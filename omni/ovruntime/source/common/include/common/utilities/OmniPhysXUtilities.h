@@ -16,7 +16,8 @@ namespace physx
 inline bool isPhysXDefaultSimulator()
 {
     carb::settings::ISettings* settings = carb::getCachedInterface<carb::settings::ISettings>();
-    return strcmp(settings->getStringBuffer(kSettingDefaultSimulator), "PhysX") == 0 ? true : false;
+    const char* defaultSimulator = settings ? settings->getStringBuffer(kSettingDefaultSimulator) : nullptr;
+    return defaultSimulator && strcmp(defaultSimulator, "PhysX") == 0;
 }
 
 // Checks if physics scene can be processed by PhysX

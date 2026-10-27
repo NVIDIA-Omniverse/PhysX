@@ -80,6 +80,8 @@ struct DofImpl
     ::physx::PxArticulationJointReducedCoordinate* joint = nullptr;
     ::physx::PxArticulationAxis::Enum axis = ::physx::PxArticulationAxis::eTWIST;
     ::physx::PxU32 isEnvelopeUsed = 0;
+    // Resolved at view creation so accessors can return a pointer good for the view's lifetime.
+    PXR_NS::SdfPath path;
 };
 
 // represents an articulation instance
@@ -101,6 +103,8 @@ struct ArticulationEntry
     ::physx::PxU32 numSpatialTendons = 0;
 
     std::vector<::physx::PxArticulationLink*> links;
+    // Parallel to links; resolved once at view creation for the same reason as DofImpl::path.
+    std::vector<PXR_NS::SdfPath> linkPaths;
     std::vector<::physx::PxU32> dofStarts;
     std::vector<FreeD6RotationAxesFlags> freeD6Axes;
     std::vector<DofImpl> dofImpls;

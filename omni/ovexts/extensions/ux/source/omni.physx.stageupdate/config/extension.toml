@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 [package]
 title = "OmniPhysX StageUpdate"
 description="OmniPhysX StageUpdate Connection."
@@ -6,7 +9,7 @@ keywords = ["physics", "physx"]
 category = "Simulation"
 authors = ["PhysX"]
 
-version = "110.1.11"
+version = "110.3.2"
 
 icon = "data/icon.png"
 preview_image = "data/preview.png"
@@ -21,13 +24,13 @@ python = true
 usd = true
 
 [dependencies]
-"omni.physx" = { version = "110.1.11", exact = true }
+"omni.physx" = { version = "110.3.2", exact = true }
 "omni.usd" = { }
 "omni.timeline.live_session" = { optional = true }
 "omni.kit.usd.layers" = { optional = true }
 "omni.ui" = {optional=true}
-"omni.physics.stageupdate" = { version = "110.1.11", exact = true, optional = true }
-"omni.physics.physx" = { version = "110.1.11", exact = true, optional = true }
+"omni.physics.stageupdate" = { version = "110.3.2", exact = true, optional = true }
+"omni.physics.physx" = { version = "110.3.2", exact = true, optional = true }
 
 [[python.module]]
 name = "omni.physxstageupdate"

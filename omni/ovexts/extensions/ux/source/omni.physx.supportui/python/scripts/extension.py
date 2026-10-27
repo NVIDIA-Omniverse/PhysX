@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-#
+# SPDX-License-Identifier: Apache-2.0
 
 import os
 from functools import partial
@@ -22,6 +21,7 @@ from .rigid_body_selection_mode import RigidBodySelectionMode
 from .utils import refresh_manipulator_selector
 from .inspector import PhysXInspector
 from omni.physxuicommon import windowmenuitem
+from ..ifacecache import release_interface_caches
 
 
 class PhysxSupportUiExtension(omni.ext.IExt):
@@ -246,3 +246,4 @@ class PhysxSupportUiExtension(omni.ext.IExt):
 
         self._physx_supportui_interface = None
         self._physx_supportui_private_interface = None
+        release_interface_caches()

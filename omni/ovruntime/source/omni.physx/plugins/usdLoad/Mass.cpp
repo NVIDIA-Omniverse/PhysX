@@ -307,7 +307,9 @@ void RequestRigidBodyMassUpdate(AttachedStage& attachedStage, const PXR_NS::UsdP
         auto it = entries->begin();
         while (it != entries->end())
         {
-            if (it->first == eBody || it->first == eArticulationLink)
+            // kInvalidObjectId would be used unchecked as an index into the internal record array
+            // (getRigidBodyShapes/getShapeMassInfo), reading far out of bounds in release builds.
+            if ((it->first == eBody || it->first == eArticulationLink) && it->second != kInvalidObjectId)
             {
                 // We assume that usdPrim is a dynamic body. Callers responsibility to check
                 RigidBodyMass physicsMassInfo = computeRigidBodyMass(&crbmInterface, attachedStage.getStage(), usdPrim, it->second);

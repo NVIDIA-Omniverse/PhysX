@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: LicenseRef-NvidiaProprietary
+# SPDX-License-Identifier: Apache-2.0
 
 set(EXT_NAME "omni.physx.graph")
 set(EXT_DIR "${OVEXTS_EXTS_PHYSICS_DIR}/${EXT_NAME}")
@@ -13,6 +13,7 @@ ovexts_prebuild_link("${CMAKE_CURRENT_SOURCE_DIR}/config"         "${EXT_DIR}/co
 ovexts_prebuild_link("${CMAKE_CURRENT_SOURCE_DIR}/nodes"          "${EXT_DIR}/${EXT_PYTHON_NS}/ogn/nodes")
 ovexts_prebuild_link("${CMAKE_CURRENT_SOURCE_DIR}/python/scripts" "${EXT_DIR}/${EXT_PYTHON_NS}/scripts")
 ovexts_prebuild_link("${CMAKE_CURRENT_SOURCE_DIR}/python/tests"   "${EXT_DIR}/${EXT_PYTHON_NS}/tests")
+ovexts_prebuild_link("${OVRUNTIME_DIR}/source/common/python/ifacecache" "${EXT_DIR}/${EXT_PYTHON_NS}/ifacecache")
 
 # ---------------------------------------------------------------------------
 # OGN code generation

@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-#
+# SPDX-License-Identifier: Apache-2.0
 
 from pathlib import Path
 from omni.physx.scripts import physicsUtils
@@ -60,6 +59,7 @@ class PhysxVisualTest(TestCase):
         utils.physics_scene_setup(stage, Gf.Vec3f(0.0, -98.0, 0.0))
 
         frame_viewport_selection()
+        await omni.kit.app.get_app().next_update_async()
 
         await self.step(20, precise=True)
         await self.do_visual_test(1e-3)

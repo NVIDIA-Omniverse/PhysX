@@ -122,12 +122,18 @@ SplinesCurve::SplinesCurve(const PXR_NS::UsdGeomBasisCurves& curvePrim)
         startIndex += count;
 
         SplineCurve curve(curveWrapType, basisToken);
+        const size_t segmentCount = curve.getSegmentCount(controlPoints.size());
+        if (segmentCount == 0)
+        {
+            CARB_LOG_WARN("BasisCurves prim %s does not define enough control points for its basis and wrap mode.",
+                          mCurvePrimPath.GetText());
+            return;
+        }
 
         std::vector<GfVec3f> tessellatedPositions, tessellatedTangents;
         const bool normalizeLengths = true;
         const std::vector<float> curveDistances = approximateDistanceAlongCurve(
             curve, controlPoints, normalizeLengths, samplesPerSegment, &tessellatedPositions, &tessellatedTangents);
-        const size_t segmentCount = curve.getSegmentCount(controlPoints.size());
         std::vector<float> curveSegmentDistances(segmentCount);
         for (size_t i = 0; i < segmentCount; i++)
         {

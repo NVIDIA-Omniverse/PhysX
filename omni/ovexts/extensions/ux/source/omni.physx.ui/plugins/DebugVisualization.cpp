@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
-//
+// SPDX-License-Identifier: Apache-2.0
 
 #include "UsdPCH.h"
 
@@ -1035,7 +1034,11 @@ void DebugVisualization::updateUsdBasedDebugVisualization(float metersPerUnit,
     }
     else if (mCameraMovement)
     {
+        // This branch re-emits every debug line from scratch, so the buffer has to be reset first - otherwise each
+        // camera move appended another full copy of the point instancer wireframes and grew the buffer without bound.
+        releaseShapeDebugLineList();
         createShapeDebugLineList();
+        mLastLineBufferSize = 0;
 
         if (mColliderVisualization == VisualizerMode::eAll)
         {
@@ -1517,6 +1520,23 @@ void DebugVisualization::updatePointInstancerPrimDebugVisualization(const PXR_NS
 {
     CARB_PROFILE_ZONE(0, "DebugVisualization::updatePointInstancerPrimDebugVisualization");
 
+    // Every instance bakes its own copy of the prototype wireframe into the shared line buffer, so the memory
+    // needed grows with instances * shapes * lines. Stop before the allocation gets big enough to abort the app.
+    // A non-positive budget means unlimited.
+    const int maxDebugLinesSetting = gSettings->get<int>(omni::physx::kSettingVisualizationMaxDebugLines);
+    const size_t maxDebugLines =
+        maxDebugLinesSetting > 0 ? size_t(maxDebugLinesSetting) : std::numeric_limits<size_t>::max();
+    if (mShapeDebugIndex >= maxDebugLines)
+    {
+        // Also warn here: an instancer that lands exactly on the budget never trips the check below, so without
+        // this the instancers that follow it would be dropped silently.
+        CARB_LOG_WARN_ONCE(
+            "Collider debug visualization hit the %zu line budget; point instancer %s and any that follow are not "
+            "drawn. Raise %s to visualize the whole stage.",
+            maxDebugLines, prim.GetPrimPath().GetText(), omni::physx::kSettingVisualizationMaxDebugLines);
+        return;
+    }
+
     const UsdGeomPointInstancer& pointInstancer = UsdGeomPointInstancer(prim);
 
     UsdRelationship prototypes = pointInstancer.GetPrototypesRel();
@@ -1567,7 +1587,7 @@ void DebugVisualization::updatePointInstancerPrimDebugVisualization(const PXR_NS
 
     for (size_t i = 0; i < indices.size(); i++)
     {
-        if (indices[i] >= static_cast<int>(targets.size()))
+        if (indices[i] < 0 || indices[i] >= static_cast<int>(targets.size()))
             continue;
 
         const GfVec3f instancePos = i < positions.size() ? positions[i] : GfVec3f(0.0f);
@@ -1604,6 +1624,20 @@ void DebugVisualization::updatePointInstancerPrimDebugVisualization(const PXR_NS
 
             uint32_t numLines = 0;
             const DebugLine* lines = gPhysXVisualization->getShapeDebugDraw(collDesc.primPath, collDesc.shapeDesc, numLines);
+
+            if (mShapeDebugIndex + numLines > maxDebugLines)
+            {
+                CARB_LOG_WARN_ONCE(
+                    "Collider debug visualization exceeded the %zu line budget at point instancer %s and will be "
+                    "truncated. Raise %s to visualize the whole stage.",
+                    maxDebugLines, prim.GetPrimPath().GetText(), omni::physx::kSettingVisualizationMaxDebugLines);
+
+                // Park the counter on the budget so the remaining instancers bail out at the top of this function
+                // instead of re-reading their instance arrays and re-parsing prototypes every frame.
+                mShapeDebugIndex = maxDebugLines;
+                return;
+            }
+
             for (uint32_t l = 0; l < numLines; l++)
             {
                 const DebugLine& line = lines[l];

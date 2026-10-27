@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: LicenseRef-NvidiaProprietary
-#
+# SPDX-License-Identifier: Apache-2.0
+
 # Test runner script generation for ovexts.
 # Replaces define_physics_test_experience() and define_etm_test_experience() from premake5-public.lua.
 

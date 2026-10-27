@@ -24,8 +24,8 @@ namespace physx
 namespace tensors
 {
 
-GpuSimulationView::GpuSimulationView(UsdStageRefPtr stage, GpuSimulationDataPtr gpuSimData)
-    : BaseSimulationView(stage), mGpuSimData(gpuSimData)
+GpuSimulationView::GpuSimulationView(UsdStageRefPtr stage, PxScene* scene, GpuSimulationDataPtr gpuSimData)
+    : BaseSimulationView(stage, scene), mGpuSimData(gpuSimData)
 {
     if (mGpuSimData)
     {

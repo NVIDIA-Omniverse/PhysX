@@ -154,6 +154,78 @@ class PointInstancerTestMemoryStage(PhysicsMemoryStageBaseTestCase):
 
         check_stats(self, {"numBoxShapes": 3, "numDynamicRigids": 3})
 
+    # NvBugs 6455958 - with inactiveIds authored, only the prototypes still referenced by an active
+    # instance get parsed. Those entries used to be appended, which compacted the list while the
+    # instance loop kept indexing it by protoIndices - reading past the end and dereferencing a
+    # garbage descriptor. Needs more than one prototype, with a leading one left unreferenced.
+    def test_physics_point_instancer_deactivation_multiple_prototypes(self):
+        stage = self.new_stage()
+
+        # two prototypes: index 0 is dynamic, index 1 is static
+        self.base_setup(stage, config="mixed")
+
+        meshIndices = [0, 1, 1, 1]
+        positions = [Gf.Vec3f(200.0), Gf.Vec3f(400.0), Gf.Vec3f(600.0), Gf.Vec3f(800.0)]
+        orientations = [Gf.Quath(1.0), Gf.Quath(1.0), Gf.Quath(1.0), Gf.Quath(1.0)]
+
+        self.instancer.GetProtoIndicesAttr().Set(meshIndices)
+        self.instancer.GetPositionsAttr().Set(positions)
+        self.instancer.GetOrientationsAttr().Set(orientations)
+
+        # the only instance using prototype 0 goes away, so prototype 1 is the sole parsed target
+        self.instancer.DeactivateId(0)
+
+        self.step()
+
+        check_stats(self, {"numBoxShapes": 3, "numStaticRigids": 3})
+
+        # out of range protoIndices combined with inactiveIds: the instance is skipped, and the
+        # index must not be fed to the activeTargets bitmap either
+        meshIndices = [0, 1, 1, 9]
+        self.instancer.GetProtoIndicesAttr().Set(meshIndices)
+
+        self.step()
+
+        check_stats(self, {"numBoxShapes": 2, "numStaticRigids": 2})
+
+    # NvBugs 6455958 (review) - inactiveIds names instances by their 'ids' value when that attribute
+    # is authored, and positionally only when it is not. Without the id -> index translation the
+    # DeactivateId(200) below names no reachable instance and both bodies stay alive.
+    def test_physics_point_instancer_deactivation_non_positional_ids(self):
+        stage = self.new_stage()
+
+        self.base_setup(stage)
+
+        meshIndices = [0, 0]
+        positions = [Gf.Vec3f(200.0), Gf.Vec3f(400.0)]
+        orientations = [Gf.Quath(1.0), Gf.Quath(1.0)]
+
+        self.instancer.GetProtoIndicesAttr().Set(meshIndices)
+        self.instancer.GetPositionsAttr().Set(positions)
+        self.instancer.GetOrientationsAttr().Set(orientations)
+        # ids well outside the positional range, so treating them as indices cannot work by accident
+        self.instancer.GetIdsAttr().Set([100, 200])
+
+        # id 200 is instance 1
+        self.instancer.DeactivateId(200)
+
+        self.step()
+
+        check_stats(self, {"numBoxShapes": 1, "numDynamicRigids": 1})
+
+        # 1 is a valid position but not an authored id, so it names no instance and is ignored
+        self.instancer.DeactivateId(1)
+
+        self.step()
+
+        check_stats(self, {"numBoxShapes": 1, "numDynamicRigids": 1})
+
+        self.instancer.ActivateId(200)
+
+        self.step()
+
+        check_stats(self, {"numBoxShapes": 2, "numDynamicRigids": 2})
+
     def test_physics_point_instancer_collisions(self):
         stage = self.new_stage()
         self.base_setup(stage, config="static")

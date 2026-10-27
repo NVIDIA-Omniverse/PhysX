@@ -39,8 +39,8 @@ namespace physx
 namespace tensors
 {
 
-CpuSimulationView::CpuSimulationView(UsdStageRefPtr stage, CpuSimulationDataPtr cpuSimData)
-    : BaseSimulationView(stage), mCpuSimData(cpuSimData)
+CpuSimulationView::CpuSimulationView(UsdStageRefPtr stage, PxScene* scene, CpuSimulationDataPtr cpuSimData)
+    : BaseSimulationView(stage, scene), mCpuSimData(cpuSimData)
 {
 }
 

@@ -58,6 +58,12 @@ void wakeActor(PxRigidActor& actor)
 
 void changeRigidActorType(PxRigidActor* sourceActor, PxRigidActor* destActor, const SdfPath& actorPath)
 {
+    if (!sourceActor || !destActor)
+    {
+        CARB_LOG_ERROR("Rigid body type change with a null actor, prim (%s)", actorPath.GetText());
+        return;
+    }
+
     OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
 
@@ -100,14 +106,19 @@ void changeRigidActorType(PxRigidActor* sourceActor, PxRigidActor* destActor, co
     destActor->userData = sourceActor->userData;
 
     omniPhysX.getRaycastManager().clearPicker(sourceActor);
+
+    // Forces are swept across every scene, and outside the getScene() guard below: mForces
+    // membership does not follow a body that changed simulation owner, and sourceActor is released
+    // by the caller whether or not it is currently in a scene. Missing the force here leaves
+    // InternalForce::mRigidActor naming freed memory (NVBugs 6583666).
+    swapForceActorsAllScenes(sourceActor, destActor);
+
     if (sourceActor->getScene())
     {
         PhysXScene* physxScene = omniPhysX.getPhysXSetup().getPhysXScene((size_t)sourceActor->getScene()->userData);
 
         physxScene->getContactReport()->swapActor(sourceActor, destActor);
         physxScene->getContactReport()->removeActor(sourceActor, actorPath);
-
-        physxScene->getInternalScene()->swapForceActors(sourceActor, destActor);        
 
         physxScene->getInternalScene()->swapDeformableAttachmentsRigidActor(sourceActor, destActor);
         physxScene->getInternalScene()->swapDeformableCollisionFiltersRigidActor(sourceActor, destActor);
@@ -175,11 +186,29 @@ bool omni::physx::updateBodyEnabled(AttachedStage& attachedStage, ObjectId objec
             }
 
             PxScene* scene = dynamicActor->getScene();
+
+            // Create the replacement actor before anything is announced or moved: createRigidStatic
+            // returns null for a pose that is not sane (non-finite, or a quaternion that drifted off
+            // unit length), and the swap below would dereference it right away.
+            const PxTransform globalPose = dynamicActor->getGlobalPose();
+            if (!globalPose.isSane())
+            {
+                CARB_LOG_ERROR("Body transformation not valid, rigidBodyEnabled change ignored, prim (%s)", objectRecord->mPath.GetText());
+                return true;
+            }
+
+            PxRigidStatic* rigidStatic = OmniPhysX::getInstance().getPhysXSetup().getPhysics()->createRigidStatic(globalPose);
+            if (!rigidStatic)
+            {
+                CARB_LOG_ERROR("Failed to create rigid static body, rigidBodyEnabled change ignored, prim (%s)", objectRecord->mPath.GetText());
+                return true;
+            }
+
             attachedStage.getPhysXPhysicsInterface()->sendObjectDestructionNotification(objectRecord->mPath, objectId, ePTActor);
-            PxRigidStatic* rigidStatic = OmniPhysX::getInstance().getPhysXSetup().getPhysics()->createRigidStatic(dynamicActor->getGlobalPose());
             changeRigidActorType(dynamicActor, rigidStatic, objectRecord->mPath);
             internalActor->mActor = rigidStatic;
             objectRecord->mPtr = rigidStatic;
+            internalScene->trackReleasedActiveActor(dynamicActor);
             dynamicActor->release();
             if (scene)
                 scene->addActor(*rigidStatic);
@@ -190,12 +219,29 @@ bool omni::physx::updateBodyEnabled(AttachedStage& attachedStage, ObjectId objec
             // switch from static to dynamic
             PxRigidActor* staticActor = actor->is<PxRigidActor>();
             PxScene* scene = staticActor->getScene();
+
+            // See the dynamic to static branch above: createRigidDynamic returns null for a pose
+            // that is not sane, and the swap below would dereference it right away.
+            const PxTransform globalPose = staticActor->getGlobalPose();
+            if (!globalPose.isSane())
+            {
+                CARB_LOG_ERROR("Body transformation not valid, rigidBodyEnabled change ignored, prim (%s)", objectRecord->mPath.GetText());
+                return true;
+            }
+
+            PxRigidDynamic* rigidDynamic = OmniPhysX::getInstance().getPhysXSetup().getPhysics()->createRigidDynamic(globalPose);
+            if (!rigidDynamic)
+            {
+                CARB_LOG_ERROR("Failed to create rigid dynamic body, rigidBodyEnabled change ignored, prim (%s)", objectRecord->mPath.GetText());
+                return true;
+            }
+
             attachedStage.getPhysXPhysicsInterface()->sendObjectDestructionNotification(objectRecord->mPath, objectId, ePTActor);
-            PxRigidDynamic* rigidDynamic = OmniPhysX::getInstance().getPhysXSetup().getPhysics()->createRigidDynamic(staticActor->getGlobalPose());
             changeRigidActorType(staticActor, rigidDynamic, objectRecord->mPath);
             applyPhysxProps(attachedStage, attachedStage.getStage()->GetPrimAtPath(objectRecord->mPath), rigidDynamic);
             internalActor->mActor = rigidDynamic;
             objectRecord->mPtr = rigidDynamic;
+            internalActor->mPhysXScene->getInternalScene()->trackReleasedActiveActor(staticActor);
             staticActor->release();
             if (scene)
                 scene->addActor(*rigidDynamic);
@@ -1049,6 +1095,37 @@ bool omni::physx::updateBodyCfmScale(AttachedStage& attachedStage, omni::physx::
     return true;
 }
 
+// Moves the InternalActor between the owning scenes' bookkeeping. InternalScene::mActors owns the
+// entry and the removal paths look the list up through InternalActor::mPhysXScene, so the two have to
+// be updated together - leaving the entry in the previous scene's list makes it dangle as soon as the
+// actor is deleted, and the teardown loop in InternalScene::release() then walks it (NVBugs 6504495).
+static void moveInternalActorToScene(InternalActor& internalActor, PhysXScene& newPhysXScene)
+{
+    PhysXScene* oldPhysXScene = internalActor.mPhysXScene;
+    if (oldPhysXScene == &newPhysXScene)
+    {
+        return;
+    }
+
+    if (oldPhysXScene && oldPhysXScene->getInternalScene())
+    {
+        oldPhysXScene->getInternalScene()->removeActor(internalActor);
+        // The forces attached to the body have to move with it, for the same reason mActors does:
+        // mForces membership decides which scene applies them, and the scene scoped
+        // swapForceActors() fixups look the force up through it (NVBugs 6583666).
+        if (newPhysXScene.getInternalScene())
+        {
+            oldPhysXScene->getInternalScene()->moveForcesForActor(
+                internalActor.mActor, *newPhysXScene.getInternalScene(), newPhysXScene);
+        }
+    }
+    if (newPhysXScene.getInternalScene())
+    {
+        newPhysXScene.getInternalScene()->addActor(internalActor);
+    }
+    internalActor.mPhysXScene = &newPhysXScene;
+}
+
 void clearSimulationOwners(InternalActor& internalActor, omni::physx::usdparser::ObjectId sceneId)
 {
     for (MirrorActor& mirror : internalActor.mMirrors)
@@ -1077,9 +1154,9 @@ void clearSimulationOwners(InternalActor& internalActor, omni::physx::usdparser:
         if (internalActor.mActor->getScene())
         {
             internalActor.mActor->getScene()->removeActor(*internalActor.mActor);
-        }        
+        }
         physxScene->getScene()->addActor(*internalActor.mActor);
-        internalActor.mPhysXScene = physxScene;
+        moveInternalActorToScene(internalActor, *physxScene);
     }
 
     std::vector<InternalActor*>& mirrorActors = oldPhysXScene->getInternalScene()->mMirorredActors;
@@ -1108,7 +1185,7 @@ void swapMainSimulationOwner(AttachedStage& attachedStage, InternalActor& intern
 
     internalActor.mActor->getScene()->removeActor(*internalActor.mActor);
     physxScene->getScene()->addActor(*internalActor.mActor);
-    internalActor.mPhysXScene = physxScene;
+    moveInternalActorToScene(internalActor, *physxScene);
 }
 
 void createMirrorSimulationOwner(AttachedStage& attachedStage, InternalActor& internalActor, const SdfPathVector& ownersPaths)
@@ -1144,7 +1221,7 @@ void createMirrorSimulationOwner(AttachedStage& attachedStage, InternalActor& in
             {
                 dynamicBody->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
             }
-            internalActor.mMirrors.push_back({ nm, col, actor });
+            internalActor.mMirrors.push_back({ nm, col, actor, mirrorScene->getInternalScene() });
         }
     }
 
@@ -1176,6 +1253,7 @@ void swapMirrorSimulationOwner(AttachedStage& attachedStage, InternalActor& inte
 
         mirror.actor->getScene()->removeActor(*mirror.actor);
         physxScene->getScene()->addActor(*mirror.actor);
+        mirror.internalScene = physxScene->getInternalScene();
     }
     else
     {
@@ -1194,7 +1272,7 @@ void swapMirrorSimulationOwner(AttachedStage& attachedStage, InternalActor& inte
             {
                 dynamicBody->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
             }
-            internalActor.mMirrors.push_back({ nm, col, actor });
+            internalActor.mMirrors.push_back({ nm, col, actor, mirrorScene->getInternalScene() });
         }
     }
 }

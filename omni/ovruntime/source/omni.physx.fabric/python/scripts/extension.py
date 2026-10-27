@@ -6,6 +6,7 @@ import omni.ext
 from .. import get_physx_fabric_interface
 from omni.physxfabric.bindings._physxFabric import release_physx_fabric_interface
 from omni.physxfabric.bindings._physxFabric import release_physx_fabric_interface_scripting
+from ..ifacecache import release_interface_caches
 
 
 class PhysxFabricExtension(omni.ext.IExt):
@@ -32,3 +33,4 @@ class PhysxFabricExtension(omni.ext.IExt):
         release_physx_fabric_interface(self._fabric_iface)
         release_physx_fabric_interface_scripting(self._fabric_iface) # OM-60917
         self._fabric_iface = None
+        release_interface_caches()

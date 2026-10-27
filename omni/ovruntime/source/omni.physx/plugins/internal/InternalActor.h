@@ -22,6 +22,8 @@ class PhysXScene;
 namespace internal
 {
 
+class InternalScene;
+
 struct ActorInitialData
 {
     ActorInitialData()
@@ -63,16 +65,12 @@ struct InternalActorFlag
 
 struct MirrorActor
 {
-    void release()
-    {
-        ::physx::PxCollectionExt::releaseObjects(*collection);
-        collection->release();
-        free(mirrorMemory);
-    }
+    void release(bool trackReleasedActor = true);
 
     void* mirrorMemory;
     ::physx::PxCollection* collection;
     ::physx::PxRigidActor* actor;
+    InternalScene* internalScene;
 };
 
 class InternalActor : public Allocateable

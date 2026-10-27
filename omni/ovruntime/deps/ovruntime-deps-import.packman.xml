@@ -1,17 +1,15 @@
 <project toolsVersion="6.11">
-  <!-- Dependencies imported from ovruntime_deps package.
-       Versions here are pinned to match what ovruntime_deps was built against.
-       When updating ovruntime_deps, update these versions accordingly. -->
+  <!-- carb + usd tracked from ovruntime_deps' own manifests. The rest are pinned
+       by hand (not in those manifests). omni_client_library: see kit-kernel-import. -->
 
-  <!-- Carbonite SDK (framework + plugins) -->
-  <dependency name="carb_sdk_plugins" linkPath="../_build/target-deps/carb_sdk_plugins" tags="slim-package">
-    <package name="carb_sdk+plugins.${platform_target_abi}" version="210.1.5+release.12978.b22b555f.gl" />
-  </dependency>
-
-  <!-- OpenUSD -->
-  <dependency name="usd-${config}" linkPath="../_build/target-deps/usd/${config}">
-    <package name="usd.py312.${platform_target_abi}.stock.${config}" version="0.25.11.kit.2-gl.19811" />
-  </dependency>
+  <import path="../_build/target-deps/ovruntime_deps_release/deps/carbonite.packman.xml">
+    <filter include="carb_sdk_plugins" />
+  </import>
+  <import path="../_build/target-deps/ovruntime_deps_release/deps/usd-deps.packman.xml">
+    <filter include="usd-${config}" />
+  </import>
+  <dependency name="carb_sdk_plugins" linkPath="../_build/target-deps/carb_sdk_plugins" tags="slim-package" />
+  <dependency name="usd-${config}" linkPath="../_build/target-deps/usd/${config}" />
 
   <!-- Python 3.12 (from Carbonite's dependency chain) -->
   <dependency name="python" linkPath="../_build/target-deps/python">
@@ -43,18 +41,8 @@
     <package name="imgui" version="1.77_WIP-277297b1" />
   </dependency>
 
-  <!-- GLM math library -->
-  <dependency name="glm" linkPath="../_build/target-deps/glm">
-    <package name="glm" version="0.9.9.1-4-560319f4" />
-  </dependency>
-
   <!-- GSL (Guidelines Support Library) -->
   <dependency name="gsl" linkPath="../_build/target-deps/gsl">
     <package name="gsl" version="3.1.0.1" />
-  </dependency>
-
-  <!-- OmniClient library -->
-  <dependency name="omni_client_library" linkPath="../_build/target-deps/client-library">
-    <package name="omni_client_library.${platform_target_abi}" version="2.69.0" />
   </dependency>
 </project>

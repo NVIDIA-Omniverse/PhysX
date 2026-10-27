@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2024-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-#
+# SPDX-License-Identifier: Apache-2.0
 
 import omni.ext
 from .. import get_physx_asset_validator_interface
@@ -21,6 +20,7 @@ from .jointPoseChecker import JointPoseChecker
 from .articulationJointsChecker import ArticulationJointsChecker
 from .newtonMigrationChecker import NewtonMigrationChecker, NewtonMimicMigrationChecker
 from omni.physx.scripts.utils import safe_import_tests
+from ..ifacecache import release_interface_caches
 
 safe_import_tests("omni.physxassetvalidator.tests")
 
@@ -57,3 +57,4 @@ class PhysxAssetValidatorExtension(omni.ext.IExt):
 
         release_physx_asset_validator_interface(self._iface)
         release_physx_asset_validator_interface_scripting(self._iface)  # OM-60917
+        release_interface_caches()

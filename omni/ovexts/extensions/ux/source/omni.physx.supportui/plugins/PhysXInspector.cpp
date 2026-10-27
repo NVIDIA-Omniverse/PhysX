@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
-//
+// SPDX-License-Identifier: Apache-2.0
+
 #include "UsdPCH.h"
 // clang-format off
 #include <omni/usd/UtilsIncludes.h>
@@ -78,21 +78,10 @@ void PhysXInspector::onStartup()
         [](const carb::dictionary::Item* changedItem, carb::dictionary::ChangeEventType eventType, void* userData) {
             PhysXInspector* self = (PhysXInspector*)userData;
             carb::dictionary::IDictionary* dict = carb::getCachedInterface<carb::dictionary::IDictionary>();
-            if (dict->getAsBool(changedItem))
-            {
-                if (self->mState == PhysXInspectorModel::State::eDisabled)
-                {
-                    self->enableAuthoringMode();
-                }
-            }
-            else
-            {
-                if (self->mState == PhysXInspectorModel::State::eAuthoring)
-                {
-                    self->stopAuthoringSimulation();
-                }
-                self->disableAuthoringMode();
-            }
+            // Setting callbacks can run during UI drawing. Defer authoring changes, which wait for async rendering,
+            // until the next stage update so the renderer can make progress.
+            self->mInspectorEnabledRequest.store(dict->getAsBool(changedItem) ? InspectorEnabledRequest::eEnabled :
+                                                                                InspectorEnabledRequest::eDisabled);
         },
         this);
 
@@ -110,6 +99,7 @@ void PhysXInspector::onStartup()
                                  disableAuthoringMode();
                                  deleteSessionSublayer();
                                  mISettings->setBool(omni::physx::kSettingsPhysicsInspectorEnabled, false);
+                                 mInspectorEnabledRequest.store(InspectorEnabledRequest::eNone);
                                  mStage = nullptr;
                              }),
         };
@@ -378,6 +368,28 @@ void PhysXInspector::onSimUpdate()
     if (mCmdZeroStep)
     {
         stepIfNecessary(0.0f);
+    }
+
+    // Apply the latest explicit setting after other queued work so it determines the final state.
+    const InspectorEnabledRequest inspectorEnabledRequest =
+        mInspectorEnabledRequest.exchange(InspectorEnabledRequest::eNone);
+    if (inspectorEnabledRequest != InspectorEnabledRequest::eNone)
+    {
+        if (inspectorEnabledRequest == InspectorEnabledRequest::eEnabled)
+        {
+            if (mState == PhysXInspectorModel::State::eDisabled)
+            {
+                enableAuthoringMode();
+            }
+        }
+        else
+        {
+            if (mState == PhysXInspectorModel::State::eAuthoring)
+            {
+                stopAuthoringSimulation();
+            }
+            disableAuthoringMode();
+        }
     }
 }
 

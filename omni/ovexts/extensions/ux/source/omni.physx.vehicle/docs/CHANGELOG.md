@@ -1,6 +1,21 @@
+<!-- SPDX-FileCopyrightText: Copyright (c) 2024-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Changelog
 
 For omni.physx changes as a whole please see omni.physx.bundle changelog.
+
+## [110.3.2] - 2026-08-20
+Version bump.
+
+## [110.3.1] - 2026-08-11
+Version bump.
+
+## [110.3.0] - 2026-07-28
+Version bump.
+
+## [110.2.0] - 2026-06-09
+Version bump.
 
 ## [110.1.13] - 2026-06-04
 Version bump.

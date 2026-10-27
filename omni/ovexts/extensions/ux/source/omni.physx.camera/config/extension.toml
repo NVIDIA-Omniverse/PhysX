@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 [package]
 title = "Physx Camera"
 description="Provide several camera behaviors that follow animated and simulated objects on the stage."
@@ -5,7 +8,7 @@ repository = ""
 keywords = ["camera"]
 category = "simulation"
 
-version = "110.1.11"
+version = "110.3.2"
 authors = ["PhysX"]
 
 icon = "data/icon.png"
@@ -22,13 +25,13 @@ usd = true
 [dependencies]
 "omni.ui" = {}
 "omni.kit.window.property" = {}
-"omni.physx" = { version = "110.1.11", exact = true }
-"omni.kit.property.physics" = { version = "110.1.11", exact = true }
-"omni.physx.demos" = { version = "110.1.11", exact = true }
+"omni.physx" = { version = "110.3.2", exact = true }
+"omni.kit.property.physics" = { version = "110.3.2", exact = true }
+"omni.physx.demos" = { version = "110.3.2", exact = true }
 "omni.kit.viewport.utility" = {}
-"omni.physx.ui" = { version = "110.1.11", exact = true }
-"omni.physx.vehicle" = { version = "110.1.11", exact = true }
-"omni.physx.tests" = { version = "110.1.11", exact = true, optional=true }
+"omni.physx.ui" = { version = "110.3.2", exact = true }
+"omni.physx.vehicle" = { version = "110.3.2", exact = true }
+"omni.physx.tests" = { version = "110.3.2", exact = true, optional=true }
 
 [[python.module]]
 name = "omni.physxcamera"

@@ -2485,6 +2485,89 @@ bool omni::physx::updateArticulationMaxJointVelocityPerAxis(AttachedStage& attac
     return true;
 }
 
+// Newton fallback: newton:velocityLimit -> physxJoint:maxJointVelocity. Both are
+// joint-level and share units, so the runtime handler is the PhysX one plus the
+// PhysX-wins guard and Newton's [0, inf] range clamp.
+bool omni::physx::updateNewtonJointVelocityLimit(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
+    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+{
+    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
+    const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+
+    PhysXType internalType = ePTRemoved;
+    const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
+    if (!objectRecord)
+        return true;
+
+    if (internalType != ePTLinkJoint)
+        return true;
+
+    // PhysX wins: skip when physxJoint:maxJointVelocity is authored.
+    const UsdPrim prim = attachedStage.getStage()->GetPrimAtPath(objectRecord->mPath);
+    if (!prim)
+        return true;
+    const UsdAttribute physxMaxVelAttr = prim.GetAttribute(PhysxSchemaTokens.Get()->physxJointMaxJointVelocity);
+    if (physxMaxVelAttr && physxMaxVelAttr.HasAuthoredValue())
+        return true;
+
+    float data;
+    if (!getValue<float>(attachedStage, objectRecord->mPath, property, timeCode, data))
+        return true;
+
+    // Newton declares the range as (0, inf]; clamp the way the parse-time fallback does.
+    if (!(data >= 0.0f))
+        data = 0.0f;
+
+    PxArticulationJointReducedCoordinate* joint = (PxArticulationJointReducedCoordinate*)objectRecord->mPtr;
+    if (joint)
+    {
+        // A per-axis PhysxJointAxisAPI:maxJointVelocity outranks the joint-level Newton value, the
+        // same way it does at parse time: fillPhysxJointAxisPropertiesDesc seeds each axis from the
+        // joint-level source, then the per-axis block overrides it. So set the axes the user has not
+        // opined on per-axis individually instead of broadcasting with the joint-level setter, which
+        // would clobber that authoring until the next reparse.
+        const bool isJointPrim = prim.IsA<UsdPhysicsJoint>();
+        auto perAxisOverrides = [&](const TfToken& instanceName) {
+            return isJointPrim && prim.HasAPI(PhysxAdditionAPITokens->PhysxJointAxisAPI, instanceName);
+        };
+
+        switch (joint->getJointType())
+        {
+            case PxArticulationJointType::eREVOLUTE:
+            case PxArticulationJointType::eREVOLUTE_UNWRAPPED:
+            {
+                if (!perAxisOverrides(UsdPhysicsTokens->angular))
+                    joint->setMaxJointVelocity(PxArticulationAxis::eTWIST, isfinite(data) ? degToRad(data) : FLT_MAX);
+            }
+            break;
+            case PxArticulationJointType::eSPHERICAL:
+            {
+                const float value = isfinite(data) ? degToRad(data) : FLT_MAX;
+                const PxArticulationAxis::Enum sphericalAxes[] = { PxArticulationAxis::eTWIST,
+                                                                   PxArticulationAxis::eSWING1,
+                                                                   PxArticulationAxis::eSWING2 };
+                for (PxArticulationAxis::Enum axis : sphericalAxes)
+                {
+                    TfToken token;
+                    if (mapAxisToToken(axis, token) && !perAxisOverrides(token))
+                        joint->setMaxJointVelocity(axis, value);
+                }
+            }
+            break;
+            case PxArticulationJointType::ePRISMATIC:
+            {
+                if (!perAxisOverrides(UsdPhysicsTokens->linear))
+                    joint->setMaxJointVelocity(PxArticulationAxis::eX, isfinite(data) ? data : FLT_MAX);
+            }
+            break;
+            default:
+                joint->setMaxJointVelocity(isfinite(data) ? data : FLT_MAX);
+                break;
+        }
+    }
+    return true;
+}
+
 bool omni::physx::updateArticulationFrictionCoefficient(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
 {

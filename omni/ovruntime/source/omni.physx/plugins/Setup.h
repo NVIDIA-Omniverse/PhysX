@@ -296,6 +296,8 @@ private:
     bool mPhysXDispatcher{ false };
 
     bool mCudaLaunchSynchronous{ false };
+    bool mCudaSettingsDeferralWarned{ false };       // sticky-log guard for deferred sync-launch/multiGPU setting change, OMPE-95128
+    bool mCudaDeviceCountDeferralWarned{ false };    // sticky-log guard for deferred device-count change, OMPE-95128
     bool mExtensionsInitialized{ false };
     bool mVehicleSDKInitialized{ false }; // for some reason scene release calls can get called multiple times. This
                                           // bool should prevent multiple de-initialization. There is a task to

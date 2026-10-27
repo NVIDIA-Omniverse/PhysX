@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
-//
+// SPDX-License-Identifier: Apache-2.0
 
 #include "UsdPCH.h"
 
@@ -695,7 +694,7 @@ bool verifyOverLayerForDomState(
 {
    static PXR_NS::TfToken const tformToken = PXR_NS::UsdGeomXformOp::GetOpName(PXR_NS::UsdGeomXformOp::Type::TypeTransform);
 
-    // Verify that the objects found in the domState objectCreations list are present in the over layer
+    // Verify that recorded actor transforms are present in the over layer
     int32_t pxActorNameAttribIndex = -1;
     int32_t pxActorNameClassIndex = -1;
 
@@ -719,17 +718,6 @@ bool verifyOverLayerForDomState(
                 PXR_NS::UsdPrim simPrim = stage->GetPrimAtPath(primPathSdf);
                 if (simPrim)
                 {
-                    PXR_NS::SdfPrimSpecHandle primSpec = overLayer->GetPrimAtPath(primPathSdf);
-                    if (!primSpec)
-                    {
-                        CARB_LOG_ERROR("Prim does not have an override: %s\n", primPathSdf.GetAsString().c_str());
-                        return false;
-                    }
-                    if (primSpec->GetSpecifier() != PXR_NS::SdfSpecifierOver)
-                    {
-                        CARB_LOG_ERROR("Prim is not an override: %s\n", primPathSdf.GetAsString().c_str());
-                        return false;
-                    }
                     // Test if the transform is the same as the OVD transform for the start and stop timecodes
                     OmniPvdAttributeInstList* globalPoses = getAttribList(pxActorGlobalPoseAttribIndex, pxActorGlobalPoseClassIndex, "globalPose", omniPvdObject);
                     if (globalPoses)
@@ -738,6 +726,18 @@ bool verifyOverLayerForDomState(
                         OmniPvdAttributeSample *lastPoseAttrib = (OmniPvdAttributeSample*)globalPoses->mLast;
                         if (firstPoseAttrib && lastPoseAttrib)
                         {
+                            PXR_NS::SdfPrimSpecHandle primSpec = overLayer->GetPrimAtPath(primPathSdf);
+                            if (!primSpec)
+                            {
+                                CARB_LOG_ERROR("Prim does not have an override: %s\n", primPathSdf.GetAsString().c_str());
+                                return false;
+                            }
+                            if (primSpec->GetSpecifier() != PXR_NS::SdfSpecifierOver)
+                            {
+                                CARB_LOG_ERROR("Prim is not an override: %s\n", primPathSdf.GetAsString().c_str());
+                                return false;
+                            }
+
                             const float* startTranslation = &((float*)firstPoseAttrib->mData)[4];
                             const float* stopTranslation = &((float*)lastPoseAttrib->mData)[4];
                             

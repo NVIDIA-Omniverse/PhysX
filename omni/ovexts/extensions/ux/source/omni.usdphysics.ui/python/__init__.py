@@ -1,18 +1,14 @@
 # SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-#
+# SPDX-License-Identifier: Apache-2.0
 
 from omni.usdphysicsui.bindings._usdphysicsUI import acquire_usdphysics_ui_interface, IUsdPhysicsUI
 from omni.usdphysicsui.bindings._usdphysicsUI import acquire_usdphysics_ui_private_interface, IUsdPhysicsUIPrivate
+from .ifacecache import cached_interface
 
 def get_usdphysicsui_interface() -> IUsdPhysicsUI:
-    if not hasattr(get_usdphysicsui_interface, "iface"):
-        get_usdphysicsui_interface.iface = acquire_usdphysics_ui_interface()
-    return get_usdphysicsui_interface.iface
+    return cached_interface(get_usdphysicsui_interface, acquire_usdphysics_ui_interface)
 
 def get_usdphysicsuiprivate_interface() -> IUsdPhysicsUIPrivate:
-    if not hasattr(get_usdphysicsuiprivate_interface, "iface"):
-        get_usdphysicsuiprivate_interface.iface = acquire_usdphysics_ui_private_interface()
-    return get_usdphysicsuiprivate_interface.iface
+    return cached_interface(get_usdphysicsuiprivate_interface, acquire_usdphysics_ui_private_interface)
 
 from .scripts.extension import *

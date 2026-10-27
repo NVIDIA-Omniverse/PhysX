@@ -1,3 +1,47 @@
+# v5.9.1-110.3
+
+## Supported Platforms
+
+### Runtime
+
+* Linux (tested on Ubuntu LTS versions 22.04, and 24.04 using their respective default GCC and Clang compilers).
+* Microsoft Windows 10 or later (64 bit) 
+* GPU acceleration: display driver supporting CUDA toolkit 12.8 and Volta GPU or above
+
+### Development
+
+* [Linux Platform Readme](documentation/platformreadme/linux/README_LINUX.md)
+* [Windows Platform Readme](documentation/platformreadme/windows/README_WINDOWS.md)
+
+## General
+
+### Fixed
+
+* The `PxCudaHelpersExt` allocation, free, copy and memset helpers no longer crash when a CUDA operation fails after `PxFoundation` has been released. Failures were reported through `PxGetFoundation()`, which returns a null reference once the foundation is gone; the report now goes through `PxIsFoundationValid()` and is dropped if there is no foundation left.
+
+### Changed
+
+* PhysX SDK public source code is now licensed under the Apache License 2.0.
+
+## Rigid Body
+
+### Fixed
+
+* Fixed SDF cooking for triangle meshes with inverted or inconsistent winding, which caused incorrect collision with the resulting collider, both against other SDF meshes and against convex and primitive shapes. Watertight, single-component meshes cooked with a `PxSDFDesc` now have their triangle winding normalized to a consistent, outward orientation, with a warning when a correction is made. `PxMeshFlag::eFLIPNORMALS` is ignored for these meshes. Previously cooked SDF meshes need to be re-cooked to pick up the fix.
+* Cooking no longer modifies the caller's `PxSDFDesc`, so the same descriptor can be reused for more than one cook. Reusing it previously produced a corrupt signed distance field.
+
+## Deformables
+
+### Fixed
+
+* PxCreateTetrahedronMesh() and PxCookTetrahedronMesh() never copied the descriptor's vertices and tetrahedra into the mesh, so the result held uninitialized memory and its local bounds were derived from it.
+
+## PVD / OVD
+
+### Fixed
+
+* PvdDom: fixed cached attribute lookups returning an unrelated attribute when a cache was reused across objects with different class hierarchies.
+
 # v5.9.0-110.1
 
 ## Supported Platforms

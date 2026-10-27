@@ -40,11 +40,15 @@ $PACKMAN pull deps/ovruntime-deps.packman.xml -p "$PLATFORM" -t "platform_target
 
 # Pull config-dependent deps for both release and debug
 for CONFIG in $CONFIGS; do
-    # Import dependencies from ovruntime_deps (Carbonite, USD, Python, CUDA, etc.)
+    # Import ovruntime_deps-aligned deps (carb, usd, python, cuda, ...)
     $PACKMAN pull deps/ovruntime-deps-import.packman.xml -p "$PLATFORM" -t "platform_target_abi=$PLATFORM" -t "config=$CONFIG"
 
     # Pull kit-kernel for dev headers not yet in ovruntime_deps (omni/timeline, omni/kit/renderer, etc.)
     $PACKMAN pull deps/kit-kernel-deps.packman.xml -p "$PLATFORM" -t "platform_target_abi=$PLATFORM" -t "config=$CONFIG"
+
+    # Pull omni_client_library at the version kit-kernel was built against
+    # (imported from kit_sdk's all-deps; requires kit-kernel from the previous step).
+    $PACKMAN pull deps/kit-kernel-import.packman.xml -p "$PLATFORM" -t "platform_target_abi=$PLATFORM" -t "config=$CONFIG"
 
     # Pull schema deps (physxSchema, physicsSchemaTools headers/libs)
     $PACKMAN pull deps/schema-deps.packman.xml -p "$PLATFORM" -t "platform_target_abi=$PLATFORM" -t "config=$CONFIG"

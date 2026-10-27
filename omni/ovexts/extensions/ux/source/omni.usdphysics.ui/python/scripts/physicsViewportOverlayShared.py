@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2024-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-#
+# SPDX-License-Identifier: Apache-2.0
 
 from pxr import Usd, UsdPhysics, UsdGeom, Gf as UsdGf, Sdf, Tf
 from usdrt import Usd as UsdRt, Rt as UsdRtGeom, UsdPhysics as UsdRtPhysics, Gf

@@ -398,7 +398,7 @@ InternalActor* setupActor(PhysXScene* ps, PxRigidActor& actor, const PhysxRigidB
         internalActor = ICE_NEW(InternalLink)(ps, topPrim.GetPrimPath(), topPrim, instance);
     }
     internalActor->mScale = desc.scale;
-    ps->getInternalScene()->mActors.push_back(internalActor);
+    ps->getInternalScene()->addActor(*internalActor);
     internalActor->mActor = &actor;
 
     // set flag if dynamic body has time sampled xform
@@ -1893,7 +1893,7 @@ ObjectId PhysXUsdPhysicsInterface::createObject(usdparser::AttachedStage& attach
                     *mirrorScene->getScene(), col, sharedCollection));
                 // mirrored body is always kinematic
                 dynamicBody->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
-                intActor->mMirrors.push_back({ nm, col, dynamicBody });
+                intActor->mMirrors.push_back({ nm, col, dynamicBody, mirrorScene->getInternalScene() });
             }
         }
     }
@@ -1965,7 +1965,7 @@ ObjectId PhysXUsdPhysicsInterface::createObject(usdparser::AttachedStage& attach
                 PxCollection* col = nullptr;
                 PxRigidStatic* staticBody = static_cast<PxRigidStatic *>(instantiateMirrorActor(nm, *physxSetup.getSerializationRegistry(),
                     *mirrorScene->getScene(), col, sharedCollection));
-                intActor->mMirrors.push_back({ nm, col, staticBody });
+                intActor->mMirrors.push_back({ nm, col, staticBody, mirrorScene->getInternalScene() });
             }
         }
     }
@@ -4291,20 +4291,20 @@ void PhysXUsdPhysicsInterface::releaseObject(AttachedStage& attachedStage, const
 
         db.storePxJoint(actor, removedPath);
 
+        ps->getInternalScene()->trackReleasedActiveActor(actor);
+        // A force prim outlives the body it is attached to on the paths that release the body
+        // without removing the force prim, so drop the back pointer before the actor dies
+        // (NVBugs 6583666).
+        internal::swapForceActorsAllScenes(actor, nullptr);
         actor->release();
         db.removeDirtyMassActor(intActor);
         // A.B. this can be easily a bottleneck
+        if (!ps->getInternalScene()->removeActor(*intActor))
         {
-            std::vector<InternalActor*>& actorsList = ps->getInternalScene()->mActors;
-            for (size_t i = 0; i < actorsList.size(); i++)
-            {
-                if (actorsList[i] == intActor)
-                {
-                    actorsList[i] = actorsList.back();
-                    actorsList.pop_back();
-                    break;
-                }
-            }
+            // The entry is looked up through intActor->mPhysXScene. If it is not there the actor is
+            // about to be deleted while some other scene still references it (NVBugs 6504495).
+            CARB_LOG_ERROR("Removed rigid body %s was not registered with its own scene.",
+                           removedPath.GetText());
         }
         {
             std::vector<InternalActor*>& actorsList = ps->getInternalScene()->mMirorredActors;
@@ -4397,9 +4397,10 @@ void PhysXUsdPhysicsInterface::releaseObject(AttachedStage& attachedStage, const
     case ePTCct:
     {
         PxController* cct = (PxController*)objectRecord.mPtr;
-        cct->release();
         InternalCct* intCct = (InternalCct*)objectRecord.mInternalPtr;
         PhysXScene* ps = intCct->mPhysXScene;
+        ps->getInternalScene()->trackReleasedActiveActor(cct->getActor());
+        cct->release();
         CctMap::iterator it = ps->getInternalScene()->mCctMap.begin();
         while (it != ps->getInternalScene()->mCctMap.end())
         {
@@ -4548,6 +4549,20 @@ void PhysXUsdPhysicsInterface::releaseObject(AttachedStage& attachedStage, const
         }
 
         InternalScene* internalScene = internalArticulation->mPhysxScene->getInternalScene();
+        {
+            const PxU32 numLinks = art->getNbLinks();
+            std::vector<PxArticulationLink*> links(numLinks);
+            if (numLinks)
+            {
+                art->getLinks(links.data(), numLinks);
+                for (PxArticulationLink* link : links)
+                {
+                    internalScene->trackReleasedActiveActor(link);
+                    // see the rigid body removal path (NVBugs 6583666)
+                    internal::swapForceActorsAllScenes(link, nullptr);
+                }
+            }
+        }
         std::vector<::physx::PxArticulationReducedCoordinate*>& articulationsList = internalScene->mArticulations;
         for (size_t i = 0; i < articulationsList.size(); i++)
         {
@@ -4676,15 +4691,11 @@ void PhysXUsdPhysicsInterface::releaseObject(AttachedStage& attachedStage, const
             actor->getShapes(&shapePtr, 1, i);
             removeFilteredObject<uint32_t>(internal::convertFilterPairFromPxFilterData(shapePtr->getSimulationFilterData()), physxSetup.getFilteredPairs());
         }
-        std::vector<InternalActor*>& actorsList = intScene->mActors;
-        for (size_t i = 0; i < actorsList.size(); i++)
+        if (!intScene->removeActor(*intActor))
         {
-            if (actorsList[i] == intActor)
-            {
-                actorsList[i] = actorsList.back();
-                actorsList.pop_back();
-                break;
-            }
+            // See the equivalent check on the rigid body removal path (NVBugs 6504495).
+            CARB_LOG_ERROR("Removed articulation link %s was not registered with its own scene.",
+                           removedPath.GetText());
         }
         db.removeDirtyMassActor(intActor);
         SAFE_DELETE_ALLOCABLE_SINGLE(intActor);
@@ -5030,8 +5041,24 @@ bool PhysXUsdPhysicsInterface::updateTransform(const AttachedStage& attachedStag
         {
             if (!dynamicActor && (intActor->mSourceGPrimPath != SdfPath()))
             {
-                // We need to get the transform from the actual gprim
-                const GfTransform gf = getSourceGPrimTransform(attachedStage, intActor->mSourceGPrimPath, fabricChange);
+                // We need to get the transform from the actual gprim. For an
+                // instanced collider the collision descriptor is parsed once from
+                // the shared USD prototype (cooking/descriptor dedup), so
+                // mSourceGPrimPath can point INSIDE that prototype rather than at
+                // this instance. A prototype-internal prim has no meaningful world
+                // transform of its own (it is not part of any instance's live
+                // ancestor chain), so ComputeLocalToWorldTransform on it silently
+                // returns a pose unrelated to this instance, discarding the
+                // instance-specific pose the caller already resolved via `path`.
+                // Fall back to `path` itself in that case - it is this actor's own
+                // concrete (possibly instance-proxy) prim, which resolves through
+                // instancing correctly.
+                SdfPath sourceGPrimPath = intActor->mSourceGPrimPath;
+                const UsdPrim sourceGPrim = attachedStage.getStage()->GetPrimAtPath(sourceGPrimPath);
+                if (!sourceGPrim || sourceGPrim.IsInPrototype())
+                    sourceGPrimPath = path;
+
+                const GfTransform gf = getSourceGPrimTransform(attachedStage, sourceGPrimPath, fabricChange);
 
                 translation = toPhysX(gf.GetTranslation());
                 (GfQuatf&)orientation = GfQuatf(gf.GetRotation().GetQuat());
@@ -6538,9 +6565,33 @@ ObjectId PhysXUsdPhysicsInterface::createMimicJoint(const usdparser::MimicJointD
                     // the stage has been attached).
                     removeArticulationFromSceneAndScheduleForReAdd(pxTargetJointArt);
 
+                    // Mimic-joint gearing/offset are authored against each joint's natural USD position
+                    // convention (relative to body0 -> body1): PhysxMimicJointAPI as
+                    // jointPosition + gearing * referenceJointPosition + offset = 0, and NewtonMimicAPI as
+                    // q_follower = coef0 + coef1 * q_leader (parsed to gearing = -coef1, offset = -coef0).
+                    // omni.physx, however, negates the PhysX articulation joint coordinate of any joint
+                    // whose body0/body1 rel does not follow the articulation hierarchy
+                    // (InternalJoint::mBody0IsParentLink == false; see
+                    // InternalScene::getArticulationJointPosition and friends). To keep the authored
+                    // relation valid in that convention, the gearing/offset must be flipped by the joints'
+                    // flip parity: gearing by sign(target)*sign(reference) and offset by sign(target).
+                    // These signs are handed to the InternalMimicJoint so they are reapplied on runtime
+                    // gearing/offset (coef) changes too.
+                    const InternalJoint* targetIntJoint =
+                        getInternalPtr<InternalJoint>(ePTLinkJoint, mimicJointDesc.mimicJointId);
+                    const InternalJoint* referenceIntJoint =
+                        getInternalPtr<InternalJoint>(ePTLinkJoint, mimicJointDesc.referenceJointId);
+
+                    const float targetSign = (targetIntJoint && !targetIntJoint->mBody0IsParentLink) ? -1.0f : 1.0f;
+                    const float referenceSign = (referenceIntJoint && !referenceIntJoint->mBody0IsParentLink) ? -1.0f : 1.0f;
+
+                    const float gearingSign = targetSign * referenceSign;
+                    const float offsetSign = targetSign;
+
                     InternalMimicJoint* internalMimicJoint = ICE_NEW(InternalMimicJoint)(*internalArt->mPhysxScene->getInternalScene(), *pxTargetJoint, *pxReferenceJoint,
                         mimicJointDesc.mimicJointAxis, mimicJointDesc.referenceJointAxis,
-                        mimicJointDesc.gearing, mimicJointDesc.offset, mimicJointDesc.naturalFrequency, mimicJointDesc.dampingRatio, mimicJointDesc.type);
+                        mimicJointDesc.gearing, mimicJointDesc.offset, mimicJointDesc.naturalFrequency, mimicJointDesc.dampingRatio,
+                        mimicJointDesc.type, gearingSign, offsetSign);
 
                     if (internalMimicJoint)
                     {

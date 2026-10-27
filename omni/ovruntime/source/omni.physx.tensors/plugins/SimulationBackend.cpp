@@ -144,7 +144,7 @@ ISimulationView* SimulationBackend::createSimulationView(long stageId)
                 return nullptr;
             }
         }
-        GpuSimulationView* simView = new GpuSimulationView(usdStage, mGpuSimData);
+        GpuSimulationView* simView = new GpuSimulationView(usdStage, scene, mGpuSimData);
         simViews.insert(simView);
         return simView ;
     }
@@ -155,7 +155,7 @@ ISimulationView* SimulationBackend::createSimulationView(long stageId)
             mCpuSimData = std::make_shared<CpuSimulationData>(*this, stageId);
         }
 
-        CpuSimulationView* simView = new CpuSimulationView(usdStage, mCpuSimData);
+        CpuSimulationView* simView = new CpuSimulationView(usdStage, scene, mCpuSimData);
         simViews.insert(simView);
         return simView;
     }

@@ -1,12 +1,12 @@
 # SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-#
+# SPDX-License-Identifier: Apache-2.0
 
 import omni.ext
 import omni.physx
 import carb
 from omni.physxgraph.bindings import _physxGraph
 import omni.physxdemos as demo
+from ..ifacecache import release_interface_caches
 
 
 DEMO_SCENES = "omni.physxgraph.scripts.samples"
@@ -29,3 +29,4 @@ class PhysxGraphExtension(omni.ext.IExt):
             self._physxGraphInterface = None
 
         demo.unregister(DEMO_SCENES)
+        release_interface_caches()

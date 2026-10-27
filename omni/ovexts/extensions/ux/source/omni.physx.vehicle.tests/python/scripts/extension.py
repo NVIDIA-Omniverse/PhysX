@@ -1,11 +1,11 @@
 # SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-#
+# SPDX-License-Identifier: Apache-2.0
 
 import omni.ext
 from omni.physxvehicletests.bindings import _physxVehicleTests
 import omni.physxvehicletests.scripts.tests as tests
 from omni.physxtests import import_tests_auto
+from ..ifacecache import release_interface_caches
 
 import_tests_auto("omni.physxvehicletests.scripts", ["tests"])
 
@@ -48,3 +48,4 @@ class PhysxVehicleTestsExtension(omni.ext.IExt):
         if self._physxVehicleTestingInterface is not None:
             _physxVehicleTests.release_physx_vehicle_testing_interface(self._physxVehicleTestingInterface)
         self._physxVehicleTestingInterface = None
+        release_interface_caches()

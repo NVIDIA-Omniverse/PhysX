@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 [package]
 category = "simulation"
 authors = ["PhysX"]
@@ -6,7 +9,7 @@ description="View and edit UsdPhysics property values"
 repository = ""
 keywords = ["kit", "usd", "property", "physx"]
 
-version = "110.1.11"
+version = "110.3.2"
 
 icon = "data/icon.png"
 preview_image = "data/preview.png"
@@ -27,9 +30,9 @@ usd = true
 "omni.kit.property.material" = {}
 "omni.kit.material.library" = {}
 "omni.kit.usd_undo" = {}
-"omni.physx" = { version = "110.1.11", exact = true }
-"omni.physx.ui" = { version = "110.1.11", exact = true }
-"omni.physx.commands" = { version = "110.1.11", exact = true }
+"omni.physx" = { version = "110.3.2", exact = true }
+"omni.physx.ui" = { version = "110.3.2", exact = true }
+"omni.physx.commands" = { version = "110.3.2", exact = true }
 
 [[python.module]]
 name = "omni.kit.property.physics"

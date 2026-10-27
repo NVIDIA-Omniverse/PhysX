@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: LicenseRef-NvidiaProprietary
+# SPDX-License-Identifier: Apache-2.0
 
 set(EXT_NAME "omni.physx.vehicle.tests")
 set(EXT_DIR "${OVEXTS_EXTS_PHYSICS_DIR}/${EXT_NAME}")
@@ -11,6 +11,7 @@ ovexts_prebuild_link("${CMAKE_CURRENT_SOURCE_DIR}/config"         "${EXT_DIR}/co
 ovexts_prebuild_link("${CMAKE_CURRENT_SOURCE_DIR}/python/scripts" "${EXT_DIR}/${EXT_PYTHON_NS}/scripts")
 ovexts_prebuild_link("${OVEXTS_ROOT_DIR}/data/audio/physics/vehicle"                   "${EXT_DIR}/data/audio")
 ovexts_prebuild_link("${OVEXTS_ROOT_DIR}/data/usd/tests/Physics/Vehicle_Schema_Tests"  "${EXT_DIR}/data/tests/Vehicle_Schema_Tests")
+ovexts_prebuild_link("${OVRUNTIME_DIR}/source/common/python/ifacecache" "${EXT_DIR}/${EXT_PYTHON_NS}/ifacecache")
 
 # Plugin
 file(GLOB_RECURSE _PLUGIN_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/plugins/*.cpp")

@@ -771,20 +771,7 @@ bool BaseRigidBodyView::setMaterialProperties(const TensorDesc* srcTensor, const
 
                 for (auto mat : extraMats)
                 {
-                    mSim->mMaterialsRefCount[mat] -= 1;
-                    if (mSim->mMaterialsRefCount[mat] == 0)
-                    {
-                        std::string key;
-                        char keybuffer[100];
-                        snprintf(keybuffer, 100, "%.6f", mat->getStaticFriction());
-                        key += std::string(keybuffer) + "_";
-                        snprintf(keybuffer, 100, "%.6f", mat->getDynamicFriction());
-                        key += std::string(keybuffer) + "_";
-                        snprintf(keybuffer, 100, "%.6f", mat->getRestitution());
-                        key += std::string(keybuffer);
-                        mSim->mMaterials.erase(key);
-                        mSim->mUnusedMaterials.insert(mat);
-                    }
+                    mSim->releaseSharedMaterial(mat);
                 }
 
                 mEntries[idx].shapes[j]->setMaterials(&material, 1);
@@ -860,28 +847,7 @@ bool BaseRigidBodyView::setCompliantMaterialProperties(const TensorDesc* srcTens
 
                 for (auto mat : extraMats)
                 {
-                    mSim->mMaterialsRefCount[mat] -= 1;
-                    if (mSim->mMaterialsRefCount[mat] == 0)
-                    {
-                        std::string key;
-                        char keybuffer[100];
-                        snprintf(keybuffer, 100, "%.6f", mat->getStaticFriction());
-                        key += std::string(keybuffer) + "_";
-                        snprintf(keybuffer, 100, "%.6f", mat->getDynamicFriction());
-                        key += std::string(keybuffer) + "_";
-                        snprintf(keybuffer, 100, "%.6f", mat->getRestitution());
-                        key += std::string(keybuffer) + "_";
-                        snprintf(keybuffer, 100, "%.6f", mat->getDamping());
-                        key += std::string(keybuffer) + "_";
-                        snprintf(keybuffer, 100, "%1d", static_cast<uint8_t>(mat->getFrictionCombineMode()));
-                        key += std::string(keybuffer) + "_";
-                        snprintf(keybuffer, 100, "%1d", static_cast<uint8_t>(mat->getRestitutionCombineMode()));
-                        key += std::string(keybuffer) + "_";
-                        snprintf(keybuffer, 100, "%1d", static_cast<uint8_t>(mat->getDampingCombineMode()));
-                        key += std::string(keybuffer);
-                        mSim->mMaterials.erase(key);
-                        mSim->mUnusedMaterials.insert(mat);
-                    }
+                    mSim->releaseSharedMaterial(mat);
                 }
 
                 mEntries[idx].shapes[j]->setMaterials(&material, 1);

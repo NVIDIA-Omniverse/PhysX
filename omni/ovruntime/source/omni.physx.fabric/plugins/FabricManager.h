@@ -179,6 +179,14 @@ public:
         mSurfaceDeformableBodyManager.setIsDirty();
     }
 
+    // Marks the direct GPU helper as needing a resync so it drops its cached PxScene pointer.
+    // Called from the PhysX deletion callbacks and on simulation stop so that the direct GPU
+    // readback path does not dereference a released scene.
+    void setDirectGpuHelperDirty()
+    {
+        mDirectGpuHelper.invalidatePhysXPointers();
+    }
+
     static ::physx::PxCudaContextManager* getCudaContextManager();
 
     bool getInitialTransformation(const omni::fabric::Path& path,

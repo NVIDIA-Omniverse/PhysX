@@ -353,5 +353,94 @@ bool isCudaLibPresent()
     return physx.isCudaLibPresent();
 }
 
+size_t getSceneInternalActorCount(const SdfPath& scenePath)
+{
+    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
+    const usdparser::AttachedStage* attachedStage =
+        usdparser::UsdLoad::getUsdLoad()->getAttachedStage(omniPhysX.getStageId());
+    if (!attachedStage)
+    {
+        return 0;
+    }
+
+    const usdparser::ObjectId sceneId = usdparser::ObjectId(getObjectDataOrID<ObjectDataQueryType::eOBJECT_ID>(
+        scenePath, ePTScene, omniPhysX.getInternalPhysXDatabase(), *attachedStage));
+    if (sceneId == usdparser::kInvalidObjectId)
+    {
+        return 0;
+    }
+
+    const PhysXScene* physxScene = omniPhysX.getPhysXSetup().getPhysXScene(sceneId);
+    if (!physxScene || !physxScene->getInternalScene())
+    {
+        return 0;
+    }
+
+    return physxScene->getInternalScene()->mActors.size();
+}
+
+bool getForceRigidActor(const SdfPath& forcePath, void** outRigidActor)
+{
+    if (outRigidActor)
+    {
+        *outRigidActor = nullptr;
+    }
+
+    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
+    const usdparser::AttachedStage* attachedStage =
+        usdparser::UsdLoad::getUsdLoad()->getAttachedStage(omniPhysX.getStageId());
+    if (!attachedStage)
+    {
+        return false;
+    }
+
+    internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const usdparser::ObjectId forceId = usdparser::ObjectId(
+        getObjectDataOrID<ObjectDataQueryType::eOBJECT_ID>(forcePath, ePTForce, db, *attachedStage));
+    if (forceId == usdparser::kInvalidObjectId)
+    {
+        return false;
+    }
+
+    const internal::InternalForce* force =
+        static_cast<const internal::InternalForce*>(db.getInternalTypedRecord(ePTForce, forceId));
+    if (!force)
+    {
+        return false;
+    }
+
+    if (outRigidActor)
+    {
+        *outRigidActor = force->mRigidActor;
+    }
+    return true;
+}
+
+size_t getSceneInternalForceCount(const SdfPath& scenePath)
+{
+    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
+    const usdparser::AttachedStage* attachedStage =
+        usdparser::UsdLoad::getUsdLoad()->getAttachedStage(omniPhysX.getStageId());
+    if (!attachedStage)
+    {
+        return 0;
+    }
+
+    const usdparser::ObjectId sceneId = usdparser::ObjectId(getObjectDataOrID<ObjectDataQueryType::eOBJECT_ID>(
+        scenePath, ePTScene, omniPhysX.getInternalPhysXDatabase(), *attachedStage));
+    if (sceneId == usdparser::kInvalidObjectId)
+    {
+        return 0;
+    }
+
+    const PhysXScene* physxScene = omniPhysX.getPhysXSetup().getPhysXScene(sceneId);
+    if (!physxScene || !physxScene->getInternalScene())
+    {
+        return 0;
+    }
+
+    return physxScene->getInternalScene()->mForces.size();
+}
+
 } // namespace physx
 } // namespace omni

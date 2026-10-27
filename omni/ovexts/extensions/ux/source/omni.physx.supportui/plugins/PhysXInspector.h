@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
-//
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 #include <private/omni/physx/IPhysxSupportUiPrivate.h>
@@ -10,6 +9,8 @@
 #include <carb/settings/ISettings.h>
 #include <carb/eventdispatcher/IEventDispatcher.h>
 #include <PxPhysicsAPI.h>
+
+#include <atomic>
 
 using JointBodyMap = PXR_NS::TfHashMap<PXR_NS::SdfPath, PXR_NS::SdfPathSet, PXR_NS::SdfPath::Hash>;
 using MaterialsShapesMap = PXR_NS::TfHashMap<PXR_NS::SdfPath, std::unordered_set<::physx::PxShape*>, PXR_NS::SdfPath::Hash>;
@@ -53,6 +54,13 @@ public:
     void refreshAllInspectorModelsOverrides();
 
 private:
+    enum class InspectorEnabledRequest : uint8_t
+    {
+        eNone,
+        eDisabled,
+        eEnabled,
+    };
+
     friend class PhysXInspectorModelImpl;
     friend class PhysXInspectorDebugVisualization;
     friend class omni::ui::PhysXInspectorWidgetImpl;
@@ -121,6 +129,7 @@ private:
     PXR_NS::SdfLayerRefPtr mSessionSubLayer;
     PXR_NS::SdfPath mSelectedPhysicsScenePath;
     carb::dictionary::SubscriptionId* mPhysicsInspectorEnabledSubID = nullptr;
+    std::atomic<InspectorEnabledRequest> mInspectorEnabledRequest{ InspectorEnabledRequest::eNone };
     bool mCmdCommitAndDisable = false;
     bool mCmdUpdateModels = false;
     bool mCmdZeroStep = false;

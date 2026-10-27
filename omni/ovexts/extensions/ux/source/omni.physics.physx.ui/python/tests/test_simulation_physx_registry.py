@@ -1,7 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-#
-
+# SPDX-License-Identifier: Apache-2.0
 
 from unittest.mock import patch, MagicMock
 from omni.kit.test.async_unittest import AsyncTestCase

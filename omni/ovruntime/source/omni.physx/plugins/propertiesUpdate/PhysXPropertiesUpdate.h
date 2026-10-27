@@ -1253,6 +1253,10 @@ bool updateNewtonDeformableContactGap(omni::physx::usdparser::AttachedStage& att
                                       omni::physx::usdparser::ObjectId,
                                       const PXR_NS::TfToken&,
                                       const PXR_NS::UsdTimeCode&);
+bool updateNewtonJointVelocityLimit(omni::physx::usdparser::AttachedStage& attachedStage,
+                                    omni::physx::usdparser::ObjectId,
+                                    const PXR_NS::TfToken&,
+                                    const PXR_NS::UsdTimeCode&);
 
 } // namespace physx
 } // namespace omni

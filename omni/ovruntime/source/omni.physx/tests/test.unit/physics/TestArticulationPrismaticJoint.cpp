@@ -153,8 +153,8 @@ TEST_CASE_TEMPLATE("Articulation Prismatic Joint Tests", T, USDChange, FabricCha
         const TfToken& changeToken = PhysxSchemaTokens->physxJointMaxJointVelocity;
 
         float value = changeTemplate.template getAttributeValue<float>(prismaticJointPath, changeToken);
-        // check default value
-        CHECK(fabsf(value - 1000000.0f) < epsilon);
+        // check default value (schema default is inf)
+        CHECK((isinf(value) && value > 0.0f));
 
         PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(prismaticJointPath, ePTLinkJoint));
         CHECK(basePtr != nullptr);
@@ -163,7 +163,7 @@ TEST_CASE_TEMPLATE("Articulation Prismatic Joint Tests", T, USDChange, FabricCha
         PxArticulationJointReducedCoordinate* joint = basePtr->is<PxArticulationJointReducedCoordinate>();
 
         float maxVel = joint->getMaxJointVelocity(PxArticulationAxis::eX);
-        CHECK(fabsf(maxVel - 1000000.0f) < epsilon);
+        CHECK(maxVel >= FLT_MAX);
 
         // change value
         value = 10.0;
@@ -222,8 +222,8 @@ TEST_CASE_TEMPLATE("Articulation Prismatic Joint Tests", T, USDChange, FabricCha
             const TfToken& changeToken = PhysxAdditionAttrTokens->maxJointVelocityLinear;
 
             float value = changeTemplate.template getAttributeValue<float>(prismaticJointPath, changeToken);
-            // check default value
-            CHECK(fabsf(value - 1000000.0f) < epsilon);
+            // check default value (schema default is inf)
+            CHECK((isinf(value) && value > 0.0f));
 
             PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(prismaticJointPath, ePTLinkJoint));
             CHECK(basePtr != nullptr);
@@ -232,7 +232,8 @@ TEST_CASE_TEMPLATE("Articulation Prismatic Joint Tests", T, USDChange, FabricCha
             PxArticulationJointReducedCoordinate* joint = basePtr->is<PxArticulationJointReducedCoordinate>();
 
             float maxVel = joint->getMaxJointVelocity(PxArticulationAxis::eX);
-            CHECK(fabsf(maxVel - value) < epsilon );
+            // USD default is inf but the runtime clamps the unlimited sentinel to FLT_MAX
+            CHECK(maxVel >= FLT_MAX);
 
             // change value
             value = 10.0;

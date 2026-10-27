@@ -288,6 +288,81 @@ class TestRigidBodyShapeProperties(GridTestBase):
         pass
 
 
+class TestRigidBodyMaterialPoolReuse(GridTestBase):
+    """Repro for NVBugs 6489465 / OMPE-102536.
+
+    set_material_properties interns PxMaterials in a refcounted pool
+    (BaseSimulationView::mMaterials) keyed by a "%.6f"-formatted value string.
+    createSharedMaterial builds a 7-component key
+    (staticFriction_dynamicFriction_restitution_damping_fCM_rCM_dCM), but the
+    release path in BaseRigidBodyView::setMaterialProperties erases the map
+    entry with a 3-component key (staticFriction_dynamicFriction_restitution).
+    The erase therefore never matches, so the stale entry survives while the
+    underlying material is recycled through mUnusedMaterials and repurposed for
+    a different tuple. Re-requesting a previously-used tuple then returns the
+    recycled material, silently binding the wrong friction/restitution values.
+
+    Four writes to the same shapes reproduce it deterministically:
+      A -> B -> C -> A, where re-requesting A returns C's values.
+    The call reports success; get_material_properties returns the foreign
+    material's values.
+    """
+
+    def __init__(self, test_case, device_params):
+        grid_params = GridParams(16, 2.0)
+        sim_params = SimParams()
+        super().__init__(test_case, grid_params, sim_params, device_params)
+
+        actor_path = self.env_template_path.AppendChild("ball")
+        transform = Transform((0.0, 0.0, 0.5))
+        self.create_multi_shape_rigid_body(actor_path, transform, 0.15)
+
+    def _uniform_material(self, balls, static_friction, dynamic_friction, restitution):
+        props = np.zeros((balls.count, balls.max_shapes, 3))
+        props[:, :, 0] = static_friction
+        props[:, :, 1] = dynamic_friction
+        props[:, :, 2] = restitution
+        return props
+
+    def on_start(self, sim):
+        balls = sim.create_rigid_body_view("/envs/*/ball")
+        all_indices = wp_utils.arange(balls.count)
+
+        # Three distinct material tuples plus a re-request of the first one.
+        mat_a = self._uniform_material(balls, 0.1, 0.2, 0.3)
+        mat_b = self._uniform_material(balls, 0.4, 0.5, 0.6)
+        mat_c = self._uniform_material(balls, 0.7, 0.8, 0.9)
+
+        def write(props):
+            wp_props = wp.from_numpy(props, dtype=wp.float32, device="cpu")
+            balls.set_material_properties(wp_props, all_indices)
+
+        # A -> B -> C: after B, material for tuple A is refcount-0 and recycled;
+        # after C it is repurposed to hold C's values while the stale A map
+        # entry still points at it.
+        write(mat_a)
+        write(mat_b)
+        write(mat_c)
+
+        # Re-request tuple A. Correct behavior: shapes report A's values.
+        # Buggy behavior: the stale pool entry returns the recycled material,
+        # so shapes report C's values.
+        write(mat_a)
+
+        readback = balls.get_material_properties().numpy()
+        self.test_case.assertTrue(
+            np.allclose(readback, mat_a),
+            "Re-requesting a previously-used material tuple returned the wrong "
+            "material (NVBugs 6489465): expected static/dynamic/restitution "
+            "{}, got {}".format(mat_a[0, 0], readback[0, 0]),
+        )
+
+        self.finish()
+
+    def on_physics_step(self, sim, stepno, dt):
+        pass
+
+
 class TestRigidBodyCompliantContact(GridTestBase):
     def __init__(self, test_case, device_params):
         grid_params = GridParams(16, 2.0)
@@ -1053,6 +1128,14 @@ class PhysxTensorsRigidBodyTests(unittest.TestCase):
 
     def test_rigid_body_shape_properties_gpu(self):
         self._run_test(TestRigidBodyShapeProperties(self, DeviceParams(True, True)))
+
+    # -- Material pool reuse (NVBugs 6489465) --
+
+    def test_rigid_body_material_pool_reuse_cpu(self):
+        self._run_test(TestRigidBodyMaterialPoolReuse(self, DeviceParams(False, False)))
+
+    def test_rigid_body_material_pool_reuse_gpu(self):
+        self._run_test(TestRigidBodyMaterialPoolReuse(self, DeviceParams(True, True)))
 
     # -- Compliant contact --
 

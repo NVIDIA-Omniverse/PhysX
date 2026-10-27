@@ -506,6 +506,7 @@ static void releasePickingDeformable()
     {
         if (intScene->getScene())
         {
+            intScene->trackReleasedActiveActor(picker.targetActor);
             intScene->getScene()->removeActor(*picker.targetActor);
         }
         SAFE_RELEASE(picker.targetActor);
@@ -834,6 +835,7 @@ static void applyManipCmd(const ManipCmd& cmd, float delta_time)
                 if (picker.targetActor != nullptr)
                 {
                     CARB_ASSERT(picker.physXScene->getScene());
+                    picker.physXScene->getInternalScene()->trackReleasedActiveActor(picker.targetActor);
                     picker.physXScene->getScene()->removeActor(*picker.targetActor);
                     SAFE_RELEASE(picker.targetActor);
                 }
@@ -860,6 +862,18 @@ void RaycastManager::clearPicker(const ::physx::PxRigidActor* rb)
         picker.hitRigidActor = nullptr;
         picker.physXScene = nullptr;
         picker.type = PickType::eNONE;
+    }
+}
+
+void RaycastManager::clearPickerForScene(const ::physx::PxScene* scene)
+{
+    // Called at the start of InternalScene::release(), while physXScene is still valid.
+    // Resets the entire Picker so applyManipCmd never touches freed PhysX objects.
+    // The picker's targetActor/joint/attachments are owned by the scene and will be
+    // released when it is destroyed — we only drop the now-stale pointers here.
+    if (picker.physXScene && picker.physXScene->getScene() == scene)
+    {
+        picker = Picker();
     }
 }
 

@@ -148,7 +148,7 @@ struct SurfaceDeformableBodyCookingParams
 // clang-format off
 constexpr static int PhysxCookingDataVersion_MeshTriangulation = 5; // version number for source triangle mesh data (triangulation of the UsdGeomPrim which acts as the source content for the cooking operation)
 constexpr static int PhysxCookingDataVersion_TriangleMesh = 7; // The current version number of cooked data for triangle meshes
-constexpr static int PhysxCookingDataVersion_TriangleMeshSDF = 1; // The current version number of cooked data for signed distance fields
+constexpr static int PhysxCookingDataVersion_TriangleMeshSDF = 2; // The current version number of cooked data for signed distance fields
 constexpr static int PhysxCookingDataVersion_ConvexMesh = 9; // The current version number of cooked data for convex meshes
 constexpr static int PhysxCookingDataVersion_ConvexDecomposition = 9; // The current version number of cooked data for a convex decomposition
 constexpr static int PhysxCookingDataVersion_ParticlePoissonSampling = 2; // The current version number of cooked data for particle Poisson Sampling

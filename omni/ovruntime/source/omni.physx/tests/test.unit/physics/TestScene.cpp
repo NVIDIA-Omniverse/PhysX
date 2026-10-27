@@ -10,7 +10,10 @@
 #include "../../common/PhysicsChangeTemplate.h"
 
 #include <PxPhysicsAPI.h>
+#include <physxSchema/physxForceAPI.h>
+#include <common/utilities/OmniPhysXUtilities.h>
 #include <omni/physx/IPhysx.h>
+#include <omni/physx/IPhysxSettings.h>
 #include <private/omni/physx/IPhysxTests.h>
 #include <omni/physx/IPhysxSimulation.h>
 #include <omni/physx/IPhysxFabric.h>
@@ -19,6 +22,29 @@
 using namespace PXR_NS;
 using namespace omni::physx;
 using namespace ::physx;
+
+TEST_CASE("Default simulator setting removal (NVBug 6282083)",
+          "[omniphysics]"
+          "[component=OmniPhysics][owner=aborovicka][priority=mandatory]")
+{
+    PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
+    carb::settings::ISettings* settings = physicsTests.acquireSettingsInterface();
+    REQUIRE(settings);
+
+    const char* originalValue = settings->getStringBuffer(kSettingDefaultSimulator);
+    const std::string originalSimulator = originalValue ? originalValue : "PhysX";
+
+    settings->setString(kSettingDefaultSimulator, "PhysX");
+    CHECK(isPhysXDefaultSimulator());
+
+    // Removing the setting synchronously invokes the default-simulator callback. It used to
+    // re-read the now-missing value and pass nullptr to strcmp(), crashing before returning.
+    settings->destroyItem(kSettingDefaultSimulator);
+    CHECK(settings->getStringBuffer(kSettingDefaultSimulator) == nullptr);
+    CHECK_FALSE(isPhysXDefaultSimulator());
+
+    settings->setString(kSettingDefaultSimulator, originalSimulator.c_str());
+}
 
 //-----------------------------------------------------------------------------
 // Collisions tests
@@ -1168,6 +1194,66 @@ TEST_CASE("Multiple Scenes",
             CHECK(scene1 == rbo->getScene());
         }
 
+        SUBCASE("RigidBody Simulation Owner Change Keeps Internal Actor Lists In Sync")
+        {
+            // NVBugs 6504495: InternalScene::mActors owns the InternalActor entries and the removal
+            // paths locate them through InternalActor::mPhysXScene. When a simulation owner change
+            // moved the actor to another scene without moving the mActors entry, removing the body
+            // left a dangling pointer in the previous scene's list, which InternalScene::release()
+            // then walked during resetSimulation()/detach.
+            IPhysxUnitTests* physxUT = physicsTests.acquirePhysxUnitTestInterface();
+            REQUIRE(physxUT);
+
+            // a body of its own, so that removing it below does not disturb cube0/cube1
+            const SdfPath movedCubePath = defaultPrimPath.AppendChild(TfToken("movedCubePrim"));
+            UsdGeomCube movedCube = UsdGeomCube::Define(stage, movedCubePath);
+            {
+                UsdPhysicsRigidBodyAPI rigidBodyAPI = UsdPhysicsRigidBodyAPI::Apply(movedCube.GetPrim());
+                SdfPathVector targets;
+                targets.push_back(physicsScene0Path);
+                rigidBodyAPI.GetSimulationOwnerRel().SetTargets(targets);
+            }
+
+            physxSim->attachStage(stageId);
+
+            // cube0 + movedCube belong to scene0, cube1 to scene1
+            CHECK(physxUT->getSceneInternalActorCount(physicsScene0Path) == 2);
+            CHECK(physxUT->getSceneInternalActorCount(physicsScene1Path) == 1);
+
+            // hand movedCube over to scene1
+            {
+                UsdPhysicsRigidBodyAPI rigidBodyAPI(movedCube.GetPrim());
+                SdfPathVector targets;
+                targets.push_back(physicsScene1Path);
+                rigidBodyAPI.GetSimulationOwnerRel().SetTargets(targets);
+            }
+            physxSim->simulate(0.01f, 0.0f);
+            physxSim->fetchResults();
+
+            // the PxActor moved ...
+            PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(physicsScene1Path, ePTScene));
+            REQUIRE(basePtr != nullptr);
+            PxScene* scene1 = (PxScene*)basePtr;
+            basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(movedCubePath, ePTActor));
+            REQUIRE(basePtr != nullptr);
+            PxRigidDynamic* rbo = basePtr->is<PxRigidDynamic>();
+            REQUIRE(rbo != nullptr);
+            CHECK(scene1 == rbo->getScene());
+
+            // ... and the InternalActor bookkeeping has to move with it
+            CHECK(physxUT->getSceneInternalActorCount(physicsScene0Path) == 1);
+            CHECK(physxUT->getSceneInternalActorCount(physicsScene1Path) == 2);
+
+            // removing the body has to clean up the list it actually lives in, so that the teardown
+            // at the end of the test case does not walk a freed InternalActor
+            stage->RemovePrim(movedCubePath);
+            physxSim->simulate(0.01f, 0.0f);
+            physxSim->fetchResults();
+
+            CHECK(physxUT->getSceneInternalActorCount(physicsScene0Path) == 1);
+            CHECK(physxUT->getSceneInternalActorCount(physicsScene1Path) == 1);
+        }
+
         {
             UsdPhysicsCollisionAPI collisionAPI = UsdPhysicsCollisionAPI::Apply(cube0.GetPrim());
             SdfPathVector targets;
@@ -1918,3 +2004,253 @@ TEST_CASE("PhysXStepper Re-entrant waitForCompletion From eSimulationComplete",
     PXR_NS::UsdUtilsStageCache::Get().Erase(stage);
     stage = nullptr;
 }
+
+//-----------------------------------------------------------------------------
+// PxScene::getActiveActors() retains entries released after fetchResults().
+// Releasing an active body from eSimulationComplete therefore leaves a stale
+// pointer for the output update that immediately follows the event.
+
+namespace
+{
+struct ReleaseActiveActorCompletionTestData
+{
+    UsdStageRefPtr stage;
+    SdfPath actorPath;
+    bool removed{ false };
+};
+
+void onReleaseActiveActorCompletionFn(SimulationStatusEvent eventStatus, void* userData)
+{
+    if (eventStatus != SimulationStatusEvent::eSimulationComplete)
+        return;
+
+    ReleaseActiveActorCompletionTestData* td =
+        static_cast<ReleaseActiveActorCompletionTestData*>(userData);
+    td->removed = td->stage->RemovePrim(td->actorPath);
+}
+}
+
+TEST_CASE("Released Active Actor Is Skipped During Simulation Output",
+          "[omniphysics]"
+          "[component=OmniPhysics][owner=aborovicka][priority=mandatory]")
+{
+    PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
+    IPhysx* physx = physicsTests.acquirePhysxInterface();
+    REQUIRE(physx);
+    IPhysxSimulation* physxSim = physicsTests.acquirePhysxSimulationInterface();
+    REQUIRE(physxSim);
+
+    UsdStageRefPtr stage = UsdStage::CreateInMemory();
+    PXR_NS::UsdGeomSetStageUpAxis(stage, TfToken("Z"));
+    PXR_NS::UsdGeomSetStageMetersPerUnit(stage, 0.01);
+    const SdfPath defaultPrimPath("/World");
+    stage->SetDefaultPrim(stage->DefinePrim(defaultPrimPath));
+
+    PXR_NS::UsdUtilsStageCache::Get().Insert(stage);
+    const long stageId = PXR_NS::UsdUtilsStageCache::Get().GetId(stage).ToLongInt();
+
+    const SdfPath physicsScenePath = defaultPrimPath.AppendChild(TfToken("physicsScene"));
+    UsdPhysicsScene::Define(stage, physicsScenePath);
+    PhysxSchemaPhysxSceneAPI::Apply(stage->GetPrimAtPath(physicsScenePath));
+
+    const SdfPath cubePath = defaultPrimPath.AppendChild(TfToken("activeCube"));
+    UsdGeomCube cube = UsdGeomCube::Define(stage, cubePath);
+    UsdPhysicsRigidBodyAPI rigidBody = UsdPhysicsRigidBodyAPI::Apply(cube.GetPrim());
+    UsdPhysicsCollisionAPI::Apply(cube.GetPrim());
+    rigidBody.CreateVelocityAttr().Set(GfVec3f(100.0f, 0.0f, 0.0f));
+
+    physxSim->attachStage(stageId);
+    REQUIRE(physx->getPhysXPtr(cubePath, ePTActor) != nullptr);
+
+    ReleaseActiveActorCompletionTestData td{ stage, cubePath };
+    const SubscriptionId subId =
+        physx->subscribePhysicsSimulationEvents(onReleaseActiveActorCompletionFn, &td);
+
+    // fetchResults() fires eSimulationComplete, then reads active-actor
+    // transforms. The released pointer must be rejected before dereferencing.
+    physxSim->simulate(0.01f, 0.0f);
+    physxSim->fetchResults();
+
+    CHECK(td.removed);
+    CHECK(physx->getPhysXPtr(cubePath, ePTActor) == nullptr);
+
+    physx->unsubscribePhysicsSimulationEvents(subId);
+    physxSim->detachStage();
+    PXR_NS::UsdUtilsStageCache::Get().Erase(stage);
+    stage = nullptr;
+}
+
+TEST_CASE("Released Active CCT Actor Is Skipped During Simulation Output",
+          "[omniphysics]"
+          "[component=OmniPhysics][owner=aborovicka][priority=mandatory]")
+{
+    PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
+    IPhysx* physx = physicsTests.acquirePhysxInterface();
+    REQUIRE(physx);
+    IPhysxSimulation* physxSim = physicsTests.acquirePhysxSimulationInterface();
+    REQUIRE(physxSim);
+
+    UsdStageRefPtr stage = UsdStage::CreateInMemory();
+    PXR_NS::UsdGeomSetStageUpAxis(stage, TfToken("Z"));
+    PXR_NS::UsdGeomSetStageMetersPerUnit(stage, 0.01);
+    const SdfPath defaultPrimPath("/World");
+    stage->SetDefaultPrim(stage->DefinePrim(defaultPrimPath));
+
+    PXR_NS::UsdUtilsStageCache::Get().Insert(stage);
+    const long stageId = PXR_NS::UsdUtilsStageCache::Get().GetId(stage).ToLongInt();
+
+    const SdfPath physicsScenePath = defaultPrimPath.AppendChild(TfToken("physicsScene"));
+    UsdPhysicsScene::Define(stage, physicsScenePath);
+    PhysxSchemaPhysxSceneAPI::Apply(stage->GetPrimAtPath(physicsScenePath));
+
+    const SdfPath cctPath = defaultPrimPath.AppendChild(TfToken("activeCct"));
+    UsdGeomCapsule capsule = UsdGeomCapsule::Define(stage, cctPath);
+    PhysxSchemaPhysxCharacterControllerAPI::Apply(capsule.GetPrim());
+
+    physxSim->attachStage(stageId);
+    PxController* controller =
+        reinterpret_cast<PxController*>(physx->getPhysXPtr(cctPath, ePTCct));
+    REQUIRE(controller != nullptr);
+
+    PxRigidDynamic* cctActor = controller->getActor();
+    REQUIRE(cctActor != nullptr);
+    cctActor->setKinematicTarget(PxTransform(PxVec3(100.0f, 0.0f, 0.0f)));
+
+    ReleaseActiveActorCompletionTestData td{ stage, cctPath };
+    const SubscriptionId subId =
+        physx->subscribePhysicsSimulationEvents(onReleaseActiveActorCompletionFn, &td);
+
+    // The controller releases its owned kinematic actor from the completion
+    // callback, while the fetched active-actor array still retains it.
+    physxSim->simulate(0.01f, 0.0f);
+    physxSim->fetchResults();
+
+    CHECK(td.removed);
+    CHECK(physx->getPhysXPtr(cctPath, ePTCct) == nullptr);
+
+    physx->unsubscribePhysicsSimulationEvents(subId);
+    physxSim->detachStage();
+    PXR_NS::UsdUtilsStageCache::Get().Erase(stage);
+    stage = nullptr;
+}
+
+//-----------------------------------------------------------------------------
+// NVBugs 6583666 / OMPE-105168. InternalForce::mRigidActor is a raw back pointer to the body
+// a PhysxForceAPI prim is attached to, and InternalScene::mForces membership used not to
+// follow a body that changed simulation owner. The force was then left registered with the
+// previous scene, so the scene scoped swapForceActors() fixup in changeRigidActorType() -
+// which resolves the scene from the actor - never saw it, while the actor was released
+// anyway. That left mRigidActor naming freed memory, and the next transform update routed to
+// the force prim dereferenced it in the ePTForce branch of
+// PhysXUsdPhysicsInterface::updateTransform.
+
+TEST_CASE_TEMPLATE("Force Back Pointer Survives A Simulation Owner Change", T, USDChange, FabricChange)
+{
+    T changeTemplate;
+
+    PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
+    IPhysx* physx = physicsTests.acquirePhysxInterface();
+    REQUIRE(physx);
+    IPhysxSimulation* physxSim = physicsTests.acquirePhysxSimulationInterface();
+    REQUIRE(physxSim);
+    IPhysxUnitTests* physxUT = physicsTests.acquirePhysxUnitTestInterface();
+    REQUIRE(physxUT);
+
+    UsdStageRefPtr stage = UsdStage::CreateInMemory();
+    PXR_NS::UsdGeomSetStageUpAxis(stage, TfToken("Z"));
+    PXR_NS::UsdGeomSetStageMetersPerUnit(stage, 0.01);
+    const SdfPath defaultPrimPath("/World");
+    stage->SetDefaultPrim(stage->DefinePrim(defaultPrimPath));
+
+    PXR_NS::UsdUtilsStageCache::Get().Insert(stage);
+    const long stageId = PXR_NS::UsdUtilsStageCache::Get().GetId(stage).ToLongInt();
+
+    const SdfPath scene0Path = defaultPrimPath.AppendChild(TfToken("physicsScene0"));
+    UsdPhysicsScene::Define(stage, scene0Path);
+    PhysxSchemaPhysxSceneAPI::Apply(stage->GetPrimAtPath(scene0Path));
+
+    const SdfPath scene1Path = defaultPrimPath.AppendChild(TfToken("physicsScene1"));
+    UsdPhysicsScene::Define(stage, scene1Path);
+    PhysxSchemaPhysxSceneAPI::Apply(stage->GetPrimAtPath(scene1Path));
+
+    const SdfPath bodyPath = defaultPrimPath.AppendChild(TfToken("body"));
+    UsdGeomCube cube = UsdGeomCube::Define(stage, bodyPath);
+    UsdGeomXformable(cube.GetPrim()).AddTranslateOp(UsdGeomXformOp::PrecisionFloat).Set(GfVec3f(0.0f));
+    UsdPhysicsRigidBodyAPI bodyAPI = UsdPhysicsRigidBodyAPI::Apply(cube.GetPrim());
+    UsdPhysicsCollisionAPI::Apply(cube.GetPrim());
+    {
+        SdfPathVector owners;
+        owners.push_back(scene0Path);
+        bodyAPI.CreateSimulationOwnerRel().SetTargets(owners);
+    }
+
+    // The force sits on a child prim of the body, so it owns an object database entry and
+    // receives transform updates of its own - that is what reaches the ePTForce branch.
+    const SdfPath forcePath = bodyPath.AppendChild(TfToken("force"));
+    UsdGeomXform forceXform = UsdGeomXform::Define(stage, forcePath);
+    {
+        UsdGeomXformable forceXformable(forceXform.GetPrim());
+        forceXformable.AddTranslateOp(UsdGeomXformOp::PrecisionFloat).Set(GfVec3f(0.0f, 0.0f, 10.0f));
+        forceXformable.AddOrientOp(UsdGeomXformOp::PrecisionFloat).Set(GfQuatf(1.0f, 0.0f, 0.0f, 0.0f));
+    }
+    // Left enabled on purpose: PhysXStepper::updateForces() then applies it every step, so the
+    // scene the force is registered with also has to follow the body. If it does not, the force is
+    // applied from the previous scene to an actor the new one simulates, which PhysX's API
+    // concurrency checker rejects outright.
+    PhysxSchemaPhysxForceAPI forceAPI = PhysxSchemaPhysxForceAPI::Apply(forceXform.GetPrim());
+    forceAPI.CreateForceAttr().Set(GfVec3f(0.0f, 1000.0f, 0.0f));
+    forceAPI.CreateWorldFrameEnabledAttr().Set(false);
+
+    changeTemplate.init(stageId, physicsTests.getApp()->getFramework());
+    physxSim->attachStage(stageId);
+    changeTemplate.initPrim(bodyPath);
+    changeTemplate.initPrim(forcePath);
+
+    void* forceActor = nullptr;
+    REQUIRE(physxUT->getForceRigidActor(forcePath, &forceActor));
+    CHECK(forceActor == physx->getPhysXPtr(bodyPath, ePTActor));
+    CHECK(physxUT->getSceneInternalForceCount(scene0Path) == 1);
+    CHECK(physxUT->getSceneInternalForceCount(scene1Path) == 0);
+
+    // hand the body over to the second scene ...
+    {
+        SdfPathVector owners;
+        owners.push_back(scene1Path);
+        UsdPhysicsRigidBodyAPI(stage->GetPrimAtPath(bodyPath)).GetSimulationOwnerRel().SetTargets(owners);
+    }
+    physxSim->simulate(0.01f, 0.0f);
+    physxSim->fetchResults();
+
+    // ... the force registration has to have followed it. Asserted here, before the conversion
+    // below: once the actor is released, the all-scenes sweep would repair mRigidActor even if
+    // the migration had stopped happening, so this is the only point that pins the membership
+    // invariant on its own.
+    CHECK(physxUT->getSceneInternalForceCount(scene0Path) == 0);
+    CHECK(physxUT->getSceneInternalForceCount(scene1Path) == 1);
+
+    // ... then convert it, which releases the actor the force points at
+    UsdPhysicsRigidBodyAPI(stage->GetPrimAtPath(bodyPath)).CreateRigidBodyEnabledAttr().Set(false);
+    physxSim->simulate(0.01f, 0.0f);
+    physxSim->fetchResults();
+
+    forceActor = nullptr;
+    // The conversion keeps the force prim, so its record has to outlive the body. If that ever
+    // stops holding, the assertion below would pass vacuously and the transform change further
+    // down would no longer reach the ePTForce branch at all.
+    REQUIRE(physxUT->getForceRigidActor(forcePath, &forceActor));
+
+    // A force that outlived the conversion may only name the body that is actually alive.
+    CHECK(forceActor == physx->getPhysXPtr(bodyPath, ePTActor));
+
+    // The call that crashed in the field: a transform update on the force prim reaches
+    // updateTransform()'s ePTForce branch, which calls mRigidActor->getGlobalPose().
+    changeTemplate.setTransformation(forcePath, GfVec3f(0.0f, 0.0f, 30.0f), GfQuatf(1.0f, 0.0f, 0.0f, 0.0f));
+    physxSim->simulate(0.01f, 0.0f);
+    physxSim->fetchResults();
+
+    physxSim->detachStage();
+    changeTemplate.destroy();
+    PXR_NS::UsdUtilsStageCache::Get().Erase(stage);
+    stage = nullptr;
+}
+

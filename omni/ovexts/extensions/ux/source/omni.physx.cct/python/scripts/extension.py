@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-#
+# SPDX-License-Identifier: Apache-2.0
 
 import omni.ext
 from .physxCct import PhysXCct
@@ -8,7 +7,7 @@ import omni.physxdemos as demo
 from omni.physxuicommon import windowmenuitem
 from .. import get_physx_cct_interface
 from ..bindings._physxCct import release_physx_cct_interface
-from .ifaces import invalidate_physx_cct_interface
+from .ifaces import release_interface_caches
 
 DEMO_MODULE = "omni.physxcct.scripts.scenes"
 
@@ -25,4 +24,4 @@ class PhysxCctExtension(omni.ext.IExt):
         demo.unregister(DEMO_MODULE)
         release_physx_cct_interface(self._physx_cct_interface)
         self._physx_cct_interface = None
-        invalidate_physx_cct_interface()
+        release_interface_caches()

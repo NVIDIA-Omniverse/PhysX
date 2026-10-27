@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-#
+# SPDX-License-Identifier: Apache-2.0
 
 from pathlib import Path
 import carb
@@ -295,6 +294,15 @@ class TestCase(PhysicsKitStageAsyncTestCase):
         }
         self._viewport_data = (width, height, window_name)
         self._setup_settings(self._viewport_resolution_settings)
+
+        # Pin the resolution on the viewport itself, not just in settings: camera fitting (frame_viewport_selection)
+        # takes its aspect ratio from viewport_api.resolution, so leaving it at the default would frame against a
+        # different aspect than we capture at and make goldens depend on the machine that produced them.
+        viewport_api = viewport_utils.get_viewport_from_window_name(window_name)
+        if viewport_api:
+            viewport_api.resolution = (width, height)
+            viewport_api.resolution_scale = 1
+        await omni.kit.app.get_app().next_update_async()
 
     async def setup_docked_test(self, window_name, window_restore=None, width=800, height=600):
         window = ui.Workspace.get_window(window_name)

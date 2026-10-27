@@ -217,8 +217,8 @@ TEST_CASE_TEMPLATE("Articulation Revolute Joint Tests", T, USDChange, FabricChan
         const TfToken& changeToken = PhysxSchemaTokens->physxJointMaxJointVelocity;
 
         float value = changeTemplate.template getAttributeValue<float>(revoluteJointPath, changeToken);
-        // check default value
-        CHECK(fabsf(value - 1000000.0f) < epsilon);
+        // check default value (schema default is inf)
+        CHECK((isinf(value) && value > 0.0f));
 
         PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(revoluteJointPath, ePTLinkJoint));
         CHECK(basePtr != nullptr);
@@ -227,7 +227,9 @@ TEST_CASE_TEMPLATE("Articulation Revolute Joint Tests", T, USDChange, FabricChan
         PxArticulationJointReducedCoordinate* joint = basePtr->is<PxArticulationJointReducedCoordinate>();
 
         float maxVel = joint->getMaxJointVelocity(PxArticulationAxis::eTWIST);
-        CHECK(fabsf(radToDeg(maxVel) - 1000000.0f) < 0.1f);
+        // default is the unlimited sentinel (effectively infinite rad/s); use a generous threshold
+        // because the angular deg<->rad conversion makes the exact magnitude path-dependent
+        CHECK(maxVel > 1e30f);
 
         // change value
         value = 10.0;
@@ -286,8 +288,8 @@ TEST_CASE_TEMPLATE("Articulation Revolute Joint Tests", T, USDChange, FabricChan
             const TfToken& changeToken = PhysxAdditionAttrTokens->maxJointVelocityAngular;
 
             float value = changeTemplate.template getAttributeValue<float>(revoluteJointPath, changeToken);
-            // check default value
-            CHECK(fabsf(value - 1000000.0f) < epsilon);
+            // check default value (schema default is inf)
+            CHECK((isinf(value) && value > 0.0f));
 
             PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(revoluteJointPath, ePTLinkJoint));
             CHECK(basePtr != nullptr);
@@ -296,7 +298,9 @@ TEST_CASE_TEMPLATE("Articulation Revolute Joint Tests", T, USDChange, FabricChan
             PxArticulationJointReducedCoordinate* joint = basePtr->is<PxArticulationJointReducedCoordinate>();
 
             float maxVel = joint->getMaxJointVelocity(PxArticulationAxis::eTWIST);
-            CHECK((maxVel- degToRad(1000000.0f)) < epsilon);
+            // default is the unlimited sentinel (effectively infinite rad/s); use a generous threshold
+            // because the angular deg<->rad conversion makes the exact magnitude path-dependent
+            CHECK(maxVel > 1e30f);
 
             // change value
             value = 10.0;

@@ -239,8 +239,11 @@ TEST_CASE("Fabric Direct-GPU API Changes Tests",
         }
     }
 
-    fabricEnable.mIPhysxFabric->detachStage();
+    // Keep Fabric attached while PhysX releases the scene, then force an update. The DirectGPU
+    // helper used to retain the released PxScene and crash in getDirectGPUAPI() here.
     physxSim->detachStage();
+    fabricEnable.mIPhysxFabric->update(dt, 0.0f);
+    fabricEnable.mIPhysxFabric->detachStage();
     fabricTemplate.destroy();
 
     UsdUtilsStageCache::Get().Erase(stage);

@@ -1899,7 +1899,8 @@ PYBIND11_MODULE(_physicsTensors, m)
                                    std::vector<std::string> primPaths(count);
                                    for (uint32_t i = 0; i < count; ++i)
                                    {
-                                       primPaths[i] = aview->getUsdPrimPath(i);
+                                       const char* path = aview->getUsdPrimPath(i);
+                                       primPaths[i] = path ? path : "";
                                    }
                                    return primPaths;
                                })
@@ -1910,9 +1911,12 @@ PYBIND11_MODULE(_physicsTensors, m)
                                    std::vector<std::vector<std::string>> dofPaths(count, std::vector<std::string>(dofCount));
                                    for (uint32_t i = 0; i < count; ++i)
                                    {
+                                       // dofCount is the view-wide maximum, so indices past this
+                                       // articulation's own DOF count are padding with no path.
                                        for (uint32_t j = 0; j < dofCount; ++j)
                                        {
-                                           dofPaths[i][j] = aview->getUsdDofPath(i, j);
+                                           const char* path = aview->getUsdDofPath(i, j);
+                                           dofPaths[i][j] = path ? path : "";
                                        }
                                    }
                                    return dofPaths;
@@ -1926,7 +1930,8 @@ PYBIND11_MODULE(_physicsTensors, m)
                                    {
                                        for (uint32_t j = 0; j < linkCount; ++j)
                                        {
-                                           linkPaths[i][j] = aview->getUsdLinkPath(i, j);
+                                           const char* path = aview->getUsdLinkPath(i, j);
+                                           linkPaths[i][j] = path ? path : "";
                                        }
                                    }
                                    return linkPaths;
@@ -2174,7 +2179,8 @@ PYBIND11_MODULE(_physicsTensors, m)
                                    std::vector<std::string> primPaths(count);
                                    for (uint32_t i = 0; i < count; ++i)
                                    {
-                                       primPaths[i] = rbview->getUsdPrimPath(i);
+                                       const char* path = rbview->getUsdPrimPath(i);
+                                       primPaths[i] = path ? path : "";
                                    }
                                    return primPaths;
                                })
@@ -2238,7 +2244,8 @@ PYBIND11_MODULE(_physicsTensors, m)
                 std::vector<std::string> primPaths(count);
                 for (uint32_t i = 0; i < count; ++i)
                 {
-                    primPaths[i] = dbview->getUsdPrimPath(i);
+                    const char* path = dbview->getUsdPrimPath(i);
+                    primPaths[i] = path ? path : "";
                 }
                 return primPaths;
             })
@@ -2248,7 +2255,8 @@ PYBIND11_MODULE(_physicsTensors, m)
                 std::vector<std::string> simPaths(count);
                 for (uint32_t i = 0; i < count; ++i)
                 {
-                    simPaths[i] = dbview->getUsdSimulationMeshPrimPath(i);
+                    const char* path = dbview->getUsdSimulationMeshPrimPath(i);
+                    simPaths[i] = path ? path : "";
                 }
                 return simPaths;
             })
@@ -2258,7 +2266,8 @@ PYBIND11_MODULE(_physicsTensors, m)
                 std::vector<std::string> collPaths(count);
                 for (uint32_t i = 0; i < count; ++i)
                 {
-                    collPaths[i] = dbview->getUsdCollisionMeshPrimPath(i);
+                    const char* path = dbview->getUsdCollisionMeshPrimPath(i);
+                    collPaths[i] = path ? path : "";
                 }
                 return collPaths;
             })
@@ -2392,7 +2401,8 @@ PYBIND11_MODULE(_physicsTensors, m)
                                    std::vector<std::string> primPaths(count);
                                    for (uint32_t i = 0; i < count; ++i)
                                    {
-                                       primPaths[i] = sdfview->getUsdPrimPath(i);
+                                       const char* path = sdfview->getUsdPrimPath(i);
+                                       primPaths[i] = path ? path : "";
                                    }
                                    return primPaths;
                                })

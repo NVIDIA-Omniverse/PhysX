@@ -163,10 +163,7 @@ const char* BaseArticulationView::getUsdDofPath(uint32_t artiIdx, uint32_t dofId
     {
         if (dofIdx < mEntries[artiIdx].dofImpls.size())
         {
-            ::physx::PxArticulationJointReducedCoordinate* joint = mEntries[artiIdx].dofImpls[dofIdx].joint;
-            size_t jointId = reinterpret_cast<size_t>(joint->userData);
-            PXR_NS::SdfPath jointPath = g_physx->getPhysXObjectUsdPath(jointId);
-            return jointPath.GetString().c_str();
+            return mEntries[artiIdx].dofImpls[dofIdx].path.GetString().c_str();
         }
         return nullptr;
     }
@@ -178,12 +175,9 @@ const char* BaseArticulationView::getUsdLinkPath(uint32_t artiIdx, uint32_t link
     CHECK_VALID_DATA_SIM_RETURN(mSimData, mSim, nullptr);
     if (artiIdx < mEntries.size())
     {
-        if (linkIdx < mEntries[artiIdx].links.size())
+        if (linkIdx < mEntries[artiIdx].linkPaths.size())
         {
-            ::physx::PxArticulationLink* link = mEntries[artiIdx].links[linkIdx];
-            size_t linkId = reinterpret_cast<size_t>(link->userData);
-            PXR_NS::SdfPath linkPath = g_physx->getPhysXObjectUsdPath(linkId);
-            return linkPath.GetString().c_str();
+            return mEntries[artiIdx].linkPaths[linkIdx].GetString().c_str();
         }
         return nullptr;
     }
@@ -1868,28 +1862,7 @@ bool BaseArticulationView::setMaterialProperties(const TensorDesc* srcTensor, co
 
                 for (auto mat : extraMats)
                 {
-                    mSim->mMaterialsRefCount[mat] -= 1;
-                    if (mSim->mMaterialsRefCount[mat] == 0)
-                    {
-                        std::string key;
-                        char keybuffer[100];
-                        snprintf(keybuffer, 100, "%.6f", mat->getStaticFriction());
-                        key += std::string(keybuffer) + "_";
-                        snprintf(keybuffer, 100, "%.6f", mat->getDynamicFriction());
-                        key += std::string(keybuffer) + "_";
-                        snprintf(keybuffer, 100, "%.6f", mat->getRestitution());
-                        key += std::string(keybuffer) + "_";
-                        snprintf(keybuffer, 100, "%.6f", mat->getDamping());
-                        key += std::string(keybuffer) + "_";
-                        snprintf(keybuffer, 100, "%1d", static_cast<uint8_t>(mat->getFrictionCombineMode()));
-                        key += std::string(keybuffer) + "_";
-                        snprintf(keybuffer, 100, "%1d", static_cast<uint8_t>(mat->getRestitutionCombineMode()));
-                        key += std::string(keybuffer) + "_";
-                        snprintf(keybuffer, 100, "%1d", static_cast<uint8_t>(mat->getDampingCombineMode()));
-                        key += std::string(keybuffer);
-                        mSim->mMaterials.erase(key);
-                        mSim->mUnusedMaterials.insert(mat);
-                    }
+                    mSim->releaseSharedMaterial(mat);
                 }
 
                 mEntries[idx].shapes[j]->setMaterials(&material, 1);
@@ -1966,29 +1939,7 @@ bool BaseArticulationView::setCompliantMaterialProperties(const TensorDesc* srcT
 
                 for (auto mat : extraMats)
                 {
-                    mSim->mMaterialsRefCount[mat] -= 1;
-                    if (mSim->mMaterialsRefCount[mat] == 0)
-                    {
-                        std::string key;
-                        char keybuffer[100];
-                        snprintf(keybuffer, 100, "%.6f", mat->getStaticFriction());
-                        key += std::string(keybuffer) + "_";
-                        snprintf(keybuffer, 100, "%.6f", mat->getDynamicFriction());
-                        key += std::string(keybuffer) + "_";
-                        snprintf(keybuffer, 100, "%.6f", mat->getRestitution());
-                        key += std::string(keybuffer) + "_";
-                        snprintf(keybuffer, 100, "%.6f", mat->getDamping());
-                        key += std::string(keybuffer) + "_";
-                        snprintf(keybuffer, 100, "%1d", static_cast<uint8_t>(mat->getFrictionCombineMode()));
-                        key += std::string(keybuffer) + "_";
-                        snprintf(keybuffer, 100, "%1d", static_cast<uint8_t>(mat->getRestitutionCombineMode()));
-                        key += std::string(keybuffer) + "_";
-                        snprintf(keybuffer, 100, "%1d", static_cast<uint8_t>(mat->getDampingCombineMode()));
-                        key += std::string(keybuffer);
-
-                        mSim->mMaterials.erase(key);
-                        mSim->mUnusedMaterials.insert(mat);
-                    }
+                    mSim->releaseSharedMaterial(mat);
                 }
 
                 mEntries[idx].shapes[j]->setMaterials(&material, 1);

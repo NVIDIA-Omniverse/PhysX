@@ -103,7 +103,10 @@ GpuArticulationView::GpuArticulationView(GpuSimulationView* sim, const std::vect
             GpuArticulationDofRecord& data = dofRecords[i * mMaxDofs + j];
             data.physxArtiIdx = mArtiIndices[i];
             data.physxDofIdx = data.physxArtiIdx * mGpuSimData->mMaxDofs + j;
-            data.body0IsParent = mEntries[i].metatype->isDofBody0Parent(j);
+            // Records are padded to the view-wide maximum; the metatype only describes this
+            // articulation's own DOFs, so querying past them logged an error per column.
+            data.body0IsParent =
+                (j < mEntries[i].numDofs) ? mEntries[i].metatype->isDofBody0Parent(j) : true;
         }
     }
     if (mMaxDofs > 0)
@@ -1133,6 +1136,17 @@ bool GpuArticulationView::getArticulationCentroidalMomentum(const TensorDesc* ds
     GPUAPI_CHECK_READY(mGpuSimData, false);
     PASS_EMPTY_TENSOR(dstTensor);
 
+
+    // Heterogeneous views are not supported here, and unlike the per-DOF readers this one cannot
+    // degrade to padding: PhysX sizes centroidalMomentumMatrix 6 x (own dofs + 6), so a view whose
+    // articulations differ has no single row stride to read it with. Reading it with the view-wide
+    // maximum runs past the end of a smaller entry's cache.
+    if (!isHomogeneous())
+    {
+        CARB_LOG_ERROR("%s: the articulations in this view are not homogeneous. Centroidal momentum is read with one row stride for the whole view, which cannot describe articulations of differing size. Build one view per articulation type.",
+                       __FUNCTION__);
+        return false;
+    }
 
     const bool isFixedBase = mEntries[0].metatype->getFixedBase();
     if (isFixedBase)

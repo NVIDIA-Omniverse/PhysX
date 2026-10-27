@@ -23,7 +23,7 @@ namespace tensors
 class CpuSimulationView : public BaseSimulationView
 {
 public:
-    explicit CpuSimulationView(PXR_NS::UsdStageRefPtr stage, CpuSimulationDataPtr cpuSimData);
+    explicit CpuSimulationView(PXR_NS::UsdStageRefPtr stage, ::physx::PxScene* scene, CpuSimulationDataPtr cpuSimData);
 
     ~CpuSimulationView() override;
 

@@ -1,12 +1,12 @@
 # SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-#
+# SPDX-License-Identifier: Apache-2.0
 
 import omni.ext
 from .. import get_physx_stage_update_node_interface
 from omni.physxstageupdate.bindings._physxStageUpdateNode import release_physx_stage_update_node_interface, release_physx_stage_update_node_scripting
 from .live_sync import StageUpdateLiveSync
 import carb
+from ..ifacecache import release_interface_caches
 
 class OmniPhysXStageUpdateExtension(omni.ext.IExt):
     def on_startup(self):        
@@ -39,3 +39,4 @@ class OmniPhysXStageUpdateExtension(omni.ext.IExt):
         release_physx_stage_update_node_interface(self._physx_stage_update_node_interface)
         release_physx_stage_update_node_scripting(self._physx_stage_update_node_interface) # OM-60917
         self._physx_stage_update_node_interface = None
+        release_interface_caches()

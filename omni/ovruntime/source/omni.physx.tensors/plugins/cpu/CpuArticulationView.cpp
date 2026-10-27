@@ -1002,9 +1002,16 @@ bool CpuArticulationView::getCoriolisAndCentrifugalCompensationForces(const Tens
         arti->computeCoriolisCompensation(*cache);
         if (isFixedBase)
         {
-            for (PxU32 j = 0; j < mMaxDofs; j++)
+            // The cache holds only this articulation's DOFs; the row is padded to the view-wide
+            // maximum, so reading that far walked off the end.
+            const PxU32 numDofs = mEntries[i].numDofs;
+            for (PxU32 j = 0; j < numDofs; j++)
             {
                 dst[j] = mEntries[i].metatype->isDofBody0Parent(j) ? cache->coriolisForce[j] : -cache->coriolisForce[j];
+            }
+            for (PxU32 j = numDofs; j < mMaxDofs; j++)
+            {
+                dst[j] = 0.0f;
             }
         }
         else
@@ -1013,9 +1020,14 @@ bool CpuArticulationView::getCoriolisAndCentrifugalCompensationForces(const Tens
             {
                 dst[j] = cache->coriolisForce[j];
             }
-            for (PxU32 j = 6; j < maxDofs; j++)
+            const PxU32 numDofs = mEntries[i].numDofs;
+            for (PxU32 j = 6; j < 6 + numDofs; j++)
             {
                 dst[j] = mEntries[i].metatype->isDofBody0Parent(j - 6) ? cache->coriolisForce[j] : -cache->coriolisForce[j];
+            }
+            for (PxU32 j = 6 + numDofs; j < maxDofs; j++)
+            {
+                dst[j] = 0.0f;
             }
         }
 
@@ -1056,9 +1068,16 @@ bool CpuArticulationView::getGravityCompensationForces(const TensorDesc* dstTens
         arti->computeGravityCompensation(*cache);
         if (isFixedBase)
         {
-            for (PxU32 j = 0; j < mMaxDofs; j++)
+            // The cache holds only this articulation's DOFs; the row is padded to the view-wide
+            // maximum, so reading that far walked off the end.
+            const PxU32 numDofs = mEntries[i].numDofs;
+            for (PxU32 j = 0; j < numDofs; j++)
             {
                 dst[j] = mEntries[i].metatype->isDofBody0Parent(j) ? cache->gravityCompensationForce[j] : -cache->gravityCompensationForce[j];
+            }
+            for (PxU32 j = numDofs; j < mMaxDofs; j++)
+            {
+                dst[j] = 0.0f;
             }
         }
         else
@@ -1067,9 +1086,14 @@ bool CpuArticulationView::getGravityCompensationForces(const TensorDesc* dstTens
             {
                 dst[j] = cache->gravityCompensationForce[j];
             }
-            for (PxU32 j = 6; j < maxDofs; j++)
+            const PxU32 numDofs = mEntries[i].numDofs;
+            for (PxU32 j = 6; j < 6 + numDofs; j++)
             {
                 dst[j] = mEntries[i].metatype->isDofBody0Parent(j - 6) ? cache->gravityCompensationForce[j] : -cache->gravityCompensationForce[j];
+            }
+            for (PxU32 j = 6 + numDofs; j < maxDofs; j++)
+            {
+                dst[j] = 0.0f;
             }
         }
 
@@ -1109,6 +1133,17 @@ bool CpuArticulationView::getArticulationCentroidalMomentum(const TensorDesc* ds
 {
     CHECK_VALID_DATA_SIM_RETURN(mCpuSimData, mSim, false);
     PASS_EMPTY_TENSOR(dstTensor);
+    // Heterogeneous views are not supported here, and unlike the per-DOF readers this one cannot
+    // degrade to padding: PhysX sizes centroidalMomentumMatrix 6 x (own dofs + 6), so a view whose
+    // articulations differ has no single row stride to read it with. Reading it with the view-wide
+    // maximum runs past the end of a smaller entry's cache.
+    if (!isHomogeneous())
+    {
+        CARB_LOG_ERROR("%s: the articulations in this view are not homogeneous. Centroidal momentum is read with one row stride for the whole view, which cannot describe articulations of differing size. Build one view per articulation type.",
+                       __FUNCTION__);
+        return false;
+    }
+
     const bool isFixedBase = mEntries[0].metatype->getFixedBase();
     if (isFixedBase)
     {

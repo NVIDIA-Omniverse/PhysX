@@ -46,7 +46,7 @@ if %ERRORLEVEL% neq 0 (
 
 REM Pull config-dependent deps for both release and debug
 for %%C in (release debug) do (
-    REM Import dependencies from ovruntime_deps (Carbonite, USD, Python, CUDA, etc.)
+    REM Import ovruntime_deps-aligned deps (carb, usd, python, cuda, ...)
     call %PACKMAN% pull deps\ovruntime-deps-import.packman.xml -p %PLATFORM% -t platform_target_abi=%PLATFORM% -t config=%%C
     if %ERRORLEVEL% neq 0 (
         echo Failed to pull ovruntime_deps imports [%%C]!
@@ -58,6 +58,15 @@ for %%C in (release debug) do (
     call %PACKMAN% pull deps\kit-kernel-deps.packman.xml -p %PLATFORM% -t platform_target_abi=%PLATFORM% -t config=%%C
     if %ERRORLEVEL% neq 0 (
         echo Failed to pull kit-kernel [%%C]!
+        popd
+        exit /b %ERRORLEVEL%
+    )
+
+    REM Pull omni_client_library at the version kit-kernel was built against
+    REM (imported from kit_sdk's all-deps; requires kit-kernel from the previous step).
+    call %PACKMAN% pull deps\kit-kernel-import.packman.xml -p %PLATFORM% -t platform_target_abi=%PLATFORM% -t config=%%C
+    if %ERRORLEVEL% neq 0 (
+        echo Failed to pull omni_client_library [%%C]!
         popd
         exit /b %ERRORLEVEL%
     )

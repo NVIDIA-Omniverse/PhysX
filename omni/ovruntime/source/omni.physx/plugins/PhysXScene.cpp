@@ -809,11 +809,15 @@ void clearVelocities(PxActor& pxActor)
 
 void PhysXStepper::updateQuasistaticActors(const PxU32 nbActors, PxActor** activeActors)
 {
-    if (mPhysXScene->getInternalScene()->getSceneDesc().quasistaticActors.empty())
+    InternalScene* internalScene = mPhysXScene->getInternalScene();
+    const bool hasReleasedActors = internalScene->hasReleasedActiveActors();
+    if (internalScene->getSceneDesc().quasistaticActors.empty())
     {
         for (PxU32 i = 0; i < nbActors; i++)
         {
             PxActor* pxActor = activeActors[i];
+            if (!pxActor || (hasReleasedActors && internalScene->isReleasedActiveActor(pxActor)))
+                continue;
             clearVelocities(*pxActor);
         }
     }
@@ -823,8 +827,11 @@ void PhysXStepper::updateQuasistaticActors(const PxU32 nbActors, PxActor** activ
         for (PxU32 i = 0; i < nbActors; i++)
         {
             PxActor* pxActor = activeActors[i];
+            if (!pxActor || (hasReleasedActors && internalScene->isReleasedActiveActor(pxActor)))
+                continue;
+
             const size_t recordsIndex = (size_t)pxActor->userData;
-            if (!pxActor || recordsIndex >= db.getRecords().size())
+            if (recordsIndex >= db.getRecords().size())
                 continue;
 
             const InternalDatabase::Record& record = db.getRecords()[recordsIndex];
@@ -1214,6 +1221,9 @@ void PhysXStepper::run()
                     omniPhysX.fireOnStepEventSubscriptions(mStepSize, true);
                 }
 
+                // The next simulation replaces the preceding active-actor
+                // array, so its release tombstones are no longer needed.
+                mPhysXScene->getInternalScene()->clearReleasedActiveActors();
                 mPhysXScene->getScene()->simulate(mStepSize);
                 mPhysXScene->getScene()->fetchResults(true);
             }

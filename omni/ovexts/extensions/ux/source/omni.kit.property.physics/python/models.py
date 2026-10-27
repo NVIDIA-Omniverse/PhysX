@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-#
+# SPDX-License-Identifier: Apache-2.0
 
 from omni.kit.property.usd.usd_attribute_model import TfTokenAttributeModel
 from omni.physx.scripts import utils

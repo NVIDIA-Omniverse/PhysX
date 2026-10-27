@@ -114,6 +114,52 @@ static inline bool shimCuCtxPopCurrent(CUcontext* out, const char* file, int lin
 #define SHIM_CU_CTX_GET_CURRENT(out) omni::physx::cudaShimWrappers::shimCuCtxGetCurrent(out, __FILE__, __LINE__)
 #define SHIM_CU_CTX_POP_CURRENT(out) omni::physx::cudaShimWrappers::shimCuCtxPopCurrent(out, __FILE__, __LINE__)
 
+// -- Defensive context guard --
+//
+// Explicitly makes `ctx` current for the duration of the scope, regardless of what the CUDA
+// driver reports as already current on this thread. Unlike a plain PxScopedCudaLock (which
+// no-ops on a nested/refcounted acquire and therefore trusts whatever context is already on
+// the stack), this always pushes and always pops, so raw driver calls made under it can't
+// silently run against a foreign context left behind by another CUDA user on the same thread.
+class CudaContextGuard
+{
+public:
+    explicit CudaContextGuard(CUcontext ctx) : mPushedCtx(nullptr)
+    {
+        CUcontext oldCtx = nullptr;
+        if (ctx && shimCuCtxGetCurrent(&oldCtx, __FILE__, __LINE__))
+        {
+            if (ctx != oldCtx)
+            {
+                int st = 0;
+                if (getCudaShim()->ctxPushCurrent(reinterpret_cast<uintptr_t>(ctx), &st))
+                {
+                    mPushedCtx = ctx;
+                }
+                else
+                {
+                    CARB_LOG_ERROR("cuCtxPushCurrent failed (CUresult %d) at %s:%d", st, __FILE__, __LINE__);
+                }
+            }
+        }
+    }
+
+    ~CudaContextGuard()
+    {
+        if (mPushedCtx)
+        {
+            CUcontext popped = nullptr;
+            shimCuCtxPopCurrent(&popped, __FILE__, __LINE__);
+        }
+    }
+
+    CudaContextGuard(const CudaContextGuard&) = delete;
+    CudaContextGuard& operator=(const CudaContextGuard&) = delete;
+
+private:
+    CUcontext mPushedCtx;
+};
+
 } // namespace cudaShimWrappers
 } // namespace physx
 } // namespace omni

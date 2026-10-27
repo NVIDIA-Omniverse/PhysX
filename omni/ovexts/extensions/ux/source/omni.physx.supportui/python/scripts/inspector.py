@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-#
+# SPDX-License-Identifier: Apache-2.0
+
+import asyncio
 
 import omni.ui
 import omni.kit.app
@@ -43,6 +44,7 @@ class InspectorViewportOverlays:
 class PhysXInspector:
     def __init__(self, icon_folder: str):
         self._icon_folder = icon_folder
+        self._event_loop = asyncio.get_running_loop()
         self._inspector_overlays = None
         self._inspector_simulation = None
         self._inspector_windows = []
@@ -60,10 +62,19 @@ class PhysXInspector:
     def _physics_inspector_enabled_setting_changed(self, item, event_type):
         if event_type == carb.settings.ChangeEventType.CHANGED:
             settings = carb.settings.get_settings()
-            if settings.get(pxsupportui.SETTINGS_PHYSICS_INSPECTOR_ENABLED):
-                self._enable_inspector()
-            else:
-                self._disable_inspector()
+            enabled = settings.get(pxsupportui.SETTINGS_PHYSICS_INSPECTOR_ENABLED)
+            event_loop = self._event_loop
+            if event_loop:
+                event_loop.call_soon_threadsafe(self._set_inspector_enabled, enabled)
+
+    def _set_inspector_enabled(self, enabled):
+        if self._settings_inspector_enabled_sub is None:
+            return
+
+        if enabled:
+            self._enable_inspector()
+        else:
+            self._disable_inspector()
 
     def _enable_inspector(self):
         # stable id is needed to allow changing window name without breaking its docking state
@@ -92,6 +103,7 @@ class PhysXInspector:
 
     def destroy(self):
         self._settings_inspector_enabled_sub = None
+        self._event_loop = None
         self._disable_inspector()
 
     def add_inspector_window(self):

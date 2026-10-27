@@ -11,6 +11,7 @@
 #include <usdLoad/Mass.h>
 
 #include <particles/PhysXParticlePost.h>
+#include <common/utilities/MemoryMacros.h>
 #include <common/utilities/UsdMaterialParsing.h>
 
 #include <PhysXTools.h>
@@ -451,13 +452,27 @@ ObjectId PhysXUsdPhysicsInterface::createParticleSet(usdparser::AttachedStage& a
 
     internalParticleSet->mWorldToLocal = xform.ComputeLocalToWorldTransform(UsdTimeCode::Default()).GetInverse();
 
-    internalPS->mParticleSets.push_back(internalParticleSet);
-
     // allocate some buffers, TODO somehow make InternalParticleSet::resize do all this.
     internalParticleSet->mMaxParticles = particleDesc.maxParticles;
     internalParticleSet->mPhases = PX_PINNED_HOST_ALLOC_T(PxU32, cudaContextManager, particleDesc.maxParticles);
     internalParticleSet->mPositions = PX_PINNED_HOST_ALLOC_T(PxVec4, cudaContextManager, particleDesc.maxParticles);
     internalParticleSet->mVelocities = PX_PINNED_HOST_ALLOC_T(PxVec4, cudaContextManager, particleDesc.maxParticles);
+
+    // Pinned-host allocation can fail (e.g. host/pinned-memory exhaustion or a pathological
+    // physxParticle:maxParticles authored on the prim). Treat a null pointer as failure and bail rather
+    // than write through it below (NVBugs 6587238). The particle set is not yet registered in
+    // internalPS->mParticleSets, so releasing it here frees any buffers that did allocate
+    // (InternalParticleSet::releasePinnedBuffers) and leaves no partial state for anything downstream
+    // (e.g. ParticlePostprocess) to trip over.
+    if (!internalParticleSet->mPhases || !internalParticleSet->mPositions || !internalParticleSet->mVelocities)
+    {
+        CARB_LOG_ERROR(
+            "PhysX Particles at %s failed to allocate pinned host buffers for %d particles.", path.GetText(), particleDesc.maxParticles);
+        SAFE_DELETE_SINGLE(internalParticleSet);
+        return kInvalidObjectId;
+    }
+
+    internalPS->mParticleSets.push_back(internalParticleSet);
 
     const std::vector<carb::Float3>& positionSrc = particleDesc.simulationPoints.empty() ? particleDesc.points : particleDesc.simulationPoints;
 

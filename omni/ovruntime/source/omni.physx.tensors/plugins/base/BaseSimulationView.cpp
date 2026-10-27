@@ -205,6 +205,13 @@ void collectSelfAndDescendantsUsdRt(const usdrt::UsdPrim& prim, std::vector<usdr
 // and would mask legitimate regressions. Callers who want to collect an
 // entire subtree must spell it with `**`.
 //
+// Two refinements keep counts exact. A named leaf that recurs nested inside
+// its own match is suppressed (shallowest wins), so a match is never counted
+// twice. And when the pattern already contains a `**`, its roots already cover
+// the whole subtree, so the leaf is direct-matched there instead of
+// descendant-searched -- otherwise a deep leaf would be emitted once per
+// ancestor (contact filterPaths and SDF views do not pointer-dedup).
+//
 // Users who need strict semantics even for named leaves can disable it via
 // kSettingRecursiveLeafPatternMatch; the explicit `**` token always works
 // regardless.
@@ -234,7 +241,15 @@ bool isRecursiveLeafPatternMatchEnabled()
 // Collects every descendant of `prim` whose name matches the regex `matcher`.
 // Does NOT include `prim` itself — the pivot is the penultimate match level,
 // we only want deeper hits.
-void collectMatchingDescendants(UsdPrim prim, TfPatternMatcher& matcher, std::vector<UsdPrim>& out)
+// Suppresses a match whose name already matched an ancestor on the current path:
+// that is the same name recurring nested inside its own match (e.g.
+// robot/Disc001/robot/Disc001, or base_link under base_link), a spurious overlap
+// that over-counts the view. Distinct names at different depths are kept, so an
+// alternation leaf ('base_link|link_0') still finds both; explicit '**' descent
+// is a separate path and unchanged. `matchedOnPath` carries the matched names on
+// the root-to-node path (a fresh set per root).
+void collectMatchingDescendants(UsdPrim prim, TfPatternMatcher& matcher,
+                                std::unordered_set<std::string>& matchedOnPath, std::vector<UsdPrim>& out)
 {
     if (!prim)
     {
@@ -242,16 +257,23 @@ void collectMatchingDescendants(UsdPrim prim, TfPatternMatcher& matcher, std::ve
     }
     for (auto child : prim.GetAllChildren())
     {
-        if (matcher.Match(child.GetName()))
+        const std::string name = child.GetName().GetString();
+        if (matcher.Match(name) && matchedOnPath.insert(name).second)
         {
             out.push_back(child);
+            collectMatchingDescendants(child, matcher, matchedOnPath, out);
+            matchedOnPath.erase(name);
         }
-        collectMatchingDescendants(child, matcher, out);
+        else
+        {
+            collectMatchingDescendants(child, matcher, matchedOnPath, out);
+        }
     }
 }
 
 void collectMatchingDescendantsUsdRt(const usdrt::UsdPrim& prim,
                                      TfPatternMatcher& matcher,
+                                     std::unordered_set<std::string>& matchedOnPath,
                                      std::vector<usdrt::UsdPrim>& out)
 {
     if (!prim)
@@ -260,11 +282,17 @@ void collectMatchingDescendantsUsdRt(const usdrt::UsdPrim& prim,
     }
     for (auto child : prim.GetAllChildren())
     {
-        if (matcher.Match(child.GetName().GetString()))
+        const std::string name = child.GetName().GetString();
+        if (matcher.Match(name) && matchedOnPath.insert(name).second)
         {
             out.push_back(child);
+            collectMatchingDescendantsUsdRt(child, matcher, matchedOnPath, out);
+            matchedOnPath.erase(name);
         }
-        collectMatchingDescendantsUsdRt(child, matcher, out);
+        else
+        {
+            collectMatchingDescendantsUsdRt(child, matcher, matchedOnPath, out);
+        }
     }
 }
 
@@ -355,8 +383,8 @@ bool findDeformableMeshPaths(SdfPath& simMeshPath,
 
 } // namespace
 
-BaseSimulationView::BaseSimulationView(UsdStageRefPtr stage)
-    : mStage(stage), mSimData(std::make_shared<BaseSimulationData>())
+BaseSimulationView::BaseSimulationView(UsdStageRefPtr stage, PxScene* scene)
+    : mStage(stage), mScene(scene), mSimData(std::make_shared<BaseSimulationData>())
 {
     omni::physx::IPhysicsObjectChangeCallback callback;
     callback.objectDestructionNotifyFn = onPhysXObjectDeletedCallback;
@@ -636,6 +664,22 @@ void BaseSimulationView::onPhysXObjectDeletedCallback(const PXR_NS::SdfPath& sdf
                 sim->invalidate();
             }
         }
+        // The scene outranks every object above: the view is bound to it and the GPU path caches
+        // it as a raw pointer, so losing it strands the view on freed memory even though none of
+        // its bodies or shapes were touched. This case used to fall through, leaving the view
+        // reporting valid.
+        if (type == ePTScene)
+        {
+            PxScene* scene = static_cast<PxScene*>(physx->getPhysXPtrFast(objectId));
+            if (sim->hasScene(scene))
+            {
+                CARB_LOG_WARN(
+                    "physics scene '%s' was deleted while being used by a tensor view class. The physics.tensors simulationView was invalidated.",
+                    sdfPath.GetText());
+                sim->invalidate();
+                sim->mScene = nullptr;
+            }
+        }
     }
 }
 
@@ -753,6 +797,25 @@ void BaseSimulationView::findMatchingPaths(const std::string& pattern_, std::vec
 
         const int numTokens = int(tokens.size());
         const bool recursiveLeaf = isRecursiveLeafPatternMatchEnabled();
+        // An explicit '**' already expands roots to every descendant, so an
+        // additional recursive-leaf descent would re-scan overlapping roots and
+        // emit the same path once per ancestor (duplicates + O(N^2)). When the
+        // pattern carries a '**' anywhere, the leaf falls back to strict matching.
+        // Because this keys on '**' appearing *anywhere*, a '**' before the leaf
+        // also makes it strict: '/envs/*/**/Robot/torso' finds 'torso' only as a
+        // direct child of each matched 'Robot', whereas '/envs/*/Robot/**/torso'
+        // (roots expanded by '**', then a strict leaf) still finds 'torso' at any
+        // depth under 'Robot'. Both are intentional -- spell the deep-leaf case
+        // as 'Robot/**/torso'.
+        bool patternHasRecursiveDescent = false;
+        for (const std::string& t : tokens)
+        {
+            if (t == kRecursiveDescentToken)
+            {
+                patternHasRecursiveDescent = true;
+                break;
+            }
+        }
 
         for (int i = 0; i < numTokens; i++)
         {
@@ -774,23 +837,27 @@ void BaseSimulationView::findMatchingPaths(const std::string& pattern_, std::vec
                     collectSelfAndDescendantsUsdRt(prim, matches);
                 }
             }
-            else if (isLeaf && recursiveLeaf && !isBareWildcard)
+            else if (isLeaf && recursiveLeaf && !isBareWildcard && !patternHasRecursiveDescent)
             {
                 // Leaf-recursive legacy-compat mode: match the leaf token
                 // against every descendant name, not just direct children.
                 // wrap in '^' and '$' so the glob anchors to the whole name.
-                const std::string tokPattern = '^' + tokens[i] + '$';
+                const std::string tokPattern = "^(" + tokens[i] + ")$";
                 TfPatternMatcher matcher(tokPattern, true, true);
+                // A same-named prim nested inside a match is a spurious overlap;
+                // the descent suppresses it (see collectMatchingDescendantsUsdRt)
+                // via a fresh path-set per root.
                 for (auto& prim : roots)
                 {
-                    collectMatchingDescendantsUsdRt(prim, matcher, matches);
+                    std::unordered_set<std::string> matchedOnPath;
+                    collectMatchingDescendantsUsdRt(prim, matcher, matchedOnPath, matches);
                 }
             }
             else
             {
                 // wrap the token in '^' and '$' so the glob anchors to the
                 // whole prim name rather than matching a substring.
-                const std::string tokPattern = '^' + tokens[i] + '$';
+                const std::string tokPattern = "^(" + tokens[i] + ")$";
                 for (auto& prim : roots)
                 {
                     findMatchingChildrenUsdRt(prim, tokPattern, matches);
@@ -838,6 +905,25 @@ void BaseSimulationView::findMatchingPaths(const std::string& pattern_, std::vec
 
         const int numTokens = int(tokens.size());
         const bool recursiveLeaf = isRecursiveLeafPatternMatchEnabled();
+        // An explicit '**' already expands roots to every descendant, so an
+        // additional recursive-leaf descent would re-scan overlapping roots and
+        // emit the same path once per ancestor (duplicates + O(N^2)). When the
+        // pattern carries a '**' anywhere, the leaf falls back to strict matching.
+        // Because this keys on '**' appearing *anywhere*, a '**' before the leaf
+        // also makes it strict: '/envs/*/**/Robot/torso' finds 'torso' only as a
+        // direct child of each matched 'Robot', whereas '/envs/*/Robot/**/torso'
+        // (roots expanded by '**', then a strict leaf) still finds 'torso' at any
+        // depth under 'Robot'. Both are intentional -- spell the deep-leaf case
+        // as 'Robot/**/torso'.
+        bool patternHasRecursiveDescent = false;
+        for (const std::string& t : tokens)
+        {
+            if (t == kRecursiveDescentToken)
+            {
+                patternHasRecursiveDescent = true;
+                break;
+            }
+        }
 
         for (int i = 0; i < numTokens; i++)
         {
@@ -858,20 +944,24 @@ void BaseSimulationView::findMatchingPaths(const std::string& pattern_, std::vec
                     collectSelfAndDescendants(prim, matches);
                 }
             }
-            else if (isLeaf && recursiveLeaf && !isBareWildcard)
+            else if (isLeaf && recursiveLeaf && !isBareWildcard && !patternHasRecursiveDescent)
             {
                 // Leaf-recursive legacy-compat mode: match the leaf token
                 // against every descendant name, not just direct children.
-                const std::string tokPattern = '^' + tokens[i] + '$';
+                const std::string tokPattern = "^(" + tokens[i] + ")$";
                 TfPatternMatcher matcher(tokPattern, true, true);
+                // A same-named prim nested inside a match is a spurious overlap;
+                // the descent suppresses it (see collectMatchingDescendants) via a
+                // fresh path-set per root.
                 for (auto& prim : roots)
                 {
-                    collectMatchingDescendants(prim, matcher, matches);
+                    std::unordered_set<std::string> matchedOnPath;
+                    collectMatchingDescendants(prim, matcher, matchedOnPath, matches);
                 }
             }
             else
             {
-                const std::string tokPattern = '^' + tokens[i] + '$';
+                const std::string tokPattern = "^(" + tokens[i] + ")$";
                 for (auto& prim : roots)
                 {
                     findMatchingChildren(prim, tokPattern, matches);
@@ -1951,7 +2041,26 @@ bool BaseSimulationView::getArticulationAtPath(const SdfPath& path, Articulation
     // printf("~!~! Arti metatype @ %p\n", entryRet.metatype);
 
     entryRet.links = links;
+
     entryRet.dofImpls = dofImpls;
+    // Topology is fixed for the view's lifetime, so cache the paths here: the accessors return
+    // a pointer that has to outlive the call.
+    for (DofImpl& dofImpl : entryRet.dofImpls)
+    {
+        if (dofImpl.joint)
+        {
+            dofImpl.path = g_physx->getPhysXObjectUsdPath(reinterpret_cast<size_t>(dofImpl.joint->userData));
+        }
+    }
+    entryRet.linkPaths.resize(entryRet.links.size());
+    for (size_t linkIdx = 0; linkIdx < entryRet.links.size(); ++linkIdx)
+    {
+        if (entryRet.links[linkIdx])
+        {
+            entryRet.linkPaths[linkIdx] =
+                g_physx->getPhysXObjectUsdPath(reinterpret_cast<size_t>(entryRet.links[linkIdx]->userData));
+        }
+    }
     entryRet.incomingJointPhysxToUsdRotations = physxToUsdRotations;
     entryRet.isIncomingJointBody0Parent = isUsdBody0Parent;
     entryRet.jointChild = jointChildxforms;
@@ -2805,22 +2914,8 @@ PxMaterial* BaseSimulationView::createSharedMaterial(float staticFriction,
         dampingCombineMode = PxCombineMode::eAVERAGE;
     }
 
-    std::string key;
-    char keybuffer[100];
-    snprintf(keybuffer, 100, "%.6f", staticFriction);
-    key += std::string(keybuffer) + "_";
-    snprintf(keybuffer, 100, "%.6f", dynamicFriction);
-    key += std::string(keybuffer) + "_";
-    snprintf(keybuffer, 100, "%.6f", restitution);
-    key += std::string(keybuffer) + "_";
-    snprintf(keybuffer, 100, "%.6f", damping);
-    key += std::string(keybuffer) + "_";
-    snprintf(keybuffer, 100, "%1d", static_cast<uint8_t>(frictionCombineMode));
-    key += std::string(keybuffer) + "_";
-    snprintf(keybuffer, 100, "%1d", static_cast<uint8_t>(restitutionCombineMode));
-    key += std::string(keybuffer) + "_";
-    snprintf(keybuffer, 100, "%1d", static_cast<uint8_t>(dampingCombineMode));
-    key += std::string(keybuffer);
+    const std::string key = makeMaterialKey(staticFriction, dynamicFriction, restitution, damping,
+                                            frictionCombineMode, restitutionCombineMode, dampingCombineMode);
 
     std::unordered_map<std::string, PxMaterial*>::const_iterator got = mMaterials.find(key);
 
@@ -2856,6 +2951,7 @@ PxMaterial* BaseSimulationView::createSharedMaterial(float staticFriction,
             material->setRestitutionCombineMode(restitutionCombineMode);
             material->setDampingCombineMode(dampingCombineMode);
             mMaterials[key] = material;
+            mMaterialKeys[material] = key;
         }
     }
     else
@@ -2873,6 +2969,86 @@ PxMaterial* BaseSimulationView::createSharedMaterial(float staticFriction,
     }
 
     return material;
+}
+
+std::string BaseSimulationView::makeMaterialKey(float staticFriction,
+                                                float dynamicFriction,
+                                                float restitution,
+                                                float damping,
+                                                PxCombineMode::Enum frictionCombineMode,
+                                                PxCombineMode::Enum restitutionCombineMode,
+                                                PxCombineMode::Enum dampingCombineMode)
+{
+    // %.9g round-trips an IEEE-754 single-precision value exactly, so distinct
+    // float32 inputs always produce distinct keys (unlike "%.6f", which
+    // collapsed values differing by less than 1e-6 onto the same key).
+    std::string key;
+    char keybuffer[100];
+    snprintf(keybuffer, 100, "%.9g", staticFriction);
+    key += std::string(keybuffer) + "_";
+    snprintf(keybuffer, 100, "%.9g", dynamicFriction);
+    key += std::string(keybuffer) + "_";
+    snprintf(keybuffer, 100, "%.9g", restitution);
+    key += std::string(keybuffer) + "_";
+    snprintf(keybuffer, 100, "%.9g", damping);
+    key += std::string(keybuffer) + "_";
+    snprintf(keybuffer, 100, "%1d", static_cast<uint8_t>(frictionCombineMode));
+    key += std::string(keybuffer) + "_";
+    snprintf(keybuffer, 100, "%1d", static_cast<uint8_t>(restitutionCombineMode));
+    key += std::string(keybuffer) + "_";
+    snprintf(keybuffer, 100, "%1d", static_cast<uint8_t>(dampingCombineMode));
+    key += std::string(keybuffer);
+    return key;
+}
+
+void BaseSimulationView::releaseSharedMaterial(PxMaterial* material)
+{
+    auto refIt = mMaterialsRefCount.find(material);
+    if (refIt == mMaterialsRefCount.end())
+    {
+        // Not a pool-owned material (e.g. the shape's original authored
+        // material); nothing to reference-count or recycle.
+        return;
+    }
+
+    if (--refIt->second > 0)
+    {
+        return;
+    }
+
+    // Last reference released. Drop the pool entry using the exact key the
+    // material was stored under (recorded in mMaterialKeys at insertion), rather
+    // than reconstructing a key from the material's current properties. The old
+    // reconstruction left the map entry dangling whenever the rebuilt key did
+    // not match the one used at insertion (e.g. the rigid-body path rebuilt only
+    // 3 of the 7 key components), so a later request for the same tuple returned
+    // this recycled material with foreign property values (NVBugs 6489465).
+    auto keyIt = mMaterialKeys.find(material);
+    if (keyIt != mMaterialKeys.end())
+    {
+        mMaterials.erase(keyIt->second);
+        mMaterialKeys.erase(keyIt);
+    }
+    else
+    {
+        // Defensive fallback: a pooled material should always have a recorded
+        // key, but if the reverse index is ever out of sync, remove the entry by
+        // pointer so we never leave a dangling map entry behind.
+        for (auto it = mMaterials.begin(); it != mMaterials.end();)
+        {
+            if (it->second == material)
+            {
+                it = mMaterials.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+    }
+
+    mMaterialsRefCount.erase(refIt);
+    mUnusedMaterials.insert(material);
 }
 
 bool BaseSimulationView::hasRigidBody(PxRigidBody* body) const
@@ -2905,6 +3081,11 @@ bool BaseSimulationView::hasShape(PxShape* shape) const
         return true;
     else
         return false;
+}
+
+bool BaseSimulationView::hasScene(const PxScene* scene) const
+{
+    return mScene != nullptr && scene == mScene;
 }
 
 bool BaseSimulationView::hasDeformableBody(PxDeformableBody* body) const

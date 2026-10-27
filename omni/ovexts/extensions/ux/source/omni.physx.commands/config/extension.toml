@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 [package]
 category = "simulation"
 authors = ["PhysX"]
@@ -6,7 +9,7 @@ description="Physics commands"
 repository = ""
 keywords = ["physics", "physx", "commands"]
 
-version = "110.1.11"
+version = "110.3.2"
 
 icon = "data/icon.png"
 preview_image = "data/preview.png"
@@ -20,7 +23,7 @@ python = true
 usd = true
 
 [dependencies]
-"omni.physx" = { version = "110.1.11", exact = true }
+"omni.physx" = { version = "110.3.2", exact = true }
 "omni.kit.commands" = {}
 "omni.kit.usd_undo" = {}
 "omni.usd" = {}

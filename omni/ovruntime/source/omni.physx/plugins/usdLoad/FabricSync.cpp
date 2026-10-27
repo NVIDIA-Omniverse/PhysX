@@ -20,7 +20,11 @@ namespace physx
 
 void flushUsdToFabric(const omni::fabric::UsdStageId& stageId, bool changeTime, double timeCode)
 {
-    omni::fabric::StageReaderWriter stageInProgress = OmniPhysX::getInstance().getIStageReaderWriter()->get(stageId);
+    omni::fabric::IStageReaderWriter* stageReaderWriter = OmniPhysX::getInstance().getIStageReaderWriter();
+    if (!stageReaderWriter)
+        return;
+
+    omni::fabric::StageReaderWriter stageInProgress = stageReaderWriter->get(stageId);
     if (stageInProgress.getId() != omni::fabric::kInvalidStageReaderWriterId)
     {
         // Creation of a UsdStage object is lightweight, it's basically a view over the USD and Fabric stages.

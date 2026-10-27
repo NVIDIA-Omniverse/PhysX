@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 [package]
 category = "simulation"
 authors = ["PhysX"]
@@ -6,7 +9,7 @@ description="Physics demos"
 repository = ""
 keywords = ["physics", "physx", "samples", "demos"]
 
-version = "110.1.11"
+version = "110.3.2"
 
 icon = "icons/icon.png"
 preview_image = "icons/preview.png"
@@ -24,8 +27,8 @@ usd = true
 "omni.usd" = {}
 "usdrt.scenegraph" = {}
 "omni.ui" = {}
-"omni.physx" = { version = "110.1.11", exact = true }
-"omni.physx.ui" = { version = "110.1.11", exact = true }
+"omni.physx" = { version = "110.3.2", exact = true }
+"omni.physx.ui" = { version = "110.3.2", exact = true }
 "omni.debugdraw" = {}
 "omni.kit.stage_templates" = {}
 "omni.kit.window.file" = {}
@@ -33,8 +36,8 @@ usd = true
 "omni.kit.viewport.utility" = {}
 "omni.kit.primitive.mesh" = {}
 "omni.kit.material.library" = {optional=true}  # to get CreateAndBindMdlMaterialFromLibrary, optional to prevent loading iray in stubgen phase ...
-"omni.physx.tests" = { version = "110.1.11", exact = true, optional=true }
-"omni.physx.tests.visual" = { version = "110.1.11", exact = true, optional=true }
+"omni.physx.tests" = { version = "110.3.2", exact = true, optional=true }
+"omni.physx.tests.visual" = { version = "110.3.2", exact = true, optional=true }
 
 [settings]
 # physics demo asset path setting: if not overriden from command line or kit file it will get set when demo ext is started 

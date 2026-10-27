@@ -139,7 +139,11 @@ private:
                 "omni.physx will ignore logging subsequent errors to user interface until simulation stop",
                 mMaxNumErrors);
         CARB_LOG_ERROR("PhysX error: %s", buffer);
-        sendErrorEvent(mEventStream, omni::physx::ePhysxTooManyErrors, std::make_pair("errorString", (const char*)buffer));
+        if (mEventStream)
+        {
+            sendErrorEvent(mEventStream, omni::physx::ePhysxTooManyErrors,
+                           std::make_pair("errorString", (const char*)buffer));
+        }
     }
 
     carb::events::IEventStreamPtr   mEventStream;

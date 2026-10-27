@@ -53,7 +53,7 @@ struct PhysicsStats
 
 struct IPhysxUnitTests
 {
-    CARB_PLUGIN_INTERFACE("omni::physx::IPhysxUnitTests", 3, 0)
+    CARB_PLUGIN_INTERFACE("omni::physx::IPhysxUnitTests", 3, 2)
 
     void(CARB_ABI* update)(float elapsedSecs, float currentTime);
 
@@ -77,6 +77,21 @@ struct IPhysxUnitTests
     void(CARB_ABI* updateCooking)();
 
     bool(CARB_ABI* isCudaLibPresent)();
+
+    // Number of InternalActor entries registered with the given physics scene. Exposed so tests can
+    // assert that the per-scene actor bookkeeping follows a simulation owner change; returns 0 if the
+    // path does not resolve to a scene.
+    size_t(CARB_ABI* getSceneInternalActorCount)(const PXR_NS::SdfPath& scenePath);
+
+    // Looks up the InternalForce registered for a PhysxForceAPI prim. Returns false when the path has
+    // no force; otherwise writes the PxRigidActor the force is bound to - which must be null once that
+    // body has been released, rather than left dangling (NVBugs 6583666) - to outRigidActor.
+    bool(CARB_ABI* getForceRigidActor)(const PXR_NS::SdfPath& forcePath, void** outRigidActor);
+
+    // Number of InternalForce entries registered with the given physics scene, so tests can assert
+    // that the per-scene force bookkeeping follows a simulation owner change the way the actor
+    // bookkeeping does; returns 0 if the path does not resolve to a scene.
+    size_t(CARB_ABI* getSceneInternalForceCount)(const PXR_NS::SdfPath& scenePath);
 };
 
 struct PhysicsProfileStats

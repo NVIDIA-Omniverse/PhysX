@@ -431,6 +431,7 @@ PYBIND11_MODULE(_physx, m)
     ADD_SETTING("SETTING_VISUALIZATION_COLLISION_MESH", kSettingVisualizationCollisionMesh);
     ADD_SETTING("SETTING_DISPLAY_COLLIDERS", kSettingDisplayColliders);
     ADD_SETTING("SETTING_DISPLAY_COLLIDER_NORMALS", kSettingDisplayColliderNormals);
+    ADD_SETTING("SETTING_VISUALIZATION_MAX_DEBUG_LINES", kSettingVisualizationMaxDebugLines);
     ADD_SETTING("SETTING_DISPLAY_MASS_PROPERTIES", kSettingDisplayMassProperties);
     ADD_SETTING("SETTING_DISPLAY_JOINTS", kSettingDisplayJoints);
     ADD_SETTING("SETTING_DISPLAY_SIMULATION_OUTPUT", kSettingDisplaySimulationOutput);

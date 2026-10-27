@@ -1344,6 +1344,12 @@ PhysxShapeDesc* parseCollisionDesc(AttachedStage& attachedStage, UsdGeomXformCac
         const UsdPrim instancePrim = stage->GetPrimAtPath(path);
         const GfTransform tf(xfCache.GetLocalToWorldTransform(instancePrim));
         PhysxShapeDesc* newDesc = scaleShapeDesc(*masterDesc, GfVec3f(tf.GetScale()));
+        // ### DEFENSIVE NvBugs 6511050
+        // scaleShapeDesc returns nullptr for shape types it does not handle (and reports them),
+        // the writes below would fault on it.
+        if (!newDesc)
+            return nullptr;
+
         GfVec3f localPos;
         GfVec3f localScale;
         GfQuatf localRot;
@@ -1508,6 +1514,17 @@ PhysxShapeDesc* scaleShapeDesc(const PhysxShapeDesc& inDesc, const GfVec3f& scal
         (GfVec3f&)meshDesc.meshScale = GfCompMult((const GfVec3f&)meshDesc.meshScale, scale);
     }
     break;
+    case eSpherePointsShape:
+    {
+        desc = ICE_PLACEMENT_NEW(SpherePointsPhysxShapeDesc)();
+        SpherePointsPhysxShapeDesc& spherePointsDesc = (SpherePointsPhysxShapeDesc&)*desc;
+        spherePointsDesc = (const SpherePointsPhysxShapeDesc&)inDesc;
+
+        // Only meshScale is scaled, as for eTriangleMeshShape above - createShape() already applies
+        // meshScale to each sphere center and radius, scaling them here too would double it.
+        (GfVec3f&)spherePointsDesc.meshScale = GfCompMult((const GfVec3f&)spherePointsDesc.meshScale, scale);
+    }
+    break;
     case eBoundingSphereShape:
     {
         desc = ICE_PLACEMENT_NEW(BoundingSpherePhysxShapeDesc)();
@@ -1532,10 +1549,24 @@ PhysxShapeDesc* scaleShapeDesc(const PhysxShapeDesc& inDesc, const GfVec3f& scal
     case ePlaneShape:
     {
         desc = ICE_PLACEMENT_NEW(PlanePhysxShapeDesc)();
-        PlanePhysxShapeDesc& bbDesc = (PlanePhysxShapeDesc&)*desc;
+        PlanePhysxShapeDesc& planeDesc = (PlanePhysxShapeDesc&)*desc;
+        planeDesc = (const PlanePhysxShapeDesc&)inDesc;
+    }
+    break;
+    case eCustomShape:
+    {
+        desc = ICE_PLACEMENT_NEW(CustomPhysxShapeDesc)();
+        CustomPhysxShapeDesc& customDesc = (CustomPhysxShapeDesc&)*desc;
+        customDesc = (const CustomPhysxShapeDesc&)inDesc;
+
+        // A custom shape carries no geometry of its own beyond its token; the implementation reads
+        // the scale off the descriptor, so the common localPos/localScale scaling below is enough.
     }
     break;
     default:
+        CARB_LOG_ERROR(
+            "scaleShapeDesc: shape type %u is not supported for scene graph instancing, the collider will be skipped.",
+            (unsigned int)inDesc.type);
         break;
     }
 

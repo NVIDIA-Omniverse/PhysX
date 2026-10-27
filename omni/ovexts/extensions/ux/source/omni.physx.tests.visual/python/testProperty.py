@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-#
+# SPDX-License-Identifier: Apache-2.0
 
 import carb
 import unittest
@@ -15,7 +14,7 @@ from omni.physx.scripts import utils as physxUtils
 from omni.physx import get_physx_cooking_interface
 from omni.physxtests import utils
 from omni.physxtests.utils.physicsBase import TestCategory
-from omni.physxtestsvisual.utils import TestCase
+from omni.physxtestsvisual.utils import TestCase, fake_newton_schema
 from pxr import Gf, PhysxSchema, UsdGeom, UsdPhysics, UsdShade
 from carb.input import MouseEventType
 from pxr.PhysicsSchemaTools import units
@@ -23,6 +22,26 @@ from pxr.PhysicsSchemaTools import units
 
 class PhysxPropertyTest(TestCase):
     category = TestCategory.Core
+
+    async def setUp(self):
+        await super().setUp()
+        # Render our own fake Newton properties in each Newton frame so the
+        # property-panel goldens are decoupled from the real omni.usd.schema.newton
+        # contents (see utils/fake_newton_schema.py). Roll the swap back if it
+        # fails part-way so a broken setUp doesn't leak into other tests.
+        try:
+            fake_newton_schema.install()
+        except Exception:
+            fake_newton_schema.restore()
+            raise
+
+    async def tearDown(self):
+        # Restore the production Newton registration for other test suites, but
+        # always run the base tearDown even if the restore fails.
+        try:
+            fake_newton_schema.restore()
+        finally:
+            await super().tearDown()
 
     async def _select_and_focus_property_window(self, paths):
         # select prim and focus property window so the widgets are built

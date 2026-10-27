@@ -22,6 +22,7 @@
 #include "Joint.h"
 #include "PhysicsBody.h"
 #include "AttributeHelpers.h"
+#include "NewtonCompat.h"
 #include <physicsSchemaTools/physicsSchemaTokens.h>
 
 
@@ -204,7 +205,7 @@ void setToDefault(PhysxJointLimit& limit)
 void setToDefault(PhysxJointAxisProperties& properties)
 {
     properties.armature = 0.0f;
-    properties.maxJointVelocity = 1000000.0f;
+    properties.maxJointVelocity = FLT_MAX;
     properties.staticFrictionEffort = 0.0f;
     properties.dynamicFrictionEffort = 0.0f;
     properties.viscousFrictionCoefficient = 0.0f;
@@ -246,6 +247,18 @@ void fillPhysxJointAxisPropertiesDesc(const omni::physics::schema::JointDesc& in
     {
         getAttribute(properties.maxJointVelocity, physxJointAPI.GetMaxJointVelocityAttr(), 0.0f, FLT_MAX, nullptr);
         getAttribute(properties.armature, physxJointAPI.GetArmatureAttr(), 0.0f, FLT_MAX, nullptr);
+    }
+
+    // Newton fallback: newton:velocityLimit -> physxJoint:maxJointVelocity. Both are
+    // joint-level (broadcast to every DOF) and share units, so this is a direct mapping.
+    // PhysX wins: only consult Newton when physxJoint:maxJointVelocity was not authored.
+    {
+        const UsdAttribute physxMaxVelAttr = physxJointAPI ? physxJointAPI.GetMaxJointVelocityAttr() : UsdAttribute();
+        if (!physxMaxVelAttr || !physxMaxVelAttr.HasAuthoredValue())
+        {
+            newton::getFallback(properties.maxJointVelocity, inDesc.usdPrim,
+                NewtonSchemaTokens->newtonVelocityLimit, 0.0f, FLT_MAX);
+        }
     }
 
     if (inDesc.usdPrim.HasAPI(type, axis))

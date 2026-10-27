@@ -51,6 +51,7 @@ See ``./build.[bat|sh] --help`` for more information.
 ## Usage with IsaacSim
 
 * Check out a tag of the IsaacSim repository according to the following mapping of IsaacSim repository tags to PhysX repository tags:
+    * v6.1.0 - 110.3-omni-and-physx-5.9.1
     * v6.0.0 - 110.1-omni-and-physx-5.9.0
     * v6.0.0-dev2 - 110.0-omni-and-physx-5.8.0
     * v6.0.0-dev - 109.0-omni-and-physx-5.7.0

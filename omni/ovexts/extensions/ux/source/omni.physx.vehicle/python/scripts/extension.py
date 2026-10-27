@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-#
+# SPDX-License-Identifier: Apache-2.0
 
 import omni.ext
 import omni.physx
@@ -10,6 +9,7 @@ from .wizards.physxVehicleWizard import PhysXVehicleWizard
 import omni.physxdemos as demo
 from omni.physxui import PhysicsMenu
 from .commands import PhysXVehicleTireFrictionTableAddCommand
+from ..ifacecache import release_interface_caches
 
 
 DEMO_SCENES = "omni.physxvehicle.scripts.samples"
@@ -53,6 +53,7 @@ class PhysxVehicleExtension(omni.ext.IExt):
             self._physxVehicleInterface = None
 
         demo.unregister(DEMO_SCENES)
+        release_interface_caches()
 
     def _on_tire_friction_table_menu_click(self):
         PhysXVehicleTireFrictionTableAddCommand.execute()

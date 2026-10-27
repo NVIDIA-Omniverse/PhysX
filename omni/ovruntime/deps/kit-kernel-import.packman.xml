@@ -1,0 +1,8 @@
+<project toolsVersion="5.0">
+  <!-- Deps tracked from kit-kernel's all-deps (must match its headers). Add more
+       filters as needed. Pull after kit-kernel-deps.packman.xml (needs kit_sdk). -->
+  <import path="../_build/target-deps/kit_sdk_${config}/dev/all-deps.packman.xml">
+    <filter include="omni_client_library" />
+  </import>
+  <dependency name="omni_client_library" linkPath="../_build/target-deps/client-library" />
+</project>

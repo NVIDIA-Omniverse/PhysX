@@ -55,6 +55,15 @@ namespace physx
                     ObjectIdMap::const_iterator it = entries->begin();
                     while (it != entries->end())
                     {
+                        // The object database can hold a kInvalidObjectId entry, and getRecords() is
+                        // only CARB_ASSERT-guarded - a no-op in release. Skip ids that cannot index
+                        // the record array instead of reading far out of bounds.
+                        if (size_t(it->second) >= db.getRecords().size())
+                        {
+                            it++;
+                            continue;
+                        }
+
                         const InternalDatabase::Record& rec = db.getRecords()[size_t(it->second)];
                         if (rec.mType == ePTActor)
                         {

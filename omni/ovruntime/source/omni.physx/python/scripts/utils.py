@@ -345,30 +345,6 @@ def hasAPI(name, prim):
     return foundSchema
 
 
-def descendantHasAPI(name, prim):
-    children = prim.GetChildren()
-    if prim.HasAPI(name):
-        return True
-    elif children:
-        if prim.HasAttribute('xformOp:reset'):  # if this prim has op:reset, ignore its descendants
-            return False
-        for i in children:
-            result = descendantHasAPI(name, i)
-            if result:
-                return True
-    return False
-
-
-def ancestorHasAPI(name, prim):
-    if prim.HasAPI(name):
-        return True
-    elif prim.GetParent():
-        if prim.HasAttribute('xformOp:reset'):  # if this prim has op:reset, ignore its ancestors
-            return False
-        return ancestorHasAPI(name, prim.GetParent())
-    return False
-
-
 def addPlaneCollider(stage, prim_path, upAxis):
     plane = UsdGeom.Plane.Define(stage, prim_path)
     plane.CreateAxisAttr().Set(upAxis)
@@ -452,8 +428,6 @@ def createJoint(stage, joint_type, from_prim, to_prim):
         component.CreateAxisAttr("X")
     elif joint_type == "Distance":
         component = UsdPhysics.DistanceJoint.Define(stage, joint_path)
-        component.CreateMinDistanceAttr(0.0)
-        component.CreateMaxDistanceAttr(0.0)
     elif joint_type == "Gear":
         component = PhysxSchema.PhysxPhysicsGearJoint.Define(stage, joint_path)
     elif joint_type == "RackAndPinion":

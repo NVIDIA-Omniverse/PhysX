@@ -6,11 +6,22 @@
 
 #include "../common/TestHelpers.h"
 
+#include <common/utilities/PhysXErrorCallback.h>
 #include <omni/physx/IPhysx.h>
 #include <private/omni/physx/IPhysxTests.h>
 #include <omni/physx/IPhysxSimulation.h>
 
 #include "PhysicsTools.h"
+
+
+TEST_CASE("PhysX abort without an error event stream",
+          "[omniphysics]"
+          "[component=OmniPhysics][owner=aborovicka][priority=mandatory]")
+{
+    CarbPhysXErrorCallback errorCallback;
+    CHECK_NOTHROW(errorCallback.reportError(
+        physx::PxErrorCode::eABORT, "Test abort without an event stream", __FILE__, __LINE__));
+}
 
 
 //-----------------------------------------------------------------------------

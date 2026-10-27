@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-#
+# SPDX-License-Identifier: Apache-2.0
 
 import omni.kit.app
 from pxr import Gf, UsdGeom, PhysxSchema, Sdf, UsdLux, Usd, UsdPhysics, Vt
@@ -186,6 +185,10 @@ class DeformableVisualizationTestKitStage(PhysicsKitStageAsyncTestCase):
     def get_proxy_attachment_path(self, path: Sdf.Path) -> Sdf.Path:
         path_mangled = self.get_session_layer_xform_path(path)
         return path_mangled.AppendChild("_attachment")
+
+    def get_proxy_collision_filter_path(self, path: Sdf.Path) -> Sdf.Path:
+        path_mangled = self.get_session_layer_xform_path(path)
+        return path_mangled.AppendChild("_collision_filter")
 
     def is_skin_mesh_shown(self, skin_mesh_path: Sdf.Path):
         imageable = UsdGeom.Imageable.Get(self._stage, skin_mesh_path)
@@ -465,3 +468,68 @@ class DeformableVisualizationTestKitStage(PhysicsKitStageAsyncTestCase):
             self._settings.set(pb.SETTING_DISPLAY_DEFORMABLE_ATTACHMENTS, True)
             await self.wait(2)
             self.assertTrue(self.is_prim_valid(self._stage, proxy_attachment_path))
+
+    async def test_collision_filter_viz_invalid_target(self):
+        stage = await self.new_stage()
+
+        UsdPhysics.Scene.Define(stage, "/physicsScene")
+
+        transform = create_transform(translate = Gf.Vec3d(1.0), scale = Gf.Vec3d(5.0))
+        simmesh = setup_simmesh(stage, "/tetMesh", transform, add_collision = True)
+        simmesh.GetPrim().ApplyAPI("OmniPhysicsDeformableBodyAPI")
+
+        # resolves to a prim but is not a collision filter target, so it has no target info
+        invalid_target = UsdGeom.Xform.Define(stage, "/invalidTarget")
+
+        collision_filter_path = Sdf.Path("/collisionFilter")
+        collision_filter = stage.DefinePrim(collision_filter_path, "OmniPhysicsElementCollisionFilter")
+        collision_filter.GetAttribute("omniphysics:filterEnabled").Set(True)
+        collision_filter.GetRelationship("omniphysics:src0").SetTargets([simmesh.GetPath()])
+        collision_filter.GetRelationship("omniphysics:src1").SetTargets([invalid_target.GetPath()])
+
+        await self._wait_cooking_finished()
+
+        self._settings.set(pb.SETTING_DISPLAY_DEFORMABLES, pb.VisualizerMode.ALL)
+        self._settings.set(pb.SETTING_DISPLAY_DEFORMABLE_ATTACHMENTS, True)
+        await self.wait(2)
+
+        proxy_collision_filter_path = self.get_proxy_collision_filter_path(collision_filter_path)
+        self.assertFalse(self.is_prim_valid(stage, proxy_collision_filter_path))
+
+        # making the target valid must bring the proxy back
+        UsdPhysics.CollisionAPI.Apply(invalid_target.GetPrim())
+        await self.wait(2)
+
+        self.assertTrue(self.is_prim_valid(stage, proxy_collision_filter_path))
+
+    async def test_attachment_viz_invalid_target(self):
+        stage = await self.new_stage()
+
+        UsdPhysics.Scene.Define(stage, "/physicsScene")
+
+        transform = create_transform(translate = Gf.Vec3d(1.0), scale = Gf.Vec3d(5.0))
+        simmesh = setup_simmesh(stage, "/tetMesh", transform, add_collision = True)
+        simmesh.GetPrim().ApplyAPI("OmniPhysicsDeformableBodyAPI")
+
+        # a Scope is neither xformable nor a deformable, so it has no target info
+        invalid_target = UsdGeom.Scope.Define(stage, "/invalidTarget")
+
+        attachment_path = Sdf.Path("/attachment")
+        attachment = stage.DefinePrim(attachment_path, "OmniPhysicsVtxXformAttachment")
+        attachment.GetRelationship("omniphysics:src0").SetTargets([simmesh.GetPath()])
+        attachment.GetRelationship("omniphysics:src1").SetTargets([invalid_target.GetPath()])
+
+        await self._wait_cooking_finished()
+
+        self._settings.set(pb.SETTING_DISPLAY_DEFORMABLES, pb.VisualizerMode.ALL)
+        self._settings.set(pb.SETTING_DISPLAY_DEFORMABLE_ATTACHMENTS, True)
+        await self.wait(2)
+
+        proxy_attachment_path = self.get_proxy_attachment_path(attachment_path)
+        self.assertFalse(self.is_prim_valid(stage, proxy_attachment_path))
+
+        # retyping the target to an xformable must bring the proxy back
+        UsdGeom.Xform.Define(stage, invalid_target.GetPath())
+        await self.wait(2)
+
+        self.assertTrue(self.is_prim_valid(stage, proxy_attachment_path))

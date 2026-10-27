@@ -76,7 +76,6 @@ bool BaseDeformableMaterialView::check() const
 
 void BaseDeformableMaterialView::release()
 {
-    mSim = nullptr;
     delete this;
 }
 

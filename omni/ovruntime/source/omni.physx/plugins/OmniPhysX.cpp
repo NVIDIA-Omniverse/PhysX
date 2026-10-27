@@ -173,6 +173,12 @@ void OmniPhysX::resetSimulation()
     if (!omniPhysX.getCachedSettings().disableResetOnStop && omniPhysX.getISettings()->getAsBool(kSettingResetOnStop))
         db.resetStartProperties(useUsdUpdate, useUsdVelocitiesUpdate, outputVelocitiesLocalSpace);
 
+    // resetStartProperties() authors to USD, and the change notices sent when its SdfChangeBlock
+    // closes can re-enter physics and tear down or re-create the PhysX SDK together with the async
+    // cooking singleton, so the pointer fetched above may be dangling by now. Re-fetch it.
+    // blockUSDUpdate() is a counter guarded against underflow, so unbalancing the pair against a
+    // freshly created singleton is harmless.
+    cookingDataAsync = omniPhysX.getPhysXSetup().getCookingDataAsync();
     if (cookingDataAsync)
     {
         cookingDataAsync->blockUSDUpdate(false); // needs to be called before releasePhysicsObjects tears the cooking down
@@ -558,11 +564,13 @@ void OmniPhysX::subscribeToSettingsChangeEvents()
         [](const carb::dictionary::Item* changedItem, carb::dictionary::ChangeEventType eventType, void* userData) {
             OmniPhysX& omniPhysX = OmniPhysX::getInstance();
             carb::dictionary::IDictionary* dict = carb::getCachedInterface<carb::dictionary::IDictionary>();
-            omniPhysX.mCachedSettings.defaultSimulator = dict->getStringBuffer(changedItem);
+            const char* defaultSimulator = dict->getStringBuffer(changedItem);
+            omniPhysX.mCachedSettings.defaultSimulator = defaultSimulator ? defaultSimulator : "";
             UsdLoad::getUsdLoad()->changeDefaultSimulator(omniPhysX.mCachedSettings.defaultSimulator);
         },
         nullptr);
-    mCachedSettings.defaultSimulator = mISettings->getStringBuffer(kSettingDefaultSimulator);
+    const char* defaultSimulator = mISettings->getStringBuffer(kSettingDefaultSimulator);
+    mCachedSettings.defaultSimulator = defaultSimulator ? defaultSimulator : "";
     mSubscribedSettings.push_back(subID);
 
     subID = mISettings->subscribeToNodeChangeEvents(

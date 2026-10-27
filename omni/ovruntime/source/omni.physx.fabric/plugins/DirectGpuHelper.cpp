@@ -150,6 +150,16 @@ bool DirectGpuHelper::prepareBuffers(omni::fabric::StageReaderWriter& srw, bool 
         return true;
     }
 
+    // Bail out before the expensive part if we cannot finish the rebuild anyway. mNeedResync stays
+    // set on every early return below, so a rebuild that is doomed to fail would otherwise re-run
+    // releaseBuffers() plus a getPhysXPtr() scan over every registered body on every single update.
+    // That matters because mNeedResync is now also set on simulation stop and on object destruction,
+    // which is exactly when the CUDA context manager tends to be unavailable.
+    if (!FabricManager::getCudaContextManager())
+    {
+        return false;
+    }
+
     releaseBuffers();
 
     IPhysx* iPhysX = carb::getCachedInterface<IPhysx>();
@@ -275,6 +285,7 @@ bool DirectGpuHelper::prepareBuffers(omni::fabric::StageReaderWriter& srw, bool 
         return false;
 
     PxScopedCudaLock _lock(*cudaContextManager);
+    omni::physx::cudaShimWrappers::CudaContextGuard _ctxGuard(cudaContextManager->getContext());
 
     // allocate articulation buffers
     if (mNumArtis > 0)
@@ -538,6 +549,7 @@ void DirectGpuHelper::releaseBuffers()
     if (cudaContextManager)
     {
         PxScopedCudaLock _lock(*cudaContextManager);
+        omni::physx::cudaShimWrappers::CudaContextGuard _ctxGuard(cudaContextManager->getContext());
 
         CHECK_CUDA_SHIM(getCudaShim()->memFree(static_cast<uintptr_t>(mArtiIndicesDev), nullptr));
         mArtiIndicesDev = 0;
@@ -629,7 +641,16 @@ void DirectGpuHelper::clear()
 
 void DirectGpuHelper::update(omni::fabric::StageReaderWriter& srw, bool forceUpdate)
 {
-    uint64_t timestamp = mPhysxSimulationInterface->getSimulationTimestamp();
+    // Re-fetch rather than trust mPhysxSimulationInterface: it is cached once at construction time,
+    // but this helper can outlive an unload/reload of the plugin that implements IPhysxSimulation
+    // (e.g. simulation stop/detach ordering), which would leave it dangling (NVBugs 6583741).
+    omni::physx::IPhysxSimulation* physxSimulationInterface = carb::getCachedInterface<omni::physx::IPhysxSimulation>();
+    if (!physxSimulationInterface)
+    {
+        return;
+    }
+
+    uint64_t timestamp = physxSimulationInterface->getSimulationTimestamp();
     //printf("~!~!~! Update called at step %u\n", unsigned(timestamp));
 
     // The PhysX direct GPU API needs a warm start.
@@ -638,11 +659,13 @@ void DirectGpuHelper::update(omni::fabric::StageReaderWriter& srw, bool forceUpd
     {
         // get current settings
         carb::settings::ISettings* iSettings = carb::getCachedInterface<carb::settings::ISettings>();
+        if (!iSettings)
+        {
+            return;
+        }
         bool updateTransforms = iSettings->getAsBool(kSettingFabricUpdateTransformations);
         bool updateVelocities = iSettings->getAsBool(kSettingFabricUpdateVelocities);
         bool fullFabricGpuInterop = iSettings->getAsBool(kSettingFabricUseGPUInterop);
-
-        uint64_t timestamp = mPhysxSimulationInterface->getSimulationTimestamp();
 
         if (updateTransforms || updateVelocities)
         {
@@ -652,7 +675,7 @@ void DirectGpuHelper::update(omni::fabric::StageReaderWriter& srw, bool forceUpd
                 //printf("~!~!~! Updating at step %u\n", unsigned(timestamp));
                 fetchRigidBodyData(srw, updateTransforms, updateVelocities, fullFabricGpuInterop);
 
-                PauseChangeTrackingScope changeTrackingPauseScope(mPhysxSimulationInterface);
+                PauseChangeTrackingScope changeTrackingPauseScope(physxSimulationInterface);
 
                 updateRigidBodies(srw, updateTransforms, updateVelocities, fullFabricGpuInterop);
 
@@ -687,6 +710,7 @@ void DirectGpuHelper::fetchRigidBodyData(omni::fabric::StageReaderWriter& srw, b
         return;
 
     PxScopedCudaLock _lock(*cudaContextManager);
+    omni::physx::cudaShimWrappers::CudaContextGuard _ctxGuard(cudaContextManager->getContext());
 
     if (mNumArtis > 0 && mArtiIndicesDev)
     {
@@ -918,6 +942,7 @@ void DirectGpuHelper::applyRigidBodiesToFabric_GPU(omni::fabric::StageReaderWrit
         return;
 
     PxScopedCudaLock _lock(*cudaContextManager);
+    omni::physx::cudaShimWrappers::CudaContextGuard _ctxGuard(cudaContextManager->getContext());
     int deviceId = -1;
     {
         int st = 0;

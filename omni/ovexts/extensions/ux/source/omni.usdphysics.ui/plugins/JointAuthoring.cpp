@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
-//
+// SPDX-License-Identifier: Apache-2.0
 
 #include "UsdPCH.h"
 
@@ -698,8 +697,15 @@ void JointAuthoringManager::parseStage(PXR_NS::UsdStageWeakPtr stage)
     PXR_NS::UsdStageCache& cache = PXR_NS::UsdUtilsStageCache::Get();
     omni::fabric::UsdStageId stageId = { static_cast<uint64_t>(cache.GetId(stage).ToLongInt()) };
     omni::fabric::IStageReaderWriter* iStageReaderWriter = carb::getCachedInterface<omni::fabric::IStageReaderWriter>();
+    // The Fabric stage-reader-writer provider is not loaded in minimal extension-test apps
+    // (exttest_*). Without this guard iStageReaderWriter->get() dereferences a null interface
+    // pointer (read of the 'get' member at offset 0x8), crashing on stage open (NvBugs 6224624).
+    if (!iStageReaderWriter)
+        return;
     omni::fabric::StageReaderWriterId stageInProgress = iStageReaderWriter->get(stageId);
     usdrt::UsdStageRefPtr usdrtStage = usdrt::UsdStage::Attach(stageId, stageInProgress);
+    if (!usdrtStage)
+        return;
 
     for (auto& usdrtPath : usdrtStage->GetPrimsWithTypeName(usdrt::TfToken("UsdPhysicsJoint")))
     {

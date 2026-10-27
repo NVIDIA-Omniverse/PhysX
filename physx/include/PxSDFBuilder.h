@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef PX_SDF_BUILDER_H
 #define PX_SDF_BUILDER_H
@@ -45,6 +22,14 @@ namespace physx
 
 /**
 \brief Utility class to compute an SDF on the GPU
+
+\note The sign of the SDF (inside vs. outside) is derived from the triangle winding of the input mesh.
+Triangles must be wound consistently such that their normals, (v1 - v0).cross(v2 - v0) for a triangle
+(v0, v1, v2), point away from the enclosed volume, i.e. counter-clockwise vertex order when seen from
+outside. The builder does not analyze or repair the winding; inverted winding produces an inverted SDF.
+Cooking through #PxCreateTriangleMesh() or #PxCookTriangleMesh() with a #PxSDFDesc normalizes the winding
+of watertight, single-component meshes automatically; clients calling the builder directly must provide
+correctly wound triangles.
 */
 class PxSDFBuilder
 {
@@ -54,7 +39,7 @@ public:
 	\brief Constructs a dense grid SDF for a triangle mesh using the GPU
 	\param[in] vertices The vertices of the triangle mesh
 	\param[in] numVertices The number of vertices
-	\param[in] indices The triangle indices
+	\param[in] indices The triangle indices. Triangles must be wound outward (see class note)
 	\param[in] numTriangleIndices The number of triangle indices
 	\param[in] width The number of samples along the x direction of the resulting SDF volume
 	\param[in] height The number of samples along the y direction of the resulting SDF volume
@@ -74,7 +59,7 @@ public:
 	\brief Constructs a sparse grid SDF for a triangle mesh using the GPU
 	\param[in] vertices The vertices of the triangle mesh
 	\param[in] numVertices The number of vertices
-	\param[in] indices The triangle indices
+	\param[in] indices The triangle indices. Triangles must be wound outward (see class note)
 	\param[in] numTriangleIndices The number of triangle indices
 	\param[in] width The number of samples along the x direction of the resulting SDF volume
 	\param[in] height The number of samples along the y direction of the resulting SDF volume

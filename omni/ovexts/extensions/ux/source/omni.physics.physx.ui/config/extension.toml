@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 [package]
 title = "Physics Umbrella PhysX UI Extension"
 description="Adds support for multiphysics workflows for PhysX."
@@ -7,7 +10,7 @@ readme = "docs/README.md"
 repository = ""
 keywords = ["physics", "ui"]
 category = "simulation"
-version = "110.1.11"
+version = "110.3.2"
 icon = "data/images/icon.png"
 preview_image = "data/images/preview.png"
 
@@ -18,13 +21,13 @@ usd = true
 
 [dependencies]
 "omni.usd" = {}
-"omni.physics.isaacsimready" = { version = "110.1.11", exact = true }
-"omni.physics.physx" = { version = "110.1.11", exact = true }
-"omni.usd.schema.physx" = { version = "110.1.11", exact = true }
+"omni.physics.isaacsimready" = { version = "110.3.2", exact = true }
+"omni.physics.physx" = { version = "110.3.2", exact = true }
+"omni.usd.schema.physx" = { version = "110.3.2", exact = true }
 "omni.usd.schema.newton" = {}
-"omni.physx" = { version = "110.1.11", exact = true }
-"omni.physx.ui" = { version = "110.1.11", exact = true }
-"omni.kit.property.physics" = { version = "110.1.11", exact = true }
+"omni.physx" = { version = "110.3.2", exact = true }
+"omni.physx.ui" = { version = "110.3.2", exact = true }
+"omni.kit.property.physics" = { version = "110.3.2", exact = true }
 
 [[python.module]]
 name = "omni.physics.physxui"

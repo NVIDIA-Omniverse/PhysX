@@ -113,6 +113,11 @@ struct CookingComputeService : public ICookingComputeService
             mPxCudaContextManager->release();
             mPxCudaContextManager = nullptr;
         }
+        for (::physx::PxCudaContextManager* retired : mRetiredContextManagers)
+        {
+            retired->release();
+        }
+        mRetiredContextManagers.clear();
         mPxFoundation->release();
         mPxFoundation = nullptr;
     }
@@ -313,34 +318,58 @@ struct CookingComputeService : public ICookingComputeService
             if (cudaContextManager == nullptr)
             {
                 lock_guard globalLock(mGlobalMutex);
-                omni::physx::PhysxFoundationDeviceOrdinal ordinal;
-                mPhysxFoundation->getSingleCudaContextManagerOrdinal(ordinal);
 
                 omni::physx::IPhysxPrivate* pxPrivate = carb::getCachedInterface<omni::physx::IPhysxPrivate>();
-                mUsingSharedContextManager = false;
                 if (pxPrivate)
                 {
-                    mPxCudaContextManager = pxPrivate->getCudaContextManager();
-                    if (mPxCudaContextManager)
+                    // Drop a stale borrowed pointer, but never overwrite a manager we own with null.
+                    if (::physx::PxCudaContextManager* shared = pxPrivate->getCudaContextManager())
                     {
+                        if (mPxCudaContextManager && !mUsingSharedContextManager && mPxCudaContextManager != shared)
+                        {
+                            mRetiredContextManagers.push_back(mPxCudaContextManager);
+                        }
+                        mPxCudaContextManager = shared;
                         mUsingSharedContextManager = true;
                     }
+                    else if (mUsingSharedContextManager)
+                    {
+                        mPxCudaContextManager = nullptr;
+                        mUsingSharedContextManager = false;
+                    }
+                }
+                else if (mUsingSharedContextManager)
+                {
+                    mPxCudaContextManager = nullptr;
+                    mUsingSharedContextManager = false;
                 }
 
-                if (mPhysxFoundation->createOrRefreshPxCudaContextManager(ordinal, mPxFoundation, mPxCudaContextManager, false))
+                if (mUsingSharedContextManager)
                 {
+                    // Owned by the provider: use as-is. Refreshing it here can release it, leaving the
+                    // provider with a dangling pointer that comes back to us on the next request.
                     cudaContextManager = mPxCudaContextManager;
                 }
                 else
                 {
-                    PhysxCookingComputeResult result;
-                    PhysxCookingComputeRequest requestCopy = request;
-                    result.request = &requestCopy;
-                    requestCopy.dataType = dataType;
-                    CARB_LOG_ERROR("Cannot create PxCudaContextManager");
-                    result.result = PhysxCookingResult::eERROR_CUDA_CONTEXT_MANAGER;
-                    result.request->onFinished(result);
-                    return false;
+                    omni::physx::PhysxFoundationDeviceOrdinal ordinal;
+                    mPhysxFoundation->getSingleCudaContextManagerOrdinal(ordinal);
+
+                    if (mPhysxFoundation->createOrRefreshPxCudaContextManager(ordinal, mPxFoundation, mPxCudaContextManager, false))
+                    {
+                        cudaContextManager = mPxCudaContextManager;
+                    }
+                    else
+                    {
+                        PhysxCookingComputeResult result;
+                        PhysxCookingComputeRequest requestCopy = request;
+                        result.request = &requestCopy;
+                        requestCopy.dataType = dataType;
+                        CARB_LOG_ERROR("Cannot create PxCudaContextManager");
+                        result.result = PhysxCookingResult::eERROR_CUDA_CONTEXT_MANAGER;
+                        result.request->onFinished(result);
+                        return false;
+                    }
                 }
             }
         }
@@ -1366,6 +1395,9 @@ private:
     std::unordered_map<std::string, std::unique_ptr<AsyncContext>> mAsyncContext;
     ::physx::PxCudaContextManager* mPxCudaContextManager = nullptr;
     bool mUsingSharedContextManager = false;
+    // Managers we created and then replaced with a provider-owned one. Released at teardown, not on
+    // replacement: in-flight cooking tasks may still hold the pointer.
+    std::vector<::physx::PxCudaContextManager*> mRetiredContextManagers;
     ::physx::PxDefaultAllocator mPxAllocator;
     ::physx::PxFoundation* mPxFoundation = nullptr;
     CarbPhysXErrorCallback mErrorCallback;

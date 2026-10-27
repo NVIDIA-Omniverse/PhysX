@@ -337,6 +337,102 @@ class TestHeterogeneousBaseArticulations(GridTestBase):
 
 # ---------------------------------------------------------------------------
 # Test class
+# One view spanning articulations of different sizes: max_dofs/max_links are maxima, so indices
+# past an articulation's own count are padding with no prim path. Reading them fed a null
+# straight into std::string (NvBugs 6511065).
+
+class TestHeterogeneousCentroidalMomentumRejected(GridTestBase):
+    """Centroidal momentum must refuse a view whose articulations differ in size.
+
+    PhysX sizes centroidalMomentumMatrix 6 x (own dofs + 6). Reading it with the view-wide maximum
+    walks past the end of a smaller entry's cache, so unlike the per-DOF readers this one cannot
+    degrade to padding -- there is no single row stride that describes a mixed view. Only
+    homogeneous articulation views are supported (see the note on SimulationView.is_homogeneous).
+    """
+
+    def __init__(self, test_case, device_params):
+        grid_params = GridParams(4, 5.0)
+        sim_params = SimParams()
+        sim_params.gravity_dir = Gf.Vec3f(0.0, 0.0, 0.0)
+        sim_params.gravity_mag = 0.0
+        super().__init__(test_case, grid_params, sim_params, device_params)
+
+        asset_path = os.path.join(get_asset_root(), "Humanoid.usda")
+        self.create_actor_from_asset(self.env_template_path.AppendChild("Humanoid"),
+                                     Transform((1.0, 0.0, 1.5)), asset_path)
+        asset_path = os.path.join(get_asset_root(), "Ant.usda")
+        self.create_actor_from_asset(self.env_template_path.AppendChild("ant"),
+                                     Transform((-1.0, 0.0, 0.0)), asset_path)
+
+    def on_start(self, sim):
+        self.mixed = sim.create_articulation_view(["/envs/*/Humanoid/torso", "/envs/*/ant/torso"])
+        self.humanoids = sim.create_articulation_view("/envs/*/Humanoid/torso")
+
+    def on_physics_step(self, sim, stepno, dt):
+        if stepno == 2:
+            # Premise: the mixed view really is heterogeneous and the single-type one is not, so
+            # the assertions below turn on the gate rather than on something both views share.
+            self.test_case.assertFalse(self.mixed.is_homogeneous, "mixed view should not be homogeneous")
+            self.test_case.assertTrue(self.humanoids.is_homogeneous, "single-type view should be homogeneous")
+
+            with self.test_case.assertRaises(Exception):
+                self.mixed.get_articulation_centroidal_momentum()
+
+            # The single-type view is unaffected -- the gate rejects heterogeneity, not the API.
+            cmm = self.humanoids.get_articulation_centroidal_momentum()
+            self.test_case.assertIsNotNone(cmm)
+
+            self.finish()
+
+class TestRaggedArticulationPaths(GridTestBase):
+    def __init__(self, test_case, device_params):
+        grid_params = GridParams(4, 2.5)
+        super().__init__(test_case, grid_params, SimParams(), device_params)
+
+        for name in ("cabinet", "franka"):
+            asset_path = os.path.join(get_asset_root(), f"{name}.usda")
+            self.create_actor_from_asset(
+                self.env_template_path.AppendChild(name), Transform((0.0, 0.0, 1.0)), asset_path
+            )
+
+    def on_start(self, sim):
+        self.mixed = sim.create_articulation_view(["/envs/*/cabinet", "/envs/*/franka"])
+
+    def on_physics_step(self, sim, stepno, dt):
+        if stepno != 1:
+            return
+
+        view = self.mixed
+        dof_counts = [view.get_metatype(i).dof_count for i in range(view.count)]
+        link_counts = [view.get_metatype(i).link_count for i in range(view.count)]
+        # The case is only meaningful if the view really is ragged.
+        self.test_case.assertTrue(
+            any(dofs != view.max_dofs for dofs in dof_counts)
+            or any(links != view.max_links for links in link_counts)
+        )
+
+        # Reading these at all is the regression: before the null guard this crashed in strlen.
+        dof_paths = view.dof_paths
+        link_paths = view.link_paths
+
+        for i in range(view.count):
+            self.test_case.assertEqual(len(dof_paths[i]), view.max_dofs)
+            for j in range(view.max_dofs):
+                if j < dof_counts[i]:
+                    self.test_case.assertTrue(dof_paths[i][j].startswith("/"))
+                else:
+                    self.test_case.assertEqual(dof_paths[i][j], "")
+
+            self.test_case.assertEqual(len(link_paths[i]), view.max_links)
+            for j in range(view.max_links):
+                if j < link_counts[i]:
+                    self.test_case.assertTrue(link_paths[i][j].startswith("/"))
+                else:
+                    self.test_case.assertEqual(link_paths[i][j], "")
+
+        self.finish()
+
+
 # ---------------------------------------------------------------------------
 
 class PhysxTensorsHeterogeneousTests(unittest.TestCase):
@@ -385,3 +481,21 @@ class PhysxTensorsHeterogeneousTests(unittest.TestCase):
 
     def test_articulation_centroidal_momentum_gg(self):
         self._run_test(TestArticulationCentroidalMomentumAndMass(self, DeviceParams(True, True)))
+
+    def test_ragged_articulation_paths_cc(self):
+        self._run_test(TestRaggedArticulationPaths(self, DeviceParams(False, False)))
+
+    def test_ragged_articulation_paths_gc(self):
+        self._run_test(TestRaggedArticulationPaths(self, DeviceParams(True, False)))
+
+    def test_ragged_articulation_paths_gg(self):
+        self._run_test(TestRaggedArticulationPaths(self, DeviceParams(True, True)))
+
+    def test_heterogeneous_centroidal_momentum_rejected_cc(self):
+        self._run_test(TestHeterogeneousCentroidalMomentumRejected(self, DeviceParams(False, False)))
+
+    def test_heterogeneous_centroidal_momentum_rejected_gc(self):
+        self._run_test(TestHeterogeneousCentroidalMomentumRejected(self, DeviceParams(True, False)))
+
+    def test_heterogeneous_centroidal_momentum_rejected_gg(self):
+        self._run_test(TestHeterogeneousCentroidalMomentumRejected(self, DeviceParams(True, True)))

@@ -57,11 +57,31 @@ namespace omni
                 mAlignedPtrs = nullptr;                
             }
 
-            void preAllocate(size_t numPtrs)
+            bool preAllocate(size_t numPtrs)
             {
                 mAlignedSize = (sizeof(T) + INTERNAL_PTR_ALIGN) & ~(INTERNAL_PTR_ALIGN - 1);
+
+                // Guard against integer overflow in the size computation and against a failed
+                // allocation (e.g. a very large replication under host-memory pressure). Without
+                // this an out-of-memory silently produced a bogus aligned base pointer (the
+                // alignment math on a null malloc result yields ~INTERNAL_PTR_ALIGN) that the
+                // placement-new constructors then wrote through, crashing in
+                // InternalActor::InternalActor (NvBugs 6282059).
+                if (numPtrs == 0 || numPtrs > (((size_t)-1) - INTERNAL_PTR_ALIGN) / mAlignedSize)
+                {
+                    mPtrs = nullptr;
+                    mAlignedPtrs = nullptr;
+                    return false;
+                }
+
                 mPtrs = malloc(mAlignedSize * (numPtrs) + INTERNAL_PTR_ALIGN);
-                mAlignedPtrs = (T*)((size_t(mPtrs) + INTERNAL_PTR_ALIGN) & ~(INTERNAL_PTR_ALIGN - 1));                
+                if (!mPtrs)
+                {
+                    mAlignedPtrs = nullptr;
+                    return false;
+                }
+                mAlignedPtrs = (T*)((size_t(mPtrs) + INTERNAL_PTR_ALIGN) & ~(INTERNAL_PTR_ALIGN - 1));
+                return true;
             }
 
             const size_t getAlignedSize() const
@@ -113,29 +133,35 @@ namespace omni
 
         struct ReplicatorMemory
         {
-            void initialize(const MemoryDesc& memoryDescIn, uint32_t numReplications)
+            // Returns false if any required pool could not be allocated (out of memory). On
+            // failure the caller must not construct objects into the pools (see replicate()).
+            bool initialize(const MemoryDesc& memoryDescIn, uint32_t numReplications)
             {
                 memoryDesc = memoryDescIn;
+                bool ok = true;
+                // Note: '&& ok' is placed last so preAllocate() is always evaluated (no
+                // short-circuit), ensuring every pool that does allocate is tracked for cleanup.
                 if (memoryDesc.numActors)
-                    actorAllocator.preAllocate(memoryDesc.numActors * numReplications);
+                    ok = actorAllocator.preAllocate(memoryDesc.numActors * numReplications) && ok;
                 if (memoryDesc.numLinks)
-                    linkAllocator.preAllocate(memoryDesc.numLinks * numReplications);
+                    ok = linkAllocator.preAllocate(memoryDesc.numLinks * numReplications) && ok;
                 if (memoryDesc.numArticulations)
-                    articulationAllocator.preAllocate(memoryDesc.numArticulations * numReplications);
+                    ok = articulationAllocator.preAllocate(memoryDesc.numArticulations * numReplications) && ok;
                 if (memoryDesc.numArticulationJoints)
-                    articulationJointAllocator.preAllocate(memoryDesc.numArticulationJoints * numReplications);
+                    ok = articulationJointAllocator.preAllocate(memoryDesc.numArticulationJoints * numReplications) && ok;
                 if (memoryDesc.numJoints)
-                    jointAllocator.preAllocate(memoryDesc.numJoints * numReplications);
+                    ok = jointAllocator.preAllocate(memoryDesc.numJoints * numReplications) && ok;
                 if (memoryDesc.numShapes)
-                    shapeAllocator.preAllocate(memoryDesc.numShapes * numReplications);
+                    ok = shapeAllocator.preAllocate(memoryDesc.numShapes * numReplications) && ok;
                 if (memoryDesc.numMaterials)
-                    materialAllocator.preAllocate(memoryDesc.numMaterials * numReplications);
+                    ok = materialAllocator.preAllocate(memoryDesc.numMaterials * numReplications) && ok;
                 if (memoryDesc.numTendonAxis)
-                    tendonAxisAllocator.preAllocate(memoryDesc.numTendonAxis * numReplications);
+                    ok = tendonAxisAllocator.preAllocate(memoryDesc.numTendonAxis * numReplications) && ok;
                 if (memoryDesc.numTendonAttachments)
-                    tendonAttachmentAllocator.preAllocate(memoryDesc.numTendonAttachments * numReplications);
+                    ok = tendonAttachmentAllocator.preAllocate(memoryDesc.numTendonAttachments * numReplications) && ok;
                 if (memoryDesc.numMimicJoints)
-                    mimicJointAllocator.preAllocate(memoryDesc.numMimicJoints * numReplications);
+                    ok = mimicJointAllocator.preAllocate(memoryDesc.numMimicJoints * numReplications) && ok;
+                return ok;
             }
 
             InternalPtrAllocator<InternalActor> actorAllocator;
@@ -499,7 +525,7 @@ namespace omni
                     stageId, &attachedStage, &db, &physxSetup, sharedCollection, scene, objectDb,
                     materialResolveEnabled, numReplications, &contactReportMap, replicatePath, useFabricReplicate, &stageRw](
                         uint32_t i, bool recordsReady, size_t recordsStart, size_t recordsOffset,
-                        ProcessReplicationData& processReplicationData, ReplicatorMemory& replicatorMemory) -> void
+                        ProcessReplicationData& processReplicationData, ReplicatorMemory& replicatorMemory) -> bool
                 {
                     const SdfPath newReplicatePath = processReplicationData.newReplicatePath; 
 
@@ -964,8 +990,13 @@ namespace omni
                                     {
                                         if (!materialResolveEnabled)
                                         {
+                                            // Defer the shared-material update to the serial post-pass (materialPairs).
+                                            // Calling intMat->addShapeId() directly here races with the other replica
+                                            // worker threads (parallelFor) on the shared source material's mShapeIds
+                                            // vector, corrupting the heap (OMPE-97081).
                                             InternalMaterial* intMat = (InternalMaterial*)db.getInternalTypedRecord(ePTMaterial, cloneShape->mMaterialId);
-                                            intMat->addShapeId(outId);
+                                            if (intMat)
+                                                processReplicationData.materialPairs.push_back(std::make_pair(intMat, outId));
                                         }
                                         else
                                         {
@@ -1060,7 +1091,18 @@ namespace omni
                             PxBase& object = processReplicationData.collection->getObject(o);
                             processObjectMemoryDescFn(object, memoryDesc);
                         }
-                        replicatorMemory.initialize(memoryDesc, numReplications);
+                        if (!replicatorMemory.initialize(memoryDesc, numReplications))
+                        {
+                            // Out of host memory while pre-allocating the replication pools.
+                            // Bail before constructing anything so we don't placement-new into
+                            // an invalid pointer (NvBugs 6282059). The partially-allocated pools
+                            // are handed to the AttachedStage for cleanup by the caller.
+                            CARB_LOG_ERROR(
+                                "PhysXReplicator: out of memory pre-allocating replication buffers "
+                                "(%u replications). Replication aborted.",
+                                numReplications);
+                            return false;
+                        }
                         ReplicatorMemoryView memoryView(replicatorMemory, i);
                         for (uint32_t o = 0; o < nbObjects; o++)
                         {
@@ -1068,7 +1110,7 @@ namespace omni
                             processObjectFn(object, recordsIndex, memoryView, processReplicationData);
                         }
                         CARB_ASSERT(recordsIndex == 0);
-                    }                    
+                    }
 
                     // resolve material clone
                     for (const std::pair<InternalShape*, size_t>& shapePair : newShapeShapeIdTable)
@@ -1087,11 +1129,40 @@ namespace omni
                             }
                         }
                     }
+
+                    return true;
                 };
 
                 std::vector<ProcessReplicationData> replicationOutData(numReplications);
                 ReplicatorMemory replicatorMemory;
                 ITasking* tasking = carb::getCachedInterface<ITasking>();
+
+                // Hand ownership of every successfully allocated replication pool to the
+                // AttachedStage so it is freed on detach. Used on both the success path and the
+                // out-of-memory abort path (partial allocation), so no pool is leaked either way.
+                auto registerReplicatorPoolMemory = [&attachedStage, &replicatorMemory]()
+                {
+                    if (replicatorMemory.actorAllocator.getMemory())
+                        attachedStage->addReplicatorMemoryBlock(replicatorMemory.actorAllocator.getMemory());
+                    if (replicatorMemory.linkAllocator.getMemory())
+                        attachedStage->addReplicatorMemoryBlock(replicatorMemory.linkAllocator.getMemory());
+                    if (replicatorMemory.articulationAllocator.getMemory())
+                        attachedStage->addReplicatorMemoryBlock(replicatorMemory.articulationAllocator.getMemory());
+                    if (replicatorMemory.articulationJointAllocator.getMemory())
+                        attachedStage->addReplicatorMemoryBlock(replicatorMemory.articulationJointAllocator.getMemory());
+                    if (replicatorMemory.jointAllocator.getMemory())
+                        attachedStage->addReplicatorMemoryBlock(replicatorMemory.jointAllocator.getMemory());
+                    if (replicatorMemory.shapeAllocator.getMemory())
+                        attachedStage->addReplicatorMemoryBlock(replicatorMemory.shapeAllocator.getMemory());
+                    if (replicatorMemory.materialAllocator.getMemory())
+                        attachedStage->addReplicatorMemoryBlock(replicatorMemory.materialAllocator.getMemory());
+                    if (replicatorMemory.tendonAxisAllocator.getMemory())
+                        attachedStage->addReplicatorMemoryBlock(replicatorMemory.tendonAxisAllocator.getMemory());
+                    if (replicatorMemory.tendonAttachmentAllocator.getMemory())
+                        attachedStage->addReplicatorMemoryBlock(replicatorMemory.tendonAttachmentAllocator.getMemory());
+                    if (replicatorMemory.mimicJointAllocator.getMemory())
+                        attachedStage->addReplicatorMemoryBlock(replicatorMemory.mimicJointAllocator.getMemory());
+                };
 
                 {
                     PHYSICS_PROFILE("PhysXReplicator::replicate::renameFnCb");
@@ -1164,7 +1235,14 @@ namespace omni
                     CARB_PROFILE_ZONE(0, "PhysXReplicator::replicate:proccessReplication");
                     const uint32_t minReplications = 128;
                     const size_t preRecordsSize = db.getRecords().size();
-                    processReplicationFn(0, false, 0, 0, replicationOutData[0], replicatorMemory);
+                    if (!processReplicationFn(0, false, 0, 0, replicationOutData[0], replicatorMemory))
+                    {
+                        // Out of memory while pre-allocating the replication pools. Nothing was
+                        // constructed and no records were added; register any pools that did
+                        // allocate for cleanup and abort gracefully instead of crashing.
+                        registerReplicatorPoolMemory();
+                        return false;
+                    }
                     const size_t postRecordsSize = db.getRecords().size();
                     const size_t recordsOffset = postRecordsSize - preRecordsSize;
                     const size_t newRecordsSize = postRecordsSize + recordsOffset * (numReplications - 1);
@@ -1202,7 +1280,6 @@ namespace omni
                 }
 
                 auto physxTask = tasking->addTask(Priority::eHigh, nullptr, [&] {
-                    PHYSICS_PROFILE("PhysXReplicator::replicate::addCollections");
                     CARB_PROFILE_ZONE(0, "PhysXReplicator::replicate::addCollections");
                     
                     const PxU32 size = PxU32(replicationOutData.size());
@@ -1261,13 +1338,12 @@ namespace omni
                 });
 
                 auto nonPhysxTask = tasking->addTask(Priority::eHigh, nullptr, [&] {
-                    PHYSICS_PROFILE("PhysXReplicator::replicate::proccessReplicationData");
                     CARB_PROFILE_ZONE(0, "PhysXReplicator::replicate:proccessReplicationData");
                     for (const ProcessReplicationData& data : replicationOutData)
                     {
                         for (InternalActor* ia : data.internalActors)
                         {
-                            scene->getInternalScene()->mActors.push_back(ia);
+                            scene->getInternalScene()->addActor(*ia);
                         }
                         for (const std::pair<PxRigidActor*, float>& cd : data.contactReports)
                         {
@@ -1294,26 +1370,7 @@ namespace omni
                 });
 
                 // main thread work
-                if (replicatorMemory.actorAllocator.getMemory())
-                    attachedStage->addReplicatorMemoryBlock(replicatorMemory.actorAllocator.getMemory());
-                if (replicatorMemory.linkAllocator.getMemory())
-                    attachedStage->addReplicatorMemoryBlock(replicatorMemory.linkAllocator.getMemory());
-                if (replicatorMemory.articulationAllocator.getMemory())
-                    attachedStage->addReplicatorMemoryBlock(replicatorMemory.articulationAllocator.getMemory());
-                if (replicatorMemory.articulationJointAllocator.getMemory())
-                    attachedStage->addReplicatorMemoryBlock(replicatorMemory.articulationJointAllocator.getMemory());
-                if (replicatorMemory.jointAllocator.getMemory())
-                    attachedStage->addReplicatorMemoryBlock(replicatorMemory.jointAllocator.getMemory());
-                if (replicatorMemory.shapeAllocator.getMemory())
-                    attachedStage->addReplicatorMemoryBlock(replicatorMemory.shapeAllocator.getMemory());
-                if (replicatorMemory.materialAllocator.getMemory())
-                    attachedStage->addReplicatorMemoryBlock(replicatorMemory.materialAllocator.getMemory());
-                if (replicatorMemory.tendonAxisAllocator.getMemory())
-                    attachedStage->addReplicatorMemoryBlock(replicatorMemory.tendonAxisAllocator.getMemory());
-                if (replicatorMemory.tendonAttachmentAllocator.getMemory())
-                    attachedStage->addReplicatorMemoryBlock(replicatorMemory.tendonAttachmentAllocator.getMemory());
-                if (replicatorMemory.mimicJointAllocator.getMemory())
-                    attachedStage->addReplicatorMemoryBlock(replicatorMemory.mimicJointAllocator.getMemory());
+                registerReplicatorPoolMemory();
 
                 physxTask.wait();
                 nonPhysxTask.wait();

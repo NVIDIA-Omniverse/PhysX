@@ -201,12 +201,14 @@ def _build_repeated_leaf_name_articulation(scenario, robot_path, transform):
                     base_link                 rigid body (inner, depth +3)
                         ToolJoint             RevoluteJoint (outer -> inner)
 
-    Both ``base_link`` prims are separate rigid bodies. The pattern
-    ``/envs/*/Robot/base_link`` used to be an unambiguous direct-child
-    match for the outer body; with recursive-leaf matching now the
-    default, it additionally matches the inner ``tool/base_link`` because
-    the leaf is searched subtree-wide. The two scenarios below pin down
-    both branches of that behavioural fork.
+    Both ``base_link`` prims are separate rigid bodies, and the inner one
+    is nested *inside* the outer's match (``Robot/base_link/tool/base_link``).
+    The pattern ``/envs/*/Robot/base_link`` returns only the outer,
+    shallowest body: recursive-leaf descent is pruned once a name matches, so
+    a same-named prim nested inside its own match is suppressed (shallowest
+    wins). The two scenarios below pin that down -- the default via
+    suppression, and ``recursiveLeafPatternMatch=false`` via strict
+    direct-child matching -- both yielding the single outer body.
     """
     stage = scenario.stage
     robot_path = Sdf.Path(robot_path)
@@ -638,27 +640,25 @@ class _RepeatedLeafNameBase(GridTestBase):
 
 
 class TestRigidBodyViewRepeatedLeafNameDefault(_RepeatedLeafNameBase):
-    """With recursive-leaf matching enabled (default), a pre-existing
-    pattern like ``/envs/*/Robot/base_link`` now matches BOTH the outer
-    ``base_link`` (depth +1) and the inner ``base_link`` under ``tool/``
-    (depth +3), because the named leaf is searched subtree-wide.
+    """With recursive-leaf matching enabled (default), a plain (non-alternation)
+    leaf like ``/envs/*/Robot/base_link`` matches ONLY the outer, shallowest
+    ``base_link`` (depth +1) -- the recursive descent is pruned on a match, so
+    the inner ``base_link`` nested under ``tool/`` (depth +3) is NOT re-matched.
 
-    This test pins down that behaviour so the compat implications of the
-    MR are explicit: callers who wrote this pattern expecting a single
-    direct-child match will see the view size grow.
+    This "shallowest wins" rule fixes the pivot/leaf-nested double-match bug
+    (a same-named prim nested inside a match was previously counted twice,
+    which broke create_rigid_contact_view's filter-count invariant). Callers
+    who genuinely want every nested occurrence must use an explicit ``**``.
     """
 
     def on_start(self, sim):
         rb_view = sim.create_rigid_body_view("/envs/*/Robot/base_link")
 
-        # Two bodies per env: outer base_link and tool/base_link.
-        expected_count = self.num_envs * 2
+        # One body per env: only the outer, shallowest base_link.
+        expected_count = self.num_envs
         self.check_rigid_body_view(rb_view, expected_count)
 
-        expected_paths = set()
-        for i in range(self.num_envs):
-            expected_paths.add(f"/envs/env{i}/Robot/base_link")
-            expected_paths.add(f"/envs/env{i}/Robot/base_link/tool/base_link")
+        expected_paths = {f"/envs/env{i}/Robot/base_link" for i in range(self.num_envs)}
         self.test_case.assertEqual(set(rb_view.prim_paths), expected_paths)
 
         self.finish()
@@ -788,14 +788,15 @@ class PhysxTensorsNestedRigidBodiesTests(unittest.TestCase):
     def test_rigid_body_view_standalone_wildcard_under_cluster_cpu(self):
         self._run_test(TestRigidBodyViewStandaloneWildcardUnderCluster(self, DeviceParams(False, False)))
 
-    # ---- repeated leaf name at two depths: behavioural-change pins ----
-    # These are the silent-behaviour-change cases: a scene where the same
-    # prim name is intentionally reused at different depths as two
-    # distinct rigid bodies. The default test pins what recursive-leaf
-    # matching does to a pre-existing `/Robot/base_link` pattern (it
-    # grows the view); the strict variant pins that the public setting
-    # `/physics/tensors/recursiveLeafPatternMatch=false` restores the
-    # legacy direct-children-only semantics.
+    # ---- repeated leaf name at two depths: same-name suppression pins ----
+    # A scene where the same prim name (`base_link`) is intentionally reused
+    # at two depths as two distinct rigid bodies, the inner nested inside the
+    # outer's match. The default test pins that recursive-leaf matching
+    # suppresses the inner same-named prim (shallowest wins), so a pre-existing
+    # `/Robot/base_link` pattern returns only the outer body -- it does NOT
+    # grow the view. The strict variant pins that the public setting
+    # `/physics/tensors/recursiveLeafPatternMatch=false` reaches the same
+    # single outer match via legacy direct-children-only semantics.
 
     def test_rigid_body_view_repeated_leaf_name_default_cpu(self):
         self._run_test(TestRigidBodyViewRepeatedLeafNameDefault(self, DeviceParams(False, False)))

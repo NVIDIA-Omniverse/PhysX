@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 [package]
 title = "Character Controller"
 description="Avatar movement controller"
@@ -6,7 +9,7 @@ keywords = ["physics", "physx", "charactercontroller"]
 category = "Simulation"
 authors = ["PhysX"]
 
-version = "110.1.11"
+version = "110.3.2"
 
 icon = "data/icon.png"
 preview_image = "data/preview.png"
@@ -20,12 +23,12 @@ python = true
 usd = true
 
 [dependencies]
-"omni.physx" = { version = "110.1.11", exact = true }
-"omni.physx.ui" = { version = "110.1.11", exact = true }
-"omni.physx.demos" = { version = "110.1.11", exact = true }
+"omni.physx" = { version = "110.3.2", exact = true }
+"omni.physx.ui" = { version = "110.3.2", exact = true }
+"omni.physx.demos" = { version = "110.3.2", exact = true }
 "omni.appwindow" = {}
 "omni.kit.viewport.utility" = {}
-"omni.physx.tests" = { version = "110.1.11", exact = true, optional=true }
+"omni.physx.tests" = { version = "110.3.2", exact = true, optional=true }
 "omni.kit.ui_test" = {}
 "omni.graph" = {}
 "omni.graph.core" = {}

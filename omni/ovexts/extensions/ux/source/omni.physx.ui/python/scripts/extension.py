@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-#
+# SPDX-License-Identifier: Apache-2.0
 
 import carb.settings
 import carb.profiler
@@ -33,6 +32,7 @@ from .physicsViewportInfoBox import *
 import omni.physxui.scripts.commands
 
 from .physxJoints import PhysxUIJointManager
+from ..ifacecache import release_interface_caches
 
 
 _extension_instance = None
@@ -247,3 +247,4 @@ class PhysxUIExtension(omni.ext.IExt):
 
         global _extension_instance
         _extension_instance = None
+        release_interface_caches()

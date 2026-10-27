@@ -417,6 +417,28 @@ class PhysicsSplineSurfaceVelocityTestMemoryStage(PhysicsMemoryStageBaseTestCase
         print(velocity)
         self.assertTrue(velocity[0] < 9.8)
 
+    def test_physics_spline_surface_velocity_rejects_short_bezier(self):
+        stage = self.new_stage()
+        self.setup_stage(stage)
+
+        curveGeom = UsdGeom.BasisCurves(stage.GetPrimAtPath("/kinematicActor/basisCurve"))
+        curveGeom.GetTypeAttr().Set(UsdGeom.Tokens.cubic)
+        curveGeom.GetBasisAttr().Set(UsdGeom.Tokens.bezier)
+        curveGeom.GetWrapAttr().Set(UsdGeom.Tokens.nonperiodic)
+        curveGeom.GetPointsAttr().Set([
+            Gf.Vec3f(-10.0, 0.0, 0.0),
+            Gf.Vec3f(0.0, 10.0, 0.0),
+            Gf.Vec3f(10.0, 0.0, 0.0),
+        ])
+        curveGeom.GetWidthsAttr().Set([1.0, 1.0, 1.0])
+        curveGeom.GetCurveVertexCountsAttr().Set([3])
+
+        with ExpectMessage(
+            self,
+            "BasisCurves prim /kinematicActor/basisCurve does not define enough control points for its basis and wrap mode.",
+        ):
+            self.step()
+
     def test_physics_spline_surface_velocity_invalid_geometry(self):
         stage = self.new_stage()
         size = 100.0

@@ -22,6 +22,9 @@ void startLoggerCheckForMultiple(std::vector<std::string>& messages,
                                  bool partialStringMatch);
 bool endLoggerCheck();
 bool isCudaLibPresent();
+size_t getSceneInternalActorCount(const PXR_NS::SdfPath& scenePath);
+bool getForceRigidActor(const PXR_NS::SdfPath& forcePath, void** outRigidActor);
+size_t getSceneInternalForceCount(const PXR_NS::SdfPath& scenePath);
 
 } // namespace physx
 } // namespace omni

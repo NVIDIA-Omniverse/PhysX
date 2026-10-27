@@ -1,7 +1,22 @@
+<!-- SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Changelog
 
 This document records all notable changes to ``omni.physx.graph`` extension.
 This project adheres to `Semantic Versioning <https://semver.org/>`_.
+
+## [110.3.2] - 2026-08-20
+Version bump.
+
+## [110.3.1] - 2026-08-11
+Version bump.
+
+## [110.3.0] - 2026-07-28
+Version bump.
+
+## [110.2.0] - 2026-06-09
+Version bump.
 
 ## [110.1.13] - 2026-06-04
 Version bump.

@@ -28,7 +28,10 @@ extern omni::physx::IPhysxJoint* g_physxJoint;
 // penultimate-level roots rather than only direct children. A bare `*`
 // leaf is always strict (direct children only) regardless of this
 // setting — callers who want to recurse below a prim must use `**`
-// explicitly. kDefaultRecursiveLeafPatternMatch is the single source of
+// explicitly. A leaf that recurs nested inside its own match is suppressed
+// (shallowest wins, never counted twice), and when the pattern itself contains
+// a `**` the leaf is direct-matched rather than descendant-searched, so no
+// duplicate paths are emitted. kDefaultRecursiveLeafPatternMatch is the single source of
 // truth: tensorsInit() passes it to setDefaultBool, and the runtime
 // reader in BaseSimulationView falls back to it when the key is not
 // present so the documented default does not depend on init order.

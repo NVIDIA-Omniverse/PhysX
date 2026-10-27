@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 [package]
 category = "Simulation"
 authors = ["PhysX"]
@@ -6,7 +9,7 @@ description = "Omniverse physics bundle extension."
 repository = ""
 keywords = ["physics", "physx", "vehicle"]
 
-version = "110.1.11"
+version = "110.3.2"
 
 icon = "data/icon.png"
 preview_image = "data/preview.png"
@@ -20,22 +23,22 @@ python = true
 usd = true
 
 [dependencies]
-"omni.physx" = { version = "110.1.11", exact = true }
-"omni.physics.physx" = { version = "110.1.11", exact = true }
-"omni.physics.stageupdate" = { version = "110.1.11", exact = true }
-"omni.physics.physx.ui" = { version = "110.1.11", exact = true }
-"omni.physx.ui" = { version = "110.1.11", exact = true }
-"omni.physx.vehicle" = { version = "110.1.11", exact = true }
-"omni.physx.demos" = { version = "110.1.11", exact = true }
-"omni.usdphysics" = { version = "110.1.11", exact = true }
-"omni.usdphysics.ui" = { version = "110.1.11", exact = true }
-"omni.physx.cct" = { version = "110.1.11", exact = true }
-"omni.physx.commands" = { version = "110.1.11", exact = true }
-"omni.physx.camera" = { version = "110.1.11", exact = true }
-"omni.physx.supportui" = { version = "110.1.11", exact = true }
-"omni.physx.graph" = { version = "110.1.11", exact = true }
-"omni.physx.asset_validator" = { version = "110.1.11", exact = true }
-"omni.physics.ui" = { version = "110.1.11", exact = true }
+"omni.physx" = { version = "110.3.2", exact = true }
+"omni.physics.physx" = { version = "110.3.2", exact = true }
+"omni.physics.stageupdate" = { version = "110.3.2", exact = true }
+"omni.physics.physx.ui" = { version = "110.3.2", exact = true }
+"omni.physx.ui" = { version = "110.3.2", exact = true }
+"omni.physx.vehicle" = { version = "110.3.2", exact = true }
+"omni.physx.demos" = { version = "110.3.2", exact = true }
+"omni.usdphysics" = { version = "110.3.2", exact = true }
+"omni.usdphysics.ui" = { version = "110.3.2", exact = true }
+"omni.physx.cct" = { version = "110.3.2", exact = true }
+"omni.physx.commands" = { version = "110.3.2", exact = true }
+"omni.physx.camera" = { version = "110.3.2", exact = true }
+"omni.physx.supportui" = { version = "110.3.2", exact = true }
+"omni.physx.graph" = { version = "110.3.2", exact = true }
+"omni.physx.asset_validator" = { version = "110.3.2", exact = true }
+"omni.physics.ui" = { version = "110.3.2", exact = true }
 
 [[test]]
 name = "startup"

@@ -1,8 +1,10 @@
 # SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-#
+# SPDX-License-Identifier: Apache-2.0
+
+import threading
 
 import carb
+import omni.kit.app
 import omni.usd
 import omni.physxsupportui.bindings._physxSupportUi as pxsupportui
 from omni.physxsupportui.bindings._physxSupportUi import PhysXInspectorModelState
@@ -47,6 +49,41 @@ class PhysicsInspectorTests(TestCase):
 
     def _get_inspector_state(self):
         return get_physx_supportui_private_interface().get_inspector_state()
+
+    async def test_inspector_setting_change_is_deferred(self):
+        self._settings.set_bool(pxsupportui.SETTINGS_PHYSICS_INSPECTOR_ENABLED, False)
+        await omni.kit.app.get_app().next_update_async()
+        self.assertEqual(self._get_inspector_state(), PhysXInspectorModelState.DISABLED)
+
+        self._settings.set_bool(pxsupportui.SETTINGS_PHYSICS_INSPECTOR_ENABLED, True)
+        self.assertEqual(self._get_inspector_state(), PhysXInspectorModelState.DISABLED)
+        self._settings.set_bool(pxsupportui.SETTINGS_PHYSICS_INSPECTOR_ENABLED, False)
+        self._settings.set_bool(pxsupportui.SETTINGS_PHYSICS_INSPECTOR_ENABLED, True)
+        await omni.kit.app.get_app().next_update_async()
+        self.assertEqual(self._get_inspector_state(), PhysXInspectorModelState.AUTHORING)
+
+        self._settings.set_bool(pxsupportui.SETTINGS_PHYSICS_INSPECTOR_ENABLED, False)
+        self.assertEqual(self._get_inspector_state(), PhysXInspectorModelState.AUTHORING)
+        await omni.kit.app.get_app().next_update_async()
+        self.assertEqual(self._get_inspector_state(), PhysXInspectorModelState.DISABLED)
+
+    async def test_background_setting_request_is_cleared_on_stage_close(self):
+        self._settings.set_bool(pxsupportui.SETTINGS_PHYSICS_INSPECTOR_ENABLED, False)
+        await omni.kit.app.get_app().next_update_async()
+        self.assertEqual(self._get_inspector_state(), PhysXInspectorModelState.DISABLED)
+
+        setting_thread = threading.Thread(
+            target=self._settings.set_bool,
+            args=(pxsupportui.SETTINGS_PHYSICS_INSPECTOR_ENABLED, True),
+        )
+        setting_thread.start()
+        setting_thread.join()
+
+        self.assertEqual(self._get_inspector_state(), PhysXInspectorModelState.DISABLED)
+        await omni.usd.get_context().close_stage_async()
+        await omni.kit.app.get_app().next_update_async()
+        self.assertFalse(self._settings.get_as_bool(pxsupportui.SETTINGS_PHYSICS_INSPECTOR_ENABLED))
+        self.assertEqual(self._get_inspector_state(), PhysXInspectorModelState.DISABLED)
 
     async def test_inspector_basic(self):
         self._settings.set_bool(pxsupportui.SETTINGS_PHYSICS_INSPECTOR_ENABLED, False)

@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-#
+# SPDX-License-Identifier: Apache-2.0
 
 import omni.ext
 import carb
@@ -131,15 +130,12 @@ class OmniPVDGizmoType(IntEnum):
     eTransparency = 6
 
 
-def _get_interface(func, acq):
-    if not hasattr(func, "iface"):
-        func.iface = acq()
-    return func.iface
+from ..ifacecache import cached_interface, release_interface_caches
 
 
 def get_physx_pvd_interface() -> IPhysXPvd:
     from omni.physxpvd.bindings._physxPvd import acquire_physx_pvd_interface
-    return _get_interface(get_physx_pvd_interface, acquire_physx_pvd_interface)
+    return cached_interface(get_physx_pvd_interface, acquire_physx_pvd_interface)
 
 
 def set_style(style):
@@ -2566,5 +2562,6 @@ class PhysxPvdExtension(omni.ext.IExt):
         # Remove the reference to the OmniPVD extension
         ################################################################################
         PhysxPvdExtension.instance = None
+        release_interface_caches()
 
 safe_import_tests("omni.physxpvd.scripts.tests")

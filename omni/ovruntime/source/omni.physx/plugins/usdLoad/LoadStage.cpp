@@ -144,7 +144,11 @@ void createBodies(AttachedStage& attachedStage, BodyMap& bodyMap, BodyVector& ad
             const SdfPath& bodyPath = ref.first;
             const ObjectId id = attachedStage.getPhysXPhysicsInterface()->createObject(attachedStage, bodyPath, *bodyDesc);
 
-            attachedStage.getObjectDatabase()->findOrCreateEntry(bodyPath, eBody, id);
+            // If PhysXUsdPhysicsInterface::setForceParseOnlySingleScene is used it may return kInvalidObjectId
+            if (id != kInvalidObjectId)
+            {
+                attachedStage.getObjectDatabase()->findOrCreateEntry(bodyPath, eBody, id);
+            }
         }
         ICE_FREE(bodyDesc);
     }

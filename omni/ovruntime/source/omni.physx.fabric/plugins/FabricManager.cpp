@@ -35,6 +35,8 @@
 
 #include <tbb/concurrent_hash_map.h>
 
+#include <functional>
+
 #include "gpu/PxPhysicsGpu.h"
 #include "gpu/PxGpu.h"
 
@@ -175,6 +177,10 @@ void onPhysXObjectDeletedCallback(const PXR_NS::SdfPath& ,
     FabricManager* fm = reinterpret_cast<FabricManager*>(userData);
     fm->setPtrDirty();
 
+    // The direct GPU helper caches the PxScene of the registered bodies. Destroying any PhysX
+    // object can release that scene, so force a resync to drop the cached pointer.
+    fm->setDirectGpuHelperDirty();
+
     // When a PhysX deformable body is destroyed, propagate dirty state to the corresponding
     // deformable body manager so that its per-scene sets get rebuilt on the next update().
     // Without this, the sets retain stale pointers to destroyed PhysX objects, causing
@@ -193,6 +199,7 @@ void onPhysXObjectDeleteAllCallback(void* userData)
 {
     FabricManager* fm = reinterpret_cast<FabricManager*>(userData);
     fm->setPtrDirty();
+    fm->setDirectGpuHelperDirty();
     fm->setSurfaceDeformableBodyDirty();
     fm->setVolumeDeformableBodyDirty();
 }
@@ -281,6 +288,12 @@ FabricManager::FabricManager()
         if (eventType == omni::physx::SimulationEvent::eStopped)
         {
             mPtrDirty = true;
+
+            // Stopping releases all PhysX objects, including the scene cached by the direct GPU
+            // helper. This has to be handled here as well as in the object destruction callbacks,
+            // because those are filtered by mObjectChangeNotificationsEnabled /
+            // stopCallbackWhenSimStopped and can be suppressed exactly when the simulation stops.
+            mDirectGpuHelper.invalidatePhysXPointers();
         }
         else if (eventType == omni::physx::SimulationEvent::eResumed)
         {
@@ -1837,6 +1850,30 @@ void FabricManager::saveToUsd()
 
             PrimBucketList primBuckets = stage.findPrims(requiredAll, requiredAny);
             size_t bucketCount = primBuckets.bucketCount();
+
+            // Gather all bodies to update first, so that nested (hierarchical) rigid bodies can be
+            // written out in parent-before-child order below - the buckets themselves are not in any
+            // hierarchy order.
+            struct RigidBodyUpdate
+            {
+                omni::fabric::Path fabricPath;
+                PXR_NS::SdfPath primPath;
+                PXR_NS::GfMatrix4d worldMatrix;
+                Float3 linVelocity;
+                Float3 angVelocity;
+            };
+
+            std::vector<RigidBodyUpdate> bodyUpdates;
+            std::unordered_map<PXR_NS::SdfPath, size_t, PXR_NS::SdfPath::Hash> primPathToIndex;
+
+            size_t totalBodyCount = 0;
+            for (size_t i = 0; i != bucketCount; i++)
+            {
+                totalBodyCount += stage.getPathArray(primBuckets, i).size();
+            }
+            bodyUpdates.reserve(totalBodyCount);
+            primPathToIndex.reserve(totalBodyCount);
+
             for (size_t i = 0; i != bucketCount; i++)
             {
                 gsl::span<const PXR_NS::GfMatrix4d> worldMatrices  =
@@ -1850,57 +1887,125 @@ void FabricManager::saveToUsd()
                 for (const omni::fabric::Path& path : paths)
                 {
                     const PXR_NS::SdfPath primPath = omni::fabric::toSdfPath(path);
-                    UsdPrim prim = gStage->GetPrimAtPath(primPath);
-
-                    const Float3& linVelocity = linVelocities[j];
-                    const Float3& angVelocity = angVelocities[j];
-
-                    const PXR_NS::GfMatrix4d mtxIn = xformCache.GetLocalToWorldTransform(prim);
-                    // scale comes from mtxIn, translation and rotation from the world matrix
-                    PXR_NS::GfTransform trIn(mtxIn);
-                    PXR_NS::GfTransform tr(worldMatrices[j]);
-                    trIn.SetRotation(tr.GetRotation());
-                    trIn.SetTranslation(tr.GetTranslation());
-                    const PXR_NS::GfMatrix4d mtx = trIn.GetMatrix();
-
-                    PXR_NS::UsdTimeCode timeCode = PXR_NS::UsdTimeCode::Default();
-                    const PXR_NS::GfMatrix4d parentToWorldMat = xformCache.GetParentToWorldTransform(prim);
-                    const PXR_NS::GfMatrix4d worldToParentMat = parentToWorldMat.GetInverse();
-
-                    omni::usd::UsdUtils::setLocalTransformMatrix(prim, mtx * worldToParentMat, timeCode, false, &changeBlock);
-
-                    TransformationCache::iterator it = mInitialTransformation.find(path);
-                    if (it != mInitialTransformation.end())
-                    {
-                        const PXR_NS::GfVec3d& pos = tr.GetTranslation();
-                        const PXR_NS::GfQuatd& ori = tr.GetRotation().GetQuat();
-                        const Float3 newInitPos = { float(pos[0]), float(pos[1]), float(pos[2]) };
-                        it->second.translation = newInitPos;
-                        const Float4 newInitOri = { float(ori.GetImaginary()[0]), float(ori.GetImaginary()[1]), float(ori.GetImaginary()[2]),
-                                                    float(ori.GetReal()) };
-                        it->second.orientation = newInitOri;
-                        const PXR_NS::GfVec3d scl = tr.GetScale();
-                        const Float3 scale = { float(scl[0]), float(scl[1]), float(scl[2]) };
-                        it->second.scale = scale;
-                    }
-
-                    {
-                        UsdAttribute velAttr = prim.GetAttribute(UsdPhysicsTokens->physicsVelocity);
-                        if (velAttr)
-                        {
-                            velAttr.Set((const GfVec3f&)linVelocity);
-                        }
-                    }
-                    {
-                        UsdAttribute velAttr = prim.GetAttribute(UsdPhysicsTokens->physicsAngularVelocity);
-                        if (velAttr)
-                        {
-                            velAttr.Set((const GfVec3f&)angVelocity);
-                        }
-                    }
-
+                    primPathToIndex[primPath] = bodyUpdates.size();
+                    bodyUpdates.push_back({ path, primPath, worldMatrices[j], linVelocities[j], angVelocities[j] });
                     j++;
                 }
+            }
+
+            std::vector<bool> processed(bodyUpdates.size(), false);
+            // Indexed by bodyUpdates index rather than keyed by path, to avoid per-body map
+            // allocations/hashing; identity-initialized so a malformed/cyclic prim hierarchy (which
+            // processBody() guards against via `processed`, but could still read an entry before it
+            // is written) never observes an uninitialized matrix.
+            std::vector<PXR_NS::GfMatrix4d> newWorldXform(bodyUpdates.size(), PXR_NS::GfMatrix4d(1.0));
+
+            PXR_NS::UsdTimeCode timeCode = PXR_NS::UsdTimeCode::Default();
+
+            std::function<void(size_t)> processBody = [&](size_t idx)
+            {
+                if (processed[idx])
+                    return;
+                // mark processed up-front to guard against malformed/cyclic prim hierarchies
+                processed[idx] = true;
+
+                RigidBodyUpdate& update = bodyUpdates[idx];
+                UsdPrim prim = gStage->GetPrimAtPath(update.primPath);
+
+                // A prim with resetXformStack set is authored as an absolute world transform - USD
+                // composition ignores the parent chain entirely for it - so its "local" matrix is
+                // just its desired world matrix, with no parent-relative correction applied.
+                PXR_NS::GfMatrix4d worldToParentMat(1.0);
+                UsdPrim parentPrim = prim.GetParent();
+                if (parentPrim && !xformCache.GetResetXformStack(prim))
+                {
+                    // Walk up past any intermediate (non-rigid-body) prims to find the nearest
+                    // ancestor that is also being updated this pass, so a body nested a few levels
+                    // below another moving body (e.g. body/plainXform/body) still gets its freshly
+                    // computed world transform instead of xformCache's stale, pre-update one. Bail
+                    // out (falling back to the direct-parent/xformCache computation below) if a
+                    // resetXformStack is hit first, since the chain up to that point does not
+                    // compose through the would-be ancestor.
+                    UsdPrim ancestor = parentPrim;
+                    size_t ancestorIdx = 0;
+                    bool foundUpdatingAncestor = false;
+                    while (ancestor && ancestor != gStage->GetPseudoRoot())
+                    {
+                        auto ancestorIt = primPathToIndex.find(ancestor.GetPrimPath());
+                        if (ancestorIt != primPathToIndex.end())
+                        {
+                            ancestorIdx = ancestorIt->second;
+                            foundUpdatingAncestor = true;
+                            break;
+                        }
+                        if (xformCache.GetResetXformStack(ancestor))
+                        {
+                            break;
+                        }
+                        ancestor = ancestor.GetParent();
+                    }
+
+                    if (foundUpdatingAncestor)
+                    {
+                        processBody(ancestorIdx);
+                        // relativeOld maps the ancestor's (still valid, unmoved-in-between) frame to
+                        // the direct parent's frame; combined with the ancestor's freshly computed
+                        // world transform this gives the direct parent's up-to-date world transform.
+                        const PXR_NS::GfMatrix4d relativeOld =
+                            xformCache.GetParentToWorldTransform(prim) * xformCache.GetLocalToWorldTransform(ancestor).GetInverse();
+                        worldToParentMat = (relativeOld * newWorldXform[ancestorIdx]).GetInverse();
+                    }
+                    else
+                    {
+                        worldToParentMat = xformCache.GetParentToWorldTransform(prim).GetInverse();
+                    }
+                }
+
+                const PXR_NS::GfMatrix4d mtxIn = xformCache.GetLocalToWorldTransform(prim);
+                // scale comes from mtxIn, translation and rotation from the world matrix
+                PXR_NS::GfTransform trIn(mtxIn);
+                PXR_NS::GfTransform tr(update.worldMatrix);
+                trIn.SetRotation(tr.GetRotation());
+                trIn.SetTranslation(tr.GetTranslation());
+                const PXR_NS::GfMatrix4d mtx = trIn.GetMatrix();
+                newWorldXform[idx] = mtx;
+
+                omni::usd::UsdUtils::setLocalTransformMatrix(prim, mtx * worldToParentMat, timeCode, false, &changeBlock);
+
+                TransformationCache::iterator it = mInitialTransformation.find(update.fabricPath);
+                if (it != mInitialTransformation.end())
+                {
+                    const PXR_NS::GfVec3d& pos = tr.GetTranslation();
+                    const PXR_NS::GfQuatd& ori = tr.GetRotation().GetQuat();
+                    const Float3 newInitPos = { float(pos[0]), float(pos[1]), float(pos[2]) };
+                    it->second.translation = newInitPos;
+                    const Float4 newInitOri = { float(ori.GetImaginary()[0]), float(ori.GetImaginary()[1]), float(ori.GetImaginary()[2]),
+                                                float(ori.GetReal()) };
+                    it->second.orientation = newInitOri;
+                    const PXR_NS::GfVec3d scl = tr.GetScale();
+                    const Float3 scale = { float(scl[0]), float(scl[1]), float(scl[2]) };
+                    it->second.scale = scale;
+                }
+
+                {
+                    UsdAttribute velAttr = prim.GetAttribute(UsdPhysicsTokens->physicsVelocity);
+                    if (velAttr)
+                    {
+                        velAttr.Set((const GfVec3f&)update.linVelocity);
+                    }
+                }
+                {
+                    UsdAttribute velAttr = prim.GetAttribute(UsdPhysicsTokens->physicsAngularVelocity);
+                    if (velAttr)
+                    {
+                        velAttr.Set((const GfVec3f&)update.angVelocity);
+                    }
+                }
+            };
+
+            for (size_t idx = 0; idx < bodyUpdates.size(); idx++)
+            {
+                processBody(idx);
             }
         }
 

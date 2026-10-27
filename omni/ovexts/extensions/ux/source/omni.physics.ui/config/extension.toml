@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 [package]
 title = "Physics UI extension"
 description="Adds UI elements for generic physics simulation."
@@ -7,7 +10,7 @@ readme = "docs/README.md"
 repository = ""
 keywords = ["physics", "ui"]
 category = "simulation"
-version = "110.1.11"
+version = "110.3.2"
 icon = "data/images/icon.png"
 preview_image = "data/images/preview.png"
 
@@ -18,8 +21,8 @@ usd = true
 
 [dependencies]
 "omni.ui" = {}
-"omni.physics" = { version = "110.1.11", exact = true }
-"omni.usdphysics.ui" = { version = "110.1.11", exact = true }
+"omni.physics" = { version = "110.3.2", exact = true }
+"omni.usdphysics.ui" = { version = "110.3.2", exact = true }
 "omni.kit.viewport.menubar.core" = {}
 "omni.kit.clipboard" = {}
 "omni.kit.notification_manager" = {}

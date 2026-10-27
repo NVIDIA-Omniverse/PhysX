@@ -98,16 +98,28 @@ void VolumeDeformableBodySet::releaseBuffers()
             if (volumeDeformableBody.stagingPointsDevMap[pathHandle])
                 PxCudaHelpersExt::freeDeviceBuffer(*cudaContextManager, volumeDeformableBody.stagingPointsDevMap[pathHandle]);
         }
+
+        // prepareBuffers() refills the map, a stale entry would be freed twice.
+        volumeDeformableBody.stagingPointsDevMap.clear();
     }
 
     if (mDeformableBodyGPUDataH)
+    {
         PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mDeformableBodyGPUDataH);
+        mDeformableBodyGPUDataH = nullptr;
+    }
 
     if (mPointsCopyEvent)
+    {
         cudaContextManager->getCudaContext()->eventDestroy(mPointsCopyEvent);
+        mPointsCopyEvent = nullptr;
+    }
 
     if (mDeformableBodyCopyStream)
+    {
         cudaContextManager->getCudaContext()->streamDestroy(mDeformableBodyCopyStream);
+        mDeformableBodyCopyStream = nullptr;
+    }
 }
 
 void VolumeDeformableBodySet::createFabricAttribute(omni::fabric::StageReaderWriter& srw, PxCudaContextManager* cudaContextManager, PXR_NS::SdfPath path, uint32_t numVertices, std::unordered_map<omni::fabric::Path, float3*>& stagingPointsDevMap)
@@ -185,6 +197,13 @@ void VolumeDeformableBodySet::updateInternalVolumeDeformableBodyData()
 
     if (!cudaContextManager)
         return;
+
+    // The copy stream and event only exist once prepareBuffers() succeeded.
+    if (!mDeformableBodyGPUDataH)
+    {
+        CARB_LOG_WARN_ONCE("VolumeDeformableBodySet::updateInternalVolumeDeformableBodyData: buffers not prepared, skipping.");
+        return;
+    }
 
     PxScopedCudaLock _lock(*cudaContextManager);
 
@@ -270,6 +289,12 @@ void VolumeDeformableBodySet::updateDeformableBodies(omni::fabric::StageReaderWr
 
     if (!cudaContextManager)
         return;
+
+    if (!mDeformableBodyGPUDataH)
+    {
+        CARB_LOG_WARN_ONCE("VolumeDeformableBodySet::updateDeformableBodies: buffers not prepared, skipping.");
+        return;
+    }
 
     PxScopedCudaLock _lock(*cudaContextManager);
     PxCudaContext* cudaContext = cudaContextManager->getCudaContext();
@@ -471,11 +496,9 @@ void VolumeDeformableBodyManager::registerDeformableBody(PXR_NS::UsdGeomXformCac
         iStageReaderWriter->getFabricId(stageInProgress), data.simMeshPrim.GetPath());
     iStageReaderWriter->createAttribute(stageInProgress, simMeshPathHandle, primType, omni::fabric::TypeC(primTypeType));
 
-    PositionCache::const_iterator fit = mInitialPositions.find(simMeshPathHandle);
-    if (fit == mInitialPositions.end())
-    {
-        mInitialPositions[simMeshPathHandle] = simMeshPoints;
-    }
+    // Reset on stop restores these. Re-reading on every registration is safe: fabric sets ePOINTS
+    // skip-write for the session, so USD keeps the authored points while the simulation runs.
+    mInitialPositions[simMeshPathHandle] = simMeshPoints;
 
     UsdGeomPointBased collMesh(data.collMeshPrim);
     if (collMesh)
@@ -490,11 +513,7 @@ void VolumeDeformableBodyManager::registerDeformableBody(PXR_NS::UsdGeomXformCac
             iStageReaderWriter->createAttribute(
                 stageInProgress, collMeshPathHandle, primType, omni::fabric::TypeC(primTypeType));
 
-            PositionCache::const_iterator fit = mInitialPositions.find(collMeshPathHandle);
-            if (fit == mInitialPositions.end())
-            {
-                mInitialPositions[collMeshPathHandle] = collMeshPoints;
-            }
+            mInitialPositions[collMeshPathHandle] = collMeshPoints;
 
             deformableBody.hasCollMesh = true;
         }
@@ -518,11 +537,7 @@ void VolumeDeformableBodyManager::registerDeformableBody(PXR_NS::UsdGeomXformCac
                 iStageReaderWriter->getFabricId(stageInProgress), data.skinMeshPrims[i].GetPath());
             iStageReaderWriter->createAttribute(stageInProgress, skinMeshPathHandle, primType, omni::fabric::TypeC(primTypeType));
 
-            PositionCache::const_iterator fit = mInitialPositions.find(skinMeshPathHandle);
-            if (fit == mInitialPositions.end())
-            {
-                mInitialPositions[skinMeshPathHandle] = points;
-            }
+            mInitialPositions[skinMeshPathHandle] = points;
         }
     }
 
@@ -538,6 +553,17 @@ bool VolumeDeformableBodyManager::prepareBuffers(omni::fabric::StageReaderWriter
 
     if (mIsDirty)
     {
+        IPhysxPrivate* iPhysXPrivate = carb::getCachedInterface<IPhysxPrivate>();
+        if (!iPhysXPrivate)
+        {
+            // Stay dirty and retry rather than run on unrefreshed snapshots.
+            CARB_LOG_WARN_ONCE("VolumeDeformableBodyManager::prepareBuffers: IPhysxPrivate is not available, skipping.");
+            return false;
+        }
+
+        // Destroying the sets runs releaseBuffers(), which frees stagingPointsDevMap entries by the
+        // mesh paths in data and skinMeshPrims. It has to run before those are refreshed below, or
+        // it looks up the new paths and leaks the device buffers held under the old ones.
         mVolumeDeformableBodySets.clear();
 
         std::vector<omni::fabric::Path> emptyPaths;
@@ -549,7 +575,31 @@ bool VolumeDeformableBodyManager::prepareBuffers(omni::fabric::StageReaderWriter
             PxDeformableVolume* deformableVolume = static_cast<PxDeformableVolume*>(iPhysX->getPhysXPtr(path, omni::physx::ePTDeformableVolume));
             if (deformableVolume)
             {
+                // data's buffers and spans belong to the internal body, which a destroy + re-create
+                // at this path frees. Refresh into a local: the getter no-ops when it finds no body.
+                InternalVolumeDeformableBodyData refreshed = {};
+                iPhysXPrivate->getInternalVolumeDeformableBodyData(
+                    (const usdparser::ObjectId)deformableVolume->userData, refreshed);
+                if (!refreshed.simMeshPrim)
+                {
+                    // Defensive: the actor and its internal body resolve through the same database
+                    // record, so no known path reaches this.
+                    CARB_LOG_WARN("VolumeDeformableBodyManager: no internal data for deformable body %s. "
+                                  "It will not be updated in Fabric until it is re-authored or the simulation is "
+                                  "restarted.",
+                                  path.GetText());
+                    continue;
+                }
+
                 it.second.physXPtr = deformableVolume;
+                it.second.data = refreshed;
+
+                // releaseBuffers() iterates this copy, not the span.
+                it.second.skinMeshPrims.assign(it.second.data.skinMeshPrims.begin(), it.second.data.skinMeshPrims.end());
+
+                // Derived from the snapshot, so it follows the refresh.
+                it.second.hasCollMesh = bool(UsdGeomPointBased(it.second.data.collMeshPrim)) &&
+                                        it.second.data.collMeshPrim != it.second.data.simMeshPrim;
 
                 PxScene* scene = deformableVolume->getScene();
                 if (scene)
@@ -569,12 +619,16 @@ bool VolumeDeformableBodyManager::prepareBuffers(omni::fabric::StageReaderWriter
             mVolumeDeformableBodies.erase(it);
         }
 
+        mIsDirty = false;
         for (auto& it : mVolumeDeformableBodySets)
         {
             it.second.prepareBuffers(srw);
-        }
 
-        mIsDirty = false;
+            // Retry on the next update when a set could not be prepared, e.g. because the CUDA
+            // context manager is not up yet.
+            if (!it.second.mDeformableBodyGPUDataH)
+                mIsDirty = true;
+        }
     }
 
     return true;

@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-#
+# SPDX-License-Identifier: Apache-2.0
 
 import omni.ext
 from omni.physx import get_physx_interface, get_physx_simulation_interface
@@ -10,6 +9,7 @@ from .propertyWidgetManager import PropertyWidgetManager
 from omni.physx.scripts.utils import safe_import_tests
 from .. import get_physx_camera_interface
 from ..bindings._physxCamera import release_physx_camera_interface, release_physx_camera_interface_scripting
+from ..ifacecache import release_interface_caches
 
 RUNNING_WTESTS = safe_import_tests("omni.physxcamera.scripts", ["tests"])
 DEMO_SCENES = "omni.physxcamera.scripts.samples"
@@ -60,3 +60,4 @@ class PhysxCameraExtension(omni.ext.IExt):
         self._physxCameraInterface = None
 
         demo.unregister(DEMO_SCENES)
+        release_interface_caches()

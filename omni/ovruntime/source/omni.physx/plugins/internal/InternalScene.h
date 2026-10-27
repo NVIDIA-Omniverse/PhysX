@@ -34,6 +34,7 @@
 #include <common/utilities/Utilities.h>
 
 
+#include <unordered_set>
 #include <vector>
 
 namespace omni
@@ -314,6 +315,27 @@ public:
         return mScene;
     }
 
+    void trackReleasedActiveActor(const ::physx::PxActor* actor)
+    {
+        if (actor)
+            mReleasedActiveActors.insert(actor);
+    }
+
+    bool hasReleasedActiveActors() const
+    {
+        return !mReleasedActiveActors.empty();
+    }
+
+    bool isReleasedActiveActor(const ::physx::PxActor* actor) const
+    {
+        return mReleasedActiveActors.find(actor) != mReleasedActiveActors.end();
+    }
+
+    void clearReleasedActiveActors()
+    {
+        mReleasedActiveActors.clear();
+    }
+
     uint32_t clampPosIterationCount(uint32_t inCount) const
     {
         return ::physx::PxClamp(inCount, mSceneDesc.minPosIterationCount, mSceneDesc.maxPosIterationCount);
@@ -386,8 +408,23 @@ public:
         }
     }
 
+    // Hands every force attached to `actor` over to `target`. mForces membership has to follow the
+    // body: the entry decides which scene applies the force each step, so a force left behind writes
+    // to an actor another scene now simulates (NVBugs 6583666).
+    void moveForcesForActor(const ::physx::PxRigidActor* actor, InternalScene& target, PhysXScene& targetPhysXScene);
+
     CUstream getDeformableCopyStream();
     void syncDeformableCopyStream(::physx::PxCudaContextManager* cudaContextManager);
+
+    // actors
+    // mActors owns the InternalActor entries of this scene. Membership has to stay in sync with
+    // InternalActor::mPhysXScene: the removal paths locate an actor through mPhysXScene, so an entry
+    // left behind in another scene's list becomes a dangling pointer once the actor is deleted
+    // (NVBugs 6504495).
+    void addActor(InternalActor& actor);
+
+    // Removes the actor from mActors. Returns false if it was not registered with this scene.
+    bool removeActor(const InternalActor& actor);
 
     // mimic joints
     void addMimicJoint(InternalMimicJoint&);
@@ -442,6 +479,7 @@ public:
 private:
     InternalVehicleContext mVehicleContext;
     ::physx::PxScene* mScene;
+    std::unordered_set<const ::physx::PxActor*> mReleasedActiveActors;
 
     typedef std::unordered_set<InternalMimicJoint*> MimicJointSet;
     MimicJointSet mMimicJointSet;
@@ -453,6 +491,17 @@ private:
     bool mDeformableCopyStreamDirty;
 };
 
+// Retargets every InternalForce back pointer naming actor0 to actor1 (null to drop it), across all
+// scenes.
+//
+// moveForcesForActor above keeps mForces membership with the body, so the owning scene is the
+// expected place to find a force. This sweep is the defensive counterpart: it does not depend on
+// that invariant holding, and it covers the release paths that have no InternalActor handle to
+// resolve a scene from - changeRigidActorType() releases sourceActor whether or not it is still in
+// a scene. Membership originally did not follow a simulation owner change at all, which is how a
+// force ended up registered with a different scene than InternalActor::mPhysXScene named; the
+// scene-scoped fixup then missed it and left mRigidActor naming a released actor (NVBugs 6583666).
+void swapForceActorsAllScenes(::physx::PxRigidActor* actor0, ::physx::PxRigidActor* actor1);
 
 } // namespace internal
 } // namespace physx

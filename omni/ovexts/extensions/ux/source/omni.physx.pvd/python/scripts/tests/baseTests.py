@@ -1,16 +1,16 @@
 # SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-#
-
+# SPDX-License-Identifier: Apache-2.0
 
 #from pxr import Gf, UsdGeom, UsdPhysics, PhysxSchema
 #import omni.physx
 from omni.physxtests.utils.physicsBase import PhysicsKitStageAsyncTestCase
+from omni.physxtests import utils
 from pathlib import Path
-from omni.physxpvd.bindings import _physxPvd
 import omni.usd
 import carb.settings
 import os
+import tempfile
+import unittest
 from pxr import Usd, UsdGeom, UsdPhysics, Gf, Sdf, Tf, UsdUtils, PhysxSchema
 
 from omni.physxpvd.scripts.extension import PhysxPvdExtension, get_physx_pvd_interface
@@ -169,6 +169,51 @@ class OmniPVDBaseTests(PhysicsKitStageAsyncTestCase):
         physxPvdInterface.load_ovd(filePathOVD)
         messages = physxPvdInterface.get_messages()
         self.assertTrue(len(messages)>0, f"No OVD messages found")
+
+    async def test_ovd_over_with_layer_creation_propagates_writer_failure(self):
+        ovd_path = str(Path(__file__).parent.parent.parent.parent.parent.joinpath("data/messages.ovd"))
+        omni_data_path = carb.tokens.get_tokens_interface().resolve("${omni_data}")
+
+        with tempfile.TemporaryDirectory(prefix="omnipvd_writer_failure_", dir=omni_data_path) as temp_dir:
+            temp_path = Path(temp_dir)
+
+            prototype_path = temp_path / "prototype.usda"
+            prototype_stage = Usd.Stage.CreateNew(prototype_path.as_posix())
+            prototype = UsdGeom.Xform.Define(prototype_stage, "/Prototype")
+            prototype_stage.SetDefaultPrim(prototype.GetPrim())
+            box = UsdGeom.Cube.Define(prototype_stage, "/Prototype/Box")
+            UsdPhysics.RigidBodyAPI.Apply(box.GetPrim())
+            prototype_stage.GetRootLayer().Save()
+            prototype_stage = None
+
+            input_path = temp_path / "input.usda"
+            input_stage = Usd.Stage.CreateNew(input_path.as_posix())
+            UsdGeom.Xform.Define(input_stage, "/World")
+            instance = UsdGeom.Xform.Define(input_stage, "/World/Instance").GetPrim()
+            instance.GetReferences().AddReference(prototype_path.as_posix())
+            instance.SetInstanceable(True)
+            input_stage.GetRootLayer().Save()
+
+            self.assertTrue(input_stage.GetPrimAtPath("/World/Instance/Box").IsInstanceProxy())
+            input_stage = None
+
+            expected_messages = [
+                "Prim still has physics schemas: /World/Instance/Box",
+                "Failed to verify the over layer",
+            ]
+            with utils.ExpectMessage(self, expected_messages, partial_string_match=True):
+                result = get_physx_pvd_interface().ovd_to_usd_over_with_layer_creation(
+                    ovd_path,
+                    input_path.as_posix(),
+                    temp_path.as_posix() + "/",
+                    "result.usda",
+                    0.0,
+                    0.0,
+                    True,
+                    True,
+                )
+
+            self.assertFalse(result)
 
     async def test_ovd_over_with_layer_creation(self):
 
@@ -506,6 +551,7 @@ class OmniPVDBaseTests(PhysicsKitStageAsyncTestCase):
 
         toPhysxUSDConverter = None
 
+    @unittest.skip("OMPE-105118: updated omni.physx.pvd binary dependency starts in 110.4")
     async def test_ovd_bake_particles_and_rigid_bodies(self):
         """Test OVD baking with both particles and rigid bodies in the scene.
         Particles are only created and verified when a GPU is present."""

@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "foundation/PxVec3.h"
 #include "foundation/PxArray.h"
@@ -193,6 +170,52 @@ bool MeshAnalyzer::makeTriOrientationConsistent(Triangle* tris, PxU32 numTriangl
 			PxSwap(t[0], t[1]);
 	}
 	return true;
+}
+
+// PxVec3T has no float -> double converting constructor.
+static PX_FORCE_INLINE PxVec3d toVec3d(const PxVec3& v)
+{
+	return PxVec3d(PxF64(v.x), PxF64(v.y), PxF64(v.z));
+}
+
+bool MeshAnalyzer::orientTrianglesOutward(Triangle* tris, PxU32 numTriangles, const PxVec3* vertices, const PxArray<bool>& consistencyFlipMap)
+{
+	if (numTriangles == 0)
+		return false;
+
+	bool changed = false;
+
+	// Make the winding consistent across the mesh.
+	for (PxU32 i = 0; i < consistencyFlipMap.size(); ++i)
+	{
+		if (consistencyFlipMap[i])
+		{
+			PxSwap(tris[i][0], tris[i][1]);
+			changed = true;
+		}
+	}
+
+	// Orient outward: flip the whole mesh if it encloses a negative signed volume. The volume is accumulated in
+	// double precision and relative to a reference vertex, so the magnitude of the individual terms is governed
+	// by the extent of the mesh rather than by its distance from the origin. For a closed mesh the reference
+	// point cancels out and does not change the result. The factor of 6 is dropped since only the sign matters.
+	const PxVec3d ref = toVec3d(vertices[tris[0][0]]);
+	PxF64 signedVolumeX6 = 0.0;
+	for (PxU32 i = 0; i < numTriangles; ++i)
+	{
+		const PxVec3d a = toVec3d(vertices[tris[i][0]]) - ref;
+		const PxVec3d b = toVec3d(vertices[tris[i][1]]) - ref;
+		const PxVec3d c = toVec3d(vertices[tris[i][2]]) - ref;
+		signedVolumeX6 += a.dot(b.cross(c));
+	}
+	if (signedVolumeX6 < 0.0)
+	{
+		for (PxU32 i = 0; i < numTriangles; ++i)
+			PxSwap(tris[i][1], tris[i][2]);
+		changed = true;
+	}
+
+	return changed;
 }
 
 bool MeshAnalyzer::checkMeshWatertightness(const Triangle* tris, PxU32 numTriangles, bool treatInconsistentWindingAsNonWatertight)

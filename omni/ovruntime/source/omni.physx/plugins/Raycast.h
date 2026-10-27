@@ -108,6 +108,7 @@ public:
     void handleInteractionEvent(const float* orig, const float* dir, PhysicsInteractionEvent interactionEvent);
     bool interactiveActorRaycast(const carb::Float3* origin, const carb::Float3* direction);
     void clearPicker(const ::physx::PxRigidActor* rb);
+    void clearPickerForScene(const ::physx::PxScene* scene);
     void clearCommandBuffer();
     Picker& getPicker()
     {

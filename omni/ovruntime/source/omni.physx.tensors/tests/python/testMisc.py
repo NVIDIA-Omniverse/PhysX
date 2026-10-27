@@ -151,6 +151,46 @@ class TestUsdPrimDeletion(GridTestBase):
             self.finish()
 
 
+
+class TestScenePrimDeletion(GridTestBase):
+    """Deleting the physics scene under a live view invalidates that view.
+
+    Regression for NvBugs 6521047 / 6558235. The scene's destruction arrives as ePTScene, which the
+    view's object-destruction handler had no branch for -- every other type it handles (actor,
+    articulation, link, shape, deformable body) was covered, so deleting the scene without touching
+    any of those left the view reporting valid while the GPU path still held the freed PxScene as a
+    raw pointer. The next read dispatched through a stale vtable.
+    """
+
+    def __init__(self, test_case, device_params):
+        grid_params = GridParams(4, 4.0)
+        sim_params = SimParams()
+        sim_params.gravity_dir = Gf.Vec3f(0.0, 0.0, 0.0)
+        sim_params.gravity_mag = 1
+        super().__init__(test_case, grid_params, sim_params, device_params)
+
+        actor_path = self.env_template_path.AppendChild("ball")
+        self.create_rigid_ball(actor_path, Transform((0.0, 0.0, 0.5)), 0.2)
+
+    def on_start(self, sim):
+        self.rigid_body_view = sim.create_rigid_body_view("/envs/*/ball")
+        self.test_case.assertIsNotNone(self.rigid_body_view)
+
+    def on_physics_step(self, sim, stepno, dt):
+        if stepno == 1:
+            # Valid going in, and a read succeeds, so the assertion below can only be the
+            # deletion's doing.
+            self.test_case.assertTrue(sim.is_valid, "simulation view should start valid")
+            t = self.rigid_body_view.get_transforms()
+            self.test_case.assertIsNotNone(t)
+        if stepno == 2:
+            prim = self.stage.GetPrimAtPath(self.scene_path)
+            self.test_case.assertTrue(prim, "physics scene prim must exist to be deleted")
+            prim.SetActive(False)
+            self.test_case.assertTrue(not sim.is_valid, "deleting the physics scene must invalidate the view")
+            self.finish()
+
+
 class TestSimViewInvalidate(GridTestBase):
     def __init__(self, test_case, device_params):
         # set up stage
@@ -219,6 +259,15 @@ class PhysxTensorsMiscTests(unittest.TestCase):
 
     def test_prim_deletion_cc(self):
         self._run_test(TestUsdPrimDeletion(self, DeviceParams(False, False)))
+
+    def test_scene_prim_deletion_cc(self):
+        self._run_test(TestScenePrimDeletion(self, DeviceParams(False, False)))
+
+    def test_scene_prim_deletion_gc(self):
+        self._run_test(TestScenePrimDeletion(self, DeviceParams(True, False)))
+
+    def test_scene_prim_deletion_gg(self):
+        self._run_test(TestScenePrimDeletion(self, DeviceParams(True, True)))
 
     def test_sim_view_invalidate_cc(self):
         self._run_test(TestSimViewInvalidate(self, DeviceParams(False, False)))

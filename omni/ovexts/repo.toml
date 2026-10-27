@@ -1,3 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+########################################################################################################################
+# Repo tool base settings
+########################################################################################################################
+
 [repo]
 logging = "warn"
 extra_tool_paths = [ "${root}/_build/target-deps/kit_sdk_release/dev", "${root}/_build/target-deps/kit_sdk_debug/dev",]
@@ -17,7 +24,7 @@ generated_app_path = ""
 
 [repo_format]
 use_current_year_as_end_year = true
-license_preamble = "SPDX-FileCopyrightText: Copyright (c) {years} NVIDIA CORPORATION & AFFILIATES. All rights reserved.\nSPDX-License-Identifier: BSD-3-Clause\n"
+license_preamble = "SPDX-FileCopyrightText: Copyright (c) {years} NVIDIA CORPORATION & AFFILIATES. All rights reserved.\nSPDX-License-Identifier: Apache-2.0\n"
 license_text = ""
 
 [repo_precache_exts.kit_env_vars]
@@ -36,4 +43,4 @@ extensions = [ ".h", ".inl", ".cpp", ".c", ".cu", ".cuh",]
 
 [repo_format.python.files]
 include = [ "extensions/**/*", "tools/**/*", "schema/**/*",]
-exclude = [ "tools/packman/**", "tools/repoman/repoman_bootstrapper.py",]
+exclude = [ "tools/packman/**", "tools/repoman/repoman.py", "tools/repoman/repoman_bootstrapper.py",]

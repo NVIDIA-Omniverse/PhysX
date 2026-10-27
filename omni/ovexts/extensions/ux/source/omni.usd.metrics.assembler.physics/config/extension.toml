@@ -1,5 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 [package]
-version = "110.1.11"
+version = "110.3.2"
 title = "Metrics Assembler Physics"
 description = "Metrics Assembler rules for physics"
 authors = ["PhysX"]
@@ -19,8 +22,8 @@ usd = true
 
 [dependencies]
 "omni.usd.metrics.assembler" = {}
-"omni.usd.schema.physx" = { version = "110.1.11", exact = true }
-"omni.physx.ui" = { version = "110.1.11", exact = true, optional=true }
+"omni.usd.schema.physx" = { version = "110.3.2", exact = true }
+"omni.physx.ui" = { version = "110.3.2", exact = true, optional=true }
 
 [[python.module]]
 name = "omni.metrics.assembler.physics"

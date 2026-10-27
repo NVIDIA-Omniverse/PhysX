@@ -108,16 +108,18 @@ InternalMimicJoint::InternalMimicJoint(InternalScene& internalScene,
     const ::physx::PxArticulationJointReducedCoordinate& targetJoint,
     const ::physx::PxArticulationJointReducedCoordinate& referenceJoint,
     int targetJointAxis, int referenceJointAxis, float gearing, float offset, float naturalFrequency, float dampingRatio,
-    usdparser::ObjectType objectType)
+    usdparser::ObjectType objectType, float gearingSign, float offsetSign)
     : mInternalScene(internalScene)
     , mObjectType(objectType)
+    , mGearingSign(gearingSign)
+    , mOffsetSign(offsetSign)
 {
     const PxArticulationAxis::Enum pxTargetJointAxis = getArticulationAxis(targetJoint, targetJointAxis);
     const PxArticulationAxis::Enum pxReferenceJointAxis = getArticulationAxis(referenceJoint, referenceJointAxis);
 
-    const PxReal pxGearing = translateGearing(gearing, pxTargetJointAxis, pxReferenceJointAxis);
+    const PxReal pxGearing = translateGearing(gearing * mGearingSign, pxTargetJointAxis, pxReferenceJointAxis);
 
-    const PxReal pxOffset = translateOffset(offset, pxTargetJointAxis);
+    const PxReal pxOffset = translateOffset(offset * mOffsetSign, pxTargetJointAxis);
 
     PxArticulationReducedCoordinate& art = targetJoint.getChildArticulationLink().getArticulation();
 
@@ -194,7 +196,7 @@ void InternalMimicJoint::setGearing(float gearing)
 {
     if (mPhysXMimicJoint)
     {
-        const PxReal pxGearing = translateGearing(gearing, mPhysXMimicJoint->getAxisA(), mPhysXMimicJoint->getAxisB());
+        const PxReal pxGearing = translateGearing(gearing * mGearingSign, mPhysXMimicJoint->getAxisA(), mPhysXMimicJoint->getAxisB());
 
         mPhysXMimicJoint->setGearRatio(pxGearing);
     }
@@ -205,7 +207,7 @@ void InternalMimicJoint::setOffset(float offset)
 {
     if (mPhysXMimicJoint)
     {
-        const PxReal pxOffset = translateOffset(offset, mPhysXMimicJoint->getAxisA());
+        const PxReal pxOffset = translateOffset(offset * mOffsetSign, mPhysXMimicJoint->getAxisA());
 
         mPhysXMimicJoint->setOffset(pxOffset);
     }

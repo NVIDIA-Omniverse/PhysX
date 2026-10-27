@@ -1,8 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 [package]
 title = "PhysX Core"
 description="PhysX 5 integration code."
 
-version = "110.1.11"
+version = "110.3.2"
 authors = ["PhysX"]
 
 repository = ""
@@ -22,12 +25,12 @@ usd = true
 
 [dependencies]
 "omni.usd.libs" = {}
-"omni.usd.schema.physx" = { version = "110.1.11", exact = true }
-"omni.usdphysics" = { version = "110.1.11", exact = true }
+"omni.usd.schema.physx" = { version = "110.3.2", exact = true }
+"omni.usdphysics" = { version = "110.3.2", exact = true }
 "usdrt.scenegraph" = {}
 "omni.gpucompute.plugins" = {}
-"omni.physx.cooking" = { version = "110.1.11", exact = true }
-"omni.physx.foundation" = { version = "110.1.11", exact = true }
+"omni.physx.cooking" = { version = "110.3.2", exact = true }
+"omni.physx.foundation" = { version = "110.3.2", exact = true }
 "omni.usd.schema.newton" = {}
 
 [[python.module]]

@@ -10,6 +10,9 @@
 #include "InternalParticle.h"
 #include "InternalMimicJoint.h"
 
+#include "OmniPhysX.h"
+#include "Setup.h"
+
 #include "particles/PhysXParticlePost.h"
 #include <deformables/PhysXDeformablePost.h>
 
@@ -47,6 +50,34 @@ static const TfToken gTokRotateXYZ = UsdGeomXformOp::GetOpName(UsdGeomXformOp::T
 static const TfToken gTokRotateX = UsdGeomXformOp::GetOpName(UsdGeomXformOp::TypeRotateX);
 static const TfToken gTokRotateY = UsdGeomXformOp::GetOpName(UsdGeomXformOp::TypeRotateY);
 static const TfToken gTokRotateZ = UsdGeomXformOp::GetOpName(UsdGeomXformOp::TypeRotateZ);
+
+void MirrorActor::release(bool trackReleasedActor)
+{
+    if (trackReleasedActor && internalScene)
+        internalScene->trackReleasedActiveActor(actor);
+    ::physx::PxCollectionExt::releaseObjects(*collection);
+    collection->release();
+    free(mirrorMemory);
+}
+
+void InternalScene::addActor(InternalActor& actor)
+{
+    mActors.push_back(&actor);
+}
+
+bool InternalScene::removeActor(const InternalActor& actor)
+{
+    for (size_t i = 0; i < mActors.size(); i++)
+    {
+        if (mActors[i] == &actor)
+        {
+            mActors[i] = mActors.back();
+            mActors.pop_back();
+            return true;
+        }
+    }
+    return false;
+}
 
 void InternalScene::setVehicleContext(const VehicleContextDesc& contextDesc)
 {
@@ -414,6 +445,10 @@ void InternalScene::release()
 {
     waitForSimulationCompletion(false);
 
+    // Reset the Picker before any actors are freed so applyManipCmd cannot
+    // dereference dangling pointers (e.g. a grabbed articulation link).
+    OmniPhysX::getInstance().getRaycastManager().clearPickerForScene(mScene);
+
     for (size_t i = 0; i < mDeformableAttachments.size(); ++i)
     {
         SAFE_DELETE_SINGLE(mDeformableAttachments[i]);
@@ -456,7 +491,11 @@ void InternalScene::release()
     for (uint32_t i = 0; i < nbActors; i++)
     {
         InternalActor* current = mActors[i];
-        if (!current->mActor->is<PxArticulationLink>())
+        // mActor is set right after the InternalActor is registered and is never reset afterwards, so
+        // a null here means this entry no longer refers to a live InternalActor. Skip the PxActor
+        // work instead of dereferencing it; this is a mitigation, the entry should not be here at all
+        // (NVBugs 6504495).
+        if (current->mActor && !current->mActor->is<PxArticulationLink>())
         {
             if(current->mActor->is<PxRigidBody>())
             {
@@ -466,7 +505,10 @@ void InternalScene::release()
         }
         for (MirrorActor& mirror : current->mMirrors)
         {
-            mirror.release();
+            // All scene tasks have completed and the scenes are being destroyed.
+            // Tracking is unnecessary here and another mirror scene may already
+            // have been deleted.
+            mirror.release(false);
         }
         SAFE_RELEASE(current->mMirrorSharedCollection);
         if (current->mMirrorMemory)
@@ -1554,13 +1596,16 @@ void InternalScene::updateRigidBodyTransforms(bool updateToUsd,
         using NestedBodiesMap = std::unordered_map<SdfPath, NestedBody, SdfPath::Hash>;
 
         NestedBodiesMap nestedBodies;
+        const bool hasReleasedActors = hasReleasedActiveActors();
 
         for (PxU32 i = 0; i < nbActors; i++)
         {
             const PxActor* pxActor = activeActors[i];
-            const size_t recordsIndex = (size_t)pxActor->userData;
+            if (!pxActor || (hasReleasedActors && isReleasedActiveActor(pxActor)))
+                continue;
 
-            if (!pxActor || recordsIndex >= db.getRecords().size())
+            const size_t recordsIndex = (size_t)pxActor->userData;
+            if (recordsIndex >= db.getRecords().size())
                 continue;
 
             const InternalDatabase::Record& record = db.getRecords()[recordsIndex];
@@ -2766,6 +2811,46 @@ void InternalScene::debugDraw(omni::physx::OmniRenderBuffer& renderBuffer, uint6
                 const PxTransform splineWorldPose = actor->mActor->getGlobalPose() * actor->mSplineLocalSpace;
                 spline->draw(renderBuffer, splineWorldPose);
             }
+        }
+    }
+}
+
+void InternalScene::moveForcesForActor(const PxRigidActor* actor, InternalScene& target, PhysXScene& targetPhysXScene)
+{
+    if (!actor || &target == this)
+    {
+        return;
+    }
+
+    for (size_t i = mForces.size(); i--;)
+    {
+        InternalForce* force = mForces[i];
+        if (!force || force->mRigidActor != actor)
+        {
+            continue;
+        }
+
+        force->mPhysXScene = &targetPhysXScene;
+        target.mForces.push_back(force);
+        mForces[i] = mForces.back();
+        mForces.pop_back();
+    }
+}
+
+void omni::physx::internal::swapForceActorsAllScenes(PxRigidActor* actor0, PxRigidActor* actor1)
+{
+    if (!actor0)
+    {
+        return;
+    }
+
+    const PhysXScenesMap& physxScenes = OmniPhysX::getInstance().getPhysXSetup().getPhysXScenes();
+    for (PhysXScenesMap::const_reference ref : physxScenes)
+    {
+        PhysXScene* physxScene = ref.second;
+        if (physxScene && physxScene->getInternalScene())
+        {
+            physxScene->getInternalScene()->swapForceActors(actor0, actor1);
         }
     }
 }

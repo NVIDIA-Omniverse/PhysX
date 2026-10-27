@@ -23,7 +23,7 @@ namespace tensors
 class GpuSimulationView : public BaseSimulationView
 {
 public:
-    GpuSimulationView(PXR_NS::UsdStageRefPtr stage, GpuSimulationDataPtr gpuSimData);
+    GpuSimulationView(PXR_NS::UsdStageRefPtr stage, ::physx::PxScene* scene, GpuSimulationDataPtr gpuSimData);
 
     ~GpuSimulationView() override;
 

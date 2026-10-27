@@ -317,13 +317,13 @@ namespace omni
             {
                 return; // do nothing, we're already set with the correct pvd options
             }
-            for (PhysXScenesMap::reference ref : mPhysXScenes)
+            // PxScene instances are owned by the current PxPhysics instance even when their steppers are complete.
+            // Recreating PxPhysics while a scene is alive leaves PhysXScene::mScene dangling.
+            if (!mPhysXScenes.empty())
             {
-                if (!ref.second->isComplete())
-                {
-                    CARB_LOG_WARN("PVD settings can only be changed when simulation is stopped");
-                    return;
-                }
+                CARB_LOG_WARN(
+                    "PVD settings change deferred until next attach; one or more PhysX scenes are still alive");
+                return;
             }
             cleanupPhysics();
             getPhysics(); // Regenerate PhysXSDK object together with all necessary PVD connections
@@ -372,16 +372,51 @@ namespace omni
             // AD: OM-117654 - the code in this function can throw a PhysX error, and the callback might access an outdated cuda context in that case.
             mErrorCallback->setCudaContextManager(nullptr);
 
-            mNextCudaContextManagerId = 0;
+            // OMPE-95128: NpScene caches the PxCudaContextManager* at construction; releasing or replacing it
+            // while scenes are alive leaves dangling vtable pointers. Defer all manager changes to the next attach.
+            const bool hasLiveScenes = !mPhysXScenes.empty();
+
+            // When a refresh is deferred under live scenes, still mirror createOrRefreshPxCudaContextManager's
+            // abort-mode reset so resume can recover from a prior GPU error.
+            // Call only while scenes are quiesced - setAbortMode() writes non-atomic state shared with GPU
+            // worker threads, so it would race with a live simulate().
+            auto clearAbortMode = [](PxCudaContextManager* mgr)
+            {
+                if (!mgr)
+                    return;
+                PxCudaContext* ctx = mgr->getCudaContext();
+                if (ctx && ctx->isInAbortMode())
+                    ctx->setAbortMode(false);
+            };
+
+            // Keep the getNextCudaContextManager() round-robin cursor while the manager vector is unchanged;
+            // reset it only when the vector is rebuilt.
+            if (!hasLiveScenes)
+                mNextCudaContextManagerId = 0;
             const bool enableSynchronousKernelLaunches = OmniPhysX::getInstance().getCachedSettings().enableSynchronousKernelLaunches;
             const int multiGPUMode = OmniPhysX::getInstance().getISettings()->getAsInt(kSettingSceneMultiGPUMode);
 
             if ((mCudaLaunchSynchronous != enableSynchronousKernelLaunches) || (mSceneMultiGPUMode != multiGPUMode))
             {
-                // clear cuda context managers so they can be recreated with correct params with one default space
-                clearCudaContextManagersAndRefillWithNull(1);
-                mCudaLaunchSynchronous = enableSynchronousKernelLaunches;
-                mSceneMultiGPUMode = multiGPUMode;
+                if (hasLiveScenes)
+                {
+                    // Sticky: warn once per deferral; flag cleared on rebuild or in releasePhysXScenes.
+                    if (!mCudaSettingsDeferralWarned)
+                    {
+                        CARB_LOG_WARN("PhysX: enableSynchronousKernelLaunches/sceneMultiGPUMode change deferred until next attach; "
+                                      "live scenes still reference the current PxCudaContextManager. "
+                                      "Stop the simulation for the new setting to take effect.");
+                        mCudaSettingsDeferralWarned = true;
+                    }
+                }
+                else
+                {
+                    // clear cuda context managers so they can be recreated with correct params with one default space
+                    clearCudaContextManagersAndRefillWithNull(1);
+                    mCudaLaunchSynchronous = enableSynchronousKernelLaunches;
+                    mSceneMultiGPUMode = multiGPUMode;
+                    mCudaSettingsDeferralWarned = false;
+                }
             }
 
             // check MultiGPU mode settings
@@ -408,11 +443,42 @@ namespace omni
 
                 if (mCudaContextManagers.size() != availableDeviceCount)
                 {
-                    clearCudaContextManagersAndRefillWithNull(availableDeviceCount);
+                    if (hasLiveScenes)
+                    {
+                        // Sticky: log once per deferral; re-armed on rebuild or in releasePhysXScenes.
+                        if (!mCudaDeviceCountDeferralWarned)
+                        {
+                            CARB_LOG_INFO("PhysX: CUDA device count change deferred until next attach; "
+                                          "live scenes still reference the current PxCudaContextManager.");
+                            mCudaDeviceCountDeferralWarned = true;
+                        }
+                    }
+                    else
+                    {
+                        clearCudaContextManagersAndRefillWithNull(availableDeviceCount);
+                        mCudaDeviceCountDeferralWarned = false;
+                    }
                 }
 
                 for (int32_t off = 0, ord = firstOrdinal; off < availableDeviceCount; ++off, ++ord)
                 {
+                    // Resize was skipped under hasLiveScenes; the vector may be smaller than availableDeviceCount.
+                    if (off >= (int32_t)mCudaContextManagers.size())
+                        break;
+
+                    if (hasLiveScenes && mCudaContextManagers[off] != nullptr)
+                    {
+                        // Recover the OOM/abort case in place; a non-OOM sticky error can only be cleared by
+                        // recreating the manager (unsafe with live scenes), so warn and defer it to next attach.
+                        clearAbortMode(mCudaContextManagers[off]);
+                        PxCudaContext* ctx = mCudaContextManagers[off]->getCudaContext();
+                        if (ctx && ctx->getLastError() != CUDA_SUCCESS)
+                            CARB_LOG_WARN("PhysX: PxCudaContextManager for device ordinal %d has a sticky CUDA error "
+                                          "that cannot be cleared while scenes are live; stop and restart the "
+                                          "simulation to recover.", ord);
+                        continue;
+                    }
+
                     // spawn a separate context and a context manager for each available cuda device
                     omni::physx::PhysxFoundationDeviceOrdinal ordinal;
                     ordinal.mode = omni::physx::PhysxFoundationDeviceOrdinal::eMODE_DEVICE_ORDINAL;
@@ -431,7 +497,17 @@ namespace omni
             {
                 omni::physx::PhysxFoundationDeviceOrdinal ordinal;
                 mPhysxFoundation->getSingleCudaContextManagerOrdinal(ordinal);
-                if (!mPhysxFoundation->createOrRefreshPxCudaContextManager(ordinal, mFoundation, mCudaContextManagers[0], enableSynchronousKernelLaunches))
+                if (hasLiveScenes && !mCudaContextManagers.empty() && mCudaContextManagers[0] != nullptr)
+                {
+                    // Recover the OOM/abort case in place; a non-OOM sticky error can only be cleared by
+                    // recreating the manager (unsafe with live scenes), so warn and defer it to next attach.
+                    clearAbortMode(mCudaContextManagers[0]);
+                    PxCudaContext* ctx = mCudaContextManagers[0]->getCudaContext();
+                    if (ctx && ctx->getLastError() != CUDA_SUCCESS)
+                        CARB_LOG_WARN("PhysX: PxCudaContextManager has a sticky CUDA error that cannot be cleared "
+                                      "while scenes are live; stop and restart the simulation to recover.");
+                }
+                else if (!mPhysxFoundation->createOrRefreshPxCudaContextManager(ordinal, mFoundation, mCudaContextManagers[0], enableSynchronousKernelLaunches))
                 {
                     SAFE_RELEASE(mCudaContextManagers[0]);
                     CARB_LOG_ERROR("Unable to create PxCudaContextManager!");
@@ -986,6 +1062,9 @@ namespace omni
         {
             mFilteredPairs.clear();
             mCollisionsGroupFilteredPairs.clear();
+            // Re-arm the sticky deferral logs; live references are gone.
+            mCudaSettingsDeferralWarned = false;
+            mCudaDeviceCountDeferralWarned = false;
 
             disconnectPVD();
 

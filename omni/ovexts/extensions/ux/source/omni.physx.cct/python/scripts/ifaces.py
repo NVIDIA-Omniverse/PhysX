@@ -1,8 +1,8 @@
 # SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-#
+# SPDX-License-Identifier: Apache-2.0
 
 from ..bindings._physxCct import acquire_physx_cct_interface, IPhysxCct
+from ..ifacecache import cached_interface, release_interface_caches
 
 __all__ = [
     "get_physx_cct_interface",
@@ -10,11 +10,4 @@ __all__ = [
 
 
 def get_physx_cct_interface() -> IPhysxCct:
-    if not hasattr(get_physx_cct_interface, "iface"):
-        get_physx_cct_interface.iface = acquire_physx_cct_interface()
-    return get_physx_cct_interface.iface
-
-
-def invalidate_physx_cct_interface():
-    if hasattr(get_physx_cct_interface, "iface"):
-        del get_physx_cct_interface.iface
+    return cached_interface(get_physx_cct_interface, acquire_physx_cct_interface)

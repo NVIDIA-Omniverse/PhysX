@@ -229,6 +229,17 @@ DEFINE_PERSISTENT_PHYSX_SETTING(kSettingDisplayColliders, "/visualizationDisplay
     @endrst */    
 DEFINE_PERSISTENT_PHYSX_SETTING(kSettingDisplayColliderNormals, "/visualizationDisplayColliderNormals");
 
+/** @rst
+    (int) Upper bound on the number of debug lines the collider viewport visualization may emit into its shared
+    line buffer. Point instancers bake one wireframe per instance, so a large instancer can otherwise request more
+    memory than is available and abort the application. Once the budget is exhausted the visualization is truncated
+    and a warning is logged. A non-positive value means unlimited.
+
+    Each line costs two 32 byte vertices, so the 8000000 line default bounds the vertex payload at roughly 488 MiB,
+    before vector capacity slack and renderer side storage.
+    @endrst */
+DEFINE_PERSISTENT_PHYSX_SETTING(kSettingVisualizationMaxDebugLines, "/visualizationMaxDebugLines");
+
 using omni::physics::kSettingDisplayJoints;
 using omni::physics::kSettingDisplayJointsDefault;
 

@@ -115,6 +115,10 @@ public:
             }
             break;
         case eBasisCurveWrap::NonPeriodic:
+            if (controlPointCount < 4)
+            {
+                return 0;
+            }
             segmentCount = (controlPointCount - 4) / mVstep + 1;
             break;
         case eBasisCurveWrap::Pinned:

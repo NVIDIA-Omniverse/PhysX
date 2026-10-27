@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 [package]
 category = "Internal"
 authors = ["PhysX"]
@@ -6,7 +9,7 @@ description="Physx visual tests"
 repository = ""
 keywords = ["physx", "tests"]
 
-version = "110.1.11"
+version = "110.3.2"
 
 icon = "icons/icon.png"
 preview_image = "icons/preview.png"
@@ -20,12 +23,12 @@ python = true
 usd = true
 
 [dependencies]
-"omni.physx.tests" = { version = "110.1.11", exact = true }
-"omni.physx.ui" = { version = "110.1.11", exact = true }
-"omni.physics.ui" = { version = "110.1.11", exact = true }
-"omni.physics.physx.ui" = { version = "110.1.11", exact = true }
-"omni.kit.property.physics" = { version = "110.1.11", exact = true }
-"omni.usd.schema.physx" = { version = "110.1.11", exact = true }
+"omni.physx.tests" = { version = "110.3.2", exact = true }
+"omni.physx.ui" = { version = "110.3.2", exact = true }
+"omni.physics.ui" = { version = "110.3.2", exact = true }
+"omni.physics.physx.ui" = { version = "110.3.2", exact = true }
+"omni.kit.property.physics" = { version = "110.3.2", exact = true }
+"omni.usd.schema.physx" = { version = "110.3.2", exact = true }
 "omni.kit.ui_test" = {}
 "omni.kit.viewport.utility" = {}
 

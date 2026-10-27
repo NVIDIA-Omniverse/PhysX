@@ -37,7 +37,15 @@ public:
                        float offset,
                        float naturalFrequency,
                        float dampingRatio,
-                       usdparser::ObjectType);
+                       usdparser::ObjectType,
+                       // Per-joint sign factors that convert authored gearing/offset (which are defined
+                       // against each joint's natural USD body0->body1 position convention) to the PhysX
+                       // articulation joint-coordinate convention. They are 1.0 unless a referenced joint
+                       // was authored with reversed body order (mBody0IsParentLink == false), in which
+                       // case omni.physx negates that joint's PhysX coordinate. Applies to both the
+                       // PhysxMimicJointAPI and NewtonMimicAPI paths.
+                       float gearingSign = 1.0f,
+                       float offsetSign = 1.0f);
 
     // for PhysXReplicator only
     InternalMimicJoint(InternalScene&, ::physx::PxArticulationMimicJoint&, usdparser::ObjectType);
@@ -83,6 +91,10 @@ private:
     InternalScene& mInternalScene;
     ::physx::PxArticulationMimicJoint* mPhysXMimicJoint;
     usdparser::ObjectType mObjectType; // for PhysXReplicator only
+    // see the constructor doc; applied to gearing/offset (incl. runtime updates) so the authored
+    // relationship holds regardless of the referenced joints' body order
+    float mGearingSign = 1.0f;
+    float mOffsetSign = 1.0f;
 };
 
 

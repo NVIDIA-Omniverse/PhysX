@@ -71,6 +71,7 @@ static PhysXSettings gPhysXSettings = PhysXSettings(
         { kSettingMaxNumberOfPhysXErrors, 1000 },
         { kSettingTestRunnerRepeats, 1 },
         { kSettingDisplayColliders, int(ui::VisualizerMode::eNone) },
+        { kSettingVisualizationMaxDebugLines, 8000000 },
         { kSettingDisplayMassProperties, int(ui::VisualizerMode::eNone) },
         { kSettingDisplayTendons, int(ui::VisualizerMode::eNone) },
         { kSettingDisplayDeformables, int(ui::VisualizerMode::eNone) },

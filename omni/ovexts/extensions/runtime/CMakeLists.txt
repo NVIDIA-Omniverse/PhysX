@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: LicenseRef-NvidiaProprietary
+# SPDX-License-Identifier: Apache-2.0
 
 # Runtime extensions: redirect ovruntime target outputs into the extension layout.
 # These extensions do NOT compile any C++ — they package pre-built ovruntime binaries

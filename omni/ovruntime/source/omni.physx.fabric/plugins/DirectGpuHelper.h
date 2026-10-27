@@ -44,6 +44,19 @@ public:
 
     void clear();
 
+    // Drops the cached PxScene pointer and forces prepareBuffers() to rebuild its indexing data
+    // from the live PhysX objects on the next update(). Called when PhysX objects are destroyed
+    // externally (simulation stop, reset, prim removal), which would otherwise leave mScene
+    // dangling and make fetchRigidBodyData() call into a released scene.
+    // NOTE: this deliberately keeps mRigidBodies, unlike clear(). The registered paths are only
+    // repopulated by registerRigidBody() during rigid body initialization, so dropping them here
+    // would silently stop fabric updates for every body that was not re-created.
+    void invalidatePhysXPointers()
+    {
+        mScene = nullptr;
+        mNeedResync = true;
+    }
+
 private:
     // indexing data for rigid bodies, which could be articulation links or rigid dynamics
     struct RigidBodyData

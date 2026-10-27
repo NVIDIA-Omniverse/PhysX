@@ -108,13 +108,13 @@ class TestNewtonMaterialAPI:
         stage, prim = self._make_material()
         prim.ApplyAPI("NewtonMaterialAPI")
         val = prim.GetAttribute("newton:torsionalFriction").Get()
-        assert val == pytest.approx(0.25)
+        assert val == pytest.approx(0.005)
 
     def test_default_rolling_friction(self):
         stage, prim = self._make_material()
         prim.ApplyAPI("NewtonMaterialAPI")
         val = prim.GetAttribute("newton:rollingFriction").Get()
-        assert val == pytest.approx(0.0005)
+        assert val == pytest.approx(0.0001)
 
 
 class TestNewtonXpbdSceneAPI:

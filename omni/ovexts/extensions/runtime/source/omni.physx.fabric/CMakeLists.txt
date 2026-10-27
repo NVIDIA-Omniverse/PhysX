@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: LicenseRef-NvidiaProprietary
+# SPDX-License-Identifier: Apache-2.0
 
 set(EXT_NAME "omni.physx.fabric")
 set(EXT_DIR "${OVEXTS_EXTS_PHYSICS_DIR}/${EXT_NAME}")
@@ -25,6 +25,7 @@ set(_OVRUNTIME_PYTHON "${OVRUNTIME_DIR}/source/${EXT_NAME}/python")
 ovexts_prebuild_copy("${_OVRUNTIME_PYTHON}/__init__.py" "${EXT_DIR}/${EXT_PYTHON_NS}/__init__.py")
 ovexts_prebuild_link("${_OVRUNTIME_PYTHON}/scripts"     "${EXT_DIR}/${EXT_PYTHON_NS}/scripts")
 ovexts_prebuild_link("${_OVRUNTIME_PYTHON}/tests"        "${EXT_DIR}/${EXT_PYTHON_NS}/tests")
+ovexts_prebuild_link("${OVRUNTIME_DIR}/source/common/python/ifacecache" "${EXT_DIR}/${EXT_PYTHON_NS}/ifacecache")
 
 # Test runner scripts
 ovexts_define_physics_test_experience(${EXT_NAME})

@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-#
+# SPDX-License-Identifier: Apache-2.0
 
 import omni.ext
 from omni.usdphysicsui import get_usdphysicsui_interface
@@ -13,6 +12,7 @@ from .immediateModeViewportOverlays import ImmediateModeViewportOverlays
 from .physicsViewportOverlayManager import *
 
 import omni.ui as ui
+from ..ifacecache import release_interface_caches
 try:
     from .physicsViewportMenuHelper import PhysicsViewportMenuHelper
 except:
@@ -77,6 +77,7 @@ class UsdPhysicsUIExtension(omni.ext.IExt):
         self._usdphysicsui_iface = None
         global _extension_instance
         _extension_instance = None
+        release_interface_caches()
 
     def __immediate_mode_draw_overlays(self, scene_view, enable_pick, amended_projection):
         dpi_scale = ui.Workspace.get_dpi_scale()

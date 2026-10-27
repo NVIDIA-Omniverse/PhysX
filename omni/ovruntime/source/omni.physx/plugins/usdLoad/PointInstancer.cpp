@@ -418,32 +418,97 @@ void parseRigidBodyInstancer(AttachedStage& attachedStage, UsdGeomXformCache& xf
         activeTargets.resize(::physx::PxU32(targets.size()));
         // get activeIds
         inactiveIds.resize(::physx::PxU32(indices.size()));
-        for (size_t i = 0; i < inactiveItemsVector.size(); i++)
+
+        // inactiveIds names instances by their 'ids' value when that attribute is authored, and
+        // positionally otherwise. The bitmap is tested positionally below and in the instance loop,
+        // so authored ids have to be translated first - ids = [100, 200] with inactiveIds = [200]
+        // deactivates instance 1, not instance 200.
+        VtArray<int64_t> instanceIds;
+        std::unordered_map<int64_t, size_t> idToInstance;
+        if (getAttributeArrayTimedFallback(instanceIds, instancer.GetIdsAttr(), earliestTime) && !instanceIds.empty())
         {
-            inactiveIds.set(::physx::PxU32(inactiveItemsVector[i]));
+            if (instanceIds.size() != indices.size())
+            {
+                CARB_LOG_WARN("Physics:PointInstancer: (%s) ids array size does not match instance count\n",
+                              instancer.GetPath().GetText());
+            }
+
+            // a shorter ids array leaves the trailing instances unnamed, so they cannot be deactivated
+            const size_t numIds = std::min(instanceIds.size(), indices.size());
+            idToInstance.reserve(numIds);
+            for (size_t i = 0; i < numIds; i++)
+            {
+                // duplicate ids are ill formed USD - keep the first, which is what UsdGeomPointInstancer does
+                idToInstance.insert({ instanceIds[i], i });
+            }
         }
 
-        // if target is used set the bit for activeTargets        
+        for (size_t i = 0; i < inactiveItemsVector.size(); i++)
+        {
+            // inactiveIds comes straight from USD metadata and can name instances that do not exist.
+            // PxBitMap::set() only asserts on range, so an out of range id would corrupt the heap.
+            size_t instanceIndex;
+            if (!idToInstance.empty())
+            {
+                const auto foundId = idToInstance.find(inactiveItemsVector[i]);
+                if (foundId == idToInstance.end())
+                {
+                    CARB_LOG_WARN("Physics:PointInstancer: (%s) inactiveIds entry %lld does not match any authored id, ignoring\n",
+                                  instancer.GetPath().GetText(), (long long)inactiveItemsVector[i]);
+                    continue;
+                }
+                instanceIndex = foundId->second;
+            }
+            else
+            {
+                // without an authored 'ids' array the id is the instance index
+                if (inactiveItemsVector[i] < 0 || size_t(inactiveItemsVector[i]) >= indices.size())
+                {
+                    CARB_LOG_WARN("Physics:PointInstancer: (%s) inactiveIds entry %lld is out of range, ignoring\n",
+                                  instancer.GetPath().GetText(), (long long)inactiveItemsVector[i]);
+                    continue;
+                }
+                instanceIndex = size_t(inactiveItemsVector[i]);
+            }
+
+            inactiveIds.set(::physx::PxU32(instanceIndex));
+        }
+
+        // if target is used set the bit for activeTargets
         for (size_t index = 0; index < indices.size(); index++)
         {
+            // protoIndices can be out of range - the instance loop below skips those - so the bit
+            // must not be set here either, for the same reason as above.
+            if (size_t(indices[index]) >= targets.size())
+            {
+                continue;
+            }
+
             if (!inactiveIds.test(::physx::PxU32(index)))
             {
                 activeTargets.set(::physx::PxU32(indices[index]));
-            }            
+            }
         }
     }
 
     // traverse bitmap only if needed, its slower
     if (!inactiveItemsVector.empty())
     {
+        // targetObjects is indexed by indices[i] below, which is an index into 'targets'. Only the
+        // active targets get parsed here, so the entries have to be placed at their target index
+        // instead of appended - appending would compact the vector and make every later
+        // targetObjects[indices[i]] read past its end.
+        targetObjects.resize(targets.size());
+
         ::physx::PxBitMap::Iterator it(activeTargets);
         for (::physx::PxU32 index = it.getNext(); index != ::physx::PxBitMap::Iterator::DONE; index = it.getNext())
         {
             ObjectInstance objectInstance = { usdPrim.GetPrimPath(), index, SdfPath(), false };
-            TargetDesc targetDesc;
             UsdPrim targetPrim = attachedStage.getStage()->GetPrimAtPath(targets[index]);
             if (targetPrim)
             {
+                // the unparsed targets keep their default constructed entry, which has desc == nullptr
+                TargetDesc& targetDesc = targetObjects[index];
                 targetDesc.targetPrim = targetPrim;
                 PhysxObjectDesc* descOut = nullptr;
                 const SdfPath descPath = parsePrototype(attachedStage, xfCache, targetPrim, filteredPairs, objectInstance,
@@ -451,11 +516,6 @@ void parseRigidBodyInstancer(AttachedStage& attachedStage, UsdGeomXformCache& xf
                 targetDesc.desc = descOut;
                 targetDesc.descPath = descPath;
                 targetDesc.outsideInstancer = isOutsideInstancer(targetPrim, usdPrim);
-                targetObjects.push_back(targetDesc);
-            }
-            else
-            {
-                targetObjects.push_back(TargetDesc());
             }
         }
     }

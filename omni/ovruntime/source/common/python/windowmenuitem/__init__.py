@@ -16,7 +16,10 @@ class MenuItem():
         ext_id = self.__class__.__module__
         action_name = f'WindowMenuItemAction_{menu_path.replace(" ", "").replace("/", "")}'
 
-        omni.kit.actions.core.get_action_registry().register_action(
+        # Keep the registered action so remove() can deregister it. The action registry is global and
+        # outlives the extension, so leaving it registered keeps toggle_fn - and through its closure
+        # cell, the owning extension object - alive past shutdown and into interpreter finalization.
+        self._action = omni.kit.actions.core.get_action_registry().register_action(
             ext_id,
             action_name,
             toggle_fn,
@@ -52,6 +55,10 @@ class MenuItem():
         if self._items:
             omni.kit.menu.utils.remove_menu_items(self._items, self._menu_group)
             self._items = None
+
+        if self._action is not None:
+            omni.kit.actions.core.get_action_registry().deregister_action(self._action)
+            self._action = None
 
     def refresh(self):
         omni.kit.menu.utils.refresh_menu_items(self._menu_group)

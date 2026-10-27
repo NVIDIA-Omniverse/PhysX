@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-#
+# SPDX-License-Identifier: Apache-2.0
 
 from omni.kit.property.physics import PhysicsWidget
 from omni.kit.property.physics.widgets import UiProp, REFRESH_GLYPH

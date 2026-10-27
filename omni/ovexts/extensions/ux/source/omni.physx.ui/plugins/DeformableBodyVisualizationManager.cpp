@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
-//
+// SPDX-License-Identifier: Apache-2.0
 
 #include "UsdPCH.h"
 
@@ -2261,6 +2260,9 @@ bool DeformableBodyVisualizationManager::checkAttachmentsCompleteness(ProxyInfo&
     if (!gStage->GetPrimAtPath(actualTargets[0]) || !gStage->GetPrimAtPath(actualTargets[1]))
         return false;
 
+    if (!attachmentProxyInfo.targetInfos[0] || !attachmentProxyInfo.targetInfos[1])
+        return false;
+
     TfType vtxXformAttachmentType = UsdSchemaRegistry::GetTypeFromSchemaTypeName(OmniPhysicsDeformableTypeTokens->VtxXformAttachment);
     TfType vtxTetAttachmentType = UsdSchemaRegistry::GetTypeFromSchemaTypeName(OmniPhysicsDeformableTypeTokens->VtxTetAttachment);
     if (proxyInfo.type == ProxyInfoType::eVtxXformAttachment)
@@ -2547,6 +2549,10 @@ bool DeformableBodyVisualizationManager::checkCollisionFiltersCompleteness(Proxy
         return false;
 
     if (!gStage->GetPrimAtPath(actualTargets[0]) || !gStage->GetPrimAtPath(actualTargets[1]))
+        return false;
+
+    if (!collisionFilterProxyInfo.collisionFilterTargetInfos[0] ||
+        !collisionFilterProxyInfo.collisionFilterTargetInfos[1])
         return false;
 
     TfType collisionFilterType = UsdSchemaRegistry::GetTypeFromSchemaTypeName(OmniPhysicsDeformableTypeTokens->ElementCollisionFilter);

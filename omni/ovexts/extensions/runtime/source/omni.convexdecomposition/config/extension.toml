@@ -1,7 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 [package]
 title = "V-HACD Convex Decompostion"
 description="V-HACD Convex Decompostion"
-version = "110.1.11"
+version = "110.3.2"
 authors = ["PhysX"]
 repository = ""
 keywords = ["convex", "convexdecomposition"]
@@ -20,7 +23,7 @@ usd = true
 [dependencies]
 "omni.assets.plugins" = {}
 "omni.usd.libs" = {}
-"omni.usd.schema.physx" = { version = "110.1.11", exact = true }
+"omni.usd.schema.physx" = { version = "110.3.2", exact = true }
 "omni.kit.commands" = {optional=true}
 
 [[python.module]]

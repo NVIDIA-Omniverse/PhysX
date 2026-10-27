@@ -257,11 +257,13 @@ class SimulationView:
 
                 **Backwards compatibility:** prior releases treated a named leaf component
                 (e.g. ``/World/envs/env_*/Robot/torso``) as a strict direct-children match. With
-                recursive-leaf matching now the default, the same pattern will additionally pick up
-                any prim named ``torso`` at *any* depth under each ``Robot``, which can enlarge
-                views compared to earlier behaviour. Callers that relied on the old semantics should
-                either set ``/physics/tensors/recursiveLeafPatternMatch`` to ``false``, or migrate to
-                a list of explicit absolute paths.
+                recursive-leaf matching now the default, the same pattern also finds a ``torso``
+                nested at any depth under each ``Robot``, which can enlarge views compared to
+                earlier behaviour. A ``torso`` that recurs *inside its own match* (a ``torso``
+                under an already-matched ``torso``) is suppressed -- shallowest wins -- so a single
+                body is never counted twice. Callers that relied on the old strict semantics should
+                either set ``/physics/tensors/recursiveLeafPatternMatch`` to ``false``, or migrate
+                to a list of explicit absolute paths.
 
             Args:
                 pattern (Union[str, List[str]]): The pattern to match the articulations in the scene. This can be a single pattern or a list of patterns. The pattern can be a wildcard pattern to match multiple objects.
@@ -303,11 +305,13 @@ class SimulationView:
 
                 **Backwards compatibility:** prior releases treated a named leaf component
                 (e.g. ``/World/envs/env_*/Robot/torso``) as a strict direct-children match. With
-                recursive-leaf matching now the default, the same pattern will additionally pick up
-                any prim named ``torso`` at *any* depth under each ``Robot``, which can enlarge
-                views compared to earlier behaviour. Callers that relied on the old semantics should
-                either set ``/physics/tensors/recursiveLeafPatternMatch`` to ``false``, or migrate to
-                a list of explicit absolute paths.
+                recursive-leaf matching now the default, the same pattern also finds a ``torso``
+                nested at any depth under each ``Robot``, which can enlarge views compared to
+                earlier behaviour. A ``torso`` that recurs *inside its own match* (a ``torso``
+                under an already-matched ``torso``) is suppressed -- shallowest wins -- so a single
+                body is never counted twice. Callers that relied on the old strict semantics should
+                either set ``/physics/tensors/recursiveLeafPatternMatch`` to ``false``, or migrate
+                to a list of explicit absolute paths.
 
             Args:
                 pattern (Union[str, List[str]]): The pattern to match the rigid bodies in the scene. This can be a single pattern or a list of patterns. The pattern can be a wildcard pattern to match multiple objects.

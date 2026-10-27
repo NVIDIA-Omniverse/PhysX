@@ -642,7 +642,8 @@ TEST_CASE("Collision Instanced",
 
     SUBCASE("Position")
     {
-        xform.AddTranslateOp().Set(GfVec3d(2.0));
+        UsdGeomXformOp instanceTranslateOp = xform.AddTranslateOp();
+        instanceTranslateOp.Set(GfVec3d(2.0));
 
         SUBCASE("Dynamic Body")
         {
@@ -687,7 +688,232 @@ TEST_CASE("Collision Instanced",
             PxTransform tr = basePtr->is<PxRigidStatic>()->getGlobalPose();
             compare(tr.p, GfVec3f(5.0f), toleranceEpsilon);
         }
+
+        // NvBugs 6544922 repro: the collider is a UsdPhysicsCollisionAPI-carrying
+        // prim ("sphere") reached only through the instanceable reference on
+        // "xformInst" - the same shape as an instanceable-referenced asset whose
+        // collider geometry lives inside the shared prototype subtree, with only
+        // the per-instance transform authored on the instance root. If USD change
+        // tracking for instance-proxy paths does not resolve a transform edit on
+        // the instance root back to this collider's PhysX shape, the shape stays
+        // frozen at its first-cook pose instead of following later edits.
+        SUBCASE("Static Body - transform update after attach")
+        {
+            // attach sim to stage which parses and creates the pointers that we can check directly
+            physxSim->attachStage(stageId);
+
+            PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(SdfPath("/World/xformInst/sphere"), ePTActor));
+            REQUIRE(basePtr != nullptr);
+            REQUIRE(basePtr->is<PxRigidStatic>());
+            PxTransform tr = basePtr->is<PxRigidStatic>()->getGlobalPose();
+            // First cook: instance translate (2,2,2) + sphere-local translate (3,3,3).
+            compare(tr.p, GfVec3f(5.0f), toleranceEpsilon);
+
+            // Move the instance root AFTER the first cook - the collider must follow.
+            instanceTranslateOp.Set(GfVec3d(20.0));
+            physxSim->simulate(0.01f, 0.0f);
+            physxSim->fetchResults();
+
+            basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(SdfPath("/World/xformInst/sphere"), ePTActor));
+            REQUIRE(basePtr != nullptr);
+            REQUIRE(basePtr->is<PxRigidStatic>());
+            tr = basePtr->is<PxRigidStatic>()->getGlobalPose();
+            // New instance translate (20,20,20) + sphere-local translate (3,3,3).
+            compare(tr.p, GfVec3f(23.0f), toleranceEpsilon);
+        }
     }
+    // Common post-test actions
+    physxSim->detachStage();
+
+    UsdUtilsStageCache::Get().Erase(stage);
+    stage = nullptr;
+}
+
+
+// NvBugs 6544922 repro: a real (multi-instance, shared-prototype) USD instanceable
+// asset whose collider is authored on a NESTED Mesh prim inside the prototype
+// (e.g. Xform/Section0), while the instance root carries only
+// UsdPhysicsMeshCollisionAPI (the approximation opinion) - the exact authoring
+// shape of the field asset (SM_HospitalBed_01b: instance root has
+// PhysicsMeshCollisionAPI only, PhysicsCollisionAPI + geometry live on
+// Section0/Section1 inside the shared prototype). Two instances force USD to
+// compose one real shared prototype rather than a single dedicated copy, so any
+// change-tracking path keyed off the PROTOTYPE'S mesh path instead of the
+// instance-proxy path would show up here. Moving one instance's own transform
+// after the first cook must move only that instance's collider; the other,
+// untouched instance must stay put.
+TEST_CASE("Collision Instanced Nested Mesh Transform Update",
+    "[omniphysics]"
+    "[component=OmniPhysics][owner=aborovicka][priority=mandatory]")
+{
+    PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
+    const float toleranceEpsilon = 1e-2f;
+
+    IPhysx* physx = physicsTests.acquirePhysxInterface();
+    REQUIRE(physx);
+    IPhysxSimulation* physxSim = physicsTests.acquirePhysxSimulationInterface();
+    REQUIRE(physxSim);
+
+    UsdStageRefPtr stage = UsdStage::CreateInMemory();
+    PXR_NS::UsdGeomSetStageUpAxis(stage, TfToken("Z"));
+    const float metersPerStageUnit = 0.01f; // work in default centimeters
+    PXR_NS::UsdGeomSetStageMetersPerUnit(stage, static_cast<double>(metersPerStageUnit));
+    const SdfPath defaultPrimPath = SdfPath("/World");
+    UsdPrim defaultPrim = stage->DefinePrim(defaultPrimPath);
+    stage->SetDefaultPrim(defaultPrim);
+
+    PXR_NS::UsdUtilsStageCache::Get().Insert(stage);
+    long stageId = PXR_NS::UsdUtilsStageCache::Get().GetId(stage).ToLongInt();
+
+    const SdfPath physicsScenePath = defaultPrimPath.AppendChild(TfToken("physicsScene"));
+    UsdPhysicsScene scene = UsdPhysicsScene::Define(stage, physicsScenePath);
+
+    // Asset source: Xform -> Mesh, with the actual collider on the nested mesh,
+    // mirroring SM_HospitalBed_01b's Xform/Section0 authoring.
+    const SdfPath assetPath = defaultPrimPath.AppendChild(TfToken("bedAsset"));
+    const SdfPath assetXformPath = assetPath.AppendChild(TfToken("Xform"));
+    const SdfPath assetMeshPath = assetXformPath.AppendChild(TfToken("Section0"));
+
+    UsdGeomXform::Define(stage, assetPath);
+    UsdGeomXform::Define(stage, assetXformPath);
+
+    UsdGeomCube sectionGeom = UsdGeomCube::Define(stage, assetMeshPath);
+    sectionGeom.CreateSizeAttr().Set(1.0);
+    UsdPhysicsCollisionAPI::Apply(sectionGeom.GetPrim());
+    UsdPhysicsMeshCollisionAPI sectionApprox = UsdPhysicsMeshCollisionAPI::Apply(sectionGeom.GetPrim());
+    sectionApprox.CreateApproximationAttr().Set(UsdPhysicsTokens->convexHull);
+
+    // Two instances of the same asset -> USD composes ONE shared prototype for
+    // both, matching the field scene (~1600 instances of the same referenced asset).
+    const SdfPath inst0Path = defaultPrimPath.AppendChild(TfToken("bedInst0"));
+    const SdfPath inst1Path = defaultPrimPath.AppendChild(TfToken("bedInst1"));
+
+    UsdGeomXform inst0 = UsdGeomXform::Define(stage, inst0Path);
+    inst0.GetPrim().GetReferences().AddInternalReference(assetPath);
+    inst0.GetPrim().SetInstanceable(true);
+    UsdPhysicsMeshCollisionAPI::Apply(inst0.GetPrim()); // instance-root: approximation opinion only
+
+    UsdGeomXform inst1 = UsdGeomXform::Define(stage, inst1Path);
+    inst1.GetPrim().GetReferences().AddInternalReference(assetPath);
+    inst1.GetPrim().SetInstanceable(true);
+    UsdPhysicsMeshCollisionAPI::Apply(inst1.GetPrim());
+
+    UsdGeomXformOp inst0TranslateOp = inst0.AddTranslateOp();
+    inst0TranslateOp.Set(GfVec3d(0.0));
+    inst1.AddTranslateOp().Set(GfVec3d(50.0, 0.0, 0.0));
+
+    REQUIRE(stage->GetPrimAtPath(inst0Path).IsInstance());
+
+    const SdfPath inst0SectionPath = inst0Path.AppendChild(TfToken("Xform")).AppendChild(TfToken("Section0"));
+    const SdfPath inst1SectionPath = inst1Path.AppendChild(TfToken("Xform")).AppendChild(TfToken("Section0"));
+
+    physxSim->attachStage(stageId);
+
+    PxBase* base0 = reinterpret_cast<PxBase*>(physx->getPhysXPtr(inst0SectionPath, ePTActor));
+    REQUIRE(base0 != nullptr);
+    REQUIRE(base0->is<PxRigidStatic>());
+    compare(base0->is<PxRigidStatic>()->getGlobalPose().p, GfVec3f(0.0f), toleranceEpsilon);
+
+    PxBase* base1 = reinterpret_cast<PxBase*>(physx->getPhysXPtr(inst1SectionPath, ePTActor));
+    REQUIRE(base1 != nullptr);
+    REQUIRE(base1->is<PxRigidStatic>());
+    compare(base1->is<PxRigidStatic>()->getGlobalPose().p, GfVec3f(50.0f, 0.0f, 0.0f), toleranceEpsilon);
+
+    // Move ONLY instance 0's own transform after the first cook.
+    inst0TranslateOp.Set(GfVec3d(100.0, 0.0, 0.0));
+    physxSim->simulate(0.01f, 0.0f);
+    physxSim->fetchResults();
+
+    base0 = reinterpret_cast<PxBase*>(physx->getPhysXPtr(inst0SectionPath, ePTActor));
+    REQUIRE(base0 != nullptr);
+    REQUIRE(base0->is<PxRigidStatic>());
+    // Instance 0's collider must follow its own new transform...
+    compare(base0->is<PxRigidStatic>()->getGlobalPose().p, GfVec3f(100.0f, 0.0f, 0.0f), toleranceEpsilon);
+
+    // ...while instance 1, never touched, must stay exactly where it was.
+    base1 = reinterpret_cast<PxBase*>(physx->getPhysXPtr(inst1SectionPath, ePTActor));
+    REQUIRE(base1 != nullptr);
+    REQUIRE(base1->is<PxRigidStatic>());
+    compare(base1->is<PxRigidStatic>()->getGlobalPose().p, GfVec3f(50.0f, 0.0f, 0.0f), toleranceEpsilon);
+
+    physxSim->detachStage();
+    UsdUtilsStageCache::Get().Erase(stage);
+}
+
+// NvBugs 6511050: a scene graph instanced sphere points collider used to crash in
+// parseCollisionDesc. scaleShapeDesc had no case for eSpherePointsShape, so it returned
+// null and the null descriptor was written through. A UsdGeomPoints prim with matching
+// widths is parsed as a sphere points collider, which makes this reachable without cooking.
+TEST_CASE("Collision Instanced SpherePoints",
+    "[omniphysics]"
+    "[component=OmniPhysics][owner=aborovicka][priority=mandatory]")
+{
+    PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
+
+    const float toleranceEpsilon = 1e-4f;
+
+    IPhysx* physx = physicsTests.acquirePhysxInterface();
+    REQUIRE(physx);
+    IPhysxSimulation* physxSim = physicsTests.acquirePhysxSimulationInterface();
+    REQUIRE(physxSim);
+
+    // setup basic stage
+    UsdStageRefPtr stage = UsdStage::CreateInMemory();
+    PXR_NS::UsdGeomSetStageUpAxis(stage, TfToken("Z"));
+    const float metersPerStageUnit = 0.01f; // work in default centimeters
+    PXR_NS::UsdGeomSetStageMetersPerUnit(stage, static_cast<double>(metersPerStageUnit));
+    const SdfPath defaultPrimPath = SdfPath("/World");
+    UsdPrim defaultPrim = stage->DefinePrim(defaultPrimPath);
+    stage->SetDefaultPrim(defaultPrim);
+
+    PXR_NS::UsdUtilsStageCache::Get().Insert(stage);
+    long stageId = PXR_NS::UsdUtilsStageCache::Get().GetId(stage).ToLongInt();
+
+    const SdfPath physicsScenePath = defaultPrimPath.AppendChild(TfToken("physicsScene"));
+    UsdPhysicsScene::Define(stage, physicsScenePath);
+
+    // prototype holding the sphere points collider, two unit-radius spheres
+    const SdfPath xformPath = defaultPrimPath.AppendChild(TfToken("xform"));
+    UsdGeomXform::Define(stage, xformPath);
+    const SdfPath pointsPath = xformPath.AppendChild(TfToken("spherePoints"));
+    UsdGeomPoints pointsGeom = UsdGeomPoints::Define(stage, pointsPath);
+    VtArray<GfVec3f> positions = { GfVec3f(0.0f, 0.0f, 0.0f), GfVec3f(4.0f, 0.0f, 0.0f) };
+    VtArray<float> widths = { 2.0f, 2.0f };
+    pointsGeom.CreatePointsAttr().Set(positions);
+    pointsGeom.CreateWidthsAttr().Set(widths);
+    UsdPhysicsCollisionAPI::Apply(pointsGeom.GetPrim());
+
+    // instance the prototype with a uniform scale
+    const SdfPath xformInstPath = defaultPrimPath.AppendChild(TfToken("xformInst"));
+    UsdGeomXform xformInst = UsdGeomXform::Define(stage, xformInstPath);
+    xformInst.GetPrim().GetReferences().AddInternalReference(xformPath);
+    xformInst.GetPrim().SetInstanceable(true);
+    xformInst.AddScaleOp().Set(GfVec3f(2.0f));
+
+    // this is the call that used to fault
+    physxSim->attachStage(stageId);
+
+    const SdfPath instancedPointsPath = xformInstPath.AppendChild(TfToken("spherePoints"));
+    void* voidPtr = physx->getPhysXPtr(instancedPointsPath, ePTCompoundShape);
+    REQUIRE(voidPtr != nullptr);
+
+    // the instance scale has to reach the spheres exactly once: radius 1.0 scaled by 2.0.
+    // Scaling both meshScale and the individual spheres would give 4.0 here.
+    PhysXCompoundShape* compoundShape = (PhysXCompoundShape*)voidPtr;
+    const std::vector<PxShape*>& shapes = compoundShape->getShapes();
+    REQUIRE(shapes.size() == 2);
+    for (const PxShape* shape : shapes)
+    {
+        const PxGeometry& geom = shape->getGeometry();
+        REQUIRE(geom.getType() == PxGeometryType::eSPHERE);
+        CHECK(fabsf(static_cast<const PxSphereGeometry&>(geom).radius - 2.0f) < toleranceEpsilon);
+    }
+
+    // static body should be there
+    PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(instancedPointsPath, ePTActor));
+    REQUIRE(basePtr != nullptr);
+    CHECK(basePtr->is<PxRigidStatic>());
+
     // Common post-test actions
     physxSim->detachStage();
 

@@ -831,6 +831,8 @@ void registerChangeParams(std::vector<usdparser::ChangeParams>& changeParams)
 
     REGISTER_CHANGE(changeParams, PhysxSchemaTokens.Get()->physxJointMaxJointVelocity, emptyRequirementCheck,
         updateArticulationMaxJointVelocity)
+    REGISTER_CHANGE(changeParams, NewtonSchemaTokens->newtonVelocityLimit, emptyRequirementCheck,
+        updateNewtonJointVelocityLimit)
     REGISTER_CHANGE(changeParams, PhysxSchemaTokens.Get()->physxJointJointFriction, emptyRequirementCheck,
         updateArticulationFrictionCoefficient)
 

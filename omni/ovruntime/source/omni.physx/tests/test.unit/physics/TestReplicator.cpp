@@ -2853,7 +2853,119 @@ TEST_CASE_TEMPLATE("Replicator Multithreading Tests", T, USDReplicator)
     physxReplicator->unregisterReplicator(stageId);
 
     settings->setBool(kSettingUpdateToUsd, true);
-    settings->setBool(kSettingUpdateVelocitiesToUsd, true);    
+    settings->setBool(kSettingUpdateVelocitiesToUsd, true);
+
+    PXR_NS::UsdUtilsStageCache::Get().Erase(stage);
+    stage = nullptr;
+}
+
+//-----------------------------------------------------------------------------
+// Regression test for OMPE-97081 / crash 80582733c78f7a4421cf4c0315edb24f.
+TEST_CASE("Replicator Compound Shape Shared Material Parallel Regression",
+    "[omniphysics]"
+    "[component=OmniPhysics][owner=aborovicka][priority=mandatory]")
+{
+    PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
+    IPhysx* physx = physicsTests.acquirePhysxInterface();
+    REQUIRE(physx);
+    IPhysxSimulation* physxSim = physicsTests.acquirePhysxSimulationInterface();
+    REQUIRE(physxSim);
+    IPhysxReplicator* physxReplicator = physicsTests.acquirePhysxReplicatorInterface();
+    REQUIRE(physxReplicator);
+
+    carb::settings::ISettings* settings =
+        physicsTests.getApp()->getFramework()->acquireInterface<carb::settings::ISettings>();
+    REQUIRE(settings);
+
+    const bool prevUpdateToUsd = settings->getAsBool(kSettingUpdateToUsd);
+    const bool prevUpdateVelocities = settings->getAsBool(kSettingUpdateVelocitiesToUsd);
+    settings->setBool(kSettingUpdateToUsd, false);
+    settings->setBool(kSettingUpdateVelocitiesToUsd, false);
+
+    const uint32_t numReplications = 256; // > 128 threshold -> tasking->parallelFor path
+
+    UsdStageRefPtr stage = UsdStage::CreateInMemory();
+    PXR_NS::UsdGeomSetStageUpAxis(stage, TfToken("Z"));
+    PXR_NS::UsdGeomSetStageMetersPerUnit(stage, 0.01);
+    const SdfPath defaultPrimPath = SdfPath("/World");
+    UsdPrim defaultPrim = stage->DefinePrim(defaultPrimPath);
+    stage->SetDefaultPrim(defaultPrim);
+
+    PXR_NS::UsdUtilsStageCache::Get().Insert(stage);
+    long stageId = PXR_NS::UsdUtilsStageCache::Get().GetId(stage).ToLongInt();
+
+    const SdfPath physicsScenePath = defaultPrimPath.AppendChild(TfToken("physicsScene"));
+    UsdPhysicsScene::Define(stage, physicsScenePath);
+
+    UsdGeomScope::Define(stage, SdfPath("/World/envs"));
+
+    const SdfPath sharedMaterialPath("/World/physicsMaterial");
+    UsdShadeMaterial sharedMaterial = UsdShadeMaterial::Define(stage, sharedMaterialPath);
+    UsdPhysicsMaterialAPI::Apply(sharedMaterial.GetPrim());
+
+    UsdGeomXform::Define(stage, SdfPath("/World/envs/env0"));
+    const SdfPath meshPath("/World/envs/env0/concaveMesh");
+    PXR_NS::UsdGeomMesh concaveMesh = createConcaveMesh(stage, meshPath, 100.0f);
+    UsdPhysicsRigidBodyAPI::Apply(concaveMesh.GetPrim());
+    UsdPhysicsCollisionAPI::Apply(concaveMesh.GetPrim());
+    UsdPhysicsMeshCollisionAPI meshCollisionAPI = UsdPhysicsMeshCollisionAPI::Apply(concaveMesh.GetPrim());
+    meshCollisionAPI.CreateApproximationAttr().Set(UsdPhysicsTokens->convexDecomposition);
+
+    UsdShadeMaterialBindingAPI bindingAPI = UsdShadeMaterialBindingAPI::Apply(concaveMesh.GetPrim());
+    bindingAPI.Bind(sharedMaterial, UsdShadeTokens->weakerThanDescendants, TfToken("physics"));
+
+    const SdfPath cloneEnv("/World/envs/env0");
+
+    IReplicatorCallback cb = { nullptr, nullptr, nullptr };
+    cb.replicationAttachFn = [](uint64_t stageId, uint32_t& numExludePaths, uint64_t*& excludePaths, void* userData)
+    {
+        numExludePaths = 1;
+        static uint64_t excludePath = sdfPathToInt(SdfPath("/World/envs"));
+        excludePaths = &excludePath;
+    };
+    cb.hierarchyRenameFn = [](uint64_t replicatePath, uint32_t index, void* userData)
+    {
+        const std::string stringPath = "/World/envs/env" + std::to_string(index + 1);
+        const SdfPath outPath(stringPath);
+        return sdfPathToInt(outPath);
+    };
+
+    physxReplicator->registerReplicator(stageId, cb);
+
+    physxSim->attachStage(stageId);
+
+    PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(physicsScenePath, ePTScene));
+    REQUIRE(basePtr != nullptr);
+    PxScene* pxScene = (PxScene*)basePtr;
+    CHECK(pxScene->getNbActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC) == 0);
+
+    // Replicate with environment IDs enabled (useEnvIds=true). All clones are authored at the
+    // origin (their target prims have no transform), so without per-environment collision
+    // filtering the coincident bodies overflow the GPU broadphase contact-pair buffers on CI.
+    // Environment IDs make PhysX skip cross-environment pairs, matching how IsaacLab replicates
+    // (see the "Replicator Multithreading Tests" case, which replicates 1023 envs the same way).
+    physxReplicator->replicate(stageId, sdfPathToInt(cloneEnv), numReplications, true, false);
+
+    CHECK(pxScene->getNbActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC) == numReplications + 1);
+
+    for (uint32_t i = 0; i <= numReplications; i++)
+    {
+        const SdfPath envMeshPath("/World/envs/env" + std::to_string(i) + "/concaveMesh");
+
+        PxBase* actorPtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(envMeshPath, ePTActor));
+        REQUIRE(actorPtr != nullptr);
+
+        void* voidPtr = physx->getPhysXPtr(envMeshPath, ePTCompoundShape);
+        REQUIRE(voidPtr != nullptr);
+        PhysXCompoundShape* cShape = (PhysXCompoundShape*)voidPtr;
+        CHECK(cShape->getShapes().size() >= 2);
+    }
+
+    physxSim->detachStage();
+    physxReplicator->unregisterReplicator(stageId);
+
+    settings->setBool(kSettingUpdateToUsd, prevUpdateToUsd);
+    settings->setBool(kSettingUpdateVelocitiesToUsd, prevUpdateVelocities);
 
     PXR_NS::UsdUtilsStageCache::Get().Erase(stage);
     stage = nullptr;

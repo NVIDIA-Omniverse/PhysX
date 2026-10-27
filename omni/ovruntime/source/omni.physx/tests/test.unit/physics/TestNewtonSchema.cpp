@@ -12,6 +12,8 @@
 #include <PxPhysicsAPI.h>
 #include <omni/physx/IPhysx.h>
 #include <omni/physx/IPhysxSimulation.h>
+#include <omni/physx/PhysxTokens.h>
+#include <physicsSchemaTools/physicsSchemaTokens.h>
 
 #include "PhysicsTools.h"
 
@@ -68,6 +70,11 @@ TEST_CASE("Newton Schema Plugin Registration", "[newton]")
     {
         CHECK_FALSE(TfType::FindByName("NewtonPhysicsMimicAPI").IsUnknown());
     }
+
+    SUBCASE("Plugin declares NewtonJointAPI")
+    {
+        CHECK_FALSE(TfType::FindByName("NewtonPhysicsJointAPI").IsUnknown());
+    }
 }
 
 // =============================================================================
@@ -109,10 +116,20 @@ TEST_CASE("Newton Schema Apply and Defaults", "[newton]")
         REQUIRE(prim.ApplyAPI(TfType::FindByName("NewtonPhysicsMaterialAPI")));
 
         float torsional; prim.GetAttribute(NewtonSchemaTokens->newtonTorsionalFriction).Get(&torsional);
-        CHECK(torsional == doctest::Approx(0.25f));
+        CHECK(torsional == doctest::Approx(0.005f));
 
         float rolling; prim.GetAttribute(NewtonSchemaTokens->newtonRollingFriction).Get(&rolling);
-        CHECK(rolling == doctest::Approx(0.0005f));
+        CHECK(rolling == doctest::Approx(0.0001f));
+    }
+
+    SUBCASE("NewtonJointAPI attributes have correct defaults")
+    {
+        UsdPrim prim = UsdPhysicsRevoluteJoint::Define(stage, SdfPath("/Joint")).GetPrim();
+        REQUIRE(prim.ApplyAPI(TfType::FindByName("NewtonPhysicsJointAPI")));
+
+        // Newton's "no clamping" sentinel is +inf, matching physxJoint:maxJointVelocity.
+        float velocityLimit; prim.GetAttribute(NewtonSchemaTokens->newtonVelocityLimit).Get(&velocityLimit);
+        CHECK((std::isinf(velocityLimit) && velocityLimit > 0.0f));
     }
 
     SUBCASE("NewtonXpbdSceneAPI attributes have correct defaults")
@@ -724,6 +741,297 @@ TEST_CASE("Newton Articulation selfCollisionEnabled fallback", "[newton]")
         // Default selfCollision is true
 
         physxSim->detachStage();
+    }
+
+    UsdUtilsStageCache::Get().Erase(stage);
+}
+
+// ---- Joint: newton:velocityLimit fallback ----
+
+// Helper: fixed-base articulation with one revolute (angular DOF) and one prismatic
+// (linear DOF) joint, so both unit paths of maxJointVelocity are covered.
+static UsdStageRefPtr createJointArticulationStage(SdfPath& outRevolutePath, SdfPath& outPrismaticPath)
+{
+    const float density = 0.001f;
+    const GfVec3f linkDims(100.f, 10.f, 10.f);
+    const GfVec3f color(0.7f, 0.1f, 0.1f);
+
+    SdfPath scenePath;
+    UsdStageRefPtr stage = createPhysicsStage(scenePath);
+
+    const SdfPath rootPath("/World/rootLink");
+    const SdfPath revoluteLinkPath("/World/revoluteLink");
+    const SdfPath prismaticLinkPath("/World/prismaticLink");
+
+    addRigidBox(stage, rootPath.GetString(), linkDims, GfVec3f(0.f), GfQuatf(1.0f), color, density);
+    addRigidBox(stage, revoluteLinkPath.GetString(), linkDims, GfVec3f(100.f, 0.f, 0.f), GfQuatf(1.0f), color, density);
+    addRigidBox(stage, prismaticLinkPath.GetString(), linkDims, GfVec3f(200.f, 0.f, 0.f), GfQuatf(1.0f), color, density);
+
+    // Fixed joint to the world turns rootLink into the articulation base.
+    UsdPhysicsFixedJoint worldJoint = UsdPhysicsFixedJoint::Define(stage, SdfPath("/World/baseFixedJoint"));
+    worldJoint.CreateBody1Rel().AddTarget(rootPath);
+
+    outRevolutePath = SdfPath("/World/revoluteJoint");
+    UsdPhysicsRevoluteJoint revolute = UsdPhysicsRevoluteJoint::Define(stage, outRevolutePath);
+    revolute.CreateBody0Rel().AddTarget(rootPath);
+    revolute.CreateBody1Rel().AddTarget(revoluteLinkPath);
+    revolute.CreateAxisAttr().Set(TfToken("Z"));
+    revolute.CreateLowerLimitAttr().Set(-90.0f);
+    revolute.CreateUpperLimitAttr().Set(90.0f);
+
+    outPrismaticPath = SdfPath("/World/prismaticJoint");
+    UsdPhysicsPrismaticJoint prismatic = UsdPhysicsPrismaticJoint::Define(stage, outPrismaticPath);
+    prismatic.CreateBody0Rel().AddTarget(revoluteLinkPath);
+    prismatic.CreateBody1Rel().AddTarget(prismaticLinkPath);
+    prismatic.CreateAxisAttr().Set(TfToken("X"));
+
+    UsdPhysicsArticulationRootAPI::Apply(stage->GetPrimAtPath(rootPath));
+
+    return stage;
+}
+
+// Helper: fetch the articulation joint behind a joint prim.
+static PxArticulationJointReducedCoordinate* getArticulationJointChecked(IPhysx* physx, const SdfPath& jointPath)
+{
+    PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(jointPath, ePTLinkJoint));
+    REQUIRE(basePtr != nullptr);
+    PxArticulationJointReducedCoordinate* joint = basePtr->is<PxArticulationJointReducedCoordinate>();
+    REQUIRE(joint != nullptr);
+    return joint;
+}
+
+TEST_CASE("Newton Joint velocityLimit fallback", "[newton]")
+{
+    const float epsilon = 0.001f;
+
+    PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
+    IPhysx* physx = physicsTests.acquirePhysxInterface();
+    REQUIRE(physx);
+    IPhysxSimulation* physxSim = physicsTests.acquirePhysxSimulationInterface();
+    REQUIRE(physxSim);
+
+    SdfPath revolutePath;
+    SdfPath prismaticPath;
+    UsdStageRefPtr stage = createJointArticulationStage(revolutePath, prismaticPath);
+    UsdPrim revolutePrim = stage->GetPrimAtPath(revolutePath);
+    UsdPrim prismaticPrim = stage->GetPrimAtPath(prismaticPath);
+
+    UsdUtilsStageCache::Get().Insert(stage);
+    long stageId = UsdUtilsStageCache::Get().GetId(stage).ToLongInt();
+
+    SUBCASE("Newton velocityLimit used when PhysX maxJointVelocity not authored")
+    {
+        // Angular DOF: Newton units are degrees/s, same as physxJoint:maxJointVelocity,
+        // so the parser converts to radians/s exactly as it does for the PhysX attribute.
+        revolutePrim.ApplyAPI(TfType::FindByName("NewtonPhysicsJointAPI"));
+        revolutePrim.GetAttribute(NewtonSchemaTokens->newtonVelocityLimit).Set(30.0f);
+
+        // Linear DOF: distance/s, no conversion.
+        prismaticPrim.ApplyAPI(TfType::FindByName("NewtonPhysicsJointAPI"));
+        prismaticPrim.GetAttribute(NewtonSchemaTokens->newtonVelocityLimit).Set(5.0f);
+
+        physxSim->attachStage(stageId);
+
+        PxArticulationJointReducedCoordinate* revoluteJoint = getArticulationJointChecked(physx, revolutePath);
+        CHECK(fabsf(radToDeg(revoluteJoint->getMaxJointVelocity(PxArticulationAxis::eTWIST)) - 30.0f) < epsilon);
+
+        PxArticulationJointReducedCoordinate* prismaticJoint = getArticulationJointChecked(physx, prismaticPath);
+        CHECK(fabsf(prismaticJoint->getMaxJointVelocity(PxArticulationAxis::eX) - 5.0f) < epsilon);
+
+        physxSim->detachStage();
+    }
+
+    SUBCASE("PhysX maxJointVelocity takes priority over Newton velocityLimit")
+    {
+        revolutePrim.ApplyAPI(TfType::FindByName("NewtonPhysicsJointAPI"));
+        revolutePrim.GetAttribute(NewtonSchemaTokens->newtonVelocityLimit).Set(30.0f);
+
+        PhysxSchemaPhysxJointAPI physxJointAPI = PhysxSchemaPhysxJointAPI::Apply(revolutePrim);
+        physxJointAPI.CreateMaxJointVelocityAttr().Set(60.0f);
+
+        physxSim->attachStage(stageId);
+
+        PxArticulationJointReducedCoordinate* revoluteJoint = getArticulationJointChecked(physx, revolutePath);
+        CHECK(fabsf(radToDeg(revoluteJoint->getMaxJointVelocity(PxArticulationAxis::eTWIST)) - 60.0f) < epsilon);
+
+        physxSim->detachStage();
+    }
+
+    SUBCASE("Applied PhysxJointAPI without an authored value does not shadow Newton")
+    {
+        // PhysxJointAPI present but maxJointVelocity left at its schema default —
+        // priority 2 (Newton authored) must still beat priority 3 (PhysX default).
+        PhysxSchemaPhysxJointAPI::Apply(revolutePrim);
+
+        revolutePrim.ApplyAPI(TfType::FindByName("NewtonPhysicsJointAPI"));
+        revolutePrim.GetAttribute(NewtonSchemaTokens->newtonVelocityLimit).Set(45.0f);
+
+        physxSim->attachStage(stageId);
+
+        PxArticulationJointReducedCoordinate* revoluteJoint = getArticulationJointChecked(physx, revolutePath);
+        CHECK(fabsf(radToDeg(revoluteJoint->getMaxJointVelocity(PxArticulationAxis::eTWIST)) - 45.0f) < epsilon);
+
+        physxSim->detachStage();
+    }
+
+    SUBCASE("Per-axis PhysxJointAxisAPI overrides the Newton joint-level value")
+    {
+        revolutePrim.ApplyAPI(TfType::FindByName("NewtonPhysicsJointAPI"));
+        revolutePrim.GetAttribute(NewtonSchemaTokens->newtonVelocityLimit).Set(30.0f);
+
+        revolutePrim.ApplyAPI(PhysxAdditionAPITokens->PhysxJointAxisAPI, UsdPhysicsTokens->angular);
+        revolutePrim.CreateAttribute(PhysxAdditionAttrTokens->maxJointVelocityAngular, SdfValueTypeNames->Float)
+            .Set(15.0f);
+
+        physxSim->attachStage(stageId);
+
+        PxArticulationJointReducedCoordinate* revoluteJoint = getArticulationJointChecked(physx, revolutePath);
+        CHECK(fabsf(radToDeg(revoluteJoint->getMaxJointVelocity(PxArticulationAxis::eTWIST)) - 15.0f) < epsilon);
+
+        physxSim->detachStage();
+    }
+
+    SUBCASE("Newton velocityLimit applied but not authored — uses PhysX default")
+    {
+        // Schema default is +inf on both sides, i.e. no clamping.
+        revolutePrim.ApplyAPI(TfType::FindByName("NewtonPhysicsJointAPI"));
+
+        physxSim->attachStage(stageId);
+
+        PxArticulationJointReducedCoordinate* revoluteJoint = getArticulationJointChecked(physx, revolutePath);
+        CHECK(revoluteJoint->getMaxJointVelocity(PxArticulationAxis::eTWIST) > 1e30f);
+
+        physxSim->detachStage();
+    }
+
+    SUBCASE("Negative Newton velocityLimit is clamped to zero")
+    {
+        // Newton declares the range as (0, inf]; out-of-range values clamp rather than
+        // reaching PhysX, which rejects negative joint velocity limits.
+        prismaticPrim.ApplyAPI(TfType::FindByName("NewtonPhysicsJointAPI"));
+        prismaticPrim.GetAttribute(NewtonSchemaTokens->newtonVelocityLimit).Set(-5.0f);
+
+        physxSim->attachStage(stageId);
+
+        PxArticulationJointReducedCoordinate* prismaticJoint = getArticulationJointChecked(physx, prismaticPath);
+        CHECK(fabsf(prismaticJoint->getMaxJointVelocity(PxArticulationAxis::eX)) < epsilon);
+
+        physxSim->detachStage();
+    }
+
+    UsdUtilsStageCache::Get().Erase(stage);
+}
+
+// ---- Joint: newton:velocityLimit runtime change ----
+
+TEST_CASE("Newton Joint velocityLimit runtime change", "[newton]")
+{
+    const float epsilon = 0.001f;
+
+    PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
+    IPhysx* physx = physicsTests.acquirePhysxInterface();
+    REQUIRE(physx);
+    IPhysxSimulation* physxSim = physicsTests.acquirePhysxSimulationInterface();
+    REQUIRE(physxSim);
+
+    SdfPath revolutePath;
+    SdfPath prismaticPath;
+    UsdStageRefPtr stage = createJointArticulationStage(revolutePath, prismaticPath);
+    UsdPrim revolutePrim = stage->GetPrimAtPath(revolutePath);
+    UsdPrim prismaticPrim = stage->GetPrimAtPath(prismaticPath);
+
+    UsdUtilsStageCache::Get().Insert(stage);
+    long stageId = UsdUtilsStageCache::Get().GetId(stage).ToLongInt();
+
+    SUBCASE("Newton fallback updates maxJointVelocity at runtime")
+    {
+        revolutePrim.ApplyAPI(TfType::FindByName("NewtonPhysicsJointAPI"));
+        revolutePrim.GetAttribute(NewtonSchemaTokens->newtonVelocityLimit).Set(30.0f);
+        prismaticPrim.ApplyAPI(TfType::FindByName("NewtonPhysicsJointAPI"));
+        prismaticPrim.GetAttribute(NewtonSchemaTokens->newtonVelocityLimit).Set(5.0f);
+
+        USDChange changeTemplate;
+        changeTemplate.init(stageId, physicsTests.getApp()->getFramework());
+        physxSim->attachStage(stageId);
+
+        PxArticulationJointReducedCoordinate* revoluteJoint = getArticulationJointChecked(physx, revolutePath);
+        PxArticulationJointReducedCoordinate* prismaticJoint = getArticulationJointChecked(physx, prismaticPath);
+        CHECK(fabsf(radToDeg(revoluteJoint->getMaxJointVelocity(PxArticulationAxis::eTWIST)) - 30.0f) < epsilon);
+        CHECK(fabsf(prismaticJoint->getMaxJointVelocity(PxArticulationAxis::eX) - 5.0f) < epsilon);
+
+        changeTemplate.setAttributeValue<float>(revolutePath, NewtonSchemaTokens->newtonVelocityLimit, 90.0f);
+        changeTemplate.setAttributeValue<float>(prismaticPath, NewtonSchemaTokens->newtonVelocityLimit, 12.0f);
+        physxSim->simulate(0.01f, 0.0f);
+        physxSim->fetchResults();
+
+        CHECK(fabsf(radToDeg(revoluteJoint->getMaxJointVelocity(PxArticulationAxis::eTWIST)) - 90.0f) < epsilon);
+        CHECK(fabsf(prismaticJoint->getMaxJointVelocity(PxArticulationAxis::eX) - 12.0f) < epsilon);
+
+        physxSim->detachStage();
+        changeTemplate.destroy();
+    }
+
+    SUBCASE("PhysX-authored maxJointVelocity ignores Newton runtime change")
+    {
+        revolutePrim.ApplyAPI(TfType::FindByName("NewtonPhysicsJointAPI"));
+        revolutePrim.GetAttribute(NewtonSchemaTokens->newtonVelocityLimit).Set(30.0f);
+
+        PhysxSchemaPhysxJointAPI physxJointAPI = PhysxSchemaPhysxJointAPI::Apply(revolutePrim);
+        physxJointAPI.CreateMaxJointVelocityAttr().Set(60.0f);
+
+        USDChange changeTemplate;
+        changeTemplate.init(stageId, physicsTests.getApp()->getFramework());
+        physxSim->attachStage(stageId);
+
+        PxArticulationJointReducedCoordinate* revoluteJoint = getArticulationJointChecked(physx, revolutePath);
+        CHECK(fabsf(radToDeg(revoluteJoint->getMaxJointVelocity(PxArticulationAxis::eTWIST)) - 60.0f) < epsilon);
+
+        // PhysX wins, so the Newton change must not move the runtime value.
+        changeTemplate.setAttributeValue<float>(revolutePath, NewtonSchemaTokens->newtonVelocityLimit, 90.0f);
+        physxSim->simulate(0.01f, 0.0f);
+        physxSim->fetchResults();
+        CHECK(fabsf(radToDeg(revoluteJoint->getMaxJointVelocity(PxArticulationAxis::eTWIST)) - 60.0f) < epsilon);
+
+        physxSim->detachStage();
+        changeTemplate.destroy();
+    }
+
+    SUBCASE("Per-axis PhysxJointAxisAPI survives a Newton runtime change")
+    {
+        // Parse time gives a per-axis PhysxJointAxisAPI:maxJointVelocity priority over the
+        // joint-level Newton value; a runtime Newton edit must respect the same precedence
+        // instead of broadcasting over every DOF. The prismatic joint carries no per-axis
+        // authoring and acts as the control: it must still follow the Newton change, so a
+        // guard that simply dropped the update would not pass this subcase.
+        revolutePrim.ApplyAPI(TfType::FindByName("NewtonPhysicsJointAPI"));
+        revolutePrim.GetAttribute(NewtonSchemaTokens->newtonVelocityLimit).Set(30.0f);
+        revolutePrim.ApplyAPI(PhysxAdditionAPITokens->PhysxJointAxisAPI, UsdPhysicsTokens->angular);
+        revolutePrim.CreateAttribute(PhysxAdditionAttrTokens->maxJointVelocityAngular, SdfValueTypeNames->Float)
+            .Set(15.0f);
+
+        prismaticPrim.ApplyAPI(TfType::FindByName("NewtonPhysicsJointAPI"));
+        prismaticPrim.GetAttribute(NewtonSchemaTokens->newtonVelocityLimit).Set(5.0f);
+
+        USDChange changeTemplate;
+        changeTemplate.init(stageId, physicsTests.getApp()->getFramework());
+        physxSim->attachStage(stageId);
+
+        PxArticulationJointReducedCoordinate* revoluteJoint = getArticulationJointChecked(physx, revolutePath);
+        PxArticulationJointReducedCoordinate* prismaticJoint = getArticulationJointChecked(physx, prismaticPath);
+        CHECK(fabsf(radToDeg(revoluteJoint->getMaxJointVelocity(PxArticulationAxis::eTWIST)) - 15.0f) < epsilon);
+        CHECK(fabsf(prismaticJoint->getMaxJointVelocity(PxArticulationAxis::eX) - 5.0f) < epsilon);
+
+        changeTemplate.setAttributeValue<float>(revolutePath, NewtonSchemaTokens->newtonVelocityLimit, 90.0f);
+        changeTemplate.setAttributeValue<float>(prismaticPath, NewtonSchemaTokens->newtonVelocityLimit, 12.0f);
+        physxSim->simulate(0.01f, 0.0f);
+        physxSim->fetchResults();
+
+        // The per-axis authoring still wins; only the unguarded prismatic axis moves.
+        CHECK(fabsf(radToDeg(revoluteJoint->getMaxJointVelocity(PxArticulationAxis::eTWIST)) - 15.0f) < epsilon);
+        CHECK(fabsf(prismaticJoint->getMaxJointVelocity(PxArticulationAxis::eX) - 12.0f) < epsilon);
+
+        physxSim->detachStage();
+        changeTemplate.destroy();
     }
 
     UsdUtilsStageCache::Get().Erase(stage);

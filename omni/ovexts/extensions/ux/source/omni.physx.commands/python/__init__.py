@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-#
+# SPDX-License-Identifier: Apache-2.0
 
 __all__ = [
     "PhysicsCommand",
@@ -41,6 +40,7 @@ __all__ = [
 import inspect
 import carb
 import omni.kit.commands
+import omni.kit.undo
 from omni.kit.usd_undo import UsdLayerUndo
 from omni.kit.commands import Command, execute, register_all_commands_in_module
 from omni.physx import get_physx_interface
@@ -393,6 +393,15 @@ class RemoveStaticColliderCommand(PhysicsCommand):
         pass
 
 
+def _apply_default_joint_limits(prim, joint_type):
+    if joint_type == "Revolute":
+        execute("AddRevolutePhysicsJointComponent", usd_prim=prim, component="PhysicsLimit:angular")
+    elif joint_type == "Prismatic":
+        execute("AddPrismaticPhysicsJointComponent", usd_prim=prim, component="PhysicsLimit:linear")
+    elif joint_type == "Spherical":
+        execute("AddSphericalPhysicsJointComponent", usd_prim=prim, component="PhysicsLimit")
+
+
 class CreateJointCommand(PhysicsCommand):
     """
     Wrapper for omni.physx.utils.createJoint. Connects two primitives with a physical joints.
@@ -403,7 +412,7 @@ class CreateJointCommand(PhysicsCommand):
         from_prim: From primitive.
         to_prim: To primitive.
 
-    Returns: 
+    Returns:
         Joint primitive.
     """
     @autoassign
@@ -411,7 +420,12 @@ class CreateJointCommand(PhysicsCommand):
         pass
 
     def do(self):
-        prim = utils.createJoint(self._stage, self._joint_type, self._from_prim, self._to_prim)
+        omni.kit.undo.begin_group()
+        try:
+            prim = utils.createJoint(self._stage, self._joint_type, self._from_prim, self._to_prim)
+            _apply_default_joint_limits(prim, self._joint_type)
+        finally:
+            omni.kit.undo.end_group()
         self._primPath = prim.GetPath().pathString
         return prim
 
@@ -429,7 +443,7 @@ class CreateJointsCommand(PhysicsCommand):
         paths: A list of paths.
         join_to_parent: Connect primitives to their parents if True, otherwise to a scene pseudo-root.
 
-    Returns: 
+    Returns:
         Joint primitives.
     """
     @autoassign
@@ -437,7 +451,13 @@ class CreateJointsCommand(PhysicsCommand):
         pass
 
     def do(self):
-        prims = utils.createJoints(self._stage, self._joint_type, self._paths, self._join_to_parent)
+        omni.kit.undo.begin_group()
+        try:
+            prims = utils.createJoints(self._stage, self._joint_type, self._paths, self._join_to_parent)
+            for prim in prims:
+                _apply_default_joint_limits(prim, self._joint_type)
+        finally:
+            omni.kit.undo.end_group()
         self._primPathsList = [prim.GetPath().pathString for prim in prims]
         return prims
 
@@ -1287,8 +1307,8 @@ class AddSphericalPhysicsJointComponentCommand(Command):
         stage = self._usd_prim.GetStage()
         if self._component == "PhysicsLimit":
             sphericalJoint = UsdPhysics.SphericalJoint.Get(stage, self._usd_prim.GetPrimPath())
-            sphericalJoint.CreateConeAngle0LimitAttr().Set(1.57)
-            sphericalJoint.CreateConeAngle1LimitAttr().Set(1.57)
+            sphericalJoint.CreateConeAngle0LimitAttr().Set(90.0)
+            sphericalJoint.CreateConeAngle1LimitAttr().Set(90.0)
             (ret, physxAPI) = execute("ApplyAPISchema", api=PhysxSchema.PhysxLimitAPI, prim=self._usd_prim, api_prefix="physxLimit", multiple_api_token="cone")
             PhysxSchema.PhysxLimitAPI.Apply(self._usd_prim, "cone")
         elif "PhysxJointAxis" in self._component:

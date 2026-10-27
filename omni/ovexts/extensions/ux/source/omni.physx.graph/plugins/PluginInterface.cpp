@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
-//
+// SPDX-License-Identifier: Apache-2.0
 
 #include "UsdPCH.h"
 
@@ -49,7 +48,21 @@ CARB_EXPORT void carbOnPluginStartup()
 
 CARB_EXPORT void carbOnPluginShutdown()
 {
-    RELEASE_OGN_NODES()
+    // During an abnormal process exit (e.g. the renderer calls exit(), which runs carb's
+    // OnExitProcess -> unloadAllPlugins) plugin unload order is unspecified, so omni.graph.core
+    // (which provides IGraphRegistry) may already be gone by the time we get here.
+    // RELEASE_OGN_NODES() deregisters our OmniGraph node types through the cached IGraphRegistry;
+    // if that provider is unloaded the cached pointer is stale and the deregistration call faults
+    // (SIGSEGV / SEGV_ACCERR, NvBugs 6224712). tryAcquireExistingInterface() only succeeds while
+    // the provider plugin is still started (it never tries to reload it) and consults framework
+    // state rather than the stale cached pointer, so use it to gate the deregistration. On a normal
+    // Kit shutdown the provider is alive and this behaves exactly as before. (This narrows, but
+    // cannot fully close, a race where the provider is reported started yet already unmapped.)
+    carb::Framework* framework = carb::getFramework();
+    if (framework && framework->tryAcquireExistingInterface<omni::graph::core::IGraphRegistry>())
+    {
+        RELEASE_OGN_NODES()
+    }
 
     omni::physx::graph::setPhysXSceneQuery(nullptr);
     /*

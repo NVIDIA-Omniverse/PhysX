@@ -792,6 +792,13 @@ static bool applySimulationInterfaceFunctionToPointInstancer(uint64_t stageId, u
     }
     for (const auto& entry : *entries)
     {
+        // See ContactReport::resolvePairs - a kInvalidObjectId entry would index far past the
+        // record array, and the CARB_ASSERT inside getRecords() is compiled out in release.
+        if (size_t(entry.second) >= db.getRecords().size())
+        {
+            continue;
+        }
+
         const InternalDatabase::Record& rec = db.getRecords()[entry.second];
         if(rec.mType == ePTPointInstancer)
         {
@@ -881,6 +888,13 @@ static bool applySimulationInterfaceFunction(uint64_t stageId, uint64_t path, co
     }
     for (const auto& entry : *entries)
     {
+        // See ContactReport::resolvePairs - taking the address of an out of range record and
+        // handing it to applyFunction would fault on the first member read.
+        if (size_t(entry.second) >= db.getRecords().size())
+        {
+            continue;
+        }
+
         const InternalDatabase::Record* rec = &db.getRecords()[entry.second];
         (*applyFunction)(rec, data);
     }
@@ -1646,6 +1660,9 @@ void fillInterface(IPhysxUnitTests& iface)
     iface.getMaterialsPaths = getMaterialsPaths;
     iface.updateCooking = updateCooking;
     iface.isCudaLibPresent = isCudaLibPresent;
+    iface.getSceneInternalActorCount = getSceneInternalActorCount;
+    iface.getForceRigidActor = getForceRigidActor;
+    iface.getSceneInternalForceCount = getSceneInternalForceCount;
 }
 
 void fillInterface(IPhysxPropertyQuery& iface)

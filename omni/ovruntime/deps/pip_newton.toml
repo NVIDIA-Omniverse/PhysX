@@ -7,12 +7,12 @@
 # SWIPAT Dependencies List:
 # -------------------------
 # Package              | Version | License    | Source
-# newton-usd-schemas   | 0.1.0   | Apache-2.0 | PyPI (https://pypi.nvidia.com)
+# newton-usd-schemas   | 0.4.1   | Apache-2.0 | PyPI (https://pypi.org)
 
 [[dependency]]
 python = "../_build/target-deps/python"
 packages = [
-    "newton-usd-schemas==0.1.0",
+    "newton-usd-schemas==0.4.1",
 ]
 target = "../_build/target-deps/newton_prebundle"
 platforms = ["*-x86_64", "*-aarch64"]

@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "common/PxProfileZone.h"
 #include "cudamanager/PxCudaContext.h"
@@ -639,9 +616,25 @@ void PxgNphaseImplementationContext::processResults()
 			localChangeTouchCM.resize(maxCmIndx);
 
 			//KS - TODO - let's remove this loop entirely in the near future!
+			bool reportedInvalidCm = false;
 			for(PxU32 a = 0; a < nbLostFoundPairs; ++a)
 			{
 				PxsContactManager* cm = lostFoundIndIterator[a];
+
+				// ### DEFENSIVE (OMPE-99346): A CUDA failure mid-narrowphase can leave the lost/found
+				// count (mTotalLostFoundPairs) non-zero while the pinned CM-pointer array was not
+				// (re)populated for this frame, so an entry can be uninitialized/garbage (e.g. the
+				// 0xcdcd.. allocator fill). Such a pointer is non-canonical/misaligned; skip it rather
+				// than dereferencing a wild pointer (which faults, typically in getWorkUnit()).
+				if(cm == NULL || (reinterpret_cast<size_t>(cm) & (sizeof(void*) - 1)) != 0)
+				{
+					if(!reportedInvalidCm)
+					{
+						outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "PxgNphaseImplementationContext::processResults: invalid contact manager pointer in lost/found list; skipping (possible prior GPU narrowphase error).");
+						reportedInvalidCm = true;
+					}
+					continue;
+				}
 
 				//PX_ASSERT(cm->getWorkUnit().statusFlags != itChangedOutputs[a].statusFlag);
 

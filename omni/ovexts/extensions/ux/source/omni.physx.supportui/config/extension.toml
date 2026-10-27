@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 [package]
 title = "PhysX SupportUI"
 description = "PhysX Simplified UI."
@@ -17,7 +20,7 @@ keywords = [
 ]
 category = "Simulation"
 
-version = "110.1.11"
+version = "110.3.2"
 
 changelog = "docs/CHANGELOG.md"
 readme = "docs/README.md"
@@ -32,10 +35,10 @@ usd = true
 [dependencies]
 "omni.ui" = {}
 "omni.kit.renderer.imgui" = {}
-"omni.physx" = { version = "110.1.11", exact = true }
-"omni.physx.ui" = { version = "110.1.11", exact = true }
-"omni.physx.commands" = { version = "110.1.11", exact = true }
-"omni.physx.tests" = { version = "110.1.11", exact = true, optional = true }
+"omni.physx" = { version = "110.3.2", exact = true }
+"omni.physx.ui" = { version = "110.3.2", exact = true }
+"omni.physx.commands" = { version = "110.3.2", exact = true }
+"omni.physx.tests" = { version = "110.3.2", exact = true, optional = true }
 "omni.debugdraw" = {}
 "omni.kit.viewport.utility" = {}
 "omni.kit.viewport.registry" = {}

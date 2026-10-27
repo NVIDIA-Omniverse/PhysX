@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved. 
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef PX_CUDA_HELPERS_EXT_H
 #define PX_CUDA_HELPERS_EXT_H
@@ -68,7 +45,7 @@ static T* allocDeviceBuffer(PxCudaContextManager& cudaContextManager, PxU64 numE
     CUdeviceptr ptr = 0;
 	PxCUresult result = cudaContextManager.getCudaContext()->memAlloc(&ptr, numElements * sizeof(T));
     if (result != 0)
-	    PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "allocDeviceBuffer failed with error code %i!\n", PxI32(result));
+	    reportError(PX_FL, "allocDeviceBuffer failed with error code %i!\n", result);
 
 	return reinterpret_cast<T*>(ptr);
 }
@@ -89,7 +66,7 @@ static void freeDeviceBuffer(PxCudaContextManager& cudaContextManager, T*& devic
         PxScopedCudaLock lock(cudaContextManager);
         PxCUresult result = cudaContextManager.getCudaContext()->memFree(reinterpret_cast<CUdeviceptr>(deviceBuffer));
         if (result != 0)
-	        PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "freeDeviceBuffer failed with error code %i!\n", PxI32(result));
+	        reportError(PX_FL, "freeDeviceBuffer failed with error code %i!\n", result);
 
         deviceBuffer = NULL;
     }
@@ -116,7 +93,7 @@ static T* allocPinnedHostBuffer(PxCudaContextManager& cudaContextManager, PxU64 
 	const unsigned int cuMemhostallocPortable = 0x01;
 	PxCUresult result = cudaContextManager.getCudaContext()->memHostAlloc(&ptr, numElements * sizeof(T), cuMemhostallocDevicemap | cuMemhostallocPortable);
     if (result != 0)
-	    PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "allocPinnedHostBuffer failed with error code %i!\n", PxI32(result));
+	    reportError(PX_FL, "allocPinnedHostBuffer failed with error code %i!\n", result);
 
 	return reinterpret_cast<T*>(ptr);
 }
@@ -137,7 +114,7 @@ static void freePinnedHostBuffer(PxCudaContextManager& cudaContextManager, T*& p
         PxScopedCudaLock lock(cudaContextManager);
         PxCUresult result = cudaContextManager.getCudaContext()->memFreeHost(pinnedHostBuffer);
         if (result != 0)
-	        PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "freePinnedHostBuffer failed with error code %i!\n", PxI32(result));
+	        reportError(PX_FL, "freePinnedHostBuffer failed with error code %i!\n", result);
 
         pinnedHostBuffer = NULL;
     }
@@ -164,7 +141,7 @@ static void copyDToH(PxCudaContextManager& cudaContextManager, T* hostBuffer, co
 
 	PxCUresult result = cudaContextManager.getCudaContext()->memcpyDtoH(hostBuffer, CUdeviceptr(deviceBuffer), numBytes);
 	if (result != 0)
-	    PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "copyDToH failed with error code %i!\n", PxI32(result));
+	    reportError(PX_FL, "copyDToH failed with error code %i!\n", result);
 }
 
 /**
@@ -188,7 +165,7 @@ static void copyHToD(PxCudaContextManager& cudaContextManager, T* deviceBuffer, 
 
 	PxCUresult result = cudaContextManager.getCudaContext()->memcpyHtoD(CUdeviceptr(deviceBuffer), hostBuffer, numBytes);
 	if (result != 0)
-	    PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "copyHtoD failed with error code %i!\n", PxI32(result));
+	    reportError(PX_FL, "copyHtoD failed with error code %i!\n", result);
 }
 
 /**
@@ -213,7 +190,7 @@ static void copyDToHAsync(PxCudaContextManager& cudaContextManager, T* hostBuffe
 
 	PxCUresult result = cudaContextManager.getCudaContext()->memcpyDtoHAsync(hostBuffer, CUdeviceptr(deviceBuffer), numBytes, stream);
 	if (result != 0)
-	    PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "copyDtoHAsync failed with error code %i!\n", PxI32(result));
+	    reportError(PX_FL, "copyDtoHAsync failed with error code %i!\n", result);
 }
 
 /**
@@ -238,7 +215,7 @@ static void copyHToDAsync(PxCudaContextManager& cudaContextManager, T* deviceBuf
 
 	PxCUresult result = cudaContextManager.getCudaContext()->memcpyHtoDAsync(CUdeviceptr(deviceBuffer), hostBuffer, numBytes, stream);
 	if (result != 0)
-	    PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "copyHtoDAsync failed with error code %i!\n", PxI32(result));
+	    reportError(PX_FL, "copyHtoDAsync failed with error code %i!\n", result);
 }
 
 /**
@@ -263,7 +240,7 @@ static void copyDToDAsync(PxCudaContextManager& cudaContextManager, T* dstDevice
 
 	PxCUresult result = cudaContextManager.getCudaContext()->memcpyDtoDAsync(CUdeviceptr(dstDeviceBuffer), CUdeviceptr(srcDeviceBuffer), numBytes, stream);
 	if (result != 0)
-	    PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "copyDtoDAsync failed with error code %i!\n", PxI32(result));
+	    reportError(PX_FL, "copyDtoDAsync failed with error code %i!\n", result);
 }
 
 /**
@@ -292,14 +269,35 @@ static void memsetAsync(PxCudaContextManager& cudaContextManager, T* dstDeviceBu
     {
         PxCUresult result = cudaContextManager.getCudaContext()->memsetD32Async(CUdeviceptr(dstDeviceBuffer), reinterpret_cast<const PxU32&>(value), numBytes >> 2, stream);
         if (result != 0)
-	        PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "memsetAsync failed with error code %i!\n", PxI32(result));
+	        reportError(PX_FL, "memsetAsync failed with error code %i!\n", result);
     }
 	else
     {
         PxCUresult result = cudaContextManager.getCudaContext()->memsetD8Async(CUdeviceptr(dstDeviceBuffer), reinterpret_cast<const PxU8&>(value), numBytes, stream);
         if (result != 0)
-	        PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "memsetAsync failed with error code %i!\n", PxI32(result));
-    }  
+	        reportError(PX_FL, "memsetAsync failed with error code %i!\n", result);
+    }
+}
+
+private:
+
+/**
+* \brief Reports a failed CUDA operation without assuming that PxFoundation is still alive.
+*
+* The helpers above are also used during teardown, when the foundation may already have been
+* released. PxGetFoundation() only asserts in that case and returns a null reference, so the
+* report is routed through PxIsFoundationValid() and dropped if there is no foundation left.
+*
+* \param[in] file the source file the failure was reported from.
+* \param[in] line the source line the failure was reported from.
+* \param[in] messageFmt the message format string, taking the CUDA result code as its only argument.
+* \param[in] result the CUDA result code of the failed operation.
+*/
+static void reportError(const char* file, int line, const char* messageFmt, PxCUresult result)
+{
+    PxFoundation* foundation = PxIsFoundationValid();
+    if (foundation)
+        foundation->error(PxErrorCode::eINTERNAL_ERROR, file, line, messageFmt, PxI32(result));
 }
 };
 

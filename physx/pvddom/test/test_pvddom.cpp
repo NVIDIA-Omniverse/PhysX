@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
-// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
+// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 // pvddom unit tests: write OVD data with pvdruntime, read back with pvddom, verify DOM.
 
@@ -206,6 +183,130 @@ TEST_F(PvdDomTest, SetAttributeValue)
     EXPECT_FLOAT_EQ(readPos[0], 1.0f);
     EXPECT_FLOAT_EQ(readPos[1], 2.0f);
     EXPECT_FLOAT_EQ(readPos[2], 3.0f);
+}
+
+// ============================================================================
+// Test: Cached attribute indices are validated for each object's class
+// ============================================================================
+TEST_F(PvdDomTest, CachedAttributeLookupDoesNotAliasAcrossDerivedClasses)
+{
+    const OmniPvdContextHandle ctx = 1;
+    const OmniPvdObjectHandle rigidHandle = 301;
+    const OmniPvdObjectHandle particleHandle = 302;
+
+    OmniPvdClassHandle actorClass = writer->registerClass("PxActor");
+    OmniPvdClassHandle rigidActorClass = writer->registerClass("PxRigidActor", actorClass);
+    OmniPvdClassHandle rigidDynamicClass = writer->registerClass("PxRigidDynamic", rigidActorClass);
+    OmniPvdClassHandle particleSystemClass = writer->registerClass("PxPBDParticleSystem", actorClass);
+
+    // Both derived classes deliberately use their first attribute slot. A cache
+    // resolved for PxRigidActor.globalPose must not alias the particle system's
+    // unrelated positionIterations attribute at the same [class][attribute] indices.
+    OmniPvdAttributeHandle globalPoseAttribute = writer->registerAttribute(
+        rigidActorClass, "globalPose", OmniPvdDataType::eFLOAT32, 7);
+    OmniPvdAttributeHandle positionIterationsAttribute = writer->registerAttribute(
+        particleSystemClass, "positionIterations", OmniPvdDataType::eUINT32, 1);
+
+    writer->createObject(ctx, rigidDynamicClass, rigidHandle, "rigid");
+    writer->createObject(ctx, particleSystemClass, particleHandle, "particles");
+
+    const float globalPose[7] = { 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 2.0f, 3.0f };
+    const uint32_t positionIterations = 4;
+    writer->setAttribute(ctx, rigidHandle, globalPoseAttribute,
+        reinterpret_cast<const uint8_t*>(globalPose), sizeof(globalPose));
+    writer->setAttribute(ctx, particleHandle, positionIterationsAttribute,
+        reinterpret_cast<const uint8_t*>(&positionIterations), sizeof(positionIterations));
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDom(domState));
+
+    OmniPvdObject* rigidObject = findOmniPvdObject(
+        getInternalHandle(rigidHandle, domState.mExternalToInternalHandleMap),
+        domState.mObjectHandleToObjectMap);
+    OmniPvdObject* particleObject = findOmniPvdObject(
+        getInternalHandle(particleHandle, domState.mExternalToInternalHandleMap),
+        domState.mObjectHandleToObjectMap);
+    ASSERT_NE(rigidObject, nullptr);
+    ASSERT_NE(particleObject, nullptr);
+
+    int32_t listAttributeIndex = -1;
+    int32_t listClassIndex = -1;
+    ASSERT_NE(getAttribList(listAttributeIndex, listClassIndex, "globalPose", rigidObject), nullptr);
+    ASSERT_EQ(listAttributeIndex, 0);
+    ASSERT_EQ(listClassIndex, 1);
+    EXPECT_EQ(getAttribList(listAttributeIndex, listClassIndex, "globalPose", particleObject), nullptr);
+
+    int32_t dataAttributeIndex = -1;
+    int32_t dataClassIndex = -1;
+    ASSERT_NE(getAttribData(dataAttributeIndex, dataClassIndex, "globalPose", rigidObject), nullptr);
+    ASSERT_EQ(dataAttributeIndex, 0);
+    ASSERT_EQ(dataClassIndex, 1);
+    EXPECT_EQ(getAttribData(dataAttributeIndex, dataClassIndex, "globalPose", particleObject), nullptr);
+}
+
+// ============================================================================
+// Test: Cached attribute validation rejects invalid indices and unique lists
+// ============================================================================
+TEST_F(PvdDomTest, CachedAttributeLookupValidatesBoundsAndAttributeKind)
+{
+    const OmniPvdContextHandle ctx = 1;
+    const OmniPvdObjectHandle objectHandle = 303;
+
+    OmniPvdClassHandle baseClass = writer->registerClass("CacheBase");
+    OmniPvdAttributeHandle uniqueAttribute = writer->registerUniqueListAttribute(
+        baseClass, "value", OmniPvdDataType::eUINT32);
+    OmniPvdClassHandle derivedClass = writer->registerClass("CacheDerived", baseClass);
+    OmniPvdAttributeHandle regularAttribute = writer->registerAttribute(
+        derivedClass, "value", OmniPvdDataType::eUINT32, 1);
+
+    writer->createObject(ctx, derivedClass, objectHandle, "cacheObject");
+
+    const uint32_t uniqueValue = 7;
+    const uint32_t regularValue = 42;
+    writer->addToUniqueListAttribute(ctx, objectHandle, uniqueAttribute,
+        reinterpret_cast<const uint8_t*>(&uniqueValue), sizeof(uniqueValue));
+    writer->setAttribute(ctx, objectHandle, regularAttribute,
+        reinterpret_cast<const uint8_t*>(&regularValue), sizeof(regularValue));
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDom(domState));
+
+    OmniPvdObject* object = findOmniPvdObject(
+        getInternalHandle(objectHandle, domState.mExternalToInternalHandleMap),
+        domState.mObjectHandleToObjectMap);
+    ASSERT_NE(object, nullptr);
+    ASSERT_EQ(object->mOmniPvdClass->mInheritanceChain.size(), 2u);
+    ASSERT_NE(object->mOmniPvdClass->mInheritanceChain[1], nullptr);
+    ASSERT_EQ(object->mOmniPvdClass->mInheritanceChain[1]->mAttributeDefinitions.size(), 1u);
+
+    // classIndex == chain size must be rejected and resolved to derived.value.
+    int32_t attributeIndex = 0;
+    int32_t classIndex = 2;
+    OmniPvdAttributeInstList* list = getAttribList(attributeIndex, classIndex, "value", object);
+    ASSERT_NE(list, nullptr);
+    EXPECT_EQ(attributeIndex, 0);
+    EXPECT_EQ(classIndex, 1);
+
+    // attributeIndex == definition count must also be rejected and resolved.
+    attributeIndex = 1;
+    classIndex = 1;
+    uint8_t* data = getAttribData(attributeIndex, classIndex, "value", object);
+    ASSERT_NE(data, nullptr);
+    EXPECT_EQ(attributeIndex, 0);
+    EXPECT_EQ(classIndex, 1);
+    EXPECT_EQ(*reinterpret_cast<const uint32_t*>(data), regularValue);
+
+    // The base slot has the requested name but is a unique list. Canonical
+    // attribute lookup skips it and resolves the regular derived attribute.
+    attributeIndex = 0;
+    classIndex = 0;
+    list = getAttribList(attributeIndex, classIndex, "value", object);
+    ASSERT_NE(list, nullptr);
+    EXPECT_EQ(attributeIndex, 0);
+    EXPECT_EQ(classIndex, 1);
+    ASSERT_NE(list->mAttributeDef, nullptr);
+    EXPECT_FALSE(list->mAttributeDef->mIsUniqueList);
+    EXPECT_EQ(list->mAttributeDef->mOmniAttributeHandle, regularAttribute);
 }
 
 // ============================================================================

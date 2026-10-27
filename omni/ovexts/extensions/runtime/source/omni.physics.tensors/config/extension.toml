@@ -1,5 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 [package]
-version = "110.1.11"
+version = "110.3.2"
 authors = ["PhysX"]
 
 title = "Tensor Interface for Physics Simulations"
@@ -21,7 +24,7 @@ usd = true
 
 [dependencies]
 "omni.usd.libs" = {}
-"omni.usd.schema.physx" = { version = "110.1.11", exact = true }
+"omni.usd.schema.physx" = { version = "110.3.2", exact = true }
 
 [[native.plugin]]
 path = "bin/*.plugin"

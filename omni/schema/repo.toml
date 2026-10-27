@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 [repo]
 logging = "warn"
 
@@ -26,6 +29,11 @@ help = "Support calling devschema and userphysx together. No effect in the schem
 required = false
 const = ""
 nargs = "?"
+
+[repo_format]
+use_current_year_as_end_year = true
+license_preamble = "SPDX-FileCopyrightText: Copyright (c) {years} NVIDIA CORPORATION & AFFILIATES. All rights reserved.\nSPDX-License-Identifier: Apache-2.0\n"
+license_text = ""
 
 [repo_usd]
 usd_root = "${root}/_build/target-deps/usd/%{cfg.buildcfg}"
@@ -58,11 +66,23 @@ packman_target_files_to_pull = [ "${root}/deps/host-deps.packman.xml", "${root}/
 [repo_build.docker]
 enabled = false
 
+[repo_format.python]
+maintain_legal_blurbs = true
+
 [repo.tokens."platform:linux-x86_64"]
 abi = "2.35"
 
 [repo.tokens."platform:linux-aarch64"]
 abi = "2.35"
+
+[repo_format.cpp.files]
+include = [ "source/nopy_compat.h", "source/*/module.cpp", "source/*/moduleDeps.cpp", "source/physicsSchemaTools/UsdTools.h", "source/physicsSchemaTools/UsdTools.cpp",]
+extensions = [ ".h", ".inl", ".cpp", ".c",]
+exclude = []
+
+[repo_format.python.files]
+include = [ "source/*/__init__.py", "source/physicsSchemaTools/units.py", "tools/check_usd_version.py", "tools/gen_unit_database.py",]
+exclude = [ "tools/packman/**", "tools/repoman/**",]
 
 [repo_usd.plugin.physxSchema]
 schema_file = "${root}/source/physxSchema/schema.usda"

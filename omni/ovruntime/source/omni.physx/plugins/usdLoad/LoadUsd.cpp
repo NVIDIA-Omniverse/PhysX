@@ -353,7 +353,7 @@ void UsdLoad::flushChanges()
 
 void UsdLoad::changeDefaultSimulator(const std::string& defaultSim)
 {
-    const bool defSim = omni::physx::isPhysXDefaultSimulator();
+    const bool defSim = defaultSim == "PhysX";
     for (AttachedStageMap::reference ref : mAttachedStages)
     {
         ref.second->setIsPhysXDefaultSimulator(defSim);

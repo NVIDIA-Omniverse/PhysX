@@ -101,7 +101,10 @@ bool isNonMovable(const AttachedStage& attachedStage, const PXR_NS::UsdPrim& pri
                 resyncPrim = prim;
                 return true;
             }
-            UsdPrimRange range = UsdPrimRange::AllPrims(prim);
+            // Instance proxies must be traversed too, same reasoning as the
+            // handleTransformChange cascade below: a collider descendant can live
+            // only in the referenced/prototype subtree.
+            UsdPrimRange range(prim, UsdTraverseInstanceProxies(UsdPrimAllPrimsPredicate));
             for (PXR_NS::UsdPrimRange::const_iterator iter = range.begin(); iter != range.end(); ++iter)
             {
                 const PXR_NS::UsdPrim& primC = *iter;
@@ -494,8 +497,14 @@ void PrimChangeMap::handleTransformChange(AttachedStage& attachedStage, const PX
             }
             else
             {
-                // we could have changed a parent node for more prims, lets update
-                UsdPrimRange range(prim);
+                // we could have changed a parent node for more prims, lets update.
+                // Instance proxies must be traversed too: an instanceable prim's
+                // collider can live on a child reached only through the referenced
+                // (instance-proxy) subtree, e.g. PhysicsCollisionAPI authored on a
+                // mesh inside the shared prototype while the instance root only
+                // carries the approximation opinion. Without this, a transform
+                // change on the instance root never reaches that collider's PxShape.
+                UsdPrimRange range(prim, UsdTraverseInstanceProxies());
                 for (PXR_NS::UsdPrimRange::const_iterator iter = range.begin(); iter != range.end(); ++iter)
                 {
                     const PXR_NS::UsdPrim& primC = *iter;

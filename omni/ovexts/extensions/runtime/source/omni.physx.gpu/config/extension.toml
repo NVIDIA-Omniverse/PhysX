@@ -1,7 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 [package]
 title = "PhysX GPU"
 description = "PhysX 5 GPU runtime binaries."
-version = "110.1.11"
+version = "110.3.2"
 authors = ["PhysX"]
 repository = ""
 keywords = ["physics", "physx", "gpu"]

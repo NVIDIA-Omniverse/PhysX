@@ -20,6 +20,7 @@ set(UNIT_TEST_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/physics/TestDeformables.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/physics/TestDistanceJoint.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/physics/TestFabricChanges.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/physics/TestFabricDeformableBodies.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/physics/TestFabricDirectGPU.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/physics/TestFabricOutputs.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/physics/TestGearJoint.cpp
@@ -34,10 +35,12 @@ set(UNIT_TEST_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/physics/TestRevoluteJoint.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/physics/TestRigidBody.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/physics/TestScene.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/physics/TestSimulationExtended.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/physics/TestTendons.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/physics/TestTransformationChanges.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/physics/TestVehicle.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/physics/TestNewtonSchema.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/physics/TestNewtonMimicJoint.cpp
 )
 
 # Shared test helpers (under tests/common/)
@@ -47,10 +50,18 @@ set(UNIT_TEST_COMMON_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/TestVehicleFactory.cpp
 )
 
+# Sources under test that the plugins do not export (TestFabricDeformableBodies.cpp).
+# Adding one here also means providing its FabricManager / FabricKernels symbols in the test.
+set(UNIT_TEST_FABRIC_SOURCES
+    ${OVRUNTIME_ROOT_DIR}/source/omni.physx.fabric/plugins/SurfaceDeformableBodyManager.cpp
+    ${OVRUNTIME_ROOT_DIR}/source/omni.physx.fabric/plugins/VolumeDeformableBodyManager.cpp
+)
+
 # --- Create test executable ---
 add_executable(OvruntimeUnitTests
     ${UNIT_TEST_SOURCES}
     ${UNIT_TEST_COMMON_SOURCES}
+    ${UNIT_TEST_FABRIC_SOURCES}
 )
 
 set_property(TARGET OvruntimeUnitTests PROPERTY FOLDER "Tests")
@@ -70,6 +81,7 @@ target_include_directories(OvruntimeUnitTests
         ${CMAKE_CURRENT_SOURCE_DIR}                    # test.unit root (common/TestHelpers.h)
         ${CMAKE_CURRENT_SOURCE_DIR}/physics            # PhysicsTools.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../common          # shared test helpers
+        ${OVRUNTIME_ROOT_DIR}/source/omni.physx.fabric/plugins  # fabric sources under test
         ${OVRUNTIME_ROOT_DIR}/include                   # public interfaces
         ${OVRUNTIME_ROOT_DIR}/include/private           # private interfaces
         ${OVRUNTIME_ROOT_DIR}/source/pch                # UsdPCH.h

@@ -35,7 +35,7 @@ using omni::physics::tensors::ObjectType;
 class BaseSimulationView : public omni::physics::tensors::ISimulationView
 {
 public:
-    explicit BaseSimulationView(PXR_NS::UsdStageRefPtr stage);
+    explicit BaseSimulationView(PXR_NS::UsdStageRefPtr stage, ::physx::PxScene* scene);
 
     virtual ~BaseSimulationView() override;
 
@@ -150,6 +150,23 @@ public:
                                               ::physx::PxCombineMode::Enum restitutionCombineMode,
                                               ::physx::PxCombineMode::Enum dampingCombineMode);
 
+    // Build the shared-material pool key for a set of properties. The float
+    // components use a representation that round-trips a float32 exactly, so two
+    // distinct requested tuples never collide onto the same key.
+    static std::string makeMaterialKey(float staticFriction,
+                                       float dynamicFriction,
+                                       float restitution,
+                                       float damping,
+                                       ::physx::PxCombineMode::Enum frictionCombineMode,
+                                       ::physx::PxCombineMode::Enum restitutionCombineMode,
+                                       ::physx::PxCombineMode::Enum dampingCombineMode);
+
+    // Drop one reference to a pooled material. When the last reference is
+    // released, every pool entry that references it is removed (looked up by
+    // pointer, not by a reconstructed key) and the material is recycled into
+    // mUnusedMaterials. Materials not owned by the pool are ignored.
+    void releaseSharedMaterial(::physx::PxMaterial* material);
+
     bool getValid() const override
     {
         return isValid;
@@ -159,6 +176,7 @@ public:
     bool hasArticulation(::physx::PxArticulationReducedCoordinate* arti) const;
     bool hasLink(::physx::PxArticulationLink* link) const;
     bool hasShape(::physx::PxShape* shape) const;
+    bool hasScene(const ::physx::PxScene* scene) const;
     bool hasDeformableBody(::physx::PxDeformableBody* body) const;
     bool hasfixedTendon(::physx::PxArticulationFixedTendon* ft) const;
     bool hasSpatialTendon(::physx::PxArticulationSpatialTendon* st) const;
@@ -166,6 +184,10 @@ public:
     std::unordered_map<std::string, ::physx::PxMaterial*> mMaterials;
     std::unordered_set<::physx::PxMaterial*> mUnusedMaterials;
     std::unordered_map<::physx::PxMaterial*, int> mMaterialsRefCount;
+    // Reverse index: the exact pool key each live material is stored under, so
+    // releaseSharedMaterial can drop its mMaterials entry in O(1) with the same
+    // string used at insertion (no per-release map scan, no key reconstruction).
+    std::unordered_map<::physx::PxMaterial*, std::string> mMaterialKeys;
 
     // for fast lookup of all the physics elements of all the views
     std::unordered_set<::physx::PxRigidBody*> rigidBodies;
@@ -188,6 +210,8 @@ public:
 protected:
     bool isValid = true;
     PXR_NS::UsdStageWeakPtr mStage;
+    // the scene this view is bound to; the GPU path caches it as a raw pointer it does not own
+    ::physx::PxScene* mScene = nullptr;
     BaseSimulationDataPtr mSimData;
 
     std::vector<BaseSdfShapeView*> mSDFViews;
