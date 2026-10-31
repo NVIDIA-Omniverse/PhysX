@@ -162,8 +162,8 @@ TEST_F(DebugRenderTest, UnknownReadAttributeFailsWithoutShiftingColumns)
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_fetch_read_next(h, read, &enabled)).status, OVPHYSX_API_SUCCESS);
     ASSERT_NE(enabled, nullptr);
     EXPECT_EQ(enabled->data.tensors[0].dtype.code, kDLUInt);
-    EXPECT_EQ(scale->attribute, 0u);
-    EXPECT_EQ(enabled->attribute, 0u);
+    EXPECT_EQ(scale->attribute, OVX_INVALID_TOKEN);
+    EXPECT_EQ(enabled->attribute, OVX_INVALID_TOKEN);
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_group(h, read, scale->read_group_id)).status, OVPHYSX_API_SUCCESS);
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_group(h, read, enabled->read_group_id)).status, OVPHYSX_API_SUCCESS);
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_read(h, read)).status, OVPHYSX_API_SUCCESS);

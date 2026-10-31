@@ -113,7 +113,7 @@ inline path_dictionary_instance_t* attached_ovstage_dictionary(ovphysx_instance_
     if (it == ovstage_test_attachments().end() || it->second.empty() || !it->second.back().stage)
         return nullptr;
     ovstage_instance_t* stage = it->second.back().stage;
-    return stage->vtable->get_path_dictionary(stage->context);
+    return ovstage_get_path_dictionary(stage);
 }
 
 inline void destroy_ovstage_test_stages(ovphysx_instance_handle_t handle)
