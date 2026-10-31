@@ -48,7 +48,7 @@ protected:
         const std::vector<test_utils::OvstageTestAttachment>& attachments =
             test_utils::ovstage_test_attachments().at(m_handle);
         ovstage_instance_t* stage = attachments.back().stage;
-        return stage->vtable->get_path_dictionary(stage->context);
+        return ovstage_get_path_dictionary(stage);
     }
 };
 
