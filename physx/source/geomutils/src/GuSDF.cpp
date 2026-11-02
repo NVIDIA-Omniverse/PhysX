@@ -871,6 +871,7 @@ namespace Gu
 			fixSdfForNonClosedGeometry(width, height, depth, sdf, sampler.getActiveCellSize());
 	}
 	//Helper class to extract surface triangles from a tetmesh
+	namespace {
 	struct SortedTriangle
 	{
 	public:
@@ -897,6 +898,7 @@ namespace Gu
 			return first.mA == second.mA && first.mB == second.mB && first.mC == second.mC;
 		}
 	};
+	}
 
 	void analyzeAndFixMesh(const PxVec3* vertices, const PxU32* indicesOrig, PxU32 numTriangleIndices, PxArray<PxU32>& repairedIndices)
 	{

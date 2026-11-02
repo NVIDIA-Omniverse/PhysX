@@ -405,7 +405,7 @@ void Sc::Scene::postBroadPhase(PxBaseTask* continuation)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-namespace
+namespace physx
 {
 	// PT: design that doesn't use a bitmap and does not require a MaxPairs limit per task. In this version the surviving pairs
 	// are moved to the front of the input buffers.
@@ -587,7 +587,7 @@ static PX_FORCE_INLINE	T*	getUsedPointer(T* ptr)
 	return address & 1 ? reinterpret_cast<T*>(address & size_t(~1)) : NULL;
 }
 
-namespace
+namespace physx
 {
 	class OnOverlapCreatedTask : public Cm::Task
 	{
@@ -888,7 +888,7 @@ void Sc::Scene::processLostTouchPairs()
 	mLostTouchPairsDeletedBodyIDs.clear();
 }
 
-namespace
+namespace physx
 {
 	PX_COMPILE_TIME_ASSERT(sizeof(IG::EdgeIndex) <= sizeof(AABBOverlap));	// PT: because we're going to store EdgeIndex in the previous AABBOverlap buffer
 	class IslandInsertionTask : public Cm::Task
