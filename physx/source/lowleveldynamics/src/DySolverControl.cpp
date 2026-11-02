@@ -89,12 +89,14 @@ SolveBlockMethod gVTableSolveConcludeBlock[] PX_UNUSED_ATTRIBUTE =
 	solve1D4Block_Conclude,					// DY_SC_TYPE_BLOCK_1D,
 };
 
+namespace {
 struct SolverDt
 {
 	PxReal simDt;
 	PxReal stepDt;
 	PxReal invStepDt; 
 };
+}
 
 constexpr bool tWriteBackInternalConstraints = true;
 constexpr bool tIsVelIter = true;
