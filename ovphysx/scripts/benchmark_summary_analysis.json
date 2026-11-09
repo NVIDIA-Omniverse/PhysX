@@ -127,6 +127,32 @@
       "Property Updates"
     ]
   },
+  "tests/benchmarks/benchmarks/AuthoringKinematicDrive.cpp": {
+    "cases": {
+      "Authoring.kinematic_drive_ovstage_cpu": {
+        "heavy": false,
+        "note": "kinematic slab driven via omni:xform, seal/drain, then step (import path)"
+      },
+      "Authoring.kinematic_drive_direct_cpu": {
+        "heavy": false,
+        "note": "kinematic slab driven via direct kinematicTargetPosition/Orientation write + step, no drain"
+      },
+      "Authoring.kinematic_drive_ovstage_heavy_cpu": {
+        "heavy": true,
+        "note": "32-pair fixture: same omni:xform drain, import re-runs discovery over the whole scene"
+      },
+      "Authoring.kinematic_drive_direct_heavy_cpu": {
+        "heavy": true,
+        "note": "32-pair fixture: direct kinematic-target write of the one driven body + step"
+      }
+    },
+    "category": "Authoring",
+    "description": "Diagnostic (hidden), CPU-only. Driving a kinematic slab (carrying a resting dynamic rider) every tick through the two control planes. `kinematic_drive_ovstage_cpu` authors `omni:xform`, seals/drains through `ovphysx_update_from_ovstage` (re-running bridge discovery each import), then steps. `kinematic_drive_direct_cpu` writes `kinematicTargetPosition`/`kinematicTargetOrientation` through a direct write session over a query held across steps, then steps, with no OVStage drain. The pair prices the import control plane against the direct kinematic-target write for the identical visible result. The kinematic-target attributes are CPU-only (CONDITIONAL), so there is no GPU counterpart.",
+    "tags": [
+      "Authoring",
+      "Property Updates"
+    ]
+  },
   "tests/benchmarks/benchmarks/Clone.cpp": {
     "cases": {
       "Clone.envs_1024": {

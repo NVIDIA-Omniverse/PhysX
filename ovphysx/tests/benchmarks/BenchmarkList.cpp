@@ -32,6 +32,7 @@ extern void initLabCartpole();
 extern void initLabAnymal();
 extern void initAuthoringPopulationAdd();
 extern void initAuthoringTeleport();
+extern void initAuthoringKinematicDrive();
 extern void initAuthoringDrain();
 extern void initAuthoringPopulationChurn();
 extern void initAuthoringPopulationScale();
@@ -60,6 +61,7 @@ void bmInitialize(bool sanityCheck, const char* dataFolder, int32_t numThreads, 
     initLabAnymal();
     initAuthoringPopulationAdd();
     initAuthoringTeleport();
+    initAuthoringKinematicDrive();
     initAuthoringDrain();
     initAuthoringPopulationChurn();
     initAuthoringPopulationScale();
