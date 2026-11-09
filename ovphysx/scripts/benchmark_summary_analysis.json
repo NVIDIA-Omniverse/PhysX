@@ -144,6 +144,30 @@
       "Authoring.kinematic_drive_direct_heavy_cpu": {
         "heavy": true,
         "note": "32-pair fixture: direct kinematic-target write of the one driven body + step"
+      },
+      "Authoring.kinematic_drive_articulated_ovstage_j4_cpu": {
+        "heavy": true,
+        "note": "articulated rider (4 revolute joints) fixed to the slab; ovstage drain re-imports joint state each tick"
+      },
+      "Authoring.kinematic_drive_articulated_direct_j4_cpu": {
+        "heavy": true,
+        "note": "same 4-joint articulated fixture; direct kinematic-target write of the slab + step"
+      },
+      "Authoring.kinematic_drive_articulated_ovstage_j16_cpu": {
+        "heavy": true,
+        "note": "articulated rider (16 revolute joints) fixed to the slab; ovstage drain re-imports joint state each tick"
+      },
+      "Authoring.kinematic_drive_articulated_direct_j16_cpu": {
+        "heavy": true,
+        "note": "same 16-joint articulated fixture; direct kinematic-target write of the slab + step"
+      },
+      "Authoring.kinematic_drive_articulated_ovstage_j64_cpu": {
+        "heavy": true,
+        "note": "articulated rider (64 revolute joints) fixed to the slab; ovstage drain re-imports joint state each tick"
+      },
+      "Authoring.kinematic_drive_articulated_direct_j64_cpu": {
+        "heavy": true,
+        "note": "same 64-joint articulated fixture; direct kinematic-target write of the slab + step"
       }
     },
     "category": "Authoring",

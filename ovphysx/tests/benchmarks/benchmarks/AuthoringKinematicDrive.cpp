@@ -249,6 +249,13 @@ protected:
         return "kinematic_drive_cpu.usda";
     }
 
+    // The body whose carry the gate checks. Default is the single rigid rider;
+    // articulated rows override this to a chain link fixed to the slab.
+    virtual const char* riderPath() const
+    {
+        return kRiderPath;
+    }
+
     // Fail-closed gate, outside the timed window: drive the slab to a
     // distinctive X and confirm both the slab arrived AND the rider on top was
     // carried. A control path that silently no-ops still costs time, so timing
@@ -280,16 +287,17 @@ protected:
             return;
         }
 
+        const char* const rider = riderPath();
         int64_t riderCount = 0;
         float riderX = 0.0f;
-        if (!readBodyXAt(kRiderPath, &riderCount, &riderX))
+        if (!readBodyXAt(rider, &riderCount, &riderX))
         {
             bmRecordFailure(mRowName, "rider pose readback failed");
             return;
         }
         if (riderCount < 1)
         {
-            bmRecordFailure(mRowName, "no rigid body at %s", kRiderPath);
+            bmRecordFailure(mRowName, "no rigid body at %s", rider);
             return;
         }
         if (riderX < kRiderCarryMin)
@@ -722,11 +730,138 @@ protected:
 };
 
 
+// ---------------------------------------------------------------------------
+// Articulated-rider variants, swept over joint count.
+// ---------------------------------------------------------------------------
+//
+// The rigid-rider fixture carries only a resting contact; this one replaces the
+// rider with an ARTICULATION (a serial revolute chain) fixed-jointed to the
+// kinematic slab. Path A's ovstage drain re-imports the whole scene each tick,
+// including the articulation's joint/binding state, so if joint rediscovery is
+// what drives the production import cost the A-B gap should SCALE with the joint
+// count. Path B still writes only the slab's kinematicTarget; the articulation
+// rides along via the fixed joint.
+//
+// The verify gate confirms link0 (fixed to the slab) was carried. The link is a
+// rigid body, so the same pose readback works.
+
+const char* const kArticulatedRiderPath = "/World/Articulation0/link0";
+
+// Base link is fixed to the slab, so it tracks the slab almost exactly; use the
+// same carry threshold as the rigid rider.
+
+template <int Joints>
+struct KinematicDriveOvstageArticulated : KinematicDriveOvstage
+{
+    explicit KinematicDriveOvstageArticulated(const char* rowName) : KinematicDriveOvstage(rowName)
+    {
+    }
+
+protected:
+    const char* sceneAsset() const override
+    {
+        return kSceneAsset;
+    }
+    const char* riderPath() const override
+    {
+        return kArticulatedRiderPath;
+    }
+    static const char* const kSceneAsset;
+};
+
+template <int Joints>
+struct KinematicDriveDirectArticulated : KinematicDriveDirect
+{
+    explicit KinematicDriveDirectArticulated(const char* rowName) : KinematicDriveDirect(rowName)
+    {
+    }
+
+protected:
+    const char* sceneAsset() const override
+    {
+        return kSceneAsset;
+    }
+    const char* riderPath() const override
+    {
+        return kArticulatedRiderPath;
+    }
+    static const char* const kSceneAsset;
+};
+
+template <> const char* const KinematicDriveOvstageArticulated<4>::kSceneAsset =
+    "kinematic_drive_articulated_j4_cpu.usda";
+template <> const char* const KinematicDriveOvstageArticulated<16>::kSceneAsset =
+    "kinematic_drive_articulated_j16_cpu.usda";
+template <> const char* const KinematicDriveOvstageArticulated<64>::kSceneAsset =
+    "kinematic_drive_articulated_j64_cpu.usda";
+template <> const char* const KinematicDriveDirectArticulated<4>::kSceneAsset =
+    "kinematic_drive_articulated_j4_cpu.usda";
+template <> const char* const KinematicDriveDirectArticulated<16>::kSceneAsset =
+    "kinematic_drive_articulated_j16_cpu.usda";
+template <> const char* const KinematicDriveDirectArticulated<64>::kSceneAsset =
+    "kinematic_drive_articulated_j64_cpu.usda";
+
+struct KinematicDriveOvstageArtJ4Cpu : KinematicDriveOvstageArticulated<4>
+{
+    KinematicDriveOvstageArtJ4Cpu()
+        : KinematicDriveOvstageArticulated<4>("Authoring.kinematic_drive_articulated_ovstage_j4_cpu")
+    {
+    }
+};
+struct KinematicDriveDirectArtJ4Cpu : KinematicDriveDirectArticulated<4>
+{
+    KinematicDriveDirectArtJ4Cpu()
+        : KinematicDriveDirectArticulated<4>("Authoring.kinematic_drive_articulated_direct_j4_cpu")
+    {
+    }
+};
+struct KinematicDriveOvstageArtJ16Cpu : KinematicDriveOvstageArticulated<16>
+{
+    KinematicDriveOvstageArtJ16Cpu()
+        : KinematicDriveOvstageArticulated<16>("Authoring.kinematic_drive_articulated_ovstage_j16_cpu")
+    {
+    }
+};
+struct KinematicDriveDirectArtJ16Cpu : KinematicDriveDirectArticulated<16>
+{
+    KinematicDriveDirectArtJ16Cpu()
+        : KinematicDriveDirectArticulated<16>("Authoring.kinematic_drive_articulated_direct_j16_cpu")
+    {
+    }
+};
+struct KinematicDriveOvstageArtJ64Cpu : KinematicDriveOvstageArticulated<64>
+{
+    KinematicDriveOvstageArtJ64Cpu()
+        : KinematicDriveOvstageArticulated<64>("Authoring.kinematic_drive_articulated_ovstage_j64_cpu")
+    {
+    }
+};
+struct KinematicDriveDirectArtJ64Cpu : KinematicDriveDirectArticulated<64>
+{
+    KinematicDriveDirectArtJ64Cpu()
+        : KinematicDriveDirectArticulated<64>("Authoring.kinematic_drive_articulated_direct_j64_cpu")
+    {
+    }
+};
+
+
 Register<KinematicDriveOvstageCpu, true> sKinematicDriveOvstageCpu("Authoring.kinematic_drive_ovstage_cpu");
 Register<KinematicDriveDirectCpu, true> sKinematicDriveDirectCpu("Authoring.kinematic_drive_direct_cpu");
 Register<KinematicDriveOvstageHeavyCpu, true> sKinematicDriveOvstageHeavyCpu(
     "Authoring.kinematic_drive_ovstage_heavy_cpu");
 Register<KinematicDriveDirectHeavyCpu, true> sKinematicDriveDirectHeavyCpu(
     "Authoring.kinematic_drive_direct_heavy_cpu");
+Register<KinematicDriveOvstageArtJ4Cpu, true> sKinematicDriveOvstageArtJ4Cpu(
+    "Authoring.kinematic_drive_articulated_ovstage_j4_cpu");
+Register<KinematicDriveDirectArtJ4Cpu, true> sKinematicDriveDirectArtJ4Cpu(
+    "Authoring.kinematic_drive_articulated_direct_j4_cpu");
+Register<KinematicDriveOvstageArtJ16Cpu, true> sKinematicDriveOvstageArtJ16Cpu(
+    "Authoring.kinematic_drive_articulated_ovstage_j16_cpu");
+Register<KinematicDriveDirectArtJ16Cpu, true> sKinematicDriveDirectArtJ16Cpu(
+    "Authoring.kinematic_drive_articulated_direct_j16_cpu");
+Register<KinematicDriveOvstageArtJ64Cpu, true> sKinematicDriveOvstageArtJ64Cpu(
+    "Authoring.kinematic_drive_articulated_ovstage_j64_cpu");
+Register<KinematicDriveDirectArtJ64Cpu, true> sKinematicDriveDirectArtJ64Cpu(
+    "Authoring.kinematic_drive_articulated_direct_j64_cpu");
 
 } // namespace
