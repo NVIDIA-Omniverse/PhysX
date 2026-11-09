@@ -1,0 +1,60 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    doc = "Kinematic-drive microbenchmark fixture: per unit one kinematic slab plus one resting dynamic rider, CPU dynamics. See gen_kinematic_drive.py."
+    metersPerUnit = 1
+    upAxis = "Y"
+    kilogramsPerUnit = 1
+)
+
+def Xform "World"
+{
+    def PhysicsScene "PhysicsScene" (
+        prepend apiSchemas = ["PhysxSceneAPI"]
+    )
+    {
+        vector3f physics:gravityDirection = (0, -1, 0)
+        float physics:gravityMagnitude = 9.81
+        bool physxScene:enableGPUDynamics = false
+        string physxScene:broadphaseType = "MBP"
+    }
+
+    def Material "HighFriction" (
+        prepend apiSchemas = ["PhysicsMaterialAPI"]
+    )
+    {
+        float physics:staticFriction = 1.0
+        float physics:dynamicFriction = 1.0
+        float physics:restitution = 0.0
+    }
+
+    def Cube "KinematicSlab0" (
+        prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+    )
+    {
+        rel material:binding:physics = </World/HighFriction> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        bool physics:kinematicEnabled = true
+        float physics:mass = 10.0
+        double size = 1
+        double3 xformOp:scale = (6.0, 1.0, 6.0)
+        double3 xformOp:translate = (0.0, 0, 0.0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "DynamicRider0" (
+        prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI", "MaterialBindingAPI"]
+    )
+    {
+        rel material:binding:physics = </World/HighFriction> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        float physics:mass = 1.0
+        float physxRigidBody:sleepThreshold = 0.0
+        float physxRigidBody:stabilizationThreshold = 0.0
+        double size = 1
+        double3 xformOp:translate = (0.0, 1.0, 0.0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+}
