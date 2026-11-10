@@ -84,16 +84,18 @@ SET(SOURCE_DISTRO_FILE_LIST "")
 # No need to set --generate-code=arch=compute_75,code=[compute_75,sm_75]
 # since that's the default set in: compiler\internal\CMakeLists.txt (using CMAKE_CUDA_ARCHITECTURES)
 # see policy CMP0104
-IF(PX_GENERATE_GPU_REDUCED_ARCHITECTURES)
-	IF(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS 13.0)
-		# CUDA 12.x still supports offline compilation for Volta / sm_70.
-		SET(PHYSX_GPU_SASS_ARCHS "70,80,86,89,90,100,120")
-	ELSE()
-		# CUDA 13.x removed offline compilation support for pre-Turing architectures.
-		SET(PHYSX_GPU_SASS_ARCHS "80,86,89,90,100,120")
-	ENDIF()
+IF(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS 13.0)
+	# CUDA 12.x still supports offline compilation for Volta / sm_70.
+	SET(PHYSX_GPU_FULL_SASS_ARCHS "70,80,86,89,90,100,120")
+ELSE()
+	# CUDA 13.x removed offline compilation support for pre-Turing architectures.
+	SET(PHYSX_GPU_FULL_SASS_ARCHS "80,86,89,90,100,120")
+ENDIF()
 
-GENERATE_ARCH_CODE_LIST(SASS "${PHYSX_GPU_SASS_ARCHS}" PTX "120")
+IF(PX_GENERATE_GPU_REDUCED_ARCHITECTURES)
+	GENERATE_ARCH_CODE_LIST(SASS "80,86,89,90,100,120" PTX "120")
+ELSE()
+	GENERATE_ARCH_CODE_LIST(SASS "${PHYSX_GPU_FULL_SASS_ARCHS}" PTX "120")
 ENDIF()
 
 # Force response files off because clangd does not parse them
