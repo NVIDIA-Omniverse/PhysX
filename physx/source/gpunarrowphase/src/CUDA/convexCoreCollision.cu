@@ -551,7 +551,8 @@ struct TestBvh
 		struct _Callback
 		{
 			const _Bvh& bvh;
-			const PxBounds3& bounds;
+			// Keep a copy: scaleBounds() returns a temporary.
+			const PxBounds3 bounds;
 			const PxReal margin;
 			const ConvexTest& test;
 
