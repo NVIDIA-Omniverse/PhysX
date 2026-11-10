@@ -617,7 +617,7 @@ struct TrimeshBvh
 
 	static const PxU32 PRIM_VERT_COUNT = 3;
 
-	__device__ void createConvex(PxU32 index, PxReal margin, float4* verts, Gu::ConvexShape& prim) const
+	__device__ void createConvex(PxU32 index, PxReal margin, float4* /*verts*/, Gu::ConvexShape& prim) const
 	{
 		uint4 inds = trimeshTriIndices[index];
 
@@ -626,18 +626,10 @@ struct TrimeshBvh
 		const PxVec3 v1 = xform.transform(PxLoad3(trimeshVerts[inds.y]));
 		const PxVec3 v2 = xform.transform(PxLoad3(trimeshVerts[inds.z]));
 
-		verts[0] = make_float4(v0.x, v0.y, v0.z, 1);
-		verts[1] = make_float4(v1.x, v1.y, v1.z, 1);
-		verts[2] = make_float4(v2.x, v2.y, v2.z, 1);
-
-		prim.coreType = Gu::ConvexCore::Type::ePOINTS;
+		// The scaled vertices live in the core itself, so the shape needs no vertex scratch.
+		prim.coreType = Gu::ConvexCore::Type::eTRIANGLE;
 		prim.pose = PxTransform(PxIdentity);
-		Gu::ConvexCore::PointsCore core;
-		core.points = verts;
-		core.numPoints = 3;
-		core.stride = sizeof(float4);
-		core.S = PxVec3(1);
-		core.R = PxQuat(PxIdentity);
+		const Gu::ConvexCore::TriangleCore core = { { v0.x, v0.y, v0.z, v1.x, v1.y, v1.z, v2.x, v2.y, v2.z } };
 		memcpy(prim.coreData, &core, sizeof(core));
 		prim.margin = margin;
 	}
@@ -1084,10 +1076,9 @@ void convexCoreTrimeshNphase_Kernel32(
 			if (triIndex != 0xffffffff)
 			{
 				// Cull individual triangles before GJK/EPA; traversal tests leaf bounds.
-				Gu::ConvexCore::PointsCore core;
+				Gu::ConvexCore::TriangleCore core;
 				memcpy(&core, tri.coreData, sizeof(core));
-				const float4* verts = static_cast<const float4*>(core.points);
-				const PxVec3 a = PxLoad3(verts[0]), b = PxLoad3(verts[1]), c = PxLoad3(verts[2]);
+				const PxVec3 a = core.point(0), b = core.point(1), c = core.point(2);
 				PxBounds3 triBounds(a.minimum(b).minimum(c), a.maximum(b).maximum(c));
 				const PxReal scale = PxMax(1.0f, PxMax(triBounds.minimum.abs().maxElement(), triBounds.maximum.abs().maxElement()));
 				triBounds.fattenFast(tri.margin + 16.0f * FLT_EPSILON * scale);
