@@ -138,10 +138,10 @@ namespace physx
 		\brief The generalized mass matrix used in inverse dynamics algorithms.
 
 		- N = (getDofs() + 6) * (getDofs() + 6) -> size includes possible floating-base DOFs regardless of PxArticulationFlag::eFIX_BASE flag.
-		- If PxArticulationFlag::eFIX_BASE is true, the terms corresponding to the root DoFs are included in the top left block of the matrix.
+		- If PxArticulationFlag::eFIX_BASE is false, the terms corresponding to the root DoFs are included in the top left block of the matrix.
 		  For these terms, column indices correspond to linear acceleration first then angular acceleration, row indices correspond to force first then torque.
 		  The bottom right block of the matrix corresponds to the joint DoFs terms, column indices correspond to joint acceleration, row indices correspond to joint force.
-		- If PxArticulationFlag::eFIX_BASE is false, only the terms corresponding to the joint DoFs are included, column indices correspond to joint acceleration,
+		- If PxArticulationFlag::eFIX_BASE is true, only the terms corresponding to the joint DoFs are included, column indices correspond to joint acceleration,
 		  row indices correspond to joint force.
 		- The indexing follows the internal DOF index order, see PxArticulationCache::jointVelocity.
 		- The mass matrix is indexed [nCols * row + column].
@@ -154,9 +154,9 @@ namespace physx
 		\brief The Coriolis and centrifugal compensation forces used in inverse dynamics algorithms.
 
 		- N = getDofs() + 6 -> size includes possible floating-base DOFs regardless of PxArticulationFlag::eFIX_BASE flag.
-		- If PxArticulationFlag::eFIX_BASE is true, the terms corresponding to the root DoFs are included at the start of
+		- If PxArticulationFlag::eFIX_BASE is false, the terms corresponding to the root DoFs are included at the start of
 		  the array (force then torque), followed by the joint DoFs terms.
-		- If PxArticulationFlag::eFIX_BASE is false, only the terms corresponding to the joint DoFs are included.
+		- If PxArticulationFlag::eFIX_BASE is true, only the terms corresponding to the joint DoFs are included.
 		- The indexing follows the internal DOF index order, see PxArticulationCache::jointVelocity.
 
 		\see PxArticulationReducedCoordinate::computeCoriolisCompensation
@@ -167,9 +167,9 @@ namespace physx
 		\brief The gravity compensation forces used in inverse dynamics algorithms.
 
 		- N = getDofs() + 6 -> size includes possible floating-base DOFs regardless of PxArticulationFlag::eFIX_BASE flag.
-		- If PxArticulationFlag::eFIX_BASE is true, the terms corresponding to the root DoFs are included at the start of
+		- If PxArticulationFlag::eFIX_BASE is false, the terms corresponding to the root DoFs are included at the start of
 		  the array (force then torque), followed by the joint DoFs terms.
-		- If PxArticulationFlag::eFIX_BASE is false, only the terms corresponding to the joint DoFs are included.
+		- If PxArticulationFlag::eFIX_BASE is true, only the terms corresponding to the joint DoFs are included.
 		- The indexing follows the internal DOF index order, see PxArticulationCache::jointVelocity.
 
 		\see PxArticulationReducedCoordinate::computeGravityCompensation
