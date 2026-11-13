@@ -36,6 +36,7 @@
     <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="_static/api.css?v=6f210184" />
     <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="_static/getting_started.css?v=d234fc04" />
   
   <!-- So that users can add custom icons -->
   <script defer src="_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
@@ -46,7 +47,7 @@
 
 
     <script rel="preload" src="_static/modal-table.js"></script>
-    <script src="_static/documentation_options.js?v=423e15eb"></script>
+    <script src="_static/documentation_options.js?v=a85d417d"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/clipboard.min.js?v=a7894cd8"></script>
@@ -56,7 +57,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.7.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.8.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -72,7 +73,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
-    <meta name="docbuild:last-update" content="Oct 15, 2026"/>
+    <meta name="docbuild:last-update" content="Nov 13, 2026"/>
   
     
     <script src="_static/searchtools.js"></script>
@@ -496,151 +497,327 @@
 <nav class="bd-docs-nav bd-links"
      aria-label="Table of Contents">
   <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
-  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Overview</span></p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="ovphysx_overview.html">ovphysx Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="coding_style.html">ovphysx coding and doc style</a></li>
-<li class="toctree-l1"><a class="reference internal" href="migrating_0_6_to_0_7.html">Migration from 0.6 to 0.7</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ovd_api_migration.html">Instance and OVD API migration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tensor_binding_migration.html">Migrating off Tensor Bindings</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
-<li class="toctree-l1"><a class="reference internal" href="local_development.html">Local Development</a></li>
-<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/first_simulation.html">Your First Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/concepts.html">Concepts</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">ovstage Integration</span></p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Building Scenes</span></p>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="ovstage_integration.html">ovstage Integration and Physics Output Read</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building_scenes/loading_scenes.html">Loading Scenes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building_scenes/physics_scene.html">The Physics Scene</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building_scenes/rigid_bodies.html">Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building_scenes/colliders_and_materials.html">Colliders and Materials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building_scenes/joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building_scenes/articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building_scenes/soft_bodies_and_particles.html">Soft Bodies and Particles</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Simulation Setup</span></p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Simulation Data</span></p>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="simulation_setup/physics_scene.html">Physics Scene and Simulation Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="simulation_setup/collision.html">Colliders</a></li>
-<li class="toctree-l1"><a class="reference internal" href="simulation_setup/rigid_bodies.html">Rigid Bodies</a></li>
-<li class="toctree-l1"><a class="reference internal" href="simulation_setup/kinematic_support.html">Kinematic Support Geometry</a></li>
-<li class="toctree-l1"><a class="reference internal" href="simulation_setup/joints.html">Joints</a></li>
-<li class="toctree-l1"><a class="reference internal" href="simulation_setup/articulations.html">Articulations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="simulation_setup/deformables.html">Deformable Bodies</a></li>
-<li class="toctree-l1"><a class="reference internal" href="simulation_setup/particles.html">Particles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulation_data/selecting_objects.html">Selecting Objects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulation_data/reading_values.html">Reading Values</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulation_data/writing_values.html">Writing Values</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulation_data/gpu_data.html">Data on the GPU</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Physics Schemas</span></p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Common Tasks</span></p>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="physics_schemas.html">Physics Schemas</a></li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="population/index.html">ovstage Physics Population Domain</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l2"><a class="reference internal" href="population/Capsule.html">Capsule</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/Cone.html">Cone</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/Cube.html">Cube</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/Cylinder.html">Cylinder</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/Material.html">Material</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/Mesh.html">Mesh</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsCollisionGroup.html">PhysicsCollisionGroup</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsDistanceJoint.html">PhysicsDistanceJoint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsFixedJoint.html">PhysicsFixedJoint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsJoint.html">PhysicsJoint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsPrismaticJoint.html">PhysicsPrismaticJoint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsRevoluteJoint.html">PhysicsRevoluteJoint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsScene.html">PhysicsScene</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsSphericalJoint.html">PhysicsSphericalJoint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxPhysicsGearJoint.html">PhysxPhysicsGearJoint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxPhysicsRackAndPinionJoint.html">PhysxPhysicsRackAndPinionJoint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/Plane.html">Plane</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/Sphere.html">Sphere</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/Xform.html">Xform</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/MaterialBindingAPI.html">MaterialBindingAPI (physics purpose)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsArticulationRootAPI.html">PhysicsArticulationRootAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsCollisionAPI.html">PhysicsCollisionAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsDriveAPI.html">PhysicsDriveAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsFilteredPairsAPI.html">PhysicsFilteredPairsAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsJointStateAPI.html">PhysicsJointStateAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsLimitAPI.html">PhysicsLimitAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsMassAPI.html">PhysicsMassAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsMaterialAPI.html">PhysicsMaterialAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsMeshCollisionAPI.html">PhysicsMeshCollisionAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsRigidBodyAPI.html">PhysicsRigidBodyAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxArticulationAPI.html">PhysxArticulationAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxCollisionAPI.html">PhysxCollisionAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxContactReportAPI.html">PhysxContactReportAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxLimitAPI.html">PhysxLimitAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxPhysicsDistanceJointAPI.html">PhysxPhysicsDistanceJointAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxRigidBodyAPI.html">PhysxRigidBodyAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxSDFMeshCollisionAPI.html">PhysxSDFMeshCollisionAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxSceneAPI.html">PhysxSceneAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxSphereFillCollisionAPI.html">PhysxSphereFillCollisionAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxSplinesSurfaceVelocityAPI.html">PhysxSplinesSurfaceVelocityAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxSurfaceVelocityAPI.html">PhysxSurfaceVelocityAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxTriangleMeshCollisionAPI.html">PhysxTriangleMeshCollisionAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxTriangleMeshSimplificationCollisionAPI.html">PhysxTriangleMeshSimplificationCollisionAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxTriggerAPI.html">PhysxTriggerAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/prim.html">Prim identity and transform</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/stage_units.html">Stage units</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-articulation_fixed_base.html">Fixed-base two-link articulation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-articulation_floating.html">Floating-base two-link articulation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-conveyor_cube.html">Kinematic conveyor Cube with a surface velocity</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-d6_joint_pair.html">Two rigid-body Cubes on a D6 joint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-distance_joint_pair.html">Two rigid-body Cubes on a distance joint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-fixed_joint_pair.html">Two rigid-body Cubes on a fixed joint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-gear_joint_pair.html">Two hinged rigid-body Cubes coupled by a gear joint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-material_bound_cube.html">Rigid-body Cube bound to a physics Material</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-physics_scene.html">Physics scene</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-prismatic_joint_pair.html">Two rigid-body Cubes on a prismatic joint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-rack_and_pinion_joint_pair.html">A hinged pinion Cube and a sliding rack Cube coupled by a rack-and-pinion joint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-revolute_joint_pair.html">Two rigid-body Cubes on a revolute joint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-rigid_body_capsule.html">Dynamic rigid body on a Capsule</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-rigid_body_cone.html">Dynamic rigid body on a Cone</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-rigid_body_cube.html">Dynamic rigid body on a Cube</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-rigid_body_cube_pair.html">Two dynamic rigid-body Cubes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-rigid_body_cylinder.html">Dynamic rigid body on a Cylinder</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-rigid_body_sphere.html">Dynamic rigid body on a Sphere</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-spherical_joint_pair.html">Two rigid-body Cubes on a spherical joint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-static_plane_collider.html">Static Plane collider</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/findings.html">Recorded findings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="common_tasks/changing_the_scene.html">Changing the Scene</a></li>
+<li class="toctree-l1"><a class="reference internal" href="common_tasks/contacts.html">Contacts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="common_tasks/showing_the_simulation.html">Showing the Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="common_tasks/debugging.html">Debugging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="common_tasks/stable_simulations.html">Stable Simulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="common_tasks/fast_simulations.html">Fast Simulations</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Advanced</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="common_tasks/many_copies.html">Many Copies of a Scene</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="reference/index.html">Detailed Reference</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="reference/overview.html">Overview and Migration</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="ovphysx_overview.html">ovphysx Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l3"><a class="reference internal" href="migrating_0_6_to_0_7.html">Migration from 0.6 to 0.7</a></li>
+<li class="toctree-l3"><a class="reference internal" href="migrating_0_7_to_0_8.html">Migration from 0.7 to 0.8</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ovd_api_migration.html">Instance and OVD API migration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tensor_binding_migration.html">Migrating off Tensor Bindings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="ovstage_integration.html">ovstage Integration and Physics Output Read</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="reference/simulation_setup.html">Simulation Setup</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="simulation_setup/physics_scene.html">Physics Scene and Simulation Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="simulation_setup/collision.html">Colliders</a></li>
+<li class="toctree-l3"><a class="reference internal" href="simulation_setup/rigid_bodies.html">Rigid Bodies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="simulation_setup/kinematic_support.html">Kinematic Support Geometry</a></li>
+<li class="toctree-l3"><a class="reference internal" href="simulation_setup/joints.html">Joints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="simulation_setup/articulations.html">Articulations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="simulation_setup/deformables.html">Deformable Bodies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="simulation_setup/particles.html">Particles</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="reference/schemas.html">Schemas and Population</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="physics_schemas.html">Physics Schemas</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="population/index.html">ovstage Physics Population Domain</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="population/BasisCurves.html">BasisCurves (spline surface velocity path)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/Camera.html">Camera (UsdGeom camera)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/Capsule.html">Capsule</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/Cone.html">Cone</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/Cube.html">Cube</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/Cylinder.html">Cylinder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/CylinderLight.html">CylinderLight (UsdLux light)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/DiskLight.html">DiskLight (UsdLux light)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/DistantLight.html">DistantLight (UsdLux light)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/DomeLight.html">DomeLight (UsdLux light)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/DomeLight_1.html">DomeLight_1 (UsdLux light)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/FabricStageInfo.html">FabricStageInfo (Fabric bookkeeping)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/GeomSubset.html">GeomSubset (per-face physics materials)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/Material.html">Material</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/Mesh.html">Mesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/NodeGraph.html">NodeGraph (UsdShade node graph)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsAttachment.html">OmniPhysicsAttachment (deformable attachment base)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsElementCollisionFilter.html">OmniPhysicsElementCollisionFilter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsTetXformAttachment.html">OmniPhysicsTetXformAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsTriTriAttachment.html">OmniPhysicsTriTriAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsVtxCrvAttachment.html">OmniPhysicsVtxCrvAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsVtxTetAttachment.html">OmniPhysicsVtxTetAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsVtxTriAttachment.html">OmniPhysicsVtxTriAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsVtxVtxAttachment.html">OmniPhysicsVtxVtxAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsVtxXformAttachment.html">OmniPhysicsVtxXformAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsCollisionGroup.html">PhysicsCollisionGroup</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsDistanceJoint.html">PhysicsDistanceJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsFixedJoint.html">PhysicsFixedJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsJoint.html">PhysicsJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsPrismaticJoint.html">PhysicsPrismaticJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsRevoluteJoint.html">PhysicsRevoluteJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsScene.html">PhysicsScene</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsSphericalJoint.html">PhysicsSphericalJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxParticleSystem.html">PhysxParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxPhysicsGearJoint.html">PhysxPhysicsGearJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxPhysicsJointInstancer.html">PhysxPhysicsJointInstancer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxPhysicsRackAndPinionJoint.html">PhysxPhysicsRackAndPinionJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleTireFrictionTable.html">PhysxVehicleTireFrictionTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/Plane.html">Plane</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PointInstancer.html">PointInstancer (rigid-body instancing)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/Points.html">Points (particle set geometry)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/RectLight.html">RectLight (UsdLux light)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/Scope.html">Scope</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/Shader.html">Shader (UsdShade shader)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/Sphere.html">Sphere</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/SphereLight.html">SphereLight (UsdLux light)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/TempChangeTracking.html">TempChangeTracking (Fabric bookkeeping)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/TetMesh.html">TetMesh (volume deformable meshes)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/Xform.html">Xform</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/CollectionAPI.html">CollectionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/GeomInstanceAPI.html">GeomInstanceAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/GeomInstanceRootAPI.html">GeomInstanceRootAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/GeomPrototypeAPI.html">GeomPrototypeAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/LightAPI.html">LightAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/MaterialBindingAPI.html">MaterialBindingAPI (physics purpose)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/NewtonArticulationRootAPI.html">NewtonArticulationRootAPI (self-collision fallback)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/NewtonCollisionAPI.html">NewtonCollisionAPI (contact offset fallbacks)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/NewtonJointAPI.html">NewtonJointAPI (joint-level seeds)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/NewtonMeshCollisionAPI.html">NewtonMeshCollisionAPI (hull vertex limit fallback)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/NewtonMimicAPI.html">NewtonMimicAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/NewtonSceneAPI.html">NewtonSceneAPI (fallbacks read by the PhysX parser)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/NodeDefAPI.html">NodeDefAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsBaseMaterialAPI.html">OmniPhysicsBaseMaterialAPI (deformable material friction and density)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsBodyAPI.html">OmniPhysicsBodyAPI (deformable body flags)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsDeformableBodyAPI.html">OmniPhysicsDeformableBodyAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsDeformableMaterialAPI.html">OmniPhysicsDeformableMaterialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsDeformablePoseAPI.html">OmniPhysicsDeformablePoseAPI (bind pose)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsSurfaceDeformableMaterialAPI.html">OmniPhysicsSurfaceDeformableMaterialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsSurfaceDeformableSimAPI.html">OmniPhysicsSurfaceDeformableSimAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsVolumeDeformableSimAPI.html">OmniPhysicsVolumeDeformableSimAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsArticulationRootAPI.html">PhysicsArticulationRootAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsCollisionAPI.html">PhysicsCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsDriveAPI.html">PhysicsDriveAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsFilteredPairsAPI.html">PhysicsFilteredPairsAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsJointStateAPI.html">PhysicsJointStateAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsLimitAPI.html">PhysicsLimitAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsMassAPI.html">PhysicsMassAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsMaterialAPI.html">PhysicsMaterialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsMeshCollisionAPI.html">PhysicsMeshCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsRigidBodyAPI.html">PhysicsRigidBodyAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxArticulationAPI.html">PhysxArticulationAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxAutoDeformableAttachmentAPI.html">PhysxAutoDeformableAttachmentAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxAutoDeformableBodyAPI.html">PhysxAutoDeformableBodyAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxAutoDeformableHexahedralMeshAPI.html">PhysxAutoDeformableHexahedralMeshAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxAutoDeformableMeshSimplificationAPI.html">PhysxAutoDeformableMeshSimplificationAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxBaseDeformableBodyAPI.html">PhysxBaseDeformableBodyAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxCharacterControllerAPI.html">PhysxCharacterControllerAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxCollisionAPI.html">PhysxCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxContactReportAPI.html">PhysxContactReportAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxCookedDataAPI.html">PhysxCookedDataAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxDeformableMaterialAPI.html">PhysxDeformableMaterialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxDiffuseParticlesAPI.html">PhysxDiffuseParticlesAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxForceAPI.html">PhysxForceAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxJointAPI.html">PhysxJointAPI (removed)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxLimitAPI.html">PhysxLimitAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxMeshMergeCollisionAPI.html">PhysxMeshMergeCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxMimicJointAPI.html">PhysxMimicJointAPI (deprecated)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxPBDMaterialAPI.html">PhysxPBDMaterialAPI (as read for a scene default material)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxParticleAPI.html">PhysxParticleAPI (particle object base)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxParticleAnisotropyAPI.html">PhysxParticleAnisotropyAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxParticleIsosurfaceAPI.html">PhysxParticleIsosurfaceAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxParticleSamplingAPI.html">PhysxParticleSamplingAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxParticleSetAPI.html">PhysxParticleSetAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxParticleSmoothingAPI.html">PhysxParticleSmoothingAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxPhysicsDistanceJointAPI.html">PhysxPhysicsDistanceJointAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxRigidBodyAPI.html">PhysxRigidBodyAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxSDFMeshCollisionAPI.html">PhysxSDFMeshCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxSceneAPI.html">PhysxSceneAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxSceneQuasistaticAPI.html">PhysxSceneQuasistaticAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxSphereFillCollisionAPI.html">PhysxSphereFillCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxSplinesSurfaceVelocityAPI.html">PhysxSplinesSurfaceVelocityAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxSurfaceDeformableBodyAPI.html">PhysxSurfaceDeformableBodyAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxSurfaceDeformableMaterialAPI.html">PhysxSurfaceDeformableMaterialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxSurfaceVelocityAPI.html">PhysxSurfaceVelocityAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxTendonAttachmentAPI.html">PhysxTendonAttachmentAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxTendonAttachmentLeafAPI.html">PhysxTendonAttachmentLeafAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxTendonAttachmentRootAPI.html">PhysxTendonAttachmentRootAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxTendonAxisAPI.html">PhysxTendonAxisAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxTendonAxisRootAPI.html">PhysxTendonAxisRootAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxTriangleMeshCollisionAPI.html">PhysxTriangleMeshCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxTriangleMeshSimplificationCollisionAPI.html">PhysxTriangleMeshSimplificationCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxTriggerAPI.html">PhysxTriggerAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxTriggerStateAPI.html">PhysxTriggerStateAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleAPI.html">PhysxVehicleAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleAckermannSteeringAPI.html">PhysxVehicleAckermannSteeringAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleAutoGearBoxAPI.html">PhysxVehicleAutoGearBoxAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleBrakesAPI.html">PhysxVehicleBrakesAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleClutchAPI.html">PhysxVehicleClutchAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleContextAPI.html">PhysxVehicleContextAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleControllerAPI.html">PhysxVehicleControllerAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleDriveBasicAPI.html">PhysxVehicleDriveBasicAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleDriveStandardAPI.html">PhysxVehicleDriveStandardAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleEngineAPI.html">PhysxVehicleEngineAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleGearsAPI.html">PhysxVehicleGearsAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleMultiWheelDifferentialAPI.html">PhysxVehicleMultiWheelDifferentialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleNonlinearCommandResponseAPI.html">PhysxVehicleNonlinearCommandResponseAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleSteeringAPI.html">PhysxVehicleSteeringAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleSuspensionAPI.html">PhysxVehicleSuspensionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleSuspensionComplianceAPI.html">PhysxVehicleSuspensionComplianceAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleTankControllerAPI.html">PhysxVehicleTankControllerAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleTankDifferentialAPI.html">PhysxVehicleTankDifferentialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleTireAPI.html">PhysxVehicleTireAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleWheelAPI.html">PhysxVehicleWheelAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleWheelAttachmentAPI.html">PhysxVehicleWheelAttachmentAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleWheelControllerAPI.html">PhysxVehicleWheelControllerAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PrototypeRootAPI.html">PrototypeRootAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/ShadowAPI.html">ShadowAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/ShapingAPI.html">ShapingAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/legacy_stage_units.html">Legacy stage units prim</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/prim.html">Prim identity and transform</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/stage_units.html">Stage units</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-articulation_fixed_base.html">Fixed-base two-link articulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-articulation_floating.html">Floating-base two-link articulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-conveyor_cube.html">Kinematic conveyor Cube with a surface velocity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-d6_joint_pair.html">Two rigid-body Cubes on a D6 joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-distance_joint_pair.html">Two rigid-body Cubes on a distance joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-fixed_joint_pair.html">Two rigid-body Cubes on a fixed joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-gear_joint_pair.html">Two hinged rigid-body Cubes coupled by a gear joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-material_bound_cube.html">Rigid-body Cube bound to a physics Material</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-physics_scene.html">Physics scene</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-prismatic_joint_pair.html">Two rigid-body Cubes on a prismatic joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-rack_and_pinion_joint_pair.html">A hinged pinion Cube and a sliding rack Cube coupled by a rack-and-pinion joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-revolute_joint_pair.html">Two rigid-body Cubes on a revolute joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-rigid_body_capsule.html">Dynamic rigid body on a Capsule</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-rigid_body_cone.html">Dynamic rigid body on a Cone</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-rigid_body_cube.html">Dynamic rigid body on a Cube</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-rigid_body_cube_pair.html">Two dynamic rigid-body Cubes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-rigid_body_cylinder.html">Dynamic rigid body on a Cylinder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-rigid_body_sphere.html">Dynamic rigid body on a Sphere</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-spherical_joint_pair.html">Two rigid-body Cubes on a spherical joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-static_plane_collider.html">Static Plane collider</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/findings.html">Recorded findings</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/physics-population-description.html">Physics Population Description</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/glossary.html">Population vocabulary</a></li>
 </ul>
 </details></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Read/Write Data Contract</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="read_write/index.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="read_write/data_model.html">Data model and semantics</a></li>
-<li class="toctree-l1"><a class="reference internal" href="read_write/device.html">Device residency and interop</a></li>
-<li class="toctree-l1"><a class="reference internal" href="read_write/readable.html">Readable data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="read_write/writable.html">Writable data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="read_write/vehicles.html">Vehicle examples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="read_write/path_patterns.html">Path patterns</a></li>
-<li class="toctree-l1"><a class="reference internal" href="read_write/limitations.html">Known limitations and gaps</a></li>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="reference/read_write.html">Read and Write Contract</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="read_write/index.html">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="read_write/data_model.html">Data model and semantics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="read_write/device.html">Device residency and interop</a></li>
+<li class="toctree-l3"><a class="reference internal" href="read_write/readable.html">Readable data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="read_write/discovery.html">Discovering attribute metadata</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="read_write/attributes/index.html">Detailed I/O attribute reference</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/units.html">Runtime I/O units</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/rigid_body.html">Rigid body</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/articulation_link.html">Articulation link</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/articulation_joint.html">Articulation joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/vehicle_wheel.html">Vehicle wheel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/deformable_volume.html">Deformable volume</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/deformable_surface.html">Deformable surface</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/particle_set.html">Particle set</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/fixed_tendon.html">Fixed tendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/spatial_tendon.html">Spatial tendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/articulation.html">Articulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/deformable_material.html">Deformable material</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/contact_sensor.html">Contact sensor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/character_controller.html">Character controller</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/vehicle.html">Vehicle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/scene.html">Scene</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/physx_material.html">Physx material</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/shape.html">Shape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/compound_shape.html">Compound shape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/rigid_actor.html">Rigid actor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/joint.html">Joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/custom_joint.html">Custom joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/particle_system.html">Particle system</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/physics.html">Physics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/debug_render.html">Debug render</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/sdf_shape.html">Sdf shape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/deformable_skin_mesh.html">Deformable skin mesh</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="tutorials/quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/hello_world.html">Hello World – Populate ovstage and Step</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/tensor_bindings.html">Tensor Bindings (deprecated)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/contact_binding.html">Contact Binding – Reading Contact Forces</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/cloning.html">Cloning – Replicate Environments</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/render_handoff.html">Rendering Handoff</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/profiling.html">Profiling: See Where Your Simulation Spends Its Time</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="read_write/writable.html">Writable data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="read_write/vehicles.html">Vehicle examples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="read_write/path_patterns.html">Path patterns</a></li>
+<li class="toctree-l3"><a class="reference internal" href="read_write/limitations.html">Known limitations and gaps</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="guides/performance.html">Simulation Performance Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/collision_tuning.html">Collision Behavior Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/articulation_stability.html">Articulation and Robot Simulation Stability Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/gripper_tuning.html">Joint Parameter Tuning Example: Robotiq 2F-85</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/limitations.html">Known Physics Limitations</a></li>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="reference/tutorials.html">Tutorials</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/quickstart.html">Quickstart</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/hello_world.html">Hello World – Populate ovstage and Step</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/tensor_bindings.html">Tensor Bindings (deprecated)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/contact_binding.html">Contact Binding – Reading Contact Forces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/cloning.html">Cloning – Replicate Environments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/render_handoff.html">Rendering Handoff</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/profiling.html">Profiling: See Where Your Simulation Spends Its Time</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
-<ul class="nav bd-sidenav">
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="reference/tuning_guides.html">Tuning Guides</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="guides/performance.html">Simulation Performance Guide</a></li>
+<li class="toctree-l3"><a class="reference internal" href="guides/collision_tuning.html">Collision Behavior Guide</a></li>
+<li class="toctree-l3"><a class="reference internal" href="guides/articulation_stability.html">Articulation and Robot Simulation Stability Guide</a></li>
+<li class="toctree-l3"><a class="reference internal" href="guides/gripper_tuning.html">Joint Parameter Tuning Example: Robotiq 2F-85</a></li>
+<li class="toctree-l3"><a class="reference internal" href="guides/limitations.html">Known Physics Limitations</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="reference/contributing.html">Contributing</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="local_development.html">Local Development</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coding_style.html">ovphysx coding and doc style</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/glossary.html">Glossary</a></li>
+</ul>
+</details></li>
 <li class="toctree-l1"><a class="reference internal" href="python_api.html">Python API Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">C API Reference</a></li>
-</ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Legal</span></p>
-<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 <li class="toctree-l1"><a class="reference internal" href="SECURITY.html">Security</a></li>
 </ul>
 </div>
@@ -821,10 +998,10 @@
         <li><a href="python_api.html#ovphysx.types.SimObjectType.ARTICULATION">(ovphysx.types.SimObjectType attribute)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python_api.html#ovphysx.types.TensorType.ARTICULATION_BODY_COM_POSE">ARTICULATION_BODY_COM_POSE (ovphysx.types.TensorType attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python_api.html#ovphysx.types.TensorType.ARTICULATION_BODY_DISABLE_GRAVITY">ARTICULATION_BODY_DISABLE_GRAVITY (ovphysx.types.TensorType attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.types.TensorType.ARTICULATION_BODY_INERTIA">ARTICULATION_BODY_INERTIA (ovphysx.types.TensorType attribute)</a>
@@ -935,6 +1112,8 @@
 </li>
       <li><a href="python_api.html#ovphysx.types.ArticulationKinematicFlag">ArticulationKinematicFlag (class in ovphysx.types)</a>
 </li>
+      <li><a href="python_api.html#ovphysx.types.GlobalConfigKey.ASYNC_EXECUTION">ASYNC_EXECUTION (ovphysx.types.GlobalConfigKey attribute)</a>
+</li>
       <li><a href="python_api.html#ovphysx.api.PhysX.attach_ovstage">attach_ovstage() (ovphysx.api.PhysX method)</a>
 </li>
       <li><a href="python_api.html#ovphysx.api.ReadGroup.attribute">attribute (ovphysx.api.ReadGroup attribute)</a>
@@ -944,6 +1123,8 @@
 </li>
       </ul></li>
       <li><a href="python_api.html#ovphysx.api.WriteGroup.attribute_index">attribute_index (ovphysx.api.WriteGroup attribute)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.types.CompiledStageCacheMode.AUTOMATIC">AUTOMATIC (ovphysx.types.CompiledStageCacheMode attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.constants.AXES_INDICES">AXES_INDICES (in module ovphysx.utils.constants)</a>
 </li>
@@ -1017,6 +1198,12 @@
       </ul></li>
       <li><a href="python_api.html#ovphysx.api.WriteSession.commit">commit() (ovphysx.api.WriteSession method)</a>
 </li>
+      <li><a href="python_api.html#ovphysx.api.WriteSession.commit_sync">commit_sync() (ovphysx.api.WriteSession method)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.types.GlobalConfigKey.COMPILED_STAGE_CACHE">COMPILED_STAGE_CACHE (ovphysx.types.GlobalConfigKey attribute)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.types.CompiledStageCacheMode">CompiledStageCacheMode (class in ovphysx.types)</a>
+</li>
       <li><a href="python_api.html#ovphysx.types.SimObjectType.COMPOUND_SHAPE">COMPOUND_SHAPE (ovphysx.types.SimObjectType attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.mesh.compute_bounding_box_diagonal">compute_bounding_box_diagonal() (in module ovphysx.utils.mesh)</a>
@@ -1041,6 +1228,8 @@
 </li>
       <li><a href="python_api.html#ovphysx.utils.mesh.convert_tetra_to_triangle_soup">convert_tetra_to_triangle_soup() (in module ovphysx.utils.mesh)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python_api.html#ovphysx.config.PhysXConfig.cooked_collider_cache_dir">cooked_collider_cache_dir (ovphysx.config.PhysXConfig attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.types.ConfigString.COOKED_COLLIDER_CACHE_DIRECTORY">COOKED_COLLIDER_CACHE_DIRECTORY (ovphysx.types.ConfigString attribute)</a>
@@ -1049,8 +1238,6 @@
         <li><a href="python_api.html#ovphysx.types.GlobalConfigKey.COOKED_COLLIDER_CACHE_DIRECTORY">(ovphysx.types.GlobalConfigKey attribute)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python_api.html#ovphysx.utils.constants.COOKED_DATA_TOKENS">COOKED_DATA_TOKENS (in module ovphysx.utils.constants)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.transform.copy_transform_as_scale_orient_translate">copy_transform_as_scale_orient_translate() (in module ovphysx.utils.transform)</a>
@@ -1157,6 +1344,8 @@
 </li>
       <li><a href="python_api.html#ovphysx.types.TensorType.DEFORMABLE_SIM_NODAL_VELOCITY">DEFORMABLE_SIM_NODAL_VELOCITY (ovphysx.types.TensorType attribute)</a>
 </li>
+      <li><a href="python_api.html#ovphysx.types.SimObjectType.DEFORMABLE_SKIN_MESH">DEFORMABLE_SKIN_MESH (ovphysx.types.SimObjectType attribute)</a>
+</li>
       <li><a href="python_api.html#ovphysx.types.SimObjectType.DEFORMABLE_SURFACE">DEFORMABLE_SURFACE (ovphysx.types.SimObjectType attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.types.SimObjectType.DEFORMABLE_VOLUME">DEFORMABLE_VOLUME (ovphysx.types.SimObjectType attribute)</a>
@@ -1200,6 +1389,8 @@
 </li>
       </ul></li>
       <li><a href="python_api.html#ovphysx.api.disable_python_logging">disable_python_logging() (in module ovphysx.api)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.types.CompiledStageCacheMode.DISABLED">DISABLED (ovphysx.types.CompiledStageCacheMode attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.dlpack.DLManagedTensor.dl_tensor">dl_tensor (ovphysx.dlpack.DLManagedTensor attribute)</a>
 </li>
@@ -1267,6 +1458,8 @@
 <h2 id="F">F</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="python_api.html#ovphysx.types.TaskStatus.FAILED">FAILED (ovphysx.types.TaskStatus attribute)</a>
+</li>
       <li><a href="python_api.html#ovphysx.api.ReadResult.fetch_next">fetch_next() (ovphysx.api.ReadResult method)</a>
 
       <ul>
@@ -1601,7 +1794,11 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python_api.html#ovphysx.types.ApiStatus.NOT_FOUND">NOT_FOUND (ovphysx.types.ApiStatus attribute)</a>
+
+      <ul>
+        <li><a href="python_api.html#ovphysx.types.TaskStatus.NOT_FOUND">(ovphysx.types.TaskStatus attribute)</a>
 </li>
+      </ul></li>
       <li><a href="python_api.html#ovphysx.types.ApiStatus.NOT_IMPLEMENTED">NOT_IMPLEMENTED (ovphysx.types.ApiStatus attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.config.PhysXConfig.num_threads">num_threads (ovphysx.config.PhysXConfig attribute)</a>
@@ -1622,11 +1819,15 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python_api.html#ovphysx.api.ReadGroup.object_type">object_type (ovphysx.api.ReadGroup attribute)</a>
 </li>
+      <li><a href="python_api.html#ovphysx.config.OmniPvdFilter.objects">objects (ovphysx.config.OmniPvdFilter attribute)</a>
+</li>
       <li><a href="python_api.html#ovphysx.types.ObjectScope">ObjectScope (class in ovphysx.types)</a>
 </li>
       <li><a href="python_api.html#ovphysx.types.ObjectType">ObjectType (class in ovphysx.types)</a>
 </li>
       <li><a href="python_api.html#ovphysx.config.OmniPvdDestination">OmniPvdDestination (class in ovphysx.config)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.config.OmniPvdFilter">OmniPvdFilter (class in ovphysx.config)</a>
 </li>
       <li><a href="python_api.html#ovphysx.api.Operation">Operation (class in ovphysx.api)</a>
 </li>
@@ -1876,7 +2077,7 @@
 </li>
       <li><a href="api.html#_CPPv4NK7ovphysx5PhysX5sweepERK35ovphysx_scene_query_geometry_desc_tAL3E_Kffb26ovphysx_scene_query_mode_tRPK13SceneQueryHitR8uint32_t">ovphysx::PhysX::sweep (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv4N7ovphysx5PhysX28updateArticulationsKinematicE22ovphysx_query_handle_t8uint32_t">ovphysx::PhysX::updateArticulationsKinematic (C++ function)</a>
+      <li><a href="api.html#_CPPv4N7ovphysx5PhysX28updateArticulationsKinematicE22ovphysx_query_handle_t8uint32_t19ovstage_cuda_sync_t">ovphysx::PhysX::updateArticulationsKinematic (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv4N7ovphysx5PhysX17updateFromOvstageE23ovstage_ordinal_range_t">ovphysx::PhysX::updateFromOvstage (C++ function)</a>
 </li>
@@ -2164,9 +2365,13 @@
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_DOF_AXIS_INDEX">OVPHYSX_ATTR_DOF_AXIS_INDEX (C macro)</a>
 </li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DOF_AXIS_KIND">OVPHYSX_ATTR_DOF_AXIS_KIND (C macro)</a>
+</li>
       <li><a href="api.html#c.OVPHYSX_ATTR_DOF_COUNT">OVPHYSX_ATTR_DOF_COUNT (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_DOF_JOINT_PATH">OVPHYSX_ATTR_DOF_JOINT_PATH (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DOF_JOINT_TYPE">OVPHYSX_ATTR_DOF_JOINT_TYPE (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_DRIVE_TORQUE">OVPHYSX_ATTR_DRIVE_TORQUE (C macro)</a>
 </li>
@@ -2191,6 +2396,10 @@
       <li><a href="api.html#c.OVPHYSX_ATTR_FILTERED_FRICTION_POINT">OVPHYSX_ATTR_FILTERED_FRICTION_POINT (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_FIXED_TENDON_COUNT">OVPHYSX_ATTR_FIXED_TENDON_COUNT (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_FIXED_TENDON_INSTANCE">OVPHYSX_ATTR_FIXED_TENDON_INSTANCE (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_FIXED_TENDON_ROOT">OVPHYSX_ATTR_FIXED_TENDON_ROOT (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_FORCE">OVPHYSX_ATTR_FORCE (C macro)</a>
 </li>
@@ -2223,8 +2432,6 @@
       <li><a href="api.html#c.OVPHYSX_ATTR_IS_SLEEPING">OVPHYSX_ATTR_IS_SLEEPING (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_JACOBIAN">OVPHYSX_ATTR_JACOBIAN (C macro)</a>
-</li>
-      <li><a href="api.html#c.OVPHYSX_ATTR_JACOBIAN_SHAPE">OVPHYSX_ATTR_JACOBIAN_SHAPE (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_JOINT_ACTUATION_FORCE">OVPHYSX_ATTR_JOINT_ACTUATION_FORCE (C macro)</a>
 </li>
@@ -2278,7 +2485,11 @@
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_LINK_COUNT">OVPHYSX_ATTR_LINK_COUNT (C macro)</a>
 </li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_LINK_INBOUND_JOINT">OVPHYSX_ATTR_LINK_INBOUND_JOINT (C macro)</a>
+</li>
       <li><a href="api.html#c.OVPHYSX_ATTR_LINK_INCOMING_JOINT_FORCE">OVPHYSX_ATTR_LINK_INCOMING_JOINT_FORCE (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_LINK_PATH">OVPHYSX_ATTR_LINK_PATH (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_MASS">OVPHYSX_ATTR_MASS (C macro)</a>
 </li>
@@ -2336,6 +2547,10 @@
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_SPATIAL_TENDON_COUNT">OVPHYSX_ATTR_SPATIAL_TENDON_COUNT (C macro)</a>
 </li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_SPATIAL_TENDON_INSTANCE">OVPHYSX_ATTR_SPATIAL_TENDON_INSTANCE (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_SPATIAL_TENDON_ROOT">OVPHYSX_ATTR_SPATIAL_TENDON_ROOT (C macro)</a>
+</li>
       <li><a href="api.html#c.OVPHYSX_ATTR_STATIC_FRICTION">OVPHYSX_ATTR_STATIC_FRICTION (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_STEER">OVPHYSX_ATTR_STEER (C macro)</a>
@@ -2349,6 +2564,8 @@
       <li><a href="api.html#c.OVPHYSX_ATTR_TARGET_GEAR">OVPHYSX_ATTR_TARGET_GEAR (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_TENDON_DAMPING">OVPHYSX_ATTR_TENDON_DAMPING (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_TENDON_INSTANCE">OVPHYSX_ATTR_TENDON_INSTANCE (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_TENDON_LIMIT">OVPHYSX_ATTR_TENDON_LIMIT (C macro)</a>
 </li>
@@ -2382,6 +2599,8 @@
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_WHEEL_STEER_ANGLE">OVPHYSX_ATTR_WHEEL_STEER_ANGLE (C macro)</a>
 </li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_WORLD_SCALE">OVPHYSX_ATTR_WORLD_SCALE (C macro)</a>
+</li>
       <li><a href="api.html#c.OVPHYSX_ATTR_WRENCH">OVPHYSX_ATTR_WRENCH (C macro)</a>
 </li>
       <li><a href="api.html#_CPPv434ovphysx_attribute_binding_handle_t">ovphysx_attribute_binding_handle_t (C++ type)</a>
@@ -2389,6 +2608,18 @@
       <li><a href="api.html#_CPPv413ovphysx_clone25ovphysx_instance_handle_t16ovphysx_string_tP16ovphysx_string_t8uint32_tPKfPK8uint32_t">ovphysx_clone (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv420ovphysx_commit_group25ovphysx_instance_handle_t22ovphysx_write_handle_tPK19ovstage_map_group_t19ovstage_cuda_sync_t">ovphysx_commit_group (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv427ovphysx_commit_group_masked25ovphysx_instance_handle_t22ovphysx_write_handle_tPK19ovstage_map_group_tPK8DLTensor19ovstage_cuda_sync_t">ovphysx_commit_group_masked (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv435ovphysx_compiled_stage_cache_mode_t">ovphysx_compiled_stage_cache_mode_t (C++ enum)</a>
+</li>
+      <li><a href="api.html#_CPPv4N35ovphysx_compiled_stage_cache_mode_t38OVPHYSX_COMPILED_STAGE_CACHE_AUTOMATICE">ovphysx_compiled_stage_cache_mode_t::OVPHYSX_COMPILED_STAGE_CACHE_AUTOMATIC (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N35ovphysx_compiled_stage_cache_mode_t37OVPHYSX_COMPILED_STAGE_CACHE_DISABLEDE">ovphysx_compiled_stage_cache_mode_t::OVPHYSX_COMPILED_STAGE_CACHE_DISABLED (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N35ovphysx_compiled_stage_cache_mode_t38OVPHYSX_COMPILED_STAGE_CACHE_READ_ONLYE">ovphysx_compiled_stage_cache_mode_t::OVPHYSX_COMPILED_STAGE_CACHE_READ_ONLY (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N35ovphysx_compiled_stage_cache_mode_t39OVPHYSX_COMPILED_STAGE_CACHE_READ_WRITEE">ovphysx_compiled_stage_cache_mode_t::OVPHYSX_COMPILED_STAGE_CACHE_READ_WRITE (C++ enumerator)</a>
 </li>
       <li><a href="api.html#_CPPv421ovphysx_config_bool_t">ovphysx_config_bool_t (C++ enum)</a>
 </li>
@@ -2554,6 +2785,8 @@
 </li>
       <li><a href="api.html#_CPPv4N19ovphysx_create_args14config_entriesE">ovphysx_create_args::config_entries (C++ member)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#_CPPv4N19ovphysx_create_args18config_entry_countE">ovphysx_create_args::config_entry_count (C++ member)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_CREATE_ARGS_DEFAULT">OVPHYSX_CREATE_ARGS_DEFAULT (C macro)</a>
@@ -2563,6 +2796,10 @@
       <li><a href="api.html#_CPPv423ovphysx_create_instanceP25ovphysx_instance_handle_t">ovphysx_create_instance (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv433ovphysx_create_instance_with_argsPK19ovphysx_create_argsP25ovphysx_instance_handle_t">ovphysx_create_instance_with_args (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv442ovphysx_create_joint_arrays_from_map_groupP18ovstage_instance_tPK19ovstage_map_group_tPP22ovphysx_joint_arrays_t">ovphysx_create_joint_arrays_from_map_group (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv443ovphysx_create_joint_arrays_from_read_groupP18ovstage_instance_tPK20ovstage_read_group_tPP22ovphysx_joint_arrays_t">ovphysx_create_joint_arrays_from_read_group (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv423ovphysx_create_sdf_view25ovphysx_instance_handle_t16ovphysx_string_t8uint32_tP25ovphysx_sdf_view_handle_t">ovphysx_create_sdf_view (C++ function)</a>
 </li>
@@ -2582,8 +2819,6 @@
 </li>
       <li><a href="api.html#_CPPv4N20ovphysx_debug_line_t6color0E">ovphysx_debug_line_t::color0 (C++ member)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#_CPPv4N20ovphysx_debug_line_t6color1E">ovphysx_debug_line_t::color1 (C++ member)</a>
 </li>
       <li><a href="api.html#_CPPv4N20ovphysx_debug_line_t4pos0E">ovphysx_debug_line_t::pos0 (C++ member)</a>
@@ -2674,6 +2909,8 @@
 </li>
       <li><a href="api.html#_CPPv424ovphysx_destroy_instance25ovphysx_instance_handle_t">ovphysx_destroy_instance (C++ function)</a>
 </li>
+      <li><a href="api.html#_CPPv428ovphysx_destroy_joint_arraysP22ovphysx_joint_arrays_t">ovphysx_destroy_joint_arrays (C++ function)</a>
+</li>
       <li><a href="api.html#_CPPv424ovphysx_destroy_sdf_view25ovphysx_instance_handle_t25ovphysx_sdf_view_handle_t">ovphysx_destroy_sdf_view (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv430ovphysx_destroy_tensor_binding25ovphysx_instance_handle_t31ovphysx_tensor_binding_handle_t">ovphysx_destroy_tensor_binding (C++ function)</a>
@@ -2728,6 +2965,10 @@
 </li>
       <li><a href="api.html#_CPPv432ovphysx_get_global_config_string23ovphysx_config_string_tP16ovphysx_string_tP6size_t">ovphysx_get_global_config_string (C++ function)</a>
 </li>
+      <li><a href="api.html#_CPPv434ovphysx_get_joint_arrays_prim_listPK22ovphysx_joint_arrays_t">ovphysx_get_joint_arrays_prim_list (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv435ovphysx_get_joint_arrays_write_dataPK22ovphysx_joint_arrays_t">ovphysx_get_joint_arrays_write_data (C++ function)</a>
+</li>
       <li><a href="api.html#_CPPv422ovphysx_get_last_errorv">ovphysx_get_last_error (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv427ovphysx_get_last_task_error25ovphysx_instance_handle_t24ovphysx_enqueue_result_t">ovphysx_get_last_task_error (C++ function)</a>
@@ -2735,6 +2976,8 @@
       <li><a href="api.html#_CPPv421ovphysx_get_log_levelv">ovphysx_get_log_level (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv423ovphysx_get_object_type25ovphysx_instance_handle_t16ovphysx_string_tP21ovphysx_object_type_t">ovphysx_get_object_type (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv435ovphysx_get_physics_population_descv">ovphysx_get_physics_population_desc (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv440ovphysx_get_tensor_binding_native_device25ovphysx_instance_handle_t31ovphysx_tensor_binding_handle_tP8DLDevice">ovphysx_get_tensor_binding_native_device (C++ function)</a>
 </li>
@@ -2746,9 +2989,13 @@
 </li>
       <li><a href="api.html#_CPPv427ovphysx_global_config_key_t">ovphysx_global_config_key_t (C++ enum)</a>
 </li>
+      <li><a href="api.html#_CPPv4N27ovphysx_global_config_key_t37OVPHYSX_GLOBAL_CONFIG_ASYNC_EXECUTIONE">ovphysx_global_config_key_t::OVPHYSX_GLOBAL_CONFIG_ASYNC_EXECUTION (C++ enumerator)</a>
+</li>
       <li><a href="api.html#_CPPv4N27ovphysx_global_config_key_t52OVPHYSX_GLOBAL_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRYE">ovphysx_global_config_key_t::OVPHYSX_GLOBAL_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY (C++ enumerator)</a>
 </li>
       <li><a href="api.html#_CPPv4N27ovphysx_global_config_key_t56OVPHYSX_GLOBAL_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRYE">ovphysx_global_config_key_t::OVPHYSX_GLOBAL_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N27ovphysx_global_config_key_t42OVPHYSX_GLOBAL_CONFIG_COMPILED_STAGE_CACHEE">ovphysx_global_config_key_t::OVPHYSX_GLOBAL_CONFIG_COMPILED_STAGE_CACHE (C++ enumerator)</a>
 </li>
       <li><a href="api.html#_CPPv4N27ovphysx_global_config_key_t53OVPHYSX_GLOBAL_CONFIG_COOKED_COLLIDER_CACHE_DIRECTORYE">ovphysx_global_config_key_t::OVPHYSX_GLOBAL_CONFIG_COOKED_COLLIDER_CACHE_DIRECTORY (C++ enumerator)</a>
 </li>
@@ -2778,6 +3025,8 @@
 </li>
       <li><a href="api.html#_CPPv425ovphysx_instance_handle_t">ovphysx_instance_handle_t (C++ type)</a>
 </li>
+      <li><a href="api.html#_CPPv429ovphysx_intern_attribute_nameP26path_dictionary_instance_t12ovx_string_tP11ovx_token_t">ovphysx_intern_attribute_name (C++ function)</a>
+</li>
       <li><a href="api.html#c.OVPHYSX_INVALID_HANDLE">OVPHYSX_INVALID_HANDLE (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_INVALID_SUBSCRIPTION_ID">OVPHYSX_INVALID_SUBSCRIPTION_ID (C macro)</a>
@@ -2785,6 +3034,8 @@
       <li><a href="api.html#_CPPv420ovphysx_is_recording25ovphysx_instance_handle_tPb">ovphysx_is_recording (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv425ovphysx_is_stage_attached25ovphysx_instance_handle_tPKvPb">ovphysx_is_stage_attached (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv422ovphysx_joint_arrays_t">ovphysx_joint_arrays_t (C++ type)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_LITERAL">OVPHYSX_LITERAL (C macro)</a>
 </li>
@@ -2803,80 +3054,6 @@
       <li><a href="api.html#_CPPv4N19ovphysx_log_level_t19OVPHYSX_LOG_VERBOSEE">ovphysx_log_level_t::OVPHYSX_LOG_VERBOSE (C++ enumerator)</a>
 </li>
       <li><a href="api.html#_CPPv4N19ovphysx_log_level_t19OVPHYSX_LOG_WARNINGE">ovphysx_log_level_t::OVPHYSX_LOG_WARNING (C++ enumerator)</a>
-</li>
-      <li><a href="api.html#_CPPv429OVPHYSX_NAME_DEBUG_ACTOR_AXES">OVPHYSX_NAME_DEBUG_ACTOR_AXES (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv440OVPHYSX_NAME_DEBUG_BODY_ANGULAR_VELOCITY">OVPHYSX_NAME_DEBUG_BODY_ANGULAR_VELOCITY (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv428OVPHYSX_NAME_DEBUG_BODY_AXES">OVPHYSX_NAME_DEBUG_BODY_AXES (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv439OVPHYSX_NAME_DEBUG_BODY_LINEAR_VELOCITY">OVPHYSX_NAME_DEBUG_BODY_LINEAR_VELOCITY (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv433OVPHYSX_NAME_DEBUG_BODY_MASS_AXES">OVPHYSX_NAME_DEBUG_BODY_MASS_AXES (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv434OVPHYSX_NAME_DEBUG_COLLISION_AABBS">OVPHYSX_NAME_DEBUG_COLLISION_AABBS (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv433OVPHYSX_NAME_DEBUG_COLLISION_AXES">OVPHYSX_NAME_DEBUG_COLLISION_AXES (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv438OVPHYSX_NAME_DEBUG_COLLISION_COMPOUNDS">OVPHYSX_NAME_DEBUG_COLLISION_COMPOUNDS (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv443OVPHYSX_NAME_DEBUG_COLLISION_DYNAMIC_PRUNER">OVPHYSX_NAME_DEBUG_COLLISION_DYNAMIC_PRUNER (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv434OVPHYSX_NAME_DEBUG_COLLISION_EDGES">OVPHYSX_NAME_DEBUG_COLLISION_EDGES (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv441OVPHYSX_NAME_DEBUG_COLLISION_FACE_NORMALS">OVPHYSX_NAME_DEBUG_COLLISION_FACE_NORMALS (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv435OVPHYSX_NAME_DEBUG_COLLISION_SHAPES">OVPHYSX_NAME_DEBUG_COLLISION_SHAPES (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv442OVPHYSX_NAME_DEBUG_COLLISION_STATIC_PRUNER">OVPHYSX_NAME_DEBUG_COLLISION_STATIC_PRUNER (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv432OVPHYSX_NAME_DEBUG_CONTACT_ERROR">OVPHYSX_NAME_DEBUG_CONTACT_ERROR (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv434OVPHYSX_NAME_DEBUG_CONTACT_IMPULSE">OVPHYSX_NAME_DEBUG_CONTACT_IMPULSE (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv433OVPHYSX_NAME_DEBUG_CONTACT_NORMAL">OVPHYSX_NAME_DEBUG_CONTACT_NORMAL (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv432OVPHYSX_NAME_DEBUG_CONTACT_POINT">OVPHYSX_NAME_DEBUG_CONTACT_POINT (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv427OVPHYSX_NAME_DEBUG_CULL_BOX">OVPHYSX_NAME_DEBUG_CULL_BOX (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv430OVPHYSX_NAME_DEBUG_CULLING_BOX">OVPHYSX_NAME_DEBUG_CULLING_BOX (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv426OVPHYSX_NAME_DEBUG_ENABLED">OVPHYSX_NAME_DEBUG_ENABLED (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv435OVPHYSX_NAME_DEBUG_FRICTION_IMPULSE">OVPHYSX_NAME_DEBUG_FRICTION_IMPULSE (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv434OVPHYSX_NAME_DEBUG_FRICTION_NORMAL">OVPHYSX_NAME_DEBUG_FRICTION_NORMAL (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv433OVPHYSX_NAME_DEBUG_FRICTION_POINT">OVPHYSX_NAME_DEBUG_FRICTION_POINT (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv431OVPHYSX_NAME_DEBUG_JOINT_LIMITS">OVPHYSX_NAME_DEBUG_JOINT_LIMITS (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv437OVPHYSX_NAME_DEBUG_JOINT_LOCAL_FRAMES">OVPHYSX_NAME_DEBUG_JOINT_LOCAL_FRAMES (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv429OVPHYSX_NAME_DEBUG_LINE_COLOR">OVPHYSX_NAME_DEBUG_LINE_COLOR (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv432OVPHYSX_NAME_DEBUG_LINE_POSITION">OVPHYSX_NAME_DEBUG_LINE_POSITION (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv430OVPHYSX_NAME_DEBUG_MBP_REGIONS">OVPHYSX_NAME_DEBUG_MBP_REGIONS (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv430OVPHYSX_NAME_DEBUG_POINT_COLOR">OVPHYSX_NAME_DEBUG_POINT_COLOR (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv433OVPHYSX_NAME_DEBUG_POINT_POSITION">OVPHYSX_NAME_DEBUG_POINT_POSITION (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv424OVPHYSX_NAME_DEBUG_SCALE">OVPHYSX_NAME_DEBUG_SCALE (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv424OVPHYSX_NAME_DEBUG_SCOPE">OVPHYSX_NAME_DEBUG_SCOPE (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv422OVPHYSX_NAME_DEBUG_SDF">OVPHYSX_NAME_DEBUG_SDF (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv434OVPHYSX_NAME_DEBUG_SIMULATION_MESH">OVPHYSX_NAME_DEBUG_SIMULATION_MESH (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv433OVPHYSX_NAME_DEBUG_TRIANGLE_COLOR">OVPHYSX_NAME_DEBUG_TRIANGLE_COLOR (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv436OVPHYSX_NAME_DEBUG_TRIANGLE_POSITION">OVPHYSX_NAME_DEBUG_TRIANGLE_POSITION (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv429OVPHYSX_NAME_DEBUG_WORLD_AXES">OVPHYSX_NAME_DEBUG_WORLD_AXES (C++ member)</a>
 </li>
       <li><a href="api.html#_CPPv433ovphysx_object_change_callbacks_t">ovphysx_object_change_callbacks_t (C++ struct)</a>
 </li>
@@ -2928,6 +3105,22 @@
 </li>
       <li><a href="api.html#_CPPv4N29ovphysx_omnipvd_destination_t9transportE">ovphysx_omnipvd_destination_t::transport (C++ member)</a>
 </li>
+      <li><a href="api.html#c.OVPHYSX_OMNIPVD_RECORDING_OPTIONS_DEFAULT">OVPHYSX_OMNIPVD_RECORDING_OPTIONS_DEFAULT (C macro)</a>
+</li>
+      <li><a href="api.html#_CPPv435ovphysx_omnipvd_recording_options_t">ovphysx_omnipvd_recording_options_t (C++ struct)</a>
+</li>
+      <li><a href="api.html#_CPPv4N35ovphysx_omnipvd_recording_options_t12object_countE">ovphysx_omnipvd_recording_options_t::object_count (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv4N35ovphysx_omnipvd_recording_options_t12object_pathsE">ovphysx_omnipvd_recording_options_t::object_paths (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv4N35ovphysx_omnipvd_recording_options_t21record_secondary_dataE">ovphysx_omnipvd_recording_options_t::record_secondary_data (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv4N35ovphysx_omnipvd_recording_options_t11scene_countE">ovphysx_omnipvd_recording_options_t::scene_count (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv4N35ovphysx_omnipvd_recording_options_t11scene_pathsE">ovphysx_omnipvd_recording_options_t::scene_paths (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv4N35ovphysx_omnipvd_recording_options_t18wait_for_selectionE">ovphysx_omnipvd_recording_options_t::wait_for_selection (C++ member)</a>
+</li>
       <li><a href="api.html#_CPPv427ovphysx_omnipvd_transport_t">ovphysx_omnipvd_transport_t (C++ enum)</a>
 </li>
       <li><a href="api.html#_CPPv4N27ovphysx_omnipvd_transport_t30OVPHYSX_OMNIPVD_TRANSPORT_FILEE">ovphysx_omnipvd_transport_t::OVPHYSX_OMNIPVD_TRANSPORT_FILE (C++ enumerator)</a>
@@ -2938,7 +3131,7 @@
 </li>
       <li><a href="api.html#_CPPv424ovphysx_ovd_is_recording25ovphysx_instance_handle_tPb">ovphysx_ovd_is_recording (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv427ovphysx_ovd_start_recording25ovphysx_instance_handle_tPK29ovphysx_omnipvd_destination_t">ovphysx_ovd_start_recording (C++ function)</a>
+      <li><a href="api.html#_CPPv427ovphysx_ovd_start_recording25ovphysx_instance_handle_tPK29ovphysx_omnipvd_destination_tPK35ovphysx_omnipvd_recording_options_t">ovphysx_ovd_start_recording (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv426ovphysx_ovd_stop_recording25ovphysx_instance_handle_t">ovphysx_ovd_stop_recording (C++ function)</a>
 </li>
@@ -3024,6 +3217,8 @@
 </li>
       <li><a href="api.html#_CPPv4N22ovphysx_query_target_t40OVPHYSX_QUERY_TARGET_DEFORMABLE_MATERIALE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_DEFORMABLE_MATERIAL (C++ enumerator)</a>
 </li>
+      <li><a href="api.html#_CPPv4N22ovphysx_query_target_t41OVPHYSX_QUERY_TARGET_DEFORMABLE_SKIN_MESHE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_DEFORMABLE_SKIN_MESH (C++ enumerator)</a>
+</li>
       <li><a href="api.html#_CPPv4N22ovphysx_query_target_t39OVPHYSX_QUERY_TARGET_DEFORMABLE_SURFACEE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_DEFORMABLE_SURFACE (C++ enumerator)</a>
 </li>
       <li><a href="api.html#_CPPv4N22ovphysx_query_target_t38OVPHYSX_QUERY_TARGET_DEFORMABLE_VOLUMEE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_DEFORMABLE_VOLUME (C++ enumerator)</a>
@@ -3056,9 +3251,11 @@
 </li>
       <li><a href="api.html#_CPPv4N22ovphysx_query_target_t34OVPHYSX_QUERY_TARGET_VEHICLE_WHEELE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_VEHICLE_WHEEL (C++ enumerator)</a>
 </li>
+      <li><a href="api.html#_CPPv425ovphysx_query_task_status25ovphysx_instance_handle_t24ovphysx_enqueue_result_tP21ovphysx_task_status_t">ovphysx_query_task_status (C++ function)</a>
+</li>
       <li><a href="api.html#_CPPv415ovphysx_raycast25ovphysx_instance_handle_tAL3E_KfAL3E_Kffb26ovphysx_scene_query_mode_tPPK25ovphysx_scene_query_hit_tP8uint32_t">ovphysx_raycast (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv412ovphysx_read25ovphysx_instance_handle_t22ovphysx_query_handle_tPK21ovx_string_or_token_t6size_tP21ovphysx_read_handle_tP21ovphysx_read_result_t">ovphysx_read (C++ function)</a>
+      <li><a href="api.html#_CPPv412ovphysx_read25ovphysx_instance_handle_t22ovphysx_query_handle_tPK21ovx_token_or_string_t6size_t19ovstage_cuda_sync_tP21ovphysx_read_handle_tP21ovphysx_read_result_t">ovphysx_read (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv431ovphysx_read_attribute_result_t">ovphysx_read_attribute_result_t (C++ struct)</a>
 </li>
@@ -3225,6 +3422,18 @@
       <li><a href="api.html#_CPPv425ovphysx_subscription_id_t">ovphysx_subscription_id_t (C++ type)</a>
 </li>
       <li><a href="api.html#_CPPv413ovphysx_sweep25ovphysx_instance_handle_tPK35ovphysx_scene_query_geometry_desc_tAL3E_Kffb26ovphysx_scene_query_mode_tPPK25ovphysx_scene_query_hit_tP8uint32_t">ovphysx_sweep (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv421ovphysx_task_status_t">ovphysx_task_status_t (C++ enum)</a>
+</li>
+      <li><a href="api.html#_CPPv4N21ovphysx_task_status_t26OVPHYSX_TASK_STATUS_FAILEDE">ovphysx_task_status_t::OVPHYSX_TASK_STATUS_FAILED (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N21ovphysx_task_status_t29OVPHYSX_TASK_STATUS_NOT_FOUNDE">ovphysx_task_status_t::OVPHYSX_TASK_STATUS_NOT_FOUND (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N21ovphysx_task_status_t27OVPHYSX_TASK_STATUS_PENDINGE">ovphysx_task_status_t::OVPHYSX_TASK_STATUS_PENDING (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N21ovphysx_task_status_t27OVPHYSX_TASK_STATUS_RUNNINGE">ovphysx_task_status_t::OVPHYSX_TASK_STATUS_RUNNING (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N21ovphysx_task_status_t29OVPHYSX_TASK_STATUS_SUCCEEDEDE">ovphysx_task_status_t::OVPHYSX_TASK_STATUS_SUCCEEDED (C++ enumerator)</a>
 </li>
       <li><a href="api.html#_CPPv429ovphysx_tensor_binding_desc_t">ovphysx_tensor_binding_desc_t (C++ struct)</a>
 </li>
@@ -3420,7 +3629,7 @@
 </li>
       <li><a href="api.html#_CPPv434ovphysx_unsubscribe_object_changes25ovphysx_instance_handle_t25ovphysx_subscription_id_t">ovphysx_unsubscribe_object_changes (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv438ovphysx_update_articulations_kinematic25ovphysx_instance_handle_t22ovphysx_query_handle_t8uint32_t">ovphysx_update_articulations_kinematic (C++ function)</a>
+      <li><a href="api.html#_CPPv438ovphysx_update_articulations_kinematic25ovphysx_instance_handle_t22ovphysx_query_handle_t8uint32_t19ovstage_cuda_sync_t">ovphysx_update_articulations_kinematic (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv427ovphysx_update_from_ovstage25ovphysx_instance_handle_t23ovstage_ordinal_range_t">ovphysx_update_from_ovstage (C++ function)</a>
 </li>
@@ -3440,7 +3649,7 @@
 </li>
       <li><a href="api.html#_CPPv414ovphysx_warmup25ovphysx_instance_handle_t">ovphysx_warmup (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv419ovphysx_writability22ovphysx_query_target_tPK21ovx_string_or_token_tP21ovphysx_writability_t">ovphysx_writability (C++ function)</a>
+      <li><a href="api.html#_CPPv419ovphysx_writability22ovphysx_query_target_tPK21ovx_token_or_string_tP21ovphysx_writability_t">ovphysx_writability (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv421ovphysx_writability_t">ovphysx_writability_t (C++ enum)</a>
 </li>
@@ -3454,7 +3663,7 @@
 </li>
       <li><a href="api.html#_CPPv4N21ovphysx_writability_t30OVPHYSX_WRITABILITY_WRITE_ONLYE">ovphysx_writability_t::OVPHYSX_WRITABILITY_WRITE_ONLY (C++ enumerator)</a>
 </li>
-      <li><a href="api.html#_CPPv413ovphysx_write25ovphysx_instance_handle_t22ovphysx_query_handle_tPK21ovx_string_or_token_t6size_tP22ovphysx_write_handle_tP22ovphysx_write_result_t">ovphysx_write (C++ function)</a>
+      <li><a href="api.html#_CPPv413ovphysx_write25ovphysx_instance_handle_t22ovphysx_query_handle_tPK21ovx_token_or_string_t6size_tP22ovphysx_write_handle_tP22ovphysx_write_result_t">ovphysx_write (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv432ovphysx_write_attribute_result_t">ovphysx_write_attribute_result_t (C++ struct)</a>
 </li>
@@ -3498,9 +3707,13 @@
 </li>
       <li><a href="python_api.html#ovphysx.types.SimObjectType.PARTICLE_SYSTEM">PARTICLE_SYSTEM (ovphysx.types.SimObjectType attribute)</a>
 </li>
+      <li><a href="python_api.html#ovphysx.types.TaskStatus.PENDING">PENDING (ovphysx.types.TaskStatus attribute)</a>
+</li>
       <li><a href="python_api.html#ovphysx.api.TaskTimeoutError.pending_task">pending_task (ovphysx.api.TaskTimeoutError property)</a>
 </li>
       <li><a href="python_api.html#ovphysx.types.SimObjectType.PHYSICS">PHYSICS (ovphysx.types.SimObjectType attribute)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.population.physics_population_desc">physics_population_desc() (in module ovphysx.population)</a>
 </li>
       <li><a href="python_api.html#ovphysx.api.PhysX">PhysX (class in ovphysx.api)</a>
 </li>
@@ -3518,10 +3731,10 @@
         <li><a href="python_api.html#ovphysx.api.WriteGroup.prim_count">(ovphysx.api.WriteGroup attribute)</a>
 </li>
       </ul></li>
-      <li><a href="python_api.html#ovphysx.api.ReadGroup.prim_index_map">prim_index_map (ovphysx.api.ReadGroup attribute)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="python_api.html#ovphysx.api.ReadGroup.prim_index_map">prim_index_map (ovphysx.api.ReadGroup attribute)</a>
+</li>
       <li><a href="python_api.html#ovphysx.api.ReadGroup.prim_list">prim_list (ovphysx.api.ReadGroup attribute)</a>
 
       <ul>
@@ -3602,11 +3815,15 @@
 </li>
       <li><a href="python_api.html#ovphysx.api.ContactBinding.read_normal_force_matrix">read_normal_force_matrix() (ovphysx.api.ContactBinding method)</a>
 </li>
+      <li><a href="python_api.html#ovphysx.types.CompiledStageCacheMode.READ_ONLY">READ_ONLY (ovphysx.types.CompiledStageCacheMode attribute)</a>
+</li>
       <li><a href="python_api.html#ovphysx.api.ContactBinding.read_raw_contact_data">read_raw_contact_data() (ovphysx.api.ContactBinding method)</a>
 </li>
       <li><a href="python_api.html#ovphysx.api.PhysX.read_sync">read_sync() (ovphysx.api.PhysX method)</a>
 </li>
       <li><a href="python_api.html#ovphysx.api.PhysX.read_tokens_sync">read_tokens_sync() (ovphysx.api.PhysX method)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.types.CompiledStageCacheMode.READ_WRITE">READ_WRITE (ovphysx.types.CompiledStageCacheMode attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.api.ReadAttributeResult">ReadAttributeResult (class in ovphysx.api)</a>
 </li>
@@ -3617,6 +3834,8 @@
       <li><a href="python_api.html#ovphysx.api.ReadOmission">ReadOmission (class in ovphysx.api)</a>
 </li>
       <li><a href="python_api.html#ovphysx.api.ReadResult">ReadResult (class in ovphysx.api)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.config.OmniPvdFilter.record_secondary_data">record_secondary_data (ovphysx.config.OmniPvdFilter attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.simulation.OvStageOutputCache.refresh">refresh() (ovphysx.utils.simulation.OvStageOutputCache method)</a>
 </li>
@@ -3634,10 +3853,10 @@
 </li>
       <li><a href="python_api.html#ovphysx.utils.deformable.remove_auto_deformable_body">remove_auto_deformable_body() (in module ovphysx.utils.deformable)</a>
 </li>
-      <li><a href="python_api.html#ovphysx.utils.deformable.remove_auto_deformable_hexahedral_mesh">remove_auto_deformable_hexahedral_mesh() (in module ovphysx.utils.deformable)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="python_api.html#ovphysx.utils.deformable.remove_auto_deformable_hexahedral_mesh">remove_auto_deformable_hexahedral_mesh() (in module ovphysx.utils.deformable)</a>
+</li>
       <li><a href="python_api.html#ovphysx.utils.deformable.remove_auto_deformable_mesh_simplification">remove_auto_deformable_mesh_simplification() (in module ovphysx.utils.deformable)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.authoring.remove_collider">remove_collider() (in module ovphysx.utils.authoring)</a>
@@ -3700,6 +3919,8 @@
 </li>
       <li><a href="python_api.html#ovphysx.types.TensorType.RIGID_BODY_WRENCH">RIGID_BODY_WRENCH (ovphysx.types.TensorType attribute)</a>
 </li>
+      <li><a href="python_api.html#ovphysx.types.TaskStatus.RUNNING">RUNNING (ovphysx.types.TaskStatus attribute)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -3725,6 +3946,8 @@
       <li><a href="python_api.html#ovphysx.types.SceneQueryGeometryType">SceneQueryGeometryType (class in ovphysx.types)</a>
 </li>
       <li><a href="python_api.html#ovphysx.types.SceneQueryMode">SceneQueryMode (class in ovphysx.types)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.config.OmniPvdFilter.scenes">scenes (ovphysx.config.OmniPvdFilter attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.codeless.schema_is_registered">schema_is_registered() (in module ovphysx.utils.codeless)</a>
 </li>
@@ -3766,10 +3989,10 @@
 </li>
       <li><a href="python_api.html#ovphysx.utils.authoring.set_physics">set_physics() (in module ovphysx.utils.authoring)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python_api.html#ovphysx.utils.authoring.set_physics_scene_asyncsimrender">set_physics_scene_asyncsimrender() (in module ovphysx.utils.authoring)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python_api.html#ovphysx.utils.deformable.set_physics_surface_deformable_body">set_physics_surface_deformable_body() (in module ovphysx.utils.deformable)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.deformable.set_physics_volume_deformable_body">set_physics_volume_deformable_body() (in module ovphysx.utils.deformable)</a>
@@ -3806,6 +4029,8 @@
 </li>
       <li><a href="python_api.html#ovphysx.types.SceneQueryGeometryType.SPHERE">SPHERE (ovphysx.types.SceneQueryGeometryType attribute)</a>
 </li>
+      <li><a href="python_api.html#ovphysx.utils.simulation.split_joint_group">split_joint_group() (in module ovphysx.utils.simulation)</a>
+</li>
       <li><a href="python_api.html#ovphysx.api.PhysX.start_recording">start_recording() (ovphysx.api.PhysX method)</a>
 </li>
       <li><a href="python_api.html#ovphysx.api.PhysX.step">step() (ovphysx.api.PhysX method)</a>
@@ -3819,6 +4044,8 @@
       <li><a href="python_api.html#ovphysx.dlpack.DLTensor.strides">strides (ovphysx.dlpack.DLTensor attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.api.PhysX.subscribe_object_changes">subscribe_object_changes() (ovphysx.api.PhysX method)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.types.TaskStatus.SUCCEEDED">SUCCEEDED (ovphysx.types.TaskStatus attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.types.ApiStatus.SUCCESS">SUCCESS (ovphysx.types.ApiStatus attribute)</a>
 </li>
@@ -3842,9 +4069,13 @@
 </li>
       <li><a href="python_api.html#ovphysx.api.Operation.task">task (ovphysx.api.Operation property)</a>
 </li>
+      <li><a href="python_api.html#ovphysx.api.PhysX.task_status">task_status() (ovphysx.api.PhysX method)</a>
+</li>
       <li><a href="python_api.html#ovphysx.api.TaskError">TaskError</a>
 </li>
       <li><a href="python_api.html#ovphysx.api.Operation.tasks">tasks (ovphysx.api.Operation property)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.types.TaskStatus">TaskStatus (class in ovphysx.types)</a>
 </li>
       <li><a href="python_api.html#ovphysx.api.TaskTimeoutError">TaskTimeoutError</a>
 </li>
@@ -3858,10 +4089,10 @@
 </li>
       <li><a href="python_api.html#ovphysx.api.TensorBinding.tensor_type">tensor_type (ovphysx.api.TensorBinding property)</a>
 </li>
-      <li><a href="python_api.html#ovphysx.api.TensorBinding">TensorBinding (class in ovphysx.api)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="python_api.html#ovphysx.api.TensorBinding">TensorBinding (class in ovphysx.api)</a>
+</li>
       <li><a href="python_api.html#ovphysx.api.ReadGroup.tensors">tensors (ovphysx.api.ReadGroup attribute)</a>
 
       <ul>
@@ -4025,7 +4256,7 @@
 </div>
       
         <div class="footer-item"><p class="last-updated">
-  Last updated on Oct 15, 2026.
+  Last updated on Nov 13, 2026.
   <br/>
 </p></div>
       

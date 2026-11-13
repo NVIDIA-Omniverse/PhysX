@@ -3,6 +3,13 @@
 
 /** @cond OVPHYSX_PLC_TRACE */
 /**
+ * @implements REQ-CAPI-OMNIPVD-CAPTURE-001
+ * @covers AC-1 AC-3 AC-5 AC-6
+ */
+/** @endcond */
+
+/** @cond OVPHYSX_PLC_TRACE */
+/**
  * @implements REQ-CAPI-OVD-NAMES-001
  * @covers AC-1 AC-2 AC-3 AC-4
  * @implements REQ-CAPI-LOG-001
@@ -32,11 +39,13 @@
  * @implements REQ-CAPI-VEHICLE-001
  * @covers AC-1 AC-2 AC-3 AC-4
  * @implements REQ-CAPI-SESSION-001
- * @covers AC-3 AC-4 AC-7
+ * @covers AC-3 AC-4 AC-7 AC-10
  * @implements REQ-CAPI-WRITE-001
  * @covers AC-15
  * @implements REQ-CAPI-SDF-001
  * @covers AC-1
+ * @implements REQ-CAPI-COMPILED-CACHE-001
+ * @covers AC-1 AC-2 AC-3 AC-4
  */
 /** @endcond */
 
@@ -53,7 +62,7 @@
 // ovstage / ovx native types. The physics output-read surface speaks ovstage's
 // own types directly (no ovphysx mirror): a read group is an `ovstage_read_group_t`,
 // discovery is an `ovstage_query_result_t`, attribute names/tokens are
-// `ovx_string_or_token_t`, ordinals are `ovstage_ordinal_t` / `ovstage_ordinal_range_t`,
+// `ovx_token_or_string_t`, ordinals are `ovstage_ordinal_t` / `ovstage_ordinal_range_t`,
 // and an attached Stage is an `ovstage_instance_t*`. ovphysx does NOT ship these
 // headers: fetch the ovstage release and add its root to CMAKE_PREFIX_PATH.
 #include <ovstage/ovstage_api/ovstage_api_types.h>
@@ -123,7 +132,7 @@ extern "C"
      */
     typedef uint64_t ovphysx_instance_handle_t;
 
-    /** Deprecated 0.6 compatibility spelling; removal proposed for 0.7. */
+    /** @deprecated 0.6 compatibility spelling. Use ovphysx_instance_handle_t. */
     typedef OVPHYSX_DEPRECATED_MSG("use ovphysx_instance_handle_t") ovphysx_instance_handle_t ovphysx_handle_t;
     typedef uint64_t ovphysx_usd_handle_t;
     typedef uint64_t ovphysx_attribute_binding_handle_t;
@@ -201,7 +210,7 @@ extern "C"
     {
         OVPHYSX_QUERY_TARGET_RIGID_BODY = 0,         /**< dynamic rigid bodies (standalone + point-instancer instances) */
         OVPHYSX_QUERY_TARGET_ARTICULATION_LINK = 1,  /**< articulation link body transforms */
-        OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT = 2, /**< articulation joint state (per-axis, one array group per joint) */
+        OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT = 2, /**< articulation joint DOFs (one row per unlocked axis) */
         OVPHYSX_QUERY_TARGET_VEHICLE_WHEEL = 3,      /**< vehicle wheel transforms */
         OVPHYSX_QUERY_TARGET_DEFORMABLE_VOLUME = 4,  /**< volume deformable meshes (points / velocities) */
         OVPHYSX_QUERY_TARGET_DEFORMABLE_SURFACE = 5, /**< surface deformable meshes */
@@ -231,6 +240,7 @@ extern "C"
            entries above: next integer, immediately before OVPHYSX_QUERY_TARGET_COUNT. */
         OVPHYSX_QUERY_TARGET_DEBUG_RENDER = 23,        /**< this instance's debug-render target; not a prim */
         OVPHYSX_QUERY_TARGET_SDF_SHAPE = 24,           /**< SDF collision shapes (query-only) */
+        OVPHYSX_QUERY_TARGET_DEFORMABLE_SKIN_MESH = 25, /**< deformable skin meshes (prim: the skinned render mesh; read-only `points`, skin-mesh-local) */
         OVPHYSX_QUERY_TARGET_COUNT                     /**< one past the last valid type; the range-check bound (not a type) */
     } ovphysx_query_target_t;
 
@@ -377,77 +387,50 @@ extern "C"
     /* OVPHYSX_ATTR_* names are string literals in ovphysx_attributes.h.
      * This header does not include that header. */
 
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_ENABLED;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_SCALE;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_WORLD_AXES;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_BODY_AXES;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_BODY_MASS_AXES;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_BODY_LINEAR_VELOCITY;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_BODY_ANGULAR_VELOCITY;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_CONTACT_POINT;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_CONTACT_NORMAL;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_CONTACT_ERROR;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_CONTACT_IMPULSE;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_FRICTION_POINT;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_FRICTION_NORMAL;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_FRICTION_IMPULSE;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_ACTOR_AXES;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_COLLISION_AABBS;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_COLLISION_SHAPES;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_COLLISION_AXES;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_COLLISION_COMPOUNDS;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_COLLISION_FACE_NORMALS;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_COLLISION_EDGES;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_COLLISION_STATIC_PRUNER;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_COLLISION_DYNAMIC_PRUNER;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_JOINT_LOCAL_FRAMES;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_JOINT_LIMITS;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_CULL_BOX;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_MBP_REGIONS;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_SIMULATION_MESH;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_SDF;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_CULLING_BOX;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_SCOPE;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_POINT_POSITION;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_POINT_COLOR;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_LINE_POSITION;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_LINE_COLOR;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_TRIANGLE_POSITION;
-    OVPHYSX_API extern const ovx_string_or_token_t OVPHYSX_NAME_DEBUG_TRIANGLE_COLOR;
+#include "generated/AttributeNames.inc"
 
     /**
      * The physics output-read surface uses ovstage's own types directly rather than
      * an ovphysx mirror (so a read group feeds straight back into the ovstage write
      * path with no repack and no translation layer):
      *
-     *   - a read group is an `ovstage_read_group_t` (from ovstage_api_types.h):
+     *   - a read group is an `ovstage_read_group_t` (from ovstage_api_types.h)
+     *     carrying one attribute column, `columns[0]` (`column_count == 1`).
+     *     `prims.list` is the interned prim set; in the column,
      *     `data.tensors[0..tensor_count)` are borrowed DLTensors (tuple width in
-     *     `dtype.lanes`), `prims.list` is the interned prim set, `attribute` is the
-     *     interned EMITTED attribute token, `semantic` is the authored USD role
-     *     (`ovstage_attribute_semantic_t`). For this physics-output path
-     *     `is_delete == false`, `prims.offset == 0`, and a point-instancer always
-     *     emits the FULL instance array by-index (`data.index_map == NULL`).
+     *     `dtype.lanes`), `attribute` is the interned EMITTED attribute token,
+     *     `semantic` is the authored USD role (`ovstage_attribute_semantic_t`). For
+     *     this physics-output path `is_delete == false`, `prims.offset == 0`, and a
+     *     point-instancer always emits the FULL instance array by-index
+     *     (`data.index_map == NULL`).
      *     Slots with no live point-instancer body are zero-filled in every emitted
      *     array. In particular, an all-zero `orientations` quaternion is the
      *     absent-slot marker; live orientations are normalized and never all zero.
      *
-     *     `is_array` decides how many tensors a group carries, and reading only
+     *     The column's `is_array` decides how many tensors it carries, and reading only
      *     `tensors[0]` is wrong for half of them:
      *       * `is_array == false` (a FIXED group, e.g. rigid-body position) stacks
-     *         every prim into ONE tensor. `tensor_count == 1`, and row i belongs
-     *         to prim i of `prims.list`.
-     *       * `is_array == true` (an ARRAY group, e.g. joint state, point-instancer
-     *         positions, deformable points) carries ONE TENSOR PER PRIM.
+     *         every row into ONE tensor. `tensor_count == 1`, and row i belongs
+     *         to entry i of `prims.list`. An articulation-joint group is a FIXED
+     *         group with one row per unlocked DOF: a joint's rows are consecutive,
+     *         in PhysX axis order, and its path repeats once per DOF in
+     *         `prims.list`. ovphysx_create_joint_arrays_from_read_group()
+     *         (`<ovphysx/ovphysx_utils.h>`) regroups it into one array per joint
+     *         for ovstage.
+     *       * `is_array == true` (an ARRAY group, e.g. point-instancer positions,
+     *         deformable points) carries ONE TENSOR PER PRIM.
      *         `tensor_count == prims.count`, and `tensors[i]` is prim i's own
-     *         variable-length array. A joint read of 16k joints is ONE group with
-     *         16k tensors, not 16k groups. Taking `tensors[0]` yields the first
-     *         prim's values and no error.
+     *         variable-length array. Taking `tensors[0]` yields the first prim's
+     *         values and no error.
      *     Element type is per attribute, in `tensors[i].dtype`. Do not assume f32.
      *     Most columns are `{kDLFloat, 32}`. The boolean flags (disableGravity,
      *     disableSimulation) and isSleeping are `{kDLUInt, 8}`; shapeCount is `{kDLInt, 32}`.
      *     `dtype.lanes` is the tuple width, and for a per-shape column it is the
      *     widest selected object in THAT read, so it varies between reads of the same
-     *     attribute. Do not cache it.
+     *     attribute. Do not cache it. The whole-articulation inverse-dynamics columns
+     *     are the exception: `dtype.lanes` is 1 and each row's dimensions are tensor
+     *     axes (jacobian `[N, R, C]`, massMatrix `[N, M, M]`, coriolisForce and
+     *     gravityForce `[N, M]`, centroidalMomentum `[N, 6, numDofs + 7]`).
      *   - residency is per attribute too. On a DirectGPU scene the simulated outputs
      *     (pose, velocity, acceleration, and whole-articulation centerOfMassWorld /
      *     centerOfMassLocal) are `kDLCUDA`, while authored body properties (mass,
@@ -458,7 +441,7 @@ extern "C"
      *     `tensors[i].device.device_type`.
      *   - discovery is an `ovstage_query_result_t` (`attributes` is the interned token
      *     array, and `total_prim_count == 0` is the valid empty-match case).
-     *   - attribute names are `ovx_string_or_token_t`. Pass a string (e.g.
+     *   - attribute names are `ovx_token_or_string_t`. Pass a string (e.g.
      *     OVPHYSX_ATTR_POSITION from ovphysx_attributes.h) or an interned token
      *     from discovery, no round-trip.
      *
@@ -649,6 +632,13 @@ extern "C"
      * Defer follow-up work until the triggering synchronous
      * call returns, or until the triggering task reaches terminal completion
      * through ovphysx_wait_task() or ovphysx_wait_all().
+     * ovphysx_detach_ovstage() and ovphysx_destroy_instance() run
+     * on_all_objects_destroyed without providing global exclusion for other
+     * instances. On an idle instance, cached-query validation, recording-status
+     * queries, completed-receipt collection and already-absent query/read/write
+     * releases may progress while the callback runs. The callback must not wait
+     * for another thread's ovphysx call, directly or through an application lock
+     * or event that thread holds.
      */
     typedef struct ovphysx_object_change_callbacks_t
     {
@@ -697,8 +687,9 @@ extern "C"
     } ovphysx_result_t;
 
     /**
-     * Copyable receipt for an accepted task. SUCCESS means admission, including
-     * work that executes inline and fails. Collect execution status with a wait.
+     * Copyable receipt for an accepted task. SUCCESS means admission, whether the
+     * work already ran, failed, or is still queued. Collect execution status with
+     * a wait.
      * Rejected submissions have zero identity and explain the rejection through
      * ovphysx_get_last_error() on the calling thread.
      */
@@ -721,8 +712,24 @@ extern "C"
     {
         const ovphysx_enqueue_result_t* error_tasks; /**< Failed tasks in submission order */
         size_t num_errors;                          /**< Number of failed tasks */
-        ovphysx_enqueue_result_t pending_task;       /**< Earliest pending task; all zero if none */
+        /** Earliest pending task; zero if none, or if wait_all times out before
+         * capturing its cutoff. That early timeout requires a retry. */
+        ovphysx_enqueue_result_t pending_task;
     } ovphysx_wait_task_result_t;
+
+    /**
+     * State of an issued task as reported by ovphysx_query_task_status(). The query
+     * never collects an outcome, so SUCCEEDED and FAILED stay observable until a
+     * wait collects the task, after which the task reports NOT_FOUND.
+     */
+    typedef enum ovphysx_task_status_t
+    {
+        OVPHYSX_TASK_STATUS_NOT_FOUND = 0, /**< Never issued, or its outcome was already collected */
+        OVPHYSX_TASK_STATUS_PENDING = 1,   /**< Accepted and queued; its work has not started */
+        OVPHYSX_TASK_STATUS_RUNNING = 2,   /**< Its work started and has not finished */
+        OVPHYSX_TASK_STATUS_SUCCEEDED = 3, /**< Finished successfully; outcome not yet collected */
+        OVPHYSX_TASK_STATUS_FAILED = 4,    /**< Finished with a failure; outcome not yet collected */
+    } ovphysx_task_status_t;
 
     /*--------------------------------------------------*/
     /* Stream synchronization types */
@@ -823,7 +830,17 @@ extern "C"
         OVPHYSX_GLOBAL_CONFIG_SCENE_MULTI_GPU_MODE = 0x00000004, /**< int64 in 0..2; no stage attached */
         OVPHYSX_GLOBAL_CONFIG_OVSTAGE_READ_POOL_MAX_MB = 0x00000005, /**< int64 fitting int32; runtime mutable */
         OVPHYSX_GLOBAL_CONFIG_PROFILER_BACKEND = 0x00000006, /**< int64 ovphysx_profiler_backend_t; startup-only */
-        OVPHYSX_GLOBAL_CONFIG_COOKED_COLLIDER_CACHE_DIRECTORY = 0x00000007, /**< string; startup-only */
+        /** string; startup-only. The compiled stage cache stores here too, and PhysX
+         * deserializes those results in place: anyone who can write the directory can
+         * corrupt this process. Keep it private to the user and on a local disk; a
+         * network share is not detected. On Linux, ovphysx creates missing directories
+         * owner-only, and the AUTOMATIC compiled stage cache mode uses only a private
+         * one: not a symlink, owned by the user and closed to group and others, with
+         * every directory above it owned by the user or root and writable by no one
+         * else unless sticky, as /tmp is. A later instance's value does not move a
+         * datastore that already runs, and AUTOMATIC then leaves the compiled stage
+         * cache off. */
+        OVPHYSX_GLOBAL_CONFIG_COOKED_COLLIDER_CACHE_DIRECTORY = 0x00000007,
         OVPHYSX_GLOBAL_CONFIG_PROFILER_OUTPUT_PATH = 0x00000008, /**< string; startup-only */
         OVPHYSX_GLOBAL_CONFIG_CPU_ONLY = 0x00000009, /**< bool; startup-only; true is sticky */
         OVPHYSX_GLOBAL_CONFIG_LOG_LEVEL = 0x0000000a, /**< int64 ovphysx_log_level_t; runtime mutable */
@@ -831,7 +848,18 @@ extern "C"
         /** bool; default false; startup-only. Enables OVD recording capability
          * without starting output. Attach a stage, then call
          * ovphysx_ovd_start_recording() to record. */
-        OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLE = 0x0000000c
+        OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLE = 0x0000000c,
+        /** bool; default true; read when an instance is created. True gives the
+         * instance one dedicated worker thread from a Carbonite
+         * carb::tasking::IThreadPool, unless IThreadPool is unavailable or the
+         * carb.tasking pool has fewer than two threads (a warning is logged). An
+         * instance without a worker thread runs each of its calls on the calling
+         * thread, and its task has finished when the call returns. */
+        OVPHYSX_GLOBAL_CONFIG_ASYNC_EXECUTION = 0x0000000d,
+        /** int64 ovphysx_compiled_stage_cache_mode_t; default AUTOMATIC; runtime
+         * mutable: each later ovphysx_attach_ovstage() reads it. Experimental.
+         * The getter reports the configured mode, not the mode an attach resolved. */
+        OVPHYSX_GLOBAL_CONFIG_COMPILED_STAGE_CACHE = 0x0000000e
     } ovphysx_global_config_key_t;
 
     /**
@@ -856,10 +884,57 @@ extern "C"
         OVPHYSX_PROFILER_BACKEND_TRACE = 2
     } ovphysx_profiler_backend_t;
 
+    /**
+     * Compiled ovstage cache mode used by
+     * OVPHYSX_GLOBAL_CONFIG_COMPILED_STAGE_CACHE. Experimental.
+     *
+     * The cache stores the compiled result of a whole-stage
+     * ovphysx_attach_ovstage(), and of physics subtrees that a later
+     * ovphysx_update_from_ovstage() adds, in the process's UJITSO datastore:
+     * the store cooked colliders use. Results are keyed by the physics inputs
+     * and the runtime build. A later attach or insertion with the same inputs
+     * restores the stored result instead of parsing; changed inputs miss and
+     * load normally, as does content the cache does not support. When a
+     * matching result fails while it is applied, the attach loads normally and
+     * reports restore failed. The result is removed from the cache if it is
+     * itself defective, and kept if the process failed (for example, ran out
+     * of memory). READ_ONLY removes such a result too; it only never stores
+     * new ones.
+     *
+     * AUTOMATIC selects READ_WRITE while cooked colliders persist in a
+     * cooked-collider cache directory the application configured
+     * (OVPHYSX_GLOBAL_CONFIG_COOKED_COLLIDER_CACHE_DIRECTORY) that the datastore
+     * was built from and that, on Linux, is private to the user (see that key),
+     * and DISABLED otherwise; it logs why at OVPHYSX_LOG_INFO when a configured
+     * directory fails either condition. Without a configured
+     * directory the datastore is a process-private directory that is deleted at
+     * shutdown, so every run would pay the store cost and reuse only within
+     * that process. READ_WRITE uses a configured directory either way; without
+     * one it stores into that process-private directory, and reuse ends at
+     * shutdown. When no local datastore is usable, or the datastore also
+     * reaches Hub or network stores, the attach loads normally and reports
+     * unavailable. Each attach logs the cache outcome (hit, miss, stored,
+     * bypassed with its reason, unavailable, ...) at OVPHYSX_LOG_INFO.
+     *
+     * Trust: stored results are deserialized in place, as cooked colliders
+     * are; see OVPHYSX_GLOBAL_CONFIG_COOKED_COLLIDER_CACHE_DIRECTORY.
+     *
+     * Attaches that assign replicator environment ids for ovphysx_clone() are
+     * cached too: a restored stage carries the environment ids that loading it
+     * normally assigns.
+     */
+    typedef enum ovphysx_compiled_stage_cache_mode_t
+    {
+        OVPHYSX_COMPILED_STAGE_CACHE_AUTOMATIC = 0,  /**< Default: READ_WRITE with a configured cooked-collider directory, else DISABLED */
+        OVPHYSX_COMPILED_STAGE_CACHE_DISABLED = 1,   /**< Never look up or store */
+        OVPHYSX_COMPILED_STAGE_CACHE_READ_ONLY = 2,  /**< Look up; never store */
+        OVPHYSX_COMPILED_STAGE_CACHE_READ_WRITE = 3  /**< Look up, and store on a miss */
+    } ovphysx_compiled_stage_cache_mode_t;
+
     /** Destination transport for a late OmniPVD recording. */
     typedef enum ovphysx_omnipvd_transport_t
     {
-        OVPHYSX_OMNIPVD_TRANSPORT_FILE = 0, /**< Write one exact .ovd file path. */
+        OVPHYSX_OMNIPVD_TRANSPORT_FILE = 0, /**< Write an exact .ovd path or a timestamped file in a directory. */
         OVPHYSX_OMNIPVD_TRANSPORT_TCP = 1   /**< Connect to one TCP listener. */
     } ovphysx_omnipvd_transport_t;
 
@@ -871,6 +946,13 @@ extern "C"
      * file_path. String views are borrowed only for the synchronous call and
      * must not contain embedded NUL bytes. A zero TCP timeout leaves the socket
      * send timeout at its platform default.
+     *
+     * FILE file_path must contain a UTF-8 encoded path on every platform.
+     * FILE treats a path ending with literal, case-sensitive ".ovd" as an exact
+     * filename. Other paths are directories receiving timestamped *_rec.ovd
+     * files. Add a trailing separator to use a directory whose name ends in
+     * .ovd. An admitted explicit start recursively creates missing directories
+     * or filename parents. Capability, creation, and attachment create no output.
      */
     typedef struct ovphysx_omnipvd_destination_t
     {
@@ -880,6 +962,53 @@ extern "C"
         uint32_t tcp_port;
         int32_t tcp_timeout_ms;
     } ovphysx_omnipvd_destination_t;
+
+    /**
+     * Initial selection for one recording session. Empty lists select all objects
+     * across the shared runtime. Otherwise scene and object paths form a union
+     * resolved within the caller's attachment. Scenes include future members.
+     * Supported objects are rigid statics/dynamics, whole articulations,
+     * deformable surfaces/volumes, particle systems and particle buffers.
+     * Links, joints, aggregates, shapes, materials and meshes are included through
+     * their selected owners and cannot be selected directly.
+     * Exact absolute prim paths cannot contain wildcards or embedded NULs.
+     * The secondary-data option and both path lists are copied during the synchronous start call.
+     * FILE retains the filter until stop/restart. A TCP receiver can replace it
+     * after an applied acknowledgment, scoped to the recording owner's attachment.
+     * Primary data always includes identity, pose, velocity, acceleration,
+     * geometry, materials, particle positions and deformable vertex state. Setting
+     * record_secondary_data to false records primary data only. Secondary data adds
+     * forces, contacts, configuration, diffuse parameters and all vehicle-specific telemetry.
+     * Secondary contacts include pairs with either endpoint selected. Rigid actors
+     * connected to selected actors by a recorded contact, joint or constraint include
+     * identity, scene, shapes and current pose/velocity state.
+     * Their other contacts and joints do not expand the selection. A contact pair
+     * whose bodies fall asleep while touching keeps the connected actor recorded,
+     * although the scene's contact arrays leave the pair out until the bodies wake.
+     * When no recorded connection requires an actor, its recording ends at the next
+     * scene recording update. Reconnecting records its current state again.
+     * A connected actor that leaves its scene stops updating at once. It stays in
+     * the recording outside every scene and aggregate until a new connection records
+     * it again, it joins a selected scene, or it is released. In Direct GPU API scenes,
+     * a rigid dynamic or articulation link that has already been simulated and becomes
+     * connected between simulation steps gets its pose and velocity at the next
+     * fetchResults().
+     */
+    typedef struct ovphysx_omnipvd_recording_options_t
+    {
+        /** Include secondary data in addition to mandatory primary state. Default: true. */
+        bool record_secondary_data;
+        const ovphysx_string_t* scene_paths;
+        uint32_t scene_count;
+        const ovphysx_string_t* object_paths;
+        uint32_t object_count;
+        /** TCP only: send a catalog and wait for a receiver selection before sampling. Default: false. */
+        bool wait_for_selection;
+    } ovphysx_omnipvd_recording_options_t;
+
+    /** Initialize all-object, all-data recording options. */
+#define OVPHYSX_OMNIPVD_RECORDING_OPTIONS_DEFAULT \
+    { true, 0, 0, 0, 0, false }
 
     /**
      * PhysX debug-visualization parameter indices. Mirrors

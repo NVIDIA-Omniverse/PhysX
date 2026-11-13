@@ -1,0 +1,229 @@
+/* SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+   SPDX-License-Identifier: Apache-2.0 */
+
+/* The Getting Started and guide figures are drawn on their own dark background. Keep the dark
+   theme from brightening them or putting a white backdrop behind their rounded corners. */
+html[data-theme=dark] .bd-content img[src*="getting_started_"],
+html[data-theme=dark] .bd-content img[src*="guide_"] {
+  filter: none;
+  background-color: transparent;
+}
+
+/* No sideways scrolling where it can be avoided. Long code lines wrap at the edge of the block
+   (copying still copies the original lines). */
+.bd-content pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.bd-content table :is(td, th) { overflow-wrap: break-word; }
+/* Names in tables stay on one line, in slightly smaller code text, so they fit the column. */
+.bd-content table :is(td, th) code { font-size: 0.8em; white-space: nowrap; }
+
+/* The rendered animation at the top of the front page has square corners; round them like
+   the other figures. */
+.bd-content img[src*="getting_started_hero"],
+html[data-theme=dark] .bd-content img[src*="getting_started_hero"] { border-radius: 16px; }
+/* The conveyor video on Fast Simulations spans the text column, with the same corners. */
+.bd-content video.conveyor-video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; border-radius: 16px; margin: 0 0 1.25rem; background: #c9cacb; }
+
+/* The collapsible C program on Your First Simulation. */
+details.getting-started-code {
+  margin: 1rem 0 1.5rem;
+  border: 1px solid var(--pst-color-border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+details.getting-started-code > summary {
+  cursor: pointer;
+  padding: 0.65rem 1rem;
+  font-family: var(--pst-font-family-monospace);
+  font-size: 0.9em;
+}
+details.getting-started-code > summary::marker { color: var(--pst-color-primary); }
+details.getting-started-code[open] > summary { border-bottom: 1px solid var(--pst-color-border); }
+details.getting-started-code div.highlight pre { margin: 0; border: 0; border-radius: 0; }
+
+/* The introductory ovstage explanation stays a plain blockquote in packaged Markdown. */
+#your-first-simulation #the-program > blockquote {
+  position: relative;
+  margin: 1rem 0 1.5rem;
+  padding: 1.1rem 1.25rem 1.1rem 3.4rem;
+  border: 1px solid rgba(118, 185, 0, 0.3);
+  border-left: 4px solid #76b900;
+  border-radius: 0.65rem;
+  background: rgba(118, 185, 0, 0.07);
+  color: var(--pst-color-text-base);
+  font-style: normal;
+}
+#your-first-simulation #the-program > blockquote::before {
+  content: "\1F4A1";
+  position: absolute;
+  left: 1rem;
+  top: 1.1rem;
+  font-size: 1.25rem;
+  line-height: 1.4;
+}
+#your-first-simulation #the-program > blockquote > p:first-child {
+  margin-bottom: 0.65rem;
+  font-size: 1.05em;
+}
+#your-first-simulation #the-program > blockquote > p:last-child {
+  margin-bottom: 0;
+}
+
+/* Plain copy of tabbed content for the docs packaged with the Python wheel and the C SDK, which
+   cannot show tabs. The website shows the tabs instead. */
+.docs-portable-copy { display: none; }
+
+/* Language tabs on Your First Simulation: a quiet frame, a tab bar, and an NVIDIA green line
+   under the open tab. */
+.bd-content .sd-tab-set.getting-started-tabs {
+  margin: 1.25rem 0 1.5rem;
+  border: 1px solid var(--pst-color-border);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background-color: var(--pst-color-surface);
+}
+.bd-content .sd-tab-set.getting-started-tabs > label.sd-tab-label {
+  position: relative;
+  z-index: 2;
+  margin: 0 0 -1px;
+  padding: 0.6rem 1.15rem 0.5rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--pst-color-text-muted);
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.6;
+  transform: none;
+  transition: color 150ms, border-color 150ms;
+}
+.bd-content .sd-tab-set.getting-started-tabs > input:checked + label.sd-tab-label {
+  border: 0;
+  border-bottom: 2px solid #76b900;
+  border-radius: 0;
+  background: transparent;
+  color: var(--pst-color-text-base);
+  transform: none;
+}
+.bd-content .sd-tab-set.getting-started-tabs > input:not(:checked, :focus-visible) + label.sd-tab-label:hover {
+  color: var(--pst-color-text-base);
+  text-decoration: none;
+}
+.bd-content .sd-tab-set.getting-started-tabs > input:focus-visible + label.sd-tab-label {
+  border: 0;
+  border-bottom: 2px solid #76b900;
+  border-radius: 0;
+  background: transparent;
+  color: var(--pst-color-text-base);
+  outline: 2px solid #76b900;
+  outline-offset: -4px;
+}
+.bd-content .sd-tab-set.getting-started-tabs > .sd-tab-content {
+  position: relative;
+  z-index: 1;
+  border: 0;
+  border-top: 1px solid var(--pst-color-border);
+  border-radius: 0;
+  background-color: var(--pst-color-on-background);
+  padding: 1.1rem 1.25rem 1.25rem;
+}
+
+/* File names above the programs in the tabs, styled like an editor tab, without numbering. */
+.getting-started-tabs div.literal-block-wrapper {
+  border: 1px solid var(--pst-color-border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  margin: 0.75rem 0 1.25rem;
+}
+.getting-started-tabs div.literal-block-wrapper div.code-block-caption {
+  padding: 0.4rem 0.9rem;
+  background-color: var(--pst-color-surface);
+  font-family: var(--pst-font-family-monospace);
+  font-size: 0.82rem;
+  font-style: normal;
+  font-weight: 500;
+  color: var(--pst-color-text-muted);
+}
+.getting-started-tabs div.literal-block-wrapper div.code-block-caption .caption-number { display: none; }
+.getting-started-tabs div.literal-block-wrapper div.code-block-caption .caption-text::before {
+  content: "";
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-right: 0.55rem;
+  border-radius: 50%;
+  background-color: #76b900;
+  vertical-align: 0.08rem;
+}
+
+/* Slightly smaller code in the tabs, so lines of up to about 88 characters fit without a
+   horizontal scrollbar on desktop screens. */
+.bd-content .getting-started-tabs div.highlight pre { font-size: 0.8125rem; }
+
+/* Every code block names its language in a small header, styled like the file names in the
+   language tabs: a green dot, then the language. Blocks that already show a file name (the
+   tabs on Your First Simulation) keep only the file name. */
+.bd-content div:is(.highlight-python, .highlight-c, .highlight-cpp, .highlight-bash,
+    .highlight-cmake, .highlight-usda, .highlight-output, .highlight-text)::before {
+  display: block;
+  margin-top: 0.4rem;
+  padding: 0.38rem 0.9rem 0.38rem 1.75rem;
+  border: 1px solid var(--pst-color-border);
+  border-bottom: 0;
+  border-radius: 0.5rem 0.5rem 0 0;
+  background:
+    radial-gradient(circle at 1rem 50%, #76b900 0.25rem, transparent 0.28rem),
+    var(--pst-color-surface);
+  color: var(--pst-color-text-muted);
+  font-family: var(--pst-font-family-monospace);
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+}
+.bd-content div.highlight-python::before { content: "Python"; }
+.bd-content div.highlight-c::before { content: "C"; }
+.bd-content div.highlight-cpp::before { content: "C++"; }
+.bd-content div.highlight-bash::before { content: "Terminal"; }
+.bd-content div.highlight-cmake::before { content: "CMake"; }
+.bd-content div.highlight-usda::before { content: "USD"; }
+.bd-content div.highlight-output::before { content: "Output"; }
+.bd-content div.highlight-text::before { content: "Text"; }
+.bd-content div:is(.highlight-python, .highlight-c, .highlight-cpp, .highlight-bash,
+    .highlight-cmake, .highlight-usda, .highlight-output, .highlight-text) pre {
+  margin-top: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+/* Program output keeps the normal text color. */
+.bd-content div.highlight-output pre .go { color: inherit; }
+/* A file name caption already names the language. */
+.bd-content div.literal-block-wrapper div[class*="highlight-"]::before { content: none; }
+
+/* Dense reference tables with seven or more columns use smaller text and tighter cells, so they
+   fit the page too. */
+.bd-content table:has(tr > :nth-child(7)) { font-size: 0.82rem; }
+.bd-content table:has(tr > :nth-child(7)) :is(td, th) { padding: 0.45rem 0.5rem; }
+
+/* Glossary: every topic table uses the same column widths, so terms line up from table to table. */
+@media (min-width: 960px) {
+  .bd-content section#glossary table { table-layout: fixed; width: 100%; }
+  .bd-content section#glossary table th:nth-child(1) { width: 19%; }
+  .bd-content section#glossary table th:nth-child(2) { width: 55%; }
+  .bd-content section#glossary table th:nth-child(3) { width: 26%; }
+}
+
+/* Homepage: a quiet card saying the package ships agent-readable docs and skills. */
+.bd-content .ai-ready {
+  display: flex; gap: 0.9rem; align-items: flex-start;
+  margin: 1.75rem 0 1.5rem; padding: 0.9rem 1.15rem;
+  border: 1px solid var(--pst-color-border); border-left: 3px solid #76b900;
+  border-radius: 8px; background: var(--pst-color-surface);
+}
+.bd-content .ai-ready-icon {
+  flex: none; width: 1.5rem; height: 1.5rem; margin-top: 0.1rem;
+  fill: none; stroke: #76b900; stroke-width: 1.4; stroke-linejoin: round;
+}
+.bd-content .ai-ready p { margin: 0; font-size: 0.92rem; line-height: 1.55; }
+.bd-content .ai-ready p.ai-ready-title { font-weight: 600; margin-bottom: 0.2rem; font-size: 0.98rem; }
+.bd-content .ai-ready code { font-size: 0.85em; white-space: nowrap; }

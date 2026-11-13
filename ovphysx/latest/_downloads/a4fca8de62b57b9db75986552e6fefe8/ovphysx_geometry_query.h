@@ -49,10 +49,11 @@ extern "C" {
      * Evaluation needs a DirectGPU scene, all the rows in one scene, at most 65535 rows -- PhysX launches its
      * SDF evaluation with one CUDA grid row per shape -- and at most 2^31 - 1 points in all (N x Q), which
      * PhysX indexes in 32-bit arithmetic. It also needs the scene to have simulated since its physics objects
-     * were last created or released, because PhysX uploads shape data to the GPU only when it simulates. On
+     * were last created, released, or transferred between scenes, because PhysX uploads shape data to the GPU only when it simulates. On
      * the first evaluation after loading USD, an automatic warmup simulation step may be performed, as for the
      * SDF view; after that the call never steps, so step once after such a change before evaluating. @p out
-     * is complete once the task has completed.
+     * is complete once the task has completed. The evaluation runs on the calling thread once earlier work on
+     * the instance has finished, and its task has finished when the call returns.
      *
      * ## Synchronization
      *
@@ -80,8 +81,12 @@ extern "C" {
      * - OVPHYSX_API_INVALID_ARGUMENT, before a task is created: a null tensor or data pointer, a tensor
      *   that is not float32 [N, Q, 3] / [N, Q, 4] and C-contiguous on a CUDA device, tensors that disagree
      *   on N, Q or device, Q of 0, N above 65535, or N x Q above 2^31 - 1.
-     * - OVPHYSX_API_NOT_FOUND, before a task is created: a query this instance does not own.
-     * - OVPHYSX_API_ERROR reported by waiting for the task: a query of another type or with no SDF shape,
+     * - OVPHYSX_API_NOT_FOUND, before a task is created: a query this instance does not own, or whose
+     *   release was accepted.
+     * - OVPHYSX_API_INVALID_STATE, before a task is created: a call inside a log, runtime or object-change
+     *   callback, or on the instance's own worker thread.
+     * - OVPHYSX_API_ERROR reported by waiting for the task: a query whose producer failed, a failed attach or
+     *   detach submitted before the call, a query of another type or with no SDF shape,
      *   N different from its row count, rows outside one DirectGPU scene, a scene that has not simulated
      *   since its physics objects last changed, tensors on a CUDA device other than the scene's, a query kept
      *   across a stage detach, a handoff that cannot be honored, or a failed evaluation.

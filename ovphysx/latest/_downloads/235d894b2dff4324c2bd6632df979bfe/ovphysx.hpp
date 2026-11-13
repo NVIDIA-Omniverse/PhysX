@@ -165,11 +165,14 @@ public:
     //------------------------------------------------------------------------------------------------------------
 
     /// Detach the Stage without changing simulation time; already detached is a successful no-op.
-    /// Executes inline and returns a task receipt; waitTask() or waitAll() collects its outcome.
+    /// Returns a task receipt; the detach runs after earlier work on the instance (see
+    /// ovphysx_detach_ovstage()), and waitTask() or waitAll() collects its outcome.
     ovphysx_enqueue_result_t detachOvstage();
 
     /// Attach an ovstage Stage through the top-level ovphysx API. `read_ordinal`
-    /// selects the caller-owned sealed ordinal (must be non-zero, 0 is reserved).
+    /// selects the caller-owned sealed ordinal (must be positive, 0 is reserved).
+    /// It does not reconstruct historical payloads or body membership. If initial
+    /// values matter, complete attach before authoring later edits.
     /// This instance may hold one attach. Other instances may be attached at the
     /// same time; this call does not detach them.
     /// Returns a task receipt; waitTask() or waitAll() collects its outcome.
@@ -183,9 +186,9 @@ public:
     ///
     /// Creates physics-optimized clones in the internal representation for
     /// high-performance simulation. The source prim must exist in the loaded
-    /// USD stage and have physics properties. Replication runs inline (any returned
-    /// op index is already complete), backed by the PhysX SDK replicator, so cloned
-    /// articulations are real articulations.
+    /// USD stage and have physics properties. The call copies its inputs and returns a task
+    /// receipt at once; replication runs after earlier work on the instance (see ovphysx_clone()),
+    /// backed by the PhysX SDK replicator, so cloned articulations are real articulations.
     ///
     /// This is the clone entrypoint for both standalone callers and callers
     /// that populate the scene through an ovstage Stage attached via the C API
@@ -203,9 +206,12 @@ public:
     ///        copy on the source.
     /// @param envIds Optional logical environment id per target ([targetPaths.size()]
     ///        uint32, each < 0x00FFFFFF, runtime id = envIds[i]+1). Stable across calls:
-    ///        the same id maps to the same environment, so clones sharing an id collide
-    ///        and stay isolated from other environments. Pass nullptr for automatic
-    ///        per-call numbering.
+    ///        the same id maps to the same environment. Under GPU dynamics and GPU broadphase,
+    ///        clones sharing an id can collide and stay isolated from other environments.
+    ///        Pass nullptr for automatic numbering from a per-attachment base.
+    ///        A later explicit id can reuse an earlier automatic id
+    ///        on the same attachment without warning or error. Use one strategy consistently;
+    ///        see ovphysx_clone() for the mapping and call-order example.
     /// @return Admission receipt; collect execution errors with waitTask() or waitAll().
     ovphysx_enqueue_result_t clone(const std::string& sourcePath, const std::vector<std::string>& targetPaths,
                                const float* anchorTransforms = nullptr,
@@ -219,8 +225,11 @@ public:
     /// Enqueue a physics simulation step (simulation time tracked internally).
     ovphysx_enqueue_result_t step(float step_dt);
 
-    /// Recompute selected articulation link state; collect the task's outcome with waitTask().
-    ovphysx_enqueue_result_t updateArticulationsKinematic(ovphysx_query_handle_t query, uint32_t flags);
+    /// Recompute selected articulation link state; collect the task's outcome with waitTask(). `cudaSync` is the
+    /// stream and event a DirectGPU refresh is ordered after, as for ovphysx_update_articulations_kinematic.
+    ovphysx_enqueue_result_t updateArticulationsKinematic(ovphysx_query_handle_t query,
+                                                          uint32_t flags,
+                                                          ovstage_cuda_sync_t cudaSync = ovstage_cuda_sync_t{ 0, 0 });
 
     /// Evaluate the SDFs of an SDF_SHAPE query's shapes at the given points; collect the outcome with waitTask().
     /// `pointsReady` is the producer handoff for `points`, as for ovphysx_evaluate_sdf_shapes.

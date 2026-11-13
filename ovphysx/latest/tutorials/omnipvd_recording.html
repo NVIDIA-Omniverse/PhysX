@@ -37,6 +37,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/getting_started.css?v=d234fc04" />
   
   <!-- So that users can add custom icons -->
   <script defer src="../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
@@ -47,7 +48,7 @@
 
 
     <script rel="preload" src="../_static/modal-table.js"></script>
-    <script src="../_static/documentation_options.js?v=423e15eb"></script>
+    <script src="../_static/documentation_options.js?v=a85d417d"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +58,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.7.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.8.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -75,7 +76,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
-    <meta name="docbuild:last-update" content="Oct 15, 2026"/>
+    <meta name="docbuild:last-update" content="Nov 13, 2026"/>
   
     
     <script src="../_static/searchtools.js"></script>
@@ -503,151 +504,327 @@
 <nav class="bd-docs-nav bd-links"
      aria-label="Table of Contents">
   <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
-  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Overview</span></p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../coding_style.html">ovphysx coding and doc style</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../migrating_0_6_to_0_7.html">Migration from 0.6 to 0.7</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../ovd_api_migration.html">Instance and OVD API migration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../tensor_binding_migration.html">Migrating off Tensor Bindings</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../local_development.html">Local Development</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/first_simulation.html">Your First Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/concepts.html">Concepts</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">ovstage Integration</span></p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Building Scenes</span></p>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../ovstage_integration.html">ovstage Integration and Physics Output Read</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../building_scenes/loading_scenes.html">Loading Scenes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../building_scenes/physics_scene.html">The Physics Scene</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../building_scenes/rigid_bodies.html">Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../building_scenes/colliders_and_materials.html">Colliders and Materials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../building_scenes/joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../building_scenes/articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../building_scenes/soft_bodies_and_particles.html">Soft Bodies and Particles</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Simulation Setup</span></p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Simulation Data</span></p>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/physics_scene.html">Physics Scene and Simulation Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/collision.html">Colliders</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/rigid_bodies.html">Rigid Bodies</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/kinematic_support.html">Kinematic Support Geometry</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/joints.html">Joints</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/articulations.html">Articulations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/deformables.html">Deformable Bodies</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/particles.html">Particles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_data/selecting_objects.html">Selecting Objects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_data/reading_values.html">Reading Values</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_data/writing_values.html">Writing Values</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_data/gpu_data.html">Data on the GPU</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Physics Schemas</span></p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Common Tasks</span></p>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../physics_schemas.html">Physics Schemas</a></li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../population/index.html">ovstage Physics Population Domain</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l2"><a class="reference internal" href="../population/Capsule.html">Capsule</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/Cone.html">Cone</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/Cube.html">Cube</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/Cylinder.html">Cylinder</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/Material.html">Material</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/Mesh.html">Mesh</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsCollisionGroup.html">PhysicsCollisionGroup</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsDistanceJoint.html">PhysicsDistanceJoint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsFixedJoint.html">PhysicsFixedJoint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsJoint.html">PhysicsJoint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsPrismaticJoint.html">PhysicsPrismaticJoint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsRevoluteJoint.html">PhysicsRevoluteJoint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsScene.html">PhysicsScene</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsSphericalJoint.html">PhysicsSphericalJoint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxPhysicsGearJoint.html">PhysxPhysicsGearJoint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxPhysicsRackAndPinionJoint.html">PhysxPhysicsRackAndPinionJoint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/Plane.html">Plane</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/Sphere.html">Sphere</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/Xform.html">Xform</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/MaterialBindingAPI.html">MaterialBindingAPI (physics purpose)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsArticulationRootAPI.html">PhysicsArticulationRootAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsCollisionAPI.html">PhysicsCollisionAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsDriveAPI.html">PhysicsDriveAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsFilteredPairsAPI.html">PhysicsFilteredPairsAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsJointStateAPI.html">PhysicsJointStateAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsLimitAPI.html">PhysicsLimitAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsMassAPI.html">PhysicsMassAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsMaterialAPI.html">PhysicsMaterialAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsMeshCollisionAPI.html">PhysicsMeshCollisionAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsRigidBodyAPI.html">PhysicsRigidBodyAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxArticulationAPI.html">PhysxArticulationAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxCollisionAPI.html">PhysxCollisionAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxContactReportAPI.html">PhysxContactReportAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxLimitAPI.html">PhysxLimitAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxPhysicsDistanceJointAPI.html">PhysxPhysicsDistanceJointAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxRigidBodyAPI.html">PhysxRigidBodyAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSDFMeshCollisionAPI.html">PhysxSDFMeshCollisionAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSceneAPI.html">PhysxSceneAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSphereFillCollisionAPI.html">PhysxSphereFillCollisionAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSplinesSurfaceVelocityAPI.html">PhysxSplinesSurfaceVelocityAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSurfaceVelocityAPI.html">PhysxSurfaceVelocityAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxTriangleMeshCollisionAPI.html">PhysxTriangleMeshCollisionAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxTriangleMeshSimplificationCollisionAPI.html">PhysxTriangleMeshSimplificationCollisionAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxTriggerAPI.html">PhysxTriggerAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/prim.html">Prim identity and transform</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/stage_units.html">Stage units</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/composition-articulation_fixed_base.html">Fixed-base two-link articulation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/composition-articulation_floating.html">Floating-base two-link articulation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/composition-conveyor_cube.html">Kinematic conveyor Cube with a surface velocity</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/composition-d6_joint_pair.html">Two rigid-body Cubes on a D6 joint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/composition-distance_joint_pair.html">Two rigid-body Cubes on a distance joint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/composition-fixed_joint_pair.html">Two rigid-body Cubes on a fixed joint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/composition-gear_joint_pair.html">Two hinged rigid-body Cubes coupled by a gear joint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/composition-material_bound_cube.html">Rigid-body Cube bound to a physics Material</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/composition-physics_scene.html">Physics scene</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/composition-prismatic_joint_pair.html">Two rigid-body Cubes on a prismatic joint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/composition-rack_and_pinion_joint_pair.html">A hinged pinion Cube and a sliding rack Cube coupled by a rack-and-pinion joint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/composition-revolute_joint_pair.html">Two rigid-body Cubes on a revolute joint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_capsule.html">Dynamic rigid body on a Capsule</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_cone.html">Dynamic rigid body on a Cone</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_cube.html">Dynamic rigid body on a Cube</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_cube_pair.html">Two dynamic rigid-body Cubes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_cylinder.html">Dynamic rigid body on a Cylinder</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_sphere.html">Dynamic rigid body on a Sphere</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/composition-spherical_joint_pair.html">Two rigid-body Cubes on a spherical joint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/composition-static_plane_collider.html">Static Plane collider</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/findings.html">Recorded findings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../common_tasks/changing_the_scene.html">Changing the Scene</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../common_tasks/contacts.html">Contacts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../common_tasks/showing_the_simulation.html">Showing the Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../common_tasks/debugging.html">Debugging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../common_tasks/stable_simulations.html">Stable Simulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../common_tasks/fast_simulations.html">Fast Simulations</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Advanced</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../common_tasks/many_copies.html">Many Copies of a Scene</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../reference/index.html">Detailed Reference</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/overview.html">Overview and Migration</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../migrating_0_6_to_0_7.html">Migration from 0.6 to 0.7</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../migrating_0_7_to_0_8.html">Migration from 0.7 to 0.8</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ovd_api_migration.html">Instance and OVD API migration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tensor_binding_migration.html">Migrating off Tensor Bindings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="../ovstage_integration.html">ovstage Integration and Physics Output Read</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/simulation_setup.html">Simulation Setup</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../simulation_setup/physics_scene.html">Physics Scene and Simulation Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../simulation_setup/collision.html">Colliders</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../simulation_setup/rigid_bodies.html">Rigid Bodies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../simulation_setup/kinematic_support.html">Kinematic Support Geometry</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../simulation_setup/joints.html">Joints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../simulation_setup/articulations.html">Articulations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../simulation_setup/deformables.html">Deformable Bodies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../simulation_setup/particles.html">Particles</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/schemas.html">Schemas and Population</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../physics_schemas.html">Physics Schemas</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../population/index.html">ovstage Physics Population Domain</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../population/BasisCurves.html">BasisCurves (spline surface velocity path)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/Camera.html">Camera (UsdGeom camera)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/Capsule.html">Capsule</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/Cone.html">Cone</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/Cube.html">Cube</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/Cylinder.html">Cylinder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/CylinderLight.html">CylinderLight (UsdLux light)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/DiskLight.html">DiskLight (UsdLux light)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/DistantLight.html">DistantLight (UsdLux light)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/DomeLight.html">DomeLight (UsdLux light)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/DomeLight_1.html">DomeLight_1 (UsdLux light)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/FabricStageInfo.html">FabricStageInfo (Fabric bookkeeping)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/GeomSubset.html">GeomSubset (per-face physics materials)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/Material.html">Material</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/Mesh.html">Mesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/NodeGraph.html">NodeGraph (UsdShade node graph)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsAttachment.html">OmniPhysicsAttachment (deformable attachment base)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsElementCollisionFilter.html">OmniPhysicsElementCollisionFilter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsTetXformAttachment.html">OmniPhysicsTetXformAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsTriTriAttachment.html">OmniPhysicsTriTriAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsVtxCrvAttachment.html">OmniPhysicsVtxCrvAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsVtxTetAttachment.html">OmniPhysicsVtxTetAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsVtxTriAttachment.html">OmniPhysicsVtxTriAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsVtxVtxAttachment.html">OmniPhysicsVtxVtxAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsVtxXformAttachment.html">OmniPhysicsVtxXformAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsCollisionGroup.html">PhysicsCollisionGroup</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsDistanceJoint.html">PhysicsDistanceJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsFixedJoint.html">PhysicsFixedJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsJoint.html">PhysicsJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsPrismaticJoint.html">PhysicsPrismaticJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsRevoluteJoint.html">PhysicsRevoluteJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsScene.html">PhysicsScene</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsSphericalJoint.html">PhysicsSphericalJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxParticleSystem.html">PhysxParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxPhysicsGearJoint.html">PhysxPhysicsGearJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxPhysicsJointInstancer.html">PhysxPhysicsJointInstancer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxPhysicsRackAndPinionJoint.html">PhysxPhysicsRackAndPinionJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleTireFrictionTable.html">PhysxVehicleTireFrictionTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/Plane.html">Plane</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PointInstancer.html">PointInstancer (rigid-body instancing)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/Points.html">Points (particle set geometry)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/RectLight.html">RectLight (UsdLux light)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/Scope.html">Scope</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/Shader.html">Shader (UsdShade shader)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/Sphere.html">Sphere</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/SphereLight.html">SphereLight (UsdLux light)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/TempChangeTracking.html">TempChangeTracking (Fabric bookkeeping)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/TetMesh.html">TetMesh (volume deformable meshes)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/Xform.html">Xform</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/CollectionAPI.html">CollectionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/GeomInstanceAPI.html">GeomInstanceAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/GeomInstanceRootAPI.html">GeomInstanceRootAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/GeomPrototypeAPI.html">GeomPrototypeAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/LightAPI.html">LightAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/MaterialBindingAPI.html">MaterialBindingAPI (physics purpose)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/NewtonArticulationRootAPI.html">NewtonArticulationRootAPI (self-collision fallback)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/NewtonCollisionAPI.html">NewtonCollisionAPI (contact offset fallbacks)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/NewtonJointAPI.html">NewtonJointAPI (joint-level seeds)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/NewtonMeshCollisionAPI.html">NewtonMeshCollisionAPI (hull vertex limit fallback)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/NewtonMimicAPI.html">NewtonMimicAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/NewtonSceneAPI.html">NewtonSceneAPI (fallbacks read by the PhysX parser)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/NodeDefAPI.html">NodeDefAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsBaseMaterialAPI.html">OmniPhysicsBaseMaterialAPI (deformable material friction and density)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsBodyAPI.html">OmniPhysicsBodyAPI (deformable body flags)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsDeformableBodyAPI.html">OmniPhysicsDeformableBodyAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsDeformableMaterialAPI.html">OmniPhysicsDeformableMaterialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsDeformablePoseAPI.html">OmniPhysicsDeformablePoseAPI (bind pose)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsSurfaceDeformableMaterialAPI.html">OmniPhysicsSurfaceDeformableMaterialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsSurfaceDeformableSimAPI.html">OmniPhysicsSurfaceDeformableSimAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsVolumeDeformableSimAPI.html">OmniPhysicsVolumeDeformableSimAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsArticulationRootAPI.html">PhysicsArticulationRootAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsCollisionAPI.html">PhysicsCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsDriveAPI.html">PhysicsDriveAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsFilteredPairsAPI.html">PhysicsFilteredPairsAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsJointStateAPI.html">PhysicsJointStateAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsLimitAPI.html">PhysicsLimitAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsMassAPI.html">PhysicsMassAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsMaterialAPI.html">PhysicsMaterialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsMeshCollisionAPI.html">PhysicsMeshCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsRigidBodyAPI.html">PhysicsRigidBodyAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxArticulationAPI.html">PhysxArticulationAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxAutoDeformableAttachmentAPI.html">PhysxAutoDeformableAttachmentAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxAutoDeformableBodyAPI.html">PhysxAutoDeformableBodyAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxAutoDeformableHexahedralMeshAPI.html">PhysxAutoDeformableHexahedralMeshAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxAutoDeformableMeshSimplificationAPI.html">PhysxAutoDeformableMeshSimplificationAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxBaseDeformableBodyAPI.html">PhysxBaseDeformableBodyAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxCharacterControllerAPI.html">PhysxCharacterControllerAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxCollisionAPI.html">PhysxCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxContactReportAPI.html">PhysxContactReportAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxCookedDataAPI.html">PhysxCookedDataAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxDeformableMaterialAPI.html">PhysxDeformableMaterialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxDiffuseParticlesAPI.html">PhysxDiffuseParticlesAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxForceAPI.html">PhysxForceAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxJointAPI.html">PhysxJointAPI (removed)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxLimitAPI.html">PhysxLimitAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxMeshMergeCollisionAPI.html">PhysxMeshMergeCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxMimicJointAPI.html">PhysxMimicJointAPI (deprecated)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxPBDMaterialAPI.html">PhysxPBDMaterialAPI (as read for a scene default material)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxParticleAPI.html">PhysxParticleAPI (particle object base)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxParticleAnisotropyAPI.html">PhysxParticleAnisotropyAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxParticleIsosurfaceAPI.html">PhysxParticleIsosurfaceAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxParticleSamplingAPI.html">PhysxParticleSamplingAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxParticleSetAPI.html">PhysxParticleSetAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxParticleSmoothingAPI.html">PhysxParticleSmoothingAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxPhysicsDistanceJointAPI.html">PhysxPhysicsDistanceJointAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxRigidBodyAPI.html">PhysxRigidBodyAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxSDFMeshCollisionAPI.html">PhysxSDFMeshCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxSceneAPI.html">PhysxSceneAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxSceneQuasistaticAPI.html">PhysxSceneQuasistaticAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxSphereFillCollisionAPI.html">PhysxSphereFillCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxSplinesSurfaceVelocityAPI.html">PhysxSplinesSurfaceVelocityAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxSurfaceDeformableBodyAPI.html">PhysxSurfaceDeformableBodyAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxSurfaceDeformableMaterialAPI.html">PhysxSurfaceDeformableMaterialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxSurfaceVelocityAPI.html">PhysxSurfaceVelocityAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxTendonAttachmentAPI.html">PhysxTendonAttachmentAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxTendonAttachmentLeafAPI.html">PhysxTendonAttachmentLeafAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxTendonAttachmentRootAPI.html">PhysxTendonAttachmentRootAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxTendonAxisAPI.html">PhysxTendonAxisAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxTendonAxisRootAPI.html">PhysxTendonAxisRootAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxTriangleMeshCollisionAPI.html">PhysxTriangleMeshCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxTriangleMeshSimplificationCollisionAPI.html">PhysxTriangleMeshSimplificationCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxTriggerAPI.html">PhysxTriggerAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxTriggerStateAPI.html">PhysxTriggerStateAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleAPI.html">PhysxVehicleAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleAckermannSteeringAPI.html">PhysxVehicleAckermannSteeringAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleAutoGearBoxAPI.html">PhysxVehicleAutoGearBoxAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleBrakesAPI.html">PhysxVehicleBrakesAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleClutchAPI.html">PhysxVehicleClutchAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleContextAPI.html">PhysxVehicleContextAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleControllerAPI.html">PhysxVehicleControllerAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleDriveBasicAPI.html">PhysxVehicleDriveBasicAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleDriveStandardAPI.html">PhysxVehicleDriveStandardAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleEngineAPI.html">PhysxVehicleEngineAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleGearsAPI.html">PhysxVehicleGearsAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleMultiWheelDifferentialAPI.html">PhysxVehicleMultiWheelDifferentialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleNonlinearCommandResponseAPI.html">PhysxVehicleNonlinearCommandResponseAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleSteeringAPI.html">PhysxVehicleSteeringAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleSuspensionAPI.html">PhysxVehicleSuspensionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleSuspensionComplianceAPI.html">PhysxVehicleSuspensionComplianceAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleTankControllerAPI.html">PhysxVehicleTankControllerAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleTankDifferentialAPI.html">PhysxVehicleTankDifferentialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleTireAPI.html">PhysxVehicleTireAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleWheelAPI.html">PhysxVehicleWheelAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleWheelAttachmentAPI.html">PhysxVehicleWheelAttachmentAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleWheelControllerAPI.html">PhysxVehicleWheelControllerAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PrototypeRootAPI.html">PrototypeRootAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/ShadowAPI.html">ShadowAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/ShapingAPI.html">ShapingAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/legacy_stage_units.html">Legacy stage units prim</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/prim.html">Prim identity and transform</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/stage_units.html">Stage units</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-articulation_fixed_base.html">Fixed-base two-link articulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-articulation_floating.html">Floating-base two-link articulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-conveyor_cube.html">Kinematic conveyor Cube with a surface velocity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-d6_joint_pair.html">Two rigid-body Cubes on a D6 joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-distance_joint_pair.html">Two rigid-body Cubes on a distance joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-fixed_joint_pair.html">Two rigid-body Cubes on a fixed joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-gear_joint_pair.html">Two hinged rigid-body Cubes coupled by a gear joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-material_bound_cube.html">Rigid-body Cube bound to a physics Material</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-physics_scene.html">Physics scene</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-prismatic_joint_pair.html">Two rigid-body Cubes on a prismatic joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-rack_and_pinion_joint_pair.html">A hinged pinion Cube and a sliding rack Cube coupled by a rack-and-pinion joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-revolute_joint_pair.html">Two rigid-body Cubes on a revolute joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-rigid_body_capsule.html">Dynamic rigid body on a Capsule</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-rigid_body_cone.html">Dynamic rigid body on a Cone</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-rigid_body_cube.html">Dynamic rigid body on a Cube</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-rigid_body_cube_pair.html">Two dynamic rigid-body Cubes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-rigid_body_cylinder.html">Dynamic rigid body on a Cylinder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-rigid_body_sphere.html">Dynamic rigid body on a Sphere</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-spherical_joint_pair.html">Two rigid-body Cubes on a spherical joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-static_plane_collider.html">Static Plane collider</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/findings.html">Recorded findings</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/physics-population-description.html">Physics Population Description</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/glossary.html">Population vocabulary</a></li>
 </ul>
 </details></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Read/Write Data Contract</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../read_write/index.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../read_write/data_model.html">Data model and semantics</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../read_write/device.html">Device residency and interop</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../read_write/readable.html">Readable data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../read_write/writable.html">Writable data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../read_write/vehicles.html">Vehicle examples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../read_write/path_patterns.html">Path patterns</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../read_write/limitations.html">Known limitations and gaps</a></li>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/read_write.html">Read and Write Contract</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../read_write/index.html">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../read_write/data_model.html">Data model and semantics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../read_write/device.html">Device residency and interop</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../read_write/readable.html">Readable data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../read_write/discovery.html">Discovering attribute metadata</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../read_write/attributes/index.html">Detailed I/O attribute reference</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/units.html">Runtime I/O units</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/rigid_body.html">Rigid body</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/articulation_link.html">Articulation link</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/articulation_joint.html">Articulation joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/vehicle_wheel.html">Vehicle wheel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/deformable_volume.html">Deformable volume</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/deformable_surface.html">Deformable surface</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/particle_set.html">Particle set</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/fixed_tendon.html">Fixed tendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/spatial_tendon.html">Spatial tendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/articulation.html">Articulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/deformable_material.html">Deformable material</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/contact_sensor.html">Contact sensor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/character_controller.html">Character controller</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/vehicle.html">Vehicle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/scene.html">Scene</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/physx_material.html">Physx material</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/shape.html">Shape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/compound_shape.html">Compound shape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/rigid_actor.html">Rigid actor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/joint.html">Joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/custom_joint.html">Custom joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/particle_system.html">Particle system</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/physics.html">Physics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/debug_render.html">Debug render</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/sdf_shape.html">Sdf shape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/deformable_skin_mesh.html">Deformable skin mesh</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
-<ul class="current nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="hello_world.html">Hello World – Populate ovstage and Step</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tensor_bindings.html">Tensor Bindings (deprecated)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="contact_binding.html">Contact Binding – Reading Contact Forces</a></li>
-<li class="toctree-l1"><a class="reference internal" href="cloning.html">Cloning – Replicate Environments</a></li>
-<li class="toctree-l1"><a class="reference internal" href="render_handoff.html">Rendering Handoff</a></li>
-<li class="toctree-l1"><a class="reference internal" href="physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
-<li class="toctree-l1"><a class="reference internal" href="profiling.html">Profiling: See Where Your Simulation Spends Its Time</a></li>
-<li class="toctree-l1"><a class="reference internal" href="source_link_build.html">Building Against the ovphysx Source Tree</a></li>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../read_write/writable.html">Writable data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../read_write/vehicles.html">Vehicle examples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../read_write/path_patterns.html">Path patterns</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../read_write/limitations.html">Known limitations and gaps</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../guides/performance.html">Simulation Performance Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/collision_tuning.html">Collision Behavior Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/articulation_stability.html">Articulation and Robot Simulation Stability Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/gripper_tuning.html">Joint Parameter Tuning Example: Robotiq 2F-85</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/limitations.html">Known Physics Limitations</a></li>
+</details></li>
+<li class="toctree-l2 current active has-children"><a class="reference internal" href="../reference/tutorials.html">Tutorials</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hello_world.html">Hello World – Populate ovstage and Step</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tensor_bindings.html">Tensor Bindings (deprecated)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="contact_binding.html">Contact Binding – Reading Contact Forces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloning.html">Cloning – Replicate Environments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="render_handoff.html">Rendering Handoff</a></li>
+<li class="toctree-l3"><a class="reference internal" href="physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
+<li class="toctree-l3 current active"><a class="current reference internal" href="#">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
+<li class="toctree-l3"><a class="reference internal" href="profiling.html">Profiling: See Where Your Simulation Spends Its Time</a></li>
+<li class="toctree-l3"><a class="reference internal" href="source_link_build.html">Building Against the ovphysx Source Tree</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
-<ul class="nav bd-sidenav">
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/tuning_guides.html">Tuning Guides</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../guides/performance.html">Simulation Performance Guide</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guides/collision_tuning.html">Collision Behavior Guide</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guides/articulation_stability.html">Articulation and Robot Simulation Stability Guide</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guides/gripper_tuning.html">Joint Parameter Tuning Example: Robotiq 2F-85</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guides/limitations.html">Known Physics Limitations</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/contributing.html">Contributing</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../local_development.html">Local Development</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../coding_style.html">ovphysx coding and doc style</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="../reference/glossary.html">Glossary</a></li>
+</ul>
+</details></li>
 <li class="toctree-l1"><a class="reference internal" href="../python_api.html">Python API Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html">C API Reference</a></li>
-</ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Legal</span></p>
-<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../SECURITY.html">Security</a></li>
 </ul>
 </div>
@@ -683,6 +860,12 @@
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
+    
+    <li class="breadcrumb-item"><a href="../reference/index.html" class="nav-link">Detailed Reference</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../reference/tutorials.html" class="nav-link">Tutorials</a></li>
+    
     <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">OmniPVD Recording – Capture Physics Internals to FILE or TCP</span></li>
   </ul>
 </nav>
@@ -712,12 +895,117 @@ visualize physics behavior.</p>
 <h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading">#</a></h2>
 <ul class="simple">
 <li><p>Install ovphysx and confirm native libraries load.</p></li>
+<li><p>Install the required PhysX schema provider in the same Python environment:
+<code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">pip</span> <span class="pre">install</span> <span class="pre">physx-usd-schemas</span></code>. See <a class="reference internal" href="../physics_schemas.html"><span class="std std-doc">Physics Schemas</span></a>
+for the native SDK installation route.</p></li>
 <li><p>A USD scene with physics objects. This tutorial uses <code class="docutils literal notranslate"><span class="pre">links_chain_sample.usda</span></code>,
 which ships with every package under <code class="docutils literal notranslate"><span class="pre">ovphysx/samples/data/</span></code> in the wheel,
 <code class="docutils literal notranslate"><span class="pre">&lt;sdk-root&gt;/samples/data/</span></code> in the C/C++ SDK, and <code class="docutils literal notranslate"><span class="pre">tests/data/</span></code> in a repository
 checkout.</p></li>
-<li><p>For offline inspection: a compatible Kit application with the OmniPVD extension.</p></li>
+<li><p>For headless inspection: a separately installed PhysX SDK <code class="docutils literal notranslate"><span class="pre">ovd-inspect</span></code> executable.
+A compatible Kit application with the OmniPVD extension is an optional visual consumer.
+Build and install the inspector from an SDK source distribution using
+<code class="docutils literal notranslate"><span class="pre">physx/pvddom/README.md</span></code> (“Installed tools and CMake consumers”); configure
+<code class="docutils literal notranslate"><span class="pre">PVDDOM_BUILD_INSPECTION=ON</span></code>, <code class="docutils literal notranslate"><span class="pre">PVDDOM_BUILD_TOOLS=ON</span></code> and the matching <code class="docutils literal notranslate"><span class="pre">PVDRUNTIME_ROOT</span></code>.</p></li>
 </ul>
+</section>
+<section id="headless-capture-and-investigation">
+<h2>Headless capture and investigation<a class="headerlink" href="#headless-capture-and-investigation" title="Link to this heading">#</a></h2>
+<p>The wheel includes <code class="docutils literal notranslate"><span class="pre">ovphysx/samples/python_samples/omnipvd_inspection.py</span></code> and
+<code class="docutils literal notranslate"><span class="pre">simple_physics_scene.usda</span></code>. Locate the sample relative to the installed package,
+then run it from any working directory:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">ovphysx</span>
+
+<span class="n">sample</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;samples/python_samples/omnipvd_inspection.py&quot;</span>
+<span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">executable</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">sample</span><span class="p">),</span>
+    <span class="s2">&quot;--inspector&quot;</span><span class="p">,</span> <span class="s2">&quot;/absolute/sdk-install/bin/ovd-inspect&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;--output-dir&quot;</span><span class="p">,</span> <span class="s2">&quot;/absolute/new-capture-directory&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;--device&quot;</span><span class="p">,</span> <span class="s2">&quot;cpu&quot;</span><span class="p">,</span>
+<span class="p">],</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>On Windows, supply the installed <code class="docutils literal notranslate"><span class="pre">ovd-inspect.exe</span></code> path. The inspector is a separate
+SDK tool, not a wheel dependency; the sample never searches a monorepo sibling or
+loads a viewer. The <code class="docutils literal notranslate"><span class="pre">ovd-record</span></code>, <code class="docutils literal notranslate"><span class="pre">ovd-inspect</span></code> and <code class="docutils literal notranslate"><span class="pre">ovd-compare</span></code> skills ship
+with the PhysX SDK. No MCP service is required.</p>
+<p>Run <code class="docutils literal notranslate"><span class="pre">--device</span> <span class="pre">gpu</span></code> in a separate process and a different new directory for a GPU
+capture. This explicitly enables GPU dynamics and DirectGPU and requires actual
+CUDA-backed live state reads; a CPU fallback fails. CPU mode is process-wide and
+sticky, so it cannot be switched back in the same process.</p>
+<p>The sample validates the inspector and required PhysX schemas before creating its
+output directory. It preserves <code class="docutils literal notranslate"><span class="pre">scene.usda</span></code>, <code class="docutils literal notranslate"><span class="pre">capture.ovd</span></code> and <code class="docutils literal notranslate"><span class="pre">evidence.json</span></code>.
+Existing output directories are refused. Capability is provisioned before creating the first
+runtime, the FILE parent directory exists before start, and stop is checked before
+running the inspector while the instance and borrowed stage remain alive. The
+report includes a live read after the final unrecorded step, showing that
+inspection did not wait for teardown. Failed stop,
+missing tooling, invalid output and mismatched observations fail the command.</p>
+<p>The report selects <code class="docutils literal notranslate"><span class="pre">/World/Cube1</span></code>, <code class="docutils literal notranslate"><span class="pre">/World/Cube2</span></code> and <code class="docutils literal notranslate"><span class="pre">/World/KinematicCube</span></code> by exact
+name/class in the reported context/segment. This sample verifies completed recorded
+frames 2 and 20 against live post-step reads 1 and 10; those numbers are not a general
+OVD-to-application frame mapping. Both dynamic bodies fall. The fixed kinematic
+body’s Carried initial snapshot is corroborated by ten live reads: it is not a fresh
+recorded observation. Inspector sample provenance is retained alongside a capture
+SHA-256; inspection never changes source bytes.</p>
+<p>For another capture, discover contexts, frame markers and completion flags with
+<code class="docutils literal notranslate"><span class="pre">ovd-inspect</span> <span class="pre">summary</span> <span class="pre">FILE</span></code> before selecting an exact object and attribute. Match
+objects across captures by explicit semantic names or a caller-supplied mapping;
+pointer handles are not cross-run identities. <code class="docutils literal notranslate"><span class="pre">ovd-inspect</span> <span class="pre">compare</span> <span class="pre">--help</span></code> is not a
+subcommand help form: use <code class="docutils literal notranslate"><span class="pre">ovd-inspect</span> <span class="pre">--help</span></code> for its required left/right selectors,
+frame range, signed offset and tolerance. Comparison defaults to linear velocity
+with version-1 evidence. Paired <code class="docutils literal notranslate"><span class="pre">--attribute</span> <span class="pre">NAME</span> <span class="pre">--distance</span> <span class="pre">vec3|position|orientation</span></code>
+flags emit version 2 with a nested <code class="docutils literal notranslate"><span class="pre">measure</span> <span class="pre">{attributeName,</span> <span class="pre">distanceKind,</span> <span class="pre">units}</span></code>,
+<code class="docutils literal notranslate"><span class="pre">leftValue</span></code>, <code class="docutils literal notranslate"><span class="pre">rightValue</span></code> and numeric <code class="docutils literal notranslate"><span class="pre">componentCount</span></code>. Vec3/position require
+explicit units; orientation uses radians and xyzw quaternion values. Units label
+without rescaling. The bounded loader accepts supported flat SDK/OvPhysX captures, not
+every OVD accepted by a compatible viewer. Exit 0 is Equal and 1 Different.
+Version 2 includes <code class="docutils literal notranslate"><span class="pre">leftFrameCompleted</span></code>/<code class="docutils literal notranslate"><span class="pre">rightFrameCompleted</span></code>: true means completed,
+false means an open START interval, and null means the frame is absent. Report
+completion independently of value equality; Equal does not prove the run finished.</p>
+<p>A load rejection exits 2 with one stdout <code class="docutils literal notranslate"><span class="pre">physx.ovd.error</span></code> version-1 object
+(<code class="docutils literal notranslate"><span class="pre">code</span></code>, <code class="docutils literal notranslate"><span class="pre">message</span></code>, <code class="docutils literal notranslate"><span class="pre">byteOffset</span></code>, <code class="docutils literal notranslate"><span class="pre">commandIndex</span></code>, <code class="docutils literal notranslate"><span class="pre">role</span></code>, <code class="docutils literal notranslate"><span class="pre">limitOption</span></code>) and stderr.
+Every Incomparable result, including selection/query failures such as a missing
+actor or recorded frame and valid queries lacking exact samples, emits
+<code class="docutils literal notranslate"><span class="pre">physx.ovd.inspection-evidence</span></code> JSON with <code class="docutils literal notranslate"><span class="pre">status:</span> <span class="pre">Incomparable</span></code>, an explanatory
+<code class="docutils literal notranslate"><span class="pre">message</span></code>, plus stderr, and exits 2.
+Command-line parsing errors and summary/inspect selection/query failures
+exit 2 with stderr only. Output failures exit
+2 with a diagnostic and may follow valid or partial stdout. Annotation I/O can
+fail after comparison evidence was emitted, so check stderr and exit status
+before claiming a sidecar was saved. Distinguish errors by <code class="docutils literal notranslate"><span class="pre">format</span></code>; a rejected
+load does not prove corruption or absence of the requested data.</p>
+<p>Optional missing references may be accepted; incompatible edges and malformed
+schema remain rejected. An immutable stopped recording cut during its final command
+can be inspected by explicitly passing <code class="docutils literal notranslate"><span class="pre">--recover-tail</span></code> to either <code class="docutils literal notranslate"><span class="pre">summary</span></code> or <code class="docutils literal notranslate"><span class="pre">inspect</span></code>. Check
+<code class="docutils literal notranslate"><span class="pre">loadInfo.recoveredTail</span></code>, <code class="docutils literal notranslate"><span class="pre">terminalError</span></code> and the stderr warning. The retained
+validated prefix may include an open frame; explain its incomplete-data caveat.
+Recovery never repairs malformed payloads, limits, I/O failures or required
+references. Comparison always loads strictly. Preserve source captures.</p>
+<p>For a trusted capture of justified size, retry only if <code class="docutils literal notranslate"><span class="pre">code</span></code> is <code class="docutils literal notranslate"><span class="pre">Limit</span></code> and
+<code class="docutils literal notranslate"><span class="pre">limitOption</span></code> identifies a known option from <code class="docutils literal notranslate"><span class="pre">ovd-inspect</span> <span class="pre">--help</span></code>. Increase that
+positive-integer option alone by a justified bounded amount. Both payload caps
+remain active: raising <code class="docutils literal notranslate"><span class="pre">--max-attribute-bytes</span></code> may expose <code class="docutils literal notranslate"><span class="pre">--max-retained-bytes</span></code>
+or conversely. Each later diagnosed limit requires separate justification;
+acceptance is not guaranteed. Null/unknown <code class="docutils literal notranslate"><span class="pre">limitOption</span></code> or another error code
+stops budget retries. Do not guess options from English messages or suppress
+validation. Preserve rejected captures for a compatible reader or diagnosis.
+Exact samples are required by default; Missing or Carried samples are Incomparable.
+Use <code class="docutils literal notranslate"><span class="pre">--allow-carried</span></code> only when carried prior known state is acceptable; it never
+supplies missing values.</p>
+<p>Explain evidence in the ordinary conversation. If saved annotations are requested,
+use <code class="docutils literal notranslate"><span class="pre">--annotations</span> <span class="pre">NEW_PATH</span></code> for a new non-source path to preserve the SDK’s
+versioned comparison evidence as a separate sidecar. Review identity, frame alignment, source sample metadata,
+tolerance/units and coverage with the SDK <code class="docutils literal notranslate"><span class="pre">ovd-compare</span></code> skill. This sidecar has no
+viewer import guarantee. The sample’s <code class="docutils literal notranslate"><span class="pre">evidence.json</span></code> is a separate workflow report,
+not that annotation format. When contacts occur, the capture can contain
+scene-level contact impulse arrays; this inspector cannot report them, so use a
+compatible OmniPVD reader or viewer. This fixture does not establish that
+contacts occurred. PxJoint reaction forces are distinct and are not recorded.
+Do not infer forces or impulses from velocities.</p>
 </section>
 <section id="required-config">
 <h2>Required Config<a class="headerlink" href="#required-config" title="Link to this heading">#</a></h2>
@@ -727,7 +1015,7 @@ checkout.</p></li>
 <code class="docutils literal notranslate"><span class="pre">ovphysx_config_value_bool(true)</span></code> before plain <code class="docutils literal notranslate"><span class="pre">ovphysx_create_instance()</span></code>.
 This process-wide BOOL bootstrap option installs the provider and sampler when
 <code class="docutils literal notranslate"><span class="pre">PxPhysics</span></code> is created. It defaults to false; without it, late start fails.
-Capability alone leaves output idle but retains sampler, listener, mutex, and
+Capability alone does not start output but retains sampler, listener, mutex, and
 scene readback costs. Only the default disabled configuration avoids those costs.
 The scoped setter is rejected after the first successful create until successful
 shutdown with no live instances, including after all native instances are destroyed.
@@ -737,11 +1025,187 @@ the setter. Its configured value survives shutdown.
 The getter reports the configured bool. Failed creates do not freeze the setter.</p>
 <p>Attach and initialize the scene, then call <code class="docutils literal notranslate"><span class="pre">start_recording()</span></code> with an
 <code class="docutils literal notranslate"><span class="pre">OmniPvdDestination</span></code>. To capture from the first simulated frame, start before
-the first step. FILE uses one exact path whose parent exists; TCP requires a
+the first step. FILE accepts an exact lowercase <code class="docutils literal notranslate"><span class="pre">.ovd</span></code> filename or a directory
+path and creates missing parents recursively at explicit start. TCP requires a
 ready listener. Stop finalizes the output and allows a new destination on the
 same instance. TCP is synchronous trusted plaintext.</p>
-<p>Creation, attach, and reattach never start output automatically. Old startup
-configuration is rejected; see the <a class="reference internal" href="../ovd_api_migration.html"><span class="std std-doc">API migration guide</span></a>.</p>
+<p>Creation, attach, and reattach never start output automatically and preserve an
+existing shared session. Old startup
+configuration submitted through ovphysx is rejected; inherited Carbonite output
+and destination settings are inert, while an inherited capability value is
+honoured. FILE writes directly to its final filename, without a
+<code class="docutils literal notranslate"><span class="pre">tmp.ovd</span></code>, stop-time rename, or directory import. See the
+<a class="reference internal" href="../ovd_api_migration.html"><span class="std std-doc">API migration guide</span></a>.</p>
+<section id="file-paths">
+<h3>FILE paths<a class="headerlink" href="#file-paths" title="Link to this heading">#</a></h3>
+<p>Use the existing FILE destination for either mode:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx</span><span class="w"> </span><span class="kn">import</span> <span class="n">OmniPvdDestination</span>
+
+<span class="n">exact_file</span> <span class="o">=</span> <span class="n">OmniPvdDestination</span><span class="o">.</span><span class="n">file</span><span class="p">(</span><span class="s2">&quot;captures/factory/capture.ovd&quot;</span><span class="p">)</span>
+<span class="n">timestamped_files</span> <span class="o">=</span> <span class="n">OmniPvdDestination</span><span class="o">.</span><span class="n">file</span><span class="p">(</span><span class="s2">&quot;captures/factory&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The literal, case-sensitive <code class="docutils literal notranslate"><span class="pre">.ovd</span></code> suffix selects an exact filename. Every
+other nonempty path selects a directory, including <code class="docutils literal notranslate"><span class="pre">capture.OVD</span></code>,
+<code class="docutils literal notranslate"><span class="pre">capture.ovd.backup</span></code> and <code class="docutils literal notranslate"><span class="pre">capture.ovd/</span></code>. An existing directory called
+<code class="docutils literal notranslate"><span class="pre">capture.ovd</span></code> requires a trailing separator; its existence does not override
+the suffix rule.</p>
+<p>An admitted explicit start creates missing directories recursively. Directory
+mode opens a local-time <code class="docutils literal notranslate"><span class="pre">YYYY_MM_DD_HH_MM_SS_CC_rec.ovd</span></code> filename exclusively;
+the counter starts at <code class="docutils literal notranslate"><span class="pre">01</span></code> and advances past existing names. Restarting into
+the same directory preserves previous captures. Exact-file mode can replace
+the existing named file. Capability and attachment do not prepare output paths.</p>
+</section>
+</section>
+<section id="select-objects-and-data">
+<h2>Select objects and data<a class="headerlink" href="#select-objects-and-data" title="Link to this heading">#</a></h2>
+<p>Initial selection runs in the producer and applies to FILE and TCP destinations.
+Scene and object paths form a union. FILE retains the filter until stop/restart;
+an active TCP receiver can replace it after an applied acknowledgment. To
+record one robot’s primary state, pass a filter when starting:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx</span><span class="w"> </span><span class="kn">import</span> <span class="n">OmniPvdFilter</span><span class="p">,</span> <span class="n">OmniPvdDestination</span>
+
+<span class="n">selection</span> <span class="o">=</span> <span class="n">OmniPvdFilter</span><span class="p">(</span><span class="n">record_secondary_data</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">objects</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;/World/robot&quot;</span><span class="p">])</span>
+<span class="n">physx</span><span class="o">.</span><span class="n">start_recording</span><span class="p">(</span><span class="n">OmniPvdDestination</span><span class="o">.</span><span class="n">file</span><span class="p">(</span><span class="s2">&quot;robot.ovd&quot;</span><span class="p">),</span> <span class="nb">filter</span><span class="o">=</span><span class="n">selection</span><span class="p">)</span>
+<span class="c1"># The same filter can stream to a ready listener:</span>
+<span class="c1"># physx.start_recording(OmniPvdDestination.tcp(&quot;127.0.0.1&quot;, 5425), filter=selection)</span>
+</pre></div>
+</div>
+<p>Selected objects always include primary data: identity and relationships,
+poses, velocities, joint state, geometry and materials. Set
+<code class="docutils literal notranslate"><span class="pre">record_secondary_data=True</span></code> to include all other supported data, such as
+forces, contacts, configuration and drive targets. This is the default;
+<code class="docutils literal notranslate"><span class="pre">False</span></code> records primary data only. Python requires a <code class="docutils literal notranslate"><span class="pre">bool</span></code> for this option
+and rejects integers, including <code class="docutils literal notranslate"><span class="pre">0</span></code> and <code class="docutils literal notranslate"><span class="pre">1</span></code>, and other non-boolean values.
+All vehicle-specific telemetry is secondary, including its vehicle velocity
+fields. The vehicle actor’s ordinary primary state remains recorded.</p>
+<p><code class="docutils literal notranslate"><span class="pre">scenes</span></code> and <code class="docutils literal notranslate"><span class="pre">objects</span></code> contain exact absolute prim paths and combine as a
+union. Populated lists resolve only within this <code class="docutils literal notranslate"><span class="pre">PhysX</span></code> instance’s attachment.
+A scene includes its current and future members. Empty lists select all objects
+across the shared runtime. Omitting <code class="docutils literal notranslate"><span class="pre">filter</span></code> preserves unrestricted recording,
+including an unattached peer start. Paths and <code class="docutils literal notranslate"><span class="pre">record_secondary_data</span></code> are
+copied during start; stop and restart to choose a different initial filter.</p>
+<p>When secondary data is enabled, contact pairs include either selected endpoint.
+Rigid actors connected to selected actors by a recorded contact, joint or
+constraint include their identity, scene, shapes and current pose/velocity state.
+Their other contacts and joints do not expand the selection. A contact pair whose
+bodies fall asleep while touching keeps the connected actor recorded, although
+the scene’s contact arrays leave the pair out until the bodies wake. When no
+recorded connection requires an actor, its recording ends at the next scene
+recording update. Reconnecting records its current state again. A connected actor
+that leaves its scene stops updating at once. It stays in the recording outside
+every scene and aggregate until a new connection records it again, it joins a
+selected scene, or it is released. In Direct GPU API scenes, a rigid dynamic or
+articulation link that has already been simulated and becomes connected between
+simulation steps gets its pose and velocity at the next <code class="docutils literal notranslate"><span class="pre">fetchResults()</span></code>.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Path list</p></th>
+<th class="head"><p>Selectable native objects</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">scenes</span></code></p></td>
+<td><p>Physics scenes and their current/future members</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">objects</span></code></p></td>
+<td><p>Rigid statics/dynamics, whole articulations, PBD particle systems, individual particle/diffuse buffers, deformable surfaces and volumes</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>An exact prototype path includes all its native instances. A fixed-base
+root-joint alias is accepted when the registry identifies a whole articulation.
+Actual articulation links, joints, constraints, shapes, materials, meshes and
+aggregates cannot be selected directly. Their supported data follows selected owners
+and the native dependency rules. Whole-articulation selection includes its
+links and joints. A particle system includes all its buffers; to exclude sibling
+buffer payloads, select one particle set’s exact prim path:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">selection</span> <span class="o">=</span> <span class="n">OmniPvdFilter</span><span class="p">(</span><span class="n">record_secondary_data</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">objects</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;/World/particles&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>Particle and deformable primary state works with ordinary GPU readback and
+DirectGPU simulation. Selected particle buffers, including the base particles
+of a diffuse buffer, record active <code class="docutils literal notranslate"><span class="pre">positionInvMasses</span></code> and <code class="docutils literal notranslate"><span class="pre">velocities</span></code> entries
+with four float32 components each, or 32 bytes per particle per recorded frame.
+<code class="docutils literal notranslate"><span class="pre">positionInvMasses</span></code> contains XYZ and inverse mass. Primary <code class="docutils literal notranslate"><span class="pre">phases</span></code> use one
+uint32 per particle and are recorded in snapshots and after phase updates.
+With secondary data enabled, <code class="docutils literal notranslate"><span class="pre">diffusePositionLifeTime</span></code> and <code class="docutils literal notranslate"><span class="pre">diffuseVelocities</span></code>
+add 32 bytes per active diffuse particle; primary-only recording omits all
+diffuse data while retaining the base particles.
+Deformable surfaces emit actor-local <code class="docutils literal notranslate"><span class="pre">positions</span></code> and <code class="docutils literal notranslate"><span class="pre">velocities</span></code>; volumes emit
+<code class="docutils literal notranslate"><span class="pre">collisionPositions</span></code>, <code class="docutils literal notranslate"><span class="pre">simulationPositions</span></code> and <code class="docutils literal notranslate"><span class="pre">velocities</span></code>, with four float32
+components per vertex. Static topology is primary data, and diffuse parameters
+are secondary. Selection does not change simulation mode.</p>
+<p>Every attribute already supported by the producer belongs to primary or
+secondary data. Synthetic geometry, drives and configurations follow their
+owner. Tendons and deformable attachments remain outside this coverage when the
+native producer emits no corresponding OVD class.</p>
+<p>C callers initialize <code class="docutils literal notranslate"><span class="pre">ovphysx_omnipvd_recording_options_t</span></code> with
+<code class="docutils literal notranslate"><span class="pre">OVPHYSX_OMNIPVD_RECORDING_OPTIONS_DEFAULT</span></code>, which sets the <code class="docutils literal notranslate"><span class="pre">bool</span></code>
+<code class="docutils literal notranslate"><span class="pre">record_secondary_data</span></code> field to <code class="docutils literal notranslate"><span class="pre">true</span></code>, and call
+<code class="docutils literal notranslate"><span class="pre">ovphysx_ovd_start_recording(handle,</span> <span class="pre">&amp;destination,</span> <span class="pre">&amp;selection)</span></code>.
+Set that field to <code class="docutils literal notranslate"><span class="pre">false</span></code> for primary data only. Passing <code class="docutils literal notranslate"><span class="pre">NULL</span></code> as the options
+argument retains unrestricted recording.
+Lengths and counts are explicit; views are borrowed only during the call.
+Malformed lists or paths return <code class="docutils literal notranslate"><span class="pre">INVALID_ARGUMENT</span></code>; missing or unsupported
+objects return <code class="docutils literal notranslate"><span class="pre">NOT_FOUND</span></code> before the destination opens. The C start signature
+has changed from two arguments to three: rebuild callers of the old form and
+pass <code class="docutils literal notranslate"><span class="pre">NULL</span></code> as the third argument to retain unrestricted recording. See the
+<a class="reference internal" href="../ovd_api_migration.html#c-start-signature"><span class="std std-ref">C start migration</span></a>.</p>
+</section>
+<section id="receiver-requests-over-tcp">
+<h2>Receiver requests over TCP<a class="headerlink" href="#receiver-requests-over-tcp" title="Link to this heading">#</a></h2>
+<p>An updated native receiver can request a new filter while reading an active TCP
+stream. <code class="docutils literal notranslate"><span class="pre">OmniPvdSocketReadStream::requestCapture()</span></code> sends an
+<code class="docutils literal notranslate"><span class="pre">OmniPvdCaptureRequest</span></code>: a nonzero <code class="docutils literal notranslate"><span class="pre">requestId</span></code> that increases with every
+request on the connection, the <code class="docutils literal notranslate"><span class="pre">recordSecondaryData</span></code> boolean, and scene and
+object handles observed in the stream (<code class="docutils literal notranslate"><span class="pre">scenes</span></code>/<code class="docutils literal notranslate"><span class="pre">nbScenes</span></code> and
+<code class="docutils literal notranslate"><span class="pre">objects</span></code>/<code class="docutils literal notranslate"><span class="pre">nbObjects</span></code>). Selected objects always include primary data: poses,
+velocities, geometry and materials. Set <code class="docutils literal notranslate"><span class="pre">recordSecondaryData</span></code> to <code class="docutils literal notranslate"><span class="pre">false</span></code> for
+primary data only. Its default value, <code class="docutils literal notranslate"><span class="pre">true</span></code>, also records all supported
+secondary data.</p>
+<p>Requests use the OVC3 control packet and require the producer’s revised-filter
+capability. Earlier experimental control masks are not reinterpreted. This
+negotiation is independent of the unchanged forward recording format and its
+OmniPVD stream and PhysX integration versions. Older one-way streams remain
+readable. To limit the initial recording, select scenes or objects when starting
+the sender; empty lists include primary payloads for every SDK object.
+The receiver sends handles, while the sender’s C/Python start descriptor uses
+attachment paths. A successful send means the request is pending.
+Handles are process-local addresses, valid only for the current run and TCP
+connection. Every OvPhysX TCP recording or discovery start opens a new connection.
+Requests do not accept names or USD paths. To repeat a selection in a later run,
+pass the saved USD paths in the start filter, or select handles from the new
+stream or discovery catalog.</p>
+<p>OvPhysX polls receiver input when the recording owner submits a public simulation
+step. Empty polls do not wait for peer jobs. A complete request uses the same
+all-instance safe point as recording start: earlier queued work finishes without
+collecting its receipts before selection changes. Already queued batches retain
+their order; the new policy takes effect before the next submitted owner step.
+Competing native authoring can postpone application until a later submission.
+This request handling can make step submission wait for earlier jobs. Keep
+submitting owner steps while waiting for an acknowledgement; status queries do
+not pump control. Accepted requests replace the policy and
+write a fresh snapshot on the same connection. The receiver observes ordinary
+<code class="docutils literal notranslate"><span class="pre">PxOmniPvdMetaData.captureRequestId</span></code>, <code class="docutils literal notranslate"><span class="pre">captureRequestStatus</span></code>, and <code class="docutils literal notranslate"><span class="pre">captureEpoch</span></code>
+attributes through <code class="docutils literal notranslate"><span class="pre">OmniPvdReader</span></code>; status values are <code class="docutils literal notranslate"><span class="pre">1</span></code> applied, <code class="docutils literal notranslate"><span class="pre">2</span></code> invalid,
+<code class="docutils literal notranslate"><span class="pre">3</span></code> busy, and <code class="docutils literal notranslate"><span class="pre">4</span></code> denied. Wait for the matching applied
+acknowledgment before treating the new policy as active.</p>
+<p>A receiver can half-close its control writes while continuing to read forward
+recording. A terminal socket or malformed-control error ends and cleans the
+session at the next safe point; another FILE or TCP recording can then start.</p>
+<p>The runtime accepts only supported live objects in the recording owner’s attachment:
+rigid actors, whole articulations, deformable actors, particle systems and
+individual particle buffers. Links, joints, aggregates, shapes, materials and
+meshes are invalid explicit selections; their data follows selected owners.
+Receiver empty/all lists select that owner’s scenes; foreign objects are
+denied and stale IDs are invalid. A recording started by an instance without its own attachment still sends
+unrestricted output, but receiver control stays denied for that whole session. FILE sessions use
+their initial policy until restart. Older TCP producers do not advertise
+control support, and <code class="docutils literal notranslate"><span class="pre">requestCapture()</span></code> returns false without sending control
+bytes to them. The Python API starts the sender; receiver requests use the
+native OmniPVD socket API.</p>
 </section>
 <section id="code">
 <h2>Code<a class="headerlink" href="#code" title="Link to this heading">#</a></h2>
@@ -752,7 +1216,6 @@ to an exact FILE destination before the first step, then stops and tears down:</
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># @implements REQ-CAPI-OVSTAGE-XFORM-001</span>
 <span class="c1"># @covers AC-1</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">glob</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
@@ -767,6 +1230,7 @@ to an exact FILE destination before the first step, then stops and tears down:</
 
 <span class="k">def</span><span class="w"> </span><span class="nf">attach_scene</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span> <span class="n">usd_path</span><span class="p">,</span> <span class="n">stage_name</span><span class="p">):</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">ovstage</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.population</span><span class="w"> </span><span class="kn">import</span> <span class="n">physics_population_descs</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">available</span><span class="p">():</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;ovstage population bridge is unavailable&quot;</span><span class="p">)</span>
@@ -781,7 +1245,7 @@ to an exact FILE destination before the first step, then stops and tears down:</
     <span class="n">stage</span> <span class="o">=</span> <span class="n">ovstage</span><span class="o">.</span><span class="n">Stage</span><span class="p">(</span><span class="n">stage_name</span><span class="p">)</span>
     <span class="n">ordinal</span> <span class="o">=</span> <span class="mi">1</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">open_usd</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">usd_path</span><span class="p">),</span> <span class="n">ordinal</span><span class="o">=</span><span class="n">ordinal</span><span class="p">,</span> <span class="n">domains</span><span class="o">=</span><span class="n">ovstage</span><span class="o">.</span><span class="n">PopulationDomain</span><span class="o">.</span><span class="n">ALL</span><span class="p">)</span>
+        <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">open_usd_with_desc</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">usd_path</span><span class="p">),</span> <span class="n">ordinal</span><span class="o">=</span><span class="n">ordinal</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">DEFAULT_TIME</span><span class="p">,</span> <span class="n">descs</span><span class="o">=</span><span class="n">physics_population_descs</span><span class="p">(</span><span class="n">rendering</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
         <span class="n">stage</span><span class="o">.</span><span class="n">advance_write_floor</span><span class="p">(</span><span class="n">ordinal</span><span class="o">=</span><span class="n">ordinal</span><span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
         <span class="n">physx</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">physx</span><span class="o">.</span><span class="n">attach_ovstage</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">read_ordinal</span><span class="o">=</span><span class="n">ordinal</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">stage</span>
@@ -836,7 +1300,7 @@ to an exact FILE destination before the first step, then stops and tears down:</
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Runtime cleanup complete; recording retained for inspection&quot;</span><span class="p">)</span>
 
 <span class="c1"># List the produced .ovd files</span>
-<span class="n">ovd_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="s2">&quot;*.ovd&quot;</span><span class="p">))</span>
+<span class="n">ovd_files</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*.ovd&quot;</span><span class="p">))</span>
 <span class="k">if</span> <span class="n">ovd_files</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Recorded </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">ovd_files</span><span class="p">)</span><span class="si">}</span><span class="s2"> OVD file(s):&quot;</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">ovd_files</span><span class="p">:</span>
@@ -968,11 +1432,11 @@ before the first simulation step:</p>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 <span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">file_path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">output_dir</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="s">&quot;capture.ovd&quot;</span><span class="p">).</span><span class="n">string</span><span class="p">();</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">file_path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">output_dir</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="s">&quot;capture.ovd&quot;</span><span class="p">).</span><span class="n">u8string</span><span class="p">();</span>
 <span class="w">    </span><span class="n">ovphysx_omnipvd_destination_t</span><span class="w"> </span><span class="n">destination</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{};</span>
 <span class="w">    </span><span class="n">destination</span><span class="p">.</span><span class="n">transport</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVPHYSX_OMNIPVD_TRANSPORT_FILE</span><span class="p">;</span>
 <span class="w">    </span><span class="n">destination</span><span class="p">.</span><span class="n">file_path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_cstr</span><span class="p">(</span><span class="n">file_path</span><span class="p">.</span><span class="n">c_str</span><span class="p">());</span>
-<span class="w">    </span><span class="n">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_ovd_start_recording</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">destination</span><span class="p">);</span>
+<span class="w">    </span><span class="n">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_ovd_start_recording</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">destination</span><span class="p">,</span><span class="w"> </span><span class="k">nullptr</span><span class="p">);</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_string_t</span><span class="w"> </span><span class="n">err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_get_last_error</span><span class="p">();</span>
 <span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Failed to start OVD recording: %.*s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">(</span><span class="n">err</span><span class="p">.</span><span class="n">length</span><span class="p">),</span><span class="w"> </span><span class="n">err</span><span class="p">.</span><span class="n">ptr</span><span class="p">);</span>
@@ -1038,6 +1502,7 @@ then records to a FILE destination. Replace <code class="docutils literal notran
 USD scene, such as the <code class="docutils literal notranslate"><span class="pre">links_chain_sample.usda</span></code> file named in the
 prerequisites:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">ovstage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.population</span><span class="w"> </span><span class="kn">import</span> <span class="n">physics_population_descs</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx</span><span class="w"> </span><span class="kn">import</span> <span class="n">GlobalConfigKey</span><span class="p">,</span> <span class="n">OmniPvdDestination</span><span class="p">,</span> <span class="n">PhysX</span><span class="p">,</span> <span class="n">newton_schema_root</span><span class="p">,</span> <span class="n">set_global_config</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.samples.python_samples.schema_support</span><span class="w"> </span><span class="kn">import</span> <span class="n">physx_schema_paths</span>
 
@@ -1046,8 +1511,12 @@ prerequisites:</p>
 <span class="c1"># Register PhysX and Newton schemas before the first USD schema read (population or export).</span>
 <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">register_usd_schemas</span><span class="p">([</span><span class="o">*</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">physx_schema_paths</span><span class="p">()],</span> <span class="nb">str</span><span class="p">(</span><span class="n">newton_schema_root</span><span class="p">())])</span>
 <span class="n">stage</span> <span class="o">=</span> <span class="n">ovstage</span><span class="o">.</span><span class="n">Stage</span><span class="p">(</span><span class="s2">&quot;late-recorded-scene&quot;</span><span class="p">)</span>
-<span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">open_usd</span><span class="p">(</span>
-    <span class="n">stage</span><span class="p">,</span> <span class="s2">&quot;scene.usda&quot;</span><span class="p">,</span> <span class="n">ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">domains</span><span class="o">=</span><span class="n">ovstage</span><span class="o">.</span><span class="n">PopulationDomain</span><span class="o">.</span><span class="n">ALL</span>
+<span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">open_usd_with_desc</span><span class="p">(</span>
+    <span class="n">stage</span><span class="p">,</span>
+    <span class="s2">&quot;scene.usda&quot;</span><span class="p">,</span>
+    <span class="n">ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">time</span><span class="o">=</span><span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">DEFAULT_TIME</span><span class="p">,</span>
+    <span class="n">descs</span><span class="o">=</span><span class="n">physics_population_descs</span><span class="p">(</span><span class="n">rendering</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
 <span class="p">)</span>
 <span class="n">stage</span><span class="o">.</span><span class="n">advance_write_floor</span><span class="p">(</span><span class="n">ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
 <span class="n">physx</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">physx</span><span class="o">.</span><span class="n">attach_ovstage</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">read_ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
@@ -1070,6 +1539,37 @@ prerequisites:</p>
 <span class="n">stage</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
 </pre></div>
 </div>
+<p>Receiver-driven selection uses the attachment that the recording owner has when the recording starts. An instance without its own attachment can start an ordinary TCP recording while a peer is attached, but no receiver selection request is applied in that session, even after the owner attaches a stage. Such requests are acknowledged as denied (<code class="docutils literal notranslate"><span class="pre">4</span></code>) unless they are invalid (<code class="docutils literal notranslate"><span class="pre">2</span></code>) or busy (<code class="docutils literal notranslate"><span class="pre">3</span></code>). To use receiver selection, attach before starting the recording, or stop and restart it after attaching.</p>
+</section>
+<section id="receiver-selected-tcp-discovery-in-python">
+<h3>Receiver-selected TCP discovery in Python<a class="headerlink" href="#receiver-selected-tcp-discovery-in-python" title="Link to this heading">#</a></h3>
+<p>Use <code class="docutils literal notranslate"><span class="pre">start_recording(...,</span> <span class="pre">wait_for_selection=True)</span></code> when the receiver should choose what to record before
+the first detailed snapshot. It opens an owned TCP session and publishes a
+lightweight object catalog while waiting for the receiver’s selection. It
+requires recording capability and this instance’s own live attachment. Start
+a receiver that supports TCP selection control first.</p>
+<p>With <code class="docutils literal notranslate"><span class="pre">physx</span></code> already attached as above:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx</span><span class="w"> </span><span class="kn">import</span> <span class="n">OmniPvdDestination</span>
+
+<span class="n">physx</span><span class="o">.</span><span class="n">start_recording</span><span class="p">(</span>
+    <span class="n">OmniPvdDestination</span><span class="o">.</span><span class="n">tcp</span><span class="p">(</span><span class="s2">&quot;127.0.0.1&quot;</span><span class="p">,</span> <span class="mi">5425</span><span class="p">,</span> <span class="n">timeout_ms</span><span class="o">=</span><span class="mi">3000</span><span class="p">),</span>
+    <span class="n">wait_for_selection</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">physx</span><span class="o">.</span><span class="n">is_recording</span><span class="p">()</span>  <span class="c1"># This instance owns the waiting session.</span>
+<span class="n">physx</span><span class="o">.</span><span class="n">step_sync</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">60</span><span class="p">)</span>
+<span class="c1"># The receiver can select objects and data through the TCP control protocol.</span>
+<span class="n">physx</span><span class="o">.</span><span class="n">stop_recording</span><span class="p">()</span>  <span class="c1"># Stops either a waiting or a sampling session.</span>
+</pre></div>
+</div>
+<p>The optional <code class="docutils literal notranslate"><span class="pre">filter</span></code> accepts the same scene and object paths as <code class="docutils literal notranslate"><span class="pre">start_recording()</span></code>.
+Discovery ignores its <code class="docutils literal notranslate"><span class="pre">record_secondary_data</span></code>: each receiver selection chooses
+whether secondary data is recorded. A missing filter or empty lists select all supported objects in
+this instance’s attachment. Scene/object lists bound the maximum discovery and
+future recording scope; receiver selection cannot widen them. An empty receiver request selects the scenes
+and objects of that scope that still exist. Discovery requires a TCP
+destination; passing a FILE destination raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> before calling C.
+Use <code class="docutils literal notranslate"><span class="pre">is_recording()</span></code> to query session ownership: it is also <code class="docutils literal notranslate"><span class="pre">True</span></code> while waiting
+for receiver selection, and is <code class="docutils literal notranslate"><span class="pre">False</span></code> for peer instances.</p>
 <section id="c-and-c">
 <h4>C and C++<a class="headerlink" href="#c-and-c" title="Link to this heading">#</a></h4>
 <p>To adapt the complete C++ sample in <a class="reference internal" href="#code">Code</a>, keep its initialization,
@@ -1114,7 +1614,7 @@ omit it to record from the first simulation frame:</p>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 
-<span class="w">    </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_ovd_start_recording</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">destination</span><span class="p">);</span>
+<span class="w">    </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_ovd_start_recording</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">destination</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 
@@ -1136,19 +1636,33 @@ omit it to record from the first simulation frame:</p>
 </div>
 <p>If the listener is not ready, <code class="docutils literal notranslate"><span class="pre">start_recording()</span></code> fails without consuming the
 session; start the listener and retry. After <code class="docutils literal notranslate"><span class="pre">stop_recording()</span></code>, the same
-instance can later record to another TCP listener or to an exact FILE path.</p>
-<p>FILE uses the exact requested path, and TCP connects synchronously to an
+instance can later record to another TCP listener or to a FILE path.</p>
+<p>FILE selects an exact filename or a timestamped directory capture by suffix,
+and TCP connects synchronously to an
 already-ready listener. Failed opens can be retried. Only one stream can be
 active in the shared runtime, and an active stream cannot be replaced. After
 stop, the owning instance can start another FILE or TCP session. The instance
 that explicitly starts recording owns it; peers report inactive and cannot stop
-its session. Detaching the active stage
-finalizes the shared session and clears its public owner, including when a peer
-handle started it. Reattach remains dormant until another explicit start.</p>
-<p>These synchronous APIs follow the ovphysx same-thread contract. The caller must
-serialize recording calls on each handle and recording/attach/detach/destroy
-transitions across all handles sharing the runtime; concurrent calls are not
-supported. Recording is supported on Windows x86_64 and Linux x86_64/aarch64.
+its session.</p>
+<p>While recording is active:</p>
+<ul class="simple">
+<li><p>Attach and detach wait for all instance work and finish before returning.</p></li>
+<li><p>Task results remain available through <code class="docutils literal notranslate"><span class="pre">wait_task()</span></code> or <code class="docutils literal notranslate"><span class="pre">wait_all()</span></code>.</p></li>
+<li><p>Detaching the recording owner, or the last live attachment, tries to finish
+the recording.</p></li>
+<li><p>Detaching a non-owner keeps the recording alive while another attachment
+remains.</p></li>
+</ul>
+<p>Call <code class="docutils literal notranslate"><span class="pre">stop_recording()</span></code> before detach so recording errors are returned to you.
+Finalization failures from implicit detach are only logged. Reattach never
+starts a new recording. Pending companion preview results reject detach; fetch
+or close the preview and retry.</p>
+<p>Serialize calls on each handle. Different instances may be attached, detached
+and destroyed concurrently; the SDK serializes their lifecycle work internally.
+If a destroy overlaps another thread’s destroy, recording start or stop, or
+detach during a recording, one call may return the retryable
+<code class="docutils literal notranslate"><span class="pre">OVPHYSX_API_INVALID_STATE</span></code>. Retry after the competing transition finishes.
+Recording is supported on Windows x86_64 and Linux x86_64/aarch64.
 Initial and restarted sessions each capture the current core PhysX,
 PhysXExtensions (including joints and custom geometry), and PhysXVehicle state.
 Stopping releases only the session’s telemetry handles; the next start takes a
@@ -1159,16 +1673,19 @@ fresh full-state snapshot.</p>
 <section id="what-happens-at-runtime">
 <h2>What Happens at Runtime<a class="headerlink" href="#what-happens-at-runtime" title="Link to this heading">#</a></h2>
 <ol class="arabic simple">
-<li><p>FILE opens its exact path or TCP connects before sampling begins.</p></li>
+<li><p>FILE prepares missing directories and opens its final exact or timestamped
+filename, or TCP connects, before sampling begins.</p></li>
 <li><p>Start snapshots the current world; each subsequent step records its state.</p></li>
 <li><p>Stop finalizes output. Another recording can start on the same capable runtime.</p></li>
 </ol>
 </section>
 <section id="inspecting-ovd-files-in-kit">
 <h2>Inspecting .ovd Files in Kit<a class="headerlink" href="#inspecting-ovd-files-in-kit" title="Link to this heading">#</a></h2>
-<p>Before you begin, stop the FILE recording to finalize the exact path you
-requested. If output is missing or incomplete, check the runtime log and verify
-that the parent directory exists and is writable. You also need the compatible
+<p>Before you begin, stop the FILE recording to finalize its output. Inspect the
+exact requested filename or the new timestamped <code class="docutils literal notranslate"><span class="pre">.ovd</span></code> inside the selected
+directory. If output is missing or incomplete, check the runtime log and verify
+that the path is writable and no regular file blocks a required directory.
+You also need the compatible
 Kit-based application with the OmniPVD extension named in the prerequisites.</p>
 <p>Then inspect the recording:</p>
 <ol class="arabic simple">
@@ -1189,7 +1706,8 @@ for the two version checks the reader applies.</p>
 <section id="capture-format-and-compatibility">
 <h2>Capture Format and Compatibility<a class="headerlink" href="#capture-format-and-compatibility" title="Link to this heading">#</a></h2>
 <p>ovphysx OmniPVD capture is optional. When enabled, the runtime writes PhysX OmniPVD
-recordings in the <strong>OVD</strong> binary format. FILE output keeps its exact requested path.</p>
+recordings in the <strong>OVD</strong> binary format. FILE opens its final exact or timestamped
+filename at start and closes it at stop.</p>
 <p><strong>OVD capture format and compatibility policy</strong></p>
 <p>This table records the format, version, and platform policy for ovphysx OmniPVD
 capture:</p>
@@ -1207,7 +1725,7 @@ capture:</p>
 <td><p>Each recording begins with a 12-byte OmniPVD version header. The writer in the PhysX SDK pinned by this ovphysx build emits <strong>0.4.0</strong> (<code class="docutils literal notranslate"><span class="pre">OMNI_PVD_VERSION_*</span></code> in <code class="docutils literal notranslate"><span class="pre">OmniPvdDefines.h</span></code>).</p></td>
 </tr>
 <tr class="row-even"><td><p>PhysX OVD integration version</p></td>
-<td><p>The stream’s <code class="docutils literal notranslate"><span class="pre">PxOmniPvdMetaData</span></code> object independently identifies the PhysX object schema as <strong>3.1</strong> (<code class="docutils literal notranslate"><span class="pre">PX_PHYSICS_OVD_INTEGRATION_VERSION_*</span></code> in <code class="docutils literal notranslate"><span class="pre">PxOmniPvd.h</span></code>). Integration-major changes can remove or change existing schema; integration-minor changes are additive. This version is separate from the 0.4.0 command-stream version.</p></td>
+<td><p>The stream’s <code class="docutils literal notranslate"><span class="pre">PxOmniPvdMetaData</span></code> object independently identifies the PhysX object schema using <code class="docutils literal notranslate"><span class="pre">PX_PHYSICS_OVD_INTEGRATION_VERSION_MAJOR</span></code> and <code class="docutils literal notranslate"><span class="pre">PX_PHYSICS_OVD_INTEGRATION_VERSION_MINOR</span></code> in the PhysX SDK’s <code class="docutils literal notranslate"><span class="pre">PxOmniPvd.h</span></code>. Read these macros from the SDK used by this build. Integration-major changes can remove or change existing schema; integration-minor changes are additive. This version is separate from the 0.4.0 command-stream version.</p></td>
 </tr>
 <tr class="row-odd"><td><p>Canonical reader</p></td>
 <td><p>Kit OmniPVD extension <code class="docutils literal notranslate"><span class="pre">omni.physx.pvd</span></code> (import OVD → cached USDA stage for scrubbing / inspection)</p></td>
@@ -1252,8 +1770,8 @@ recording from appearing:</p>
 <td><p>Call <code class="docutils literal notranslate"><span class="pre">stop_recording()</span></code> before teardown</p></td>
 </tr>
 <tr class="row-even"><td><p>FILE <code class="docutils literal notranslate"><span class="pre">start_recording()</span></code> fails (“failed to open the destination or start sampling”)</p></td>
-<td><p>Parent directory is missing or not writable</p></td>
-<td><p>Create the parent directory first (FILE does not create directories), then retry</p></td>
+<td><p>Path is not writable, a regular file blocks a required directory, or an existing <code class="docutils literal notranslate"><span class="pre">.ovd</span></code> directory was selected as an exact file</p></td>
+<td><p>Fix the blocked path or permissions; add a trailing separator for a directory ending in <code class="docutils literal notranslate"><span class="pre">.ovd</span></code>, then retry</p></td>
 </tr>
 <tr class="row-odd"><td><p>TCP start fails</p></td>
 <td><p>Listener was not ready or address/port was wrong</p></td>
@@ -1320,11 +1838,18 @@ recordings from an ovphysx simulation for offline inspection in Kit.</p>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#prerequisites">Prerequisites</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#required-config">Required Config</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#headless-capture-and-investigation">Headless capture and investigation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#required-config">Required Config</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#file-paths">FILE paths</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#select-objects-and-data">Select objects and data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#receiver-requests-over-tcp">Receiver requests over TCP</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#code">Code</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#python">Python</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#c">C++</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#late-tcp-recording">Late TCP Recording</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#late-tcp-recording">Late TCP Recording</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#receiver-selected-tcp-discovery-in-python">Receiver-selected TCP discovery in Python</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#c-and-c">C and C++</a></li>
 </ul>
 </li>
@@ -1382,7 +1907,7 @@ recordings from an ovphysx simulation for offline inspection in Kit.</p>
 </div>
       
         <div class="footer-item"><p class="last-updated">
-  Last updated on Oct 15, 2026.
+  Last updated on Nov 13, 2026.
   <br/>
 </p></div>
       

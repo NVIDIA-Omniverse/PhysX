@@ -29,6 +29,8 @@
  * @covers AC-8
  * @implements REQ-CAPI-SDF-001
  * @covers AC-3
+ * @implements REQ-CAPI-ARTICULATION-NAMES-001
+ * @covers AC-1 AC-2 AC-3 AC-4
  */
 /** @endcond */
 
@@ -82,6 +84,12 @@ extern "C" {
      * OVD recording capability uses OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLE.
      * Carbonite tasking/TBB pool sizes stay on this entry.
      * Retired OVD configuration entries return OVPHYSX_API_INVALID_ARGUMENT.
+     *
+     * Before the first instance starts Carbonite, the entry is copied and
+     * queued. The next create applies queued entries once, before its own
+     * config_entries and before plugins load; later creates do not replay them.
+     * Getters report the current effective value, not a queued value.
+     * /physics/cudaDevice and invalid scoped-key values are rejected at the call.
      */
     OVPHYSX_API OVPHYSX_DEPRECATED_MSG(
         "use ovphysx_set_global_config for scoped keys; tasking/TBB pool sizes stay here")
@@ -416,8 +424,9 @@ extern "C" {
      *
      * @par Errors
      * - OVPHYSX_API_INVALID_ARGUMENT if out_device is NULL
-     * - OVPHYSX_API_NOT_FOUND if binding_handle is unknown or stale
      * - OVPHYSX_API_ERROR if handle is invalid
+     * - OVPHYSX_API_NOT_FOUND if binding_handle is unknown or stale
+     * - OVPHYSX_API_INVALID_STATE for runtime or application log callback reentry
      *
      * @code{.c}
      * #include <ovphysx/ovphysx_legacy.h>
@@ -708,9 +717,10 @@ extern "C" {
      * binding creation time. Articulations of different topology (e.g. a 7-DOF arm and a
      * 30-DOF humanoid, or two arms whose joints are named differently) need a separate
      * binding each.
-     * A binding spanning heterogeneous articulations returns a non-SUCCESS status here with
-     * all-zero counts -- the same signal as an empty binding -- while
-     * ovphysx_get_tensor_binding_spec still reports the correct shape.
+     * A binding spanning heterogeneous articulations returns a non-SUCCESS status here,
+     * while ovphysx_get_tensor_binding_spec still reports the correct shape.
+     * Initialize out_metadata before calling and read its fields only after
+     * OVPHYSX_API_SUCCESS; failed calls do not guarantee zero counts.
      *
      * For name arrays (DOF names, body names, joint names) use the corresponding
      * ovphysx_articulation_get_*_names functions.
@@ -763,18 +773,25 @@ extern "C" {
      * @param out_names [out] Array of ovphysx_string_t to fill
      * @param max_names Capacity of out_names array. Set to metadata.dof_count
      *   (from ovphysx_get_articulation_metadata()) to receive all names.
-     * @param out_count [out] Actual number of names written
-     * @return ovphysx_result_t
+     * @param out_count [out] Total number of DOF names, even when that exceeds max_names
+     * @return OVPHYSX_API_SUCCESS when every name was written, or
+     *   OVPHYSX_API_BUFFER_TOO_SMALL when out_count exceeds max_names and only
+     *   the first max_names entries were written
      *
      * @deprecated Binding-coupled (requires a tensor-binding handle) and removed with the tensor
      *   binding. Per-DOF identity is now served without a binding by the
-     *   `OVPHYSX_ATTR_DOF_JOINT_PATH` macro in ovphysx_attributes.h
-     *   and `OVPHYSX_ATTR_DOF_AXIS_INDEX` read attributes on @ref ovphysx_read (one entry per DOF, in
-     *   inverse-dynamics matrix column order): a DOF is identified by (owning joint prim, axis index)
+     *   `OVPHYSX_ATTR_DOF_JOINT_PATH` macro in ovphysx_attributes.h,
+     *   `OVPHYSX_ATTR_DOF_AXIS_INDEX`, `OVPHYSX_ATTR_DOF_AXIS_KIND`, and `OVPHYSX_ATTR_DOF_JOINT_TYPE`
+     *   read attributes on
+     *   @ref ovphysx_read (one entry per DOF, in inverse-dynamics matrix column order): a DOF is
+     *   identified by (owning joint prim, unlocked-axis ordinal, PhysX joint-frame axis id, joint type)
      *   rather than a string, so an inverse-dynamics matrix column is joinable back to its joint.
+     *   For unique joint leaf names, the legacy DOF name is the leaf of `dofJointPath`, plus `:` and `dofAxisKind`,
+     *   only when `dofJointType` is spherical. A revolute or prismatic keeps the bare leaf.
+     *   Colliding joint leaves receive numeric suffixes in the legacy names; use full prim paths for identity.
      */
     OVPHYSX_API OVPHYSX_DEPRECATED_MSG(
-        "ovphysx tensor bindings are deprecated; per-DOF identity is served by the dofJointPath/dofAxisIndex read attributes on ovphysx_read (a DOF is (joint prim, axis))")
+        "ovphysx tensor bindings are deprecated; per-DOF identity is served by the dofJointPath/dofAxisIndex/dofAxisKind/dofJointType read attributes on ovphysx_read")
     ovphysx_result_t ovphysx_articulation_get_dof_names(
         ovphysx_instance_handle_t handle,
         ovphysx_tensor_binding_handle_t binding_handle,
@@ -792,16 +809,19 @@ extern "C" {
      * @param out_names [out] Array of ovphysx_string_t to fill
      * @param max_names Capacity of out_names array. Set to metadata.body_count
      *   (from ovphysx_get_articulation_metadata()) to receive all names.
-     * @param out_count [out] Actual number of names written
-     * @return ovphysx_result_t
+     * @param out_count [out] Total number of body names, even when that exceeds max_names
+     * @return OVPHYSX_API_SUCCESS when every name was written, or
+     *   OVPHYSX_API_BUFFER_TOO_SMALL when out_count exceeds max_names and only
+     *   the first max_names entries were written
      *
      * @deprecated Binding-coupled (requires a tensor-binding handle) and removed with the tensor
-     *   binding. Link names are now served without a binding as the leaf name of each
+     *   binding. Link identity in `getLinkIndex()` order is the `linkPath` read attribute on
+     *   @ref ovphysx_read. Link names are the leaf of each
      *   `OVPHYSX_QUERY_TARGET_ARTICULATION_LINK` prim read by @ref ovphysx_read -- resolve the prim path
-     *   through the query's path dictionary and take its leaf.
+     *   through the query's path dictionary and take its leaf. That prim list is not `linkPath` order.
      */
     OVPHYSX_API OVPHYSX_DEPRECATED_MSG(
-        "ovphysx tensor bindings are deprecated; link names are the leaf name of the articulation-link prims served by ovphysx_read")
+        "ovphysx tensor bindings are deprecated; link identity is the linkPath read attribute, and link names are the leaf of the articulation-link prims served by ovphysx_read")
     ovphysx_result_t ovphysx_articulation_get_body_names(
         ovphysx_instance_handle_t handle,
         ovphysx_tensor_binding_handle_t binding_handle,
@@ -819,19 +839,24 @@ extern "C" {
      * @param out_names [out] Array of ovphysx_string_t to fill
      * @param max_names Capacity of out_names array. Set to metadata.joint_count
      *   (from ovphysx_get_articulation_metadata()) to receive all names.
-     * @param out_count [out] Actual number of names written
-     * @return ovphysx_result_t
+     * @param out_count [out] Total number of joint names, even when that exceeds max_names
+     * @return OVPHYSX_API_SUCCESS when every name was written, or
+     *   OVPHYSX_API_BUFFER_TOO_SMALL when out_count exceeds max_names and only
+     *   the first max_names entries were written
      *
      * @deprecated Binding-coupled (requires a tensor-binding handle) and removed with the tensor
-     *   binding. For DOF-bearing joints, names are now served without a binding as the leaf name of each
-     *   `OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT` prim read by @ref ovphysx_read -- resolve the prim path
-     *   through the query's path dictionary and take its leaf. The
-     *   `OVPHYSX_ATTR_DOF_JOINT_PATH` descriptor in ovphysx_attributes.h names
-     *   the same joint prim per DOF column. A fully-locked (zero-DOF) joint has no read
-     *   group, so its path is not among them; the deprecated getter listed those fixed joints too.
+     *   binding. Read `physxPointer` on `OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT` via @ref ovphysx_read
+     *   and resolve the group's prim list through the attached Stage's path dictionary. The leaf
+     *   names include fixed (zero-DOF) joints; pointer dereference is not needed. Such joints have no
+     *   DOF-state rows or `OVPHYSX_ATTR_DOF_JOINT_PATH` entries (the macro is in ovphysx_attributes.h).
+     *   Group prim order does not establish this getter's per-articulation name order. `linkPath`
+     *   is the link/Jacobian row mapping. `linkInboundJoint` is the inbound joint of that link:
+     *   slot L is `PxArticulationLink::getInboundJoint()` for `linkPath` slot L, slot 0 is 0, and a
+     *   fixed joint between two links is included. For unique joint leaf names, the legacy name list is the leaf of each non-zero
+     *   slot. Colliding joint leaves receive numeric suffixes in the legacy names. `dofJointPath` skips zero-DOF joints.
      */
     OVPHYSX_API OVPHYSX_DEPRECATED_MSG(
-        "ovphysx tensor bindings are deprecated; joint names are the leaf name of the articulation-joint prims served by ovphysx_read")
+        "ovphysx tensor bindings are deprecated; joint identity per link is the linkInboundJoint read attribute on ovphysx_read")
     ovphysx_result_t ovphysx_articulation_get_joint_names(
         ovphysx_instance_handle_t handle,
         ovphysx_tensor_binding_handle_t binding_handle,
@@ -853,8 +878,10 @@ extern "C" {
      * @param out_paths [out] Array of ovphysx_string_t to fill
      * @param max_paths Capacity of out_paths array. Must be at least the binding
      *   count to receive all paths.
-     * @param out_count [out] Actual number of paths written
-     * @return ovphysx_result_t
+     * @param out_count [out] Total number of binding paths, even when that exceeds max_paths
+     * @return OVPHYSX_API_SUCCESS when every path was written, or
+     *   OVPHYSX_API_BUFFER_TOO_SMALL when out_count exceeds max_paths and only
+     *   the first max_paths entries were written
      *
      * @deprecated The tensor-binding API is deprecated. Use @ref ovphysx_read
      *   (reads) and @ref ovphysx_write (writes) instead.
@@ -941,6 +968,8 @@ extern "C" {
      *   clears contacts, and it does not change the conversion `dt`. Reads after
      *   it return exactly what they returned before it -- the contacts and forces
      *   of the last step with a positive `dt`.
+     * - Failed steps do not roll back simulation results. Contact forces read
+     *   after a failed step are not guaranteed to be valid.
      *
      * **Why a separate binding type (not tensor binding)**
      *
@@ -997,6 +1026,8 @@ extern "C" {
      *         handle, sensors, 1, filters, 1, 256, out_binding);
      * }
      * @endcode
+     *
+     * @deprecated The contact-binding API is deprecated and retained for compatibility.
      */
     OVPHYSX_API OVPHYSX_DEPRECATED_MSG(
         "ovphysx contact bindings are deprecated; include <ovphysx/ovphysx_legacy.h>")
@@ -1015,6 +1046,8 @@ extern "C" {
      * @param handle Instance handle
      * @param contact_handle Contact binding to destroy
      * @return ovphysx_result_t
+     *
+     * @deprecated The contact-binding API is deprecated and retained for compatibility.
      */
     OVPHYSX_API OVPHYSX_DEPRECATED_MSG(
         "ovphysx contact bindings are deprecated; include <ovphysx/ovphysx_legacy.h>")
@@ -1030,6 +1063,8 @@ extern "C" {
      * @param out_sensor_count [out] Number of sensor bodies matched
      * @param out_filter_count [out] Number of filter bodies per sensor
      * @return ovphysx_result_t
+     *
+     * @deprecated The contact-binding API is deprecated and retained for compatibility.
      */
     OVPHYSX_API OVPHYSX_DEPRECATED_MSG(
         "ovphysx contact bindings are deprecated; include <ovphysx/ovphysx_legacy.h>")
@@ -1057,6 +1092,8 @@ extern "C" {
      *   max_paths
      * @return OVPHYSX_API_SUCCESS when every sensor path was written, or
      *   OVPHYSX_API_BUFFER_TOO_SMALL when demand exceeds max_paths
+     *
+     * @deprecated The contact-binding API is deprecated and retained for compatibility.
      */
     OVPHYSX_API OVPHYSX_DEPRECATED_MSG(
         "ovphysx contact bindings are deprecated; include <ovphysx/ovphysx_legacy.h>")
@@ -1085,6 +1122,8 @@ extern "C" {
      *   (`sensor_count * filter_count`), even when that exceeds max_paths
      * @return OVPHYSX_API_SUCCESS when every filter path was written, or
      *   OVPHYSX_API_BUFFER_TOO_SMALL when demand exceeds max_paths
+     *
+     * @deprecated The contact-binding API is deprecated and retained for compatibility.
      */
     OVPHYSX_API OVPHYSX_DEPRECATED_MSG(
         "ovphysx contact bindings are deprecated; include <ovphysx/ovphysx_legacy.h>")
@@ -1108,6 +1147,8 @@ extern "C" {
      * @param contact_handle Contact binding
      * @param out_max_contact_data_count [out] Max detailed contact/friction entries
      * @return ovphysx_result_t
+     *
+     * @deprecated The contact-binding API is deprecated and retained for compatibility.
      */
     OVPHYSX_API OVPHYSX_DEPRECATED_MSG(
         "ovphysx contact bindings are deprecated; include <ovphysx/ovphysx_legacy.h>")
@@ -1128,6 +1169,8 @@ extern "C" {
      * ovphysx_step_sync() call that simulated; a zero-dt step is skipped and leaves
      * both the contacts and the dt of the preceding positive-dt step in place. This
      * function waits for pending SDK work before retrieving the contact forces.
+     *
+     * @deprecated The contact-binding API is deprecated and retained for compatibility.
      */
     OVPHYSX_API OVPHYSX_DEPRECATED_MSG(
         "ovphysx contact bindings are deprecated; include <ovphysx/ovphysx_legacy.h>")
@@ -1149,6 +1192,8 @@ extern "C" {
      * ovphysx_step_sync() call that simulated; a zero-dt step is skipped and leaves
      * both the contacts and the dt of the preceding positive-dt step in place. This
      * function waits for pending SDK work before retrieving the contact forces.
+     *
+     * @deprecated The contact-binding API is deprecated and retained for compatibility.
      */
     OVPHYSX_API OVPHYSX_DEPRECATED_MSG(
         "ovphysx contact bindings are deprecated; include <ovphysx/ovphysx_legacy.h>")
@@ -1169,6 +1214,8 @@ extern "C" {
      * ovphysx_step_sync() call that simulated; a zero-dt step is skipped and leaves
      * both the contacts and the dt of the preceding positive-dt step in place. This
      * function waits for pending SDK work before retrieving the contact forces.
+     *
+     * @deprecated The contact-binding API is deprecated and retained for compatibility.
      */
     OVPHYSX_API OVPHYSX_DEPRECATED_MSG(
         "ovphysx contact bindings are deprecated; include <ovphysx/ovphysx_legacy.h>")
@@ -1190,6 +1237,8 @@ extern "C" {
      * ovphysx_step_sync() call that simulated; a zero-dt step is skipped and leaves
      * both the contacts and the dt of the preceding positive-dt step in place. This
      * function waits for pending SDK work before retrieving the contact forces.
+     *
+     * @deprecated The contact-binding API is deprecated and retained for compatibility.
      */
     OVPHYSX_API OVPHYSX_DEPRECATED_MSG(
         "ovphysx contact bindings are deprecated; include <ovphysx/ovphysx_legacy.h>")
@@ -1215,10 +1264,12 @@ extern "C" {
     /**
      * @brief Read detailed normal contact data into flat buffers.
      *
-     * contact_force_tensor contains scalar normal forces. Multiply each scalar
-     * by the corresponding contact_normal_tensor vector to obtain the world-space
-     * normal force vector. Friction forces are returned separately by
-     * ovphysx_read_friction_contact_data().
+     * contact_force_tensor contains signed scalar normal forces: each scalar is the
+     * normal force on the reporting sensor, negated when the sensor is the contact
+     * pair's second body (the normal is not flipped). Multiply each scalar by the
+     * corresponding contact_normal_tensor vector to obtain the world-space normal
+     * force on the sensor; see docs/read_write/readable.md ("Force sign"). Friction
+     * forces are returned separately by ovphysx_read_friction_contact_data().
      *
      * Required shapes:
      * - contact_force_tensor: `[C, 1]` float32
@@ -1236,7 +1287,7 @@ extern "C" {
      * `C` and `F` must be positive. Pass a positive max_contact_data_count
      * and filters_per_sensor > 0 when creating the binding. Count and
      * start-index tensors may be int32 or uint32.
-     * Contact force magnitudes use the timestep from the last successful
+     * Contact normal forces use the timestep from the last successful
      * ovphysx_step() or ovphysx_step_sync() call that simulated; a zero-dt step is
      * skipped and leaves the preceding step's contacts and timestep in place.
      *
@@ -1253,7 +1304,7 @@ extern "C" {
      *
      * @param handle Instance handle
      * @param contact_handle Contact binding
-     * @param contact_force_tensor Pre-allocated contact normal force magnitudes
+     * @param contact_force_tensor Pre-allocated signed contact normal force scalars
      * @param contact_point_tensor Pre-allocated world-frame contact points
      * @param contact_normal_tensor Pre-allocated world-frame contact normals
      * @param contact_separation_tensor Pre-allocated contact separations
@@ -1264,6 +1315,8 @@ extern "C" {
      * @return OVPHYSX_API_SUCCESS when the complete result fits,
      *   OVPHYSX_API_BUFFER_TOO_SMALL when only a valid prefix was written, or
      *   another error status on failure.
+     *
+     * @deprecated The contact-binding API is deprecated and retained for compatibility.
      */
     OVPHYSX_API OVPHYSX_DEPRECATED_MSG(
         "ovphysx contact bindings are deprecated; include <ovphysx/ovphysx_legacy.h>")
@@ -1336,6 +1389,8 @@ extern "C" {
      * @return OVPHYSX_API_SUCCESS when the complete result fits,
      *   OVPHYSX_API_BUFFER_TOO_SMALL when only a valid prefix was written, or
      *   another error status on failure.
+     *
+     * @deprecated The contact-binding API is deprecated and retained for compatibility.
      */
     OVPHYSX_API OVPHYSX_DEPRECATED_MSG(
         "ovphysx contact bindings are deprecated; include <ovphysx/ovphysx_legacy.h>")
@@ -1369,7 +1424,8 @@ extern "C" {
      * @ref ovphysx_contact_binding_get_other_actor_paths_from_ids.
      *
      * Required shapes (C = max_contact_data_count, S = sensor_count):
-     * - contact_force_tensor:        `[C, 1]` float32, contact normal force magnitude
+     * - contact_force_tensor:        `[C, 1]` float32, signed contact normal force
+     *   scalar (see "Force sign" below)
      * - contact_point_tensor:        `[C, 3]` float32, contact point in world frame
      * - contact_normal_tensor:       `[C, 3]` float32, contact normal in world frame
      * - contact_separation_tensor:   `[C, 1]` float32, signed separation
@@ -1377,6 +1433,12 @@ extern "C" {
      *   contact count and column 1 is its start index into the flat buffers
      * - actor_ids_tensor:            `[C, 2]` int64/uint64, per contact, column 0 is the
      *   reporting sensor's own actor id and column 1 is the actor it contacted
+     *
+     * **Force sign**: contact_force_tensor is a *signed* normal-force scalar, not a
+     * magnitude. It is the contact impulse over the step's dt, negated when the reporting
+     * sensor is the contact pair's second body; the matching contact_normal_tensor is
+     * never flipped, so `force * normal` is the normal force on the sensor. The
+     * read-session guide (docs/read_write/readable.md, "Force sign") states the full rule.
      *
      * The two pairs that are only meaningful together are single tensors rather than
      * separate buffers the caller has to keep in step. The four per-contact value
@@ -1413,6 +1475,8 @@ extern "C" {
      * @return OVPHYSX_API_SUCCESS when the complete result fits,
      *   OVPHYSX_API_BUFFER_TOO_SMALL when only a valid prefix was written, or
      *   another error status on failure.
+     *
+     * @deprecated The contact-binding API is deprecated and retained for compatibility.
      */
     OVPHYSX_API OVPHYSX_DEPRECATED_MSG(
         "ovphysx contact bindings are deprecated; include <ovphysx/ovphysx_legacy.h>")
@@ -1471,6 +1535,8 @@ extern "C" {
      * @return OVPHYSX_API_SUCCESS when the complete result fits,
      *   OVPHYSX_API_BUFFER_TOO_SMALL when only a valid prefix was written, or
      *   another error status on failure.
+     *
+     * @deprecated The contact-binding API is deprecated and retained for compatibility.
      */
     OVPHYSX_API OVPHYSX_DEPRECATED_MSG(
         "ovphysx contact bindings are deprecated; include <ovphysx/ovphysx_legacy.h>")
@@ -1512,6 +1578,8 @@ extern "C" {
      *         `out_type` is NULL or `prim_path` is NULL, empty, or contains an
      *         embedded NUL byte, or OVPHYSX_API_ERROR if no stage is attached
      *         or the TensorAPI simulation view cannot be created.
+     *
+     * @deprecated Object-type lookup is deprecated.
      */
     OVPHYSX_API OVPHYSX_DEPRECATED_MSG(
         "ovphysx_get_object_type is deprecated; include <ovphysx/ovphysx_legacy.h>")
@@ -1765,10 +1833,6 @@ extern "C" {
     /**
      * Create an SDF shape view for shapes matching the given pattern.
      *
-     * Deprecated: use ovphysx_evaluate_sdf_shapes (ovphysx_geometry_query.h) over an
-     * OVPHYSX_QUERY_TARGET_SDF_SHAPE query, which evaluates the same shapes and takes Q from the
-     * tensors on every call.
-     *
      * The view evaluates the signed distance field of PhysX collision shapes
      * at caller-supplied query points. Requires a GPU instance. CPU SDF
      * evaluation is not implemented and create fails for CPU instances.
@@ -1797,6 +1861,10 @@ extern "C" {
      * @param out_handle        Receives the new SDF view handle on success.
      *                          Set to 0 on failure.
      * @return OVPHYSX_API_SUCCESS or an error code.
+     *
+     * @deprecated Use ovphysx_evaluate_sdf_shapes (ovphysx_geometry_query.h) over an
+     *   OVPHYSX_QUERY_TARGET_SDF_SHAPE query, which evaluates the same shapes and takes Q from
+     *   the tensors on every call.
      */
     OVPHYSX_API OVPHYSX_DEPRECATED_MSG(
         "ovphysx SDF views are deprecated; include <ovphysx/ovphysx_legacy.h>")
@@ -1814,6 +1882,9 @@ extern "C" {
      * @param out_count     Receives the shape count on success.
      * @return OVPHYSX_API_SUCCESS, OVPHYSX_API_INVALID_ARGUMENT if out_count is NULL,
      *         OVPHYSX_API_NOT_FOUND if sdf_handle is not valid.
+     *
+     * @deprecated SDF views are deprecated. Use ovphysx_evaluate_sdf_shapes()
+     *   (ovphysx_geometry_query.h) over an OVPHYSX_QUERY_TARGET_SDF_SHAPE query.
      */
     OVPHYSX_API OVPHYSX_DEPRECATED_MSG(
         "ovphysx SDF views are deprecated; include <ovphysx/ovphysx_legacy.h>")
@@ -1830,6 +1901,9 @@ extern "C" {
      * @param out_max_query_points Receives the max query points on success.
      * @return OVPHYSX_API_SUCCESS, OVPHYSX_API_INVALID_ARGUMENT if out_max_query_points is NULL,
      *         OVPHYSX_API_NOT_FOUND if sdf_handle is not valid.
+     *
+     * @deprecated SDF views are deprecated. Use ovphysx_evaluate_sdf_shapes()
+     *   (ovphysx_geometry_query.h) over an OVPHYSX_QUERY_TARGET_SDF_SHAPE query.
      */
     OVPHYSX_API OVPHYSX_DEPRECATED_MSG(
         "ovphysx SDF views are deprecated; include <ovphysx/ovphysx_legacy.h>")
@@ -1857,6 +1931,9 @@ extern "C" {
      * @param query_points                  Query point tensor [N, Q, 3].
      * @param out_distances_and_gradients   Output tensor [N, Q, 4].
      * @return OVPHYSX_API_SUCCESS or an error code.
+     *
+     * @deprecated SDF views are deprecated. Use ovphysx_evaluate_sdf_shapes()
+     *   (ovphysx_geometry_query.h) over an OVPHYSX_QUERY_TARGET_SDF_SHAPE query.
      */
     OVPHYSX_API OVPHYSX_DEPRECATED_MSG(
         "ovphysx SDF views are deprecated; include <ovphysx/ovphysx_legacy.h>")
@@ -1875,7 +1952,12 @@ extern "C" {
      *
      * @param handle        Instance handle.
      * @param sdf_handle    SDF view handle from ovphysx_create_sdf_view.
-     * @return OVPHYSX_API_SUCCESS, or OVPHYSX_API_ERROR on invalid instance handle.
+     * @return OVPHYSX_API_SUCCESS, OVPHYSX_API_ERROR on an invalid instance
+     *         handle, or OVPHYSX_API_INVALID_STATE for runtime or application
+     *         log callback reentry.
+     *
+     * @deprecated SDF views are deprecated. Use ovphysx_evaluate_sdf_shapes()
+     *   (ovphysx_geometry_query.h) over an OVPHYSX_QUERY_TARGET_SDF_SHAPE query.
      */
     OVPHYSX_API OVPHYSX_DEPRECATED_MSG(
         "ovphysx SDF views are deprecated; include <ovphysx/ovphysx_legacy.h>")

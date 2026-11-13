@@ -37,6 +37,7 @@
     <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="_static/api.css?v=6f210184" />
     <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="_static/getting_started.css?v=d234fc04" />
   
   <!-- So that users can add custom icons -->
   <script defer src="_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
@@ -47,7 +48,7 @@
 
 
     <script rel="preload" src="_static/modal-table.js"></script>
-    <script src="_static/documentation_options.js?v=423e15eb"></script>
+    <script src="_static/documentation_options.js?v=a85d417d"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +58,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.7.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.8.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -68,14 +69,14 @@
 
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Physics Scene and Simulation Configuration" href="simulation_setup/physics_scene.html" />
-    <link rel="prev" title="Changelog" href="changelog.html" />
+    <link rel="next" title="Simulation Setup" href="reference/simulation_setup.html" />
+    <link rel="prev" title="OV Libraries V2 Transitional Annex: Timeout Type" href="ov_libraries_v2_annex.html" />
 
 
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
-    <meta name="docbuild:last-update" content="Oct 15, 2026"/>
+    <meta name="docbuild:last-update" content="Nov 13, 2026"/>
   
     
     <script src="_static/searchtools.js"></script>
@@ -503,151 +504,327 @@
 <nav class="bd-docs-nav bd-links"
      aria-label="Table of Contents">
   <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
-  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Overview</span></p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="ovphysx_overview.html">ovphysx Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="coding_style.html">ovphysx coding and doc style</a></li>
-<li class="toctree-l1"><a class="reference internal" href="migrating_0_6_to_0_7.html">Migration from 0.6 to 0.7</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ovd_api_migration.html">Instance and OVD API migration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tensor_binding_migration.html">Migrating off Tensor Bindings</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
-<li class="toctree-l1"><a class="reference internal" href="local_development.html">Local Development</a></li>
-<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/first_simulation.html">Your First Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/concepts.html">Concepts</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">ovstage Integration</span></p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Building Scenes</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="building_scenes/loading_scenes.html">Loading Scenes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building_scenes/physics_scene.html">The Physics Scene</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building_scenes/rigid_bodies.html">Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building_scenes/colliders_and_materials.html">Colliders and Materials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building_scenes/joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building_scenes/articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building_scenes/soft_bodies_and_particles.html">Soft Bodies and Particles</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Simulation Data</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="simulation_data/selecting_objects.html">Selecting Objects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulation_data/reading_values.html">Reading Values</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulation_data/writing_values.html">Writing Values</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulation_data/gpu_data.html">Data on the GPU</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Common Tasks</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="common_tasks/changing_the_scene.html">Changing the Scene</a></li>
+<li class="toctree-l1"><a class="reference internal" href="common_tasks/contacts.html">Contacts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="common_tasks/showing_the_simulation.html">Showing the Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="common_tasks/debugging.html">Debugging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="common_tasks/stable_simulations.html">Stable Simulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="common_tasks/fast_simulations.html">Fast Simulations</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Advanced</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="common_tasks/many_copies.html">Many Copies of a Scene</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Reference</span></p>
 <ul class="current nav bd-sidenav">
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">ovstage Integration and Physics Output Read</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="reference/index.html">Detailed Reference</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2 has-children"><a class="reference internal" href="reference/overview.html">Overview and Migration</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="ovphysx_overview.html">ovphysx Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l3"><a class="reference internal" href="migrating_0_6_to_0_7.html">Migration from 0.6 to 0.7</a></li>
+<li class="toctree-l3"><a class="reference internal" href="migrating_0_7_to_0_8.html">Migration from 0.7 to 0.8</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ovd_api_migration.html">Instance and OVD API migration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tensor_binding_migration.html">Migrating off Tensor Bindings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Simulation Setup</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="simulation_setup/physics_scene.html">Physics Scene and Simulation Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="simulation_setup/collision.html">Colliders</a></li>
-<li class="toctree-l1"><a class="reference internal" href="simulation_setup/rigid_bodies.html">Rigid Bodies</a></li>
-<li class="toctree-l1"><a class="reference internal" href="simulation_setup/kinematic_support.html">Kinematic Support Geometry</a></li>
-<li class="toctree-l1"><a class="reference internal" href="simulation_setup/joints.html">Joints</a></li>
-<li class="toctree-l1"><a class="reference internal" href="simulation_setup/articulations.html">Articulations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="simulation_setup/deformables.html">Deformable Bodies</a></li>
-<li class="toctree-l1"><a class="reference internal" href="simulation_setup/particles.html">Particles</a></li>
+</details></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">ovstage Integration and Physics Output Read</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="reference/simulation_setup.html">Simulation Setup</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="simulation_setup/physics_scene.html">Physics Scene and Simulation Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="simulation_setup/collision.html">Colliders</a></li>
+<li class="toctree-l3"><a class="reference internal" href="simulation_setup/rigid_bodies.html">Rigid Bodies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="simulation_setup/kinematic_support.html">Kinematic Support Geometry</a></li>
+<li class="toctree-l3"><a class="reference internal" href="simulation_setup/joints.html">Joints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="simulation_setup/articulations.html">Articulations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="simulation_setup/deformables.html">Deformable Bodies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="simulation_setup/particles.html">Particles</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Physics Schemas</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="physics_schemas.html">Physics Schemas</a></li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="population/index.html">ovstage Physics Population Domain</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l2"><a class="reference internal" href="population/Capsule.html">Capsule</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/Cone.html">Cone</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/Cube.html">Cube</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/Cylinder.html">Cylinder</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/Material.html">Material</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/Mesh.html">Mesh</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsCollisionGroup.html">PhysicsCollisionGroup</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsDistanceJoint.html">PhysicsDistanceJoint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsFixedJoint.html">PhysicsFixedJoint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsJoint.html">PhysicsJoint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsPrismaticJoint.html">PhysicsPrismaticJoint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsRevoluteJoint.html">PhysicsRevoluteJoint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsScene.html">PhysicsScene</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsSphericalJoint.html">PhysicsSphericalJoint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxPhysicsGearJoint.html">PhysxPhysicsGearJoint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxPhysicsRackAndPinionJoint.html">PhysxPhysicsRackAndPinionJoint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/Plane.html">Plane</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/Sphere.html">Sphere</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/Xform.html">Xform</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/MaterialBindingAPI.html">MaterialBindingAPI (physics purpose)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsArticulationRootAPI.html">PhysicsArticulationRootAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsCollisionAPI.html">PhysicsCollisionAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsDriveAPI.html">PhysicsDriveAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsFilteredPairsAPI.html">PhysicsFilteredPairsAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsJointStateAPI.html">PhysicsJointStateAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsLimitAPI.html">PhysicsLimitAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsMassAPI.html">PhysicsMassAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsMaterialAPI.html">PhysicsMaterialAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsMeshCollisionAPI.html">PhysicsMeshCollisionAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysicsRigidBodyAPI.html">PhysicsRigidBodyAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxArticulationAPI.html">PhysxArticulationAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxCollisionAPI.html">PhysxCollisionAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxContactReportAPI.html">PhysxContactReportAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxLimitAPI.html">PhysxLimitAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxPhysicsDistanceJointAPI.html">PhysxPhysicsDistanceJointAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxRigidBodyAPI.html">PhysxRigidBodyAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxSDFMeshCollisionAPI.html">PhysxSDFMeshCollisionAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxSceneAPI.html">PhysxSceneAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxSphereFillCollisionAPI.html">PhysxSphereFillCollisionAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxSplinesSurfaceVelocityAPI.html">PhysxSplinesSurfaceVelocityAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxSurfaceVelocityAPI.html">PhysxSurfaceVelocityAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxTriangleMeshCollisionAPI.html">PhysxTriangleMeshCollisionAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxTriangleMeshSimplificationCollisionAPI.html">PhysxTriangleMeshSimplificationCollisionAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxTriggerAPI.html">PhysxTriggerAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/prim.html">Prim identity and transform</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/stage_units.html">Stage units</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-articulation_fixed_base.html">Fixed-base two-link articulation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-articulation_floating.html">Floating-base two-link articulation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-conveyor_cube.html">Kinematic conveyor Cube with a surface velocity</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-d6_joint_pair.html">Two rigid-body Cubes on a D6 joint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-distance_joint_pair.html">Two rigid-body Cubes on a distance joint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-fixed_joint_pair.html">Two rigid-body Cubes on a fixed joint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-gear_joint_pair.html">Two hinged rigid-body Cubes coupled by a gear joint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-material_bound_cube.html">Rigid-body Cube bound to a physics Material</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-physics_scene.html">Physics scene</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-prismatic_joint_pair.html">Two rigid-body Cubes on a prismatic joint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-rack_and_pinion_joint_pair.html">A hinged pinion Cube and a sliding rack Cube coupled by a rack-and-pinion joint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-revolute_joint_pair.html">Two rigid-body Cubes on a revolute joint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-rigid_body_capsule.html">Dynamic rigid body on a Capsule</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-rigid_body_cone.html">Dynamic rigid body on a Cone</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-rigid_body_cube.html">Dynamic rigid body on a Cube</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-rigid_body_cube_pair.html">Two dynamic rigid-body Cubes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-rigid_body_cylinder.html">Dynamic rigid body on a Cylinder</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-rigid_body_sphere.html">Dynamic rigid body on a Sphere</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-spherical_joint_pair.html">Two rigid-body Cubes on a spherical joint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/composition-static_plane_collider.html">Static Plane collider</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/findings.html">Recorded findings</a></li>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="reference/schemas.html">Schemas and Population</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="physics_schemas.html">Physics Schemas</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="population/index.html">ovstage Physics Population Domain</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="population/BasisCurves.html">BasisCurves (spline surface velocity path)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/Camera.html">Camera (UsdGeom camera)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/Capsule.html">Capsule</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/Cone.html">Cone</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/Cube.html">Cube</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/Cylinder.html">Cylinder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/CylinderLight.html">CylinderLight (UsdLux light)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/DiskLight.html">DiskLight (UsdLux light)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/DistantLight.html">DistantLight (UsdLux light)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/DomeLight.html">DomeLight (UsdLux light)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/DomeLight_1.html">DomeLight_1 (UsdLux light)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/FabricStageInfo.html">FabricStageInfo (Fabric bookkeeping)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/GeomSubset.html">GeomSubset (per-face physics materials)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/Material.html">Material</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/Mesh.html">Mesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/NodeGraph.html">NodeGraph (UsdShade node graph)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsAttachment.html">OmniPhysicsAttachment (deformable attachment base)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsElementCollisionFilter.html">OmniPhysicsElementCollisionFilter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsTetXformAttachment.html">OmniPhysicsTetXformAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsTriTriAttachment.html">OmniPhysicsTriTriAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsVtxCrvAttachment.html">OmniPhysicsVtxCrvAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsVtxTetAttachment.html">OmniPhysicsVtxTetAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsVtxTriAttachment.html">OmniPhysicsVtxTriAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsVtxVtxAttachment.html">OmniPhysicsVtxVtxAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsVtxXformAttachment.html">OmniPhysicsVtxXformAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsCollisionGroup.html">PhysicsCollisionGroup</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsDistanceJoint.html">PhysicsDistanceJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsFixedJoint.html">PhysicsFixedJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsJoint.html">PhysicsJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsPrismaticJoint.html">PhysicsPrismaticJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsRevoluteJoint.html">PhysicsRevoluteJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsScene.html">PhysicsScene</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsSphericalJoint.html">PhysicsSphericalJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxParticleSystem.html">PhysxParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxPhysicsGearJoint.html">PhysxPhysicsGearJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxPhysicsJointInstancer.html">PhysxPhysicsJointInstancer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxPhysicsRackAndPinionJoint.html">PhysxPhysicsRackAndPinionJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleTireFrictionTable.html">PhysxVehicleTireFrictionTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/Plane.html">Plane</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PointInstancer.html">PointInstancer (rigid-body instancing)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/Points.html">Points (particle set geometry)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/RectLight.html">RectLight (UsdLux light)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/Scope.html">Scope</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/Shader.html">Shader (UsdShade shader)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/Sphere.html">Sphere</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/SphereLight.html">SphereLight (UsdLux light)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/TempChangeTracking.html">TempChangeTracking (Fabric bookkeeping)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/TetMesh.html">TetMesh (volume deformable meshes)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/Xform.html">Xform</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/CollectionAPI.html">CollectionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/GeomInstanceAPI.html">GeomInstanceAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/GeomInstanceRootAPI.html">GeomInstanceRootAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/GeomPrototypeAPI.html">GeomPrototypeAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/LightAPI.html">LightAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/MaterialBindingAPI.html">MaterialBindingAPI (physics purpose)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/NewtonArticulationRootAPI.html">NewtonArticulationRootAPI (self-collision fallback)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/NewtonCollisionAPI.html">NewtonCollisionAPI (contact offset fallbacks)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/NewtonJointAPI.html">NewtonJointAPI (joint-level seeds)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/NewtonMeshCollisionAPI.html">NewtonMeshCollisionAPI (hull vertex limit fallback)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/NewtonMimicAPI.html">NewtonMimicAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/NewtonSceneAPI.html">NewtonSceneAPI (fallbacks read by the PhysX parser)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/NodeDefAPI.html">NodeDefAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsBaseMaterialAPI.html">OmniPhysicsBaseMaterialAPI (deformable material friction and density)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsBodyAPI.html">OmniPhysicsBodyAPI (deformable body flags)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsDeformableBodyAPI.html">OmniPhysicsDeformableBodyAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsDeformableMaterialAPI.html">OmniPhysicsDeformableMaterialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsDeformablePoseAPI.html">OmniPhysicsDeformablePoseAPI (bind pose)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsSurfaceDeformableMaterialAPI.html">OmniPhysicsSurfaceDeformableMaterialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsSurfaceDeformableSimAPI.html">OmniPhysicsSurfaceDeformableSimAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/OmniPhysicsVolumeDeformableSimAPI.html">OmniPhysicsVolumeDeformableSimAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsArticulationRootAPI.html">PhysicsArticulationRootAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsCollisionAPI.html">PhysicsCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsDriveAPI.html">PhysicsDriveAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsFilteredPairsAPI.html">PhysicsFilteredPairsAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsJointStateAPI.html">PhysicsJointStateAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsLimitAPI.html">PhysicsLimitAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsMassAPI.html">PhysicsMassAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsMaterialAPI.html">PhysicsMaterialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsMeshCollisionAPI.html">PhysicsMeshCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysicsRigidBodyAPI.html">PhysicsRigidBodyAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxArticulationAPI.html">PhysxArticulationAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxAutoDeformableAttachmentAPI.html">PhysxAutoDeformableAttachmentAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxAutoDeformableBodyAPI.html">PhysxAutoDeformableBodyAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxAutoDeformableHexahedralMeshAPI.html">PhysxAutoDeformableHexahedralMeshAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxAutoDeformableMeshSimplificationAPI.html">PhysxAutoDeformableMeshSimplificationAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxBaseDeformableBodyAPI.html">PhysxBaseDeformableBodyAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxCharacterControllerAPI.html">PhysxCharacterControllerAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxCollisionAPI.html">PhysxCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxContactReportAPI.html">PhysxContactReportAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxCookedDataAPI.html">PhysxCookedDataAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxDeformableMaterialAPI.html">PhysxDeformableMaterialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxDiffuseParticlesAPI.html">PhysxDiffuseParticlesAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxForceAPI.html">PhysxForceAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxJointAPI.html">PhysxJointAPI (removed)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxLimitAPI.html">PhysxLimitAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxMeshMergeCollisionAPI.html">PhysxMeshMergeCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxMimicJointAPI.html">PhysxMimicJointAPI (deprecated)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxPBDMaterialAPI.html">PhysxPBDMaterialAPI (as read for a scene default material)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxParticleAPI.html">PhysxParticleAPI (particle object base)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxParticleAnisotropyAPI.html">PhysxParticleAnisotropyAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxParticleIsosurfaceAPI.html">PhysxParticleIsosurfaceAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxParticleSamplingAPI.html">PhysxParticleSamplingAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxParticleSetAPI.html">PhysxParticleSetAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxParticleSmoothingAPI.html">PhysxParticleSmoothingAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxPhysicsDistanceJointAPI.html">PhysxPhysicsDistanceJointAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxRigidBodyAPI.html">PhysxRigidBodyAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxSDFMeshCollisionAPI.html">PhysxSDFMeshCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxSceneAPI.html">PhysxSceneAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxSceneQuasistaticAPI.html">PhysxSceneQuasistaticAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxSphereFillCollisionAPI.html">PhysxSphereFillCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxSplinesSurfaceVelocityAPI.html">PhysxSplinesSurfaceVelocityAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxSurfaceDeformableBodyAPI.html">PhysxSurfaceDeformableBodyAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxSurfaceDeformableMaterialAPI.html">PhysxSurfaceDeformableMaterialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxSurfaceVelocityAPI.html">PhysxSurfaceVelocityAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxTendonAttachmentAPI.html">PhysxTendonAttachmentAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxTendonAttachmentLeafAPI.html">PhysxTendonAttachmentLeafAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxTendonAttachmentRootAPI.html">PhysxTendonAttachmentRootAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxTendonAxisAPI.html">PhysxTendonAxisAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxTendonAxisRootAPI.html">PhysxTendonAxisRootAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxTriangleMeshCollisionAPI.html">PhysxTriangleMeshCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxTriangleMeshSimplificationCollisionAPI.html">PhysxTriangleMeshSimplificationCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxTriggerAPI.html">PhysxTriggerAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxTriggerStateAPI.html">PhysxTriggerStateAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleAPI.html">PhysxVehicleAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleAckermannSteeringAPI.html">PhysxVehicleAckermannSteeringAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleAutoGearBoxAPI.html">PhysxVehicleAutoGearBoxAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleBrakesAPI.html">PhysxVehicleBrakesAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleClutchAPI.html">PhysxVehicleClutchAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleContextAPI.html">PhysxVehicleContextAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleControllerAPI.html">PhysxVehicleControllerAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleDriveBasicAPI.html">PhysxVehicleDriveBasicAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleDriveStandardAPI.html">PhysxVehicleDriveStandardAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleEngineAPI.html">PhysxVehicleEngineAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleGearsAPI.html">PhysxVehicleGearsAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleMultiWheelDifferentialAPI.html">PhysxVehicleMultiWheelDifferentialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleNonlinearCommandResponseAPI.html">PhysxVehicleNonlinearCommandResponseAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleSteeringAPI.html">PhysxVehicleSteeringAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleSuspensionAPI.html">PhysxVehicleSuspensionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleSuspensionComplianceAPI.html">PhysxVehicleSuspensionComplianceAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleTankControllerAPI.html">PhysxVehicleTankControllerAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleTankDifferentialAPI.html">PhysxVehicleTankDifferentialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleTireAPI.html">PhysxVehicleTireAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleWheelAPI.html">PhysxVehicleWheelAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleWheelAttachmentAPI.html">PhysxVehicleWheelAttachmentAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PhysxVehicleWheelControllerAPI.html">PhysxVehicleWheelControllerAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/PrototypeRootAPI.html">PrototypeRootAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/ShadowAPI.html">ShadowAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/ShapingAPI.html">ShapingAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/legacy_stage_units.html">Legacy stage units prim</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/prim.html">Prim identity and transform</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/stage_units.html">Stage units</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-articulation_fixed_base.html">Fixed-base two-link articulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-articulation_floating.html">Floating-base two-link articulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-conveyor_cube.html">Kinematic conveyor Cube with a surface velocity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-d6_joint_pair.html">Two rigid-body Cubes on a D6 joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-distance_joint_pair.html">Two rigid-body Cubes on a distance joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-fixed_joint_pair.html">Two rigid-body Cubes on a fixed joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-gear_joint_pair.html">Two hinged rigid-body Cubes coupled by a gear joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-material_bound_cube.html">Rigid-body Cube bound to a physics Material</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-physics_scene.html">Physics scene</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-prismatic_joint_pair.html">Two rigid-body Cubes on a prismatic joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-rack_and_pinion_joint_pair.html">A hinged pinion Cube and a sliding rack Cube coupled by a rack-and-pinion joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-revolute_joint_pair.html">Two rigid-body Cubes on a revolute joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-rigid_body_capsule.html">Dynamic rigid body on a Capsule</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-rigid_body_cone.html">Dynamic rigid body on a Cone</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-rigid_body_cube.html">Dynamic rigid body on a Cube</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-rigid_body_cube_pair.html">Two dynamic rigid-body Cubes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-rigid_body_cylinder.html">Dynamic rigid body on a Cylinder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-rigid_body_sphere.html">Dynamic rigid body on a Sphere</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-spherical_joint_pair.html">Two rigid-body Cubes on a spherical joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/composition-static_plane_collider.html">Static Plane collider</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/findings.html">Recorded findings</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/physics-population-description.html">Physics Population Description</a></li>
+<li class="toctree-l4"><a class="reference internal" href="population/glossary.html">Population vocabulary</a></li>
 </ul>
 </details></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Read/Write Data Contract</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="read_write/index.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="read_write/data_model.html">Data model and semantics</a></li>
-<li class="toctree-l1"><a class="reference internal" href="read_write/device.html">Device residency and interop</a></li>
-<li class="toctree-l1"><a class="reference internal" href="read_write/readable.html">Readable data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="read_write/writable.html">Writable data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="read_write/vehicles.html">Vehicle examples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="read_write/path_patterns.html">Path patterns</a></li>
-<li class="toctree-l1"><a class="reference internal" href="read_write/limitations.html">Known limitations and gaps</a></li>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="reference/read_write.html">Read and Write Contract</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="read_write/index.html">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="read_write/data_model.html">Data model and semantics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="read_write/device.html">Device residency and interop</a></li>
+<li class="toctree-l3"><a class="reference internal" href="read_write/readable.html">Readable data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="read_write/discovery.html">Discovering attribute metadata</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="read_write/attributes/index.html">Detailed I/O attribute reference</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/units.html">Runtime I/O units</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/rigid_body.html">Rigid body</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/articulation_link.html">Articulation link</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/articulation_joint.html">Articulation joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/vehicle_wheel.html">Vehicle wheel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/deformable_volume.html">Deformable volume</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/deformable_surface.html">Deformable surface</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/particle_set.html">Particle set</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/fixed_tendon.html">Fixed tendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/spatial_tendon.html">Spatial tendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/articulation.html">Articulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/deformable_material.html">Deformable material</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/contact_sensor.html">Contact sensor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/character_controller.html">Character controller</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/vehicle.html">Vehicle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/scene.html">Scene</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/physx_material.html">Physx material</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/shape.html">Shape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/compound_shape.html">Compound shape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/rigid_actor.html">Rigid actor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/joint.html">Joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/custom_joint.html">Custom joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/particle_system.html">Particle system</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/physics.html">Physics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/debug_render.html">Debug render</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/sdf_shape.html">Sdf shape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="read_write/attributes/deformable_skin_mesh.html">Deformable skin mesh</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="tutorials/quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/hello_world.html">Hello World – Populate ovstage and Step</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/tensor_bindings.html">Tensor Bindings (deprecated)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/contact_binding.html">Contact Binding – Reading Contact Forces</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/cloning.html">Cloning – Replicate Environments</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/render_handoff.html">Rendering Handoff</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/profiling.html">Profiling: See Where Your Simulation Spends Its Time</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="read_write/writable.html">Writable data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="read_write/vehicles.html">Vehicle examples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="read_write/path_patterns.html">Path patterns</a></li>
+<li class="toctree-l3"><a class="reference internal" href="read_write/limitations.html">Known limitations and gaps</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="guides/performance.html">Simulation Performance Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/collision_tuning.html">Collision Behavior Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/articulation_stability.html">Articulation and Robot Simulation Stability Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/gripper_tuning.html">Joint Parameter Tuning Example: Robotiq 2F-85</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/limitations.html">Known Physics Limitations</a></li>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="reference/tutorials.html">Tutorials</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/quickstart.html">Quickstart</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/hello_world.html">Hello World – Populate ovstage and Step</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/tensor_bindings.html">Tensor Bindings (deprecated)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/contact_binding.html">Contact Binding – Reading Contact Forces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/cloning.html">Cloning – Replicate Environments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/render_handoff.html">Rendering Handoff</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/profiling.html">Profiling: See Where Your Simulation Spends Its Time</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
-<ul class="nav bd-sidenav">
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="reference/tuning_guides.html">Tuning Guides</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="guides/performance.html">Simulation Performance Guide</a></li>
+<li class="toctree-l3"><a class="reference internal" href="guides/collision_tuning.html">Collision Behavior Guide</a></li>
+<li class="toctree-l3"><a class="reference internal" href="guides/articulation_stability.html">Articulation and Robot Simulation Stability Guide</a></li>
+<li class="toctree-l3"><a class="reference internal" href="guides/gripper_tuning.html">Joint Parameter Tuning Example: Robotiq 2F-85</a></li>
+<li class="toctree-l3"><a class="reference internal" href="guides/limitations.html">Known Physics Limitations</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="reference/contributing.html">Contributing</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="local_development.html">Local Development</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coding_style.html">ovphysx coding and doc style</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/glossary.html">Glossary</a></li>
+</ul>
+</details></li>
 <li class="toctree-l1"><a class="reference internal" href="python_api.html">Python API Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">C API Reference</a></li>
-</ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Legal</span></p>
-<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 <li class="toctree-l1"><a class="reference internal" href="SECURITY.html">Security</a></li>
 </ul>
 </div>
@@ -683,6 +860,9 @@
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
+    
+    <li class="breadcrumb-item"><a href="reference/index.html" class="nav-link">Detailed Reference</a></li>
+    
     <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">ovstage Integration and Physics Output Read</span></li>
   </ul>
 </nav>
@@ -714,10 +894,10 @@ articulations, deformables, particles), refer to the
 <a class="reference internal" href="simulation_setup/physics_scene.html"><span class="std std-doc">Simulation Setup</span></a> pages.</p>
 <section id="the-data-surface-ovstage-ordinals">
 <h2>The data surface: ovstage + ordinals<a class="headerlink" href="#the-data-surface-ovstage-ordinals" title="Link to this heading">#</a></h2>
-<p>An ovstage Stage is a versioned, columnar data store. Every committed write lands
-at an <strong>ordinal</strong> — a monotonically increasing version number that the
-<strong>application owns and advances</strong>. A <em>write floor</em> seals ordinals at or below a
-value: sealed data never changes and is what reads observe.</p>
+<p>An ovstage Stage is a columnar data store. Every committed write has an
+<strong>ordinal</strong> — a monotonically increasing ordering number that the
+<strong>application owns and advances</strong>. A <em>write floor</em> seals writes at or below an
+ordinal. Sealing does not preserve historical versions of their payloads.</p>
 <p>ovphysx never advances ordinals or writes to the Stage on its own. It exposes
 exactly three ordinal-aware operations:</p>
 <div class="pst-scrollable-table-container"><table class="table">
@@ -730,7 +910,7 @@ exactly three ordinal-aware operations:</p>
 <tbody>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ovphysx_attach_ovstage(handle,</span> <span class="pre">stage,</span> <span class="pre">read_ordinal)</span></code></p></td>
 <td><p>attach</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">stage</span></code> is an <code class="docutils literal notranslate"><span class="pre">ovstage_instance_t*</span></code>; initial scene parse reads at the sealed <code class="docutils literal notranslate"><span class="pre">read_ordinal</span></code> (<code class="docutils literal notranslate"><span class="pre">ovstage_ordinal_t</span></code>, must be non-zero)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">stage</span></code> is an <code class="docutils literal notranslate"><span class="pre">ovstage_instance_t*</span></code>; initial scene parse reads at the sealed <code class="docutils literal notranslate"><span class="pre">read_ordinal</span></code> (<code class="docutils literal notranslate"><span class="pre">ovstage_ordinal_t</span></code>, 1 through <code class="docutils literal notranslate"><span class="pre">OVSTAGE_ORDINAL_MAX</span></code>)</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ovphysx_update_from_ovstage(handle,</span> <span class="pre">range)</span></code></p></td>
 <td><p><strong>app → physics</strong></p></td>
@@ -743,11 +923,20 @@ exactly three ordinal-aware operations:</p>
 </tbody>
 </table>
 </div>
-<p>Attach, update and detach return task receipts. Check admission, then wait for
-the task’s successful outcome before depending on it. The current execution is
-inline; callers must still keep Stage storage and the sealed data being read
-alive through completion. Keep an attached Stage alive until successful detach
-or instance destruction. See <a class="reference internal" href="developer_guide.html#stage-lifecycle-completion"><span class="std std-ref">Stage lifecycle completion</span></a>.</p>
+<p>Attach, update and detach return task receipts and may finish later. Calls on
+one instance stay ordered, so later instance calls need no intermediate wait.
+Wait before outside code uses the result. Keep the Stage and sealed data alive
+until the task finishes, and keep an attached Stage alive until detach succeeds
+or the instance is destroyed. See
+<a class="reference internal" href="developer_guide.html#stage-lifecycle-completion"><span class="std std-ref">Stage lifecycle completion</span></a>.</p>
+<p>On a DirectGPU scene, <code class="docutils literal notranslate"><span class="pre">update_from_ovstage</span></code> drains the device-eligible value attributes
+(<code class="docutils literal notranslate"><span class="pre">physics:velocity</span></code>, <code class="docutils literal notranslate"><span class="pre">physics:angularVelocity</span></code>) straight from device memory with no host
+round trip, when the producer authored them device-resident over the drained bodies; other
+attributes, partial writes, and mixed DirectGPU + CPU stages stage through the host. This is
+transparent – the producer authors the same columns either way – and does not change the
+sealing rules below: a structural change such as a prim deletion must still be sealed over its
+structural columns (a <code class="docutils literal notranslate"><span class="pre">SCOPE_ALL</span></code> <code class="docutils literal notranslate"><span class="pre">advance_write_floor</span></code>), not only the value floor, or the drain
+of that range is held until it is.</p>
 <section id="register-the-physx-schemas-before-reading-usd-schemas">
 <h3>Register the PhysX schemas before reading USD schemas<a class="headerlink" href="#register-the-physx-schemas-before-reading-usd-schemas" title="Link to this heading">#</a></h3>
 <p>Applications install <code class="docutils literal notranslate"><span class="pre">physx-usd-schemas</span></code> separately and register its
@@ -762,7 +951,7 @@ is accepted and no attachment is taken. The refusal persists for the process;
 restart and register before populating or exporting. A procedural stage attached
 while USD schema definitions remain unbuilt skips the family check, leaving it
 active for later attaches. Once population or export builds those definitions,
-even procedural stages are checked. The legacy Carbonite setting
+even procedural stages are checked. The raw Carbonite setting
 <code class="docutils literal notranslate"><span class="pre">/ovphysx/schemas/requireRegistration</span> <span class="pre">=</span> <span class="pre">false</span></code> downgrades the refusal to a warning
 without restoring missing data. See
 <a class="reference internal" href="physics_schemas.html#attach-time-registration-guard"><span class="std std-ref">Physics Schemas</span></a> for setup and
@@ -789,6 +978,19 @@ ordinal 1 is harmless because consumed ordinals are skipped, but naming only the
 new range makes producer ownership explicit. A range containing only consumed
 ordinals is a successful no-op; an overlapping range applies only its unread
 suffix.</p>
+<p><code class="docutils literal notranslate"><span class="pre">read_ordinal</span></code> establishes the initial read and consumed-ordinal cursor, not a
+historical Stage snapshot. OVStage’s latest-snapshot reads return the latest
+committed recorded-column payloads. If ordinal 2 is already sealed, attaching
+with <code class="docutils literal notranslate"><span class="pre">read_ordinal=1</span></code> can see newer positions and bodies added at ordinal 2;
+a lower ordinal does not reconstruct earlier values or membership. If initial
+values matter, seal the initial population and complete attach before authoring
+later edits. When attaching after later edits, use the final sealed ordinal so
+the consumed cursor covers the initial read.</p>
+<p>OVStage ordinals are signed (<code class="docutils literal notranslate"><span class="pre">int64_t</span></code>): a Stage starts sealed through
+<code class="docutils literal notranslate"><span class="pre">OVSTAGE_ORDINAL_MIN</span></code>, and zero and negative ordinals are writable. ovphysx
+attaches only at a positive <code class="docutils literal notranslate"><span class="pre">read_ordinal</span></code> (0 is reserved), so seal the initial
+population at 1 or later. Update ranges may start below 1: those ordinals
+precede every attach ordinal and are skipped as consumed.</p>
 <p>OVStage defaults to <code class="docutils literal notranslate"><span class="pre">NONDECREASING</span></code>: repeated mutations may use the same ordinal
 while it remains unsealed. With an explicitly selected <code class="docutils literal notranslate"><span class="pre">STRICTLY_INCREASING</span></code>
 admission policy, a second mutation
@@ -802,73 +1004,163 @@ it at ordinal 3; wait for both operations, seal ordinal 3, and call
 attributes at ordinal 3 before sealing. A fresh attach reads the final sealed
 ordinal. The application coordinates these ordinals across physics and rendering;
 ovphysx does not silently renumber caller-owned writes.</p>
-<p>Scene-graph instancing currently has one snapshot caveat: ovstage’s public
+<p>Scene-graph instancing has an additional constraint: ovstage’s public
 prototype/instance topology queries and resolved instance-material data expose
 the latest committed state rather than an ordinal range. Finish population
 before attach and keep instance topology stable for that attachment; historical
 instance topology cannot be reconstructed from <code class="docutils literal notranslate"><span class="pre">read_ordinal</span></code>.</p>
 </section>
+<section id="transform-inputs">
+<h3>Transform inputs<a class="headerlink" href="#transform-inputs" title="Link to this heading">#</a></h3>
+<p>Transform updates are triggered by edits to the local <code class="docutils literal notranslate"><span class="pre">omni:xform</span></code> or
+<code class="docutils literal notranslate"><span class="pre">omni:resetXformStack</span></code> (also <code class="docutils literal notranslate"><span class="pre">omni:fabric:localMatrix</span></code> for producers that use it).
+A change to <code class="docutils literal notranslate"><span class="pre">omni:fabric:worldMatrix</span></code> alone does not trigger a physics transform
+update, even when its ordinal is sealed and passed to <code class="docutils literal notranslate"><span class="pre">update_from_ovstage()</span></code>.
+To move a body through the stage, author the local transform and update any
+existing resolved <code class="docutils literal notranslate"><span class="pre">omni:fabric:worldMatrix</span></code> to match at the same control ordinal,
+then seal and drain it. Population can seed that column even if the application
+has never published it. Keep affected descendants’ resolved world matrices
+consistent too; a stale matrix can keep the body at its old pose.</p>
+<p>The update trigger and the pose read are separate. At initial attachment and
+when applying local edits, ovphysx can read an existing resolved world matrix
+instead of composing the pose from local transforms.</p>
+<p>The host transform-update path does not move rigid actors in DirectGPU scenes.
+A separate DirectGPU device pose path can apply resolved world matrices for
+supported standalone bodies, but teleports them rather than setting kinematic
+targets. For explicit DirectGPU pose control, use session <code class="docutils literal notranslate"><span class="pre">position</span></code> and
+<code class="docutils literal notranslate"><span class="pre">orientation</span></code> writes after the first step; see
+<a class="reference internal" href="simulation_data/writing_values.html"><span class="std std-doc">Writing Values</span></a>. Leave DirectGPU disabled
+when driving kinematic supports that must carry other bodies, as described in
+<a class="reference internal" href="simulation_setup/kinematic_support.html"><span class="std std-doc">Kinematic Support Geometry</span></a>. See
+<a class="reference internal" href="read_write/limitations.html"><span class="std std-doc">Known Limitations</span></a> for other runtime-edit restrictions.</p>
 </section>
-<section id="population-domains">
-<h2>Population domains<a class="headerlink" href="#population-domains" title="Link to this heading">#</a></h2>
-<p>Population is <em>domain-scoped</em>. <code class="docutils literal notranslate"><span class="pre">ovstage.population.open_usd()</span></code> (C:
-<code class="docutils literal notranslate"><span class="pre">ovstage_population_open_usd_from_file</span></code> / <code class="docutils literal notranslate"><span class="pre">_from_string</span></code>) takes a <strong><code class="docutils literal notranslate"><span class="pre">domains</span></code>
-bitmask</strong> selecting which parts of the USD file land in the Stage. The values are
-OR-combinable flags, not a choice of exactly one:</p>
+<section id="deferred-mass-edits-and-session-overrides">
+<h3>Deferred mass edits and session overrides<a class="headerlink" href="#deferred-mass-edits-and-session-overrides" title="Link to this heading">#</a></h3>
+<p>Completion of <code class="docutils literal notranslate"><span class="pre">update_from_ovstage()</span></code> does not imply that every edited property
+is already reflected in live PhysX state. Rigid mass-frame edits
+(<code class="docutils literal notranslate"><span class="pre">physics:mass</span></code>, <code class="docutils literal notranslate"><span class="pre">physics:density</span></code>, <code class="docutils literal notranslate"><span class="pre">physics:centerOfMass</span></code>,
+<code class="docutils literal notranslate"><span class="pre">physics:diagonalInertia</span></code>, and <code class="docutils literal notranslate"><span class="pre">physics:principalAxes</span></code>) use the parse path to
+recompute mass, inertia, and center of mass together at the next step. Covered
+velocity edits can be visible immediately after the drain; that timing does not
+apply to the mass frame.</p>
+<p>A session write changes live PhysX state without authoring back to OVStage or
+cancelling a pending recomputation. Draining stage mass 6, committing session
+mass 9, and then stepping therefore leaves mass 6. To apply a session override
+after the stage-derived mass frame is installed, use this order:</p>
+<ol class="arabic simple">
+<li><p>Finish authoring the OVStage edit, seal its ordinal, and wait for the seal.</p></li>
+<li><p>Call <code class="docutils literal notranslate"><span class="pre">physx.wait_task(physx.update_from_ovstage(ordinal,</span> <span class="pre">ordinal))</span></code>.</p></li>
+<li><p>Complete <code class="docutils literal notranslate"><span class="pre">physx.step_sync(dt)</span></code> with the application’s simulation timestep.</p></li>
+<li><p>Open <code class="docutils literal notranslate"><span class="pre">physx.write_sync(...)</span></code>, fill the desired mass-frame values, and call
+<code class="docutils literal notranslate"><span class="pre">session.commit_sync(group)</span></code> for each group to override.</p></li>
+</ol>
+<p>The step in item 3 advances simulation using the stage-derived mass frame.
+If the desired mass must apply in that step, author it in OVStage before the
+drain instead. Later stage edits that trigger another recomputation can replace
+the live override again. See <a class="reference internal" href="read_write/writable.html#mixing-ovstage-mass-edits-and-session-writes"><span class="std std-ref">session write ordering</span></a>
+and <a class="reference internal" href="read_write/limitations.html"><span class="std std-doc">drain limitations</span></a> for scope and device restrictions.</p>
+</section>
+<section id="changing-a-prim-s-type-at-runtime">
+<h3>Changing a prim’s type at runtime<a class="headerlink" href="#changing-a-prim-s-type-at-runtime" title="Link to this heading">#</a></h3>
+<p>To retype a live prim, for example a <code class="docutils literal notranslate"><span class="pre">PhysicsFixedJoint</span></code> into a
+<code class="docutils literal notranslate"><span class="pre">PhysicsRevoluteJoint</span></code>, write its new <code class="docutils literal notranslate"><span class="pre">usd-prim-type</span></code> at a new ordinal, seal it
+and drain it like any other edit. ovphysx re-parses the prim and rebuilds its
+PhysX object from the prim’s columns.</p>
+<p>Write the new type’s columns in the same ordinal, at their resolved values: the
+authored value, or the USD schema fallback when nothing is authored. That is
+what ovstage population publishes for a prim authored with the new type; the
+<a class="reference internal" href="population/index.html"><span class="std std-doc">population reference</span></a> lists it per type under
+<em>Producer writes</em>. The old type’s columns do not cover the new type: a fixed
+joint has no <code class="docutils literal notranslate"><span class="pre">physics:lowerLimit</span></code> / <code class="docutils literal notranslate"><span class="pre">physics:upperLimit</span></code>, so a retype to
+revolute publishes <code class="docutils literal notranslate"><span class="pre">-inf</span></code> / <code class="docutils literal notranslate"><span class="pre">inf</span></code> for an unlimited hinge. ovphysx reads an
+absent column with its <em>Parser default</em>. For the joint limits that default is
+the schema fallback, but the reference lists columns where the two differ, so
+writing the full set is what keeps a retyped prim identical to a freshly
+populated one.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">ovphysx.population</span></code> builder writes such a set:
+<code class="docutils literal notranslate"><span class="pre">resolved_defaults(&quot;PhysicsRevoluteJoint&quot;,</span> <span class="pre">...)</span></code> in Python or
+<code class="docutils literal notranslate"><span class="pre">PhysicsRevoluteJointDefaults::resolved(units)</span></code> in C++ gives the resolved
+values, and <code class="docutils literal notranslate"><span class="pre">PrimBatch.define_physics_revolute_joint(...)</span></code> /
+<code class="docutils literal notranslate"><span class="pre">definePhysicsRevoluteJoint(...)</span></code> followed by <code class="docutils literal notranslate"><span class="pre">write(stage,</span> <span class="pre">ordinal)</span></code> in Python
+or <code class="docutils literal notranslate"><span class="pre">write(ordinal)</span></code> in C++ (the C++ batch takes its instance at construction)
+upserts the prim. <code class="docutils literal notranslate"><span class="pre">write()</span></code> also rewrites <code class="docutils literal notranslate"><span class="pre">usd-schemas</span></code> from the APIs applied on the
+batch, so apply the prim’s existing APIs again. When the old and new types
+have different ancestor types, write <code class="docutils literal notranslate"><span class="pre">usd-ancestor-types</span></code> as well; ovstage does
+not derive it from <code class="docutils literal notranslate"><span class="pre">usd-prim-type</span></code>.</p>
+</section>
+</section>
+<section id="populating-physics-the-physics-population-description">
+<h2>Populating physics: the physics population description<a class="headerlink" href="#populating-physics-the-physics-population-description" title="Link to this heading">#</a></h2>
+<p>OVStage populates physics data from USD only through a <em>population description</em>:
+selectors of prims and properties, metadata paths and derived values, passed to
+the <code class="docutils literal notranslate"><span class="pre">*_with_desc</span></code> entry points (Python: <code class="docutils literal notranslate"><span class="pre">ovstage.population.open_usd_with_desc()</span></code>,
+<code class="docutils literal notranslate"><span class="pre">open_usd_from_string_with_desc()</span></code>, <code class="docutils literal notranslate"><span class="pre">repopulate_usd_with_desc()</span></code>; C:
+<code class="docutils literal notranslate"><span class="pre">ovstage_population_open_usd_from_file_with_desc()</span></code> / <code class="docutils literal notranslate"><span class="pre">_from_string_with_desc()</span></code>,
+<code class="docutils literal notranslate"><span class="pre">ovstage_population_repopulate_usd_with_desc()</span></code>). Its only built-in domain is
+<code class="docutils literal notranslate"><span class="pre">RENDERING</span></code> (meshes, lights, materials, cameras).</p>
+<p>ovphysx publishes the description of everything it reads:
+<code class="docutils literal notranslate"><span class="pre">ovphysx_get_physics_population_desc()</span></code> in C (<code class="docutils literal notranslate"><span class="pre">ovphysx_population.h</span></code>) and
+<code class="docutils literal notranslate"><span class="pre">ovphysx.population.physics_population_desc()</span></code> in Python. It selects colliders,
+rigid bodies, joints, articulations and the other physics prims with their
+physics schema properties, the geometry of the shapes, the stage units, and the
+defaults ovphysx relies on where nothing is authored. The
+<a class="reference internal" href="population/physics-population-description.html"><span class="std std-doc">physics population description reference</span></a>
+lists it in full. Its own <code class="docutils literal notranslate"><span class="pre">domains</span></code> is <code class="docutils literal notranslate"><span class="pre">NONE</span></code>, so you choose what goes beside it:</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
-<tr class="row-odd"><th class="head"><p>Python (<code class="docutils literal notranslate"><span class="pre">ovstage.PopulationDomain</span></code>)</p></th>
-<th class="head"><p>C (<code class="docutils literal notranslate"><span class="pre">ovstage_population_domain_t</span></code>)</p></th>
-<th class="head"><p>Populates</p></th>
+<tr class="row-odd"><th class="head"><p>To populate</p></th>
+<th class="head"><p>Python <code class="docutils literal notranslate"><span class="pre">descs=</span></code></p></th>
+<th class="head"><p>C <code class="docutils literal notranslate"><span class="pre">descs</span></code>, <code class="docutils literal notranslate"><span class="pre">desc_count</span></code></p></th>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">NONE</span></code> (0)</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">OVSTAGE_POPULATION_DOMAIN_NONE</span></code></p></td>
-<td><p>nothing</p></td>
+<tr class="row-even"><td><p>physics only</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics_population_descs()</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ovphysx_get_physics_population_desc()</span></code>, 1</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">RENDERING</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">OVSTAGE_POPULATION_DOMAIN_RENDERING</span></code></p></td>
-<td><p>meshes, lights, materials, cameras</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">PHYSICS</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">OVSTAGE_POPULATION_DOMAIN_PHYSICS</span></code></p></td>
-<td><p>colliders, rigid bodies, joints, articulations, the physics schema attributes authored on them, and the stage units below</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ALL</span></code> (<code class="docutils literal notranslate"><span class="pre">RENDERING</span> <span class="pre">|</span> <span class="pre">PHYSICS</span></code>)</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">OVSTAGE_POPULATION_DOMAIN_ALL</span></code></p></td>
-<td><p>both</p></td>
+<tr class="row-odd"><td><p>physics and render prims</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics_population_descs(rendering=True)</span></code></p></td>
+<td><p>the physics description, then one whose <code class="docutils literal notranslate"><span class="pre">domains</span></code> is <code class="docutils literal notranslate"><span class="pre">OVSTAGE_POPULATION_DOMAIN_RENDERING</span></code>; 2</p></td>
 </tr>
 </tbody>
 </table>
 </div>
 <p>Stage units (<code class="docutils literal notranslate"><span class="pre">metersPerUnit</span></code>, <code class="docutils literal notranslate"><span class="pre">kilogramsPerUnit</span></code>, <code class="docutils literal notranslate"><span class="pre">upAxis</span></code>) are populated onto the
 root prim <code class="docutils literal notranslate"><span class="pre">/</span></code> under the reserved <code class="docutils literal notranslate"><span class="pre">usd-metadata:</span></code> column prefix, for example
-<code class="docutils literal notranslate"><span class="pre">usd-metadata:metersPerUnit</span></code>. They are brought in by the <code class="docutils literal notranslate"><span class="pre">PHYSICS</span></code> domain (and so
-by <code class="docutils literal notranslate"><span class="pre">ALL</span></code>); a <code class="docutils literal notranslate"><span class="pre">NONE</span></code>-only populate authors no units. A bare <code class="docutils literal notranslate"><span class="pre">PHYSICS</span></code>/<code class="docutils literal notranslate"><span class="pre">ALL</span></code>
-<code class="docutils literal notranslate"><span class="pre">open_usd</span></code> therefore already carries the units — no extra request is needed.</p>
+<code class="docutils literal notranslate"><span class="pre">usd-metadata:metersPerUnit</span></code>. The physics description requests them, so no extra
+request is needed.</p>
 <blockquote>
-<div><p><strong>ovstage’s Python default is <code class="docutils literal notranslate"><span class="pre">PopulationDomain.RENDERING</span></code> — physics off.</strong>
-ovphysx finds no simulatable content on a Stage populated with the default, so
-always pass a mask that includes <code class="docutils literal notranslate"><span class="pre">PHYSICS</span></code>.</p>
+<div><p><strong>ovstage’s <code class="docutils literal notranslate"><span class="pre">open_usd()</span></code> populates <code class="docutils literal notranslate"><span class="pre">RENDERING</span></code> only.</strong> ovphysx finds no
+simulatable content on such a Stage, so always populate through the physics
+description.</p>
 </div></blockquote>
-<section id="compatibility-path-all-or-physics-rendering">
-<h3>Compatibility path: <code class="docutils literal notranslate"><span class="pre">ALL</span></code> (or <code class="docutils literal notranslate"><span class="pre">PHYSICS</span> <span class="pre">|</span> <span class="pre">RENDERING</span></code>)<a class="headerlink" href="#compatibility-path-all-or-physics-rendering" title="Link to this heading">#</a></h3>
-<p>For arbitrary USD content — including headless apps where ovphysx is the only
-consumer — populate <code class="docutils literal notranslate"><span class="pre">ALL</span></code>. The physics populator on the currently pinned ovstage
-uses default USD traversal, which visits neither instance proxies nor private
-prototypes. A rigid body whose collider sits under a native USD scene-graph
-instance can therefore be populated incompletely under <code class="docutils literal notranslate"><span class="pre">PHYSICS</span></code> alone: shape
-bindings that appear under <code class="docutils literal notranslate"><span class="pre">ALL</span></code> are silently missing. Until the physics
-populator grows instance-aware traversal, <code class="docutils literal notranslate"><span class="pre">ALL</span></code> (equivalently
-<code class="docutils literal notranslate"><span class="pre">PHYSICS</span> <span class="pre">|</span> <span class="pre">RENDERING</span></code>) is the compatibility path for scenes that may use native
-instancing.</p>
+<section id="compatibility-path-physics-with-rendering">
+<h3>Compatibility path: physics with RENDERING<a class="headerlink" href="#compatibility-path-physics-with-rendering" title="Link to this heading">#</a></h3>
+<p>Populate the physics description with RENDERING when a renderer shares the
+Stage or the scene uses point-instancer prototype geometry.</p>
+<p>Native USD scene-graph instances need only the physics description. ovstage
+writes each prototype’s content once and publishes instancing topology;
+ovphysx resolves the logical instance paths through the instancing API with
+and without RENDERING. Hierarchy, prim type, applied schemas and local
+transforms come from the prototype. Other attributes and relationships use
+values published at the logical path first, including empty relationships
+and arrays, then inherit the prototype’s values. A producer writing a logical
+instance path therefore changes what that instance simulates.</p>
+<p>USD class definitions containing nested instances are currently unsupported: colliders may
+also be created at the class-definition paths. Support for this case is deferred to a separate
+issue.</p>
+<p>Material bindings use the published winning purpose and instance-root binding
+strength. An ancestor’s physics-purpose binding outranks an all-purpose
+fallback inside the prototype, and a <code class="docutils literal notranslate"><span class="pre">strongerThanDescendants</span></code> instance-root
+binding overrides a descendant binding of the same purpose. Prototype-internal
+material targets resolve to the corresponding material in each instance.</p>
 <p>Both the Python and C examples below use <code class="docutils literal notranslate"><span class="pre">scene.usda</span></code> as a required
 caller-supplied USD file, relative to the working directory. Replace each
 <code class="docutils literal notranslate"><span class="pre">&quot;scene.usda&quot;</span></code> literal with the path to an existing USD scene. For the supplied
 <code class="docutils literal notranslate"><span class="pre">simple_physics_scene.usda</span></code> and its package locations, see
 <a class="reference internal" href="tutorials/quickstart.html#prerequisites"><span class="std std-ref">Quickstart prerequisites</span></a>.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">ovphysx</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.population</span><span class="w"> </span><span class="kn">import</span> <span class="n">physics_population_descs</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.samples.python_samples.schema_support</span><span class="w"> </span><span class="kn">import</span> <span class="n">physx_schema_paths</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">ovstage</span>
 
@@ -877,11 +1169,12 @@ caller-supplied USD file, relative to the working directory. Replace each
     <span class="p">[</span><span class="o">*</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">physx_schema_paths</span><span class="p">()],</span> <span class="nb">str</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="n">newton_schema_root</span><span class="p">())]</span>
 <span class="p">)</span>
 <span class="n">stage</span> <span class="o">=</span> <span class="n">ovstage</span><span class="o">.</span><span class="n">Stage</span><span class="p">(</span><span class="s2">&quot;scene&quot;</span><span class="p">)</span>
-<span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">open_usd</span><span class="p">(</span>
+<span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">open_usd_with_desc</span><span class="p">(</span>
     <span class="n">stage</span><span class="p">,</span>
     <span class="s2">&quot;scene.usda&quot;</span><span class="p">,</span>
     <span class="n">ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-    <span class="n">domains</span><span class="o">=</span><span class="n">ovstage</span><span class="o">.</span><span class="n">PopulationDomain</span><span class="o">.</span><span class="n">ALL</span><span class="p">,</span>
+    <span class="n">time</span><span class="o">=</span><span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">DEFAULT_TIME</span><span class="p">,</span>
+    <span class="n">descs</span><span class="o">=</span><span class="n">physics_population_descs</span><span class="p">(</span><span class="n">rendering</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
 <span class="p">)</span>
 <span class="n">stage</span><span class="o">.</span><span class="n">advance_write_floor</span><span class="p">(</span><span class="n">ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
 </pre></div>
@@ -889,6 +1182,7 @@ caller-supplied USD file, relative to the working directory. Replace each
 <p>For the C example, copy the SDK’s <code class="docutils literal notranslate"><span class="pre">samples/c_samples/common/</span></code> directory beside
 the source file.</p>
 <div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx_population.h&gt;</span>
 <span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovstage/ovstage.h&gt;</span>
 <span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovstage/ovstage_population.h&gt;</span>
 
@@ -900,13 +1194,18 @@ the source file.</p>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">ovphysx_sample_register_physx_schemas</span><span class="p">())</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span>
 
+<span class="w">    </span><span class="cm">/* The physics description, then RENDERING beside it. */</span>
+<span class="w">    </span><span class="n">ovstage_population_desc_t</span><span class="w"> </span><span class="n">descs</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+<span class="w">    </span><span class="n">memset</span><span class="p">(</span><span class="n">descs</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">descs</span><span class="p">));</span>
+<span class="w">    </span><span class="n">descs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">*</span><span class="n">ovphysx_get_physics_population_desc</span><span class="p">();</span>
+<span class="w">    </span><span class="n">descs</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">domains</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVSTAGE_POPULATION_DOMAIN_RENDERING</span><span class="p">;</span>
+
 <span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovx_string_t</span><span class="w"> </span><span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;scene.usda&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">strlen</span><span class="p">(</span><span class="s">&quot;scene.usda&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">};</span>
-<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovstage_population_enqueue_result_t</span><span class="w"> </span><span class="n">pop</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovstage_population_open_usd_from_file</span><span class="p">(</span>
-<span class="w">        </span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">path</span><span class="p">,</span><span class="w"> </span><span class="cm">/*ordinal=*/</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="cm">/*time=*/</span><span class="mf">0.0</span><span class="p">,</span>
-<span class="w">        </span><span class="n">OVSTAGE_POPULATION_DOMAIN_ALL</span><span class="p">);</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovstage_population_enqueue_result_t</span><span class="w"> </span><span class="n">pop</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovstage_population_open_usd_from_file_with_desc</span><span class="p">(</span>
+<span class="w">        </span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">path</span><span class="p">,</span><span class="w"> </span><span class="cm">/*ordinal=*/</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="cm">/*time=*/</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="n">descs</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">);</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">pop</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="p">)</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">pop</span><span class="p">.</span><span class="n">op_index</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVSTAGE_POPULATION_INVALID_OP_ID</span><span class="w"> </span><span class="o">&amp;&amp;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">pop</span><span class="p">.</span><span class="n">op_index</span><span class="p">.</span><span class="n">raw_id</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">&amp;&amp;</span>
 <span class="w">        </span><span class="n">ovstage_population_wait_op</span><span class="p">(</span>
 <span class="w">            </span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">pop</span><span class="p">.</span><span class="n">op_index</span><span class="p">,</span><span class="w"> </span><span class="n">OVSTAGE_TIMEOUT_INFINITE</span><span class="p">,</span><span class="w"> </span><span class="cm">/*out=*/</span><span class="nb">NULL</span><span class="p">)</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="p">)</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
@@ -920,50 +1219,38 @@ the source file.</p>
 <p>After <code class="docutils literal notranslate"><span class="pre">populate_scene()</span></code> succeeds, seal ordinal 1 with
 <code class="docutils literal notranslate"><span class="pre">ovstage_advance_write_floor()</span></code> before attaching it to ovphysx, exactly as in
 <a class="reference internal" href="#seal-population-changes-before-attaching-or-draining">Seal population changes before attaching or draining</a>.</p>
-<p>A Stage shared with a render consumer such as ovrtx needs the same union for a
-second reason: physics-only leaves the renderer with no geometry to draw, and
-rendering-only leaves ovphysx with nothing to simulate.</p>
+<p>A Stage shared with a render consumer such as ovrtx needs both for a second
+reason: physics alone leaves the renderer with no geometry to draw, and
+rendering alone leaves ovphysx with nothing to simulate.</p>
 </section>
-<section id="when-physics-alone-is-enough">
-<h3>When <code class="docutils literal notranslate"><span class="pre">PHYSICS</span></code> alone is enough<a class="headerlink" href="#when-physics-alone-is-enough" title="Link to this heading">#</a></h3>
-<p><code class="docutils literal notranslate"><span class="pre">PHYSICS</span></code> alone remains valid when the USD is known not to put physics under
-native scene-graph instances. Resolve the transform seeds as described below,
-and do not treat “ovphysx is the only consumer” as sufficient reason to skip
-<code class="docutils literal notranslate"><span class="pre">RENDERING</span></code>.</p>
-<p>OVStage 0.3 seeds <code class="docutils literal notranslate"><span class="pre">omni:fabric:worldMatrix</span></code> with each prim’s local matrix
-under <code class="docutils literal notranslate"><span class="pre">PHYSICS</span></code> alone. ovphysx trusts this column when present. The pinned
-release’s <code class="docutils literal notranslate"><span class="pre">compute_hierarchy()</span></code> leaves those physics-only seeds unchanged, so
-calling it does not resolve a transformed parent. Prefer <code class="docutils literal notranslate"><span class="pre">ALL</span></code> for the
-population examples above.</p>
-<p>A producer that deliberately uses <code class="docutils literal notranslate"><span class="pre">PHYSICS</span></code> alone can omit the seeded world
-column before sealing, allowing ovphysx to compose <code class="docutils literal notranslate"><span class="pre">omni:xform</span></code> up the parent
-chain, including <code class="docutils literal notranslate"><span class="pre">omni:resetXformStack</span></code>:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># After population at population_ordinal, before advance_write_floor().</span>
-<span class="n">cleanup_ordinal</span> <span class="o">=</span> <span class="n">population_ordinal</span> <span class="o">+</span> <span class="mi">1</span>
-<span class="k">with</span> <span class="n">stage</span><span class="o">.</span><span class="n">query</span><span class="p">()</span> <span class="k">as</span> <span class="n">query</span><span class="p">:</span>
-    <span class="n">query</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
-    <span class="n">stage</span><span class="o">.</span><span class="n">delete_attributes</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;omni:fabric:worldMatrix&quot;</span><span class="p">],</span> <span class="n">ordinal</span><span class="o">=</span><span class="n">cleanup_ordinal</span><span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
-<span class="n">stage</span><span class="o">.</span><span class="n">advance_write_floor</span><span class="p">(</span><span class="n">ordinal</span><span class="o">=</span><span class="n">cleanup_ordinal</span><span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
-<span class="c1"># Attach at cleanup_ordinal, or drain the full population-through-cleanup range.</span>
-</pre></div>
-</div>
-<p>For C, use <code class="docutils literal notranslate"><span class="pre">ovstage_query()</span></code>, <code class="docutils literal notranslate"><span class="pre">ovstage_delete_attributes()</span></code> and
-<code class="docutils literal notranslate"><span class="pre">ovstage_release_query()</span></code>; wait, check per-operation errors and release each
-operation before sealing. This omission route is for attach and local-transform
-consumption only; world-transform output publication requires a resolved
-world-matrix column, so use <code class="docutils literal notranslate"><span class="pre">ALL</span></code> for workflows that publish physics output.
-Apply this only to population’s local seeds. A producer that writes resolved
-world matrices directly owns those values and should preserve them.</p>
+<section id="when-the-physics-description-alone-is-enough">
+<h3>When the physics description alone is enough<a class="headerlink" href="#when-the-physics-description-alone-is-enough" title="Link to this heading">#</a></h3>
+<p>The physics description alone supports native scene-graph instances when no
+renderer shares the Stage and the scene uses no point-instancer prototypes.
+Point-instancer prototype geometry requires RENDERING; without that geometry
+the prototypes get no physics actors.</p>
+<p>World transforms need nothing extra. Without <code class="docutils literal notranslate"><span class="pre">RENDERING</span></code>, population creates
+<code class="docutils literal notranslate"><span class="pre">omni:fabric:worldMatrix</span></code> holding each prim’s local matrix, and ovphysx trusts
+that column when present. Sealing resolves it: an <code class="docutils literal notranslate"><span class="pre">advance_write_floor()</span></code> that
+covers the column runs OVStage’s default hierarchy computation, so the sealed
+ordinal holds composed world matrices. A body under a transformed parent
+attaches at its world pose, and output publication updates the column as with
+<code class="docutils literal notranslate"><span class="pre">RENDERING</span></code>; the vehicle-wheel scale <code class="docutils literal notranslate"><span class="pre">ovphysx.utils.step_and_write_to_ovstage()</span></code>
+derives from this column is composed the same way. Early OVStage 0.3 builds left
+these values unresolved, so the ovphysx 0.7 guide had physics-only producers
+delete the column before sealing. Remove that deletion: the sealed column
+already holds composed world matrices, and vehicle-wheel output needs them.</p>
 </section>
-<section id="the-mask-is-chosen-once-at-population-time">
-<h3>The mask is chosen once, at population time<a class="headerlink" href="#the-mask-is-chosen-once-at-population-time" title="Link to this heading">#</a></h3>
+<section id="the-descriptions-are-chosen-at-population-time">
+<h3>The descriptions are chosen at population time<a class="headerlink" href="#the-descriptions-are-chosen-at-population-time" title="Link to this heading">#</a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">apply_usd_changes()</span></code> and the time-update entry points (Python:
 <code class="docutils literal notranslate"><span class="pre">ovstage.population.update_from_usd_time()</span></code>; C:
-<code class="docutils literal notranslate"><span class="pre">ovstage_population_apply_usd_time()</span></code>) take no <code class="docutils literal notranslate"><span class="pre">domains</span></code> argument — they honor
-the mask the initial <code class="docutils literal notranslate"><span class="pre">open_usd*()</span></code> selected and re-evaluate only those domains.
-No call adds a domain to an already-populated Stage. If a Stage may later be
-handed to a renderer, or may contain native instances, populate <code class="docutils literal notranslate"><span class="pre">ALL</span></code> up front;
-otherwise the only way to change the mask is to re-populate from USD.</p>
+<code class="docutils literal notranslate"><span class="pre">ovstage_population_apply_usd_time()</span></code>) take no descriptions — they honor the
+ones the last <code class="docutils literal notranslate"><span class="pre">open_usd*_with_desc()</span></code> or <code class="docutils literal notranslate"><span class="pre">repopulate_usd_with_desc()</span></code> took and
+re-evaluate only what those select. If a Stage may later be handed to a
+renderer, or may use point-instancer prototype geometry, add RENDERING up front; otherwise
+change the descriptions with <code class="docutils literal notranslate"><span class="pre">repopulate_usd_with_desc()</span></code>, which populates again
+from the current USD source.</p>
 </section>
 <section id="sequencing-a-shared-stage">
 <h3>Sequencing a shared Stage<a class="headerlink" href="#sequencing-a-shared-stage" title="Link to this heading">#</a></h3>
@@ -973,7 +1260,7 @@ population or export, and seal the population ordinal first, exactly as
 describes, then let each
 consumer observe it:</p>
 <ol class="arabic simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">open_usd()</span></code> / <code class="docutils literal notranslate"><span class="pre">apply_usd_changes()</span></code>, and wait for the operation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">open_usd_with_desc()</span></code> / <code class="docutils literal notranslate"><span class="pre">apply_usd_changes()</span></code>, and wait for the operation.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">advance_write_floor(ordinal).wait()</span></code>.</p></li>
 <li><p>Physics: <code class="docutils literal notranslate"><span class="pre">attach_ovstage(stage,</span> <span class="pre">read_ordinal=ordinal)</span></code> on first populate;
 <code class="docutils literal notranslate"><span class="pre">ovphysx_update_from_ovstage(handle,</span> <span class="pre">[ordinal,</span> <span class="pre">ordinal])</span></code> only for later
@@ -995,24 +1282,22 @@ objects when the requested type is absent from the scene.</p>
 is unchanged by a shared Stage: physics still must never drain the ordinals
 where physics output was written, whatever else reads them.</p>
 </section>
-<section id="cost-of-all-shared-population">
-<h3>Cost of <code class="docutils literal notranslate"><span class="pre">ALL</span></code> / shared population<a class="headerlink" href="#cost-of-all-shared-population" title="Link to this heading">#</a></h3>
-<p>A Stage populated with <code class="docutils literal notranslate"><span class="pre">ALL</span></code> carries render geometry as well as physics. ovphysx
-now scopes attach-time instance-root queries to prototypes that back collision
-shapes in common leaf-collider scenes, so render-only prototypes no longer
-dominate attach the way they once did. Preferring <code class="docutils literal notranslate"><span class="pre">PHYSICS</span></code> for known-safe
-non-instanced sample content is still reasonable when no renderer shares the
-Stage; it is not a reason to choose <code class="docutils literal notranslate"><span class="pre">PHYSICS</span></code> for arbitrary scenes, where
-native-instance colliders can be omitted.</p>
+<section id="cost-of-rendering-shared-population">
+<h3>Cost of RENDERING / shared population<a class="headerlink" href="#cost-of-rendering-shared-population" title="Link to this heading">#</a></h3>
+<p>A Stage populated with RENDERING carries render geometry as well as physics.
+ovphysx scopes attach-time instance-root queries to prototypes that back
+physics, so render-only prototypes do not dominate attach. The physics
+description alone avoids rendering population for native scene-graph instances.</p>
 </section>
 </section>
 <section id="the-key-principle-physics-must-not-get-its-own-changes">
 <h2>The key principle: physics must not get its own changes<a class="headerlink" href="#the-key-principle-physics-must-not-get-its-own-changes" title="Link to this heading">#</a></h2>
 <p>Both the application’s <em>control</em> edits (poses, joint targets, gravity, …) and the
 physics <em>output</em> (simulated poses, velocities, mesh points, …) live in the <strong>same
-ovstage Stage</strong>. If physics drained the ordinals where its own output was written,
-it would re-ingest its last result as if it were a new authored change — corrupting
-the simulation.</p>
+ovstage Stage</strong>. World-matrix-only output does not trigger a physics transform
+update. Other output can use input attributes, such as point-instancer
+<code class="docutils literal notranslate"><span class="pre">positions</span></code> and <code class="docutils literal notranslate"><span class="pre">orientations</span></code>; draining those edits can feed simulated poses
+back into physics as authored changes.</p>
 <p>One rule prevents this, and the application enforces it through the ordinals it
 passes to <code class="docutils literal notranslate"><span class="pre">ovphysx_update_from_ovstage</span></code>:</p>
 <blockquote>
@@ -1073,12 +1358,12 @@ ordinal lifecycle — not the per-type contract.</p>
 <p>The read API mirrors the ovstage read idiom — open a query over a simulated type,
 read named attributes, iterate typed column groups, release. Native borrowed
 columns can feed straight back into ovstage with no repack. It is ovstage-native:
-only meaningful while an ovstage Stage is attached. Query, read, fetch and release
-return task receipts; their current implementation executes inline. Keep inputs and
-output slots alive until completion, and inspect outputs only after a successful wait.</p>
+only meaningful while an ovstage Stage is attached. Query, read, fetch, and
+release return task receipts. Their handles are available on acceptance; wait
+before using other outputs.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ovphysx_query</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">query</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">query_result</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">wait</span> <span class="n">successfully</span>
      <span class="n">query_result</span> <span class="p">(</span><span class="n">optional</span><span class="p">,</span> <span class="n">NULL</span> <span class="n">skips</span> <span class="n">it</span><span class="p">):</span> <span class="n">creation</span><span class="o">-</span><span class="n">time</span> <span class="nb">type</span> <span class="n">vocabulary</span> <span class="o">/</span> <span class="n">total</span><span class="o">-</span><span class="n">prim</span> <span class="n">discovery</span>
-  <span class="o">-&gt;</span> <span class="n">ovphysx_read</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">attrs</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">read</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">read_result</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">wait</span> <span class="n">successfully</span>
+  <span class="o">-&gt;</span> <span class="n">ovphysx_read</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">attrs</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">cuda_sync</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">read</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">read_result</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">wait</span> <span class="n">successfully</span>
      <span class="n">read_result</span> <span class="p">(</span><span class="n">optional</span><span class="p">,</span> <span class="n">NULL</span> <span class="n">skips</span> <span class="n">it</span><span class="p">):</span> <span class="n">per</span><span class="o">-</span><span class="n">request</span> <span class="n">group</span> <span class="n">counts</span> <span class="ow">and</span> <span class="n">omission</span> <span class="n">reasons</span>
        <span class="o">-&gt;</span> <span class="n">ovphysx_fetch_read_next</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">read</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">group_ptr</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">wait</span> <span class="n">successfully</span>
           <span class="n">null</span> <span class="n">group_ptr</span> <span class="n">means</span> <span class="n">EOF</span><span class="p">;</span> <span class="n">otherwise</span> <span class="n">consume</span> <span class="n">the</span> <span class="n">borrowed</span> <span class="n">group</span>
@@ -1089,12 +1374,16 @@ output slots alive until completion, and inspect outputs only after a successful
 </div>
 <p>Interned attribute tokens and prim lists resolve through the attached Stage’s
 own path dictionary, <code class="docutils literal notranslate"><span class="pre">ovstage_get_path_dictionary(stage)</span></code>. The read uses ovstage’s
-own types directly (no ovphysx mirror): a group is an <code class="docutils literal notranslate"><span class="pre">ovstage_read_group_t</span></code>,
+own types directly (no ovphysx mirror): a group is an <code class="docutils literal notranslate"><span class="pre">ovstage_read_group_t</span></code>
+carrying one attribute column, <code class="docutils literal notranslate"><span class="pre">columns[0]</span></code> (<code class="docutils literal notranslate"><span class="pre">column_count</span> <span class="pre">==</span> <span class="pre">1</span></code>),
 discovery is an <code class="docutils literal notranslate"><span class="pre">ovstage_query_result_t</span></code>, and attribute names are
-<code class="docutils literal notranslate"><span class="pre">ovx_string_or_token_t</span></code> (a string name OR an interned token from discovery). The
+<code class="docutils literal notranslate"><span class="pre">ovx_token_or_string_t</span></code> (a string name OR an interned token from discovery). A
+non-NULL <code class="docutils literal notranslate"><span class="pre">string.ptr</span></code> selects the string and ignores the token; otherwise the token
+names the attribute, and <code class="docutils literal notranslate"><span class="pre">OVX_INVALID_TOKEN</span></code> is not a valid name. The
 <a class="reference internal" href="read_write/index.html#session-results"><span class="std std-ref">Session results</span></a> section describes the
 optional query and read results. The ovstage-native shape passes through
-unflattened:</p>
+unflattened (the <code class="docutils literal notranslate"><span class="pre">data</span></code>, <code class="docutils literal notranslate"><span class="pre">attribute</span></code>, <code class="docutils literal notranslate"><span class="pre">is_array</span></code>, <code class="docutils literal notranslate"><span class="pre">semantic</span></code>, <code class="docutils literal notranslate"><span class="pre">ordinal</span></code> and <code class="docutils literal notranslate"><span class="pre">meta</span></code> fields
+below are on the group’s column, <code class="docutils literal notranslate"><span class="pre">columns[0]</span></code>):</p>
 <ul class="simple">
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">data.tensors</span></code> / <code class="docutils literal notranslate"><span class="pre">data.tensor_count</span></code></strong> — a borrowed <code class="docutils literal notranslate"><span class="pre">DLTensor</span></code> array: one stacked tensor for a
 fixed group, one tensor per prim for an <code class="docutils literal notranslate"><span class="pre">is_array</span></code> group. Group shape (fixed vs array) and how
@@ -1102,8 +1391,10 @@ fixed group, one tensor per prim for an <code class="docutils literal notranslat
 <a class="reference internal" href="read_write/data_model.html"><span class="std std-doc">Data model and semantics</span></a>.</p></li>
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">prims.list</span></code> / <code class="docutils literal notranslate"><span class="pre">prims.offset</span></code> / <code class="docutils literal notranslate"><span class="pre">prims.count</span></code> / <code class="docutils literal notranslate"><span class="pre">prims.index_map</span></code></strong> — the interned
 prim set (resolve through the attached Stage’s path dictionary, or feed <code class="docutils literal notranslate"><span class="pre">prims.list</span></code> straight into
-<code class="docutils literal notranslate"><span class="pre">ovstage_query_from_path_list</span></code> for the write-back). <code class="docutils literal notranslate"><span class="pre">attribute</span></code> is likewise an
-interned token.</p></li>
+<code class="docutils literal notranslate"><span class="pre">ovstage_query_from_path_list</span></code> for the write-back). An articulation-joint group is the exception:
+it has one row per DOF and its prim list repeats a joint’s path once per axis, so regroup it per
+joint first (<a class="reference internal" href="#c-utility-joint-groups-as-one-array-per-joint">joint groups</a>). <code class="docutils literal notranslate"><span class="pre">attribute</span></code> is
+likewise an interned token.</p></li>
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">data.index_map</span></code> / <code class="docutils literal notranslate"><span class="pre">data.mask</span></code></strong> — sparsity over the <strong>outer</strong> logical element
 axis (ovstage’s per-prim/per-tensor axis), never rows inside a single tensor.
 Point-instancer rigid-body output therefore always emits the instancer’s FULL
@@ -1132,8 +1423,9 @@ already knows it.</p></li>
 </ul>
 <p>Ownership &amp; lifetime: the group is <strong>producer-owned</strong> — <code class="docutils literal notranslate"><span class="pre">ovphysx_fetch_read_next</span></code> hands back a
 borrowed <code class="docutils literal notranslate"><span class="pre">const</span> <span class="pre">ovstage_read_group_t*</span></code> (you do not allocate it). The two-tier lifetime — the group
-struct and <code class="docutils literal notranslate"><span class="pre">prims.list</span></code> versus the numeric tensors/maps/mask/event, and what a further fetch or an
-<code class="docutils literal notranslate"><span class="pre">ovphysx_step</span></code> does to each — is documented in <a class="reference internal" href="read_write/device.html"><span class="std std-doc">Device residency and interop</span></a>.</p>
+struct and <code class="docutils literal notranslate"><span class="pre">prims.list</span></code> versus the column and its numeric tensors/maps/mask/event, and what a further
+fetch or an <code class="docutils literal notranslate"><span class="pre">ovphysx_step</span></code> does to each — is documented in
+<a class="reference internal" href="read_write/device.html"><span class="std std-doc">Device residency and interop</span></a>.</p>
 <section id="python-warp-frontend">
 <h3>Python Warp frontend<a class="headerlink" href="#python-warp-frontend" title="Link to this heading">#</a></h3>
 <p>Python read groups expose one numeric type on both backends: every non-empty tensor
@@ -1166,8 +1458,9 @@ group. A group’s arrays are built on the first <code class="docutils literal n
 and a CUDA group’s nonzero producer event is ordered onto the Warp stream current at
 that point. That stream wait does not block the host, but native task execution can;
 establish a Warp stream dependency before using an array on another stream. Non-empty
-arrays borrow the read session and may outlive the <code class="docutils literal notranslate"><span class="pre">ReadResult</span></code>, so drop every array
-and downstream view before <code class="docutils literal notranslate"><span class="pre">PhysX.destroy()</span></code>. Stage dictionary values (<code class="docutils literal notranslate"><span class="pre">prim_list</span></code> and
+arrays borrow the read session and are invalid once the <code class="docutils literal notranslate"><span class="pre">ReadResult</span></code> is closed; a result
+dropped without a close stays alive while its arrays are. Drop every array and downstream
+view before <code class="docutils literal notranslate"><span class="pre">PhysX.destroy()</span></code>. Stage dictionary values (<code class="docutils literal notranslate"><span class="pre">prim_list</span></code> and
 <code class="docutils literal notranslate"><span class="pre">attribute</span></code>) stay context-bound; resolve them while the session is open, for example
 through <code class="docutils literal notranslate"><span class="pre">result.dictionary</span></code>, an <code class="docutils literal notranslate"><span class="pre">ovstage.PathDictionary</span></code> for the attached Stage. Detach
 retires this metadata even when borrowed numerical snapshots remain alive.</p>
@@ -1257,15 +1550,15 @@ retried.</p>
 <span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 
 <span class="w">        </span><span class="c1">// Attribute selectors are names or interned tokens.</span>
-<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">ovx_string_or_token_t</span><span class="w"> </span><span class="n">names</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="p">{</span><span class="w"> </span><span class="p">.</span><span class="n">token</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">ovx_token_or_string_t</span><span class="w"> </span><span class="n">names</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="p">{</span><span class="w"> </span><span class="p">.</span><span class="n">token</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVX_INVALID_TOKEN</span><span class="p">,</span>
 <span class="w">              </span><span class="p">.</span><span class="n">string</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVPHYSX_ATTR_POSITION</span><span class="p">,</span>
 <span class="w">                          </span><span class="p">.</span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">OVPHYSX_ATTR_POSITION</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">},</span>
-<span class="w">            </span><span class="p">{</span><span class="w"> </span><span class="p">.</span><span class="n">token</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">            </span><span class="p">{</span><span class="w"> </span><span class="p">.</span><span class="n">token</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVX_INVALID_TOKEN</span><span class="p">,</span>
 <span class="w">              </span><span class="p">.</span><span class="n">string</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVPHYSX_ATTR_ORIENTATION</span><span class="p">,</span>
 <span class="w">                          </span><span class="p">.</span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">OVPHYSX_ATTR_ORIENTATION</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">},</span>
 <span class="w">        </span><span class="p">};</span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">complete_task</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_read</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">q</span><span class="p">,</span><span class="w"> </span><span class="n">names</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)))</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">complete_task</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_read</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">q</span><span class="p">,</span><span class="w"> </span><span class="n">names</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">ovstage_cuda_sync_t</span><span class="p">){</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">},</span><span class="w"> </span><span class="o">&amp;</span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)))</span>
 <span class="w">            </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
 <span class="w">        </span><span class="n">read_open</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 
@@ -1277,7 +1570,8 @@ retried.</p>
 <span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">g</span><span class="p">)</span>
 <span class="w">                </span><span class="k">break</span><span class="p">;</span>
 <span class="w">            </span><span class="c1">// App writes at `output_ord` without sealing it yet, reusing</span>
-<span class="w">            </span><span class="c1">// g-&gt;prims.list, g-&gt;data.tensors, and g-&gt;is_array with no repack.</span>
+<span class="w">            </span><span class="c1">// g-&gt;prims.list, g-&gt;columns[0].data.tensors, and g-&gt;columns[0].is_array with no repack</span>
+<span class="w">            </span><span class="c1">// (a joint group is regrouped per joint first; see below).</span>
 <span class="w">            </span><span class="n">write_output_to_ovstage</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">output_ord</span><span class="p">,</span><span class="w"> </span><span class="n">g</span><span class="p">);</span>
 <span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">complete_task</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_release_group</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="n">g</span><span class="o">-&gt;</span><span class="n">read_group_id</span><span class="p">)))</span>
 <span class="w">                </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
@@ -1339,36 +1633,50 @@ utility waits for its writes and returns their result; the application then
 seals the output ordinal. It does not step, seal, drain, or update an
 application transform journal. Never include its output ordinals in a range
 passed to <code class="docutils literal notranslate"><span class="pre">ovphysx_update_from_ovstage()</span></code>.</p>
-<p>Scale comes from the current, sealed <code class="docutils literal notranslate"><span class="pre">omni:fabric:worldMatrix</span></code>. After authoring
-local transforms or hierarchy, compute the hierarchy and seal its output
-before using the utility, including before a cache’s first use. Seal each
-published output before the next call, and complete any pending world-matrix
-edits first. A different stage is rejected before the utility accesses that
-stage or binds the cache.</p>
+<p>Scale comes from physics, not from the stage: the utility reads
+<a class="reference internal" href="read_write/readable.html#rigid-bodies"><span class="std std-ref"><code class="docutils literal notranslate"><span class="pre">worldScale</span></code></span></a> in the same physics read as
+<code class="docutils literal notranslate"><span class="pre">position</span></code> and <code class="docutils literal notranslate"><span class="pre">orientation</span></code>. That is the signed world scale ovphysx stored when
+each body was created, so the stage needs no computed <code class="docutils literal notranslate"><span class="pre">omni:fabric:worldMatrix</span></code>
+before the first call, and direct edits to the stage’s world matrices do not
+change the published scale. Neither does a runtime scale edit that physics does
+not apply: character controllers, DirectGPU rigid bodies, articulation links
+and kinematic bodies driven by time-sampled transforms keep their creation
+scale, so each publication overwrites the matrix a hierarchy recomputation
+derived from the edit. A character controller’s matrix is published in its
+capsule actor’s frame, not the controller prim’s
+(<a class="reference internal" href="read_write/limitations.html"><span class="std std-doc">Known limitations</span></a>). Seal each published output
+before the next call. A different stage is rejected before the utility accesses
+that stage or binds the cache.</p>
 <p>The utility combines that scale with physics position and orientation using
 ovphysx’s <a class="reference internal" href="read_write/data_model.html#signed-scale-and-body-orientation"><span class="std std-ref">signed-scale convention</span></a>
 and writes a row-vector float64 MATRIX. It
-does not preserve shear. CUDA poses stay on the device while matrices are
-composed and published. These direct world matrices leave <code class="docutils literal notranslate"><span class="pre">omni:xform</span></code> and
-<code class="docutils literal notranslate"><span class="pre">omni:resetXformStack</span></code> unchanged and do not propagate to descendants. A later
-hierarchy computation can overwrite them with matrices derived from the
-authored local transforms.</p>
-<p>Omit the optional cache argument to read current scale on every call. An
-application-owned <code class="docutils literal notranslate"><span class="pre">OvStageOutputCache</span></code> retains scale copies and reusable
-CPU/CUDA buffers, never borrowed stage views. It binds to the instance, stage
-pointer and attachment on its first use. Call <code class="docutils literal notranslate"><span class="pre">refresh()</span></code> after authored
-transform or topology changes; this discards cached data but keeps the
-binding. Create a new cache after detach/reattach. Destroy the cache before
-the instance and stage, and serialize calls with simulation and stage edits.
-ovstage supplies CPU world-matrix reads for scale capture, including for
-matrices authored on CUDA. Retaining the cache avoids rereading and
-decomposing them on subsequent frames.</p>
+does not preserve shear. Character-controller orientation includes the capsule-axis
+correction, so its matrix is in the controller prim’s frame. On a DirectGPU scene the pose and scale columns are
+device-resident, and matrices are composed and published without a host copy.
+The utility then computes the hierarchy at <code class="docutils literal notranslate"><span class="pre">outputOrdinal</span></code> with the CPU model,
+whatever the runtime default. The CPU model folds a direct world matrix into
+the prim’s local transform at its next computation, against the parent
+transforms of that time. Folding it at the output ordinal keeps local and world
+transforms consistent there, so a later parent edit moves a published body
+with its parent. Without it, the first CPU computation after the edit would
+hold the body at its published pose instead. The GPU models do not fold: they
+rederive world matrices from the local transforms, so a GPU computation
+without the fold would discard the published pose. <code class="docutils literal notranslate"><span class="pre">omni:resetXformStack</span></code> is
+unchanged, and the matrices do not propagate to descendants.</p>
+<p>Omit the optional cache argument to allocate output buffers on every call. An
+application-owned <code class="docutils literal notranslate"><span class="pre">OvStageOutputCache</span></code> retains reusable CPU/CUDA matrix
+buffers, one per published prim set and device, never borrowed stage views. It
+binds to the instance, stage pointer and attachment on its first use. Call
+<code class="docutils literal notranslate"><span class="pre">refresh()</span></code> after topology changes to release buffers for prim sets that are
+no longer published; it keeps the binding. Create a new cache after
+detach/reattach. Destroy the cache before the instance and stage, and
+serialize calls with simulation and stage edits.</p>
 <p><code class="docutils literal notranslate"><span class="pre">OvStageOutputResult::ok()</span></code> reports success, including a scene with no selected
 fixed poses. <code class="docutils literal notranslate"><span class="pre">matricesWritten</span></code> counts completed matrix rows. Failures return a
-native ovphysx status and a descriptive <code class="docutils literal notranslate"><span class="pre">message</span></code>; missing or malformed source
-matrices are not replaced with unit scale. A later write failure can leave
-earlier writes completed at the unsealed output ordinal, with their row count
-reported in the result. There is no rollback.</p>
+native ovphysx status and a descriptive <code class="docutils literal notranslate"><span class="pre">message</span></code>; missing pose or scale
+columns and invalid pose or scale values are not replaced with defaults. A
+later write failure can leave earlier writes completed at the unsealed output
+ordinal, with their row count reported in the result. There is no rollback.</p>
 <p>The installed <code class="docutils literal notranslate"><span class="pre">samples/c_samples/ovstage_output_cpp</span></code> sample demonstrates a
 caller-owned cache and explicit step, publication and sealing:</p>
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/experimental/OvStageOutput.hpp&gt;</span>
@@ -1420,6 +1728,60 @@ caller-owned cache and explicit step, publication and sealing:</p>
 </pre></div>
 </div>
 </section>
+<section id="c-utility-joint-groups-as-one-array-per-joint">
+<h3>C utility: joint groups as one array per joint<a class="headerlink" href="#c-utility-joint-groups-as-one-array-per-joint" title="Link to this heading">#</a></h3>
+<p>An articulation-joint group has one row per DOF: a joint’s rows are consecutive and its path
+repeats once per axis in <code class="docutils literal notranslate"><span class="pre">prims.list</span></code> (<a class="reference internal" href="read_write/readable.html"><span class="std std-doc">Articulation joints</span></a>).
+ovstage stores a joint’s values as one array per joint prim, so forwarding the group verbatim does
+not fit. <code class="docutils literal notranslate"><span class="pre">ovphysx_create_joint_arrays_from_read_group</span></code> and <code class="docutils literal notranslate"><span class="pre">ovphysx_create_joint_arrays_from_map_group</span></code>,
+declared in <code class="docutils literal notranslate"><span class="pre">&lt;ovphysx/ovphysx_utils.h&gt;</span></code>, regroup a joint read or write group without copying
+anything: one tensor per joint, each a view of that joint’s rows in the group’s own memory, and an
+owned path list naming each joint once. <code class="docutils literal notranslate"><span class="pre">ovphysx_get_joint_arrays_write_data</span></code> returns the views as
+an ovstage array write payload (<code class="docutils literal notranslate"><span class="pre">tensors</span></code>, <code class="docutils literal notranslate"><span class="pre">tensor_count</span></code> joints), carrying a read group’s semantic
+and CUDA sync:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="c1">// Waits for an enqueued ovstage operation and releases it; true when it succeeded.</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="nf">wait_op</span><span class="p">(</span><span class="n">ovstage_instance_t</span><span class="o">*</span><span class="w"> </span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">ovstage_enqueue_result_t</span><span class="w"> </span><span class="n">task</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">task</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">task</span><span class="p">.</span><span class="n">op_index</span><span class="p">.</span><span class="n">raw_id</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span><span class="w"> </span><span class="c1">// nothing left to run</span>
+<span class="w">    </span><span class="n">ovstage_op_wait_result_t</span><span class="w"> </span><span class="n">wait</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovstage_wait_op</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">task</span><span class="p">.</span><span class="n">op_index</span><span class="p">,</span><span class="w"> </span><span class="n">OVSTAGE_TIMEOUT_INFINITE</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">wait</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="w"> </span><span class="o">&amp;&amp;</span>
+<span class="w">                    </span><span class="n">wait</span><span class="p">.</span><span class="n">error_op_id_count</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">ovstage_release_op</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">task</span><span class="p">.</span><span class="n">op_index</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">ok</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// Publishes a fetched joint read group as one array per joint prim. The views alias the group, so it stays</span>
+<span class="c1">// unreleased until the write has completed.</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="nf">publish_joints</span><span class="p">(</span><span class="n">ovstage_instance_t</span><span class="o">*</span><span class="w"> </span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">ovstage_read_group_t</span><span class="o">*</span><span class="w"> </span><span class="n">group</span><span class="p">,</span>
+<span class="w">                           </span><span class="n">ovx_token_or_string_t</span><span class="w"> </span><span class="n">attribute</span><span class="p">,</span><span class="w"> </span><span class="n">ovstage_ordinal_t</span><span class="w"> </span><span class="n">output_ord</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">ovphysx_joint_arrays_t</span><span class="o">*</span><span class="w"> </span><span class="n">joints</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ovphysx_create_joint_arrays_from_read_group</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">group</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">joints</span><span class="p">).</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span><span class="w"> </span><span class="c1">// ovphysx_get_last_error() says why</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+<span class="w">    </span><span class="n">ovstage_query_handle_t</span><span class="w"> </span><span class="n">query</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVSTAGE_INVALID_QUERY_HANDLE</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ovstage_query_from_path_list</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_get_joint_arrays_prim_list</span><span class="p">(</span><span class="n">joints</span><span class="p">),</span><span class="w"> </span><span class="o">&amp;</span><span class="n">query</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">wait_op</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">ovstage_write_attribute</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">query</span><span class="p">,</span><span class="w"> </span><span class="n">attribute</span><span class="p">,</span><span class="w"> </span><span class="n">output_ord</span><span class="p">,</span>
+<span class="w">                                                    </span><span class="n">ovphysx_get_joint_arrays_write_data</span><span class="p">(</span><span class="n">joints</span><span class="p">),</span>
+<span class="w">                                                    </span><span class="n">OVSTAGE_PRIM_MODE_UPSERT</span><span class="p">));</span>
+<span class="w">        </span><span class="n">ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">wait_op</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">ovstage_release_query</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">query</span><span class="p">))</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">ok</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">ovphysx_destroy_joint_arrays</span><span class="p">(</span><span class="n">joints</span><span class="p">);</span><span class="w"> </span><span class="c1">// after the query, which uses the joints&#39; path list</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">ok</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The views alias the group, so they are valid only while it is: until the read group is released or
+the write group is committed. Writing through a view of a write group fills its column. A group not
+shaped as a joint group is refused with <code class="docutils literal notranslate"><span class="pre">OVPHYSX_API_INVALID_ARGUMENT</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">ovphysx_get_last_error</span></code> gives the reason. The Python counterpart is
+<code class="docutils literal notranslate"><span class="pre">ovphysx.utils.split_joint_group(stage,</span> <span class="pre">group)</span></code>, which returns the path list (an <code class="docutils literal notranslate"><span class="pre">ovstage.PathList</span></code>
+the caller releases) and the views, and which <code class="docutils literal notranslate"><span class="pre">step_and_write_to_ovstage</span></code> uses for joint output.</p>
+</section>
 <section id="python-utility-one-call-for-step-read-write-back">
 <h3>Python utility: one call for step + read + write-back<a class="headerlink" href="#python-utility-one-call-for-step-read-write-back" title="Link to this heading">#</a></h3>
 <p>The opt-in <code class="docutils literal notranslate"><span class="pre">ovphysx.utils</span></code> helper composes <code class="docutils literal notranslate"><span class="pre">PhysX.step_sync</span></code>, <code class="docutils literal notranslate"><span class="pre">PhysX.read_sync</span></code>, and
@@ -1439,18 +1801,24 @@ core <code class="docutils literal notranslate"><span class="pre">PhysX</span></
 <p>The utility imports the <code class="docutils literal notranslate"><span class="pre">ovstage</span></code> Python package only when called.
 It uses the <code class="docutils literal notranslate"><span class="pre">ovstage.Stage</span></code> object passed to <code class="docutils literal notranslate"><span class="pre">PhysX.attach_ovstage()</span></code>, which
 rejects a raw native handle with <code class="docutils literal notranslate"><span class="pre">TypeError</span></code>.</p>
-<p>PhysX pose output contains world position and orientation, but deliberately
-contains no scale. For fixed rigid bodies, articulation links, and vehicle
-wheels, the utility reads the current row-vector float64
+<p>PhysX pose output contains world position and orientation; physics simulates no
+scale. For fixed rigid bodies and articulation links, the utility also reads
+<a class="reference internal" href="read_write/readable.html#rigid-bodies"><span class="std std-ref"><code class="docutils literal notranslate"><span class="pre">worldScale</span></code></span></a>, the signed world scale
+ovphysx stored when each body was created, in the same physics read, so it reads
+no world matrix from OVStage for them. A runtime scale edit that physics does not
+apply therefore does not reach the published matrix either
+(<a class="reference internal" href="read_write/limitations.html"><span class="std std-doc">Known limitations</span></a>). Vehicle wheels have no stored scale: for
+them the utility reads the current row-vector float64
 <code class="docutils literal notranslate"><span class="pre">omni:fabric:worldMatrix</span></code>, derives its shear-free signed scale using the same
 <a class="reference internal" href="read_write/data_model.html#signed-scale-and-body-orientation"><span class="std std-ref">matrix decomposition as ovphysx</span></a>,
-releases every OVStage read view, and only
-then writes the reconstructed world matrix. It never writes <code class="docutils literal notranslate"><span class="pre">omni:xform</span></code> or
-changes <code class="docutils literal notranslate"><span class="pre">omni:resetXformStack</span></code>. Scale remains OVStage state, not physics state.</p>
-<p><code class="docutils literal notranslate"><span class="pre">omni:fabric:worldMatrix</span></code> is a direct consumer-facing value. This helper does
-not turn it into authoritative local transform state, schedule hierarchy
-propagation, or update descendants. Do not run a later hierarchy computation
-expecting this output ordinal to become the prim’s new local transform.</p>
+and releases every OVStage read view first. Either way it then writes the
+reconstructed world matrix. It never changes <code class="docutils literal notranslate"><span class="pre">omni:resetXformStack</span></code>.
+<code class="docutils literal notranslate"><span class="pre">worldScale</span></code> is used only to compose the matrix; it is written to
+<code class="docutils literal notranslate"><span class="pre">sim:worldScale</span></code> only when <code class="docutils literal notranslate"><span class="pre">outputs</span></code> selects it.</p>
+<p>After the writes, and before sealing <code class="docutils literal notranslate"><span class="pre">output_ordinal</span></code>, the helper computes the
+hierarchy at that ordinal with the CPU model, as the C++ utility does. The
+published prims’ local transforms then match their new world matrices, so a
+later parent edit moves them with their parent.</p>
 <p>Because a fixed pose write composes a world matrix from both halves, an
 <code class="docutils literal notranslate"><span class="pre">outputs</span></code> selection that names <code class="docutils literal notranslate"><span class="pre">position</span></code> without <code class="docutils literal notranslate"><span class="pre">orientation</span></code> (or the
 reverse) for a rigid body, articulation link, or vehicle wheel raises
@@ -1462,8 +1830,8 @@ utility writes those values to the native <code class="docutils literal notransl
 <code class="docutils literal notranslate"><span class="pre">orientations</span></code> (<code class="docutils literal notranslate"><span class="pre">float16</span></code>, QUATERNION) arrays. It preserves unsimulated holes
 and authored trailing rows from the current arrays; it does not touch <code class="docutils literal notranslate"><span class="pre">scales</span></code>,
 prototype indices, or other instancer arrays.</p>
-<p>The default mode above reads the current transform and point-instancer values
-on every call and retains no snapshots. Applications that prefer fewer OVStage
+<p>The default mode above reads the current vehicle-wheel world matrices and
+point-instancer values on every call and retains no snapshots. Applications that prefer fewer OVStage
 reads and reusable CPU/CUDA buffers can explicitly own a copy cache:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">OvStageOutputCache</span><span class="p">,</span> <span class="n">step_and_write_to_ovstage</span>
 
@@ -1480,16 +1848,21 @@ reads and reusable CPU/CUDA buffers can explicitly own a copy cache:</p>
 </pre></div>
 </div>
 <p>The cache owns copies, never persistent borrowed OVStage views. Call
-<code class="docutils literal notranslate"><span class="pre">output_cache.refresh()</span></code> after transform, point-instancer pose-array, or
-topology changes. It is bound to the exact OVStage attachment and cannot be
+<code class="docutils literal notranslate"><span class="pre">output_cache.refresh()</span></code> after vehicle-wheel transform, point-instancer
+pose-array, or topology changes; rigid-body and link scale comes from physics
+on every call. It is bound to the exact OVStage attachment and cannot be
 reused after a detach/reattach cycle. A lone <code class="docutils literal notranslate"><span class="pre">position</span></code> or <code class="docutils literal notranslate"><span class="pre">orientation</span></code>
 selection is rejected.</p>
-<p>The sampled <code class="docutils literal notranslate"><span class="pre">omni:fabric:worldMatrix</span></code> must already contain the current, sealed
-world transform. After changing authored local transforms or hierarchy, compute
-the hierarchy and advance its output write floor before calling this helper.</p>
+<p>For vehicle wheels, the sampled <code class="docutils literal notranslate"><span class="pre">omni:fabric:worldMatrix</span></code> must already contain
+the current, sealed world transform. After changing authored local transforms or
+hierarchy, compute the hierarchy and advance its output write floor before
+calling this helper. Rigid bodies and articulation links need no stage world
+matrix.</p>
 <p>Every other emitted attribute is written to a shadow <code class="docutils literal notranslate"><span class="pre">sim:&lt;name&gt;</span></code> attribute.
 Its <code class="docutils literal notranslate"><span class="pre">prim_list</span></code> forwards directly, fixed-group tensors pass through as-is, and
 array-group tensors are lane-folded into OVStage’s <code class="docutils literal notranslate"><span class="pre">dtype.lanes</span></code> vector shape.
+A joint group is first split with <code class="docutils literal notranslate"><span class="pre">ovphysx.utils.split_joint_group</span></code>, so each
+joint prim gets one array holding its DOFs in order.
 Sparse index and CUDA synchronization metadata forward with unchanged data.
 Pose matrices and point-instancer array merges run in Warp on the relevant CPU
 or CUDA devices. The default path borrows OVStage DLPack views until the output
@@ -1515,6 +1888,7 @@ which ships with every package under <code class="docutils literal notranslate">
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">ovstage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.population</span><span class="w"> </span><span class="kn">import</span> <span class="n">physics_population_descs</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">warp</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">wp</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">ObjectScope</span><span class="p">,</span> <span class="n">SimObjectType</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">OvStageOutputCache</span><span class="p">,</span> <span class="n">step_and_write_to_ovstage</span>
@@ -1543,9 +1917,8 @@ which ships with every package under <code class="docutils literal notranslate">
         <span class="n">_physx_schemas_registered</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="n">stage</span> <span class="o">=</span> <span class="n">ovstage</span><span class="o">.</span><span class="n">Stage</span><span class="p">(</span><span class="s2">&quot;ovphysx-output-read-sample&quot;</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">open_usd</span><span class="p">(</span>
-            <span class="n">stage</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">usd_path</span><span class="p">),</span> <span class="n">ordinal</span><span class="o">=</span><span class="n">read_ordinal</span><span class="p">,</span> <span class="n">domains</span><span class="o">=</span><span class="n">ovstage</span><span class="o">.</span><span class="n">PopulationDomain</span><span class="o">.</span><span class="n">ALL</span>
-        <span class="p">)</span>
+        <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">open_usd_with_desc</span><span class="p">(</span>
+            <span class="n">stage</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">usd_path</span><span class="p">),</span> <span class="n">ordinal</span><span class="o">=</span><span class="n">read_ordinal</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">DEFAULT_TIME</span><span class="p">,</span> <span class="n">descs</span><span class="o">=</span><span class="n">physics_population_descs</span><span class="p">(</span><span class="n">rendering</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
         <span class="n">stage</span><span class="o">.</span><span class="n">advance_write_floor</span><span class="p">(</span><span class="n">ordinal</span><span class="o">=</span><span class="n">read_ordinal</span><span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
         <span class="n">physx</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">physx</span><span class="o">.</span><span class="n">attach_ovstage</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">read_ordinal</span><span class="o">=</span><span class="n">read_ordinal</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">stage</span>
@@ -1605,7 +1978,8 @@ which ships with every package under <code class="docutils literal notranslate">
     <span class="k">with</span> <span class="n">physx</span><span class="o">.</span><span class="n">read_sync</span><span class="p">(</span><span class="n">SimObjectType</span><span class="o">.</span><span class="n">RIGID_BODY</span><span class="p">,</span> <span class="p">[</span><span class="n">attribute</span><span class="p">],</span> <span class="n">scope</span><span class="o">=</span><span class="n">ObjectScope</span><span class="o">.</span><span class="n">ALL</span><span class="p">)</span> <span class="k">as</span> <span class="n">result</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">groups</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">group</span><span class="o">.</span><span class="n">is_delete</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">group</span><span class="o">.</span><span class="n">is_array</span> <span class="ow">and</span> <span class="n">group</span><span class="o">.</span><span class="n">tensors</span><span class="p">:</span>
-                <span class="n">columns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">tensors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span>
+                <span class="c1"># Copied: the read&#39;s arrays are invalid once it is closed.</span>
+                <span class="n">columns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">tensors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">columns</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No rigid-body </span><span class="si">{</span><span class="n">attribute</span><span class="si">}</span><span class="s2"> values were read&quot;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">columns</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -1618,16 +1992,18 @@ which ships with every package under <code class="docutils literal notranslate">
         <span class="n">read</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">read</span><span class="o">.</span><span class="n">groups</span><span class="p">():</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">group</span><span class="o">.</span><span class="n">is_delete</span><span class="p">:</span>
+                <span class="c1"># One attribute was requested, so each group has that one column.</span>
+                <span class="n">column</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">column</span><span class="o">.</span><span class="n">is_delete</span><span class="p">:</span>
                     <span class="k">continue</span>
-                <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+                <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">column</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
                 <span class="c1"># Typed reads expose matrix/vector components as trailing axes.</span>
                 <span class="c1"># Keep the leading data-row axis intact when flattening them.</span>
                 <span class="n">values</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">values</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
                 <span class="n">group_paths</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">get_path_strings</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">prim_list</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">local</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">prim_count</span><span class="p">):</span>
                     <span class="n">prim_index</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">prim_index</span><span class="p">(</span><span class="n">local</span><span class="p">)</span>
-                    <span class="n">data_index</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">data_row_index</span><span class="p">(</span><span class="n">local</span><span class="p">)</span> <span class="k">if</span> <span class="n">group</span><span class="o">.</span><span class="n">has_data_index_map</span> <span class="k">else</span> <span class="n">local</span>
+                    <span class="n">data_index</span> <span class="o">=</span> <span class="n">column</span><span class="o">.</span><span class="n">data_row_index</span><span class="p">(</span><span class="n">local</span><span class="p">)</span> <span class="k">if</span> <span class="n">column</span><span class="o">.</span><span class="n">has_data_index_map</span> <span class="k">else</span> <span class="n">local</span>
                     <span class="n">rows</span><span class="p">[</span><span class="n">group_paths</span><span class="p">[</span><span class="n">prim_index</span><span class="p">]]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="n">data_index</span><span class="p">],</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">finally</span><span class="p">:</span>
                 <span class="n">stage</span><span class="o">.</span><span class="n">release_group</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
@@ -1721,6 +2097,9 @@ which ships with every package under <code class="docutils literal notranslate">
 
             <span class="c1"># Step once and write the default dynamic output set at an</span>
             <span class="c1"># ordinal that physics never drains.</span>
+            <span class="c1"># The default also requests CUDA-only deformable and particle outputs.</span>
+            <span class="c1"># This CPU scene has neither, but those reads may still warn about a</span>
+            <span class="c1"># missing CUDA context; the warnings do not indicate failed rigid-body output.</span>
             <span class="n">dumped</span> <span class="o">=</span> <span class="n">step_and_write_to_ovstage</span><span class="p">(</span>
                 <span class="n">physx</span><span class="p">,</span>
                 <span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span>
@@ -1752,7 +2131,7 @@ which ships with every package under <code class="docutils literal notranslate">
 
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Closed-loop ovstage output read completed successfully&quot;</span><span class="p">)</span>
     <span class="k">finally</span><span class="p">:</span>
-        <span class="c1"># The closed result and final loop group still retain their read arrays.</span>
+        <span class="c1"># Drop the closed result and final loop group: their read arrays are invalid.</span>
         <span class="n">result</span> <span class="o">=</span> <span class="n">group</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">output_cache</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">output_cache</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
@@ -1772,13 +2151,14 @@ which ships with every package under <code class="docutils literal notranslate">
 <section id="notes">
 <h2>Notes<a class="headerlink" href="#notes" title="Link to this heading">#</a></h2>
 <ul class="simple">
-<li><p>The read is ovstage-only: it requires an attached ovstage Stage, otherwise the
-query call is rejected without a task. Only inspect <code class="docutils literal notranslate"><span class="pre">out_query</span></code> after a successful wait.
+<li><p>The read is ovstage-only. A query accepted without a usable attached Stage
+later fails its task. Its handle is still available immediately, so dependent
+calls may be submitted and will fail in order if the query fails.
 An empty match is still a valid, nonzero query whose read reaches null-group EOF
 (its optional query result then reports <code class="docutils literal notranslate"><span class="pre">total_prim_count</span> <span class="pre">==</span> <span class="pre">0</span></code>).</p></li>
 <li><p>A whole-type query is a reusable selector (type + scope), not a captured membership
 snapshot: each read or write session evaluates its membership when it opens,
-observing the most recently completed step. A step between query and read is fine —
+observing every step submitted before it. A step between query and read is fine —
 the read reflects the newer step. The optional query result is a snapshot taken at
 query creation and never updates. A selected query keeps the membership it resolved
 at creation.</p></li>
@@ -1803,20 +2183,20 @@ model, and to the <a class="reference internal" href="api.html"><span class="std
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="changelog.html"
+       href="ov_libraries_v2_annex.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Changelog</p>
+        <p class="prev-next-title">OV Libraries V2 Transitional Annex: Timeout Type</p>
       </div>
     </a>
     <a class="right-next"
-       href="simulation_setup/physics_scene.html"
+       href="reference/simulation_setup.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Physics Scene and Simulation Configuration</p>
+        <p class="prev-next-title">Simulation Setup</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -1844,14 +2224,17 @@ model, and to the <a class="reference internal" href="api.html"><span class="std
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-data-surface-ovstage-ordinals">The data surface: ovstage + ordinals</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#register-the-physx-schemas-before-reading-usd-schemas">Register the PhysX schemas before reading USD schemas</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#seal-population-changes-before-attaching-or-draining">Seal population changes before attaching or draining</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#transform-inputs">Transform inputs</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#deferred-mass-edits-and-session-overrides">Deferred mass edits and session overrides</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#changing-a-prim-s-type-at-runtime">Changing a prim’s type at runtime</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#population-domains">Population domains</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#compatibility-path-all-or-physics-rendering">Compatibility path: <code class="docutils literal notranslate"><span class="pre">ALL</span></code> (or <code class="docutils literal notranslate"><span class="pre">PHYSICS</span> <span class="pre">|</span> <span class="pre">RENDERING</span></code>)</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#when-physics-alone-is-enough">When <code class="docutils literal notranslate"><span class="pre">PHYSICS</span></code> alone is enough</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-mask-is-chosen-once-at-population-time">The mask is chosen once, at population time</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#populating-physics-the-physics-population-description">Populating physics: the physics population description</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#compatibility-path-physics-with-rendering">Compatibility path: physics with RENDERING</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#when-the-physics-description-alone-is-enough">When the physics description alone is enough</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-descriptions-are-chosen-at-population-time">The descriptions are chosen at population time</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#sequencing-a-shared-stage">Sequencing a shared Stage</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#cost-of-all-shared-population">Cost of <code class="docutils literal notranslate"><span class="pre">ALL</span></code> / shared population</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#cost-of-rendering-shared-population">Cost of RENDERING / shared population</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-key-principle-physics-must-not-get-its-own-changes">The key principle: physics must not get its own changes</a><ul class="nav section-nav flex-column">
@@ -1864,6 +2247,7 @@ model, and to the <a class="reference internal" href="api.html"><span class="std
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#worked-example-one-closed-loop-frame">Worked example: one closed-loop frame</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#c-utility-publish-fixed-world-transforms">C++ utility: publish fixed world transforms</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#c-utility-joint-groups-as-one-array-per-joint">C utility: joint groups as one array per joint</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#python-utility-one-call-for-step-read-write-back">Python utility: one call for step + read + write-back</a></li>
 </ul>
 </li>
@@ -1915,7 +2299,7 @@ model, and to the <a class="reference internal" href="api.html"><span class="std
 </div>
       
         <div class="footer-item"><p class="last-updated">
-  Last updated on Oct 15, 2026.
+  Last updated on Nov 13, 2026.
   <br/>
 </p></div>
       

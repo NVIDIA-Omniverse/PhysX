@@ -1,0 +1,1672 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Your First Simulation &#8212; ovphysx SDK</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=933278ad" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/getting_started.css?v=d234fc04" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=a85d417d"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=fc986d73"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'getting_started/first_simulation';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.8.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <script src="../_static/version-patch.js?v=3e13fdd2"></script>
+
+    <link rel="icon" href="../_static/favicon.png"/>
+
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Concepts" href="concepts.html" />
+    <link rel="prev" title="Install" href="install.html" />
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+    <meta name="docbuild:last-update" content="Nov 13, 2026"/>
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+
+
+  </head>
+
+  <body data-default-mode="">
+
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Install</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Your First Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="concepts.html">Concepts</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Building Scenes</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../building_scenes/loading_scenes.html">Loading Scenes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../building_scenes/physics_scene.html">The Physics Scene</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../building_scenes/rigid_bodies.html">Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../building_scenes/colliders_and_materials.html">Colliders and Materials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../building_scenes/joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../building_scenes/articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../building_scenes/soft_bodies_and_particles.html">Soft Bodies and Particles</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Simulation Data</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../simulation_data/selecting_objects.html">Selecting Objects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_data/reading_values.html">Reading Values</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_data/writing_values.html">Writing Values</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_data/gpu_data.html">Data on the GPU</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Common Tasks</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../common_tasks/changing_the_scene.html">Changing the Scene</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../common_tasks/contacts.html">Contacts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../common_tasks/showing_the_simulation.html">Showing the Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../common_tasks/debugging.html">Debugging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../common_tasks/stable_simulations.html">Stable Simulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../common_tasks/fast_simulations.html">Fast Simulations</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Advanced</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../common_tasks/many_copies.html">Many Copies of a Scene</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../reference/index.html">Detailed Reference</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/overview.html">Overview and Migration</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../migrating_0_6_to_0_7.html">Migration from 0.6 to 0.7</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../migrating_0_7_to_0_8.html">Migration from 0.7 to 0.8</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ovd_api_migration.html">Instance and OVD API migration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tensor_binding_migration.html">Migrating off Tensor Bindings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="../ovstage_integration.html">ovstage Integration and Physics Output Read</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/simulation_setup.html">Simulation Setup</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../simulation_setup/physics_scene.html">Physics Scene and Simulation Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../simulation_setup/collision.html">Colliders</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../simulation_setup/rigid_bodies.html">Rigid Bodies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../simulation_setup/kinematic_support.html">Kinematic Support Geometry</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../simulation_setup/joints.html">Joints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../simulation_setup/articulations.html">Articulations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../simulation_setup/deformables.html">Deformable Bodies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../simulation_setup/particles.html">Particles</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/schemas.html">Schemas and Population</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../physics_schemas.html">Physics Schemas</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../population/index.html">ovstage Physics Population Domain</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../population/BasisCurves.html">BasisCurves (spline surface velocity path)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/Camera.html">Camera (UsdGeom camera)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/Capsule.html">Capsule</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/Cone.html">Cone</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/Cube.html">Cube</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/Cylinder.html">Cylinder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/CylinderLight.html">CylinderLight (UsdLux light)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/DiskLight.html">DiskLight (UsdLux light)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/DistantLight.html">DistantLight (UsdLux light)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/DomeLight.html">DomeLight (UsdLux light)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/DomeLight_1.html">DomeLight_1 (UsdLux light)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/FabricStageInfo.html">FabricStageInfo (Fabric bookkeeping)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/GeomSubset.html">GeomSubset (per-face physics materials)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/Material.html">Material</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/Mesh.html">Mesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/NodeGraph.html">NodeGraph (UsdShade node graph)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsAttachment.html">OmniPhysicsAttachment (deformable attachment base)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsElementCollisionFilter.html">OmniPhysicsElementCollisionFilter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsTetXformAttachment.html">OmniPhysicsTetXformAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsTriTriAttachment.html">OmniPhysicsTriTriAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsVtxCrvAttachment.html">OmniPhysicsVtxCrvAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsVtxTetAttachment.html">OmniPhysicsVtxTetAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsVtxTriAttachment.html">OmniPhysicsVtxTriAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsVtxVtxAttachment.html">OmniPhysicsVtxVtxAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsVtxXformAttachment.html">OmniPhysicsVtxXformAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsCollisionGroup.html">PhysicsCollisionGroup</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsDistanceJoint.html">PhysicsDistanceJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsFixedJoint.html">PhysicsFixedJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsJoint.html">PhysicsJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsPrismaticJoint.html">PhysicsPrismaticJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsRevoluteJoint.html">PhysicsRevoluteJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsScene.html">PhysicsScene</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsSphericalJoint.html">PhysicsSphericalJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxParticleSystem.html">PhysxParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxPhysicsGearJoint.html">PhysxPhysicsGearJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxPhysicsJointInstancer.html">PhysxPhysicsJointInstancer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxPhysicsRackAndPinionJoint.html">PhysxPhysicsRackAndPinionJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleTireFrictionTable.html">PhysxVehicleTireFrictionTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/Plane.html">Plane</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PointInstancer.html">PointInstancer (rigid-body instancing)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/Points.html">Points (particle set geometry)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/RectLight.html">RectLight (UsdLux light)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/Scope.html">Scope</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/Shader.html">Shader (UsdShade shader)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/Sphere.html">Sphere</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/SphereLight.html">SphereLight (UsdLux light)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/TempChangeTracking.html">TempChangeTracking (Fabric bookkeeping)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/TetMesh.html">TetMesh (volume deformable meshes)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/Xform.html">Xform</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/CollectionAPI.html">CollectionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/GeomInstanceAPI.html">GeomInstanceAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/GeomInstanceRootAPI.html">GeomInstanceRootAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/GeomPrototypeAPI.html">GeomPrototypeAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/LightAPI.html">LightAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/MaterialBindingAPI.html">MaterialBindingAPI (physics purpose)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/NewtonArticulationRootAPI.html">NewtonArticulationRootAPI (self-collision fallback)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/NewtonCollisionAPI.html">NewtonCollisionAPI (contact offset fallbacks)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/NewtonJointAPI.html">NewtonJointAPI (joint-level seeds)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/NewtonMeshCollisionAPI.html">NewtonMeshCollisionAPI (hull vertex limit fallback)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/NewtonMimicAPI.html">NewtonMimicAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/NewtonSceneAPI.html">NewtonSceneAPI (fallbacks read by the PhysX parser)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/NodeDefAPI.html">NodeDefAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsBaseMaterialAPI.html">OmniPhysicsBaseMaterialAPI (deformable material friction and density)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsBodyAPI.html">OmniPhysicsBodyAPI (deformable body flags)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsDeformableBodyAPI.html">OmniPhysicsDeformableBodyAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsDeformableMaterialAPI.html">OmniPhysicsDeformableMaterialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsDeformablePoseAPI.html">OmniPhysicsDeformablePoseAPI (bind pose)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsSurfaceDeformableMaterialAPI.html">OmniPhysicsSurfaceDeformableMaterialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsSurfaceDeformableSimAPI.html">OmniPhysicsSurfaceDeformableSimAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/OmniPhysicsVolumeDeformableSimAPI.html">OmniPhysicsVolumeDeformableSimAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsArticulationRootAPI.html">PhysicsArticulationRootAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsCollisionAPI.html">PhysicsCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsDriveAPI.html">PhysicsDriveAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsFilteredPairsAPI.html">PhysicsFilteredPairsAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsJointStateAPI.html">PhysicsJointStateAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsLimitAPI.html">PhysicsLimitAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsMassAPI.html">PhysicsMassAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsMaterialAPI.html">PhysicsMaterialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsMeshCollisionAPI.html">PhysicsMeshCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysicsRigidBodyAPI.html">PhysicsRigidBodyAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxArticulationAPI.html">PhysxArticulationAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxAutoDeformableAttachmentAPI.html">PhysxAutoDeformableAttachmentAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxAutoDeformableBodyAPI.html">PhysxAutoDeformableBodyAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxAutoDeformableHexahedralMeshAPI.html">PhysxAutoDeformableHexahedralMeshAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxAutoDeformableMeshSimplificationAPI.html">PhysxAutoDeformableMeshSimplificationAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxBaseDeformableBodyAPI.html">PhysxBaseDeformableBodyAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxCharacterControllerAPI.html">PhysxCharacterControllerAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxCollisionAPI.html">PhysxCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxContactReportAPI.html">PhysxContactReportAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxCookedDataAPI.html">PhysxCookedDataAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxDeformableMaterialAPI.html">PhysxDeformableMaterialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxDiffuseParticlesAPI.html">PhysxDiffuseParticlesAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxForceAPI.html">PhysxForceAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxJointAPI.html">PhysxJointAPI (removed)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxLimitAPI.html">PhysxLimitAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxMeshMergeCollisionAPI.html">PhysxMeshMergeCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxMimicJointAPI.html">PhysxMimicJointAPI (deprecated)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxPBDMaterialAPI.html">PhysxPBDMaterialAPI (as read for a scene default material)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxParticleAPI.html">PhysxParticleAPI (particle object base)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxParticleAnisotropyAPI.html">PhysxParticleAnisotropyAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxParticleIsosurfaceAPI.html">PhysxParticleIsosurfaceAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxParticleSamplingAPI.html">PhysxParticleSamplingAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxParticleSetAPI.html">PhysxParticleSetAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxParticleSmoothingAPI.html">PhysxParticleSmoothingAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxPhysicsDistanceJointAPI.html">PhysxPhysicsDistanceJointAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxRigidBodyAPI.html">PhysxRigidBodyAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxSDFMeshCollisionAPI.html">PhysxSDFMeshCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxSceneAPI.html">PhysxSceneAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxSceneQuasistaticAPI.html">PhysxSceneQuasistaticAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxSphereFillCollisionAPI.html">PhysxSphereFillCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxSplinesSurfaceVelocityAPI.html">PhysxSplinesSurfaceVelocityAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxSurfaceDeformableBodyAPI.html">PhysxSurfaceDeformableBodyAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxSurfaceDeformableMaterialAPI.html">PhysxSurfaceDeformableMaterialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxSurfaceVelocityAPI.html">PhysxSurfaceVelocityAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxTendonAttachmentAPI.html">PhysxTendonAttachmentAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxTendonAttachmentLeafAPI.html">PhysxTendonAttachmentLeafAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxTendonAttachmentRootAPI.html">PhysxTendonAttachmentRootAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxTendonAxisAPI.html">PhysxTendonAxisAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxTendonAxisRootAPI.html">PhysxTendonAxisRootAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxTriangleMeshCollisionAPI.html">PhysxTriangleMeshCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxTriangleMeshSimplificationCollisionAPI.html">PhysxTriangleMeshSimplificationCollisionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxTriggerAPI.html">PhysxTriggerAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxTriggerStateAPI.html">PhysxTriggerStateAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleAPI.html">PhysxVehicleAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleAckermannSteeringAPI.html">PhysxVehicleAckermannSteeringAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleAutoGearBoxAPI.html">PhysxVehicleAutoGearBoxAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleBrakesAPI.html">PhysxVehicleBrakesAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleClutchAPI.html">PhysxVehicleClutchAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleContextAPI.html">PhysxVehicleContextAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleControllerAPI.html">PhysxVehicleControllerAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleDriveBasicAPI.html">PhysxVehicleDriveBasicAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleDriveStandardAPI.html">PhysxVehicleDriveStandardAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleEngineAPI.html">PhysxVehicleEngineAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleGearsAPI.html">PhysxVehicleGearsAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleMultiWheelDifferentialAPI.html">PhysxVehicleMultiWheelDifferentialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleNonlinearCommandResponseAPI.html">PhysxVehicleNonlinearCommandResponseAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleSteeringAPI.html">PhysxVehicleSteeringAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleSuspensionAPI.html">PhysxVehicleSuspensionAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleSuspensionComplianceAPI.html">PhysxVehicleSuspensionComplianceAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleTankControllerAPI.html">PhysxVehicleTankControllerAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleTankDifferentialAPI.html">PhysxVehicleTankDifferentialAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleTireAPI.html">PhysxVehicleTireAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleWheelAPI.html">PhysxVehicleWheelAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleWheelAttachmentAPI.html">PhysxVehicleWheelAttachmentAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PhysxVehicleWheelControllerAPI.html">PhysxVehicleWheelControllerAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/PrototypeRootAPI.html">PrototypeRootAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/ShadowAPI.html">ShadowAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/ShapingAPI.html">ShapingAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/legacy_stage_units.html">Legacy stage units prim</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/prim.html">Prim identity and transform</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/stage_units.html">Stage units</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-articulation_fixed_base.html">Fixed-base two-link articulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-articulation_floating.html">Floating-base two-link articulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-conveyor_cube.html">Kinematic conveyor Cube with a surface velocity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-d6_joint_pair.html">Two rigid-body Cubes on a D6 joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-distance_joint_pair.html">Two rigid-body Cubes on a distance joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-fixed_joint_pair.html">Two rigid-body Cubes on a fixed joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-gear_joint_pair.html">Two hinged rigid-body Cubes coupled by a gear joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-material_bound_cube.html">Rigid-body Cube bound to a physics Material</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-physics_scene.html">Physics scene</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-prismatic_joint_pair.html">Two rigid-body Cubes on a prismatic joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-rack_and_pinion_joint_pair.html">A hinged pinion Cube and a sliding rack Cube coupled by a rack-and-pinion joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-revolute_joint_pair.html">Two rigid-body Cubes on a revolute joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-rigid_body_capsule.html">Dynamic rigid body on a Capsule</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-rigid_body_cone.html">Dynamic rigid body on a Cone</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-rigid_body_cube.html">Dynamic rigid body on a Cube</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-rigid_body_cube_pair.html">Two dynamic rigid-body Cubes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-rigid_body_cylinder.html">Dynamic rigid body on a Cylinder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-rigid_body_sphere.html">Dynamic rigid body on a Sphere</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-spherical_joint_pair.html">Two rigid-body Cubes on a spherical joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/composition-static_plane_collider.html">Static Plane collider</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/findings.html">Recorded findings</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/physics-population-description.html">Physics Population Description</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../population/glossary.html">Population vocabulary</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/read_write.html">Read and Write Contract</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../read_write/index.html">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../read_write/data_model.html">Data model and semantics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../read_write/device.html">Device residency and interop</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../read_write/readable.html">Readable data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../read_write/discovery.html">Discovering attribute metadata</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../read_write/attributes/index.html">Detailed I/O attribute reference</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/units.html">Runtime I/O units</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/rigid_body.html">Rigid body</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/articulation_link.html">Articulation link</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/articulation_joint.html">Articulation joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/vehicle_wheel.html">Vehicle wheel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/deformable_volume.html">Deformable volume</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/deformable_surface.html">Deformable surface</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/particle_set.html">Particle set</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/fixed_tendon.html">Fixed tendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/spatial_tendon.html">Spatial tendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/articulation.html">Articulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/deformable_material.html">Deformable material</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/contact_sensor.html">Contact sensor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/character_controller.html">Character controller</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/vehicle.html">Vehicle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/scene.html">Scene</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/physx_material.html">Physx material</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/shape.html">Shape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/compound_shape.html">Compound shape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/rigid_actor.html">Rigid actor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/joint.html">Joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/custom_joint.html">Custom joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/particle_system.html">Particle system</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/physics.html">Physics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/debug_render.html">Debug render</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/sdf_shape.html">Sdf shape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../read_write/attributes/deformable_skin_mesh.html">Deformable skin mesh</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../read_write/writable.html">Writable data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../read_write/vehicles.html">Vehicle examples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../read_write/path_patterns.html">Path patterns</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../read_write/limitations.html">Known limitations and gaps</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/tutorials.html">Tutorials</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/quickstart.html">Quickstart</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/hello_world.html">Hello World – Populate ovstage and Step</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/tensor_bindings.html">Tensor Bindings (deprecated)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/contact_binding.html">Contact Binding – Reading Contact Forces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/cloning.html">Cloning – Replicate Environments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/render_handoff.html">Rendering Handoff</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/profiling.html">Profiling: See Where Your Simulation Spends Its Time</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/tuning_guides.html">Tuning Guides</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../guides/performance.html">Simulation Performance Guide</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guides/collision_tuning.html">Collision Behavior Guide</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guides/articulation_stability.html">Articulation and Robot Simulation Stability Guide</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guides/gripper_tuning.html">Joint Parameter Tuning Example: Robotiq 2F-85</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guides/limitations.html">Known Physics Limitations</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/contributing.html">Contributing</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../local_development.html">Local Development</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../coding_style.html">ovphysx coding and doc style</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="../reference/glossary.html">Glossary</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../python_api.html">Python API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">C API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../SECURITY.html">Security</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Your First Simulation</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<section id="your-first-simulation">
+<h1>Your First Simulation<a class="headerlink" href="#your-first-simulation" title="Link to this heading">#</a></h1>
+<p>This page drops a box onto the ground and prints its height while it falls. The program comes in
+Python and in C. Follow <a class="reference internal" href="install.html"><span class="std std-doc">Install</span></a> first.</p>
+<section id="the-scene">
+<h2>The Scene<a class="headerlink" href="#the-scene" title="Link to this heading">#</a></h2>
+<p>The scene is written in USD, the scene format that ovstage loads for ovphysx. It has a ground plane and a
+box with 1 m sides, whose center starts 2 m above the ground. These parts make it a physics
+scene:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Scene Part</p></th>
+<th class="head"><p>What It Does</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">PhysicsScene</span></code></p></td>
+<td><p>Sets gravity and other simulation settings. Here, the default gravity pulls the box down the z axis at 9.81 m/s².</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PhysicsCollisionAPI</span></code></p></td>
+<td><p>Makes the ground and the box solid, so they collide.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">PhysicsRigidBodyAPI</span></code></p></td>
+<td><p>Makes the box respond to gravity and other forces. The ground does not have this API schema, so it stays still.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The following figure shows what the program computes:</p>
+<p><img alt="Side view of the scene. A green box falls from a height of 2 m and lands on the ground, where its center rests at 0.5 m. Next to it, the program's seven output lines appear one by one as simulated time passes." src="../_images/getting_started_falling_box.png" /></p>
+</section>
+<section id="the-program">
+<h2>The Program<a class="headerlink" href="#the-program" title="Link to this heading">#</a></h2>
+<blockquote>
+<div><p><strong>Why ovstage?</strong></p>
+<p>ovphysx does not open USD files itself. ovstage loads the scene once and keeps it in memory as
+a stage. ovphysx, a renderer such as ovrtx, and your own code can all work from that one copy
+instead of each loading the file. Nothing moves between them on its own: your program decides
+when each library reads the stage and what is written to it.</p>
+</div></blockquote>
+<p>To read the box’s height, the program uses one of these calls:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Python Call</p></th>
+<th class="head"><p>What It Does</p></th>
+<th class="head"><p>C Calls Underneath</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">physx.query(type,</span> <span class="pre">pattern=...).wait()</span></code></p></td>
+<td><p>Picks the objects once and returns a query you can reuse</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ovphysx_query</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">physx.read(query,</span> <span class="pre">names).wait()</span></code></p></td>
+<td><p>Opens a read on a query you kept</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ovphysx_read</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">physx.read_sync(type,</span> <span class="pre">names,</span> <span class="pre">pattern=...)</span></code></p></td>
+<td><p>Shortcut: makes a query, reads every group, waits, and releases the query when the <code class="docutils literal notranslate"><span class="pre">with</span></code> block ends</p></td>
+<td><p>both of the above, on every call</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The program loads the scene, simulates 1 s in steps of 1/60 s, and prints the box’s
+height every 10 steps. It comes in Python and in C:</p>
+<div class="sd-tab-set getting-started-tabs docutils">
+<input checked="checked" id="sd-tab-item-0" name="sd-tab-set-0" type="radio">
+<label class="sd-tab-label" data-sync-group="language" data-sync-id="python" for="sd-tab-item-0">
+Python</label><div class="sd-tab-content docutils">
+<p>Save the program as <code class="docutils literal notranslate"><span class="pre">falling_box.py</span></code>:</p>
+<div class="literal-block-wrapper docutils container" id="id1">
+<div class="code-block-caption"><span class="caption-number">Listing 1 </span><span class="caption-text">falling_box.py</span><a class="headerlink" href="#id1" title="Link to this code">#</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">ovstage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.population</span><span class="w"> </span><span class="kn">import</span> <span class="n">physics_population_descs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx</span><span class="w"> </span><span class="kn">import</span> <span class="n">PhysX</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.samples.python_samples.schema_support</span><span class="w"> </span><span class="kn">import</span> <span class="n">physx_schema_paths</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">SimObjectType</span>
+
+<span class="c1"># A ground plane and a 1 m box whose center starts 2 m above it.</span>
+<span class="n">SCENE</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;#usda 1.0</span>
+<span class="s2">(</span>
+<span class="s2">    metersPerUnit = 1</span>
+<span class="s2">    kilogramsPerUnit = 1</span>
+<span class="s2">    upAxis = &quot;Z&quot;</span>
+<span class="s2">)</span>
+
+<span class="s2">def Xform &quot;World&quot;</span>
+<span class="s2">{</span>
+<span class="s2">    def PhysicsScene &quot;PhysicsScene&quot; </span><span class="si">{}</span>
+
+<span class="s2">    def Plane &quot;Ground&quot; (</span>
+<span class="s2">        prepend apiSchemas = [&quot;PhysicsCollisionAPI&quot;]</span>
+<span class="s2">    )</span>
+<span class="s2">    {</span>
+<span class="s2">        uniform token axis = &quot;Z&quot;</span>
+<span class="s2">    }</span>
+
+<span class="s2">    def Cube &quot;Box&quot; (</span>
+<span class="s2">        prepend apiSchemas = [&quot;PhysicsRigidBodyAPI&quot;, &quot;PhysicsCollisionAPI&quot;]</span>
+<span class="s2">    )</span>
+<span class="s2">    {</span>
+<span class="s2">        double size = 1</span>
+<span class="s2">        double3 xformOp:translate = (0, 0, 2)</span>
+<span class="s2">        uniform token[] xformOpOrder = [&quot;xformOp:translate&quot;]</span>
+<span class="s2">    }</span>
+<span class="s2">}</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">box_height</span><span class="p">(</span><span class="n">physx</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read the position of every rigid body and return the box&#39;s z.&quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">physx</span><span class="o">.</span><span class="n">read_sync</span><span class="p">(</span><span class="n">SimObjectType</span><span class="o">.</span><span class="n">RIGID_BODY</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;position&quot;</span><span class="p">])</span> <span class="k">as</span> <span class="n">result</span><span class="p">:</span>
+        <span class="n">positions</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">groups</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tensors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>  <span class="c1"># one row per body</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">positions</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+
+
+<span class="c1"># ovstage must know the PhysX USD schemas before it reads a scene.</span>
+<span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">register_usd_schemas</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">physx_schema_paths</span><span class="p">()])</span>
+
+<span class="c1"># Load the scene into a stage, then seal the edits at ordinal 1.</span>
+<span class="n">stage</span> <span class="o">=</span> <span class="n">ovstage</span><span class="o">.</span><span class="n">Stage</span><span class="p">(</span><span class="s2">&quot;falling_box&quot;</span><span class="p">)</span>
+<span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">open_usd_from_string_with_desc</span><span class="p">(</span>
+    <span class="n">stage</span><span class="p">,</span> <span class="n">SCENE</span><span class="p">,</span> <span class="n">ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">DEFAULT_TIME</span><span class="p">,</span> <span class="n">descs</span><span class="o">=</span><span class="n">physics_population_descs</span><span class="p">(</span><span class="n">rendering</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="n">stage</span><span class="o">.</span><span class="n">advance_write_floor</span><span class="p">(</span><span class="n">ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+
+<span class="c1"># Create the simulation from the sealed stage.</span>
+<span class="n">physx</span> <span class="o">=</span> <span class="n">PhysX</span><span class="p">()</span>
+<span class="n">physx</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">physx</span><span class="o">.</span><span class="n">attach_ovstage</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">read_ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;t=0.00 s  box z = </span><span class="si">{</span><span class="n">box_height</span><span class="p">(</span><span class="n">physx</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> m&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">61</span><span class="p">):</span>
+    <span class="n">physx</span><span class="o">.</span><span class="n">step_sync</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mf">60.0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">step</span> <span class="o">%</span> <span class="mi">10</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;t=</span><span class="si">{</span><span class="n">step</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">60</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> s  box z = </span><span class="si">{</span><span class="n">box_height</span><span class="p">(</span><span class="n">physx</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> m&quot;</span><span class="p">)</span>
+
+<span class="n">physx</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">physx</span><span class="o">.</span><span class="n">detach_ovstage</span><span class="p">())</span>
+<span class="n">physx</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+<span class="n">stage</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>Run it from the folder where you saved it:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>falling_box.py
+</pre></div>
+</div>
+</div>
+<input id="sd-tab-item-1" name="sd-tab-set-0" type="radio">
+<label class="sd-tab-label" data-sync-group="language" data-sync-id="c" for="sd-tab-item-1">
+C</label><div class="sd-tab-content docutils">
+<p>Use the SDK from <a class="reference internal" href="install.html"><span class="doc">Install</span></a>. Save this build file as
+<code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code>:</p>
+<div class="literal-block-wrapper docutils container" id="id2">
+<div class="code-block-caption"><span class="caption-number">Listing 2 </span><span class="caption-text">CMakeLists.txt</span><a class="headerlink" href="#id2" title="Link to this code">#</a></div>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">cmake_minimum_required</span><span class="p">(</span><span class="s">VERSION</span><span class="w"> </span><span class="s">3.16</span><span class="p">)</span>
+<span class="nb">project</span><span class="p">(</span><span class="s">falling_box</span><span class="w"> </span><span class="s">C</span><span class="p">)</span>
+
+<span class="nb">set</span><span class="p">(</span><span class="s">CMAKE_C_STANDARD</span><span class="w"> </span><span class="s">11</span><span class="p">)</span>
+<span class="nb">set</span><span class="p">(</span><span class="s">CMAKE_C_STANDARD_REQUIRED</span><span class="w"> </span><span class="s">ON</span><span class="p">)</span>
+
+<span class="nb">find_package</span><span class="p">(</span><span class="s">ovphysx</span><span class="w"> </span><span class="s">REQUIRED</span><span class="p">)</span>
+
+<span class="nb">add_executable</span><span class="p">(</span><span class="s">falling_box</span><span class="w"> </span><span class="s">falling_box.c</span><span class="p">)</span>
+<span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">falling_box</span><span class="w"> </span><span class="s">PRIVATE</span><span class="w"> </span><span class="s">ovphysx::ovphysx</span><span class="w"> </span><span class="s">ovphysx::ovstage</span><span class="p">)</span>
+
+<span class="c"># On Windows, copy the ovphysx libraries next to the program and make</span>
+<span class="c"># ovstage findable.</span>
+<span class="nb">if</span><span class="p">(</span><span class="s">WIN32</span><span class="p">)</span>
+<span class="w">    </span><span class="nb">ovphysx_copy_runtime_dlls</span><span class="p">(</span><span class="s">falling_box</span><span class="p">)</span>
+<span class="w">    </span><span class="nb">ovphysx_set_ovstage_runtime_env</span><span class="p">(</span><span class="s">falling_box</span><span class="p">)</span>
+<span class="nb">endif</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>Save the program, which checks every call, as <code class="docutils literal notranslate"><span class="pre">falling_box.c</span></code> in the same folder:</p>
+<div class="literal-block-wrapper docutils container" id="id3">
+<div class="code-block-caption"><span class="caption-number">Listing 3 </span><span class="caption-text">falling_box.c</span><a class="headerlink" href="#id3" title="Link to this code">#</a></div>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx_population.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx_attributes.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovstage/ovstage.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovstage/ovstage_population.h&gt;</span>
+
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdio.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdlib.h&gt;</span>
+
+<span class="cm">/* A ground plane and a 1 m box whose center starts 2 m above it. */</span>
+<span class="k">static</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="n">SCENE</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span>
+<span class="w">    </span><span class="s">&quot;#usda 1.0</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;(</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;    metersPerUnit = 1</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;    kilogramsPerUnit = 1</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;    upAxis = </span><span class="se">\&quot;</span><span class="s">Z</span><span class="se">\&quot;\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;)</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;def Xform </span><span class="se">\&quot;</span><span class="s">World</span><span class="se">\&quot;\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;{</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;    def PhysicsScene </span><span class="se">\&quot;</span><span class="s">PhysicsScene</span><span class="se">\&quot;</span><span class="s"> {}</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;    def Plane </span><span class="se">\&quot;</span><span class="s">Ground</span><span class="se">\&quot;</span><span class="s"> (prepend apiSchemas = [</span><span class="se">\&quot;</span><span class="s">PhysicsCollisionAPI</span><span class="se">\&quot;</span><span class="s">])</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;    {</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;        uniform token axis = </span><span class="se">\&quot;</span><span class="s">Z</span><span class="se">\&quot;\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;    }</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;    def Cube </span><span class="se">\&quot;</span><span class="s">Box</span><span class="se">\&quot;</span><span class="s"> (</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;        prepend apiSchemas = [</span><span class="se">\&quot;</span><span class="s">PhysicsRigidBodyAPI</span><span class="se">\&quot;</span><span class="s">,</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;                              </span><span class="se">\&quot;</span><span class="s">PhysicsCollisionAPI</span><span class="se">\&quot;</span><span class="s">]</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;    )</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;    {</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;        double size = 1</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;        double3 xformOp:translate = (0, 0, 2)</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;        uniform token[] xformOpOrder = [</span><span class="se">\&quot;</span><span class="s">xformOp:translate</span><span class="se">\&quot;</span><span class="s">]</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;    }</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;}</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
+
+<span class="k">static</span><span class="w"> </span><span class="n">ovphysx_instance_handle_t</span><span class="w"> </span><span class="n">physx</span><span class="p">;</span>
+
+<span class="cm">/* Stop the program with a message when something fails. */</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">need</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">ok</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">what</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">ok</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;falling_box: %s failed</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">what</span><span class="p">);</span>
+<span class="w">        </span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="cm">/* Return 1 when a call that finishes before it returns succeeded. */</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">ok</span><span class="p">(</span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">result</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/* Wait for an ovphysx task. Print its error and return 0 when it failed. */</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">done</span><span class="p">(</span><span class="n">ovphysx_enqueue_result_t</span><span class="w"> </span><span class="n">task</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">ovphysx_wait_task_result_t</span><span class="w"> </span><span class="n">waited</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+<span class="w">    </span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">task</span><span class="p">.</span><span class="n">status</span><span class="p">};</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">task</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
+<span class="w">        </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_wait_task</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">task</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_TIMEOUT_INFINITE</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">waited</span><span class="p">);</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">waited</span><span class="p">.</span><span class="n">num_errors</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ovphysx_string_t</span><span class="w"> </span><span class="n">e</span><span class="w"> </span><span class="o">=</span>
+<span class="w">            </span><span class="n">ovphysx_get_last_task_error</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">waited</span><span class="p">.</span><span class="n">error_tasks</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;ovphysx: %.*s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">e</span><span class="p">.</span><span class="n">length</span><span class="p">,</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">waited</span><span class="p">.</span><span class="n">num_errors</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ovphysx_string_t</span><span class="w"> </span><span class="n">e</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_get_last_error</span><span class="p">();</span>
+<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;ovphysx: %.*s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">e</span><span class="p">.</span><span class="n">length</span><span class="p">,</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">ovphysx_destroy_wait_task_result</span><span class="p">(</span><span class="o">&amp;</span><span class="n">waited</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/* Read the position of every rigid body and print the box&#39;s z. */</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">print_box_height</span><span class="p">(</span><span class="kt">double</span><span class="w"> </span><span class="n">t</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovx_token_or_string_t</span><span class="w"> </span><span class="n">position</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">OVX_INVALID_TOKEN</span><span class="p">,</span>
+<span class="w">        </span><span class="p">{</span><span class="n">OVPHYSX_ATTR_POSITION</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">OVPHYSX_ATTR_POSITION</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">}};</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovstage_cuda_sync_t</span><span class="w"> </span><span class="n">no_cuda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">};</span><span class="w"> </span><span class="cm">/* CPU read: no CUDA ordering */</span>
+<span class="w">    </span><span class="n">ovphysx_query_handle_t</span><span class="w"> </span><span class="n">query</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">ovphysx_read_handle_t</span><span class="w"> </span><span class="n">read</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovstage_read_group_t</span><span class="o">*</span><span class="w"> </span><span class="n">group</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">done</span><span class="p">(</span><span class="n">ovphysx_query</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_QUERY_TARGET_RIGID_BODY</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">OVPHYSX_SCOPE_ALL</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">query</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)),</span>
+<span class="w">         </span><span class="s">&quot;query&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">done</span><span class="p">(</span><span class="n">ovphysx_read</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">query</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">position</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">no_cuda</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">read</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)),</span>
+<span class="w">         </span><span class="s">&quot;read&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">done</span><span class="p">(</span><span class="n">ovphysx_fetch_read_next</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">read</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">group</span><span class="p">)),</span><span class="w"> </span><span class="s">&quot;fetch&quot;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* One row per rigid body, three float32 values per row: x, y, z. */</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">DLTensor</span><span class="o">*</span><span class="w"> </span><span class="n">rows</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">group</span><span class="o">-&gt;</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">data</span><span class="p">.</span><span class="n">tensors</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">rows</span><span class="o">-&gt;</span><span class="n">device</span><span class="p">.</span><span class="n">device_type</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">kDLCPU</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;finding the positions in CPU memory&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="o">*</span><span class="w"> </span><span class="n">xyz</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="o">*</span><span class="p">)((</span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="p">)</span><span class="n">rows</span><span class="o">-&gt;</span><span class="n">data</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">rows</span><span class="o">-&gt;</span><span class="n">byte_offset</span><span class="p">);</span>
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;t=%.2f s  box z = %.3f m</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">t</span><span class="p">,</span><span class="w"> </span><span class="n">xyz</span><span class="p">[</span><span class="mi">2</span><span class="p">]);</span>
+
+<span class="w">    </span><span class="cm">/* Releasing the read also frees its data. */</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">done</span><span class="p">(</span><span class="n">ovphysx_release_read</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">read</span><span class="p">)),</span><span class="w"> </span><span class="s">&quot;releasing the read&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">done</span><span class="p">(</span><span class="n">ovphysx_release_query</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">query</span><span class="p">)),</span><span class="w"> </span><span class="s">&quot;releasing the query&quot;</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="cm">/* ovstage must know the PhysX USD schemas before it reads a scene. They come</span>
+<span class="cm">     * from the physx-usd-schemas Python package: PHYSX_USD_SCHEMAS_ROOT names the</span>
+<span class="cm">     * folder that holds its physx_usd_schemas folder. */</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">root</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getenv</span><span class="p">(</span><span class="s">&quot;PHYSX_USD_SCHEMAS_ROOT&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">root</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;reading PHYSX_USD_SCHEMAS_ROOT&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">modules</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="s">&quot;PhysxSchema&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;OmniUsdPhysicsDeformableSchema&quot;</span><span class="p">};</span>
+<span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="n">dirs</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">4096</span><span class="p">];</span>
+<span class="w">    </span><span class="n">ovx_string_t</span><span class="w"> </span><span class="n">schemas</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">int</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">snprintf</span><span class="p">(</span><span class="n">dirs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="k">sizeof</span><span class="w"> </span><span class="n">dirs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+<span class="w">                         </span><span class="s">&quot;%s/physx_usd_schemas/%s/resources&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">root</span><span class="p">,</span><span class="w"> </span><span class="n">modules</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<span class="w">        </span><span class="n">need</span><span class="p">(</span><span class="n">n</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="k">sizeof</span><span class="w"> </span><span class="n">dirs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="s">&quot;building a schema path&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="n">schemas</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">ovx_string_t</span><span class="p">){</span><span class="n">dirs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="p">)</span><span class="n">n</span><span class="p">};</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">ok</span><span class="p">(</span><span class="n">ovphysx_initialize</span><span class="p">()),</span><span class="w"> </span><span class="s">&quot;ovphysx_initialize&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">ovstage_population_register_usd_schemas</span><span class="p">(</span><span class="n">schemas</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="p">,</span>
+<span class="w">         </span><span class="s">&quot;registering the schemas&quot;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* Load the scene into a stage, then seal the edits at ordinal 1. */</span>
+<span class="w">    </span><span class="n">ovstage_instance_desc_t</span><span class="w"> </span><span class="n">desc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{.</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;falling_box&quot;</span><span class="p">};</span>
+<span class="w">    </span><span class="n">ovstage_instance_t</span><span class="o">*</span><span class="w"> </span><span class="n">stage</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">ovstage_create_instance</span><span class="p">(</span><span class="o">&amp;</span><span class="n">desc</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">stage</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="p">,</span>
+<span class="w">         </span><span class="s">&quot;creating the stage&quot;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovx_string_t</span><span class="w"> </span><span class="n">usda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">SCENE</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="w"> </span><span class="n">SCENE</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">};</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovstage_population_desc_t</span><span class="w"> </span><span class="n">population_descs</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="o">*</span><span class="n">ovphysx_get_physics_population_desc</span><span class="p">(),</span>
+<span class="w">        </span><span class="p">{.</span><span class="n">domains</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVSTAGE_POPULATION_DOMAIN_RENDERING</span><span class="p">},</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">    </span><span class="n">ovstage_population_enqueue_result_t</span><span class="w"> </span><span class="n">load</span><span class="w"> </span><span class="o">=</span>
+<span class="w">        </span><span class="n">ovstage_population_open_usd_from_string_with_desc</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">usda</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">                                                </span><span class="n">OVSTAGE_POPULATION_DEFAULT_TIME</span><span class="p">,</span>
+<span class="w">                                                </span><span class="n">population_descs</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">);</span>
+<span class="w">    </span><span class="n">ovstage_population_op_wait_result_t</span><span class="w"> </span><span class="n">loaded</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">load</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="w"> </span><span class="o">&amp;&amp;</span>
+<span class="w">             </span><span class="n">ovstage_population_wait_op</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">load</span><span class="p">.</span><span class="n">op_index</span><span class="p">,</span>
+<span class="w">                                        </span><span class="n">OVSTAGE_TIMEOUT_INFINITE</span><span class="p">,</span>
+<span class="w">                                        </span><span class="o">&amp;</span><span class="n">loaded</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="p">,</span>
+<span class="w">         </span><span class="s">&quot;loading the scene&quot;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">ovstage_write_floor_desc_t</span><span class="w"> </span><span class="n">floor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{.</span><span class="n">ordinal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">scope</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVSTAGE_SCOPE_ALL</span><span class="p">};</span>
+<span class="w">    </span><span class="n">ovstage_enqueue_result_t</span><span class="w"> </span><span class="n">seal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovstage_advance_write_floor</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">floor</span><span class="p">);</span>
+<span class="w">    </span><span class="n">ovstage_op_wait_result_t</span><span class="w"> </span><span class="n">sealed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">seal</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="w"> </span><span class="o">&amp;&amp;</span>
+<span class="w">             </span><span class="n">ovstage_wait_op</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">seal</span><span class="p">.</span><span class="n">op_index</span><span class="p">,</span><span class="w"> </span><span class="n">OVSTAGE_TIMEOUT_INFINITE</span><span class="p">,</span>
+<span class="w">                             </span><span class="o">&amp;</span><span class="n">sealed</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="w"> </span><span class="o">&amp;&amp;</span>
+<span class="w">             </span><span class="n">sealed</span><span class="p">.</span><span class="n">error_op_id_count</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">         </span><span class="s">&quot;sealing ordinal 1&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">ovstage_release_op</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">seal</span><span class="p">.</span><span class="n">op_index</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="p">,</span>
+<span class="w">         </span><span class="s">&quot;releasing the seal&quot;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* Create the simulation from the sealed stage. */</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">ok</span><span class="p">(</span><span class="n">ovphysx_create_instance</span><span class="p">(</span><span class="o">&amp;</span><span class="n">physx</span><span class="p">)),</span><span class="w"> </span><span class="s">&quot;creating the simulation&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">done</span><span class="p">(</span><span class="n">ovphysx_attach_ovstage</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">)),</span><span class="w"> </span><span class="s">&quot;attaching the stage&quot;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">print_box_height</span><span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">step</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="n">step</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">60</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">step</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">need</span><span class="p">(</span><span class="n">ok</span><span class="p">(</span><span class="n">ovphysx_step_sync</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0f</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">60.0f</span><span class="p">)),</span><span class="w"> </span><span class="s">&quot;step&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">step</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+<span class="w">            </span><span class="n">print_box_height</span><span class="p">(</span><span class="n">step</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">60.0</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">done</span><span class="p">(</span><span class="n">ovphysx_detach_ovstage</span><span class="p">(</span><span class="n">physx</span><span class="p">)),</span><span class="w"> </span><span class="s">&quot;detaching the stage&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">ok</span><span class="p">(</span><span class="n">ovphysx_destroy_instance</span><span class="p">(</span><span class="n">physx</span><span class="p">)),</span><span class="w"> </span><span class="s">&quot;destroying the simulation&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">ovstage_destroy_instance</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;destroying the stage&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">ok</span><span class="p">(</span><span class="n">ovphysx_shutdown</span><span class="p">()),</span><span class="w"> </span><span class="s">&quot;ovphysx_shutdown&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<p>Build and run it on Linux from that folder, with <code class="docutils literal notranslate"><span class="pre">/path/to/ovphysx</span></code> replaced by the folder
+where you extracted the SDK:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cmake<span class="w"> </span>-B<span class="w"> </span>build<span class="w"> </span>-S<span class="w"> </span>.<span class="w"> </span>-DCMAKE_PREFIX_PATH<span class="o">=</span>/path/to/ovphysx
+cmake<span class="w"> </span>--build<span class="w"> </span>build
+<span class="nv">PHYSX_USD_SCHEMAS_ROOT</span><span class="o">=</span>~/physx-schemas<span class="w"> </span>./build/falling_box
+</pre></div>
+</div>
+<p>On Windows with Visual Studio, build with <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--build</span> <span class="pre">build</span> <span class="pre">--config</span> <span class="pre">Release</span></code>, set
+<code class="docutils literal notranslate"><span class="pre">PHYSX_USD_SCHEMAS_ROOT</span></code>, and run <code class="docutils literal notranslate"><span class="pre">build\Release\run_falling_box.cmd</span></code>.</p>
+<p>In C, your program also starts and stops the library with <code class="docutils literal notranslate"><span class="pre">ovphysx_initialize</span></code> and
+<code class="docutils literal notranslate"><span class="pre">ovphysx_shutdown</span></code>. The <code class="docutils literal notranslate"><span class="pre">done</span></code> helper waits for background work and prints any error.
+A read returns a <code class="docutils literal notranslate"><span class="pre">DLTensor</span></code>, an array described using the DLPack standard.</p>
+</div>
+</div>
+<div class="docs-portable-copy">
+<p><strong>Python.</strong> Save the program as <code class="docutils literal notranslate"><span class="pre">falling_box.py</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">ovstage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.population</span><span class="w"> </span><span class="kn">import</span> <span class="n">physics_population_descs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx</span><span class="w"> </span><span class="kn">import</span> <span class="n">PhysX</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.samples.python_samples.schema_support</span><span class="w"> </span><span class="kn">import</span> <span class="n">physx_schema_paths</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">SimObjectType</span>
+
+<span class="c1"># A ground plane and a 1 m box whose center starts 2 m above it.</span>
+<span class="n">SCENE</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;#usda 1.0</span>
+<span class="s2">(</span>
+<span class="s2">    metersPerUnit = 1</span>
+<span class="s2">    kilogramsPerUnit = 1</span>
+<span class="s2">    upAxis = &quot;Z&quot;</span>
+<span class="s2">)</span>
+
+<span class="s2">def Xform &quot;World&quot;</span>
+<span class="s2">{</span>
+<span class="s2">    def PhysicsScene &quot;PhysicsScene&quot; </span><span class="si">{}</span>
+
+<span class="s2">    def Plane &quot;Ground&quot; (</span>
+<span class="s2">        prepend apiSchemas = [&quot;PhysicsCollisionAPI&quot;]</span>
+<span class="s2">    )</span>
+<span class="s2">    {</span>
+<span class="s2">        uniform token axis = &quot;Z&quot;</span>
+<span class="s2">    }</span>
+
+<span class="s2">    def Cube &quot;Box&quot; (</span>
+<span class="s2">        prepend apiSchemas = [&quot;PhysicsRigidBodyAPI&quot;, &quot;PhysicsCollisionAPI&quot;]</span>
+<span class="s2">    )</span>
+<span class="s2">    {</span>
+<span class="s2">        double size = 1</span>
+<span class="s2">        double3 xformOp:translate = (0, 0, 2)</span>
+<span class="s2">        uniform token[] xformOpOrder = [&quot;xformOp:translate&quot;]</span>
+<span class="s2">    }</span>
+<span class="s2">}</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">box_height</span><span class="p">(</span><span class="n">physx</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read the position of every rigid body and return the box&#39;s z.&quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">physx</span><span class="o">.</span><span class="n">read_sync</span><span class="p">(</span><span class="n">SimObjectType</span><span class="o">.</span><span class="n">RIGID_BODY</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;position&quot;</span><span class="p">])</span> <span class="k">as</span> <span class="n">result</span><span class="p">:</span>
+        <span class="n">positions</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">groups</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tensors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>  <span class="c1"># one row per body</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">positions</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+
+
+<span class="c1"># ovstage must know the PhysX USD schemas before it reads a scene.</span>
+<span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">register_usd_schemas</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">physx_schema_paths</span><span class="p">()])</span>
+
+<span class="c1"># Load the scene into a stage, then seal the edits at ordinal 1.</span>
+<span class="n">stage</span> <span class="o">=</span> <span class="n">ovstage</span><span class="o">.</span><span class="n">Stage</span><span class="p">(</span><span class="s2">&quot;falling_box&quot;</span><span class="p">)</span>
+<span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">open_usd_from_string_with_desc</span><span class="p">(</span>
+    <span class="n">stage</span><span class="p">,</span> <span class="n">SCENE</span><span class="p">,</span> <span class="n">ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">DEFAULT_TIME</span><span class="p">,</span> <span class="n">descs</span><span class="o">=</span><span class="n">physics_population_descs</span><span class="p">(</span><span class="n">rendering</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="n">stage</span><span class="o">.</span><span class="n">advance_write_floor</span><span class="p">(</span><span class="n">ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+
+<span class="c1"># Create the simulation from the sealed stage.</span>
+<span class="n">physx</span> <span class="o">=</span> <span class="n">PhysX</span><span class="p">()</span>
+<span class="n">physx</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">physx</span><span class="o">.</span><span class="n">attach_ovstage</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">read_ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;t=0.00 s  box z = </span><span class="si">{</span><span class="n">box_height</span><span class="p">(</span><span class="n">physx</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> m&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">61</span><span class="p">):</span>
+    <span class="n">physx</span><span class="o">.</span><span class="n">step_sync</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mf">60.0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">step</span> <span class="o">%</span> <span class="mi">10</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;t=</span><span class="si">{</span><span class="n">step</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">60</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> s  box z = </span><span class="si">{</span><span class="n">box_height</span><span class="p">(</span><span class="n">physx</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> m&quot;</span><span class="p">)</span>
+
+<span class="n">physx</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">physx</span><span class="o">.</span><span class="n">detach_ovstage</span><span class="p">())</span>
+<span class="n">physx</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+<span class="n">stage</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Run it from the folder where you saved it:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>falling_box.py
+</pre></div>
+</div>
+<p><strong>C.</strong> Use the SDK from <a class="reference internal" href="install.html#install-the-c-sdk"><span class="std std-ref">Install</span></a>. Save this build file as
+<code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code>:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">cmake_minimum_required</span><span class="p">(</span><span class="s">VERSION</span><span class="w"> </span><span class="s">3.16</span><span class="p">)</span>
+<span class="nb">project</span><span class="p">(</span><span class="s">falling_box</span><span class="w"> </span><span class="s">C</span><span class="p">)</span>
+
+<span class="nb">set</span><span class="p">(</span><span class="s">CMAKE_C_STANDARD</span><span class="w"> </span><span class="s">11</span><span class="p">)</span>
+<span class="nb">set</span><span class="p">(</span><span class="s">CMAKE_C_STANDARD_REQUIRED</span><span class="w"> </span><span class="s">ON</span><span class="p">)</span>
+
+<span class="nb">find_package</span><span class="p">(</span><span class="s">ovphysx</span><span class="w"> </span><span class="s">REQUIRED</span><span class="p">)</span>
+
+<span class="nb">add_executable</span><span class="p">(</span><span class="s">falling_box</span><span class="w"> </span><span class="s">falling_box.c</span><span class="p">)</span>
+<span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">falling_box</span><span class="w"> </span><span class="s">PRIVATE</span><span class="w"> </span><span class="s">ovphysx::ovphysx</span><span class="w"> </span><span class="s">ovphysx::ovstage</span><span class="p">)</span>
+
+<span class="c"># On Windows, copy the ovphysx libraries next to the program and make</span>
+<span class="c"># ovstage findable.</span>
+<span class="nb">if</span><span class="p">(</span><span class="s">WIN32</span><span class="p">)</span>
+<span class="w">    </span><span class="nb">ovphysx_copy_runtime_dlls</span><span class="p">(</span><span class="s">falling_box</span><span class="p">)</span>
+<span class="w">    </span><span class="nb">ovphysx_set_ovstage_runtime_env</span><span class="p">(</span><span class="s">falling_box</span><span class="p">)</span>
+<span class="nb">endif</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Save the program, which checks every call, as <code class="docutils literal notranslate"><span class="pre">falling_box.c</span></code> in the same folder:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx_population.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx_attributes.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovstage/ovstage.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovstage/ovstage_population.h&gt;</span>
+
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdio.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdlib.h&gt;</span>
+
+<span class="cm">/* A ground plane and a 1 m box whose center starts 2 m above it. */</span>
+<span class="k">static</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="n">SCENE</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span>
+<span class="w">    </span><span class="s">&quot;#usda 1.0</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;(</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;    metersPerUnit = 1</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;    kilogramsPerUnit = 1</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;    upAxis = </span><span class="se">\&quot;</span><span class="s">Z</span><span class="se">\&quot;\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;)</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;def Xform </span><span class="se">\&quot;</span><span class="s">World</span><span class="se">\&quot;\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;{</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;    def PhysicsScene </span><span class="se">\&quot;</span><span class="s">PhysicsScene</span><span class="se">\&quot;</span><span class="s"> {}</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;    def Plane </span><span class="se">\&quot;</span><span class="s">Ground</span><span class="se">\&quot;</span><span class="s"> (prepend apiSchemas = [</span><span class="se">\&quot;</span><span class="s">PhysicsCollisionAPI</span><span class="se">\&quot;</span><span class="s">])</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;    {</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;        uniform token axis = </span><span class="se">\&quot;</span><span class="s">Z</span><span class="se">\&quot;\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;    }</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;    def Cube </span><span class="se">\&quot;</span><span class="s">Box</span><span class="se">\&quot;</span><span class="s"> (</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;        prepend apiSchemas = [</span><span class="se">\&quot;</span><span class="s">PhysicsRigidBodyAPI</span><span class="se">\&quot;</span><span class="s">,</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;                              </span><span class="se">\&quot;</span><span class="s">PhysicsCollisionAPI</span><span class="se">\&quot;</span><span class="s">]</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;    )</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;    {</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;        double size = 1</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;        double3 xformOp:translate = (0, 0, 2)</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;        uniform token[] xformOpOrder = [</span><span class="se">\&quot;</span><span class="s">xformOp:translate</span><span class="se">\&quot;</span><span class="s">]</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;    }</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="s">&quot;}</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
+
+<span class="k">static</span><span class="w"> </span><span class="n">ovphysx_instance_handle_t</span><span class="w"> </span><span class="n">physx</span><span class="p">;</span>
+
+<span class="cm">/* Stop the program with a message when something fails. */</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">need</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">ok</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">what</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">ok</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;falling_box: %s failed</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">what</span><span class="p">);</span>
+<span class="w">        </span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="cm">/* Return 1 when a call that finishes before it returns succeeded. */</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">ok</span><span class="p">(</span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">result</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/* Wait for an ovphysx task. Print its error and return 0 when it failed. */</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">done</span><span class="p">(</span><span class="n">ovphysx_enqueue_result_t</span><span class="w"> </span><span class="n">task</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">ovphysx_wait_task_result_t</span><span class="w"> </span><span class="n">waited</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+<span class="w">    </span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">task</span><span class="p">.</span><span class="n">status</span><span class="p">};</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">task</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
+<span class="w">        </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_wait_task</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">task</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_TIMEOUT_INFINITE</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">waited</span><span class="p">);</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">waited</span><span class="p">.</span><span class="n">num_errors</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ovphysx_string_t</span><span class="w"> </span><span class="n">e</span><span class="w"> </span><span class="o">=</span>
+<span class="w">            </span><span class="n">ovphysx_get_last_task_error</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">waited</span><span class="p">.</span><span class="n">error_tasks</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;ovphysx: %.*s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">e</span><span class="p">.</span><span class="n">length</span><span class="p">,</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">waited</span><span class="p">.</span><span class="n">num_errors</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ovphysx_string_t</span><span class="w"> </span><span class="n">e</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_get_last_error</span><span class="p">();</span>
+<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;ovphysx: %.*s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">e</span><span class="p">.</span><span class="n">length</span><span class="p">,</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">ovphysx_destroy_wait_task_result</span><span class="p">(</span><span class="o">&amp;</span><span class="n">waited</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/* Read the position of every rigid body and print the box&#39;s z. */</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">print_box_height</span><span class="p">(</span><span class="kt">double</span><span class="w"> </span><span class="n">t</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovx_token_or_string_t</span><span class="w"> </span><span class="n">position</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">OVX_INVALID_TOKEN</span><span class="p">,</span>
+<span class="w">        </span><span class="p">{</span><span class="n">OVPHYSX_ATTR_POSITION</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">OVPHYSX_ATTR_POSITION</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">}};</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovstage_cuda_sync_t</span><span class="w"> </span><span class="n">no_cuda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">};</span><span class="w"> </span><span class="cm">/* CPU read: no CUDA ordering */</span>
+<span class="w">    </span><span class="n">ovphysx_query_handle_t</span><span class="w"> </span><span class="n">query</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">ovphysx_read_handle_t</span><span class="w"> </span><span class="n">read</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovstage_read_group_t</span><span class="o">*</span><span class="w"> </span><span class="n">group</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">done</span><span class="p">(</span><span class="n">ovphysx_query</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_QUERY_TARGET_RIGID_BODY</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">OVPHYSX_SCOPE_ALL</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">query</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)),</span>
+<span class="w">         </span><span class="s">&quot;query&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">done</span><span class="p">(</span><span class="n">ovphysx_read</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">query</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">position</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">no_cuda</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">read</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)),</span>
+<span class="w">         </span><span class="s">&quot;read&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">done</span><span class="p">(</span><span class="n">ovphysx_fetch_read_next</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">read</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">group</span><span class="p">)),</span><span class="w"> </span><span class="s">&quot;fetch&quot;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* One row per rigid body, three float32 values per row: x, y, z. */</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">DLTensor</span><span class="o">*</span><span class="w"> </span><span class="n">rows</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">group</span><span class="o">-&gt;</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">data</span><span class="p">.</span><span class="n">tensors</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">rows</span><span class="o">-&gt;</span><span class="n">device</span><span class="p">.</span><span class="n">device_type</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">kDLCPU</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;finding the positions in CPU memory&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="o">*</span><span class="w"> </span><span class="n">xyz</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="o">*</span><span class="p">)((</span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="p">)</span><span class="n">rows</span><span class="o">-&gt;</span><span class="n">data</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">rows</span><span class="o">-&gt;</span><span class="n">byte_offset</span><span class="p">);</span>
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;t=%.2f s  box z = %.3f m</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">t</span><span class="p">,</span><span class="w"> </span><span class="n">xyz</span><span class="p">[</span><span class="mi">2</span><span class="p">]);</span>
+
+<span class="w">    </span><span class="cm">/* Releasing the read also frees its data. */</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">done</span><span class="p">(</span><span class="n">ovphysx_release_read</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">read</span><span class="p">)),</span><span class="w"> </span><span class="s">&quot;releasing the read&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">done</span><span class="p">(</span><span class="n">ovphysx_release_query</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">query</span><span class="p">)),</span><span class="w"> </span><span class="s">&quot;releasing the query&quot;</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="cm">/* ovstage must know the PhysX USD schemas before it reads a scene. They come</span>
+<span class="cm">     * from the physx-usd-schemas Python package: PHYSX_USD_SCHEMAS_ROOT names the</span>
+<span class="cm">     * folder that holds its physx_usd_schemas folder. */</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">root</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getenv</span><span class="p">(</span><span class="s">&quot;PHYSX_USD_SCHEMAS_ROOT&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">root</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;reading PHYSX_USD_SCHEMAS_ROOT&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">modules</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="s">&quot;PhysxSchema&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;OmniUsdPhysicsDeformableSchema&quot;</span><span class="p">};</span>
+<span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="n">dirs</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">4096</span><span class="p">];</span>
+<span class="w">    </span><span class="n">ovx_string_t</span><span class="w"> </span><span class="n">schemas</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">int</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">snprintf</span><span class="p">(</span><span class="n">dirs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="k">sizeof</span><span class="w"> </span><span class="n">dirs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+<span class="w">                         </span><span class="s">&quot;%s/physx_usd_schemas/%s/resources&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">root</span><span class="p">,</span><span class="w"> </span><span class="n">modules</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<span class="w">        </span><span class="n">need</span><span class="p">(</span><span class="n">n</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="k">sizeof</span><span class="w"> </span><span class="n">dirs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="s">&quot;building a schema path&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="n">schemas</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">ovx_string_t</span><span class="p">){</span><span class="n">dirs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="p">)</span><span class="n">n</span><span class="p">};</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">ok</span><span class="p">(</span><span class="n">ovphysx_initialize</span><span class="p">()),</span><span class="w"> </span><span class="s">&quot;ovphysx_initialize&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">ovstage_population_register_usd_schemas</span><span class="p">(</span><span class="n">schemas</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="p">,</span>
+<span class="w">         </span><span class="s">&quot;registering the schemas&quot;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* Load the scene into a stage, then seal the edits at ordinal 1. */</span>
+<span class="w">    </span><span class="n">ovstage_instance_desc_t</span><span class="w"> </span><span class="n">desc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{.</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;falling_box&quot;</span><span class="p">};</span>
+<span class="w">    </span><span class="n">ovstage_instance_t</span><span class="o">*</span><span class="w"> </span><span class="n">stage</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">ovstage_create_instance</span><span class="p">(</span><span class="o">&amp;</span><span class="n">desc</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">stage</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="p">,</span>
+<span class="w">         </span><span class="s">&quot;creating the stage&quot;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovx_string_t</span><span class="w"> </span><span class="n">usda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">SCENE</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="w"> </span><span class="n">SCENE</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">};</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovstage_population_desc_t</span><span class="w"> </span><span class="n">population_descs</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="o">*</span><span class="n">ovphysx_get_physics_population_desc</span><span class="p">(),</span>
+<span class="w">        </span><span class="p">{.</span><span class="n">domains</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVSTAGE_POPULATION_DOMAIN_RENDERING</span><span class="p">},</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">    </span><span class="n">ovstage_population_enqueue_result_t</span><span class="w"> </span><span class="n">load</span><span class="w"> </span><span class="o">=</span>
+<span class="w">        </span><span class="n">ovstage_population_open_usd_from_string_with_desc</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">usda</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">                                                </span><span class="n">OVSTAGE_POPULATION_DEFAULT_TIME</span><span class="p">,</span>
+<span class="w">                                                </span><span class="n">population_descs</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">);</span>
+<span class="w">    </span><span class="n">ovstage_population_op_wait_result_t</span><span class="w"> </span><span class="n">loaded</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">load</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="w"> </span><span class="o">&amp;&amp;</span>
+<span class="w">             </span><span class="n">ovstage_population_wait_op</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">load</span><span class="p">.</span><span class="n">op_index</span><span class="p">,</span>
+<span class="w">                                        </span><span class="n">OVSTAGE_TIMEOUT_INFINITE</span><span class="p">,</span>
+<span class="w">                                        </span><span class="o">&amp;</span><span class="n">loaded</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="p">,</span>
+<span class="w">         </span><span class="s">&quot;loading the scene&quot;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">ovstage_write_floor_desc_t</span><span class="w"> </span><span class="n">floor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{.</span><span class="n">ordinal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">scope</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVSTAGE_SCOPE_ALL</span><span class="p">};</span>
+<span class="w">    </span><span class="n">ovstage_enqueue_result_t</span><span class="w"> </span><span class="n">seal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovstage_advance_write_floor</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">floor</span><span class="p">);</span>
+<span class="w">    </span><span class="n">ovstage_op_wait_result_t</span><span class="w"> </span><span class="n">sealed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">seal</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="w"> </span><span class="o">&amp;&amp;</span>
+<span class="w">             </span><span class="n">ovstage_wait_op</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">seal</span><span class="p">.</span><span class="n">op_index</span><span class="p">,</span><span class="w"> </span><span class="n">OVSTAGE_TIMEOUT_INFINITE</span><span class="p">,</span>
+<span class="w">                             </span><span class="o">&amp;</span><span class="n">sealed</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="w"> </span><span class="o">&amp;&amp;</span>
+<span class="w">             </span><span class="n">sealed</span><span class="p">.</span><span class="n">error_op_id_count</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">         </span><span class="s">&quot;sealing ordinal 1&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">ovstage_release_op</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">seal</span><span class="p">.</span><span class="n">op_index</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="p">,</span>
+<span class="w">         </span><span class="s">&quot;releasing the seal&quot;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* Create the simulation from the sealed stage. */</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">ok</span><span class="p">(</span><span class="n">ovphysx_create_instance</span><span class="p">(</span><span class="o">&amp;</span><span class="n">physx</span><span class="p">)),</span><span class="w"> </span><span class="s">&quot;creating the simulation&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">done</span><span class="p">(</span><span class="n">ovphysx_attach_ovstage</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">)),</span><span class="w"> </span><span class="s">&quot;attaching the stage&quot;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">print_box_height</span><span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">step</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="n">step</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">60</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">step</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">need</span><span class="p">(</span><span class="n">ok</span><span class="p">(</span><span class="n">ovphysx_step_sync</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0f</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">60.0f</span><span class="p">)),</span><span class="w"> </span><span class="s">&quot;step&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">step</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+<span class="w">            </span><span class="n">print_box_height</span><span class="p">(</span><span class="n">step</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">60.0</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">done</span><span class="p">(</span><span class="n">ovphysx_detach_ovstage</span><span class="p">(</span><span class="n">physx</span><span class="p">)),</span><span class="w"> </span><span class="s">&quot;detaching the stage&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">ok</span><span class="p">(</span><span class="n">ovphysx_destroy_instance</span><span class="p">(</span><span class="n">physx</span><span class="p">)),</span><span class="w"> </span><span class="s">&quot;destroying the simulation&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">ovstage_destroy_instance</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;destroying the stage&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">need</span><span class="p">(</span><span class="n">ok</span><span class="p">(</span><span class="n">ovphysx_shutdown</span><span class="p">()),</span><span class="w"> </span><span class="s">&quot;ovphysx_shutdown&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Build and run it on Linux from that folder, with <code class="docutils literal notranslate"><span class="pre">/path/to/ovphysx</span></code> replaced by the folder where
+you extracted the SDK:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cmake<span class="w"> </span>-B<span class="w"> </span>build<span class="w"> </span>-S<span class="w"> </span>.<span class="w"> </span>-DCMAKE_PREFIX_PATH<span class="o">=</span>/path/to/ovphysx
+cmake<span class="w"> </span>--build<span class="w"> </span>build
+<span class="nv">PHYSX_USD_SCHEMAS_ROOT</span><span class="o">=</span>~/physx-schemas<span class="w"> </span>./build/falling_box
+</pre></div>
+</div>
+<p>On Windows with Visual Studio, build with <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--build</span> <span class="pre">build</span> <span class="pre">--config</span> <span class="pre">Release</span></code>, set
+<code class="docutils literal notranslate"><span class="pre">PHYSX_USD_SCHEMAS_ROOT</span></code>, and run <code class="docutils literal notranslate"><span class="pre">build\Release\run_falling_box.cmd</span></code>.</p>
+<p>In C, your program also starts and stops the library with <code class="docutils literal notranslate"><span class="pre">ovphysx_initialize</span></code> and
+<code class="docutils literal notranslate"><span class="pre">ovphysx_shutdown</span></code>. The <code class="docutils literal notranslate"><span class="pre">done</span></code> helper waits for background work and prints any error.
+A read returns a <code class="docutils literal notranslate"><span class="pre">DLTensor</span></code>, an array described using the DLPack standard.</p>
+</div>
+<p>After the startup messages, both programs print:</p>
+<div class="highlight-output notranslate"><div class="highlight"><pre><span></span><span class="go">t=0.00 s  box z = 2.000 m</span>
+<span class="go">t=0.17 s  box z = 1.863 m</span>
+<span class="go">t=0.33 s  box z = 1.453 m</span>
+<span class="go">t=0.50 s  box z = 0.771 m</span>
+<span class="go">t=0.67 s  box z = 0.500 m</span>
+<span class="go">t=0.83 s  box z = 0.500 m</span>
+<span class="go">t=1.00 s  box z = 0.500 m</span>
+</pre></div>
+</div>
+<p>The program has three main parts:</p>
+<ol class="arabic simple">
+<li><p><strong>Prepare the scene.</strong> Register the PhysX schemas, then load the scene into
+ovstage, the library that holds it in memory. Seal the loaded scene with
+<code class="docutils literal notranslate"><span class="pre">advance_write_floor</span></code>, then attach the stage to ovphysx.</p></li>
+<li><p><strong>Move time forward.</strong> Each <code class="docutils literal notranslate"><span class="pre">step_sync(1.0</span> <span class="pre">/</span> <span class="pre">60.0)</span></code> simulates 1/60 s and waits for the
+step to finish.</p></li>
+<li><p><strong>Read the height.</strong> <code class="docutils literal notranslate"><span class="pre">read_sync</span></code> returns the box’s x, y, and z coordinates. <code class="docutils literal notranslate"><span class="pre">box_height</span></code>
+copies z into a plain number before leaving the <code class="docutils literal notranslate"><span class="pre">with</span></code> block.</p></li>
+</ol>
+<p>The box comes to rest at 0.500 m because its center is half a side above the ground.</p>
+</section>
+<section id="next-steps">
+<h2>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading">#</a></h2>
+<p><a class="reference internal" href="concepts.html"><span class="std std-doc">Concepts</span></a> explains the ideas behind these programs.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="install.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Install</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="concepts.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Concepts</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+
+
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-scene">The Scene</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-program">The Program</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#next-steps">Next Steps</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2025-2026, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Nov 13, 2026.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>
