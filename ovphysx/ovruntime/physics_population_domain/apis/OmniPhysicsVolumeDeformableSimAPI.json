@@ -1,0 +1,68 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "OmniPhysicsVolumeDeformableSimAPI",
+  "title": "OmniPhysicsVolumeDeformableSimAPI",
+  "summary": "Marks the tetrahedral simulation mesh of a volume deformable body and carries its rest shape. The walker accepts it on the body prim or an immediate child that is a TetMesh or has readable tetVertexIndices; volume cooking requires the rest shape to match the mesh exactly.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "TetMesh"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true,
+    "geometry_role": true
+  },
+  "columns": [
+    {
+      "name": "omniphysics:restShapePoints",
+      "usd_type": "point3f[]",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "POINT",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 3,
+        "is_array": true
+      },
+      "required": true,
+      "absent": "Volume cooking requires exactly one rest point per simulation-mesh point, so an absent column fails cooking ('UsdGeomTetMesh not compatible with rest attributes in DeformableVolumeSimAPI') and no body is created. For a PhysxAutoDeformableBodyAPI body the runtime's cooker generates the simulation mesh and writes this column itself.",
+      "units": "length",
+      "implemented_in": [
+        "source/omni.physx/plugins/CookingDataAsync.cpp",
+        "source/omni.physx/plugins/tensors/base/BaseSimulationView.cpp",
+        "source/omni.physx/plugins/OvxPhysicsRead.cpp",
+        "source/omni.physics.ovstage/OvstageSource.cpp"
+      ],
+      "notes": "The rest points are what PhysX cooks the simulation tet mesh from. Tensor views warn when the count differs from the mesh points, and return these values as the body's rest points."
+    },
+    {
+      "name": "omniphysics:restTetVtxIndices",
+      "usd_type": "int4[]",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "int",
+        "bits": 32,
+        "lanes": 4,
+        "is_array": true
+      },
+      "required": true,
+      "absent": "Volume cooking requires it to equal tetVertexIndices element for element, so an absent column fails cooking with the same error and no body is created. Written by the cooker for a PhysxAutoDeformableBodyAPI body.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physx/plugins/CookingDataAsync.cpp",
+        "source/omni.physx/plugins/tensors/base/BaseSimulationView.cpp",
+        "source/omni.physics.ovstage/OvstageSource.cpp"
+      ],
+      "notes": "Tensor views refuse the body ('No support for distinct rest shape topology') on a mismatch. A change re-parses the deformable body."
+    }
+  ],
+  "notes": [
+    "ovstage's usd-prim-type column reports a UsdGeomTetMesh as Mesh, so the walker also accepts a prim with readable tetVertexIndices."
+  ]
+}

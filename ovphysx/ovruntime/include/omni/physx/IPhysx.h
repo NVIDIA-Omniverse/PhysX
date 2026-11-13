@@ -605,14 +605,6 @@ struct IPhysx
     /// subscriptionId SubscriptionId obtained via @ref subscribePhysicsSimulationEvents.
     void(CARB_ABI* unsubscribePhysicsSimulationEvents)(SubscriptionId subscriptionId);
 
-    /// Get rigid body transformation
-    ///
-    /// \param[in] key Rigid body ObjectKey.
-    /// \param[out] pos Rigid body position.
-    /// \param[out] rot Rigid body rotation in quaternion (x,y,z,w).
-    /// \return True if rigid body was found.
-    bool(CARB_ABI* getRigidBodyTransformation)(omni::physics::AttachHandle attach, omni::physics::parse::ObjectKey key, carb::Float3& pos, carb::Float4& rot);
-
     /// Run backwards compatibility on currently attached USD stage
     /// DEPRECATED, use asset validator instead
     ///

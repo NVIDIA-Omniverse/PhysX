@@ -12,9 +12,9 @@ from pathlib import Path
 
 
 def stopped():
-    import ctypes,os
+    from ovphysx_companion._worker import load_library
     from ovphysx_companion.vehicle import VehicleMath
-    service=VehicleMath(ctypes.CDLL(os.environ['OVPHYSX_LIB']))
+    service=VehicleMath(load_library())
     masses=service.sprung_masses(((-1,0,-2),(1,0,-2),(-1,0,2),(1,0,2)),1200)
     assert masses==(300,)*4
     frame=service.suspension_frame((1,0,0,0,0,0,1),(2,0,3,0,0,0,1))
@@ -24,6 +24,7 @@ def stopped():
 
 def run():
     import ovphysx,ovstage
+    from ovphysx.population import physics_population_desc
     from ovphysx_companion.vehicle import population_desc
     from ovphysx_companion.preview import PreviewSession
     from ovphysx_companion.vehicle import VehicleController,VehicleInput
@@ -33,7 +34,7 @@ def run():
     ovphysx.PhysX.set_cpu_mode(True)
     physics=ovphysx.PhysX();stage=ovstage.Stage('vehicle-extension-sample')
     try:
-        ovstage.population.open_usd_with_desc(stage,str(Path(__file__).with_name('scenes')/'vehicle.usda'),ordinal=1,time=float("nan"),descs=[population_desc()])
+        ovstage.population.open_usd_with_desc(stage,str(Path(__file__).with_name('scenes')/'vehicle.usda'),ordinal=1,time=float("nan"),descs=[physics_population_desc(),population_desc()])
         stage.advance_write_floor(ordinal=1).wait()
         with PreviewSession(physics,stage,read_ordinal=1) as preview:
             with VehicleController(preview,'/World/Car',response_rate=3) as vehicle,FrameCoordinator(preview) as loop:

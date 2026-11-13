@@ -6,7 +6,7 @@
 
 /**
  * @implements REQ-PUBLICAPI-001
- * @covers AC-23
+ * @covers AC-23 AC-51
  *
  * @implements REQ-SIM-AUTOATTACH-001
  * @covers AC-1 AC-2
@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <omni/physics/AttachHandle.h>
 #include <internal/Internal.h>
 #include "foundation/PxTransform.h"
 
@@ -41,6 +42,11 @@ struct GeneratedAutoAttachmentChild;
 typedef void (*getGeometryInfoCallback)(const ::physx::PxGeometry& geom,
                                         const ::physx::PxTransform& geomPos,
                                         void* userData);
+
+// Handle-based entries enforce runtime admission and retain the selected owner.
+// Return false for an invalid attachment or busy execution.
+bool setupAutoDeformableAttachment(omni::physics::AttachHandle attach, omni::physics::parse::ObjectKey attachmentKey);
+bool updateAutoDeformableAttachment(omni::physics::AttachHandle attach, omni::physics::parse::ObjectKey attachmentKey);
 
 bool setupAutoDeformableAttachment(usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey attachmentKey);
 

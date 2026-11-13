@@ -29,7 +29,7 @@ NpDirectGPUAPI::NpDirectGPUAPI(NpScene& scene) :
 	if( (flags & PxSceneFlag::eENABLE_DIRECT_GPU_API) && (flags & PxSceneFlag::eENABLE_GPU_DYNAMICS) && (mNpScene.getBroadPhaseType() == PxBroadPhaseType::eGPU) )
 	{
 		PxsSimulationController* controller = mNpScene.getScScene().getSimulationController();
-		if (controller->getEnableOVDReadback())
+		if (controller->getOVDReadbackMode() != PxsOVDReadbackMode::eDISABLED)
 		{
 			controller->setOVDCallbacks(mOvdCallback);
 		}

@@ -313,6 +313,14 @@ namespace physx
 
 		PX_FORCE_INLINE PxgGpuNarrowphaseCore* getNarrowphaseCore() { return mGpuNpCore; }
 
+#if PX_SUPPORT_OMNI_PVD
+		struct OmniPvdContactStreams
+		{
+			PxcDataStreamPool points, patches, forces, friction;
+		};
+		PX_FORCE_INLINE const OmniPvdContactStreams& getOmniPvdContactStreams() const { return mOvdContactStreams; }
+#endif
+
 		PX_FORCE_INLINE PxgSimulationCore* getSimulationCore() { return mGpuSimulationCore; }
 
 		PX_FORCE_INLINE PxgCudaBroadPhaseSap*	getGpuBroadPhase() { return mGpuBp;  }
@@ -441,6 +449,9 @@ namespace physx
 		PxgPinnedHostLinearMemoryAllocator*		mFrictionPatchStreamAllocator;
 
 		PxU32									mCurrentContactStream;
+#if PX_SUPPORT_OMNI_PVD
+		OmniPvdContactStreams mOvdContactStreams;
+#endif
 
 		PxgIslandContext*						mIslandContextPool;
 		PxU32									mNumIslandContextPool;

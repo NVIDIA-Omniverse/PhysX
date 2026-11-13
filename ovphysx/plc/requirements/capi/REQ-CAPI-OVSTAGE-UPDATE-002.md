@@ -29,13 +29,14 @@ capturing a diagnostic alone does not make an update fail.
 ## Test References
 
 - [TEST-CAPI-OVSTAGE-UPDATE-002](../../tests/capi/TEST-CAPI-OVSTAGE-UPDATE-002.md)
-  is specification only; direct automated update-diagnostic coverage is not
-  implemented yet.
+  covers the real failed-scan diagnostic. Controlled first-error selection,
+  no-detail fallback and recoverable-diagnostic cases remain specification only.
 
 ## Code References
 
 - ovphysx/src/ovphysx/ovphysx.cpp (`ovphysx_update_from_ovstage`; AC-1, AC-2, AC-3)
 - ovphysx/src/include/internal/sdk/TaskContext.hpp (retained execution errors)
+- ovphysx/tests/c_unittests/test_usd_loading.cpp (`PartialSealIncrementalScanCanRetryAfterSealingJointRelationships`; failed-scan cause, AC-1)
 
 ## Dependencies
 

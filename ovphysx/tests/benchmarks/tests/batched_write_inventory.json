@@ -1,0 +1,6 @@
+{
+  "_comment": "One hidden CPU batched-attribute spawn diagnostic. Existing families remain unchanged. See REQ-CAPI-BENCHMARK-009.",
+  "rows": [
+    {"name": "BatchedWrite.runtime_write_spawn_cpu", "device": "cpu"}
+  ]
+}

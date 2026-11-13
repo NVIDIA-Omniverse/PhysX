@@ -1,0 +1,266 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxArticulationAPI",
+  "title": "PhysxArticulationAPI",
+  "summary": "PhysX tuning of a reduced-coordinate articulation, applied on the same prim as PhysicsArticulationRootAPI. Two thresholds have units-scaled parser defaults that the raw schema fallbacks do not reproduce, and the producer performs NO articulation derivation: on a producer-populated stage the consumer receives the raw fallbacks and uses them verbatim.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "Xformable",
+    "PhysicsJoint"
+  ],
+  "requires": [
+    "PhysicsArticulationRootAPI"
+  ],
+  "multi_apply": false,
+  "uses": [
+    "stage_units"
+  ],
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "producer_scope": "Every declared attribute is published at its resolved value. Unlike PhysxRigidBodyAPI there is no units-scaled rewrite of sleepThreshold or stabilizationThreshold: the raw fallbacks 0.00005 and 0.00001 are published when unauthored and, because the consumer has no authored gate, they replace the units-scaled parser defaults.",
+  "columns": [
+    {
+      "name": "physxArticulation:articulationEnabled",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": true,
+      "verify": {
+        "target": "articulation",
+        "expr": "articulation != nullptr",
+        "kind": "bool",
+        "notes": "No sample: a disabled articulation emits no descriptor and invalidates every articulation-targeted check."
+      },
+      "parser_default": true,
+      "absent": "The articulation is built. false skips the root entirely when the articulations are built: no descriptor is emitted and the bodies and joints under it become plain rigid bodies and standalone joints.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseArticulation.cpp",
+        "source/omni.physics.parse/ArticulationGraph.cpp"
+      ]
+    },
+    {
+      "name": "physxArticulation:sleepThreshold",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 5e-05,
+      "verify": {
+        "target": "articulation",
+        "expr": "articulation->getSleepThreshold()",
+        "kind": "float",
+        "sample": 0.25
+      },
+      "parser_default": "5e-5 * (10 / metersPerUnit) ** 2",
+      "absent": "Units-scaled default: 5e-3 on a meter stage, 50 on a centimeter stage. The producer does not rewrite this column, so USD population publishes the raw 5e-5 and the consumer, which has no authored gate, uses 5e-5: on a centimeter stage a producer-populated articulation sleeps 10^6 times more eagerly than one that omits the column.",
+      "raw_fallback_diverges": false,
+      "units": "length^2/s^2",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseArticulation.cpp",
+        "source/omni.physics.parse/KnownTokens.cpp"
+      ],
+      "notes": "raw_fallback_diverges flags that the raw value and the absent-column behaviour disagree; here the raw value is also exactly what the producer publishes, so the divergence is between USD population and a hand populator that omits the column, not between the raw value and USD population. raw_fallback_diverges is false by the schema's definition: USD population publishes exactly the raw fallback, so writing it reproduces USD population. The consumer then reads that raw value literally on every stage (no articulation rewrite in the producer, no authored gate in the consumer), which is the recorded finding, not a builder rule."
+    },
+    {
+      "name": "physxArticulation:stabilizationThreshold",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 1e-05,
+      "verify": {
+        "target": "articulation",
+        "expr": "articulation->getStabilizationThreshold()",
+        "kind": "float",
+        "sample": 0.125
+      },
+      "parser_default": "1e-2 * (10 / metersPerUnit) ** 2",
+      "absent": "Units-scaled default with coefficient 1e-2: 1.0 on a meter stage, 10000 on a centimeter stage. The schema documents 0.00001 * tolerancesSpeed^2 and falls back to 1e-5; the parser's coefficient is 1000 times larger (see findings). As with sleepThreshold the producer publishes the raw 1e-5 and the consumer uses it verbatim.",
+      "raw_fallback_diverges": false,
+      "units": "length^2/s^2",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseArticulation.cpp",
+        "source/omni.physics.parse/KnownTokens.cpp"
+      ],
+      "notes": "See sleepThreshold for the meaning of raw_fallback_diverges on this component. raw_fallback_diverges is false by the schema's definition: USD population publishes exactly the raw fallback, so writing it reproduces USD population. The consumer then reads that raw value literally on every stage (no articulation rewrite in the producer, no authored gate in the consumer), which is the recorded finding, not a builder rule."
+    },
+    {
+      "name": "physxArticulation:solverPositionIterationCount",
+      "usd_type": "int",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "int",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 32,
+      "verify": {
+        "target": "articulation",
+        "expr": "harness::articulationPositionIterations(articulation)",
+        "kind": "int",
+        "sample": 8
+      },
+      "parser_default": 32,
+      "absent": "32 position iterations. Read through int64 and narrowed, then clamped to [1, 255]; the scene's own iteration bounds may clamp further at creation.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "clamp": [
+        1,
+        255
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseArticulation.cpp",
+        "source/omni.physics.parse/KnownTokens.cpp"
+      ]
+    },
+    {
+      "name": "physxArticulation:solverVelocityIterationCount",
+      "usd_type": "int",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "int",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 1,
+      "verify": {
+        "target": "articulation",
+        "expr": "harness::articulationVelocityIterations(articulation)",
+        "kind": "int",
+        "sample": 2
+      },
+      "parser_default": 1,
+      "absent": "1 velocity iteration. Clamped to [0, 255].",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "clamp": [
+        0,
+        255
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseArticulation.cpp",
+        "source/omni.physics.parse/KnownTokens.cpp"
+      ]
+    },
+    {
+      "name": "physxArticulation:enabledSelfCollisions",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": true,
+      "parser_default": true,
+      "absent": "Links self-collide. When this column is absent (or the API is not applied) the consumer falls back to newton:selfCollisionEnabled if present. Deprecated by the schema in favour of newton:selfCollisionEnabled.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseArticulation.cpp",
+        "source/omni.physics.parse/KnownTokens.cpp"
+      ],
+      "notes": "No verify block: the runtime keeps this as an internal per-articulation flag that drives link-pair filtering; there is no PxArticulationReducedCoordinate getter for it."
+    }
+  ],
+  "derived": [
+    {
+      "name": "tolerances_speed",
+      "expr": "10 / metersPerUnit",
+      "inputs": [
+        "stage_units"
+      ],
+      "summary": "The speed scale both thresholds are squared against in the consumer's units-aware articulation defaults."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysicsArticulationRootAPI",
+      "rule": "Read once per elected root, after the units-scaled default thresholds are seeded and before the graph pass. Gate is usd-schemas CONTAINS PhysxArticulationAPI; without it every field keeps its default and only newton:selfCollisionEnabled is consulted."
+    },
+    {
+      "with": "stage_units",
+      "rule": "Both thresholds scale with (10 / metersPerUnit)^2 when the column is absent; an authored or producer-published value is taken as-is in stage units."
+    },
+    {
+      "with": "PhysxRigidBodyAPI",
+      "rule": "Same sleepThreshold coefficient as the rigid-body default (5e-5), but the stabilization coefficient is 1e-2 here against 1e-5 there."
+    }
+  ],
+  "findings": [
+    {
+      "column": "physxArticulation:stabilizationThreshold",
+      "severity": "defect",
+      "side": "consumer",
+      "summary": "The parser's units-scaled default uses coefficient 1e-2 while the schema documents and falls back to 1e-5 (and PhysxRigidBodyAPI uses 1e-5): a 1000x divergence beyond the units factor, pinned by a parser unit test. sleepThreshold's 5e-5 matches the schema.",
+      "tracking": "follow-up to file"
+    },
+    {
+      "column": "physxArticulation:sleepThreshold",
+      "severity": "defect",
+      "side": "both",
+      "propagates_to": [
+        "physxArticulation:stabilizationThreshold"
+      ],
+      "summary": "The producer performs no units-scaled rewrite for articulations (it does for rigid bodies) and the consumer has no authored gate, so a producer-populated stage with PhysxArticulationAPI applied and unauthored thresholds simulates with the raw 5e-5 / 1e-5 while a stage that omits the columns gets 5e-3 / 1.0 on a meter stage. The two population paths disagree on every stage; the gap grows with 1/metersPerUnit^2.",
+      "tracking": "follow-up to file"
+    }
+  ],
+  "notes": [
+    "applies_to includes PhysicsJoint because the API sits on the same prim as PhysicsArticulationRootAPI, which the fixed-base pattern puts on the root joint (see that component).",
+    "newton:selfCollisionEnabled (Newton schema, not part of this contract) is read when PhysxArticulationAPI is absent or when physxArticulation:enabledSelfCollisions is not readable.",
+    "physics:filteredPairs on the root prim is owned by PhysicsFilteredPairsAPI and feeds the articulation's filtered collision list."
+  ]
+}

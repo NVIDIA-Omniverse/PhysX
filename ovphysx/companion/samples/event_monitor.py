@@ -9,6 +9,7 @@ from pathlib import Path
 
 def run():
     import ovphysx,ovstage
+    from ovphysx.population import physics_population_descs
     from ovphysx_companion.preview import PreviewSession
     from ovphysx_companion.host import FrameCoordinator
     from ovphysx_companion.events import EventQueue,Mask,Kind,TriggerType,EventOverflow
@@ -17,8 +18,8 @@ def run():
     ovphysx.PhysX.set_cpu_mode(True)
     physics=ovphysx.PhysX();stage=ovstage.Stage('event-monitor')
     try:
-        ovstage.population.open_usd(stage,str(Path(__file__).with_name('scenes')/'events.usda'),
-            ordinal=1,domains=ovstage.PopulationDomain.ALL)
+        ovstage.population.open_usd_with_desc(stage,str(Path(__file__).with_name('scenes')/'events.usda'),
+            ordinal=1,time=ovstage.population.DEFAULT_TIME,descs=physics_population_descs(rendering=True))
         stage.advance_write_floor(ordinal=1).wait()
         with PreviewSession(physics,stage,read_ordinal=1) as preview,FrameCoordinator(preview) as loop:
             # Subscribe before stepping. The source explicitly applies trigger and

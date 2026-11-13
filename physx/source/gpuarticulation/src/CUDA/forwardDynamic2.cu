@@ -367,7 +367,10 @@ static __device__ void jcalc(const PxgArticulation& articulation, PxgArticulatio
 		PxReal* PX_RESTRICT cfms = articulation.cfms;
 		const PxgArticulationLinkProp* PX_RESTRICT props = articulation.linkProps;
 
-		if (confiDirty)
+		// The cfm scales come from the link records, which change with the configuration and with dirty links.
+		const bool cfmScaleDirty = confiDirty || (artiData.updateDirty & Dy::ArticulationDirtyFlag::eDIRTY_LINKS);
+
+		if (cfmScaleDirty)
 			cfmScale[0] = (artiData.flags & PxArticulationFlag::eFIX_BASE) ? 0.f : links[0].cfmScale * invLengthScale;
 
 		if (dataDirty)
@@ -396,7 +399,7 @@ static __device__ void jcalc(const PxgArticulation& articulation, PxgArticulatio
 
 			jointOffsets[linkID] = offset;
 
-			if (confiDirty)
+			if (cfmScaleDirty)
 				cfmScale[linkID] = links[linkID].cfmScale * invLengthScale;
 
 			if (dataDirty)
@@ -404,7 +407,7 @@ static __device__ void jcalc(const PxgArticulation& articulation, PxgArticulatio
 		}
 
 		artiData.confiDirty = false;
-		// do not reset artiData.updateDirty here; hold on until block data is copied below in the else if (dataDirty) block
+		// Do not reset artiData.updateDirty here. The block copy below resets it.
 	}
 	//KS - now we copy the data we may/may not have computed above into the batch format.
 	//This has to be done every frame because there are no guarantees that articulations will be batched 
@@ -430,6 +433,12 @@ static __device__ void jcalc(const PxgArticulation& articulation, PxgArticulatio
 		rootLinkBlockData.mDisableGravity[threadIndexInWarp] = rootLink.disableGravity;
 		rootLinkBlockData.mRetainsAcceleration[threadIndexInWarp] = rootLink.retainsAccelerations;
 		rootLinkBlockData.mDofs[threadIndexInWarp] = 0;
+		// The root has no inbound joint or parent link.
+		rootLinkBlockData.mParents[threadIndexInWarp] = DY_ARTICULATION_LINK_NONE;
+		rootLinkBlockData.mJointOffset[threadIndexInWarp] = 0;
+		rootLinkBlockData.mRw_x[threadIndexInWarp] = 0.0f;
+		rootLinkBlockData.mRw_y[threadIndexInWarp] = 0.0f;
+		rootLinkBlockData.mRw_z[threadIndexInWarp] = 0.0f;
 
 		rootLinkBlockData.mLinDampingX_AngDampingY_maxLinVelSqZ_maxAngVelSqW[threadIndexInWarp] =
 			make_float4(rootLink.linearDamping, rootLink.angularDamping, rootLink.maxLinearVelocitySq, rootLink.maxAngularVelocitySq);
@@ -547,6 +556,9 @@ static __device__ void jcalc(const PxgArticulation& articulation, PxgArticulatio
 		initializeMimicJointsBlock(articulation, artiData, artiBlock, mimicJointBlocks, threadIndexInWarp);
 
 		artiBlock.mFlags[threadIndexInWarp] = articulation.data.flags;
+
+		// The full rebuild above covers every updateDirty bit.
+		artiData.updateDirty = 0;
 	}
 	else if (dataDirty)
 	{
@@ -2408,7 +2420,7 @@ static __device__ void computeAndEnforceJointPositions(
 	{
 		PxgArticulationBlockLinkData& link = linkData[linkID];
 		PxU8 jointType = link.mJointType[threadIndexInWarp];
-		PxU8 jointOffset = link.mJointOffset[threadIndexInWarp];
+		const PxU32 jointOffset = link.mJointOffset[threadIndexInWarp];
 
 		PxgArticulationBlockDofData* dof = &dofData[jointOffset];
 		// We don't need to deal with eREVOLUTE_UNWRAPPED case because there are no joint position changed
@@ -3491,10 +3503,11 @@ extern "C" __global__ void artiApplyTgsSubstepForces(PxgArticulationCoreDesc* sc
 
 	if(globalThreadIndex < nbArticulations)
 	{
-		const PxgArticulation& articulation = scDesc->articulations[globalThreadIndex];
+		PxgArticulationBlockData& articulationBlock = scDesc->mArticulationBlocks[globalWarpIndex];
+		const PxU32 articulationIndex = articulationBlock.mArticulationIndex[threadIndexInWarp];
+		const PxgArticulation& articulation = scDesc->articulations[articulationIndex];
 		const Cm::UnAlignedSpatialVector* PX_RESTRICT zExt = articulation.zAForces;
 		const PxReal* PX_RESTRICT jointForces = articulation.jointForce;
-		PxgArticulationBlockData& articulationBlock = scDesc->mArticulationBlocks[globalWarpIndex];
 		PxgArticulationBlockLinkData* artiLinks = &scDesc->mArticulationLinkBlocks[globalWarpIndex * maxLinks];
 		PxgArticulationBlockDofData* artiDofs = &scDesc->mArticulationDofBlocks[globalWarpIndex * maxDofs];
 		const PxU32 numLinks = articulationBlock.mNumLinks[threadIndexInWarp];

@@ -41,10 +41,16 @@ endif()
 string(STRIP "${_UV_VERSION}" _UV_VERSION)
 message(STATUS "Pyright: using uv (${_UV_VERSION})")
 
-set(UV_CACHE_DIR_PATH "${PROJECT_ROOT}/_build/.uv_cache")
+set(UV_CACHE_DIR_PATH "${BUILD_PATH}/.uv_cache")
+foreach(_CACHE_PATH IN ITEMS "${UV_CACHE_DIR_PATH}" "${BUILD_PATH}/pycache"
+                             "${BUILD_PATH}/venv/pyright")
+    ovphysx_require_build_path("${_CACHE_PATH}")
+endforeach()
 file(MAKE_DIRECTORY "${UV_CACHE_DIR_PATH}")
 set(UV_ENV
     "UV_CACHE_DIR=${UV_CACHE_DIR_PATH}"
+    "UV_PROJECT_ENVIRONMENT=${BUILD_PATH}/venv/pyright"
+    "PYTHONPYCACHEPREFIX=${BUILD_PATH}/pycache"
     "UV_NO_CONFIG=1"
     "UV_HTTP_TIMEOUT=300"
 )

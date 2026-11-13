@@ -21,3 +21,5 @@ static_assert(std::is_same<decltype(ovphysx_attach_ovstage(0, nullptr, 1)), ovph
 static_assert(std::is_same<decltype(ovphysx_update_from_ovstage(0, {})), ovphysx_enqueue_result_t>::value);
 static_assert(std::is_same<decltype(ovphysx_detach_ovstage(0)), ovphysx_enqueue_result_t>::value);
 static_assert(std::is_same<decltype(ovphysx_is_stage_attached(0, nullptr, nullptr)), ovphysx_result_t>::value);
+
+#include <ovphysx/ovphysx_attribute_tokens.h>

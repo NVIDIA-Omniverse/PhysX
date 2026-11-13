@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-ATTACH-SERVICES-001
+ * @covers AC-3
+ */
 
 #include <carb/profiler/Profile.h>
 
@@ -9,6 +13,9 @@
 #include "UjitsoMeshUtils.inl"
 #include "UjitsoHashUtils.inl"
 #include "LoggingUtils.h"
+
+#include <chrono>
+#include <thread>
 
 using namespace carb::ujitso;
 using namespace carb::datastore;
@@ -69,9 +76,13 @@ UjitsoProcessContext::BuildRequestResult UjitsoProcessContext::requestBuild(uint
     {
         m_state = Pending;
     }
+    // Set before the request goes out: requestCallback() may run before agent->requestBuild() returns
+    m_callbackPending.store(true, std::memory_order_release);
     OperationResult ujitsoResult = m_agent->agent->requestBuild(
         *m_agent, m_requestBuilder.getRequest().getRequest(), *this, &m_requestHandle);
 
+    if (ujitsoResult != OperationResult::SUCCESS)
+        m_callbackPending.store(false, std::memory_order_release); // no build started, so no callback will come
     CHECK_RETURN_VALUE_ON_FAIL(ujitsoResult == OperationResult::SUCCESS, BuildRequestResult::eUjitsoRequestFailed);
 
     int32_t expected = Pending;
@@ -110,6 +121,7 @@ void UjitsoProcessContext::cancel(bool invokeCallbacks)
 {
     CARB_UNUSED(invokeCallbacks);
 
+    m_canceled = true;
     m_state = Finishing;
 }
 
@@ -133,6 +145,16 @@ void UjitsoProcessContext::onBuildFinished()
 
     if (m_agent)
     {
+        // A build canceled while it runs still completes, and its callback still runs postbuild() on
+        // this context; destroyRequest() does not wait for a callback that has already started.
+        // Same budget as MeshCookingContext gives unregisterContainer() to let go of an input in use
+        constexpr uint32_t timeoutMs = 60000;
+        if (!waitForCallback(timeoutMs))
+        {
+            CARB_LOG_ERROR("UjitsoProcessContext::onBuildFinished: build callback still running after %us.",
+                           timeoutMs / 1000);
+        }
+
         // Make sure the request is destroyed before the agent
         destroyRequest();
 
@@ -144,6 +166,26 @@ void UjitsoProcessContext::onBuildFinished()
         m_agent = nullptr;
         m_agentIsExternal = false;
     }
+}
+
+bool UjitsoProcessContext::waitForCallback(uint32_t timeoutMs)
+{
+    if (!callbackPending())
+        return true;
+
+    CARB_PROFILE_ZONE(0, "UjitsoProcessContext::waitForCallback");
+
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutMs);
+
+    // waitRequest() blocks for the build chain; the loop covers the end of the callback itself
+    waitRequest(timeoutMs);
+    while (callbackPending())
+    {
+        if (std::chrono::steady_clock::now() >= deadline)
+            return false;
+        std::this_thread::yield();
+    }
+    return true;
 }
 
 void UjitsoProcessContext::prebuild()
@@ -216,6 +258,9 @@ void UjitsoProcessContext::requestCallback(
     context->postbuild(requestHandle, resultHandle, result);
 
     context->setBuildFinished();
+
+    // Last access to the context: once this is cleared, the thread that owns it may delete it
+    context->m_callbackPending.store(false, std::memory_order_release);
 }
 
 } // namespace physx

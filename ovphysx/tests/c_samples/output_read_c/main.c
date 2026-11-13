@@ -35,6 +35,7 @@
 
 #include <ovphysx/ovphysx.h>
 #include <ovphysx/ovphysx_attributes.h>
+#include <ovphysx/ovphysx_config.h>
 #include <ovphysx/ovphysx_types.h>
 
 #include "ovstage_sample.h"                       // pulls in ovstage.h (write API + DLTensor)
@@ -53,7 +54,10 @@
 // [tutorial-start]
 // A representative output-attribute set (see the ovstage Integration guide).
 // ovphysx_read skips names a type does not emit, and a type with no objects
-// yields no groups, so iterating this table is safe on any scene.
+// yields no groups, so iterating this table is safe on any scene. Joint state is
+// left out: a joint group has one row per DOF, not ovstage's one array per joint
+// prim, so it is not forwarded verbatim; ovphysx_create_joint_arrays_from_read_group
+// (<ovphysx/ovphysx_utils.h>) regroups it into one array per joint.
 typedef struct
 {
     ovphysx_query_target_t type;
@@ -70,7 +74,6 @@ static const output_spec_t OUTPUT_SPECS[] = {
       { OVPHYSX_ATTR_ROOT_POSITION, OVPHYSX_ATTR_ROOT_ORIENTATION, OVPHYSX_ATTR_ROOT_LINEAR_VELOCITY,
         OVPHYSX_ATTR_ROOT_ANGULAR_VELOCITY },
       4 },
-    { OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT, { OVPHYSX_ATTR_JOINT_POSITION, OVPHYSX_ATTR_JOINT_VELOCITY }, 2 },
     { OVPHYSX_QUERY_TARGET_VEHICLE_WHEEL, { OVPHYSX_ATTR_POSITION, OVPHYSX_ATTR_ORIENTATION }, 2 },
     { OVPHYSX_QUERY_TARGET_DEFORMABLE_VOLUME, { OVPHYSX_ATTR_POINTS, OVPHYSX_ATTR_VELOCITIES }, 2 },
     { OVPHYSX_QUERY_TARGET_DEFORMABLE_SURFACE, { OVPHYSX_ATTR_POINTS, OVPHYSX_ATTR_VELOCITIES }, 2 },
@@ -89,7 +92,7 @@ static int ovstage_sample_wait(ovstage_instance_t* inst, ovstage_enqueue_result_
         return 0;
     }
     int ok = 1;
-    if (r.op_index != OVSTAGE_INVALID_OP_ID)
+    if (r.op_index.raw_id != 0)
     {
         ovstage_op_wait_result_t wait_result = { 0 };
         const ovstage_api_status_t status = ovstage_wait_op(inst, r.op_index, OVSTAGE_TIMEOUT_INFINITE, &wait_result);
@@ -117,22 +120,22 @@ static int advance_floor(ovstage_instance_t* inst, ovstage_ordinal_t ordinal)
     return ovstage_sample_wait(inst, ovstage_advance_write_floor(inst, &desc));
 }
 
-static ovx_string_or_token_t name_str(const char* s)
+static ovx_token_or_string_t name_str(const char* s)
 {
-    ovx_string_or_token_t n;
-    n.token = 0;
+    ovx_token_or_string_t n;
+    n.token = OVX_INVALID_TOKEN;
     n.string.ptr = s;
     /* Callers pass short attribute and type identifiers, so 256 bounds the scan. */
     n.string.length = strnlen(s, 256);
     return n;
 }
 
-// An attribute name given as an already-interned token. A non-zero token selects
-// the token form and the string side is ignored. Reusing an interned token skips
+// An attribute name given as an already-interned token. A NULL string selects the
+// token form (a non-NULL string would take precedence). Reusing an interned token skips
 // the string round-trip ovstage would otherwise do to re-intern a name.
-static ovx_string_or_token_t name_tok(ovx_token_t tok)
+static ovx_token_or_string_t name_tok(ovx_token_t tok)
 {
-    ovx_string_or_token_t n;
+    ovx_token_or_string_t n;
     n.token = tok;
     n.string.ptr = NULL;
     n.string.length = 0;
@@ -148,21 +151,21 @@ enum { SIM_TOKEN_CACHE_CAP = 16 };
 typedef struct
 {
     ovx_token_t emitted[SIM_TOKEN_CACHE_CAP]; // group->attribute as read back
-    ovx_token_t sim[SIM_TOKEN_CACHE_CAP];     // interned "sim:<name>" (0 == unresolved)
+    ovx_token_t sim[SIM_TOKEN_CACHE_CAP];     // interned "sim:<name>" (OVX_INVALID_TOKEN == unresolved)
     int count;
 } sim_token_cache_t;
 
 // Return the interned "sim:<name>" token for an emitted attribute token, interning
-// it on first sight. Returns 0 if the name cannot be resolved or interned, and
+// it on first sight. Returns OVX_INVALID_TOKEN if the name cannot be resolved or interned, and
 // the caller then falls back to a literal string name.
 static ovx_token_t sim_token_for(
     sim_token_cache_t* cache, path_dictionary_instance_t* dict, ovx_token_t emitted)
 {
     for (int i = 0; i < cache->count; ++i)
-        if (cache->emitted[i] == emitted)
+        if (ovx_token_equal(cache->emitted[i], emitted))
             return cache->sim[i];
 
-    ovx_token_t sim = 0;
+    ovx_token_t sim = OVX_INVALID_TOKEN;
     ovx_string_t name = { NULL, 0 };
     if (dict && path_dictionary_get_strings_from_tokens(dict, &emitted, 1, &name).status == OVX_API_SUCCESS
         && name.ptr)
@@ -175,7 +178,7 @@ static ovx_token_t sim_token_for(
         ovx_string_t s = { buf, strnlen(buf, sizeof buf) };
         // Interning is idempotent. Equal strings yield equal tokens, so this both
         // mints the token and lets the cache short-circuit every later sighting.
-        ovx_token_t minted = 0;
+        ovx_token_t minted = OVX_INVALID_TOKEN;
         if (path_dictionary_create_tokens_from_strings(dict, &s, 1, &minted).status == OVX_API_SUCCESS)
             sim = minted;
     }
@@ -196,7 +199,7 @@ static int author_velocity(
     ovstage_instance_t* inst, const ovstage_read_group_t* g, ovstage_ordinal_t ordinal, const float vel[3])
 {
     const uint32_t count = g->prims.count;
-    if (count == 0 || g->prims.list == 0)
+    if (count == 0 || !ovx_primpath_list_is_valid(g->prims.list))
         return 1; // nothing to author is not a failure
 
     float* values = (float*)malloc((size_t)count * 3 * sizeof(float));
@@ -229,8 +232,8 @@ static int author_velocity(
 
     int ok = 0;
     ovstage_query_handle_t q = OVSTAGE_INVALID_QUERY_HANDLE;
-    if (ovstage_query_from_path_list(inst, (ovx_primpath_list_t)g->prims.list, &q) == OVSTAGE_OK
-        && q != OVSTAGE_INVALID_QUERY_HANDLE)
+    if (ovstage_query_from_path_list(inst, g->prims.list, &q) == OVSTAGE_OK
+        && q.raw_id != 0)
     {
         ok = ovstage_sample_wait(inst, ovstage_write_attribute(inst, q, name_str("physics:velocity"), ordinal, w,
                                                                OVSTAGE_PRIM_MODE_UPSERT));
@@ -280,7 +283,7 @@ static int verify_pending_readback(ovstage_instance_t* inst, pending_readback_t*
     int ok = 0;
     ovstage_query_handle_t q = OVSTAGE_INVALID_QUERY_HANDLE;
     if (ovstage_query_from_path_list(inst, pending->list, &q) == OVSTAGE_OK
-        && q != OVSTAGE_INVALID_QUERY_HANDLE)
+        && q.raw_id != 0)
     {
         ovstage_read_handle_t read = OVSTAGE_INVALID_READ_HANDLE;
         // A latest snapshot, not a range pinned to the write. After the seal the column's latest
@@ -303,9 +306,10 @@ static int verify_pending_readback(ovstage_instance_t* inst, pending_readback_t*
             for (;;)
             {
                 ovstage_read_group_t g;
+                size_t fetched = 0;
                 memset(&g, 0, sizeof(g));
                 const ovstage_api_status_t fs =
-                    ovstage_fetch_read_next(inst, read, OVSTAGE_TIMEOUT_INFINITE, &g);
+                    ovstage_fetch_read_next(inst, read, OVSTAGE_TIMEOUT_INFINITE, &g, 1, &fetched);
                 if (fs == OVSTAGE_ERROR_END_OF_ITERATION)
                     break;
                 if (fs != OVSTAGE_OK)
@@ -313,11 +317,12 @@ static int verify_pending_readback(ovstage_instance_t* inst, pending_readback_t*
                     fprintf(stderr, "read-back: ovstage_fetch_read_next failed (status %d)\n", (int)fs);
                     break;
                 }
-                // A delete row carries no values. Counting it would let an erased column read as a
-                // successful round trip.
-                if (!g.is_delete && g.data.tensor_count > 0 && g.data.tensors)
+                // A delete column carries no values. Counting it would let an erased column read as
+                // a successful round trip. One attribute was requested, so a group has one column.
+                if (g.column_count == 1 && !g.columns[0].is_delete && g.columns[0].data.tensor_count > 0 &&
+                    g.columns[0].data.tensors)
                     ++seen_values;
-                ovstage_release_group(inst, &g);
+                ovstage_release_groups(inst, &g, 1);
             }
             ok = ovstage_sample_wait(inst, rr) && seen_values > 0;
             ok = ovstage_sample_wait(inst, ovstage_release_read(inst, read)) && ok;
@@ -354,29 +359,30 @@ static int dump_group(ovstage_instance_t* inst,
                       int* out_written,
                       pending_readback_t* out_pending)
 {
-    if (g->is_delete || g->data.tensor_count == 0 || !g->data.tensors || g->prims.list == 0)
+    if (g->columns[0].is_delete || g->columns[0].data.tensor_count == 0 || !g->columns[0].data.tensors
+        || !ovx_primpath_list_is_valid(g->prims.list))
         return 1; // nothing to write back. Not a failure and not a dumped group either
 
     // The interned "sim:<name>" token for this emitted attribute, resolved once and
     // then cached. It comes from the same shared dictionary as the group, so it is
     // valid as the ovstage write target with no re-intern. A literal name is the
     // fallback when the token could not be resolved.
-    const ovx_token_t sim = sim_token_for(tokens, dict, (ovx_token_t)g->attribute);
-    const ovx_string_or_token_t attr = sim ? name_tok(sim) : name_str("sim:value");
+    const ovx_token_t sim = sim_token_for(tokens, dict, g->columns[0].attribute);
+    const ovx_token_or_string_t attr = ovx_token_is_valid(sim) ? name_tok(sim) : name_str("sim:value");
 
     // Reuse the group's data block verbatim. The borrowed tensors are already in
     // ovstage column layout (tuple width in dtype.lanes), so they assign straight
     // into the write payload without reshape or copy.
     ovstage_write_data_t w;
     memset(&w, 0, sizeof(w));
-    w.tensors = g->data.tensors;
-    w.tensor_count = g->data.tensor_count;
-    w.semantic = g->semantic;
-    w.is_array = g->is_array;
+    w.tensors = g->columns[0].data.tensors;
+    w.tensor_count = g->columns[0].data.tensor_count;
+    w.semantic = g->columns[0].semantic;
+    w.is_array = g->columns[0].is_array;
 
     ovstage_query_handle_t q = OVSTAGE_INVALID_QUERY_HANDLE;
-    if (ovstage_query_from_path_list(inst, (ovx_primpath_list_t)g->prims.list, &q) != OVSTAGE_OK
-        || q == OVSTAGE_INVALID_QUERY_HANDLE)
+    if (ovstage_query_from_path_list(inst, g->prims.list, &q) != OVSTAGE_OK
+        || q.raw_id == 0)
     {
         fprintf(stderr, "ovstage_query_from_path_list failed for a read group\n");
         return 0;
@@ -389,11 +395,11 @@ static int dump_group(ovstage_instance_t* inst,
     // is enough, since the round trip has the same shape for every attribute. The pin is skipped
     // when the sim token could not be interned, because the read is by token. `run()` fails if
     // nothing was ever verified, so skipping cannot quietly become never.
-    if (ok && out_pending && !out_pending->armed && sim && dict
-        && path_dictionary_add_path_list_reference(dict, (ovx_primpath_list_t)g->prims.list).status == OVX_API_SUCCESS)
+    if (ok && out_pending && !out_pending->armed && ovx_token_is_valid(sim) && dict
+        && path_dictionary_add_path_list_reference(dict, g->prims.list).status == OVX_API_SUCCESS)
     {
         out_pending->armed = 1;
-        out_pending->list = (ovx_primpath_list_t)g->prims.list;
+        out_pending->list = g->prims.list;
         out_pending->attr = sim;
         out_pending->ordinal = ordinal;
         out_pending->dict = dict;
@@ -424,14 +430,18 @@ static int author_rigid_body_velocity(
         // A query error is not "no rigid bodies". Conflating them would let a broken read path
         // pass as an empty scene.
         fprintf(stderr, "ovphysx_query(RIGID_BODY) failed (status %d)\n", (int)qr.status);
+        if (query != 0)
+            ovphysx_sample_complete_task(handle, ovphysx_release_query(handle, query));
         return -1;
     }
-    const ovx_string_or_token_t names[] = { name_str(OVPHYSX_ATTR_POSITION) };
+    const ovx_token_or_string_t names[] = { name_str(OVPHYSX_ATTR_POSITION) };
     ovphysx_read_handle_t read = 0;
-    const ovphysx_result_t rr = ovphysx_sample_complete_task(handle, ovphysx_read(handle, query, names, 1, &read, NULL));
+    const ovphysx_result_t rr = ovphysx_sample_complete_task(handle, ovphysx_read(handle, query, names, 1, (ovstage_cuda_sync_t){0, 0}, &read, NULL));
     if (rr.status != OVPHYSX_API_SUCCESS || read == 0)
     {
         fprintf(stderr, "ovphysx_read(RIGID_BODY) failed (status %d)\n", (int)rr.status);
+        if (read != 0)
+            ovphysx_sample_complete_task(handle, ovphysx_release_read(handle, read));
         failed = 1;
     }
     else
@@ -449,7 +459,7 @@ static int author_rigid_body_velocity(
                 failed = 1;
                 break;
             }
-            if (!g->is_array) // standalone bodies carry a writable physics:velocity
+            if (!g->columns[0].is_array) // standalone bodies carry a writable physics:velocity
             {
                 // Counts writes that succeeded, not writes attempted. The caller drains the control
                 // ordinal based on this count, and draining after a failed write would make the
@@ -508,16 +518,23 @@ static int read_rigid_body_vector_stats(ovphysx_instance_handle_t handle, const 
     stats->max_x = -FLT_MAX;
 
     ovphysx_query_handle_t query = 0;
-    if (ovphysx_sample_complete_task(handle, ovphysx_query(handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &query, NULL)).status
-            != OVPHYSX_API_SUCCESS
-        || query == 0)
+    const ovphysx_result_t query_result =
+        ovphysx_sample_complete_task(
+            handle, ovphysx_query(handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &query, NULL));
+    if (query_result.status != OVPHYSX_API_SUCCESS || query == 0)
+    {
+        if (query != 0)
+            ovphysx_sample_complete_task(handle, ovphysx_release_query(handle, query));
         return 0;
+    }
 
     int valid = 1;
-    const ovx_string_or_token_t name = name_str(attribute);
+    const ovx_token_or_string_t name = name_str(attribute);
     ovphysx_read_handle_t read = 0;
-    if (ovphysx_sample_complete_task(handle, ovphysx_read(handle, query, &name, 1, &read, NULL)).status != OVPHYSX_API_SUCCESS || read == 0)
+    if (ovphysx_sample_complete_task(handle, ovphysx_read(handle, query, &name, 1, (ovstage_cuda_sync_t){0, 0}, &read, NULL)).status != OVPHYSX_API_SUCCESS || read == 0)
     {
+        if (read != 0)
+            ovphysx_sample_complete_task(handle, ovphysx_release_read(handle, read));
         if (ovphysx_sample_complete_task(handle, ovphysx_release_query(handle, query)).status != OVPHYSX_API_SUCCESS)
             valid = 0;
         return 0;
@@ -535,9 +552,10 @@ static int read_rigid_body_vector_stats(ovphysx_instance_handle_t handle, const 
             break;
         }
 
-        if (!g->is_delete && !g->is_array && g->data.tensor_count == 1 && g->data.tensors)
+        if (!g->columns[0].is_delete && !g->columns[0].is_array && g->columns[0].data.tensor_count == 1
+            && g->columns[0].data.tensors)
         {
-            const DLTensor* tensor = &g->data.tensors[0];
+            const DLTensor* tensor = &g->columns[0].data.tensors[0];
             if (!tensor->data || tensor->device.device_type != kDLCPU || tensor->dtype.code != kDLFloat
                 || tensor->dtype.bits != 32 || tensor->dtype.lanes < 1 || tensor->ndim != 1 || !tensor->shape)
             {
@@ -594,12 +612,14 @@ static int read_and_dump_all(ovphysx_instance_handle_t handle,
             // A query error is not "no objects of this type". Conflating them would let a broken
             // read path pass as an empty scene.
             fprintf(stderr, "ovphysx_query failed for output spec %d (status %d)\n", s, (int)qr.status);
+            if (query != 0)
+                ovphysx_sample_complete_task(handle, ovphysx_release_query(handle, query));
             return -1;
         }
         // The attached Stage's own path dictionary, the same one that interned this
         // query's prim lists and attribute tokens and that the ovstage write path
         // interns into. ovphysx has no dictionary of its own.
-        path_dictionary_instance_t* dict = inst->vtable->get_path_dictionary(inst->context);
+        path_dictionary_instance_t* dict = ovstage_get_path_dictionary(inst);
         if (!dict)
         {
             fprintf(stderr, "the attached Stage published no path dictionary\n");
@@ -607,15 +627,17 @@ static int read_and_dump_all(ovphysx_instance_handle_t handle,
             return -1;
         }
 
-        ovx_string_or_token_t attrs[4];
+        ovx_token_or_string_t attrs[4];
         for (size_t i = 0; i < spec->attr_count; ++i)
             attrs[i] = name_str(spec->attrs[i]);
 
         ovphysx_read_handle_t read = 0;
-        const ovphysx_result_t rr = ovphysx_sample_complete_task(handle, ovphysx_read(handle, query, attrs, spec->attr_count, &read, NULL));
+        const ovphysx_result_t rr = ovphysx_sample_complete_task(handle, ovphysx_read(handle, query, attrs, spec->attr_count, (ovstage_cuda_sync_t){0, 0}, &read, NULL));
         if (rr.status != OVPHYSX_API_SUCCESS || read == 0)
         {
             fprintf(stderr, "ovphysx_read failed for output spec %d (status %d)\n", s, (int)rr.status);
+            if (read != 0)
+                ovphysx_sample_complete_task(handle, ovphysx_release_read(handle, read));
             ovphysx_sample_complete_task(handle, ovphysx_release_query(handle, query));
             return -1;
         }
@@ -670,10 +692,11 @@ static int run(void)
         fprintf(stderr, "Failed to initialize ovphysx\n");
         return 1;
     }
-    // CPU mode keeps the read deterministic, with no GPU warmup step before the read. If the
-    // process is already in GPU mode this call fails, and every later read would then need a
-    // warmup step the sample never takes, so the failure is not ignored.
-    if (ovphysx_set_cpu_mode(true).status != OVPHYSX_API_SUCCESS)
+    // CPU mode keeps the read deterministic, with no GPU warmup step before the read. If an
+    // instance was already created in this process, this call fails, and every later read would
+    // then need a warmup step the sample never takes, so the failure is not ignored.
+    if (ovphysx_set_global_config(
+            OVPHYSX_GLOBAL_CONFIG_CPU_ONLY, ovphysx_config_value_bool(true)).status != OVPHYSX_API_SUCCESS)
     {
         fprintf(stderr, "Failed to enter CPU-only mode\n");
         ovphysx_shutdown();

@@ -22,15 +22,19 @@ For scaled content, pair the read orientation with the decomposed world scale,
 not the authored scale. See [Signed scale and body orientation](../read_write/data_model.md#signed-scale-and-body-orientation)
 for the reconstruction rule and orientation-write convention.
 
+For deformables, read the skinned render mesh with `PhysX.read_sync(SimObjectType.DEFORMABLE_SKIN_MESH, ["points"])`; refer to
+[Readable data](../read_write/readable.md#deformable-skin-meshes).
+
 ## Two Ways to Hand Off, and What Each Populates
 
 - **Tensor handoff (this tutorial).** The viewer never reads the Stage — Rerun
   receives transforms from `PhysX.read_sync` and the sample supplies its own
-  geometry. The sample USD is non-instanced, so `domains=PopulationDomain.PHYSICS`
-  is enough here; for arbitrary content prefer `ALL`.
+  geometry. The sample USD is non-instanced, so the physics population description
+  alone (`physics_population_descs()`) is enough here; for arbitrary content add
+  RENDERING beside it.
 - **Shared Stage.** A renderer such as ovrtx draws from the same Stage, so
-  populate `ALL` (or `PHYSICS | RENDERING`). Refer to
-  [Population domains](../ovstage_integration.md#population-domains)
+  populate the physics description with RENDERING beside it. Refer to
+  [Populating physics](../ovstage_integration.md#populating-physics-the-physics-population-description)
   for the full contract, the native-instance caveat, sequencing, and cost.
 
 ## Prerequisites

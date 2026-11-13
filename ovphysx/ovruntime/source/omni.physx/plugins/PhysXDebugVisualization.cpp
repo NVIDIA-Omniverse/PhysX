@@ -94,7 +94,7 @@ uint32_t omni::physx::getDebugDrawCollShapeColor(usdparser::AttachedStage& owner
     bool isTrimesh = false;
     if (src->isA(key, tok.meshType))
     {
-        if (src->hasSchema(key, tok.usdPhysicsMeshCollisionAPI))
+        if (src->hasSchema(key, tok.physicsMeshCollisionAPI))
         {
             omni::physics::parse::TokenId approx{};
             src->getAttribute(key, tok.physicsApproximation, approx);

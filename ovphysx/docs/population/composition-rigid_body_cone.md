@@ -5,7 +5,7 @@
 
 # Dynamic rigid body on a Cone
 
-Convenience composition: one Cone prim that is both the body and its only collider (a PxConvexCoreGeometry with the default runtime settings). Owns no columns; everything comes from the listed components.
+Convenience composition: one Cone [prim](glossary.md#prim) that is both the body and its only collider (a PxConvexCoreGeometry with the default runtime settings). Owns no columns; everything comes from the listed components.
 
 - **Type:** [`Cone`](Cone.md)
 - **Required APIs:** [`PhysicsRigidBodyAPI`](PhysicsRigidBodyAPI.md), [`PhysicsCollisionAPI`](PhysicsCollisionAPI.md)

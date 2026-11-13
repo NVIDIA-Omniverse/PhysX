@@ -57,6 +57,7 @@ public:
 	bool			updatePvdProperties(physx::pvdsdk::PvdDataStream&,
 										const physx::PxConstraint*,
 										physx::PxPvdUpdateType::Enum) const { return true; }
+	using physx::PxConstraintConnector::updateOmniPvdProperties;
 	void			updateOmniPvdProperties() const { }
 	physx::PxBase*	getSerializable() { return NULL; }
 

@@ -5,7 +5,7 @@
 
 # Static Plane collider
 
-Convenience composition: one Plane prim with a collider and no rigid body, the usual ground plane (a PxRigidStatic with a PxPlaneGeometry). Owns no columns; everything comes from the listed components.
+Convenience composition: one Plane [prim](glossary.md#prim) with a collider and no rigid body, the usual ground plane (a PxRigidStatic with a PxPlaneGeometry). Owns no columns; everything comes from the listed components.
 
 - **Type:** [`Plane`](Plane.md)
 - **Required APIs:** [`PhysicsCollisionAPI`](PhysicsCollisionAPI.md)

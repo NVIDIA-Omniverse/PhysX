@@ -49,16 +49,26 @@ dispatcher submits into the Carb pool or into PhysX's own worker set.
   written. Tasking counts must be non-negative; an explicitly configured TBB
   limit must be positive because absence, not zero, selects its machine-sized
   default. A failed create therefore does not poison a later default create.
+- AC-6: An instance uses a dedicated one-thread Carbonite `IThreadPool` only
+  when `OVPHYSX_GLOBAL_CONFIG_ASYNC_EXECUTION` is true, `IThreadPool` is available
+  and the existing tasking pool has more than one thread. Otherwise it runs
+  synchronously without creating a worker. An unavailable interface or small
+  tasking pool emits a warning; explicit configuration off does not. The global
+  getter still reports the configured value, not an instance's fallback. PhysX
+  dispatcher thread count does not choose this mode. Installing task-aware waits
+  observes the existing tasking pool without starting or resizing it.
 
 ## Test References
 
 - TEST-CAPI-THREADING-001
+- [TEST-CAPI-THREADING-002](../../tests/capi/TEST-CAPI-THREADING-002.md)
 
 ## Code References
 
 - ovphysx/src/CarboniteLoader/CarboniteLoader.cpp
 - ovphysx/src/ovphysx/ovphysx.cpp
 - ovphysx/src/ovphysx/ovphysxTestHelpers.cpp
+- ovphysx/src/ovphysx/InstanceExecutor.cpp
 - ovphysx/tests/c_unittests/test_worker_pool.cpp
 - ovphysx/docs/guides/performance.md
 

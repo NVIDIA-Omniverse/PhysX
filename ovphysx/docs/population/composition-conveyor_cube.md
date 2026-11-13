@@ -5,9 +5,9 @@
 
 # Kinematic conveyor Cube with a surface velocity
 
-Multi-prim test composition: one kinematic Cube rigid body carrying PhysxSurfaceVelocityAPI, the conveyor-belt pattern. PhysxSurfaceVelocityAPI owns no verifiable column (PhysX exposes no getter for the surface velocity), so the test observes the body and shape columns with the kinematic flag fixed and checks that the API is accepted on the population path. Owns no columns and generates no helper.
+Multi-prim test composition: one kinematic Cube rigid body carrying PhysxSurfaceVelocityAPI, the conveyor-belt pattern. PhysxSurfaceVelocityAPI owns no verifiable column ([PhysX](glossary.md#physx) exposes no getter for the surface velocity), so the test observes the body and shape columns with the kinematic flag fixed and checks that the API is accepted on the population path. Owns no columns and generates no helper.
 
-- **Form:** multi-prim; no helper, the contract test builds each prim with `PrimBatch`.
+- **Form:** multi-prim; no helper, the contract test builds each [prim](glossary.md#prim) with `PrimBatch`.
 
 | Path | Type | Applied APIs | Authored values | Relationships | Verified |
 |---|---|---|---|---|---|

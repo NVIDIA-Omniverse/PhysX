@@ -5,26 +5,47 @@
 
 # ovstage Physics Population Domain
 
-What ovphysx reads from an ovstage Stage, per prim type and applied API schema, and what
-ovstage population writes for a USD stage. Each column records the USD fallback, what the
+What [ovphysx](glossary.md#ovphysx) reads from an [ovstage](glossary.md#ovstage) Stage, per [prim](glossary.md#prim) type and applied API schema, and what
+ovstage population writes for a [USD](glossary.md#usd) stage. Each column records the USD fallback, what the
 producer writes, and what the parser assumes when the column is absent, so that a Stage
 populated without USD parses exactly like one populated from USD. The Python module
 `ovphysx.population` and the C++ header `ovphysx/population/Population.hpp` are generated from
-the same contract and write these columns for you.
+the same contract and write these columns for you, except for the components marked
+*(no builder)*: the consumer reads those when another population writes them.
 
 ## Structural blocks
 
-- [`prim`](prim.md): Structural columns on every physics-domain prim: the type token, the applied-schema list, and the local transform.
+- [`legacy_stage_units`](legacy_stage_units.md): Unprefixed stage units on the stage-info prim of older and controlled Stages.
+- [`prim`](prim.md): [Structural columns](prim.md#columns) on every physics-domain prim: the type token, the applied-schema list, and the local transform.
 - [`stage_units`](stage_units.md): Length, mass and up-axis metadata on the root prim, read once per Stage by the consumer.
 
 ## Prim types
 
+- [`BasisCurves`](BasisCurves.md) *(no builder)*: A curve the runtime reads only as the path of PhysxSplinesSurfaceVelocityAPI: when a body's physxSplinesSurfaceVelocity:surfaceVelocityCurve targets a BasisCurves below it, the runtime tessellates the curve into a sampled polyline that contact modification projects contacts onto.
+- [`Camera`](Camera.md) *(no builder)*: A UsdGeom Camera, render-only.
 - [`Capsule`](Capsule.md): Capsule geometry (cylinder of the given height capped by two hemispheres of the given radius, along axis).
 - [`Cone`](Cone.md): Cone geometry along axis.
 - [`Cube`](Cube.md): Axis-aligned box geometry.
 - [`Cylinder`](Cylinder.md): Cylinder geometry along axis.
+- [`CylinderLight`](CylinderLight.md) *(no builder)*: A [UsdLux](glossary.md#usdlux) CylinderLight, a render-only light.
+- [`DiskLight`](DiskLight.md) *(no builder)*: A UsdLux DiskLight, a render-only light.
+- [`DistantLight`](DistantLight.md) *(no builder)*: A UsdLux DistantLight, a render-only light.
+- [`DomeLight`](DomeLight.md) *(no builder)*: A UsdLux DomeLight, a render-only light.
+- [`DomeLight_1`](DomeLight_1.md) *(no builder)*: A UsdLux DomeLight_1, a render-only light.
+- [`FabricStageInfo`](FabricStageInfo.md) *(no builder)*: A [Fabric](glossary.md#fabric) bookkeeping prim that populations with RENDERING carry.
+- [`GeomSubset`](GeomSubset.md): A face subset of a [Mesh](glossary.md#mesh) collider.
 - [`Material`](Material.md): UsdShade Material prim.
 - [`Mesh`](Mesh.md): Polygonal mesh geometry.
+- [`NodeGraph`](NodeGraph.md) *(no builder)*: A UsdShade NodeGraph of a render material (for example an MDL or preview-surface network below a Material).
+- [`OmniPhysicsAttachment`](OmniPhysicsAttachment.md) *(no builder)*: Base type of the OmniPhysics deformable attachments.
+- [`OmniPhysicsElementCollisionFilter`](OmniPhysicsElementCollisionFilter.md) *(no builder)*: Excludes groups of collision elements of two sources from colliding with each other: one source is a deformable body, the other a deformable body or a rigid.
+- [`OmniPhysicsTetXformAttachment`](OmniPhysicsTetXformAttachment.md) *(no builder)*: Binds points inside tetrahedra of volume deformable body src0 to fixed positions in the frame of [Xformable](glossary.md#xformable) src1: the rigid body or articulation link at or above src1, or the world when there is none.
+- [`OmniPhysicsTriTriAttachment`](OmniPhysicsTriTriAttachment.md) *(no builder)*: Triangle-to-triangle deformable attachment between src0 and src1.
+- [`OmniPhysicsVtxCrvAttachment`](OmniPhysicsVtxCrvAttachment.md) *(no builder)*: Vertex-to-curve deformable attachment between src0 and src1.
+- [`OmniPhysicsVtxTetAttachment`](OmniPhysicsVtxTetAttachment.md) *(no builder)*: Binds vertices of deformable body src0 to points inside tetrahedra of volume deformable body src1, given as tetrahedron indices plus barycentric coordinates.
+- [`OmniPhysicsVtxTriAttachment`](OmniPhysicsVtxTriAttachment.md) *(no builder)*: Binds vertices of deformable body src0 to points on triangles of surface deformable body src1, given as triangle indices plus triangle coordinates.
+- [`OmniPhysicsVtxVtxAttachment`](OmniPhysicsVtxVtxAttachment.md) *(no builder)*: Binds vertices of one deformable body's simulation mesh to vertices of another; both sources must be deformable bodies.
+- [`OmniPhysicsVtxXformAttachment`](OmniPhysicsVtxXformAttachment.md) *(no builder)*: Binds vertices of deformable body src0 to fixed positions in the frame of Xformable src1: the rigid body or articulation link at or above src1 (a two-way constraint), or the world when there is none.
 - [`PhysicsCollisionGroup`](PhysicsCollisionGroup.md): A named set of colliders plus the list of groups it does not collide with.
 - [`PhysicsDistanceJoint`](PhysicsDistanceJoint.md): Keeps the distance between the two local frame origins inside [minDistance, maxDistance]; either bound is optional.
 - [`PhysicsFixedJoint`](PhysicsFixedJoint.md): Welds two bodies (or a body and the world) with no degrees of freedom.
@@ -33,17 +54,48 @@ the same contract and write these columns for you.
 - [`PhysicsRevoluteJoint`](PhysicsRevoluteJoint.md): Hinge joint: one rotational degree of freedom about a local axis, optionally limited in degrees.
 - [`PhysicsScene`](PhysicsScene.md): A simulation scene.
 - [`PhysicsSphericalJoint`](PhysicsSphericalJoint.md): Ball joint: three rotational degrees of freedom about a common point, optionally bounded by an elliptical cone given as two half-angles in degrees.
+- [`PhysxParticleSystem`](PhysxParticleSystem.md) *(no builder)*: [PhysX](glossary.md#physx) position-based-dynamics particle system holding the solver settings shared by the particle sets that name it through physxParticle:particleSystem.
 - [`PhysxPhysicsGearJoint`](PhysxPhysicsGearJoint.md): Couples the angular velocities of two revolute (hinge) joints by a fixed ratio.
+- [`PhysxPhysicsJointInstancer`](PhysxPhysicsJointInstancer.md): Instances joints from prototype joints.
 - [`PhysxPhysicsRackAndPinionJoint`](PhysxPhysicsRackAndPinionJoint.md): Couples the angular velocity of a revolute (hinge) joint to the linear velocity of a prismatic joint by a fixed ratio in degrees per length unit.
+- [`PhysxVehicleTireFrictionTable`](PhysxVehicleTireFrictionTable.md) *(no builder)*: Friction of a vehicle tire against a list of ground materials, referenced by the physxVehicleTire:frictionTable relationship of a tire.
 - [`Plane`](Plane.md): Infinite plane geometry.
+- [`PointInstancer`](PointInstancer.md): Instances rigid-body prototypes.
+- [`Points`](Points.md) *(no builder)*: UsdGeom point cloud, read by the runtime only as particle geometry: a Points prim that lists PhysxParticleSetAPI becomes a PBD particle set seeded from its points and velocities.
+- [`RectLight`](RectLight.md) *(no builder)*: A UsdLux RectLight, a render-only light.
+- [`Scope`](Scope.md): A grouping prim without a transform.
+- [`Shader`](Shader.md) *(no builder)*: A UsdShade Shader of a render material (for example an MDL or preview-surface network below a Material).
 - [`Sphere`](Sphere.md): Sphere geometry.
+- [`SphereLight`](SphereLight.md) *(no builder)*: A UsdLux SphereLight, a render-only light.
+- [`TempChangeTracking`](TempChangeTracking.md) *(no builder)*: A Fabric bookkeeping root that populations with RENDERING carry, at /TempChangeTracking.
+- [`TetMesh`](TetMesh.md) *(no builder)*: Tetrahedral mesh used as the simulation and collision mesh of a volume deformable body.
 - [`Xform`](Xform.md): A transform-only prim.
 
 ## Applied API schemas
 
+- [`CollectionAPI`](CollectionAPI.md): USD collections, applied as CollectionAPI:<name>.
+- [`GeomInstanceAPI`](GeomInstanceAPI.md) *(no builder)*: Native-instancing tag on an instance root.
+- [`GeomInstanceRootAPI`](GeomInstanceRootAPI.md) *(no builder)*: Native-instancing tag on an instance root outside a prototype, written by ovstage population next to GeomInstanceAPI.
+- [`GeomPrototypeAPI`](GeomPrototypeAPI.md) *(no builder)*: Native-instancing tag that ovstage population writes on native-instancing prototype prims.
+- [`LightAPI`](LightAPI.md) *(no builder)*: The UsdLux light API, built into every light type.
 - [`MaterialBindingAPI`](MaterialBindingAPI.md): Binds a physics material to a collision shape.
+- [`NewtonArticulationRootAPI`](NewtonArticulationRootAPI.md): Newton self-collision switch, read on every articulation root when PhysxArticulationAPI carries no enabledSelfCollisions.
+- [`NewtonCollisionAPI`](NewtonCollisionAPI.md): Newton contact margin and gap, read for every collider as fallbacks for the PhysX rest and contact offsets when those are absent.
+- [`NewtonJointAPI`](NewtonJointAPI.md): Newton joint-level values the PhysX parser reads as seeds for every axis of a revolute, prismatic, spherical or D6 joint: velocity limit, armature, friction and damping.
+- [`NewtonMeshCollisionAPI`](NewtonMeshCollisionAPI.md): Newton hull vertex limit, read for convexHull and convexDecomposition approximations when the matching PhysX hullVertexLimit is absent.
+- [`NewtonMimicAPI`](NewtonMimicAPI.md): Newton schema mimic constraint: joint = coef0 + coef1 * leader, with the leader given by newton:mimicJoint.
+- [`NewtonSceneAPI`](NewtonSceneAPI.md): Newton scene settings the PhysX parser reads as fallbacks on every PhysicsScene: the step rate when physxScene:timeStepsPerSecond is absent, and a switch that turns gravity off.
+- [`NodeDefAPI`](NodeDefAPI.md) *(no builder)*: The UsdShade node definition built into Shader prims (the shader's implementation source).
+- [`OmniPhysicsBaseMaterialAPI`](OmniPhysicsBaseMaterialAPI.md) *(no builder)*: Friction and density of an OmniPhysics deformable material.
+- [`OmniPhysicsBodyAPI`](OmniPhysicsBodyAPI.md) *(no builder)*: Simulation-body flags of the OmniPhysics deformable schema.
+- [`OmniPhysicsDeformableBodyAPI`](OmniPhysicsDeformableBodyAPI.md) *(no builder)*: Makes a prim the root of a volume or surface deformable body.
+- [`OmniPhysicsDeformableMaterialAPI`](OmniPhysicsDeformableMaterialAPI.md) *(no builder)*: Elasticity of an OmniPhysics deformable material.
+- [`OmniPhysicsDeformablePoseAPI`](OmniPhysicsDeformablePoseAPI.md) *(no builder)*: Named point sets of a deformable body's meshes, applied as OmniPhysicsDeformablePoseAPI:<name> with an arbitrary instance name.
+- [`OmniPhysicsSurfaceDeformableMaterialAPI`](OmniPhysicsSurfaceDeformableMaterialAPI.md) *(no builder)*: Surface (cloth) properties of an OmniPhysics deformable material.
+- [`OmniPhysicsSurfaceDeformableSimAPI`](OmniPhysicsSurfaceDeformableSimAPI.md) *(no builder)*: Marks the triangle simulation mesh of a surface deformable body and carries its rest shape and default bending rest angles.
+- [`OmniPhysicsVolumeDeformableSimAPI`](OmniPhysicsVolumeDeformableSimAPI.md) *(no builder)*: Marks the tetrahedral simulation mesh of a volume deformable body and carries its rest shape.
 - [`PhysicsArticulationRootAPI`](PhysicsArticulationRootAPI.md): Marks the root of a reduced-coordinate articulation.
-- [`PhysicsCollisionAPI`](PhysicsCollisionAPI.md): Makes a Gprim a collision shape.
+- [`PhysicsCollisionAPI`](PhysicsCollisionAPI.md): Makes a [Gprim](glossary.md#gprim) a collision shape.
 - [`PhysicsDriveAPI`](PhysicsDriveAPI.md): Force- or acceleration-mode PD drive on one joint axis, applied as PhysicsDriveAPI:<inst>.
 - [`PhysicsFilteredPairsAPI`](PhysicsFilteredPairsAPI.md): Suppresses collision between this prim and the listed prims.
 - [`PhysicsJointStateAPI`](PhysicsJointStateAPI.md): Initial joint-space position and velocity of one axis, applied as PhysicsJointStateAPI:<inst>.
@@ -53,24 +105,78 @@ the same contract and write these columns for you.
 - [`PhysicsMeshCollisionAPI`](PhysicsMeshCollisionAPI.md): Chooses how a Mesh collider is approximated for PhysX.
 - [`PhysicsRigidBodyAPI`](PhysicsRigidBodyAPI.md): Makes an Xformable prim a rigid body.
 - [`PhysxArticulationAPI`](PhysxArticulationAPI.md): PhysX tuning of a reduced-coordinate articulation, applied on the same prim as PhysicsArticulationRootAPI.
+- [`PhysxAutoDeformableAttachmentAPI`](PhysxAutoDeformableAttachmentAPI.md) *(no builder)*: An authoring container that generates vertex attachments and element collision filters between its two attachables, a deformable body and a second deformable body or an Xformable's colliders.
+- [`PhysxAutoDeformableBodyAPI`](PhysxAutoDeformableBodyAPI.md) *(no builder)*: Turns on automatic generation of a deformable body's simulation and collision meshes from a cooking source mesh, read on the prim carrying OmniPhysicsDeformableBodyAPI when PhysxAutoDeformableBodyAPI is listed in its [usd-schemas](prim.md#columns).
+- [`PhysxAutoDeformableHexahedralMeshAPI`](PhysxAutoDeformableHexahedralMeshAPI.md) *(no builder)*: Makes the automatic cook of a volume deformable build a hexahedral (voxel) simulation mesh that embeds the collision tetrahedral mesh.
+- [`PhysxAutoDeformableMeshSimplificationAPI`](PhysxAutoDeformableMeshSimplificationAPI.md) *(no builder)*: Parameters for simplifying, and optionally first remeshing, the cooking source mesh during the automatic cook of a volume or surface deformable.
+- [`PhysxBaseDeformableBodyAPI`](PhysxBaseDeformableBodyAPI.md) *(no builder)*: PhysX tuning for a volume or surface deformable body (damping, velocity caps, sleep and settling thresholds, self collision, gravity, speculative CCD, solver iterations), read on the prim carrying OmniPhysicsDeformableBodyAPI only when PhysxBaseDeformableBodyAPI is listed in its usd-schemas.
+- [`PhysxCharacterControllerAPI`](PhysxCharacterControllerAPI.md) *(no builder)*: Turns a Capsule into a PhysX capsule character controller (PxCapsuleController).
 - [`PhysxCollisionAPI`](PhysxCollisionAPI.md): PhysX contact tuning for a collision shape.
 - [`PhysxContactReportAPI`](PhysxContactReportAPI.md): Registers a rigid actor (including a standalone static collider), or every link of an articulation, for contact reporting.
 - [`PhysxConvexDecompositionCollisionAPI`](PhysxConvexDecompositionCollisionAPI.md): Convex decomposition cooking parameters for a Mesh collider with physics:approximation convexDecomposition.
 - [`PhysxConvexHullCollisionAPI`](PhysxConvexHullCollisionAPI.md): Convex hull cooking parameters for a Mesh collider with physics:approximation convexHull.
+- [`PhysxCookedDataAPI`](PhysxCookedDataAPI.md) *(no builder)*: Cooked-data storage on a collider (uchar[] physxCookedData:<inst>:buffer).
+- [`PhysxDeformableMaterialAPI`](PhysxDeformableMaterialAPI.md) *(no builder)*: PhysX elasticity damping for a volume or surface deformable material, read when PhysxDeformableMaterialAPI is listed in usd-schemas of a deformable material prim or of the material bound to a PhysicsScene (its default deformable materials).
+- [`PhysxDiffuseParticlesAPI`](PhysxDiffuseParticlesAPI.md) *(no builder)*: Spawns render-only diffuse particles (spray, foam, bubbles) from a particle set.
 - [`PhysxDrivePerformanceEnvelopeAPI`](PhysxDrivePerformanceEnvelopeAPI.md): Actuator performance envelope of one joint drive (maximum actuator velocity, velocity-dependent resistance, speed-effort gradient), applied as PhysxDrivePerformanceEnvelopeAPI:<inst> alongside PhysicsDriveAPI:<inst>.
+- [`PhysxForceAPI`](PhysxForceAPI.md): Applies a constant force and torque to the rigid body that owns the prim, at the body's centre of mass or at this Xformable's position.
+- [`PhysxJointAPI`](PhysxJointAPI.md) *(no builder)*: Removed PhysX joint API that older assets still apply.
 - [`PhysxJointAxisAPI`](PhysxJointAxisAPI.md): Per-axis PhysX properties of an articulation joint (armature, maximum joint velocity, static, dynamic and viscous friction), applied as PhysxJointAxisAPI:<inst>.
 - [`PhysxLimitAPI`](PhysxLimitAPI.md): PhysX tuning of one joint limit (restitution, bounce threshold, soft-limit spring), applied as PhysxLimitAPI:<inst>.
 - [`PhysxMaterialAPI`](PhysxMaterialAPI.md): PhysX tuning for a physics material: combine modes and compliant contact.
+- [`PhysxMeshMergeCollisionAPI`](PhysxMeshMergeCollisionAPI.md) *(no builder)*: Merges the meshes of its built-in collisionmeshes collection into one collision mesh for the collider it is applied to; no column of the API is read.
+- [`PhysxMimicJointAPI`](PhysxMimicJointAPI.md): Couples one degree of freedom of an articulation joint to one of a reference joint: position + gearing * referencePosition + offset = 0.
+- [`PhysxPBDMaterialAPI`](PhysxPBDMaterialAPI.md): Position-based-dynamics particle material.
+- [`PhysxParticleAPI`](PhysxParticleAPI.md) *(no builder)*: Base API of a particle object, applied automatically by USD with PhysxParticleSetAPI.
+- [`PhysxParticleAnisotropyAPI`](PhysxParticleAnisotropyAPI.md) *(no builder)*: Anisotropy post-processing on a particle system: per-particle ellipsoid scales and orientations computed for rendering fluid particle sets, without effect on the dynamics.
+- [`PhysxParticleIsosurfaceAPI`](PhysxParticleIsosurfaceAPI.md) *(no builder)*: Isosurface extraction post-processing on a particle system: a triangle mesh around the fluid particles for rendering, without effect on the dynamics.
+- [`PhysxParticleSamplingAPI`](PhysxParticleSamplingAPI.md) *(no builder)*: Poisson-samples a Mesh into the particle set that its physxParticleSampling:particles relationship names.
+- [`PhysxParticleSetAPI`](PhysxParticleSetAPI.md) *(no builder)*: Turns a [PointBased](glossary.md#pointbased) (Points, Mesh, ...) or PointInstancer prim into a set of PBD particles simulated by the particle system that physxParticle:particleSystem names.
+- [`PhysxParticleSmoothingAPI`](PhysxParticleSmoothingAPI.md) *(no builder)*: Position smoothing post-processing on a particle system: smoothed particle positions for rendering fluid particle sets, without effect on the dynamics.
 - [`PhysxPhysicsDistanceJointAPI`](PhysxPhysicsDistanceJointAPI.md): Spring behaviour of a distance joint: enable flag, stiffness and damping of the spring that acts when the distance leaves [minDistance, maxDistance].
 - [`PhysxRigidBodyAPI`](PhysxRigidBodyAPI.md): PhysX tuning for a dynamic rigid body.
 - [`PhysxSDFMeshCollisionAPI`](PhysxSDFMeshCollisionAPI.md): Signed-distance-field cooking parameters for a Mesh collider with physics:approximation sdf.
 - [`PhysxSceneAPI`](PhysxSceneAPI.md): PhysX tuning for a PhysicsScene prim: solver, broadphase, flags, friction thresholds, iteration bounds and GPU memory budgets.
+- [`PhysxSceneQuasistaticAPI`](PhysxSceneQuasistaticAPI.md) *(no builder)*: Quasistatic mode for a scene: while enableQuasistatic is on, the runtime clears the velocities of the scene's dynamic actors and articulation links after every step, or only of the members of its quasistaticactors collection when that has any.
 - [`PhysxSphereFillCollisionAPI`](PhysxSphereFillCollisionAPI.md): Sphere fill cooking parameters for a Mesh collider with physics:approximation sphereFill.
 - [`PhysxSplinesSurfaceVelocityAPI`](PhysxSplinesSurfaceVelocityAPI.md): Surface velocity that follows a BasisCurves prim under the body instead of a constant vector.
+- [`PhysxSurfaceDeformableBodyAPI`](PhysxSurfaceDeformableBodyAPI.md) *(no builder)*: PhysX collision substepping for a surface deformable body, read on the prim carrying OmniPhysicsDeformableBodyAPI only when its simulation mesh is a surface (OmniPhysicsSurfaceDeformableSimAPI) and PhysxSurfaceDeformableBodyAPI is listed in its usd-schemas.
+- [`PhysxSurfaceDeformableMaterialAPI`](PhysxSurfaceDeformableMaterialAPI.md) *(no builder)*: PhysX bend damping for a surface deformable material, read only when the material prim also carries OmniPhysicsSurfaceDeformableMaterialAPI and lists PhysxSurfaceDeformableMaterialAPI in its usd-schemas.
 - [`PhysxSurfaceVelocityAPI`](PhysxSurfaceVelocityAPI.md): Conveyor-belt surface velocity on a rigid body: contacts against the body behave as if its surface moved with the given linear and angular velocity while the body itself stays put.
+- [`PhysxTendonAttachmentAPI`](PhysxTendonAttachmentAPI.md): One attachment of a spatial tendon on an articulation link, applied as PhysxTendonAttachmentAPI:<name>.
+- [`PhysxTendonAttachmentLeafAPI`](PhysxTendonAttachmentLeafAPI.md): Leaf attachment of a spatial tendon, applied as PhysxTendonAttachmentLeafAPI:<name>; it closes one sub-tendon and carries its rest length and limits.
+- [`PhysxTendonAttachmentRootAPI`](PhysxTendonAttachmentRootAPI.md): Root attachment of a spatial tendon, applied as PhysxTendonAttachmentRootAPI:<name>.
+- [`PhysxTendonAxisAPI`](PhysxTendonAxisAPI.md): One joint axis of a fixed tendon, applied as PhysxTendonAxisAPI:<tendon> on a revolute or prismatic articulation joint.
+- [`PhysxTendonAxisRootAPI`](PhysxTendonAxisRootAPI.md): Root axis of a fixed tendon, applied as PhysxTendonAxisRootAPI:<tendon>.
 - [`PhysxTriangleMeshCollisionAPI`](PhysxTriangleMeshCollisionAPI.md): Triangle mesh cooking parameter (weld tolerance) for a Mesh collider with physics:approximation none or sdf.
 - [`PhysxTriangleMeshSimplificationCollisionAPI`](PhysxTriangleMeshSimplificationCollisionAPI.md): Quadric mesh simplification cooking parameters for a Mesh collider with physics:approximation meshSimplification.
 - [`PhysxTriggerAPI`](PhysxTriggerAPI.md): Marks a collision shape as a trigger volume.
+- [`PhysxTriggerStateAPI`](PhysxTriggerStateAPI.md) *(no builder)*: Asks the runtime to report a trigger's current overlaps back to the stage; only its presence is checked and no column is read.
+- [`PhysxVehicleAPI`](PhysxVehicleAPI.md) *(no builder)*: Makes a rigid body the chassis of a PhysX vehicle whose wheels are the descendants with PhysxVehicleWheelAttachmentAPI.
+- [`PhysxVehicleAckermannSteeringAPI`](PhysxVehicleAckermannSteeringAPI.md) *(no builder)*: Ackermann steering for two wheels, applied on the vehicle prim.
+- [`PhysxVehicleAutoGearBoxAPI`](PhysxVehicleAutoGearBoxAPI.md) *(no builder)*: Automatic gear box of a standard vehicle drive: the up and down shift ratios.
+- [`PhysxVehicleBrakesAPI`](PhysxVehicleBrakesAPI.md) *(no builder)*: Up to two braking systems of a vehicle, applied on the vehicle prim as PhysxVehicleBrakesAPI:brakes0 and PhysxVehicleBrakesAPI:brakes1; brakes0 is commanded by physxVehicleController:brake0 and brakes1 by brake1.
+- [`PhysxVehicleClutchAPI`](PhysxVehicleClutchAPI.md) *(no builder)*: Clutch of a standard vehicle drive.
+- [`PhysxVehicleContextAPI`](PhysxVehicleContextAPI.md) *(no builder)*: Scene-wide vehicle settings (update mode, vertical and longitudinal axes) on a PhysicsScene prim.
+- [`PhysxVehicleControllerAPI`](PhysxVehicleControllerAPI.md) *(no builder)*: Driver inputs (throttle, brakes, steer, target gear) of a vehicle that has a drive.
+- [`PhysxVehicleDriveBasicAPI`](PhysxVehicleDriveBasicAPI.md) *(no builder)*: Basic vehicle drive (a torque applied directly to the driven wheels) on the vehicle prim or on a separate prim that physxVehicle:drive targets.
+- [`PhysxVehicleDriveStandardAPI`](PhysxVehicleDriveStandardAPI.md) *(no builder)*: Standard vehicle drive (engine, gears, clutch and an optional automatic gear box) on the vehicle prim or on a separate prim that physxVehicle:drive targets.
+- [`PhysxVehicleEngineAPI`](PhysxVehicleEngineAPI.md) *(no builder)*: Engine of a standard vehicle drive, including its torque curve.
+- [`PhysxVehicleGearsAPI`](PhysxVehicleGearsAPI.md) *(no builder)*: Gear ratios of a standard vehicle drive.
+- [`PhysxVehicleMultiWheelDifferentialAPI`](PhysxVehicleMultiWheelDifferentialAPI.md) *(no builder)*: Which wheels of a vehicle are driven and how the drive torque splits among them, applied on the vehicle prim.
+- [`PhysxVehicleNonlinearCommandResponseAPI`](PhysxVehicleNonlinearCommandResponseAPI.md) *(no builder)*: A nonlinear response to a vehicle command, applied as PhysxVehicleNonlinearCommandResponseAPI:drive, :steer, :brakes0 or :brakes1: command values, and per command value a graph of the response over speed.
+- [`PhysxVehicleSteeringAPI`](PhysxVehicleSteeringAPI.md) *(no builder)*: Basic steering: which wheels follow the steer control and their maximum steer angle, applied on the vehicle prim.
+- [`PhysxVehicleSuspensionAPI`](PhysxVehicleSuspensionAPI.md) *(no builder)*: Suspension parameters of a PhysX vehicle, shareable between wheel attachments.
+- [`PhysxVehicleSuspensionComplianceAPI`](PhysxVehicleSuspensionComplianceAPI.md) *(no builder)*: Suspension compliance of a vehicle wheel: toe and camber angles and the suspension and tire force application points as graphs over the suspension jounce.
+- [`PhysxVehicleTankControllerAPI`](PhysxVehicleTankControllerAPI.md) *(no builder)*: Thrust inputs that divert engine torque to the tracks of a wheeled tank vehicle.
+- [`PhysxVehicleTankDifferentialAPI`](PhysxVehicleTankDifferentialAPI.md) *(no builder)*: Differential of a wheeled tank vehicle, applied on the vehicle prim: which wheels form each track and which thrust control drives it, on top of the multi-wheel differential columns.
+- [`PhysxVehicleTireAPI`](PhysxVehicleTireAPI.md) *(no builder)*: Tire parameters of a PhysX vehicle, shareable between wheel attachments: among them the friction-vs-slip graph and the physxVehicleTire:frictionTable relationship to a PhysxVehicleTireFrictionTable prim.
+- [`PhysxVehicleWheelAPI`](PhysxVehicleWheelAPI.md) *(no builder)*: Wheel parameters of a PhysX vehicle, shareable between wheel attachments.
+- [`PhysxVehicleWheelAttachmentAPI`](PhysxVehicleWheelAttachmentAPI.md) *(no builder)*: One wheel of a PhysX vehicle: a descendant of the PhysxVehicleAPI prim that names its wheel, tire and suspension (relationships or the APIs on itself) and places the suspension and its force application points.
+- [`PhysxVehicleWheelControllerAPI`](PhysxVehicleWheelControllerAPI.md) *(no builder)*: Direct per-wheel drive torque, brake torque and steer angle for a vehicle without a drive, applied on a wheel attachment (a prim with PhysxVehicleWheelAttachmentAPI below the vehicle prim).
+- [`PrototypeRootAPI`](PrototypeRootAPI.md) *(no builder)*: Native-instancing tag on a generated prototype root (/__Prototype_<n>).
+- [`ShadowAPI`](ShadowAPI.md) *(no builder)*: The UsdLux shadow controls of a light.
+- [`ShapingAPI`](ShapingAPI.md) *(no builder)*: The UsdLux shaping controls of a light (focus, cone, IES profile).
 
 ## Compositions
 
@@ -78,7 +184,7 @@ the same contract and write these columns for you.
 - [`articulation_floating`](composition-articulation_floating.md): Multi-prim test composition: a two-link reduced-coordinate articulation.
 - [`conveyor_cube`](composition-conveyor_cube.md): Multi-prim test composition: one kinematic Cube rigid body carrying PhysxSurfaceVelocityAPI, the conveyor-belt pattern.
 - [`d6_joint_pair`](composition-d6_joint_pair.md): Multi-prim test composition: two Cube rigid bodies one unit apart (B translated +3 in x, half extents 0.5) joined by a D6 joint (a prim typed exactly PhysicsJoint) with a twist (rotX) limit, drive and PhysX limit tuning whose local frames meet halfway between them.
-- [`distance_joint_pair`](composition-distance_joint_pair.md): Multi-prim test composition: two Cube rigid bodies one unit apart (B translated +3 in x, half extents 0.5) joined by a PhysicsDistanceJoint (a native PxDistanceJoint) with min/max distance, the PhysX distance spring and PhysX limit tuning whose local frames meet halfway between them.
+- [`distance_joint_pair`](composition-distance_joint_pair.md): Multi-prim test composition: two Cube rigid bodies one unit apart (B translated +3 in x, half extents 0.5) joined by a PhysicsDistanceJoint (a native [PxDistanceJoint](glossary.md#pxdistancejoint)) with min/max distance, the PhysX distance spring and PhysX limit tuning whose local frames meet halfway between them.
 - [`fixed_joint_pair`](composition-fixed_joint_pair.md): Multi-prim test composition: two Cube rigid bodies one unit apart (B translated +3 in x, half extents 0.5) joined by a PhysicsFixedJoint (all six axes locked) whose local frames meet halfway between them.
 - [`gear_joint_pair`](composition-gear_joint_pair.md): Multi-prim test composition: two Cube rigid bodies (B translated +3 in x), each hinged to the world by its own PhysicsRevoluteJoint, and a PhysxPhysicsGearJoint between the bodies that references the two hinges and couples their angular velocities.
 - [`material_bound_cube`](composition-material_bound_cube.md): Multi-prim test composition: a Material prim carrying PhysicsMaterialAPI and PhysxMaterialAPI, bound as the physics material of a Cube rigid body through material:binding:physics.
@@ -98,17 +204,41 @@ the same contract and write these columns for you.
 ## Findings
 
 - [Recorded findings](findings.md): every producer/consumer divergence the contract records, with the compositions whose parity test asserts it as a canary.
+- [Population vocabulary](glossary.md): definitions of shared storage, schema and engine terms.
+
+## Physics population description
+
+- [Physics population description](physics-population-description.md): the OVStage population description ovphysx publishes, which populates exactly these columns from a USD stage.
 
 ```{toctree}
 :maxdepth: 1
 :hidden:
 
+BasisCurves
+Camera
 Capsule
 Cone
 Cube
 Cylinder
+CylinderLight
+DiskLight
+DistantLight
+DomeLight
+DomeLight_1
+FabricStageInfo
+GeomSubset
 Material
 Mesh
+NodeGraph
+OmniPhysicsAttachment
+OmniPhysicsElementCollisionFilter
+OmniPhysicsTetXformAttachment
+OmniPhysicsTriTriAttachment
+OmniPhysicsVtxCrvAttachment
+OmniPhysicsVtxTetAttachment
+OmniPhysicsVtxTriAttachment
+OmniPhysicsVtxVtxAttachment
+OmniPhysicsVtxXformAttachment
 PhysicsCollisionGroup
 PhysicsDistanceJoint
 PhysicsFixedJoint
@@ -117,12 +247,43 @@ PhysicsPrismaticJoint
 PhysicsRevoluteJoint
 PhysicsScene
 PhysicsSphericalJoint
+PhysxParticleSystem
 PhysxPhysicsGearJoint
+PhysxPhysicsJointInstancer
 PhysxPhysicsRackAndPinionJoint
+PhysxVehicleTireFrictionTable
 Plane
+PointInstancer
+Points
+RectLight
+Scope
+Shader
 Sphere
+SphereLight
+TempChangeTracking
+TetMesh
 Xform
+CollectionAPI
+GeomInstanceAPI
+GeomInstanceRootAPI
+GeomPrototypeAPI
+LightAPI
 MaterialBindingAPI
+NewtonArticulationRootAPI
+NewtonCollisionAPI
+NewtonJointAPI
+NewtonMeshCollisionAPI
+NewtonMimicAPI
+NewtonSceneAPI
+NodeDefAPI
+OmniPhysicsBaseMaterialAPI
+OmniPhysicsBodyAPI
+OmniPhysicsDeformableBodyAPI
+OmniPhysicsDeformableMaterialAPI
+OmniPhysicsDeformablePoseAPI
+OmniPhysicsSurfaceDeformableMaterialAPI
+OmniPhysicsSurfaceDeformableSimAPI
+OmniPhysicsVolumeDeformableSimAPI
 PhysicsArticulationRootAPI
 PhysicsCollisionAPI
 PhysicsDriveAPI
@@ -134,24 +295,79 @@ PhysicsMaterialAPI
 PhysicsMeshCollisionAPI
 PhysicsRigidBodyAPI
 PhysxArticulationAPI
+PhysxAutoDeformableAttachmentAPI
+PhysxAutoDeformableBodyAPI
+PhysxAutoDeformableHexahedralMeshAPI
+PhysxAutoDeformableMeshSimplificationAPI
+PhysxBaseDeformableBodyAPI
+PhysxCharacterControllerAPI
 PhysxCollisionAPI
 PhysxContactReportAPI
 PhysxConvexDecompositionCollisionAPI
 PhysxConvexHullCollisionAPI
+PhysxCookedDataAPI
+PhysxDeformableMaterialAPI
+PhysxDiffuseParticlesAPI
 PhysxDrivePerformanceEnvelopeAPI
+PhysxForceAPI
+PhysxJointAPI
 PhysxJointAxisAPI
 PhysxLimitAPI
 PhysxMaterialAPI
+PhysxMeshMergeCollisionAPI
+PhysxMimicJointAPI
+PhysxPBDMaterialAPI
+PhysxParticleAPI
+PhysxParticleAnisotropyAPI
+PhysxParticleIsosurfaceAPI
+PhysxParticleSamplingAPI
+PhysxParticleSetAPI
+PhysxParticleSmoothingAPI
 PhysxPhysicsDistanceJointAPI
 PhysxRigidBodyAPI
 PhysxSDFMeshCollisionAPI
 PhysxSceneAPI
+PhysxSceneQuasistaticAPI
 PhysxSphereFillCollisionAPI
 PhysxSplinesSurfaceVelocityAPI
+PhysxSurfaceDeformableBodyAPI
+PhysxSurfaceDeformableMaterialAPI
 PhysxSurfaceVelocityAPI
+PhysxTendonAttachmentAPI
+PhysxTendonAttachmentLeafAPI
+PhysxTendonAttachmentRootAPI
+PhysxTendonAxisAPI
+PhysxTendonAxisRootAPI
 PhysxTriangleMeshCollisionAPI
 PhysxTriangleMeshSimplificationCollisionAPI
 PhysxTriggerAPI
+PhysxTriggerStateAPI
+PhysxVehicleAPI
+PhysxVehicleAckermannSteeringAPI
+PhysxVehicleAutoGearBoxAPI
+PhysxVehicleBrakesAPI
+PhysxVehicleClutchAPI
+PhysxVehicleContextAPI
+PhysxVehicleControllerAPI
+PhysxVehicleDriveBasicAPI
+PhysxVehicleDriveStandardAPI
+PhysxVehicleEngineAPI
+PhysxVehicleGearsAPI
+PhysxVehicleMultiWheelDifferentialAPI
+PhysxVehicleNonlinearCommandResponseAPI
+PhysxVehicleSteeringAPI
+PhysxVehicleSuspensionAPI
+PhysxVehicleSuspensionComplianceAPI
+PhysxVehicleTankControllerAPI
+PhysxVehicleTankDifferentialAPI
+PhysxVehicleTireAPI
+PhysxVehicleWheelAPI
+PhysxVehicleWheelAttachmentAPI
+PhysxVehicleWheelControllerAPI
+PrototypeRootAPI
+ShadowAPI
+ShapingAPI
+legacy_stage_units
 prim
 stage_units
 composition-articulation_fixed_base
@@ -175,4 +391,6 @@ composition-rigid_body_sphere
 composition-spherical_joint_pair
 composition-static_plane_collider
 findings
+physics-population-description
+glossary
 ```

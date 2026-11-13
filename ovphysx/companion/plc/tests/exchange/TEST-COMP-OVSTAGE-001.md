@@ -17,16 +17,24 @@ Run a bidirectional host loop with an authored input edit and a simulation outpu
 
 ## Given
 
-- An attached ovstage, a host input-update counter, a USD mirror notice adapter and a separate authoring snapshot.
+- An attached ovstage, a replacement Stage held behind uncollected detach/attach
+  receipts, a host input-update counter, a USD mirror notice adapter and a
+  separate authoring snapshot.
 - Separate input/output ordinals and one declared writer per destination.
 
 ## When
 
-- Apply one authored edit, step/read, explicitly publish ovstage and USD output, then process host notices and start a snapshot computation.
+- Apply one authored edit, step/read, explicitly publish ovstage and USD output,
+  then process host notices and start a snapshot computation.
+- Complete an attach through a later step without collecting its receipt; repeat
+  with a committed Stage A followed by uncollected detach and attach of Stage B.
 
 ## Then
 
 - The authored edit produces exactly one explicit input update and the stage remains alive through detach (REQ AC-1).
+- StageFlow resolves the native current Stage: an uncollected attach is usable,
+  and after uncollected detach/reattach Stage A is rejected while Stage B is
+  accepted (REQ AC-1).
 - Output changes appear only after explicit publication, and the output ordinal is never submitted as input (REQ AC-2).
 - The snapshot computation leaves the live attachment unchanged (REQ AC-3).
 - Output-generated USD notices cause zero new solver input updates (REQ AC-4).
@@ -37,10 +45,16 @@ Run a bidirectional host loop with an authored input edit and a simulation outpu
 [preview integration](../../../tests_native/test_preview.py) verifies composed
 parent/body world matrices before attachment and body poses in both playback and
 independent preview (AC-1).
-Population uses ALL domains with OVStage 0.3; physics snapshot filtering is unchanged.
+Population uses ovphysx's physics population description with RENDERING beside it; physics snapshot filtering is unchanged.
 
-[Native integration](../../../tests_native/test_exchange.py), all five cases pass:
+[Native integration](../../../tests_native/test_exchange.py), all seven cases pass:
 
+- `test_stage_flow_resolves_an_uncollected_attach`: a later step completes attach
+  without collecting its receipt, and StageFlow resolves the held pending Stage
+  (AC-1).
+- `test_stage_flow_resolves_uncollected_detach_and_replacement`: committed Stage A
+  stays in the wrapper while native work detaches it and attaches B; StageFlow
+  rejects A and accepts B before either lifecycle receipt is collected (AC-1).
 - `test_core_authored_input_explicit_output_and_snapshot`: one authored update, immutable copied output, unchanged ovstage world matrix before publication, skipped output mass sentinel, later authored input and snapshot mass computation preserving live owner/step (AC-1/2/3).
 - `test_preview_flow_owner_election_sealing_and_retirement`: independent preview, exact-stage validation, one writer, required sealing/consumption, thread affinity and owner retirement (AC-1/2).
 - `test_exchange_preflight_and_failed_publication_latch`: preflight leaves cursor unchanged; failed publication latches rather than risking replay (AC-2).
@@ -73,3 +87,7 @@ then refreshes the joint and verifies it still reads the authored stiffness 125
 The `companion_bad_OUTPUT_PARAM` fixture declares a native plugin parameter in
 `companion:output:`; `test_incompatible_plugin_never_starts[OUTPUT_PARAM]`
 verifies registration fails with INVALID_ARGUMENT before the plugin starts (AC-2).
+
+The standalone external-schema population helper preserves authored rigid-body
+kinematic and mass settings as well as CompanionBallAPI parameters, without a
+second core physics description (AC-1).

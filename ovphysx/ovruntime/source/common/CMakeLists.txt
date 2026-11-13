@@ -25,7 +25,6 @@ set(COMMON_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/include/common/utilities/LockingList.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/common/utilities/MemoryMacros.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/common/utilities/MemoryUtilities.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/common/utilities/OmniPhysXUtilities.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/common/utilities/PhysXErrorCallback.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/common/utilities/PrimHierarchyStorage.h
     # utilities: SdfPathEncoding.h and UsdToolsTestHelpers.h were never built or
@@ -130,7 +129,6 @@ install(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/include/common/utilities/LockingList.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/common/utilities/MemoryMacros.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/common/utilities/MemoryUtilities.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/common/utilities/OmniPhysXUtilities.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/common/utilities/PhysXErrorCallback.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/common/utilities/PrimHierarchyStorage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/common/utilities/Utilities.h

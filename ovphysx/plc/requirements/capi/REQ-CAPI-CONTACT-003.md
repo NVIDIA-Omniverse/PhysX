@@ -41,8 +41,8 @@ old entry points as deprecated aliases.
   `ovphysx_read_friction_contact_data` / `read_friction_contact_data` likewise
   preserve friction forces, anchor points, layouts, required capacity, and
   truncation behavior.
-- AC-3: **Read contract.** Component reads use the last successful simulation
-  step's dt, validate float32 output shape/device, and reject destroyed or
+- AC-3: **Read contract.** Component reads use the last successful positive simulation
+  step's dt (zero-dt steps retain that divisor), validate float32 output shape/device, and reject destroyed or
   invalidated bindings. Their normal and friction outputs for the same step
   can be added to obtain total contact force, per sensor for net reads or per
   sensor/filter pair for matrices; the friction vector is not torque.

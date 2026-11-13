@@ -164,8 +164,7 @@ public:
                             uint64_t readOrdinal,
                             AttachOvstageBackingStageHandle backingStage,
                             uint64_t effectiveBackingStageId,
-                            const PhysxAttachOptions& options,
-                            bool startConfiguredRecording = true);
+                            const PhysxAttachOptions& options);
     // Pull + apply ovstage change deltas over an explicit ordinal range (ADR-0003 M3).
     bool physXUpdateFromOvStage(omni::physics::AttachHandle attach, uint64_t fromOrdinal, uint64_t toOrdinal);
 

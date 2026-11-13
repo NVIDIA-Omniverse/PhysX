@@ -1,0 +1,27 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxVehicleContextAPI",
+  "title": "PhysxVehicleContextAPI",
+  "summary": "Scene-wide vehicle settings (update mode, vertical and longitudinal axes) on a PhysicsScene prim. Listing it turns on vehicle parsing for the attach; the walkers emit one vehicle context per PhysicsScene that lists it.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "PhysicsScene"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "columns": [],
+  "interactions": [
+    {
+      "with": "PhysicsScene",
+      "rule": "On a prim that is not a PhysicsScene the ovstage walker ignores the API silently and the USD walker logs an error. The contexts are set on their scenes after all scenes are loaded and before any vehicle is created."
+    }
+  ],
+  "notes": [
+    "The parser reads physxVehicleContext:updateMode, verticalAxis and longitudinalAxis, falling back to the deprecated upAxis and forwardAxis when an axis token is undefined, and the runtime applies live changes of the first three. They are not described yet."
+  ]
+}

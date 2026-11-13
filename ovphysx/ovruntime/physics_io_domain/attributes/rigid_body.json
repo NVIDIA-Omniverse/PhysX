@@ -1,0 +1,2541 @@
+{
+  "$schema": "../contract.schema.json",
+  "schema_version": 1,
+  "attributes": [
+    {
+      "id": "position",
+      "name": "position",
+      "public": true,
+      "semantic": "POINT",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "description": "body position",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "length",
+          "writability": "WRITABLE",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "effect": "set_state",
+            "persistence": "simulation_state",
+            "visibility": "commit",
+            "preserves": [
+              "orientation"
+            ]
+          }
+        },
+        {
+          "target": "ARTICULATION_LINK",
+          "description": "link position",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "length",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": false
+        },
+        {
+          "target": "VEHICLE_WHEEL",
+          "description": "composed wheel position",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "length",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "orientation",
+      "name": "orientation",
+      "public": true,
+      "semantic": "QUATERNION",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "description": "rotation",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 4,
+              "shape": [
+                "objects"
+              ],
+              "order": "xyzw"
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 4,
+              "shape": [
+                "objects"
+              ],
+              "order": "xyzw"
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "effect": "set_state",
+            "persistence": "simulation_state",
+            "visibility": "commit",
+            "preserves": [
+              "position"
+            ]
+          },
+          "notes": "For a character-controller row, reads return the controller prim's world orientation with the capsule-axis correction applied, as in native prim write-back. Character-controller proxies are excluded from rigid-body writes; use CHARACTER_CONTROLLER move."
+        },
+        {
+          "target": "ARTICULATION_LINK",
+          "description": "link rotation",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "dimensionless",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 4,
+              "shape": [
+                "objects"
+              ],
+              "order": "xyzw"
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": false
+        },
+        {
+          "target": "VEHICLE_WHEEL",
+          "description": "composed wheel rotation, xyzw",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "dimensionless",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 4,
+              "shape": [
+                "objects"
+              ],
+              "order": "xyzw"
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "linear_velocity",
+      "name": "linearVelocity",
+      "public": true,
+      "semantic": "VECTOR",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "description": "COM linear velocity",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "velocity",
+          "writability": "WRITABLE",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup",
+              "rigid_velocity"
+            ],
+            "effect": "set_state",
+            "persistence": "simulation_state",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "population": {
+            "component": "apis/PhysicsRigidBodyAPI.json",
+            "column": "physics:velocity",
+            "conversion": "Runtime values are world-space. Population may apply local-space velocity transformation."
+          }
+        },
+        {
+          "target": "ARTICULATION_LINK",
+          "description": "COM linear velocity",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "velocity",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "angular_velocity",
+      "name": "angularVelocity",
+      "public": true,
+      "semantic": "VECTOR",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "description": "angular velocity",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "angular_velocity",
+          "writability": "WRITABLE",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup",
+              "rigid_velocity"
+            ],
+            "effect": "set_state",
+            "persistence": "simulation_state",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "population": {
+            "component": "apis/PhysicsRigidBodyAPI.json",
+            "column": "physics:angularVelocity",
+            "conversion": "Population angular velocity is degrees/s; parsing converts to radians/s. Runtime I/O uses radians/s."
+          }
+        },
+        {
+          "target": "ARTICULATION_LINK",
+          "description": "angular velocity",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "angular_velocity",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "linear_acceleration",
+      "name": "linearAcceleration",
+      "public": true,
+      "semantic": "VECTOR",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "description": "linear acceleration",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "acceleration",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": false
+        },
+        {
+          "target": "ARTICULATION_LINK",
+          "description": "linear acceleration",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "acceleration",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "angular_acceleration",
+      "name": "angularAcceleration",
+      "public": true,
+      "semantic": "VECTOR",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "description": "angular acceleration",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "angular_acceleration",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": false
+        },
+        {
+          "target": "ARTICULATION_LINK",
+          "description": "angular acceleration",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "angular_acceleration",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "world_scale",
+      "name": "worldScale",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "description": "signed world scale the body was created with (read-only)",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "dimensionless",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": false,
+          "notes": "The scale physics built the body's collision shapes with: the parser's signed decomposition of the body's world transform when the body was created (a replicated clone copies its source's). PhysX carries no scale. Composes with position and orientation (same physics frame) into the body's world matrix, including a character controller's: its orientation includes the capsule-axis correction and its scale keeps the controller prim's authored axes. Constant for the body's lifetime. A scale edit (a USD edit or an OVStage transform change) recreates a CPU-scene body, kinematic or dynamic, which stores the new scale; character controllers, DirectGPU bodies and kinematic bodies driven by time-sampled transforms do not apply the edit, so they keep simulating, and reporting, the creation scale until the prim is removed and re-added or the stage is reattached. DirectGPU serves it from a stored device copy, beside the pose. No point-instancer array form."
+        },
+        {
+          "target": "ARTICULATION_LINK",
+          "description": "signed world scale the body was created with (read-only)",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "dimensionless",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": false,
+          "notes": "The scale physics built the link's collision shapes with: the parser's signed decomposition of the link's world transform when the link was created (a replicated clone copies its source's). PhysX carries no scale. Composes with position and orientation (same physics frame) into the link's world matrix. Constant for the link's lifetime: articulation links do not apply a runtime scale edit, so they keep simulating, and reporting, the creation scale. DirectGPU serves it from a stored device copy, beside the pose. No point-instancer array form."
+        }
+      ]
+    },
+    {
+      "id": "mass",
+      "name": "mass",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "description": "body mass",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "mass",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        },
+        {
+          "target": "ARTICULATION_LINK",
+          "description": "link mass",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "mass",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "inverse_mass",
+      "name": "inverseMass",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "description": "1/mass",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "inverse_mass",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            }
+          },
+          "write": false
+        },
+        {
+          "target": "ARTICULATION_LINK",
+          "description": "1/mass",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "inverse_mass",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            }
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "inertia",
+      "name": "inertia",
+      "public": true,
+      "semantic": "MATRIX",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "description": "inertia tensor",
+          "dtype": "f32",
+          "frame": "center_of_mass",
+          "units": "inertia",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 9,
+              "shape": [
+                "objects"
+              ],
+              "order": "column_major"
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 9,
+              "shape": [
+                "objects"
+              ],
+              "order": "column_major"
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        },
+        {
+          "target": "ARTICULATION_LINK",
+          "description": "inertia tensor",
+          "dtype": "f32",
+          "frame": "center_of_mass",
+          "units": "inertia",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 9,
+              "shape": [
+                "objects"
+              ],
+              "order": "column_major"
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 9,
+              "shape": [
+                "objects"
+              ],
+              "order": "column_major"
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "inverse_inertia",
+      "name": "inverseInertia",
+      "public": true,
+      "semantic": "MATRIX",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "description": "inverse inertia",
+          "dtype": "f32",
+          "frame": "center_of_mass",
+          "units": "inverse_inertia",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 9,
+              "shape": [
+                "objects"
+              ],
+              "order": "column_major"
+            }
+          },
+          "write": false
+        },
+        {
+          "target": "ARTICULATION_LINK",
+          "description": "inverse inertia",
+          "dtype": "f32",
+          "frame": "center_of_mass",
+          "units": "inverse_inertia",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 9,
+              "shape": [
+                "objects"
+              ],
+              "order": "column_major"
+            }
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "center_of_mass_position",
+      "name": "centerOfMassPosition",
+      "public": true,
+      "semantic": "POINT",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "description": "COM offset",
+          "dtype": "f32",
+          "frame": "body",
+          "units": "length",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": [
+              "centerOfMassOrientation"
+            ]
+          }
+        },
+        {
+          "target": "ARTICULATION_LINK",
+          "description": "COM offset",
+          "dtype": "f32",
+          "frame": "body",
+          "units": "length",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": [
+              "centerOfMassOrientation"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "center_of_mass_orientation",
+      "name": "centerOfMassOrientation",
+      "public": true,
+      "semantic": "QUATERNION",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "description": "COM frame rotation",
+          "dtype": "f32",
+          "frame": "body",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 4,
+              "shape": [
+                "objects"
+              ],
+              "order": "xyzw"
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 4,
+              "shape": [
+                "objects"
+              ],
+              "order": "xyzw"
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": [
+              "centerOfMassPosition"
+            ]
+          }
+        },
+        {
+          "target": "ARTICULATION_LINK",
+          "description": "COM frame rotation",
+          "dtype": "f32",
+          "frame": "body",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 4,
+              "shape": [
+                "objects"
+              ],
+              "order": "xyzw"
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 4,
+              "shape": [
+                "objects"
+              ],
+              "order": "xyzw"
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": [
+              "centerOfMassPosition"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "disable_gravity",
+      "name": "disableGravity",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "description": "gravity-off flag",
+          "dtype": "u8",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        },
+        {
+          "target": "ARTICULATION_LINK",
+          "description": "gravity-off flag",
+          "dtype": "u8",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "disable_simulation",
+      "name": "disableSimulation",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "description": "excluded-from-sim flag",
+          "dtype": "u8",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        },
+        {
+          "target": "ARTICULATION_LINK",
+          "description": "excluded-from-sim flag",
+          "dtype": "u8",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            }
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "physx_pointer",
+      "name": "physxPointer",
+      "cpp_symbol": "kPhysXPointer",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION_LINK",
+          "description": "Borrowed native PhysX address for this query target; no ownership transfer.",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "native_pointer"
+            ]
+          },
+          "write": false
+        },
+        {
+          "target": "ARTICULATION_JOINT",
+          "description": "Borrowed native PhysX address for this query target; no ownership transfer.",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "native_pointer"
+            ]
+          },
+          "write": false
+        },
+        {
+          "target": "PARTICLE_SET",
+          "description": "Borrowed native PhysX address for this query target; no ownership transfer.",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "native_pointer"
+            ]
+          },
+          "write": false
+        },
+        {
+          "target": "ARTICULATION",
+          "description": "Borrowed native PhysX address for this query target; no ownership transfer.",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "native_pointer"
+            ]
+          },
+          "write": false
+        },
+        {
+          "target": "SCENE",
+          "description": "Borrowed native PhysX address for this query target; no ownership transfer.",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "native_pointer"
+            ]
+          },
+          "write": false
+        },
+        {
+          "target": "PHYSX_MATERIAL",
+          "description": "Borrowed native PhysX address for this query target; no ownership transfer.",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "native_pointer"
+            ]
+          },
+          "write": false
+        },
+        {
+          "target": "SHAPE",
+          "description": "Borrowed native PhysX address for this query target; no ownership transfer.",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "native_pointer"
+            ]
+          },
+          "write": false
+        },
+        {
+          "target": "COMPOUND_SHAPE",
+          "description": "Borrowed native PhysX address for this query target; no ownership transfer.",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "native_pointer"
+            ]
+          },
+          "write": false
+        },
+        {
+          "target": "RIGID_ACTOR",
+          "description": "Borrowed native PhysX address for this query target; no ownership transfer.",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "native_pointer"
+            ]
+          },
+          "write": false
+        },
+        {
+          "target": "JOINT",
+          "description": "Borrowed native PhysX address for this query target; no ownership transfer.",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "native_pointer"
+            ]
+          },
+          "write": false
+        },
+        {
+          "target": "CUSTOM_JOINT",
+          "description": "Borrowed native PhysX address for this query target; no ownership transfer.",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "native_pointer"
+            ]
+          },
+          "write": false
+        },
+        {
+          "target": "PARTICLE_SYSTEM",
+          "description": "Borrowed native PhysX address for this query target; no ownership transfer.",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "native_pointer"
+            ]
+          },
+          "write": false
+        },
+        {
+          "target": "PHYSICS",
+          "description": "Borrowed native PhysX address for this query target; no ownership transfer.",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "native_pointer"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "kinematic_target_position",
+      "name": "kinematicTargetPosition",
+      "public": true,
+      "semantic": "POINT",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "description": "pending kinematic target position (else the body's pose)",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "length",
+          "writability": "CONDITIONAL",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "kinematic_target"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "kinematic_target"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": [
+              "kinematicTargetOrientation"
+            ]
+          }
+        },
+        {
+          "target": "ARTICULATION_LINK",
+          "description": "world pose fallback (a link cannot be a kinematic target)",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "length",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "kinematic_target"
+            ]
+          },
+          "write": false,
+          "notes": "Articulation links return their current world pose; they cannot receive kinematic targets."
+        }
+      ]
+    },
+    {
+      "id": "kinematic_target_orientation",
+      "name": "kinematicTargetOrientation",
+      "public": true,
+      "semantic": "QUATERNION",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "description": "pending kinematic target rotation (else the body's pose)",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "dimensionless",
+          "writability": "CONDITIONAL",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 4,
+              "shape": [
+                "objects"
+              ],
+              "order": "xyzw"
+            },
+            "conditions": [
+              "session",
+              "kinematic_target"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 4,
+              "shape": [
+                "objects"
+              ],
+              "order": "xyzw"
+            },
+            "conditions": [
+              "session",
+              "kinematic_target"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": [
+              "kinematicTargetPosition"
+            ]
+          },
+          "notes": "For a character-controller row, reads return the pending target (or actor-pose fallback) in the same prim frame as orientation, with the capsule-axis correction applied. Character-controller proxies are excluded from rigid-body writes; use CHARACTER_CONTROLLER move."
+        },
+        {
+          "target": "ARTICULATION_LINK",
+          "description": "world pose fallback (a link cannot be a kinematic target)",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "dimensionless",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 4,
+              "shape": [
+                "objects"
+              ],
+              "order": "xyzw"
+            },
+            "conditions": [
+              "session",
+              "kinematic_target"
+            ]
+          },
+          "write": false,
+          "notes": "Articulation links return their current world pose; they cannot receive kinematic targets."
+        }
+      ]
+    },
+    {
+      "id": "static_friction",
+      "name": "staticFriction",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "description": "per-shape static friction",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_shape_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "shapeCount",
+              "padding": 0
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_shape_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "shapeCount",
+              "padding": 0
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "Padded to the widest queried object; read shapeCount for the real count. Only material 0 is reported for a shape with multiple materials. Width may change for each query."
+        },
+        {
+          "target": "ARTICULATION_LINK",
+          "description": "per-shape static friction",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_shape_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "shapeCount",
+              "padding": 0
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_shape_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "shapeCount",
+              "padding": 0
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "Padded to the widest queried object; read shapeCount for the real count. Only material 0 is reported for a shape with multiple materials. Width may change for each query."
+        },
+        {
+          "target": "ARTICULATION",
+          "description": "per-shape, link-major in linkPath order",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_shape_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "shapeCount",
+              "padding": 0
+            }
+          },
+          "write": false,
+          "notes": "Padded to the widest queried object; read shapeCount for the real count. Shapes are link-major in linkPath order, then per-shape within the link. Only material 0 is reported for a shape with multiple materials. Width may change for each query."
+        }
+      ]
+    },
+    {
+      "id": "dynamic_friction",
+      "name": "dynamicFriction",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "description": "per-shape dynamic friction",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_shape_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "shapeCount",
+              "padding": 0
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_shape_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "shapeCount",
+              "padding": 0
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "Padded to the widest queried object; read shapeCount for the real count. Only material 0 is reported for a shape with multiple materials. Width may change for each query."
+        },
+        {
+          "target": "ARTICULATION_LINK",
+          "description": "per-shape dynamic friction",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_shape_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "shapeCount",
+              "padding": 0
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_shape_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "shapeCount",
+              "padding": 0
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "Padded to the widest queried object; read shapeCount for the real count. Only material 0 is reported for a shape with multiple materials. Width may change for each query."
+        },
+        {
+          "target": "ARTICULATION",
+          "description": "per-shape, link-major in linkPath order",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_shape_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "shapeCount",
+              "padding": 0
+            }
+          },
+          "write": false,
+          "notes": "Padded to the widest queried object; read shapeCount for the real count. Shapes are link-major in linkPath order, then per-shape within the link. Only material 0 is reported for a shape with multiple materials. Width may change for each query."
+        }
+      ]
+    },
+    {
+      "id": "restitution",
+      "name": "restitution",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "description": "per-shape restitution",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_shape_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "shapeCount",
+              "padding": 0
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_shape_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "shapeCount",
+              "padding": 0
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "Padded to the widest queried object; read shapeCount for the real count. Only material 0 is reported for a shape with multiple materials. Width may change for each query."
+        },
+        {
+          "target": "ARTICULATION_LINK",
+          "description": "per-shape restitution",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_shape_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "shapeCount",
+              "padding": 0
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_shape_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "shapeCount",
+              "padding": 0
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "Padded to the widest queried object; read shapeCount for the real count. Only material 0 is reported for a shape with multiple materials. Width may change for each query."
+        },
+        {
+          "target": "ARTICULATION",
+          "description": "per-shape, link-major in linkPath order",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_shape_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "shapeCount",
+              "padding": 0
+            }
+          },
+          "write": false,
+          "notes": "Padded to the widest queried object; read shapeCount for the real count. Shapes are link-major in linkPath order, then per-shape within the link. Only material 0 is reported for a shape with multiple materials. Width may change for each query."
+        }
+      ]
+    },
+    {
+      "id": "contact_offset",
+      "name": "contactOffset",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "description": "per-shape contact offset",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "length",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_shape_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "shapeCount",
+              "padding": 0
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_shape_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "shapeCount",
+              "padding": 0
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "Padded to the widest queried object; read shapeCount for the real count. Only material 0 is reported for a shape with multiple materials. Width may change for each query."
+        },
+        {
+          "target": "ARTICULATION_LINK",
+          "description": "per-shape contact offset",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "length",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_shape_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "shapeCount",
+              "padding": 0
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_shape_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "shapeCount",
+              "padding": 0
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "Padded to the widest queried object; read shapeCount for the real count. Only material 0 is reported for a shape with multiple materials. Width may change for each query."
+        },
+        {
+          "target": "ARTICULATION",
+          "description": "per-shape, link-major in linkPath order",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "length",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_shape_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "shapeCount",
+              "padding": 0
+            }
+          },
+          "write": false,
+          "notes": "Padded to the widest queried object; read shapeCount for the real count. Shapes are link-major in linkPath order, then per-shape within the link. Only material 0 is reported for a shape with multiple materials. Width may change for each query."
+        }
+      ]
+    },
+    {
+      "id": "rest_offset",
+      "name": "restOffset",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "description": "per-shape rest offset",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "length",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_shape_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "shapeCount",
+              "padding": 0
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_shape_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "shapeCount",
+              "padding": 0
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "Padded to the widest queried object; read shapeCount for the real count. Only material 0 is reported for a shape with multiple materials. Width may change for each query."
+        },
+        {
+          "target": "ARTICULATION_LINK",
+          "description": "per-shape rest offset",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "length",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_shape_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "shapeCount",
+              "padding": 0
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_shape_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "shapeCount",
+              "padding": 0
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "Padded to the widest queried object; read shapeCount for the real count. Only material 0 is reported for a shape with multiple materials. Width may change for each query."
+        },
+        {
+          "target": "ARTICULATION",
+          "description": "per-shape, link-major in linkPath order",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "length",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_shape_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "shapeCount",
+              "padding": 0
+            }
+          },
+          "write": false,
+          "notes": "Padded to the widest queried object; read shapeCount for the real count. Shapes are link-major in linkPath order, then per-shape within the link. Only material 0 is reported for a shape with multiple materials. Width may change for each query."
+        }
+      ]
+    },
+    {
+      "id": "shape_count",
+      "name": "shapeCount",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "description": "real shapes per row",
+          "dtype": "i32",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            }
+          },
+          "write": false
+        },
+        {
+          "target": "ARTICULATION_LINK",
+          "description": "real shapes per row",
+          "dtype": "i32",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            }
+          },
+          "write": false
+        },
+        {
+          "target": "ARTICULATION",
+          "description": "total shapes across links",
+          "dtype": "i32",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            }
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "link_incoming_joint_force",
+      "name": "linkIncomingJointForce",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION_LINK",
+          "description": "spatial force the inbound joint exerts on the link",
+          "dtype": "f32",
+          "frame": "joint",
+          "units": "spatial_force",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 6,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "is_sleeping",
+      "name": "isSleeping",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "description": "current sleep state: 1 asleep, 0 awake (read-only)",
+          "dtype": "u8",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            }
+          },
+          "write": false,
+          "notes": "Current PhysX sleep state, independent of the last wake command. A link reports its owning articulation. DirectGPU disables sleeping, so emitted values are zero; omitted rows are not awake values."
+        },
+        {
+          "target": "ARTICULATION_LINK",
+          "description": "current sleep state: 1 asleep, 0 awake (read-only)",
+          "dtype": "u8",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            }
+          },
+          "write": false,
+          "notes": "Current PhysX sleep state, independent of the last wake command. A link reports its owning articulation. DirectGPU disables sleeping, so emitted values are zero; omitted rows are not awake values."
+        }
+      ]
+    },
+    {
+      "id": "force",
+      "name": "force",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "description": "external force at COM (write-only)",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "force",
+          "writability": "WRITE_ONLY",
+          "read": false,
+          "write": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "effect": "apply_force",
+            "persistence": "one_step",
+            "visibility": "commit",
+            "preserves": []
+          }
+        },
+        {
+          "target": "ARTICULATION_LINK",
+          "description": "external force at COM (write-only)",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "force",
+          "writability": "WRITE_ONLY",
+          "read": false,
+          "write": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "effect": "apply_force",
+            "persistence": "one_step",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "wrench",
+      "name": "wrench",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "description": "external force xyz + torque xyz + world application point (write-only)",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "wrench",
+          "writability": "WRITE_ONLY",
+          "read": false,
+          "write": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 9,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "effect": "apply_force",
+            "persistence": "one_step",
+            "visibility": "commit",
+            "preserves": []
+          }
+        },
+        {
+          "target": "ARTICULATION_LINK",
+          "description": "external force xyz + torque xyz + world application point (write-only)",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "wrench",
+          "writability": "WRITE_ONLY",
+          "read": false,
+          "write": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 9,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "effect": "apply_force",
+            "persistence": "one_step",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "wake",
+      "name": "wake",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "description": "wake / sleep control \u2014 nonzero wakes, zero sleeps (write-only, CONDITIONAL: non-DirectGPU scenes)",
+          "dtype": "u8",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "CONDITIONAL",
+          "read": false,
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "wake"
+            ],
+            "effect": "command",
+            "persistence": "once",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "positions",
+      "name": "positions",
+      "public": false,
+      "semantic": "POINT",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "representation": "instancer",
+          "description": "Point-instancer body position",
+          "dtype": "f32",
+          "frame": "instancer_local",
+          "units": "length",
+          "writability": "UNCLASSIFIED",
+          "read": {
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "instance_slots"
+              ],
+              "padding": 0
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "request_name": "position"
+          },
+          "write": {
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "instance_slots"
+              ],
+              "padding": 0
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "effect": "set_state",
+            "persistence": "simulation_state",
+            "visibility": "commit",
+            "preserves": [
+              "orientation"
+            ],
+            "request_name": "position"
+          },
+          "notes": "Request this column using `position`; the plural name is the emitted read-group name and is not accepted as a request."
+        }
+      ]
+    },
+    {
+      "id": "orientations",
+      "name": "orientations",
+      "public": false,
+      "semantic": "QUATERNION",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "representation": "instancer",
+          "description": "Point-instancer rotation",
+          "dtype": "f32",
+          "frame": "instancer_local",
+          "units": "dimensionless",
+          "writability": "UNCLASSIFIED",
+          "read": {
+            "layout": {
+              "kind": "array",
+              "lanes": 4,
+              "shape": [
+                "instance_slots"
+              ],
+              "order": "xyzw",
+              "padding": 0
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "request_name": "orientation"
+          },
+          "write": {
+            "layout": {
+              "kind": "array",
+              "lanes": 4,
+              "shape": [
+                "instance_slots"
+              ],
+              "order": "xyzw",
+              "padding": 0
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "effect": "set_state",
+            "persistence": "simulation_state",
+            "visibility": "commit",
+            "preserves": [
+              "position"
+            ],
+            "request_name": "orientation"
+          },
+          "notes": "Request this column using `orientation`; the plural name is the emitted read-group name and is not accepted as a request."
+        }
+      ]
+    },
+    {
+      "id": "angular_velocities",
+      "name": "angularVelocities",
+      "public": false,
+      "semantic": "VECTOR",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "representation": "instancer",
+          "description": "Point-instancer angular velocity",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "angular_velocity",
+          "writability": "UNCLASSIFIED",
+          "read": {
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "instance_slots"
+              ],
+              "padding": 0
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "request_name": "angularVelocity"
+          },
+          "write": {
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "instance_slots"
+              ],
+              "padding": 0
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup",
+              "rigid_velocity"
+            ],
+            "effect": "set_state",
+            "persistence": "simulation_state",
+            "visibility": "commit",
+            "preserves": [],
+            "request_name": "angularVelocity"
+          },
+          "notes": "Request this column using `angularVelocity`; the plural name is the emitted read-group name and is not accepted as a request."
+        }
+      ]
+    },
+    {
+      "id": "accelerations",
+      "name": "accelerations",
+      "public": false,
+      "semantic": "VECTOR",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "representation": "instancer",
+          "description": "Point-instancer linear acceleration",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "acceleration",
+          "writability": "UNCLASSIFIED",
+          "read": {
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "instance_slots"
+              ],
+              "padding": 0
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "request_name": "linearAcceleration"
+          },
+          "write": false,
+          "notes": "Request this column using `linearAcceleration`; the plural name is the emitted read-group name and is not accepted as a request. The emitted name follows UsdGeomPointInstancer, which uses velocities and accelerations for the linear quantities."
+        }
+      ]
+    },
+    {
+      "id": "angular_accelerations",
+      "name": "angularAccelerations",
+      "public": false,
+      "semantic": "VECTOR",
+      "uses": [
+        {
+          "target": "RIGID_BODY",
+          "representation": "instancer",
+          "description": "Point-instancer angular acceleration",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "angular_acceleration",
+          "writability": "UNCLASSIFIED",
+          "read": {
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "instance_slots"
+              ],
+              "padding": 0
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "request_name": "angularAcceleration"
+          },
+          "write": false,
+          "notes": "Request this column using `angularAcceleration`; the plural name is the emitted read-group name and is not accepted as a request. UsdGeomPointInstancer has no angular-acceleration attribute; this runtime name keeps the angular prefix used by angularVelocities."
+        }
+      ]
+    }
+  ]
+}

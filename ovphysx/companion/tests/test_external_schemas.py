@@ -27,6 +27,42 @@ def test_real_external_schemas_survive_independent_population():
         '/World/Spring.companion:damping':2.,'/World/Ball.companion:radius':.75}
 
 
+def test_standalone_population_description_preserves_core_physics_inputs():
+    run('''
+import ovstage
+from external_schema_authoring import sample_bundle
+from ovphysx_companion.schemas import register_population_schemas, population_description
+bundle = sample_bundle()
+register_population_schemas([bundle])
+usda = ''' + repr('''#usda 1.0
+(metersPerUnit = 0.01)
+def PhysicsScene "Scene" {}
+def Sphere "Ball" (prepend apiSchemas = ["CompanionBallAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI"])
+{
+    bool physics:kinematicEnabled = true
+    float physics:mass = 7
+    float companion:radius = 0.75
+}
+''') + '''
+with ovstage.Stage('standalone-companion-population') as stage, ovstage.PathDictionary(stage) as dictionary:
+    ovstage.population.open_usd_from_string_with_desc(stage, usda, 1, ovstage.population.DEFAULT_TIME,
+                                                     [population_description([bundle])])
+    stage.advance_write_floor(ordinal=1).wait()
+    for path, name, expected in [('/Ball', 'physics:kinematicEnabled', True),
+                                 ('/Ball', 'physics:mass', 7.0), ('/Ball', 'companion:radius', 0.75),
+                                 ('/Scene', 'physics:gravityMagnitude', 981.0)]:
+        values = []
+        with dictionary.create_path_list_from_strings([path]) as paths, stage.query_from_path_list(paths) as query:
+            with stage.read_attributes(query, [dictionary.intern_token(name)], ovstage.OrdinalRange.latest(1)) as read:
+                read.wait()
+                for group in read.groups():
+                    with group:
+                        for column in group.columns:
+                            values.extend(column.array(0).reshape(-1).tolist())
+        assert values == [expected], (name, values)
+''')
+
+
 @pytest.mark.parametrize('case', ['late','parameter','kind'])
 def test_external_schema_registration_fails_explicitly(case):
     script = '''

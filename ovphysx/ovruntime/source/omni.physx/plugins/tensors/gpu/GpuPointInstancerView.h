@@ -6,6 +6,7 @@
 #include "tensors/CommonTypes.h"
 #include "tensors/base/BasePointInstancerView.h"
 #include "tensors/gpu/GpuSimulationData.h"
+#include "tensors/gpu/OvStageDeviceArgs.h"
 
 #include <vector>
 
@@ -35,17 +36,38 @@ public:
     // including actor-flag changes that did not pass through a tensor view.
     bool refreshDisabledRowsOvStage() const;
 
-    bool getInstancerColumnsOvStage(InstancerColumn column,
-                                    void* dst,
-                                    const ::physx::PxU32* offsets,
-                                    ::physx::PxU32 numInstancers) const override;
+    // A stream-ordered ovstage read (ADR-0055) of `columns`, column c landing at the per-instancer float offsets
+    // `offsets[c]` from its destination. Plans it: the list that heads the read's scratch -- every column's
+    // offsets -- and the scratch's size. Uploads the instancer frames and the GPU index map first when they
+    // changed, which a read being captured cannot do: `capturing` refuses instead, reporting why.
+    bool planOvStageRead(const InstancerColumn* columns,
+                         const ::physx::PxU32* const* offsets,
+                         ::physx::PxU32 columnCount,
+                         bool capturing,
+                         std::vector<uint8_t>& head,
+                         size_t& scratchBytes) const;
+    // Queues a planned read of `columns` into `dsts` on `args.stream`. The caller zeroes the destinations first:
+    // a slot with no live instance is never written.
+    bool readOvStageColumns(const OvStageDeviceReadArgs& args,
+                            const InstancerColumn* columns,
+                            float* const* dsts,
+                            ::physx::PxU32 columnCount) const;
+
     // The device write (ADR-0012). One instancer per call, launched over that instancer's record
     // range, so the packed pair handed to PhysX is exactly its live instances -- count known on the
     // host, no compaction and no host block.
     bool setInstancerColumnOvStage(InstancerColumn column,
                                    ::physx::PxU32 instancerIndex,
                                    const void* src,
-                                   ::physx::PxU32 arrayLength) override;
+                                   ::physx::PxU32 arrayLength,
+                                   const uint8_t* hostMask,
+                                   const OvStageDeviceWriteArgs* deviceArgs) override;
+    // The host work a session write does once, at open, so its commit only enqueues: uploads the instancer
+    // transforms when they changed. Returns this instancer's
+    // live instance count and record rows (owned by the view), or false when it cannot write.
+    bool prepareInstancerWriteOvStage(::physx::PxU32 instancerIndex,
+                                      const ::physx::PxU32*& outRows,
+                                      ::physx::PxU32& outCount);
 
     // False when this view cannot serve reads at all: an instance whose body has no row in the scene's
     // superset rigid view, or a device allocation that failed during construction. The caller must drop
@@ -57,16 +79,10 @@ public:
     }
 
 private:
-    // Push the staged world inverses to the device. Called from the column read rather than from
+    // Push the staged world inverses to the device. Called when a read is planned rather than from
     // setWorldInverses, so the upload happens inside the CUDA context guard the read already takes,
     // and it is skipped unless an instancer actually moved.
     bool uploadWorldInverses() const;
-    // Per-instancer destination starts, in FLOATS -- not "elements", which in this codebase means the
-    // dtype.lanes tuple. The array depends only on the instancer lengths and the column width, and five
-    // of InstancerColumn's six values are 3 floats wide (only eLocalOrientation is 4), so consecutive
-    // reads usually ask for identical offsets; what is already resident is compared, not re-uploaded.
-    bool uploadOffsets(const ::physx::PxU32* offsets, ::physx::PxU32 numInstancers) const;
-
     GpuSimulationDataPtr mGpuSimData;
 
     // The scene's superset rigid view, resolved once at construction. Not owned: it is a sibling
@@ -89,14 +105,14 @@ private:
     };
     std::vector<InstancerRange> mRanges;
 
-    // The record rows, host-side, for the write's packed index build. Filled lazily on the first
-    // write and never invalidated: the records it mirrors are immutable for this view's lifetime, and
-    // a rebuild takes a new view.
+    // The record rows, host-side, for the write's packed index build. Filled when the view is built
+    // and never changed: the records it mirrors are immutable for this view's lifetime, and a rebuild
+    // takes a new view.
     std::vector<::physx::PxU32> mWriteRows;
-    // One row-cache token per instancer range, minted from the shared ovstage counter when mWriteRows
-    // is built. Stored so repeated writes to the same range reuse the device copy, yet a rebuilt view
-    // gets fresh tokens -- unlike an address-derived token, these never alias a freed view reused at
-    // the old pointer, which the superset row cache would otherwise serve as this range's rows.
+    // One row-cache token per instancer range, minted from the shared ovstage counter with mWriteRows.
+    // Stored so repeated writes to the same range reuse the device copy, yet a rebuilt view gets fresh
+    // tokens -- unlike an address-derived token, these never alias a freed view reused at the old
+    // pointer, which the superset row cache would otherwise serve as this range's rows.
     std::vector<uint64_t> mWriteRowsTokens;
     ::physx::PxU32 mNumInstances = 0;
 
@@ -108,10 +124,6 @@ private:
     // larger entry, so `mEntries` is not an array of inverses. Filled in setWorldInverses so the
     // upload reads it directly.
     mutable std::vector<InstancerAffine> mWorldInversesHost;
-    mutable ::physx::PxU32* mOffsetsDev = nullptr;
-    mutable ::physx::PxU32 mOffsetsCapacity = 0;
-    // What is currently on the device, so an unchanged offsets array is not pushed again.
-    mutable std::vector<::physx::PxU32> mOffsetsHost;
 };
 
 } // namespace tensors

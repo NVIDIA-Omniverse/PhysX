@@ -32,6 +32,7 @@ set(PHYSX_PLUGIN_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/PhysXUSDProperties.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/PhysXUpdate.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/PhysXUnitTestsIface.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/QueryDeviceBuffers.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/Raycast.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/SceneMultiGPUMode.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/ScopedNoticeLock.h
@@ -156,6 +157,8 @@ source_group(TREE ${OVRUNTIME_ROOT_DIR}/include PREFIX "include" FILES ${PHYSX_P
 
 # --- Plugin sources ---
 set(PHYSX_PLUGIN_SOURCE
+    plugins/cache/AttachmentCache.cpp
+    plugins/cache/AttachmentRecords.cpp
     # root
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/ChangeRegister.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/CollisionRepresentation.cpp
@@ -499,9 +502,6 @@ ovruntime_target_add_cuda_sources(OvruntimePhysX
     SOURCES     ${TENSORS_CUDA_SOURCE}
     INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/plugins"
 )
-if(NOT WIN32)
-    set_target_properties(OvruntimePhysX PROPERTIES CUDA_RESOLVE_DEVICE_SYMBOLS ON)
-endif()
 
 # PhysXGpu and (Windows-only) PhysXDevice64 are loaded at runtime. Keep
 # build-tree copies in the runtime output directory used by the owner binary.
@@ -577,3 +577,14 @@ install(
     LIBRARY DESTINATION bin
     ARCHIVE DESTINATION lib
 )
+
+# Pointer-free compiled attachment archive codecs, independently testable without runtime startup.
+add_library(OvruntimeCompiledCache OBJECT plugins/cache/RuntimeArchive.cpp)
+target_include_directories(OvruntimeCompiledCache PUBLIC ${OVRUNTIME_ROOT_DIR}/include)
+target_link_libraries(OvruntimeCompiledCache PUBLIC OvruntimePhysicsParse)
+ovruntime_add_external_system_includes(OvruntimeCompiledCache NO_USD)
+set_target_properties(OvruntimeCompiledCache PROPERTIES POSITION_INDEPENDENT_CODE ON)
+# Embed the codec in the installed runtime archive; downstream static consumers
+# must not need a separate, uninstalled cache library.
+target_sources(OvruntimePhysX PRIVATE $<TARGET_OBJECTS:OvruntimeCompiledCache>)
+include(${OVRUNTIME_ROOT_DIR}/cmake/CompiledCacheIdentity.cmake)

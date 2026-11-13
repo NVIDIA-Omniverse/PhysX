@@ -7,9 +7,12 @@
 # (physx_usd_schemas.PhysxSchema, physx_usd_schemas.OmniUsdPhysicsDeformableSchema,
 # physx_usd_schemas.PhysicsSchemaTools). Importing this package registers all schema
 # plugins with the active USD runtime, so a plain ``import physx_usd_schemas`` is
-# enough to make the PhysX schema types known to USD. The schema Python APIs load on
-# demand -- e.g. ``from physx_usd_schemas import PhysxSchema``. register_all() /
-# schema_paths() remain available for explicit use.
+# enough to make the PhysX schema types known to USD. A schema plugin that the
+# process already provides under the same name, such as a host application's own
+# PhysX schema, is kept instead of the bundled copy. Validator registration is
+# explicit so applications can register all Plug-declared validators before the
+# global OpenUSD validation registry is constructed. The schema Python APIs load
+# on demand -- e.g. ``from physx_usd_schemas import PhysxSchema``.
 
 from __future__ import annotations
 
@@ -17,6 +20,7 @@ from pathlib import Path
 
 # _version.py is generated into the wheel by scripts/build_wheel.py.
 from ._version import __version__
+from .validation import register_validators
 
 __all__ = [
     "PhysxSchema",
@@ -24,12 +28,16 @@ __all__ = [
     "PhysicsSchemaTools",
     "schema_paths",
     "register_all",
+    "register_validators",
     "__version__",
 ]
 
 # Subpackages that ship USD plugin data (plugInfo.json + generatedSchema.usda under
-# their resources/ directory).
-_SCHEMA_MODULES = ("PhysxSchema", "OmniUsdPhysicsDeformableSchema")
+# their resources/ directory), mapped to the plugin name in that plugInfo.json.
+_SCHEMA_MODULES = {
+    "PhysxSchema": "physxSchema",
+    "OmniUsdPhysicsDeformableSchema": "omniUsdPhysicsDeformableSchema",
+}
 
 
 def schema_paths() -> list[Path]:
@@ -71,8 +79,11 @@ def register_all() -> None:
 
     Registers ``PhysxSchema`` and ``OmniUsdPhysicsDeformableSchema`` via
     ``pxr.Plug.Registry().RegisterPlugins()``. This runs automatically on import;
-    it is kept public for explicit callers and is safe to call again.  After it
-    runs the PhysX API schemas can be applied by their schema identifier::
+    it is kept public for explicit callers and is safe to call again.  A bundled
+    plugin is skipped when the process already provides a plugin with the same
+    name, for example a host application's own PhysX schema or one found through
+    ``PXR_PLUGINPATH_NAME``; that plugin keeps its schema types.  After it runs
+    the PhysX API schemas can be applied by their schema identifier::
 
         import physx_usd_schemas
         from pxr import Usd
@@ -87,8 +98,13 @@ def register_all() -> None:
     """
     from pxr import Plug  # noqa: PLC0415 -- deferred so the ImportError names pxr, not this module
 
-    paths = schema_paths()
-    Plug.Registry().RegisterPlugins([str(p) for p in paths])
+    # OpenUSD skips a same-named plugin only when both have the same plugin type, so
+    # a host's compiled physxSchema would otherwise collide on every shared type.
+    registry = Plug.Registry()
+    paths = [path for path in schema_paths()
+             if registry.GetPluginWithName(_SCHEMA_MODULES[path.parent.name]) is None]
+    if paths:
+        registry.RegisterPlugins([str(path) for path in paths])
 
 
 # Register all schemas on import so `import physx_usd_schemas` is sufficient to make

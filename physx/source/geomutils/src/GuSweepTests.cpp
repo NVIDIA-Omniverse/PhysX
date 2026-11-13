@@ -30,9 +30,9 @@ using namespace aos;
 //#define USE_VIRTUAL_GJK
 #ifdef USE_VIRTUAL_GJK
 static bool virtualGjkRaycastPenetration(const GjkConvex& a, const GjkConvex& b, const Vec3VArg initialDir, const FloatVArg initialLambda, const Vec3VArg s, const Vec3VArg r, FloatV& lambda, 
-		Vec3V& normal, Vec3V& closestA, const PxReal _inflation, const bool initialOverlap)
+		Vec3V& normal, Vec3V& closestA, const PxReal _inflation, const bool initialOverlap, const bool useClosestB = false, const PxReal toleranceScale = 0.1f, const PxReal mtdInflation = 0.0f)
 {
-	return gjkRaycastPenetration<GjkConvex, GjkConvex >(a, b, initialDir, initialLambda, s, r, lambda, normal, closestA, _inflation, initialOverlap);
+	return gjkRaycastPenetration<GjkConvex, GjkConvex >(a, b, initialDir, initialLambda, s, r, lambda, normal, closestA, _inflation, initialOverlap, useClosestB, toleranceScale, mtdInflation);
 }
 #endif
 
@@ -71,10 +71,10 @@ bool sweepCapsule_BoxGeom(GU_CAPSULE_SWEEP_FUNC_PARAMS)
 	const LocalConvex<BoxV> convexB(box);
 	const Vec3V initialSearchDir = V3Sub(capsule.getCenter(), box.getCenter());
 #ifdef USE_VIRTUAL_GJK
-	if(!virtualGjkRaycastPenetration(convexA, convexB, initialSearchDir, zero, zeroV, dir, toi, normal, closestA, lss.radius + inflation, isMtd))
+	if(!virtualGjkRaycastPenetration(convexA, convexB, initialSearchDir, zero, zeroV, dir, toi, normal, closestA, lss.radius + inflation, isMtd, false, 0.1f, inflation))
 		return false;
 #else
-	if(!gjkRaycastPenetration<LocalConvex<CapsuleV>, LocalConvex<BoxV> >(convexA, convexB, initialSearchDir, zero, zeroV, dir, toi, normal, closestA, lss.radius + inflation, isMtd))
+	if(!gjkRaycastPenetration<LocalConvex<CapsuleV>, LocalConvex<BoxV> >(convexA, convexB, initialSearchDir, zero, zeroV, dir, toi, normal, closestA, lss.radius + inflation, isMtd, false, 0.1f, inflation))
 		return false;
 #endif
 	sweepHit.flags = PxHitFlag::eNORMAL;
@@ -148,10 +148,10 @@ bool sweepBox_SphereGeom(GU_BOX_SWEEP_FUNC_PARAMS)
 	const LocalConvex<CapsuleV> convexA(capsuleV);
 	const LocalConvex<BoxV> convexB(boxV);
 #ifdef USE_VIRTUAL_GJK
-	if(!virtualGjkRaycastPenetration(convexA, convexB, initialSearchDir, zero, zeroV, dir, toi, normal, closestA, sphereGeom.radius+inflation, isMtd))
+	if(!virtualGjkRaycastPenetration(convexA, convexB, initialSearchDir, zero, zeroV, dir, toi, normal, closestA, sphereGeom.radius+inflation, isMtd, false, 0.1f, inflation))
 		return false;
 #else
-	if(!gjkRaycastPenetration<LocalConvex<CapsuleV>, LocalConvex<BoxV> >(convexA, convexB, initialSearchDir, zero, zeroV, dir, toi, normal, closestA, sphereGeom.radius+inflation, isMtd))
+	if(!gjkRaycastPenetration<LocalConvex<CapsuleV>, LocalConvex<BoxV> >(convexA, convexB, initialSearchDir, zero, zeroV, dir, toi, normal, closestA, sphereGeom.radius+inflation, isMtd, false, 0.1f, inflation))
 		return false;
 #endif
 	sweepHit.flags = PxHitFlag::eNORMAL;
@@ -225,10 +225,10 @@ bool sweepBox_CapsuleGeom(GU_BOX_SWEEP_FUNC_PARAMS)
 	const LocalConvex<CapsuleV> convexA(capsuleV);
 	const LocalConvex<BoxV> convexB(boxV);
 #ifdef USE_VIRTUAL_GJK
-	if(!virtualGjkRaycastPenetration(convexA, convexB, initialSearchDir, zero, zeroV, dir, toi, normal, closestA, capsuleGeom.radius+inflation, isMtd))
+	if(!virtualGjkRaycastPenetration(convexA, convexB, initialSearchDir, zero, zeroV, dir, toi, normal, closestA, capsuleGeom.radius+inflation, isMtd, false, 0.1f, inflation))
 		return false;
 #else
-	if(!gjkRaycastPenetration<LocalConvex<CapsuleV>, LocalConvex<BoxV> >(convexA, convexB, initialSearchDir, zero, zeroV, dir, toi, normal, closestA, capsuleGeom.radius+inflation, isMtd))
+	if(!gjkRaycastPenetration<LocalConvex<CapsuleV>, LocalConvex<BoxV> >(convexA, convexB, initialSearchDir, zero, zeroV, dir, toi, normal, closestA, capsuleGeom.radius+inflation, isMtd, false, 0.1f, inflation))
 		return false;
 #endif
 	sweepHit.flags = PxHitFlag::eNORMAL;
@@ -298,10 +298,10 @@ bool sweepBox_BoxGeom(GU_BOX_SWEEP_FUNC_PARAMS)
 	const RelativeConvex<BoxV> convexA(box0, aToB);
 	const LocalConvex<BoxV> convexB(box1);
 #ifdef USE_VIRTUAL_GJK
-	if(!virtualGjkRaycastPenetration(convexA, convexB, aToB.p, zero, zeroV, dir, toi, normal, closestA, inflation, isMtd))
+	if(!virtualGjkRaycastPenetration(convexA, convexB, aToB.p, zero, zeroV, dir, toi, normal, closestA, inflation, isMtd, true, isMtd ? 0.001f : 0.1f, inflation))
 		return false;
 #else
-	if(!gjkRaycastPenetration<RelativeConvex<BoxV>, LocalConvex<BoxV> >(convexA, convexB, aToB.p, zero, zeroV, dir, toi, normal, closestA, inflation, isMtd))
+	if(!gjkRaycastPenetration<RelativeConvex<BoxV>, LocalConvex<BoxV> >(convexA, convexB, aToB.p, zero, zeroV, dir, toi, normal, closestA, inflation, isMtd, true, isMtd ? 0.001f : 0.1f, inflation))
 		return false;
 #endif	
 	sweepHit.flags = PxHitFlag::eNORMAL;

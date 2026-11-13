@@ -1,0 +1,96 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "OmniPhysicsBodyAPI",
+  "title": "OmniPhysicsBodyAPI (deformable body flags)",
+  "summary": "Simulation-body flags of the OmniPhysics deformable schema. The runtime reads them only on a prim it enumerates through OmniPhysicsDeformableBodyAPI, and only when OmniPhysicsBodyAPI is listed in usd-schemas too.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "Xformable"
+  ],
+  "requires": [
+    "OmniPhysicsDeformableBodyAPI"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true,
+    "material_consumer": true
+  },
+  "columns": [
+    {
+      "name": "omniphysics:kinematicEnabled",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": false,
+      "parser_default": false,
+      "absent": "false: a dynamic deformable body, the only kind the runtime supports. With true, volume and surface body creation log 'Currently kinematic deformable bodies are not supported.' and create no body (volume cooking refuses it too).",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseDeformableBody.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceDeformable.cpp",
+        "source/omni.physx/plugins/CookingDataAsync.cpp"
+      ]
+    },
+    {
+      "name": "omniphysics:startsAsleep",
+      "usd_type": "uniform bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": false,
+      "parser_default": false,
+      "absent": "false: the body starts awake with its simulation mesh's velocities. With true the runtime sets the wake counter to 0 and zeroes the initial velocities.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseDeformableBody.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceDeformable.cpp"
+      ]
+    },
+    {
+      "name": "omniphysics:simulationOwner",
+      "usd_type": "rel",
+      "origin": "schema",
+      "kind": "relationship",
+      "semantic": "RELATIONSHIP_PATH_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": true
+      },
+      "required": false,
+      "absent": "The body joins the default PhysX scene (the first one registered). Only the first target is used, and a first target that is not a PhysicsScene leaves the body in the default scene too; it is not dropped.",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseDeformableBody.cpp",
+        "source/omni.physx/plugins/usdLoad/LoadStage.cpp"
+      ],
+      "notes": "Path-dictionary ids in USD target order."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "OmniPhysicsDeformableBodyAPI",
+      "rule": "USD lists OmniPhysicsBodyAPI as a built-in of OmniPhysicsDeformableBodyAPI. The runtime checks the usd-schemas list for each separately, so a hand populator must list both for these columns to be read; on a prim without OmniPhysicsDeformableBodyAPI they are ignored."
+    }
+  ]
+}

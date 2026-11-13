@@ -1,0 +1,194 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "MaterialBindingAPI",
+  "title": "MaterialBindingAPI (physics purpose)",
+  "summary": "Binds a physics material to a collision shape. The producer resolves the binding onto every material consumer; the consumer additionally walks purposes and ancestors for stages that were not produced that way.",
+  "status": "draft",
+  "compiled_cache": true,
+  "column_prefixes": [
+    "material:binding"
+  ],
+  "applies_to": [
+    "Gprim",
+    "Xformable",
+    "GeomSubset"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": false,
+    "row": false
+  },
+  "producer_scope": "On a prim with PhysicsCollisionAPI, PhysicsRigidBodyAPI, OmniPhysicsBodyAPI or OmniPhysicsDeformableBodyAPI, and on collider GeomSubsets, the producer computes the USD-resolved physics-purpose binding (direct, inherited or collection-based) and writes it to material:binding:physics, overriding any direct binding on the prim, but only if the bound Material carries a physics schema. On every other in-scope prim the authored material:binding[:*] relationships are copied unresolved. A prim that only authors material:binding:physics towards a physics material gets a row of its own for that reason.",
+  "columns": [
+    {
+      "name": "material:binding:physics",
+      "usd_type": "rel",
+      "python_name": "material_binding_physics",
+      "origin": "schema",
+      "kind": "relationship",
+      "semantic": "RELATIONSHIP_PATH_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": true
+      },
+      "required": false,
+      "producer": {
+        "writes": "the USD-resolved physics-purpose bound Material path, when it carries a physics schema",
+        "via": "derive",
+        "on": {
+          "components": {
+            "material_consumer": true
+          }
+        },
+        "resolve": {
+          "kind": "bound_material",
+          "purpose": "physics",
+          "material": {
+            "ref": "physics_prim"
+          }
+        },
+        "when": "always",
+        "creates_column": true,
+        "notes": "On material consumers only. A render-only Material is not published as the physics material; the raw authored binding, if any, survives."
+      },
+      "absent": "The consumer falls back to material:binding on the same prim, then walks ancestors trying both. With none, the shape has no material slot: the scene default material applies and density resolves to PhysicsMassAPI.default_density.",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageSource.cpp"
+      ],
+      "verify": {
+        "target": "shape",
+        "expr": "harness::shapeUsesMaterial(shape, relTarget)",
+        "kind": "bool",
+        "sample": true,
+        "check_absent": false,
+        "notes": "relTarget is the composition's first target for this relationship. True when the shape has exactly one PxMaterial and it is the one created for that Material prim. Relationships are authored in every test variant, so both variants expect true; the absent variant of a composition without the relationship expects nothing."
+      }
+    },
+    {
+      "name": "material:binding",
+      "usd_type": "rel",
+      "python_name": "material_binding",
+      "origin": "schema",
+      "kind": "relationship",
+      "semantic": "RELATIONSHIP_PATH_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": true
+      },
+      "required": false,
+      "absent": "See material:binding:physics.",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageSource.cpp"
+      ]
+    },
+    {
+      "name": "_instanceMaterialBinding",
+      "python_name": "instance_material_binding",
+      "builder": false,
+      "origin": "producer",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "producer": {
+        "writes": "the resolved material path id of an instanced prim (rendering population)",
+        "via": "ovstage",
+        "when": "always"
+      },
+      "sentinel": "0, a non-uint64 or an array row: no instance material.",
+      "absent": "No instance-proxy material: the material comes from the bindings alone.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageSource.cpp"
+      ],
+      "notes": "One fixed uint64 path id per prim, not a relationship row. Binding resolution takes it after the physics-purpose binding on the prim or an ancestor and the prim's own material:binding, and before an inherited material:binding. Read regardless of usd-schemas; the instance-material cache issues no query while no prim on the Stage carries the column."
+    },
+    {
+      "name": "material:binding:physics:winning-binding-purpose",
+      "python_name": "material_binding_physics_winning_binding_purpose",
+      "builder": false,
+      "origin": "producer",
+      "kind": "token",
+      "semantic": "TOKEN_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "producer": {
+        "writes": "the purpose of the binding that won the resolved physics material: physics or allPurpose",
+        "via": "derive",
+        "on": {
+          "components": {
+            "material_consumer": true
+          }
+        },
+        "resolve": {
+          "kind": "binding_purpose",
+          "purpose": "physics",
+          "material": {
+            "ref": "physics_prim"
+          }
+        },
+        "when": "always"
+      },
+      "absent": "Treat material:binding:physics as a physics-purpose binding for manually published rows without provenance.",
+      "notes": "The parser uses this provenance to distinguish an allPurpose fallback on a prototype from a physics-purpose binding on an instance ancestor. The hyphen keeps it apart from authored properties."
+    },
+    {
+      "name": "material:binding:physics:winning-binding-strength",
+      "python_name": "material_binding_physics_winning_binding_strength",
+      "builder": false,
+      "origin": "producer",
+      "kind": "token",
+      "semantic": "TOKEN_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "producer": {
+        "writes": "the strength of the binding that won the resolved physics material: weakerThanDescendants or strongerThanDescendants",
+        "via": "derive",
+        "on": false,
+        "resolve": {
+          "kind": "binding_strength",
+          "purpose": "physics",
+          "material": {
+            "ref": "physics_prim"
+          }
+        },
+        "when": "always"
+      },
+      "absent": "Use weakerThanDescendants precedence.",
+      "notes": "Published on physics instance roots so the parser can apply strongerThanDescendants to prototype bindings of the same winning purpose."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysicsCollisionAPI",
+      "rule": "Only shapes consume the binding. The Material prim itself is a separate prim_type component (not yet written); it gets a row because PhysicsMaterialAPI is in the producer's physics set."
+    },
+    {
+      "with": "prim",
+      "rule": "Resolved bindings are not published at instance-proxy paths; a consumer must resolve proxy to _protoPath to prototype (open producer gap)."
+    }
+  ],
+  "notes": [
+    "Before resolving a binding the consumer probes the Stage for any column starting with material:binding, and it resolves purpose and collection bindings beyond the columns above. The compiled cache's read plan therefore covers the whole prefix (column_prefixes)."
+  ]
+}

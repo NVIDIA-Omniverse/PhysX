@@ -368,6 +368,9 @@ namespace physx
 		mGpuTask			(*this),
 		mPostSolveTask		(*this)
 	{
+#if PX_SUPPORT_OMNI_PVD
+		PxMemZero(&mOvdContactStreams, sizeof(mOvdContactStreams));
+#endif
 		mGpuArticulationCore = NULL;
 		mGpuBp = NULL;
 		mGpuNpCore = NULL;
@@ -417,6 +420,14 @@ namespace physx
 	
 	void PxgGpuContext::mergeResults()
 	{
+#if PX_SUPPORT_OMNI_PVD
+		// Fetch-time contact iteration still refers to this completed frame. Preserve its host
+		// buffer bases and active ranges before swapping points/patches and resetting allocation.
+		mOvdContactStreams.points = mContactStreamPool;
+		mOvdContactStreams.patches = mPatchStreamPool;
+		mOvdContactStreams.forces = mForceStreamPool;
+		mOvdContactStreams.friction = mFrictionPatchStreamPool;
+#endif
 		//Flip the current contact stream
 		mCurrentContactStream = 1 - mCurrentContactStream;
 		mContactStreamPool.mDataStream = mContactStreamAllocators[mCurrentContactStream]->mStart;
@@ -581,13 +592,13 @@ namespace physx
 
 		mSimulationController->update(changedHandleMap);
 
-		if (!mEnableDirectGPUAPI || getSimulationController()->getEnableOVDReadback())
+		if (!mEnableDirectGPUAPI || getSimulationController()->getOVDReadbackMode() == PxsOVDReadbackMode::eFULL)
 		{
 			mGpuArticulationCore->gpuMemDMAbackArticulation(mLinkAndJointAndRootStateDataPool, mArticulationSleepDataPool);
 		}
 
 		mGpuSolverCore->gpuMemDMAbackSolverBodies(reinterpret_cast<float4*>(mSolverBodyPool.begin()), mSolverBodyPool.size(), mBody2WorldPool,
-			mSolverBodySleepDataPool, mEnableDirectGPUAPI && (!getSimulationController()->getEnableOVDReadback()));
+			mSolverBodySleepDataPool, mEnableDirectGPUAPI && (getSimulationController()->getOVDReadbackMode() != PxsOVDReadbackMode::eFULL));
 	}
 
 	class PxgPostSolveWorkerTask : public Cm::Task
@@ -847,7 +858,7 @@ namespace physx
 		getNarrowphaseCore()->drawFrictionAnchors();
 		mForceChangedThresholdStream.forceSize_Unsafe(nbThresholdElems); 
 
-		if (!mEnableDirectGPUAPI || getSimulationController()->getEnableOVDReadback())
+		if (!mEnableDirectGPUAPI || getSimulationController()->getOVDReadbackMode() == PxsOVDReadbackMode::eFULL)
 		{
 			//TODO - multi-thread this!
 			const PxU32 offset = 1 + mKinematicCount;
@@ -2416,6 +2427,11 @@ void PxgGpuContext::updatePostPartitioning(PxBaseTask* lostTouchTask, PxvNphaseI
 		// required to happen even if we early-out here?
 		if (!needsSolve(islandSim, bodyCount, articulationCount))
 		{
+			// Without a solve, the kinematic targets of the direct GPU API are applied here instead of after the solver.
+			if (mEnableDirectGPUAPI)
+			{
+				getSimulationController()->getSimulationCore()->applyKinematicTargets();
+			}
 			mGpuSolverCore->releaseContext();
 			return;
 		}

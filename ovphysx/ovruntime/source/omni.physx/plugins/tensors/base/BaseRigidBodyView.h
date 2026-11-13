@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include "tensors/CenterOfMassEpoch.h"
 #include "tensors/CommonTypes.h"
 #include "tensors/base/BaseSimulationData.h"
 #include "tensors/base/OvStageShapeProperty.h"
@@ -99,10 +100,12 @@ public:
     void setComsCacheStateValid(bool flag)
     {
         validComsCache = flag;
+        if (flag)
+            mComsEpoch = centerOfMassEpoch();
     };
     bool getComsCacheStateValid() const
     {
-        return validComsCache;
+        return validComsCache && mComsEpoch == centerOfMassEpoch();
     };
     //
     // helpers
@@ -313,6 +316,9 @@ protected:
     std::vector<RigidBodyEntry> mEntries;
     std::vector<uint32_t> mAllIndices;
     mutable bool validComsCache = true;
+    // The centre-of-mass epoch the COM table was built at: a centre of mass changed through any path since makes the
+    // table stale.
+    uint64_t mComsEpoch = centerOfMassEpoch();
     uint32_t mMaxShapes = 0;
 };
 

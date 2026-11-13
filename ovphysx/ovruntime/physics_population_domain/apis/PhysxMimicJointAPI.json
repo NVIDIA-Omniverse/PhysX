@@ -1,0 +1,163 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxMimicJointAPI",
+  "title": "PhysxMimicJointAPI (deprecated)",
+  "summary": "Couples one degree of freedom of an articulation joint to one of a reference joint: position + gearing * referencePosition + offset = 0. Deprecated in favour of NewtonMimicAPI. Applied as PhysxMimicJointAPI:rotX, rotY or rotZ; the parser probes exactly those three instances on revolute, prismatic and D6 joints.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "PhysicsJoint"
+  ],
+  "multi_apply": true,
+  "instances": [
+    "rotX",
+    "rotY",
+    "rotZ"
+  ],
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "producer_scope": "Every declared attribute of an applied instance is published at its resolved value; the referenceJoint relationship when authored.",
+  "columns": [
+    {
+      "name": "physxMimicJoint:<inst>:referenceJoint",
+      "usd_type": "rel",
+      "origin": "schema",
+      "kind": "relationship",
+      "semantic": "RELATIONSHIP_PATH_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": true
+      },
+      "required": false,
+      "absent": "Error; the instance is skipped. Exactly one target, a joint other than this one, is required.",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMimicJoint.cpp"
+      ]
+    },
+    {
+      "name": "physxMimicJoint:<inst>:referenceJointAxis",
+      "usd_type": "uniform token",
+      "origin": "schema",
+      "kind": "token",
+      "semantic": "TOKEN_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "rotX",
+      "parser_default": "none: the instance is skipped",
+      "absent": "Error 'unsupported token'; the instance is skipped. Only rotX, rotY and rotZ are accepted, and USD's fallback rotX is not assumed: write the axis.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMimicJoint.cpp"
+      ]
+    },
+    {
+      "name": "physxMimicJoint:<inst>:gearing",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 1.0,
+      "parser_default": 0.0,
+      "absent": "0.0: no coupling term. USD's fallback is 1.0, so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMimicJoint.cpp"
+      ]
+    },
+    {
+      "name": "physxMimicJoint:<inst>:offset",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0.",
+      "raw_fallback_diverges": false,
+      "units": "rot: deg; trans: length",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMimicJoint.cpp"
+      ]
+    },
+    {
+      "name": "physxMimicJoint:<inst>:naturalFrequency",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0: rigid coupling.",
+      "raw_fallback_diverges": false,
+      "units": "1/s",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMimicJoint.cpp"
+      ]
+    },
+    {
+      "name": "physxMimicJoint:<inst>:dampingRatio",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMimicJoint.cpp"
+      ]
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysicsJoint",
+      "rule": "Read only on enabled revolute (with finite limits), prismatic and D6 joints (all linear axes locked, the instance axis free) that are not excluded from the articulation; the reference joint must pass the same checks for referenceJointAxis and be enabled. Revolute and prismatic joints take one instance."
+    },
+    {
+      "with": "PhysicsArticulationRootAPI",
+      "rule": "Both joints must belong to an articulation."
+    }
+  ]
+}

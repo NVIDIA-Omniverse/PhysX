@@ -356,9 +356,14 @@ extern "C" __global__ void markUpdatedPairsLaunch(const PxgBroadPhaseDesc* bpDes
 		//printf("mask %i\n", mask);
 
 #if PX_DEBUG
-		const PxU32* aggregatedBoundHandles = bpDesc->aabbMngr_aggregatedBoundHandles;
-		const PxU32 aggregatedBoundMask = aggregatedBoundHandles[word];
-		assert(!(mask & aggregatedBoundMask));
+		// The aggregated-bounds map grows only for broadphase entries and aggregates, so it can be shorter than the
+		// changed-handle map, or unallocated. Its range includes every handle with a changed bit.
+		if (mask)
+		{
+			const PxU32* aggregatedBoundHandles = bpDesc->aabbMngr_aggregatedBoundHandles;
+			const PxU32 aggregatedBoundMask = aggregatedBoundHandles[word];
+			assert(!(mask & aggregatedBoundMask));
+		}
 #endif
 
 		const PxU32 addedBoundMask = addedHandles[word];
@@ -1478,11 +1483,36 @@ static __device__ PX_FORCE_INLINE void updatePair(PxU32 handle, PxU32 otherHandl
 	report[index] = PxgBroadPhasePair(handle, otherHandle);
 }
 
-extern "C" __global__ void performIncrementalSAP(PxgBroadPhaseDesc* bpDesc)	// BP_INCREMENTAL_SAP
+// Finds the projection that work item workId belongs to, and the work item's offset within that projection's comparisons.
+// The prefix sums are stored in two levels (see PxgBroadPhaseDesc::incrementalWarpComparisons): first find the warp,
+// using its 64-bit base, then the projection within the warp, using the 32-bit offsets.
+static __device__ PX_FORCE_INLINE PxU32 findIncrementalProjection(const PxU64* warpComparisons, const PxU32* comparisons, const PxU32 nbProjections, const PxU64 workId, PxU32& offset)
+{
+	const PxU32 nbWarps = (nbProjections + WARP_SIZE - 1) / WARP_SIZE;
+	const PxU32 warpId = binarySearch(warpComparisons, nbWarps, workId);
+
+	// The comparisons of a warp fit in 32 bits
+	const PxU32 workIdInWarp = PxU32(workId - warpComparisons[warpId]);
+
+	const PxU32 firstProjection = warpId * WARP_SIZE;
+	const PxU32 index = firstProjection + binarySearch(comparisons + firstProjection, PxMin(nbProjections - firstProjection, WARP_SIZE), workIdInWarp);
+	offset = workIdInWarp - comparisons[index];
+	return index;
+}
+
+// 6 resident blocks per SM, i.e. at most 40 registers: the kernel needs the occupancy to hide its memory latency (OMPE-120355).
+// sm_75 holds at most 1024 threads per SM, i.e. 4 blocks, and ptxas rejects a higher minimum.
+#if defined(__CUDA_ARCH__) && (__CUDA_ARCH__ == 750)
+#define BP_INCREMENTAL_SAP_MIN_BLOCKS_PER_SM	4
+#else
+#define BP_INCREMENTAL_SAP_MIN_BLOCKS_PER_SM	6
+#endif
+extern "C" __global__ __launch_bounds__(PxgBPKernelBlockDim::BP_INCREMENTAL_SAP, BP_INCREMENTAL_SAP_MIN_BLOCKS_PER_SM) void performIncrementalSAP(PxgBroadPhaseDesc* bpDesc)	// BP_INCREMENTAL_SAP
 {
 	const PxU32 WARP_PERBLOCK_SIZE = PxgBPKernelBlockDim::BP_INCREMENTAL_SAP / WARP_SIZE;
-	__shared__ PxU32 sTotalComparisons;
+	__shared__ PxU64 sTotalComparisons;
 	__shared__ const PxU32* sComparisonHistograms;
+	__shared__ const PxU64* sWarpComparisonHistograms;
 	__shared__ const PxU32* sRanks;
 	__shared__ PxgBroadPhasePair* sFoundOrLost[2];
 	__shared__ const PxU32* sSortedHandles;
@@ -1509,6 +1539,7 @@ extern "C" __global__ void performIncrementalSAP(PxgBroadPhaseDesc* bpDesc)	// B
 	{
 		sTotalComparisons = bpDesc->totalIncrementalComparisons[blockIdx.y];
 		sComparisonHistograms = bpDesc->incrementalComparisons[blockIdx.y];
+		sWarpComparisonHistograms = bpDesc->incrementalWarpComparisons[blockIdx.y];
 		sRanks = bpDesc->boxProjectionRanks[blockIdx.y];
 		//sRanks[threadIdx.x] = bpDesc->boxProjectionRanks[threadIdx.x];
 		//sSortedHandles[threadIdx.x][0] = bpDesc->boxTempHandles[threadIdx.x];
@@ -1540,8 +1571,9 @@ extern "C" __global__ void performIncrementalSAP(PxgBroadPhaseDesc* bpDesc)	// B
 	__syncthreads();
 	//Loop over all 3 axes, do incremental swaps, produce results...
 
-	PxU32 nbBlocksProcessed = 0;
-	PxU32 blockId = blockIdx.x;
+	// The number of comparisons can exceed 32 bits, so work ids and block counters are 64-bit
+	PxU64 nbBlocksProcessed = 0;
+	PxU64 blockId = blockIdx.x;
 
 	const PxU32 threadIndexInWarp = threadIdx.x&(WARP_SIZE-1);
 	const PxU32 warpIndex = threadIdx.x/WARP_SIZE;
@@ -1549,11 +1581,12 @@ extern "C" __global__ void performIncrementalSAP(PxgBroadPhaseDesc* bpDesc)	// B
 	PxU32 axis = blockIdx.y;
 	{
 		//This is the number of iterations per-grid
-		const PxU32 totalCmpsThisAxis = sTotalComparisons;
-		const PxU32 nbBlocksRequired = (totalCmpsThisAxis + blockDim.x-1)/blockDim.x;
-		const PxU32 blockStartIndex = nbBlocksProcessed;
-		const PxU32 blockEndIndex = blockStartIndex + nbBlocksRequired;
+		const PxU64 totalCmpsThisAxis = sTotalComparisons;
+		const PxU64 nbBlocksRequired = (totalCmpsThisAxis + blockDim.x-1)/blockDim.x;
+		const PxU64 blockStartIndex = nbBlocksProcessed;
+		const PxU64 blockEndIndex = blockStartIndex + nbBlocksRequired;
 		const PxU32* histogram = sComparisonHistograms;
+		const PxU64* warpHistogram = sWarpComparisonHistograms;
 
 		const PxU32* boxRanks = sRanks;
 
@@ -1562,7 +1595,7 @@ extern "C" __global__ void performIncrementalSAP(PxgBroadPhaseDesc* bpDesc)	// B
 			//OK. We need to process this block of work...
 			//Work out the threadIdx to be able to process the pair...
 
-			const PxU32 workId = (blockId-blockStartIndex) * (blockDim.x) + threadIdx.x;
+			const PxU64 workId = (blockId-blockStartIndex) * (blockDim.x) + threadIdx.x;
 
 			PxU32 handle = 0xFFFFFFFF;
 			PxU32 otherHandle = 0xFFFFFFFF;
@@ -1573,7 +1606,8 @@ extern "C" __global__ void performIncrementalSAP(PxgBroadPhaseDesc* bpDesc)	// B
 			{
 				//Then we have something to do...
 				//Stage 1 -> work out which projection we're processing...
-				PxU32 index = binarySearch(histogram, nbProjections, workId);
+				PxU32 offset;
+				const PxU32 index = findIncrementalProjection(warpHistogram, histogram, nbProjections, workId, offset);
 
 				const PxU32 sortedHandle = sSortedHandles[index];
 
@@ -1585,10 +1619,6 @@ extern "C" __global__ void performIncrementalSAP(PxgBroadPhaseDesc* bpDesc)	// B
 #if USE_ENV_IDS
 				const PxU32 envId = envIds ? envIds[handle] : PX_INVALID_U32;
 #endif
-				//Now figure out how far offset we are...
-
-				const PxU32 offset = workId - histogram[index];
-
 				//Now figure out which swaps etc. we are processing...
 
 				const PxU32 prevIndex = boxRanks[index];
@@ -1941,18 +1971,24 @@ extern "C" __global__ void computeIncrementalComparisonHistograms_Stage1(const P
 	PxU32* incComparisons1 = bpDesc->incrementalComparisons[AXIS_Y];
 	PxU32* incComparisons2 = bpDesc->incrementalComparisons[AXIS_Z];
 
+	PxU64* warpComparisons0 = bpDesc->incrementalWarpComparisons[AXIS_X];
+	PxU64* warpComparisons1 = bpDesc->incrementalWarpComparisons[AXIS_Y];
+	PxU64* warpComparisons2 = bpDesc->incrementalWarpComparisons[AXIS_Z];
+
 	//if hardware support shfl, the compiler should be able to strip these three array out
 	__shared__ PxU32 sComparisons0[PxgBPKernelBlockDim::BP_COMPUTE_INCREMENTAL_CMP_COUNTS1];
 	__shared__ PxU32 sComparisons1[PxgBPKernelBlockDim::BP_COMPUTE_INCREMENTAL_CMP_COUNTS1];
 	__shared__ PxU32 sComparisons2[PxgBPKernelBlockDim::BP_COMPUTE_INCREMENTAL_CMP_COUNTS1];
 
-	__shared__ PxU32 sBlockAccum0[WARP_PERBLOCK_SIZE];
-	__shared__ PxU32 sBlockAccum1[WARP_PERBLOCK_SIZE];
-	__shared__ PxU32 sBlockAccum2[WARP_PERBLOCK_SIZE];
+	// The comparisons of a single projection, and their sum over a warp, fit in 32 bits.
+	// Sums over more projections can overflow after large teleports, so they use 64 bits.
+	__shared__ PxU64 sBlockAccum0[WARP_PERBLOCK_SIZE];
+	__shared__ PxU64 sBlockAccum1[WARP_PERBLOCK_SIZE];
+	__shared__ PxU64 sBlockAccum2[WARP_PERBLOCK_SIZE];
 
-	__shared__ PxU32 sAccum0;
-	__shared__ PxU32 sAccum1;
-	__shared__ PxU32 sAccum2;
+	__shared__ PxU64 sAccum0;
+	__shared__ PxU64 sAccum1;
+	__shared__ PxU64 sAccum2;
 
 	__shared__ PxU32* sStartEndAccum[2][2][3];
 
@@ -2046,9 +2082,9 @@ extern "C" __global__ void computeIncrementalComparisonHistograms_Stage1(const P
 			sBlockAccum2[warpIndex] = res2 + comparisons2;
 		}
 
-		PxU32 accum0 = sAccum0;
-		PxU32 accum1 = sAccum1;
-		PxU32 accum2 = sAccum2;
+		const PxU64 accum0 = sAccum0;
+		const PxU64 accum1 = sAccum1;
+		const PxU64 accum2 = sAccum2;
 
 		__syncthreads();
 
@@ -2057,8 +2093,8 @@ extern "C" __global__ void computeIncrementalComparisonHistograms_Stage1(const P
 			unsigned mask_threadIndexInWarp = __ballot_sync(FULL_MASK, threadIndexInWarp < WARP_PERBLOCK_SIZE);
 			if(threadIndexInWarp < WARP_PERBLOCK_SIZE)
 			{
-				const PxU32 val = sBlockAccum0[threadIndexInWarp];
-				const PxU32 res = warpScanAddWriteToSharedMem<WARP_PERBLOCK_SIZE>(mask_threadIndexInWarp, threadIndexInWarp, threadIndexInWarp, sBlockAccum0, val, val);
+				const PxU64 val = sBlockAccum0[threadIndexInWarp];
+				const PxU64 res = warpScanAddWriteToSharedMem<WARP_PERBLOCK_SIZE>(mask_threadIndexInWarp, threadIndexInWarp, threadIndexInWarp, sBlockAccum0, val, val);
 
 				if(threadIndexInWarp == (WARP_PERBLOCK_SIZE-1))
 					sAccum0 += val+res;
@@ -2069,9 +2105,9 @@ extern "C" __global__ void computeIncrementalComparisonHistograms_Stage1(const P
 			unsigned mask_threadIndexInWarp = __ballot_sync(FULL_MASK, threadIndexInWarp < WARP_PERBLOCK_SIZE);
 			if(threadIndexInWarp < WARP_PERBLOCK_SIZE)
 			{
-				const PxU32 val = sBlockAccum1[threadIndexInWarp];
+				const PxU64 val = sBlockAccum1[threadIndexInWarp];
 
-				const PxU32 res = warpScanAddWriteToSharedMem<WARP_PERBLOCK_SIZE>(mask_threadIndexInWarp, threadIndexInWarp, threadIndexInWarp, sBlockAccum1, val, val);
+				const PxU64 res = warpScanAddWriteToSharedMem<WARP_PERBLOCK_SIZE>(mask_threadIndexInWarp, threadIndexInWarp, threadIndexInWarp, sBlockAccum1, val, val);
 				if(threadIndexInWarp == (WARP_PERBLOCK_SIZE-1))
 					sAccum1 += val+res;
 			}
@@ -2081,9 +2117,9 @@ extern "C" __global__ void computeIncrementalComparisonHistograms_Stage1(const P
 			unsigned mask_threadIndexInWarp = __ballot_sync(FULL_MASK, threadIndexInWarp < WARP_PERBLOCK_SIZE);
 			if(threadIndexInWarp < WARP_PERBLOCK_SIZE)
 			{
-				const PxU32 val = sBlockAccum2[threadIndexInWarp];
+				const PxU64 val = sBlockAccum2[threadIndexInWarp];
 
-				const PxU32 res = warpScanAddWriteToSharedMem<WARP_PERBLOCK_SIZE>(mask_threadIndexInWarp, threadIndexInWarp, threadIndexInWarp, sBlockAccum2, val, val);
+				const PxU64 res = warpScanAddWriteToSharedMem<WARP_PERBLOCK_SIZE>(mask_threadIndexInWarp, threadIndexInWarp, threadIndexInWarp, sBlockAccum2, val, val);
 				if(threadIndexInWarp == (WARP_PERBLOCK_SIZE-1))
 					sAccum2 += val+res;
 			}
@@ -2093,9 +2129,18 @@ extern "C" __global__ void computeIncrementalComparisonHistograms_Stage1(const P
 
 		if(readIdx < nbProjections)
 		{
-			incComparisons0[readIdx] = accum0 + res0 + sBlockAccum0[warpIndex];
-			incComparisons1[readIdx] = accum1 + res1 + sBlockAccum1[warpIndex];
-			incComparisons2[readIdx] = accum2 + res2 + sBlockAccum2[warpIndex];
+			incComparisons0[readIdx] = res0;
+			incComparisons1[readIdx] = res1;
+			incComparisons2[readIdx] = res2;
+
+			// The warp's base is relative to this block here, Stage2 adds the block's base
+			if(threadIndexInWarp == 0)
+			{
+				const PxU32 warpId = readIdx / WARP_SIZE;
+				warpComparisons0[warpId] = accum0 + sBlockAccum0[warpIndex];
+				warpComparisons1[warpId] = accum1 + sBlockAccum1[warpIndex];
+				warpComparisons2[warpId] = accum2 + sBlockAccum2[warpIndex];
+			}
 		}
 		__syncthreads();
 	}
@@ -2118,17 +2163,17 @@ extern "C" __global__ void computeIncrementalComparisonHistograms_Stage2(PxgBroa
 	//const PxU32 numHandles = bpDesc->numPreviousHandles + bpDesc->numCreatedHandles - bpDesc->numRemovedHandles;
 	PxU32 nbProjections = numHandles * 2;
 
-	PxU32* incComparisons0 = bpDesc->incrementalComparisons[0];
-	PxU32* incComparisons1 = bpDesc->incrementalComparisons[1];
-	PxU32* incComparisons2 = bpDesc->incrementalComparisons[2];
+	PxU64* warpComparisons0 = bpDesc->incrementalWarpComparisons[0];
+	PxU64* warpComparisons1 = bpDesc->incrementalWarpComparisons[1];
+	PxU64* warpComparisons2 = bpDesc->incrementalWarpComparisons[2];
 
-	const PxU32* incBlockComparisons0 = bpDesc->incrementalBlockComparisons[0];
-	const PxU32* incBlockComparisons1 = bpDesc->incrementalBlockComparisons[1];
-	const PxU32* incBlockComparisons2 = bpDesc->incrementalBlockComparisons[2];
+	const PxU64* incBlockComparisons0 = bpDesc->incrementalBlockComparisons[0];
+	const PxU64* incBlockComparisons1 = bpDesc->incrementalBlockComparisons[1];
+	const PxU64* incBlockComparisons2 = bpDesc->incrementalBlockComparisons[2];
 
-	__shared__ PxU32 sBlockAccum0[BLOCK_SIZE];
-	__shared__ PxU32 sBlockAccum1[BLOCK_SIZE];
-	__shared__ PxU32 sBlockAccum2[BLOCK_SIZE];
+	__shared__ PxU64 sBlockAccum0[BLOCK_SIZE];
+	__shared__ PxU64 sBlockAccum1[BLOCK_SIZE];
+	__shared__ PxU64 sBlockAccum2[BLOCK_SIZE];
 
 	const PxU32 warpIndex = threadIdx.x/WARP_SIZE;
 	const PxU32 threadIndexInWarp = threadIdx.x&(WARP_SIZE-1);
@@ -2138,9 +2183,9 @@ extern "C" __global__ void computeIncrementalComparisonHistograms_Stage2(PxgBroa
 		const unsigned mask_threadIndexInWarp = __ballot_sync(FULL_MASK, threadIndexInWarp < BLOCK_SIZE);
 		if(threadIndexInWarp < BLOCK_SIZE)
 		{
-			const PxU32 val = incBlockComparisons0[threadIndexInWarp];
+			const PxU64 val = incBlockComparisons0[threadIndexInWarp];
 
-			const PxU32 res = warpScanAddWriteToSharedMem<BLOCK_SIZE>(mask_threadIndexInWarp, threadIndexInWarp, threadIndexInWarp, sBlockAccum0, val, val);
+			const PxU64 res = warpScanAddWriteToSharedMem<BLOCK_SIZE>(mask_threadIndexInWarp, threadIndexInWarp, threadIndexInWarp, sBlockAccum0, val, val);
 			if(threadIndexInWarp == (BLOCK_SIZE-1) && blockIdx.x == 0)
 				bpDesc->totalIncrementalComparisons[0] = res + val;
 		}
@@ -2150,9 +2195,9 @@ extern "C" __global__ void computeIncrementalComparisonHistograms_Stage2(PxgBroa
 		const unsigned mask_threadIndexInWarp = __ballot_sync(FULL_MASK, threadIndexInWarp < BLOCK_SIZE);
 		if(threadIndexInWarp < BLOCK_SIZE)
 		{
-			const PxU32 val = incBlockComparisons1[threadIndexInWarp];
+			const PxU64 val = incBlockComparisons1[threadIndexInWarp];
 
-			const PxU32 res = warpScanAddWriteToSharedMem<BLOCK_SIZE>(mask_threadIndexInWarp, threadIndexInWarp, threadIndexInWarp, sBlockAccum1, val, val);
+			const PxU64 res = warpScanAddWriteToSharedMem<BLOCK_SIZE>(mask_threadIndexInWarp, threadIndexInWarp, threadIndexInWarp, sBlockAccum1, val, val);
 			if(threadIndexInWarp == (BLOCK_SIZE-1) && blockIdx.x == 0)
 				bpDesc->totalIncrementalComparisons[1] = res + val;
 		}
@@ -2162,9 +2207,9 @@ extern "C" __global__ void computeIncrementalComparisonHistograms_Stage2(PxgBroa
 		const unsigned mask_threadIndexInWarp = __ballot_sync(FULL_MASK, threadIndexInWarp < BLOCK_SIZE);
 		if(threadIndexInWarp < BLOCK_SIZE)
 		{
-			const PxU32 val = incBlockComparisons2[threadIndexInWarp];
+			const PxU64 val = incBlockComparisons2[threadIndexInWarp];
 
-			const PxU32 res = warpScanAddWriteToSharedMem<BLOCK_SIZE>(mask_threadIndexInWarp, threadIndexInWarp, threadIndexInWarp, sBlockAccum2, val, val);
+			const PxU64 res = warpScanAddWriteToSharedMem<BLOCK_SIZE>(mask_threadIndexInWarp, threadIndexInWarp, threadIndexInWarp, sBlockAccum2, val, val);
 			if(threadIndexInWarp == (BLOCK_SIZE-1) && blockIdx.x == 0)
 				bpDesc->totalIncrementalComparisons[2] = res + val;
 		}
@@ -2172,25 +2217,26 @@ extern "C" __global__ void computeIncrementalComparisonHistograms_Stage2(PxgBroa
 
 	__syncthreads();
 
+	// Same partition as Stage1: each block processed nbIterationsPerBlock chunks of blockDim.x projections.
+	// Only the warp bases need the block's base, the per-projection offsets are relative to their warp.
 	const PxU32 nbBlocksRequired = (nbProjections + blockDim.x-1)/blockDim.x;
 
 	const PxU32 nbIterationsPerBlock = (nbBlocksRequired + gridDim.x-1)/gridDim.x;
 
-	const PxU32 blockAccumulation0 = sBlockAccum0[blockIdx.x];
-	const PxU32 blockAccumulation1 = sBlockAccum1[blockIdx.x];
-	const PxU32 blockAccumulation2 = sBlockAccum2[blockIdx.x];
+	const PxU32 nbWarpsPerChunk = blockDim.x/WARP_SIZE;
+	const PxU32 nbWarps = (nbProjections + WARP_SIZE-1)/WARP_SIZE;
+	const PxU32 firstWarp = blockIdx.x*nbIterationsPerBlock*nbWarpsPerChunk;
+	const PxU32 lastWarp = PxMin(firstWarp + nbIterationsPerBlock*nbWarpsPerChunk, nbWarps);
 
-	for(PxU32 i = 0; i < nbIterationsPerBlock; ++i)
+	const PxU64 blockAccumulation0 = sBlockAccum0[blockIdx.x];
+	const PxU64 blockAccumulation1 = sBlockAccum1[blockIdx.x];
+	const PxU64 blockAccumulation2 = sBlockAccum2[blockIdx.x];
+
+	for(PxU32 i = firstWarp + threadIdx.x; i < lastWarp; i += blockDim.x)
 	{
-		const PxI32 blockId = blockIdx.x*nbIterationsPerBlock + i;
-		const PxI32 readIdx = blockId * blockDim.x + threadIdx.x;
-
-		if(readIdx < nbProjections)
-		{
-			incComparisons0[readIdx] = incComparisons0[readIdx] + blockAccumulation0;
-			incComparisons1[readIdx] = incComparisons1[readIdx] + blockAccumulation1;
-			incComparisons2[readIdx] = incComparisons2[readIdx] + blockAccumulation2;
-		}
+		warpComparisons0[i] += blockAccumulation0;
+		warpComparisons1[i] += blockAccumulation1;
+		warpComparisons2[i] += blockAccumulation2;
 	}
 }
 

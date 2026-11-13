@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // @implements REQ-NATIVE-INTERACTION-001
-// @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6
+// @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7
 #include <omni/physx/NativeInteraction.h>
 #include <omni/physx/PhysXRuntime.h>
 #include "NativeObjects.h"
@@ -41,23 +41,24 @@ bool finite(const float* p){return p && std::isfinite(p[0]) && std::isfinite(p[1
 PxVec3 vec(const float* p){return PxVec3(p[0],p[1],p[2]);}
 bool cpu(const PxScene* scene)
 {return scene && !(scene->getFlags()&(PxSceneFlag::eENABLE_GPU_DYNAMICS|PxSceneFlag::eENABLE_DIRECT_GPU_API));}
-PxRigidDynamic* dynamic(const Owner& owner,const ObjectReference& ref)
-{
-    const omni::physx::internal::InternalDatabase::Record * record=objectRecord(owner,ref);
-    if(!record || record->mType!=ePTActor)return nullptr;
-    ::physx::PxRigidDynamic * body=static_cast<PxRigidActor*>(record->mPtr)->is<PxRigidDynamic>();
-    if(!body || !cpu(body->getScene()) || body->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC) ||
-       body->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION))return nullptr;
-    return body;
-}
+// GPU dynamics reads poses/velocities back and keeps the CPU actor API used by
+// forces, damping, wake and joints. DirectGPU rejects or stales that API.
+bool interactive(const PxScene* scene)
+{return scene && !scene->getFlags().isSet(PxSceneFlag::eENABLE_DIRECT_GPU_API);}
 PxRigidBody* forceBody(const Owner& owner,const ObjectReference& ref)
 {
     const internal::InternalDatabase::Record* record=objectRecord(owner,ref);
     if(!record || !matchesObjectKind(record->mType,ObjectKind::Body))return nullptr;
     PxRigidBody* body=static_cast<PxRigidActor*>(record->mPtr)->is<PxRigidBody>();
-    if(!body || !cpu(body->getScene()) || body->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC) ||
+    if(!body || !interactive(body->getScene()) || body->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC) ||
        body->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION))return nullptr;
     return body;
+}
+// Same eligibility as forceBody; articulation links are not PxRigidDynamic.
+PxRigidDynamic* dynamic(const Owner& owner,const ObjectReference& ref)
+{
+    PxRigidBody* body=forceBody(owner,ref);
+    return body?body->is<PxRigidDynamic>():nullptr;
 }
 bool rayTarget(const float* origin,const float* direction,float distance,PxVec3& target)
 {

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // @implements REQ-NATIVE-QUERY-001
-// @covers AC-1 AC-2 AC-3 AC-4
+// @covers AC-1 AC-2 AC-3 AC-4 AC-5
 #pragma once
 #include "NativeInspection.h"
 namespace omni::physx::native
@@ -31,7 +31,8 @@ struct SceneQueryResult
 };
 // Exact-owner idle query on the existing native scene-query structures. Missing
 // owner Stale, pending/callback Busy, invalid numeric input Invalid, unsupported
-// variants Unavailable. CPU-qualified only. No cooking, stepping or completion.
+// variants Unavailable. CPU and GPU-dynamics scenes; an owner with a DirectGPU
+// scene is Unavailable. No cooking, stepping or completion.
 // Positions/distances in world scene length units, normalized directions/normals.
 // One SDK hit per shape/actor pair, not every crossed triangle. all/closest scan
 // all selected scenes; ordered by distance then body/shape/face identity. any is

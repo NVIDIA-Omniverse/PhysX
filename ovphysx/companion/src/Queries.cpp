@@ -4,7 +4,7 @@
 // @implements REQ-COMP-QUERY-001
 // @covers AC-1 AC-2 AC-4
 // @implements REQ-CAPI-COMPANION-001
-// @covers AC-1
+// @covers AC-1 AC-3
 #include "ovphysx_companion/queries.h"
 #include "internal/sdk/CompanionRuntime.hpp"
 #include <omni/physx/NativeQueries.h>
@@ -25,6 +25,7 @@ try
         input->includeCount>256 || input->excludeCount>256 || (input->includeCount && !input->include) ||
         (input->excludeCount && !input->exclude))return OVPHYSX_COMPANION_INVALID_ARGUMENT;
     CompanionOperationGuard guard(companionRuntime());if(!guard)return OVPHYSX_COMPANION_BUSY;
+    CompanionOwnerLane owner;if(!owner.tryAcquireForAttachment(attachment))return OVPHYSX_COMPANION_BUSY;
     SceneQuery query;
     query.kind=input->kind;query.mode=input->mode;query.geometry=input->geometry;query.flags=input->flags;
     query.capacity=input->capacity;query.distance=input->distance;query.shape=reference(input->shape);

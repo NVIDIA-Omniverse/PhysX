@@ -1,0 +1,222 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysicsMassAPI",
+  "title": "PhysicsMassAPI",
+  "summary": "Explicit mass properties on a body or a shape. Every column is optional and encodes unset through a value sentinel; anything unset is computed from geometry and density.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "Xformable"
+  ],
+  "requires": [],
+  "multi_apply": false,
+  "uses": [
+    "stage_units"
+  ],
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "producer_scope": "All five attributes are published at their resolved USD value with no derivation: the raw fallbacks are exactly the unset sentinels the consumer tests for, so a producer-populated body without authored mass reads as fully unset.",
+  "columns": [
+    {
+      "name": "physics:mass",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "float64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "verify": {
+        "target": "body",
+        "expr": "body->getMass()",
+        "kind": "float",
+        "sample": 5.0,
+        "check_absent": false,
+        "notes": "Absent means computed from volume and density."
+      },
+      "parser_default": -1.0,
+      "absent": "Mass is computed from volume and density.",
+      "raw_fallback_diverges": false,
+      "sentinel": "value <= 0 means unset",
+      "units": "mass",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMass.cpp"
+      ]
+    },
+    {
+      "name": "physics:density",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "float64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": -1.0,
+      "absent": "Density falls back to the bound physics material, then to default_density.",
+      "raw_fallback_diverges": false,
+      "sentinel": "value <= 0 means unset",
+      "units": "mass/length^3",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMass.cpp"
+      ]
+    },
+    {
+      "name": "physics:centerOfMass",
+      "usd_type": "point3f",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "POINT",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 3,
+        "is_array": false,
+        "accepts": [
+          "float64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": [
+        "-inf",
+        "-inf",
+        "-inf"
+      ],
+      "verify": {
+        "target": "body",
+        "expr": "body->getCMassLocalPose().p",
+        "kind": "vec3",
+        "sample": [
+          0.1,
+          0.2,
+          0.3
+        ],
+        "check_absent": false
+      },
+      "absent": "Computed from the shapes; there is no fixed parser default, the sentinel below is the parser's 'unset' marker. An authored value is multiplied component-wise by the prim's world scale, without rotation.",
+      "raw_fallback_diverges": false,
+      "sentinel": "any non-finite component means unset",
+      "units": "length",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMass.cpp"
+      ]
+    },
+    {
+      "name": "physics:diagonalInertia",
+      "usd_type": "float3",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 3,
+        "is_array": false,
+        "accepts": [
+          "float64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": [
+        0,
+        0,
+        0
+      ],
+      "verify": {
+        "target": "body",
+        "expr": "body->getMassSpaceInertiaTensor()",
+        "kind": "vec3",
+        "sample": [
+          1.0,
+          2.0,
+          3.0
+        ],
+        "check_absent": false
+      },
+      "absent": "Computed from the shapes; there is no fixed parser default, the sentinel below is the parser's 'unset' marker.",
+      "raw_fallback_diverges": false,
+      "sentinel": "all components <= 0 means unset",
+      "units": "mass*length^2",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMass.cpp"
+      ]
+    },
+    {
+      "name": "physics:principalAxes",
+      "usd_type": "quatf",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "QUATERNION",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 4,
+        "is_array": false,
+        "accepts": [
+          "float64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "parser_default": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "absent": "Identity. Lane order is x, y, z, w.",
+      "raw_fallback_diverges": false,
+      "sentinel": "all-zero quaternion means unset",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMass.cpp"
+      ]
+    }
+  ],
+  "derived": [
+    {
+      "name": "default_density",
+      "expr": "1000 * metersPerUnit ** 3 / kilogramsPerUnit",
+      "inputs": [
+        "physics:density",
+        "MaterialBindingAPI.material:binding:physics",
+        "stage_units"
+      ],
+      "summary": "1000 kg/m^3 in stage units, used by the consumer when neither the shape, its body, nor a bound material authors a positive density. Mass is then volume times density."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysicsRigidBodyAPI",
+      "rule": "On a body prim the values describe the whole body. Read by the consumer after parsing, gated on the API being listed in usd-schemas."
+    },
+    {
+      "with": "PhysicsCollisionAPI",
+      "rule": "On a shape prim, density applies to that shape only and takes precedence over the body's density."
+    }
+  ]
+}

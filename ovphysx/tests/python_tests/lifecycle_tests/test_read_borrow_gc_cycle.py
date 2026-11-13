@@ -33,8 +33,7 @@ def test_unreachable_read_array_cycle_destroys_native_instance(monkeypatch):
         stage = attach_usd_with_ovstage(sdk, data_path("boxes_falling_on_groundplane.usda"))
         result = sdk.read_sync(SimObjectType.RIGID_BODY, ["position"])
         sdk.retained_read_array = result.groups[0].tensors[0]
-        result.close()
-        result = None
+        result = None  # dropped without a close, so the array keeps the read alive
         handle = sdk.handle
         instance_ref = weakref.ref(sdk)
         assert any(holder.has_live_borrows for holder in sdk._live_read_holders)

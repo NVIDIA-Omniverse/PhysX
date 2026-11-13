@@ -82,9 +82,9 @@ class Interaction(ObjectAccess):
     """Host-thread interaction on ToolsSession or independent PreviewSession.
 
     Calls require idle owner state; route inputs through the host's pre-step phase.
-    Force grabbing supports movable CPU rigid bodies and articulation links (with
-    preserve-velocity policy). D6 dragging and direct apply_force require dynamic
-    rigid bodies. Static, kinematic, disabled and GPU/DirectGPU bodies are unavailable. No implicit
+    Force grabbing supports movable rigid bodies and articulation links (with
+    preserve-velocity policy) in CPU and GPU-dynamics scenes. D6 dragging and direct
+    apply_force require dynamic rigid bodies. Static, kinematic, disabled and DirectGPU bodies are unavailable. No implicit
     fetch or step. Forces use scene mass*length/seconds^2, impulses mass*length/seconds.
     The existing core read/write APIs remain suitable for their tensor semantics;
     this service adds exact-instance force-at-point and native managed force grabbing.
@@ -158,7 +158,7 @@ class Interaction(ObjectAccess):
 
     def pick(self,origin,direction,*,max_distance=1000000,mode=GrabMode.FORCE,picking_force=1,
              end_velocity=EndVelocity.PRESERVE,include=(),exclude=(),capacity=256,**joint_options):
-        """Pick the closest eligible CPU body and return its grab, or None.
+        """Pick the closest eligible body and return its grab, or None.
 
         include/exclude are exact body/shape refs; the host supplies visibility
         filtering through those lists, or performs its own SceneQueries and grab.

@@ -33,7 +33,7 @@ warp arrays, ovstage identity, closed-loop write-back), use the
    are explicit.
 
 2. Keep an ovstage Stage attached and alive. When attachment and process
-   lifecycle are not already established, invoke the `basic-workflow` skill by
+   lifecycle are not already established, invoke the `ovphysx-basic-workflow` skill by
    name.
 
    **Complete when:** the attached Stage owns the shared path dictionary for the
@@ -111,10 +111,12 @@ warp arrays, ovstage identity, closed-loop write-back), use the
   table below, or attempt `physx.write_sync(...)`, which raises `TaskError` (a
   `RuntimeError`) for an attribute that is not writable for the object type,
   rather than writing nothing silently.
-- Fill EVERY mapped entry before committing. There is no fill mask on the group:
-  a committed group publishes every entry, so an unfilled one publishes stale
-  memory. To write only some bodies, select their prims with a prim-set query
-  (C `ovphysx_query_selection`, Python `prim_paths=` / `pattern=`); there is no
+- Fill EVERY mapped entry before a plain commit: it publishes every entry, so an
+  unfilled one publishes stale memory. To write only some rows, commit with a row
+  mask (C `ovphysx_commit_group_masked`, Python `commit(group, mask=...)`), which
+  writes the rows it selects and leaves the others as they were; or, for a fixed
+  set of bodies, select their prims with a prim-set query (C
+  `ovphysx_query_selection`, Python `prim_paths=` / `pattern=`). There is no
   kinematic-body filter, and neither `ALL` nor `ACTIVE` scope provides one.
 - Uncommitted groups are discarded when the session closes. A failed commit can
   partially apply its group and consumes it; previously committed groups remain

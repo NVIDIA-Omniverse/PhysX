@@ -17,9 +17,11 @@ from ovphysx_companion.preview import PreviewSession
 @pytest.fixture
 def stage(physics):
     import ovstage
+    from ovphysx.population import physics_population_descs
     value=ovstage.Stage('interaction-test')
-    ovstage.population.open_usd(value,str(Path(__file__).resolve().parents[1]/'samples/scenes/interaction.usda'),ordinal=1,
-                                domains=ovstage.PopulationDomain.ALL)
+    ovstage.population.open_usd_with_desc(value,str(Path(__file__).resolve().parents[1]/'samples/scenes/interaction.usda'),ordinal=1,
+                                time=ovstage.population.DEFAULT_TIME,
+                                descs=physics_population_descs(rendering=True))
     value.advance_write_floor(ordinal=1).wait()
     yield value
     value.destroy()

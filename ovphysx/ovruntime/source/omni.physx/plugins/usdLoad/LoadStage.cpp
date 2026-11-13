@@ -1,8 +1,13 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-CACHE-UPDATE-001
+ * @covers AC-2 AC-6 AC-7 AC-8
+ */
+
 /** @implements REQ-PARSE-FEED-006
- * @covers AC-5
+ * @covers AC-5 AC-7
  */
 
 // @implements REQ-ATTACH-SERVICES-001
@@ -19,7 +24,7 @@
 // @implements REQ-PARSE-VEH-DRIVETRAIN-001
 // @covers AC-4 AC-6
 // @implements REQ-PARSE-VEH-DRIVE-001
-// @covers AC-6
+// @covers AC-6 AC-8
 /** @implements REQ-PARSE-BATCH-001
  * @covers AC-3
  * @implements REQ-PARSE-PARALLEL-001
@@ -34,6 +39,11 @@
 /**
  * @implements REQ-PARSE-INSTANCER-DISPATCH-001
  * @covers AC-2 AC-3 AC-4
+ */
+
+/**
+ * @implements REQ-PARSE-SCENE-OWNER-001
+ * @covers AC-1 AC-2 AC-4 AC-5 AC-6
  */
 
 /**
@@ -65,7 +75,7 @@
  * @covers AC-5
  *
  * @implements REQ-PARSE-COL-003
- * @covers AC-6
+ * @covers AC-1 AC-3 AC-6
  */
 
 #include <carb/logging/Log.h>
@@ -86,6 +96,8 @@
 #include <usdBridge/AttachmentAuthoringBridge.h>
 #include <omni/physics/parse/IPhysicsSource.h>
 #include <omni/physics/parse/KnownTokens.h>
+#include <omni/physics/parse/ParseContext.h>
+#include <omni/physics/parse/PreparedScene.h>
 #include <omni/physics/parse/ScanBackend.h> // pxr-free scanStage(AttachTarget, ...) sibling
 #include <omni/physics/parse/ScannedStage.h>
 #include <unordered_map>
@@ -111,6 +123,7 @@ namespace omni { namespace physx { bool isRigidBodyDynamic(const omni::physx::us
 #include "PhysicsBody.h"
 #include "CollisionGroup.h"
 #include "LoadStage.h"
+#include "../cache/AttachmentCache.h"
 #include <omni/physics/parse/DescriptorBatchAllocator.h>
 #include "DescriptorRuntimeStats.h"
 #include <CookingDataAsync.h>
@@ -150,6 +163,7 @@ namespace omni { namespace physx { bool isRigidBodyDynamic(const omni::physx::us
 #include "Material.h"  // setToDefault overloads for default sub-material descs
 #include <propertiesUpdate/PhysXPropertiesUpdate.h>  // updateDeformableContactOffset/RestOffset
 #include <PhysXCustomJoint.h>  // CustomJointManager for eJointCustom registry lookup
+#include <cmath>
 #include <cstdlib>
 #include <unordered_set>
 
@@ -453,60 +467,6 @@ bool isJointBodyTransformEqual(const ::physx::PxMat44d& body0World, bool body0Va
     return true;
 }
 
-// Source-routed equivalent of common/utilities `canSceneBeProcessedByPhysX`
-// (no UsdPrim). PhysX processes a scene that carries PhysxSceneAPI, or that has
-// no applied API while PhysX is the default simulator, or whose applied APIs are
-// all in the allow-list.
-//
-// The applied-API list is the source's plain applied-schema set (the only
-// notion an arbitrary IPhysicsSource backend — e.g. ovstage — can offer; there
-// is no authored-vs-built-in distinction). This matches the legacy authored-only
-// read in practice: the only API the allow-list path inspects is the one
-// authored on a scene prim, and `UsdPhysicsScene` contributes no built-in API
-// schemas of its own, so its applied-schema set equals its authored set.
-bool canSceneBeProcessedByPhysXSource(const omni::physics::parse::IPhysicsSource& src,
-                                      omni::physics::parse::ObjectKey key, bool isDefaultSimulator)
-{
-    omni::physics::parse::KnownTokens tok;
-    tok.intern(src);
-    bool processScene = src.hasSchema(key, tok.physxSceneAPI);
-    static const char* const allowedList[] = { "PhysxSceneQuasistaticAPI", "MaterialBindingAPI",
-                                               "CollectionAPI", "VehicleContextAPI",
-                                               "NewtonPhysicsSceneAPI", "NewtonPhysicsXpbdSceneAPI",
-                                               "NewtonPhysicsKaminoSceneAPI" };
-    std::vector<std::string> apis;
-    src.forEachAppliedSchema(key, [&](omni::physics::parse::TokenId t)
-                             { apis.emplace_back(src.tokenToString(t)); });
-    if (apis.empty() && isDefaultSimulator)
-    {
-        processScene = true;
-    }
-    else if (!processScene && !apis.empty())
-    {
-        bool allowedApis = true;
-        for (const std::string& tokenString : apis)
-        {
-            bool allowed = false;
-            for (const char* allowedToken : allowedList)
-            {
-                if (tokenString.find(allowedToken) != std::string::npos)
-                {
-                    allowed = true;
-                    break;
-                }
-            }
-            if (!allowed)
-            {
-                allowedApis = false;
-                break;
-            }
-        }
-        if (allowedApis)
-            processScene = true;
-    }
-    return processScene;
-}
-
 void refreshAutoDeformableAttachments(AttachedStage& attachedStage,
     DeformableAttachmentVector& attachments, DeformableCollisionFilterVector& collisionFilters)
 {
@@ -520,7 +480,7 @@ void refreshAutoDeformableAttachments(AttachedStage& attachedStage,
     if (src)
     {
         const omni::physics::parse::KnownTokens& tok = attachedStage.getKnownTokens();
-        const omni::physics::parse::TokenId autoApiTok = tok.PhysxAutoDeformableAttachmentAPI;
+        const omni::physics::parse::TokenId autoApiTok = tok.physxAutoDeformableAttachmentAPI;
         for (const auto& attachment : attachments)
         {
             const omni::physics::parse::ObjectKey attachmentKey = attachment.path;
@@ -811,6 +771,69 @@ void createFilteredPairs(AttachedStage& attachedStage, const CollisionPairVector
     }
 }
 
+// Default-material descriptors and quasistatic actors complete a parsed scene
+// descriptor from the source, alike for a load and for a compiled-cache hit.
+void completeSceneDesc(AttachedStage& attachedStage, omni::physics::parse::ObjectKey sceneKey, PhysxSceneDesc& desc)
+{
+    const omni::physics::parse::IPhysicsSource* sceneSource = attachedStage.getSource();
+    if (!sceneSource)
+        return;
+    const omni::physics::parse::IPhysicsSource& source = *sceneSource;
+    // Scene-level nested material descriptor defaults + binding overlay.
+    // Mirrors legacy `parseSceneDesc` at usdLoad/Scene.cpp:108-138:
+    //   1. `setToDefault` each nested material desc (units-aware defaults
+    //      — youngsModulus needs metersPerUnit/kilogramsPerUnit, surface
+    //      thickness needs metersPerUnit).  The parse-lib `setToDefault`
+    //      for PhysxSceneDesc doesn't touch the nested descs (SourceUnits
+    //      lacks kilogramsPerUnit; the deformable defaults need it), so
+    //      we re-apply the USD-side defaults here at the consumer
+    //      boundary.  Without this, scene->defaultDeformableMaterialDesc
+    //      ships with youngsModulus=0 — `createDeformableVolumeMaterial`
+    //      makes a degenerate material and modified-rest-shape volume
+    //      deformables collapse (TestDeformables.cpp:606).
+    //   2. Overlay each nested desc from the scene prim's material
+    //      binding (if any) via the source-backed `parse*ForPrim` helpers.
+    //      These no-op when the source has no bound material key.  This replaces
+    //      the binding overlay that `StageScan::emitScene` does — the
+    //      consumer's overlay applies to a properly-defaulted desc and
+    //      uses legacy `parseMaterialDescInt` paths.
+    setToDefault(desc.defaultMaterialDesc);
+    // Units-aware deformable-material defaults from the source units
+    // (backend-agnostic; no USD stage needed under ovstage).
+    const omni::physics::parse::SourceUnits sceneUnits = source.getSourceUnits();
+    setToDefault(sceneUnits, desc.defaultDeformableMaterialDesc);
+    setToDefault(sceneUnits, desc.defaultSurfaceDeformableMaterialDesc);
+    setToDefault(desc.defaultPBDMaterialDesc);
+    // Scene's bound default material via the source (no UsdPrim / UsdStage).
+    const omni::physics::parse::ObjectKey sceneMatKey = source.getMaterialBinding(sceneKey);
+    parseMaterialForPrim(attachedStage, sceneMatKey, desc.defaultMaterialDesc);
+    parseDeformableMaterialForPrim(attachedStage, sceneMatKey, desc.defaultDeformableMaterialDesc);
+    parseSurfaceDeformableMaterialForPrim(attachedStage, sceneMatKey, desc.defaultSurfaceDeformableMaterialDesc);
+    parsePBDMaterialForPrim(attachedStage, sceneMatKey, desc.defaultPBDMaterialDesc);
+
+    // PhysxSceneQuasistaticAPI: resolve the actors collection at
+    // the consumer (USD-side work; parse-lib has no UsdCollectionAPI
+    // dependency).  Mirrors `parseSceneDesc` at usdLoad/Scene.cpp:
+    // 288-310 — when the includes rel has targets, compute the
+    // membership and insert each resolved path as an attachedStage
+    // key into `desc.quasistaticActors`.
+    {
+        // resolveCollection performs the include/exclude membership walk
+        // (instance proxies included) internally and returns persistent-source
+        // ObjectKeys, replacing the UsdCollectionAPI::ComputeIncludedPaths path.
+        const omni::physics::parse::KnownTokens& tok = attachedStage.getKnownTokens();
+        if (source.hasSchema(sceneKey, tok.physxSceneQuasistaticAPI))
+        {
+            std::vector<omni::physics::parse::ObjectKey> members;
+            source.resolveCollection(sceneKey, source.internToken("quasistaticactors"), members);
+            desc.quasistaticActors.clear();
+            desc.quasistaticActors.reserve(members.size());
+            for (const omni::physics::parse::ObjectKey& k : members)
+                desc.quasistaticActors.insert(k);
+        }
+    }
+}
+
 ObjectId createObject(AttachedStage& attachedStage, omni::physics::parse::ObjectKey primKey, PhysxObjectDesc* desc,
     PhysXUsdPhysicsInterface& physicsInterface, ObjectDb& objectDb)
 {
@@ -1089,9 +1112,8 @@ class PhysxUsdPhysicsListener
 public:
 
     PhysxUsdPhysicsListener(AttachedStage& attachedStage)
-        : mSceneFound(false), mNoValidScene(false), mNoPhysXScene(false), mCollectionsPopulated(false), mNumScenes(0), mAttachedStage(attachedStage)
+        : mSceneFound(false), mNoValidScene(false), mCollectionsPopulated(false), mNumScenes(0), mAttachedStage(attachedStage)
     {
-        mNoPhysXScene = !attachedStage.isPhysXDefaultSimulator();
     }
 
     // Per-prim side-effect walk.  scanStage's descriptor lists cover
@@ -1313,7 +1335,7 @@ public:
                     // creation block runs.
                     mParsingFlags |= ParsingFlag::eParseVehicles;
                 }
-                else if (tok == knownTok.PhysxAutoDeformableAttachmentAPI)
+                else if (tok == knownTok.physxAutoDeformableAttachmentAPI)
                 {
                     mAutoDeformableAttachmentKeys.insert(primObjKey);
                 }
@@ -1484,13 +1506,11 @@ public:
         // ----- Scenes ------------------------------------------------
         // Process scenes first so they're in ObjectDatabase by the time
         // the later body / shape / articulation blocks resolve
-        // `simulationOwners → sceneIds`.  The consumer-side
-        // `canSceneBeProcessedByPhysX` simulator-ownership gate
-        // (ADR-0002 §4 — engine-agnostic scan, consumer applies
-        // filtering) decides whether each scanned scene becomes a
-        // PhysX scene.  Mirrors legacy `reportObjectDesc:eScene`
-        // behavior including mSceneFound / mNoPhysXScene / mNumScenes
-        // bookkeeping.
+        // `simulationOwners → sceneIds`.  Every scanned PhysicsScene
+        // becomes a PhysX scene, whatever API schemas it carries
+        // (REQ-PARSE-SCENE-OWNER-001).  Mirrors legacy
+        // `reportObjectDesc:eScene` behavior including mSceneFound /
+        // mNumScenes bookkeeping.
         for (auto& scanScene : scanned.scenes)
         {
             CARB_PROFILE_ZONE(0, "UsdPhysics:processScannedDescs:scene");
@@ -1501,16 +1521,10 @@ public:
             if (!scnSrc)
                 continue;
             // A synthetic default scene (makeDefaultSceneDesc — backend authored no
-            // prim) has no source object, so skip the existence + simulator-ownership
-            // gates that assume a real prim. Real scanned scenes still pass through them.
-            if (!scanScene->synthetic)
-            {
-                if (!scnSrc->exists(sceneKey))
-                    continue;
-                const bool isDefaultSimulator = mAttachedStage.isPhysXDefaultSimulator();
-                if (!canSceneBeProcessedByPhysXSource(*scnSrc, sceneKey, isDefaultSimulator))
-                    continue;
-            }
+            // prim) has no source object, so skip the existence gate that assumes a
+            // real prim. Real scanned scenes still pass through it.
+            if (!scanScene->synthetic && !scnSrc->exists(sceneKey))
+                continue;
             PhysxSceneDesc* desc = scanScene.get();
             if (!desc)
                 continue;
@@ -1534,66 +1548,27 @@ public:
             rekey(desc->defaultSurfaceDeformableMaterialDesc.materialKey);
             rekey(desc->defaultPBDMaterialDesc.materialKey);
 
-            // Scene-level nested material descriptor defaults + binding overlay.
-            // Mirrors legacy `parseSceneDesc` at usdLoad/Scene.cpp:108-138:
-            //   1. `setToDefault` each nested material desc (units-aware defaults
-            //      — youngsModulus needs metersPerUnit/kilogramsPerUnit, surface
-            //      thickness needs metersPerUnit).  The parse-lib `setToDefault`
-            //      for PhysxSceneDesc doesn't touch the nested descs (SourceUnits
-            //      lacks kilogramsPerUnit; the deformable defaults need it), so
-            //      we re-apply the USD-side defaults here at the consumer
-            //      boundary.  Without this, scene->defaultDeformableMaterialDesc
-            //      ships with youngsModulus=0 — `createDeformableVolumeMaterial`
-            //      makes a degenerate material and modified-rest-shape volume
-            //      deformables collapse (TestDeformables.cpp:606).
-            //   2. Overlay each nested desc from the scene prim's material
-            //      binding (if any) via the source-backed `parse*ForPrim` helpers.
-            //      These no-op when the source has no bound material key.  This replaces
-            //      the binding overlay that `StageScan::emitScene` does — the
-            //      consumer's overlay applies to a properly-defaulted desc and
-            //      uses legacy `parseMaterialDescInt` paths.
-            setToDefault(desc->defaultMaterialDesc);
-            // Units-aware deformable-material defaults from the source units
-            // (backend-agnostic; no USD stage needed under ovstage).
-            const omni::physics::parse::SourceUnits sceneUnits = scnSrc->getSourceUnits();
-            setToDefault(sceneUnits, desc->defaultDeformableMaterialDesc);
-            setToDefault(sceneUnits, desc->defaultSurfaceDeformableMaterialDesc);
-            setToDefault(desc->defaultPBDMaterialDesc);
-            // Scene's bound default material via the source (no UsdPrim / UsdStage).
-            const omni::physics::parse::ObjectKey sceneMatKey = scnSrc->getMaterialBinding(sceneKey);
-            parseMaterialForPrim(mAttachedStage, sceneMatKey, desc->defaultMaterialDesc);
-            parseDeformableMaterialForPrim(mAttachedStage, sceneMatKey, desc->defaultDeformableMaterialDesc);
-            parseSurfaceDeformableMaterialForPrim(mAttachedStage, sceneMatKey, desc->defaultSurfaceDeformableMaterialDesc);
-            parsePBDMaterialForPrim(mAttachedStage, sceneMatKey, desc->defaultPBDMaterialDesc);
+            completeSceneDesc(mAttachedStage, path, *desc);
 
-            // PhysxSceneQuasistaticAPI: resolve the actors collection at
-            // the consumer (USD-side work; parse-lib has no UsdCollectionAPI
-            // dependency).  Mirrors `parseSceneDesc` at usdLoad/Scene.cpp:
-            // 288-310 — when the includes rel has targets, compute the
-            // membership and insert each resolved path as an attachedStage
-            // key into `desc->quasistaticActors`.
+            // A compiled-cache attach that missed created this prim's scene while it
+            // captured the stage's inputs, from the same reads: take it and announce it
+            // where its creation would have.
+            ObjectId sceneId = kInvalidObjectId;
+            auto& prepared = mAttachedStage.preparedScene;
+            if (prepared && prepared->key == path)
             {
-                // resolveCollection performs the include/exclude membership walk
-                // (instance proxies included) internally and returns persistent-source
-                // ObjectKeys, replacing the UsdCollectionAPI::ComputeIncludedPaths path.
-                const omni::physics::parse::IPhysicsSource* src = mAttachedStage.getSource();
-                const omni::physics::parse::KnownTokens& tok = mAttachedStage.getKnownTokens();
-                if (src && src->hasSchema(path, tok.physxSceneQuasistaticAPI))
-                {
-                    std::vector<omni::physics::parse::ObjectKey> members;
-                    src->resolveCollection(path, src->internToken("quasistaticactors"), members);
-                    desc->quasistaticActors.clear();
-                    desc->quasistaticActors.reserve(members.size());
-                    for (const omni::physics::parse::ObjectKey& k : members)
-                        desc->quasistaticActors.insert(k);
-                }
+                sceneId = prepared->id;
+                const auto& records = mAttachedStage.getInternalPhysXDatabase().getRecords();
+                for (const ObjectId record : prepared->records)
+                    mAttachedStage.getPhysXPhysicsInterface()->sendObjectCreationNotification(
+                        mAttachedStage, records[record].mKey, record, records[record].mType);
+                prepared.reset();
             }
-
-            const ObjectId sceneId = createObject(mAttachedStage, path, desc, false);
+            else
+                sceneId = createObject(mAttachedStage, path, desc, false);
             if (sceneId != kInvalidObjectId)
             {
                 mSceneFound = true;
-                mNoPhysXScene = false;
                 mNumScenes++;
             }
             else if (mAttachedStage.getParseOptions().forceSingleScenePath.empty())
@@ -1603,8 +1578,6 @@ public:
         }
 
         if (mNoValidScene)
-            return;
-        if (mNoPhysXScene)
             return;
         // ----- CollisionGroups --------------------------------------
         // First-time collection population: invert the per-group
@@ -1878,7 +1851,8 @@ public:
                     ssrc->hasSchema(bodyKey, tok.physxSplinesSurfaceVelocityAPI))
                 {
                     bool splinesEnabledAuthored = true;
-                    internal::getValue<bool>(mAttachedStage, bodyKey, tok.physxSplinesSurfaceVelocityEnabled,
+                    internal::getValue<bool>(mAttachedStage, bodyKey,
+                                             tok.physxSplinesSurfaceVelocitySurfaceVelocityEnabled,
                                              omni::physics::parse::ReadTime::defaultTime(), splinesEnabledAuthored);
 
                     if (dyn->surfaceVelocityEnabled && splinesEnabledAuthored)
@@ -1891,7 +1865,8 @@ public:
                     {
                         // Distinguish an absent relationship from a defined-but-empty one
                         // (matches the prior `!splinesRel || splinesList.empty()` gate).
-                        const omni::physics::parse::TokenId curveRelTok = tok.physxSplinesSurfaceVelocityCurve;
+                        const omni::physics::parse::TokenId curveRelTok =
+                            tok.physxSplinesSurfaceVelocitySurfaceVelocityCurve;
                         const bool hasCurveRel = ssrc->hasRelationship(bodyKey, curveRelTok);
                         std::vector<omni::physics::parse::ObjectKey> curveKeys;
                         if (hasCurveRel)
@@ -2235,7 +2210,7 @@ public:
             if (desc->type == eSurfaceDeformableBody && src)
             {
                 const omni::physics::parse::ObjectKey simKey = desc->simMeshKey;
-                if (src->hasSchema(simKey, tok.OmniPhysicsSurfaceDeformableSimAPI))
+                if (src->hasSchema(simKey, tok.omniPhysicsSurfaceDeformableSimAPI))
                 {
                     const auto rbaTok = tok.omniphysicsRestBendAnglesDefault;
                     omni::physics::parse::TokenId val{};
@@ -2277,6 +2252,39 @@ public:
                     if (src->isAttributeTimeSampled(collKey, roTok))
                         mAttachedStage.registerTimeSampledAttribute(collKey, roTok, updateDeformableRestOffset);
                 }
+                // Resolve the effective pair before cross-validation: a Newton
+                // margin can make contact valid below the temporary default rest.
+                // Newton collision offsets are fallbacks on the collision mesh,
+                // just as in ParseCollision.cpp. Resolved-value sources publish
+                // the PhysX schema's unset sentinel as an authored column, so
+                // precedence must test the value rather than the authored bit.
+                bool hasNewtonOffset = false;
+                if (!isPhysxOffsetAuthored(mAttachedStage, collKey, roTok))
+                {
+                    float margin;
+                    if (src->getAttribute(collKey, tok.newtonContactMargin, margin)
+                        && std::isfinite(margin) && margin >= 0.0f)
+                    {
+                        restOffset = margin;
+                        hasNewtonOffset = true;
+                    }
+                }
+                if (!isPhysxOffsetAuthored(mAttachedStage, collKey, coTok))
+                {
+                    float gap;
+                    if (src->getAttribute(collKey, tok.newtonContactGap, gap)
+                        && std::isfinite(gap) && gap >= 0.0f
+                        && std::isfinite(restOffset + gap))
+                    {
+                        contactOffset = restOffset + gap;
+                        hasNewtonOffset = true;
+                    }
+                }
+                // Match the rigid Newton fallback's strict-order adjustment,
+                // without changing the legacy pair or the automatic sentinel.
+                if (hasNewtonOffset && contactOffset >= 0.0f && contactOffset <= restOffset)
+                    contactOffset = restOffset + 1e-4f;
+
                 // Preserve the automatic contact sentinel and the authored rest
                 // offset together. desc->contactOffset is -1 until a deformable
                 // body is created (Descriptors.h: "sentinel: recompute in PhysX
@@ -2289,6 +2297,7 @@ public:
                 // At equality, deriveCollisionOffsets diagnoses and raises the
                 // contact offset before PhysX requires strict ordering.
                 if (contactOffset < 0.0f || restOffset <= contactOffset) desc->restOffset = restOffset;
+
                 // collisionGroup is resolved later in the
                 // createDeformableBody loop, after processScannedDescs
                 // fully populates the CollisionGroupsMap.
@@ -2357,13 +2366,13 @@ public:
                 const omni::physics::parse::ObjectKey bodyKey = src ? path : omni::physics::parse::ObjectKey{};
                 if (src && src->exists(bodyKey))
                 {
-                    if (src->hasSchema(bodyKey, tok.PhysxAutoDeformableBodyAPI))
+                    if (src->hasSchema(bodyKey, tok.physxAutoDeformableBodyAPI))
                     {
                         mAttachedStage.getObjectDatabase()->addSchemaAPI(path, SchemaAPIFlag::eAutoDeformableBodyAPI);
-                        if (src->hasSchema(bodyKey, tok.PhysxAutoDeformableMeshSimplificationAPI))
+                        if (src->hasSchema(bodyKey, tok.physxAutoDeformableMeshSimplificationAPI))
                             mAttachedStage.getObjectDatabase()->addSchemaAPI(path, SchemaAPIFlag::eAutoDeformableMeshSimplificationAPI);
                         if (desc->type == eVolumeDeformableBody &&
-                            src->hasSchema(bodyKey, tok.PhysxAutoDeformableHexahedralMeshAPI))
+                            src->hasSchema(bodyKey, tok.physxAutoDeformableHexahedralMeshAPI))
                             mAttachedStage.getObjectDatabase()->addSchemaAPI(path, SchemaAPIFlag::eAutoDeformableHexahedralMeshAPI);
                     }
                 }
@@ -3442,6 +3451,7 @@ public:
             // the same prim) are logged here and the vehicle is dropped.
             omni::physics::parse::ObjectKey driveKey;
             bool driveAuthored = false;
+            bool driveFromRel = false; // driveKey came from a physxVehicle:drive relationship target
             {
                 // physxVehicle:drive relationship targets via the source (an
                 // unauthored/absent rel reports empty — matches the legacy
@@ -3461,6 +3471,7 @@ public:
                 {
                     driveKey = driveKeys[0];
                     driveAuthored = true;
+                    driveFromRel = true;
                 }
                 else
                 {
@@ -3496,7 +3507,19 @@ public:
                         drive = basicIt->second;
                 }
                 if (!drive)
-                    continue;  // per-component parser already logged the validation error
+                {
+                    // A physxVehicle:drive relationship target that resolves to no parsed drive --
+                    // typically a dangling target (references no prim) -- had no per-component
+                    // parser run for it, so nothing was logged; name it rather than drop the whole
+                    // vehicle silently. A self-applied drive API that failed was already logged by
+                    // its per-component parser.
+                    if (driveFromRel)
+                        CARB_LOG_ERROR(
+                            "Usd Physics: vehicle \"%s\" has a \"drive\" relationship target \"%s\" that does not "
+                            "resolve to a PhysxVehicleDriveStandardAPI or PhysxVehicleDriveBasicAPI; the vehicle is dropped.",
+                            mAttachedStage.textFor(vehicleKey), mAttachedStage.textFor(driveKey));
+                    continue;
+                }
             }
 
             // ---- Differential: applied directly on vehicle prim -------
@@ -3704,27 +3727,26 @@ public:
             }
         } scopedKnownKeys;
 
+        // Bulk hierarchy-read windows trust the complete child cache's leaf answers.
+        // Do not use beginLoadCache(): that also changes attribute covered-miss handling.
+        struct ScopedOvstageHierarchyBulkRead
         {
-            // Bulk hierarchy-read window: forEachChild() trusts the complete child cache's leaf
-            // answer only inside one. Spans the scoped side-effects walk (which asks every leaf of
-            // a re-parsed subtree) and processScannedDescs (getMeshAttributes hits that path once
-            // per mesh). beginHierarchyBulkRead(), not beginLoadCache(): a load cache would also
-            // arm the attribute covered-miss machinery and seal attributes a prefetch did not return.
-            struct ScopedOvstageHierarchyBulkRead
+            omni::physics::ovstage::OvstageSource* source = nullptr;
+            explicit ScopedOvstageHierarchyBulkRead(omni::physics::parse::IPhysicsSource* src)
+                : source(dynamic_cast<omni::physics::ovstage::OvstageSource*>(src))
             {
-                omni::physics::ovstage::OvstageSource* source = nullptr;
-                explicit ScopedOvstageHierarchyBulkRead(omni::physics::parse::IPhysicsSource* src)
-                    : source(dynamic_cast<omni::physics::ovstage::OvstageSource*>(src))
-                {
-                    if (source)
-                        source->beginHierarchyBulkRead();
-                }
-                ~ScopedOvstageHierarchyBulkRead()
-                {
-                    if (source)
-                        source->endHierarchyBulkRead();
-                }
-            } scopedHierarchyBulkRead(mAttachedStage.getSource());
+                if (source)
+                    source->beginHierarchyBulkRead();
+            }
+            ~ScopedOvstageHierarchyBulkRead()
+            {
+                if (source)
+                    source->endHierarchyBulkRead();
+            }
+        };
+
+        {
+            ScopedOvstageHierarchyBulkRead scopedHierarchyBulkRead(mAttachedStage.getSource());
 
             {
                 CARB_PROFILE_ZONE(0, "UsdPhysics:gatherPerPrimSideEffects");
@@ -3747,10 +3769,6 @@ public:
         }
 
         if (mNoValidScene)
-            return true;
-
-        // We dont have a PhysX scene, PhysX should not simulate anything early exit
-        if (mNoPhysXScene)
             return true;
 
         if(!mAttachedStage.getParseOptions().forceSingleScenePath.empty())
@@ -3781,7 +3799,6 @@ public:
                 {
                     mAttachedStage.getObjectDatabase()->findOrCreateEntry(sceneKey, sceneDesc.type, sceneId);
                     mSceneFound = true;
-                    mNoPhysXScene = false;
                     mNumScenes++;
                 }
             };
@@ -3842,6 +3859,8 @@ public:
 
         // create shapes next
         {
+            ScopedOvstageHierarchyBulkRead scopedHierarchyBulkRead(
+                initialStageLoad ? mAttachedStage.getSource() : nullptr);
             for (const ShapeDescAndMaterials& shapeDesc : mShapes)
             {
                 // createShape's own registration still resolves attachedStage.pathFor(key)
@@ -4176,6 +4195,8 @@ public:
 
         // create collision blocks
         {
+            ScopedOvstageHierarchyBulkRead scopedHierarchyBulkRead(
+                initialStageLoad ? mAttachedStage.getSource() : nullptr);
 
             createFilteredPairs(mAttachedStage, mFilteredPairs, mFilteredPairsPaths);
         }
@@ -4247,7 +4268,6 @@ public:
 private:
     bool mSceneFound;
     bool mNoValidScene;
-    bool mNoPhysXScene;
     bool mCollectionsPopulated;
     uint32_t mNumScenes;
 
@@ -4325,20 +4345,67 @@ bool loadFromStage(AttachedStage& attachedStage, const PathSet* excludePaths)
     return usdPhysicsListener.loadFromRange(scanRoots, exclusions.empty() ? nullptr : &exclusions, true);
 }
 
-void loadPhysicsFromPrimitive(AttachedStage& attachedStage, const std::vector<std::string>& updateRoots,
+bool loadSceneFromStage(AttachedStage& attachedStage, const std::string& scenePath)
+{
+    CARB_PROFILE_ZONE(0, "Physics Load Scene");
+    PhysxSceneDesc desc;
+    return readSceneFromStage(attachedStage, attachedStage.keyFor(scenePath), desc) &&
+           createSceneFromDesc(attachedStage, desc) != kInvalidObjectId;
+}
+
+bool readSceneFromStage(AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, PhysxSceneDesc& desc)
+{
+    omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
+    if (!source || !key.valid() || !source->exists(key))
+        return false;
+    // The walker's scene preparation and fill, for this one prim. Schema checks read
+    // this prim alone instead of building the stage-wide schema vocabulary.
+    std::optional<omni::physics::ovstage::OvstageSource::SinglePrimSchemaScope> singlePrim;
+    if (const auto* ovstage = dynamic_cast<const omni::physics::ovstage::OvstageSource*>(source))
+        singlePrim.emplace(*ovstage);
+    const omni::physics::parse::KnownTokens& tokens = attachedStage.getKnownTokens();
+    omni::physics::parse::SceneInfo info;
+    source->getAttribute(key, tokens.physicsGravityDirection, info.gravityDirection);
+    source->getAttribute(key, tokens.physicsGravityMagnitude, info.gravityMagnitude);
+    omni::physics::parse::ParseContext context(*source, iceDescriptorAllocator());
+    omni::physics::parse::setToDefault(desc, source->getSourceUnits());
+    if (!omni::physics::parse::fillScene(omni::physics::parse::prepareScene(context, key, info), desc))
+        return false;
+    desc.primKey = key;
+    completeSceneDesc(attachedStage, key, desc);
+    return true;
+}
+
+ObjectId createSceneFromDesc(AttachedStage& attachedStage, PhysxSceneDesc& desc)
+{
+    return createObject(attachedStage, desc.primKey, &desc, false);
+}
+
+bool loadPhysicsFromPrimitive(AttachedStage& attachedStage, const std::vector<std::string>& updateRoots,
                               bool applyAttachmentExclusions)
 {
     PHYSICS_PROFILE("Physics Load Prims");
     CARB_PROFILE_ZONE(0, "Physics Load Prims");
     if (updateRoots.empty())
-        return;
+        return true;
 
     // Incremental re-parse: the changed-prim paths are the scan roots; the
     // backend walks each subtree (instance proxies) and the post-scan passes
     // walk via IPhysicsSource. No PrimIterator.
     PhysxUsdPhysicsListener usdPhysicsListener(attachedStage);
     const PathSet exclusions = applyAttachmentExclusions ? attachmentExclusions(attachedStage) : PathSet{};
-    usdPhysicsListener.loadFromRange(updateRoots, exclusions.empty() ? nullptr : &exclusions, false);
+    const PathSet* excluded = exclusions.empty() ? nullptr : &exclusions;
+    // A cache candidate proves the common root has no existing runtime records
+    // and audits its complete selected inputs. On a miss, parse that admitted
+    // unit once instead of every notified physics leaf; a hit loads nothing.
+    bool loaded = true;
+    const auto loadUnit = [&](const std::string& root) {
+        loaded = usdPhysicsListener.loadFromRange({ root }, excluded, false);
+        return loaded;
+    };
+    if (applyAttachmentExclusions && cache::loadCompiledInsertion(attachedStage, updateRoots, loadUnit))
+        return loaded;
+    return usdPhysicsListener.loadFromRange(updateRoots, excluded, false);
 }
 
 } // namespace usdparser

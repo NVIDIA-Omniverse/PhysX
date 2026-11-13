@@ -17,7 +17,7 @@ namespace omni::physics::parse
 // pxr-free interface the loadable USD library installs so the USD-free omni.physx side can drive
 // the USD-stage/layer *lifecycle* operations the runtime-entry bridge needs -- UsdStage::Open /
 // CreateNew / stage-cache insert-erase and SdfLayer::Find -- without linking or naming any pxr
-// type (ADR-0027 bridge collapse). These back the IPhysxBenchmarks / Kit test surfaces
+// type (ADR-0027 bridge collapse). These back the native benchmark helpers / Kit test surfaces
 // (bridgeLoadTargetStage / bridgeCreateEmptyStage) and the Kit/USD-authoring sim-layer bind
 // (bridgeSetSimulationLayer). Installed once by the USD backend loader; null in production, where
 // nothing opens or caches a USD stage and the bridge entries fail closed (0 / no-op).

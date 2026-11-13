@@ -1,6 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-SIM-OVSTAGE-WRITEAPPLY-001
+ * @covers AC-21
+ */
+
 #include "PhysXPropertiesUpdate.h"
 
 #include <PhysXTools.h>
@@ -78,10 +83,12 @@ bool omni::physx::updateSpatialTendonStiffness(AttachedStage& attachedStage, omn
     {
         const std::string enabledString = "physxTendon:" + tendonInstanceName(intAttachment->instanceName) + ":tendonEnabled";
         const omni::physics::parse::IPhysicsSource* enabledSource = attachedStage.getSource();
-        bool isEnabled;
-        if (!enabledSource ||
-            !getValue<bool>(attachedStage, objectRecord->mKey, enabledSource->internToken(enabledString), timeCode, isEnabled))
+        if (!enabledSource)
             return true;
+        // An unauthored tendonEnabled means enabled, as the parser builds the tendon.
+        bool isEnabled = false;
+        if (!getValue<bool>(attachedStage, objectRecord->mKey, enabledSource->internToken(enabledString), timeCode, isEnabled))
+            isEnabled = true;
 
         if (isEnabled)
         {
@@ -114,10 +121,12 @@ bool omni::physx::updateSpatialTendonDamping(AttachedStage& attachedStage, omni:
     {
         const std::string enabledString = "physxTendon:" + tendonInstanceName(intAttachment->instanceName) + ":tendonEnabled";
         const omni::physics::parse::IPhysicsSource* enabledSource = attachedStage.getSource();
-        bool isEnabled;
-        if (!enabledSource ||
-            !getValue<bool>(attachedStage, objectRecord->mKey, enabledSource->internToken(enabledString), timeCode, isEnabled))
+        if (!enabledSource)
             return true;
+        // An unauthored tendonEnabled means enabled, as the parser builds the tendon.
+        bool isEnabled = false;
+        if (!getValue<bool>(attachedStage, objectRecord->mKey, enabledSource->internToken(enabledString), timeCode, isEnabled))
+            isEnabled = true;
 
         if (isEnabled)
         {
@@ -150,10 +159,12 @@ bool omni::physx::updateSpatialTendonLimitStiffness(AttachedStage& attachedStage
     {
         const std::string enabledString = "physxTendon:" + tendonInstanceName(intAttachment->instanceName) + ":tendonEnabled";
         const omni::physics::parse::IPhysicsSource* enabledSource = attachedStage.getSource();
-        bool isEnabled;
-        if (!enabledSource ||
-            !getValue<bool>(attachedStage, objectRecord->mKey, enabledSource->internToken(enabledString), timeCode, isEnabled))
+        if (!enabledSource)
             return true;
+        // An unauthored tendonEnabled means enabled, as the parser builds the tendon.
+        bool isEnabled = false;
+        if (!getValue<bool>(attachedStage, objectRecord->mKey, enabledSource->internToken(enabledString), timeCode, isEnabled))
+            isEnabled = true;
 
         if (isEnabled)
         {
@@ -417,10 +428,12 @@ bool omni::physx::updateFixedTendonStiffness(AttachedStage& attachedStage, omni:
     {
         const std::string enabledString = "physxTendon:" + tendonInstanceName(intAxis->instanceName) + ":tendonEnabled";
         const omni::physics::parse::IPhysicsSource* enabledSource = attachedStage.getSource();
-        bool isEnabled;
-        if (!enabledSource ||
-            !getValue<bool>(attachedStage, objectRecord->mKey, enabledSource->internToken(enabledString), timeCode, isEnabled))
+        if (!enabledSource)
             return true;
+        // An unauthored tendonEnabled means enabled, as the parser builds the tendon.
+        bool isEnabled = false;
+        if (!getValue<bool>(attachedStage, objectRecord->mKey, enabledSource->internToken(enabledString), timeCode, isEnabled))
+            isEnabled = true;
 
         if (isEnabled)
         {
@@ -453,10 +466,12 @@ bool omni::physx::updateFixedTendonLimitStiffness(AttachedStage& attachedStage, 
     {
         const std::string enabledString = "physxTendon:" + tendonInstanceName(intAxis->instanceName) + ":tendonEnabled";
         const omni::physics::parse::IPhysicsSource* enabledSource = attachedStage.getSource();
-        bool isEnabled;
-        if (!enabledSource ||
-            !getValue<bool>(attachedStage, objectRecord->mKey, enabledSource->internToken(enabledString), timeCode, isEnabled))
+        if (!enabledSource)
             return true;
+        // An unauthored tendonEnabled means enabled, as the parser builds the tendon.
+        bool isEnabled = false;
+        if (!getValue<bool>(attachedStage, objectRecord->mKey, enabledSource->internToken(enabledString), timeCode, isEnabled))
+            isEnabled = true;
 
         if (isEnabled)
         {
@@ -489,10 +504,12 @@ bool omni::physx::updateFixedTendonDamping(AttachedStage& attachedStage, omni::p
     {
         const std::string enabledString = "physxTendon:" + tendonInstanceName(intAxis->instanceName) + ":tendonEnabled";
         const omni::physics::parse::IPhysicsSource* enabledSource = attachedStage.getSource();
-        bool isEnabled;
-        if (!enabledSource ||
-            !getValue<bool>(attachedStage, objectRecord->mKey, enabledSource->internToken(enabledString), timeCode, isEnabled))
+        if (!enabledSource)
             return true;
+        // An unauthored tendonEnabled means enabled, as the parser builds the tendon.
+        bool isEnabled = false;
+        if (!getValue<bool>(attachedStage, objectRecord->mKey, enabledSource->internToken(enabledString), timeCode, isEnabled))
+            isEnabled = true;
 
         if (isEnabled)
         {

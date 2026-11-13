@@ -18,6 +18,8 @@
 #   Remaining GPU tests       (filter: *GpuTest*)               GPU lock
 #   Global lifecycle tests    (filter: GlobalLifecycle.*)       clean refs
 #   Non-GPU tests             (filter: derived from isolate_from_cpu_pass) CPU lock
+#   Non-GPU tests, queued     (same filter, OVPHYSX_TEST_EXECUTION=queue) queued venue
+#   Non-GPU tests, no worker  (same filter, OVPHYSX_TEST_EXECUTION=noworker) no worker thread
 #
 # Prerequisite: cmake -P scripts/build.cmake && cmake -P scripts/install.cmake
 
@@ -42,12 +44,16 @@ endif()
 # The test executables stay in _build. Only the SDK under test is installed.
 set(GTEST_EXECUTABLE "${STANDARD_OUTPUT_DIR}/c_unittests${EXE_SUFFIX}")
 set(SIDECAR_GTEST_EXECUTABLE "${STANDARD_OUTPUT_DIR}/sidecar_token_scope_unittests${EXE_SUFFIX}")
+set(EXECUTOR_GTEST_EXECUTABLE "${STANDARD_OUTPUT_DIR}/instance_executor_unittests${EXE_SUFFIX}")
 
 if(NOT EXISTS "${GTEST_EXECUTABLE}")
     message(FATAL_ERROR "C++ test executable not found at: ${GTEST_EXECUTABLE}\nRun: cmake -P scripts/build.cmake")
 endif()
 if(NOT EXISTS "${SIDECAR_GTEST_EXECUTABLE}")
     message(FATAL_ERROR "Sidecar C++ test executable not found at: ${SIDECAR_GTEST_EXECUTABLE}\nRun: cmake -P scripts/build.cmake")
+endif()
+if(NOT EXISTS "${EXECUTOR_GTEST_EXECUTABLE}")
+    message(FATAL_ERROR "Executor C++ test executable not found at: ${EXECUTOR_GTEST_EXECUTABLE}\nRun: cmake -P scripts/build.cmake")
 endif()
 
 # On Windows the DLLs must be on PATH before process launch, because the loader
@@ -206,7 +212,10 @@ set(OVPHYSX_GTEST_PASSES_REQUIRING_CUDA
     cuda-selection-nonzero-ordinal
     default-gpu
     session-gpu-dynamics
+    gpu-attach-context
+    omnipvd-capture-gpu
     gpu
+    gpu-always-queue
 )
 if(NOT DEFINED OVPHYSX_SKIP_GPU_PASSES AND DEFINED ENV{OVPHYSX_SKIP_GPU_PASSES})
     set(OVPHYSX_SKIP_GPU_PASSES "$ENV{OVPHYSX_SKIP_GPU_PASSES}")
@@ -237,14 +246,27 @@ function(run_gtest_pass _P_LABEL _P_FILTER)
 
     set(_P_ENV)
     set(_P_ORIGINAL_PATH "$ENV{PATH}")
-    if("${_P_LABEL}" STREQUAL "gpu" OR "${_P_LABEL}" STREQUAL "default-gpu"
-       OR "${_P_LABEL}" STREQUAL "session-gpu-dynamics")
+    if("${_P_LABEL}" STREQUAL "gpu" OR "${_P_LABEL}" STREQUAL "gpu-always-queue"
+       OR "${_P_LABEL}" STREQUAL "default-gpu"
+       OR "${_P_LABEL}" STREQUAL "session-gpu-dynamics"
+       OR "${_P_LABEL}" STREQUAL "gpu-attach-context"
+       OR "${_P_LABEL}" STREQUAL "omnipvd-capture-gpu")
         list(APPEND _P_ENV "OVPHYSX_TEST_REQUIRE_CUDA=1")
+        if("${_P_LABEL}" STREQUAL "gpu-always-queue")
+            list(APPEND _P_ENV "OVPHYSX_TEST_EXECUTION=queue")
+        endif()
     elseif("${_P_LABEL}" MATCHES "^lifecycle")
         list(APPEND _P_ENV "OVPHYSX_DISABLE_GPU=1")
         list(APPEND _P_ENV "OVPHYSX_TEST_LIFECYCLE_OWNS_INIT=1")
-    elseif("${_P_LABEL}" STREQUAL "cpu" OR "${_P_LABEL}" MATCHES "^(profiler-(trace|backend|bind-)|solver-threads-|omnipvd-)")
+    elseif("${_P_LABEL}" STREQUAL "cpu" OR "${_P_LABEL}" STREQUAL "cpu-always-queue"
+           OR "${_P_LABEL}" STREQUAL "cpu-no-worker"
+           OR "${_P_LABEL}" MATCHES "^(profiler-(trace|backend|bind-)|solver-threads-|omnipvd-)")
         list(APPEND _P_ENV "OVPHYSX_DISABLE_GPU=1")
+        if("${_P_LABEL}" STREQUAL "cpu-always-queue")
+            list(APPEND _P_ENV "OVPHYSX_TEST_EXECUTION=queue")
+        elseif("${_P_LABEL}" STREQUAL "cpu-no-worker")
+            list(APPEND _P_ENV "OVPHYSX_TEST_EXECUTION=noworker")
+        endif()
         if(OS_NAME STREQUAL "windows")
             set(ENV{PATH} "${BASE_TEST_PATH}")
         endif()
@@ -400,8 +422,18 @@ run_gtest_pass("session-gpu-dynamics" "SessionGpuDynamicsTest.*")
 # process and is routed to its own pass below. *GpuTest* also keeps
 # CpuNoCudaContextGpuTest.* out of the shared cpu process.
 # -------------------------------------------------------------------------
+# Capture capability is latched when the first GPU instance creates PxPhysics.
+# This fixture enables it at creation, so it needs a fresh process before the
+# ordinary GPU fixtures can create a provider without recording capability.
+run_gtest_pass("omnipvd-capture-gpu" "*OmniPvdSelectiveCaptureGpuTest.*")
 isolate_from_cpu_pass("*GpuTest*")
-run_gtest_pass("gpu" "*GpuTest*:-CpuNoCudaContextGpuTest.*")
+# This attach must create the first device-ordinal context manager, so it cannot
+# share the ordinary GPU process. Both cases below are excluded by *GpuTest* above.
+run_gtest_pass("gpu-attach-context" "WorkerLifecycle.NoContextOrdinalAttachRestoresCallerGpuTest")
+run_gtest_pass("gpu" "*GpuTest*:-CpuNoCudaContextGpuTest.*:WorkerLifecycle.NoContextOrdinalAttachRestoresCallerGpuTest:*OmniPvdSelectiveCaptureGpuTest.*")
+run_gtest_pass(
+    "gpu-always-queue"
+    "SessionPhysicsGpuTest.*:OvStageOutputGpuTest.*:ReadCaptureGpuTest.*:WorkerShortCallsGpuTest.*")
 
 # -------------------------------------------------------------------------
 # Global lifecycle tests run in their own process so runtime refs start clean.
@@ -427,6 +459,14 @@ run_gtest_pass(
     "GlobalLifecycle.ShutdownDrainsAcceptedCallback:GlobalLifecycle.LiveInstanceShutdownDrainDoesNotHoldInstanceMapLock"
     "${GTEST_EXECUTABLE}"
     60)
+# Shutdown with live instances stops their workers and ends the process lifecycle, so
+# this case owns initialize and shutdown in a process of its own.
+isolate_from_cpu_pass("WorkerTeardown.ShutdownJoinsWorkersWithLiveInstances")
+run_gtest_pass(
+    "lifecycle-worker-teardown-shutdown"
+    "WorkerTeardown.ShutdownJoinsWorkersWithLiveInstances"
+    "${GTEST_EXECUTABLE}"
+    120)
 
 # Provider creation is process-latched, so this exclusion regression needs a
 # fresh process before any other test can create PxPhysics.
@@ -443,6 +483,18 @@ run_isolated_gtest_cases("OmniPvdGlobalConfig" "lifecycle-omnipvd")
 # it in a fresh process instead of sharing the CPU pass's frozen default.
 isolate_from_cpu_pass("OmniPvdRecording.*")
 run_isolated_gtest_cases("OmniPvdRecording" "omnipvd-recording")
+
+# Attach and detach while a recording is active, for the same reason: each case
+# creates its own recording-capable instances in a fresh process.
+isolate_from_cpu_pass("WorkerLifecycle.Recorded*")
+run_gtest_pass("omnipvd-worker-lifecycle-recorded-detach"
+    "WorkerLifecycle.RecordedDetachIsSynchronousAndDrainsPeers")
+run_gtest_pass("omnipvd-worker-lifecycle-recorded-order"
+    "WorkerLifecycle.RecordedDetachThenAttachKeepsOrder")
+# Selective capture also provisions capability before its first instance. Keep
+# each CPU case out of the shared CPU pass and give it a fresh configured runtime.
+isolate_from_cpu_pass("OmniPvdSelectiveCapture.*")
+run_isolated_gtest_cases("OmniPvdSelectiveCapture" "omnipvd-capture")
 
 # The chrome trace is written by the last-loader shutdown, so any other live
 # instance in the process -- the shared CPU one every other case uses -- would
@@ -497,6 +549,10 @@ isolate_from_cpu_pass("WorkerPoolOverrideTest.*")
 run_gtest_pass("lifecycle-worker-pool-override" "WorkerPoolOverrideTest.*")
 isolate_from_cpu_pass("WorkerPoolInvalidTest.*")
 run_gtest_pass("lifecycle-worker-pool-invalid" "WorkerPoolInvalidTest.*")
+isolate_from_cpu_pass("WorkerPoolOneThreadTest.*")
+run_gtest_pass("lifecycle-worker-pool-one-thread" "WorkerPoolOneThreadTest.*")
+isolate_from_cpu_pass("WorkerPoolQueuedEntryTest.*")
+run_gtest_pass("lifecycle-worker-pool-queued-entry" "WorkerPoolQueuedEntryTest.*")
 
 # -------------------------------------------------------------------------
 # Each requested dispatcher count needs a fresh runtime and settings store.
@@ -519,6 +575,25 @@ set_property(GLOBAL PROPERTY OVPHYSX_CPU_PASS_LATCHED TRUE)
 run_gtest_pass("cpu" "-${_CPU_FILTER}")
 
 # -------------------------------------------------------------------------
+# The same non-GPU tests again with every short async call queued as a job on the
+# instance worker, even on an idle instance, and every step run whole as a job.
+# OVPHYSX_TEST_EXECUTION=queue is read by the test program, which passes it to the
+# library's private test hook before the first instance exists; the library reads
+# no environment for it. Most tests make their short calls on an idle instance, where
+# they normally run on the calling thread, so this pass covers the queued path of
+# each. Tests that pin where a call runs skip themselves under the switch.
+# -------------------------------------------------------------------------
+run_gtest_pass("cpu-always-queue" "-${_CPU_FILTER}")
+
+# -------------------------------------------------------------------------
+# The same non-GPU tests again with every instance created without a worker thread
+# (OVPHYSX_TEST_EXECUTION=noworker sets OVPHYSX_GLOBAL_CONFIG_ASYNC_EXECUTION to
+# false in the test program), so every call runs on the calling thread. Tests that hold
+# the worker or leave work to it skip themselves.
+# -------------------------------------------------------------------------
+run_gtest_pass("cpu-no-worker" "-${_CPU_FILTER}")
+
+# -------------------------------------------------------------------------
 # CPU-no-CUDA-context contract. On a GPU box, a cpu_only instance must not open
 # a CUDA context. Runs in a fresh process so the primary-context probe starts
 # from a clean state. Self-skips on CPU-only runners.
@@ -529,6 +604,11 @@ run_gtest_pass("cpu-no-cuda-context" "CpuNoCudaContextGpuTest.*")
 # Isolated checked token-scope sidecar bridge tests.
 # -------------------------------------------------------------------------
 run_gtest_pass("sidecar-token-scope" "*" "${SIDECAR_GTEST_EXECUTABLE}")
+
+# -------------------------------------------------------------------------
+# Isolated per-instance executor (worker, FIFO and lane) tests.
+# -------------------------------------------------------------------------
+run_gtest_pass("instance-executor" "*" "${EXECUTOR_GTEST_EXECUTABLE}")
 
 # -------------------------------------------------------------------------
 # Check for simulation stage leaks across all passes.

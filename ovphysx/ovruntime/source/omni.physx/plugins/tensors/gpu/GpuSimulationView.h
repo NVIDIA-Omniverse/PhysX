@@ -86,6 +86,16 @@ public:
         const std::unordered_map<const ::physx::PxArticulationReducedCoordinate*, ::physx::PxU32>** outRowMap,
         const std::vector<ArticulationEntry>** outEntries);
 
+    // Whether the superset view of that kind is already built, so asking for it builds nothing.
+    bool hasSupersetRigidView() const
+    {
+        return mSupersetRigidView != nullptr;
+    }
+    bool hasSupersetArticulationView() const
+    {
+        return mSupersetArtiView != nullptr;
+    }
+
     GpuVolumeDeformableBodyView* createVolumeDeformableBodyView(const char* pattern) override;
     GpuVolumeDeformableBodyView* createVolumeDeformableBodyView(const std::vector<std::string>& patterns) override;
     GpuSurfaceDeformableBodyView* createSurfaceDeformableBodyView(const char* pattern) override;

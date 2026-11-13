@@ -18,6 +18,7 @@ Scene-query and inspection adapters use core read/query sessions where equivalen
 - AC-2: **Identity.** Query hits return owner/generation/object and instance identities, distances/positions/normals with declared units/frame, and the evaluated scene revision or completed step.
 - AC-3: **Inspection.** Body/joint/material/articulation inspection uses supported typed data; joint frame conversion is explicit and debug mass inspection depends on no unit-test interface.
 - AC-4: **Ordering.** Queries and live reads observe the owning core session completion rules and reject stale handles without dereferencing deleted actors.
+- AC-5: **Backends.** Queries run on CPU and GPU-dynamics scenes; an owner with a DirectGPU scene reports unavailable with outputs unchanged. Live inspection reports GPU-dynamics and DirectGPU state unavailable.
 
 ## Implementation scope
 
@@ -28,9 +29,10 @@ core query calls; they query the same existing PhysX scene-query structures with
 another scene, runtime, or cooking path. Equivalent core results are regression
 oracles; `capture_body_output` continues to delegate supported core read sessions.
 
-CPU ray, sphere/box/capsule and already-cooked convex-shape sweep/overlap support
-the documented modes. Overlap closest, unsupported bound geometry, GPU scenes,
-and unsupported flags fail explicitly. Filters use validated body/shape records;
+Ray, sphere/box/capsule and already-cooked convex-shape sweep/overlap support
+the documented modes on CPU and GPU-dynamics scenes, whose poses are read back into
+the scene-query structures. Overlap closest, unsupported bound geometry, DirectGPU
+scenes and unsupported flags fail explicitly. Filters use validated body/shape records;
 point-instance body identities distinguish shared shapes. Results own copies,
 full counts, bounded nearest results and truncation. Optional geometric fields
 have validity bits (initial-overlap position can be absent).

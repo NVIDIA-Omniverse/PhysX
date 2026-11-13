@@ -5,13 +5,13 @@
 
 # Stage units
 
-Length, mass and up-axis metadata on the root prim, read once per Stage by the consumer. Every units-scaled default, on both the producer and the consumer side, derives from these values, so a hand-populated Stage that omits them silently simulates at SI scale.
+Length, mass and up-axis metadata on the root [prim](glossary.md#prim), read once per Stage by the consumer. Every units-scaled default, on both the producer and the consumer side, derives from these values, so a hand-populated Stage that omits them silently simulates at [SI](glossary.md#si) scale.
 
 - **Scope:** stage, prim `/`
 
 ## What USD population writes
 
-Written only when the PHYSICS domain is selected (the profile requests exactly these three metadata paths). The values are USD stage metadata resolved with fallbacks, so the columns are always present on a PHYSICS populate even when the layer authors none of them. timeCodesPerSecond is not published.
+Written when the physics population description is populated: it requests exactly these three stage metadata paths, from the stage_metadata producer rules. The values are [USD](glossary.md#usd) stage metadata resolved with fallbacks, so the columns are always present after a physics populate even when the layer authors none of them. timeCodesPerSecond is not published.
 
 ## Columns
 
@@ -19,10 +19,10 @@ Written only when the PHYSICS domain is selected (the profile requests exactly t
 |---|---|---|---|---|
 | `usd-metadata:metersPerUnit` | float64 | no | the stage's resolved metersPerUnit metadata | 1.0 (SI). Any dtype other than float32/float64 is ignored as if absent. |
 | `usd-metadata:kilogramsPerUnit` | float64 | no | the stage's resolved kilogramsPerUnit metadata | 1.0 (SI). |
-| `usd-metadata:upAxis` | uint64, TOKEN_ID | no | token id of the stage's resolved upAxis metadata | Z-up on the consumer. Only the string "Y" selects Y-up; every other token resolves to Z. Note USD's own fallback is Y, so a stage that authors no upAxis is Y-up under USD but the producer publishes the resolved Y and the consumer honours it; only a hand-populated stage that omits the column gets Z. |
+| `usd-metadata:upAxis` | uint64, TOKEN_ID | no | [token id](glossary.md#token-id) of the stage's resolved upAxis metadata | Z-up on the consumer. Only the string "Y" selects Y-up; every other token resolves to Z. Note USD's own fallback is Y, so a stage that authors no upAxis is Y-up under USD but the producer publishes the resolved Y and the consumer honours it; only a hand-populated stage that omits the column gets Z. |
 
 ## Notes
 
 - Column names are usd-metadata:<field>. The dash makes collision with a USD property name impossible.
-- The consumer additionally probes two legacy prims, /__ovstage_population_stage_info__ and /__ovpopulation_stage_info__, with unprefixed names. The current producer never writes them; they exist for older stages only.
+- The consumer additionally probes two legacy prims, /__ovstage_population_stage_info__ and /__ovpopulation_stage_info__, with unprefixed names, when the root prim carries none of these columns (block legacy_stage_units). The current producer never writes them; they exist for older stages only.
 - Units are read once when the consumer's source is constructed. Writing them at a later ordinal has no effect on an attached simulation.

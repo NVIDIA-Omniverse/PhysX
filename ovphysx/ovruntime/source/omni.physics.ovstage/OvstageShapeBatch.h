@@ -10,6 +10,7 @@
 #pragma once
 #include <omni/physics/parse/DescriptorBatchAllocator.h>
 #include <omni/physics/parse/PreparedShape.h>
+#include <memory>
 #include <variant>
 #include <cmath>
 #include <stdexcept>
@@ -40,6 +41,11 @@ struct PreparedOvstageShape
     PreparedSdfMeshCookingExt sdfCooking;
     BufferSpan<carb::Float3> points;
     MergeMeshDesc* mergedMesh = nullptr;
+    // PhysxMeshMergeCollisionAPI on the collider: the collisionmeshes members'
+    // geometry built by parse::buildMergedMesh, moved into mergedMesh when the batch
+    // is constructed. Null for every other shape, so its presence is the merge flag
+    // and the common record stays small.
+    std::unique_ptr<MergeMeshDesc> merged;
     std::vector<ObjectKey> materials, filteredCollisions, simulationOwners;
 };
 
@@ -121,7 +127,7 @@ inline void constructShapeBatches(DescriptorBatchAllocator& pool, std::vector<Pr
     constructShapeType<BoundingSpherePhysxShapeDesc>(pool, eBoundingSphereShape, inputs, outputs);
     constructShapeType<BoundingBoxPhysxShapeDesc>(pool, eBoundingBoxShape, inputs, outputs);
     const size_t mergedCount = size_t(std::count_if(inputs.begin(), inputs.end(), [](const PreparedOvstageShape& input)
-    { return input.type == eBoundingSphereShape || input.type == eBoundingBoxShape; }));
+    { return input.merged || input.type == eBoundingSphereShape || input.type == eBoundingBoxShape; }));
     meshes = allocateDescriptorBatch<MergeMeshDesc>(pool, mergedCount);
     size_t mesh = 0;
     for (size_t index = 0; index < inputs.size(); ++index)
@@ -133,7 +139,14 @@ inline void constructShapeBatches(DescriptorBatchAllocator& pool, std::vector<Pr
         output.sourceMaterials.resize(input.materials.size());
         output.sourceFilteredCollisions.resize(input.filteredCollisions.size());
         output.sourceSimulationOwners.resize(input.simulationOwners.size());
-        if (input.type == eBoundingSphereShape || input.type == eBoundingBoxShape)
+        if (input.merged)
+        {
+            // The staged buffers move into the batch descriptor here on the coordinator,
+            // so the fill below only attaches the pointer (and scales the bounding input).
+            input.mergedMesh = meshes[mesh++].get();
+            *input.mergedMesh = std::move(*input.merged);
+        }
+        else if (input.type == eBoundingSphereShape || input.type == eBoundingBoxShape)
         {
             input.mergedMesh = meshes[mesh++].get();
             input.mergedMesh->points.resize(input.points.count);
@@ -251,6 +264,18 @@ inline bool fillOvstageShape(const PreparedOvstageShape& input, PhysxShapeDesc& 
     case eBoundingSphereShape:
     case eBoundingBoxShape:
     {
+        if (input.merged)
+        {
+            // The merged points sit in the collider's frame without its scale: the cooked
+            // types carry that in meshScale, but the bounding fits read the points directly,
+            // so the collider's world scale is baked in here, as the standalone path below
+            // does for the gprim's points. geometryScale is decomposed by the fill, so this
+            // cannot happen at construction; the fill runs once per prepared input.
+            if (!input.mergedMesh) return false;
+            for (carb::Float3& point : input.mergedMesh->points)
+                point = { point.x * input.geometryScale.x, point.y * input.geometryScale.y, point.z * input.geometryScale.z };
+            break; // attached below
+        }
         if (!input.mergedMesh || input.mergedMesh->points.size() != input.points.count) return false;
         for (size_t index = 0; index < input.points.count; ++index)
         {
@@ -262,6 +287,13 @@ inline bool fillOvstageShape(const PreparedOvstageShape& input, PhysxShapeDesc& 
         break;
     }
     default: return false;
+    }
+    if (input.merged)
+    {
+        // Every mesh and bounding type derives from MergeMeshPhysxShapeDesc; the consumer
+        // cooks a merged collider from these buffers because its source prim is no mesh.
+        if (!input.mergedMesh) return false;
+        static_cast<MergeMeshPhysxShapeDesc&>(output).mergedMesh = input.mergedMesh;
     }
     return true;
 }

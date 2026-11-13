@@ -108,9 +108,15 @@ bool RackAndPinionJoint::setJoints(const PxBase* hinge, const PxBase* prismatic)
 	markDirty();
 
 #if PX_SUPPORT_OMNI_PVD
-	const PxBase* joints[] = { hinge, prismatic };
-	PxU32 jointCount = sizeof(joints) / sizeof(joints[0]);
-	OMNI_PVD_SET_ARRAY(OMNI_PVD_CONTEXT_HANDLE, PxRackAndPinionJoint, joints, static_cast<PxRackAndPinionJoint&>(*this), joints, jointCount)
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+	PxRackAndPinionJoint& joint = static_cast<PxRackAndPinionJoint&>(*this);
+	if (OmniPvdShouldRecordValue("PxRackAndPinionJoint", "joints", pvdRegData->pvdPxRackAndPinionJoint.getObjectHandle(joint)))
+	{
+		OmniPvdCacheJointReferences(joint, hinge, prismatic);
+		const PxBase* joints[] = { OmniPvdCaptureJointReference(hinge, pvdWriter), OmniPvdCaptureJointReference(prismatic, pvdWriter) };
+		OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRackAndPinionJoint, joints, joint, joints, PxU32(sizeof(joints) / sizeof(joints[0])))
+	}
+	OMNI_PVD_WRITE_SCOPE_END
 #endif
 		
 	return true;
@@ -371,10 +377,14 @@ void physx::Ext::omniPvdInitJoint<RackAndPinionJoint>(OmniPvdWriter* pvdWriter, 
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRackAndPinionJoint, ratio, j, joint.getRatio())
 
 	// Re-emit the linked hinge + prismatic references (set live by setJoints) so a late attach reconstructs them.
-	const PxBase* hinge = NULL; const PxBase* prismatic = NULL;
-	joint.getJoints(hinge, prismatic);
-	const PxBase* joints[] = { hinge, prismatic };
-	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRackAndPinionJoint, joints, j, joints, PxU32(sizeof(joints) / sizeof(joints[0])))
+	if (OmniPvdShouldRecordValue("PxRackAndPinionJoint", "joints", pvdRegData->pvdPxRackAndPinionJoint.getObjectHandle(j)))
+	{
+		const PxBase* hinge = NULL; const PxBase* prismatic = NULL;
+		joint.getJoints(hinge, prismatic);
+		OmniPvdCacheJointReferences(j, hinge, prismatic);
+		const PxBase* joints[] = { OmniPvdCaptureJointReference(hinge, pvdWriter), OmniPvdCaptureJointReference(prismatic, pvdWriter) };
+		OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRackAndPinionJoint, joints, j, joints, PxU32(sizeof(joints) / sizeof(joints[0])))
+	}
 }
 
 #endif

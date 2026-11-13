@@ -557,17 +557,21 @@ struct TaskGuardUser {
     std::atomic<int> selfStatus{-1};
     std::atomic<int> invalidCount{0};
     std::atomic<int> absentCount{0};
+    std::atomic<int> destroyStatus{-1};
 };
 
-void taskGuardReset(void* user) {
+// A detach job runs its teardown, and so the all-destroyed callback, on the instance
+// worker, a native thread. Destroy still tears the attachment down on its calling thread,
+// so a destroy made inside a Carbonite task delivers the callback in that task.
+void taskGuardDestroy(void* user) {
     TaskGuardUser* taskUser = static_cast<TaskGuardUser*>(user);
-    EXPECT_EQ(test_utils::complete_task(taskUser->handle, ovphysx_detach_ovstage(taskUser->handle)).status,
-              OVPHYSX_API_SUCCESS);
+    taskUser->destroyStatus.store(static_cast<int>(ovphysx_destroy_instance(taskUser->handle).status),
+                                  std::memory_order_release);
 }
 
 void taskGuardProbe(void* user) {
     TaskGuardUser* taskUser = static_cast<TaskGuardUser*>(user);
-    // Unknown id: the guard runs before any runtime unsubscribe. Detach holds
+    // Unknown id: the guard runs before any runtime unsubscribe. The teardown holds
     // that runtime lock across this callback, so a real id would deadlock.
     const ovphysx_result_t result =
         ovphysx_unsubscribe_object_changes(taskUser->handle, static_cast<ovphysx_subscription_id_t>(~0ULL) - 1);
@@ -587,18 +591,31 @@ void taskGuardAllDestroyed(void* user_data) {
 // @implements REQ-CAPI-OBJCHANGE-001
 // @covers AC-2
 TEST_F(ObjectChangeIntegrationTest, CallbackGuardFollowsCarboniteTaskNotWorker) {
+    // A dedicated instance, which the Carbonite task destroys (see taskGuardDestroy()).
     TaskGuardUser taskUser;
-    taskUser.handle = m_handle;
+    struct Owner {
+        TaskGuardUser& user;
+        ~Owner() {
+            if (user.handle == 0 || user.destroyStatus.load() == static_cast<int>(OVPHYSX_API_SUCCESS))
+                return;
+            destroy_ovstage_test_attachments(user.handle);
+            ovphysx_destroy_instance(user.handle);
+        }
+    } owner{taskUser};
+    ASSERT_EQ(ovphysx_create_instance(&taskUser.handle).status, OVPHYSX_API_SUCCESS);
+    ovphysx_usd_handle_t usd = 0;
+    ASSERT_TRUE(load_usd_and_wait(taskUser.handle, "tests/data/basic_simulation.usda", usd));
+    ASSERT_TRUE(step_and_wait(taskUser.handle, 1.0f / 60.0f));
 
     ovphysx_object_change_callbacks_t callbacks{};
     callbacks.on_all_objects_destroyed = taskGuardAllDestroyed;
     callbacks.user_data = &taskUser;
-    ScopedSubscription active;
-    active.handle = m_handle;
-    ASSERT_EQ(ovphysx_subscribe_object_changes(m_handle, &callbacks, &active.id).status, OVPHYSX_API_SUCCESS);
-    taskUser.activeId = active.id;
+    ASSERT_EQ(ovphysx_subscribe_object_changes(taskUser.handle, &callbacks, &taskUser.activeId).status,
+              OVPHYSX_API_SUCCESS);
 
-    ASSERT_TRUE(ovphysx_with_suspended_carbonite_task_for_test_internal(taskGuardReset, taskGuardProbe, &taskUser));
+    ASSERT_TRUE(ovphysx_with_suspended_carbonite_task_for_test_internal(taskGuardDestroy, taskGuardProbe, &taskUser));
+    EXPECT_EQ(taskUser.destroyStatus.load(std::memory_order_acquire), static_cast<int>(OVPHYSX_API_SUCCESS));
+    destroy_ovstage_test_stages(taskUser.handle);
     EXPECT_EQ(taskUser.invalidCount.load(std::memory_order_acquire), 0);
     EXPECT_GE(taskUser.absentCount.load(std::memory_order_acquire), 8);
     EXPECT_EQ(taskUser.selfStatus.load(std::memory_order_acquire), static_cast<int>(OVPHYSX_API_INVALID_STATE));

@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-SIM-LOCALVELOCITY-001
+// @covers AC-8
+
 /** @implements REQ-PARSE-PARALLEL-001
  * @covers AC-3 AC-4
  */
@@ -48,6 +51,9 @@ struct ScanOptions
     // Its upstream must match the scan allocator. Other backends may ignore it.
     std::shared_ptr<DescriptorBatchAllocator> descriptorPool;
     DescriptorExecutionOptions descriptorExecution;
+
+    // Consumer fallback for bodies without localSpaceVelocities metadata.
+    bool outputVelocitiesLocalSpaceDefault = false;
 };
 
 // One registered whole-stage walker.

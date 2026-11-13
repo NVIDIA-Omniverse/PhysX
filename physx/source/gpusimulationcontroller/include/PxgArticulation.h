@@ -95,6 +95,17 @@ namespace physx
 #pragma warning(pop)
 #endif
 
+#if PX_CUDA_COMPILER
+	// Zeroes the root velocity in the root link record and in motionVelocities, the copies that jcalc loads into the solver block data.
+	PX_FORCE_INLINE __device__ void clearRootVelocity(const PxgArticulation& articulation)
+	{
+		articulation.motionVelocities[0] = Cm::UnAlignedSpatialVector::Zero();
+		PxgArticulationLink& rootLink = articulation.links[0];
+		rootLink.initialAngVelXYZ_penBiasClamp = make_float4(0.0f, 0.0f, 0.0f, rootLink.initialAngVelXYZ_penBiasClamp.w);
+		rootLink.initialLinVelXYZ_invMassW = make_float4(0.0f, 0.0f, 0.0f, rootLink.initialLinVelXYZ_invMassW.w);
+	}
+#endif
+
 	/*
 	\brief We aggregate link, joint, and root link state data into a single char buffer.
 	We do this in two ways:

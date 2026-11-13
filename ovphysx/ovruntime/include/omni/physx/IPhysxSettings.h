@@ -63,8 +63,6 @@ constexpr int kSettingCudaDeviceDefaultVal = -1;
 /// \ingroup private
 /// (bool) Force process-wide CPU-only PhysX startup before any CUDA probing.
 DEFINE_PHYSX_SETTING(kSettingForceCpuMode, "/forceCpuMode");
-/// (string) Simulation engine name.
-DEFINE_PHYSX_SETTING(kSettingDefaultSimulator, "/defaultSimulator");
 /** @rst
     (int) See :ref:`simulation_on_multiple_gpus` and :ref:`Use Physics Scene Multi-GPU Mode<Use Physics Scene Multi-GPU Mode>`. Changeable through :ref:`Physics Preferences`.
     @endrst */
@@ -470,6 +468,8 @@ enum class OmniPvdTransport : uint8_t
 struct OmniPvdDestination
 {
     OmniPvdTransport transport{ OmniPvdTransport::eFile };
+    // A literal .ovd suffix selects a named file; any other value selects a
+    // directory for a timestamped capture. Explicit start creates missing parents.
     std::string fileTarget;
     std::string tcpAddress;
     uint16_t tcpPort{ 0 };
@@ -484,87 +484,10 @@ inline bool copyOmniPvdConfigString(const char* value, size_t length, std::strin
     return true;
 }
 
-inline bool normalizeOmniPvdDestination(
-    const char* transport,
-    size_t transportLength,
-    const char* fileTarget,
-    size_t fileTargetLength,
-    const char* tcpAddress,
-    size_t tcpAddressLength,
-    int64_t tcpPort,
-    int64_t tcpTimeoutMs,
-    OmniPvdDestination& destination,
-    const char*& errorMessage)
-{
-    std::string transportValue;
-    destination = {};
-    errorMessage = nullptr;
-    if (!copyOmniPvdConfigString(transport, transportLength, transportValue) || transportValue.empty())
-    {
-        errorMessage = "OmniPVD transport must be 'file' or 'tcp'";
-        return false;
-    }
-    if (!copyOmniPvdConfigString(fileTarget, fileTargetLength, destination.fileTarget) ||
-        !copyOmniPvdConfigString(tcpAddress, tcpAddressLength, destination.tcpAddress))
-    {
-        errorMessage = "OmniPVD destination strings must not contain embedded NUL bytes";
-        return false;
-    }
-    if (transportValue == "file")
-    {
-        destination.transport = OmniPvdTransport::eFile;
-        return true;
-    }
-    if (transportValue != "tcp")
-    {
-        errorMessage = "OmniPVD transport must be 'file' or 'tcp'";
-        return false;
-    }
-    if (destination.tcpAddress.empty())
-    {
-        errorMessage = "OmniPVD TCP address must be non-empty";
-        return false;
-    }
-    if (tcpPort < 1 || tcpPort > 65535)
-    {
-        errorMessage = "OmniPVD TCP port must be in 1..65535";
-        return false;
-    }
-    if (tcpTimeoutMs < 0 || tcpTimeoutMs > INT32_MAX)
-    {
-        errorMessage = "OmniPVD TCP timeout must be in 0..INT32_MAX milliseconds";
-        return false;
-    }
-    destination.transport = OmniPvdTransport::eTcp;
-    destination.tcpPort = static_cast<uint16_t>(tcpPort);
-    destination.tcpTimeoutMs = static_cast<uint32_t>(tcpTimeoutMs);
-    return true;
-}
-
-/** @rst
-    (string) Sets the directory for OmniPVD output files.
-    @endrst */
-DEFINE_PERSISTENT_PHYSX_SETTING(kOmniPvdOvdRecordingDirectory, "/omniPvdOvdRecordingDirectory");
-/** OmniPVD startup destination transport: "file" or "tcp". */
-DEFINE_PHYSX_SETTING(kOmniPvdTransport, "/omniPvdTransport");
-/** OmniPVD TCP peer address. */
-DEFINE_PHYSX_SETTING(kOmniPvdTcpAddress, "/omniPvdTcpAddress");
-/** OmniPVD TCP peer port. */
-DEFINE_PHYSX_SETTING(kOmniPvdTcpPort, "/omniPvdTcpPort");
-/** OmniPVD TCP send timeout in milliseconds. */
-DEFINE_PHYSX_SETTING(kOmniPvdTcpTimeoutMs, "/omniPvdTcpTimeoutMs");
-/** @rst
-    (bool) Toggles collection of OmniPVD telemetry. Only if this setting is true, do the other OmniPVD settings matter.
-    @endrst */
-DEFINE_PHYSX_SETTING(kOmniPvdOutputEnabled, "/omniPvdOutputEnabled");
 /** (bool) Declares whether OmniPVD recording is available in this process. */
 DEFINE_PHYSX_SETTING(kOmniPvdRecordingCapable, "/omniPvdRecordingCapable");
 /** @rst
-    (bool) Toggles if the Stage is an OmniPVD stage or not. Only non-OmniPVD stages get recorded into OVD files.
-    @endrst */
-DEFINE_PHYSX_SETTING(kOmniPvdIsOVDStage, "/omniPvdIsOVDStage");
-/** @rst
-    (bool) Toggles if the Stage is being recorded into OmniPVD.
+    (bool) Reports whether an explicit OmniPVD recording is active.
     @endrst */
 DEFINE_PHYSX_SETTING(kOmniPvdIsRecording, "/omniPvdIsRecording");
 

@@ -15,6 +15,7 @@ from pathlib import Path
 
 def main():
     import ovphysx,ovstage,numpy as np
+    from ovphysx.population import physics_population_descs
     from ovphysx_companion.native import ToolsSession
     from ovphysx_companion.inspection import Inspector
     from ovphysx_companion.exchange import StageFlow,OutputColumn
@@ -25,7 +26,7 @@ def main():
     ovstage.population.register_usd_schemas(schemas);ovphysx.PhysX.set_cpu_mode(True)
     physics=ovphysx.PhysX();stage=ovstage.Stage('explicit-flow')
     try:
-        ovstage.population.open_usd(stage,str(Path(__file__).parent/'scenes/exchange.usda'),ordinal=1,domains=ovstage.PopulationDomain.ALL)
+        ovstage.population.open_usd_with_desc(stage,str(Path(__file__).parent/'scenes/exchange.usda'),ordinal=1,time=ovstage.population.DEFAULT_TIME,descs=physics_population_descs(rendering=True))
         stage.advance_write_floor(ordinal=1).wait();physics.wait_task(physics.attach_ovstage(stage,read_ordinal=1))
         with ToolsSession(physics) as owner,StageFlow(owner,stage,consumed_ordinal=1) as flow,FrameCoordinator(owner) as host,Inspector(owner) as inspector:
             with ovstage.PathDictionary(stage) as dictionary:

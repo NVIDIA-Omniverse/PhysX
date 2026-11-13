@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-SIM-LOCALVELOCITY-001
+// @covers AC-8
+
 /**
  * @implements REQ-PARSE-INSTANCER-DISPATCH-001
  * @covers AC-1 AC-2
@@ -2329,145 +2332,6 @@ bool isCustomShapeApplied(const PXR_NS::TfTokenVector& apis,
     return false;
 }
 
-// Walk children of a `PhysxMeshMergeCollisionAPI` parent and assemble
-// a MergeMeshDesc from each child's points / indices / face counts /
-// holes — concatenated into one merged buffer. Mixed-handedness
-// children are normalised by flipping triangle winding on the minority.
-void populateMergedMeshFromChildrenNative(
-    parse::ParseContext& ctx, UsdWalkCtx& impl,
-    parse::MergeMeshPhysxShapeDesc* desc, parse::ObjectKey parentKey)
-{
-    const parse::TokenId collectionTok = impl.source.internToken("collisionmeshes");
-    const parse::TokenId orientationTok = impl.source.internToken("orientation");
-    const parse::TokenId leftHandedTok = impl.source.internToken("leftHanded");
-
-    std::vector<parse::ObjectKey> children;
-    impl.source.resolveCollection(parentKey, collectionTok, children);
-
-    struct ChildEntry
-    {
-        parse::ObjectKey                 key;
-        parse::BufferSpan<carb::Float3>  points;
-        parse::BufferSpan<int32_t>       indices;
-        parse::BufferSpan<int32_t>       faceCounts;
-        parse::BufferSpan<int32_t>       holes;
-        size_t                           pointsOffset = 0;
-        size_t                           indicesOffset = 0;
-        size_t                           facesOffset = 0;
-        size_t                           holesOffset = 0;
-        bool                             changeIndicesOrder = false;
-    };
-    std::vector<ChildEntry> entries;
-    entries.reserve(children.size());
-
-    bool leftHanded = false, rightHanded = false;
-    for (parse::ObjectKey child : children)
-    {
-        ChildEntry e;
-        e.key = child;
-        const parse::MeshGeometry geom = parse::parseMeshGeometry(ctx, child);
-        e.points     = ctx.getBuffer<carb::Float3>(geom.points);
-        e.indices    = ctx.getBuffer<int32_t>(geom.indices);
-        e.faceCounts = ctx.getBuffer<int32_t>(geom.faceCounts);
-        e.holes      = ctx.getBuffer<int32_t>(geom.holes);
-        if (e.points.empty() || e.indices.empty() || e.faceCounts.empty())
-            continue;
-
-        parse::TokenId orient;
-        const bool childLeftHanded = impl.source.getAttribute(child, orientationTok, orient) &&
-                                     orient == leftHandedTok;
-
-        if (!leftHanded && !rightHanded)
-        {
-            if (childLeftHanded) leftHanded = true; else rightHanded = true;
-        }
-        else
-        {
-            if (childLeftHanded && rightHanded)      e.changeIndicesOrder = true;
-            else if (!childLeftHanded && leftHanded) e.changeIndicesOrder = true;
-        }
-        entries.push_back(std::move(e));
-    }
-
-    size_t totalPoints = 0, totalIndices = 0, totalFaces = 0, totalHoles = 0;
-    for (auto& e : entries)
-    {
-        e.pointsOffset  = totalPoints;  totalPoints  += e.points.count;
-        e.indicesOffset = totalIndices; totalIndices += e.indices.count;
-        e.facesOffset   = totalFaces;   totalFaces   += e.faceCounts.count;
-        e.holesOffset   = totalHoles;   totalHoles   += e.holes.count;
-    }
-
-    parse::DescPtr<parse::MergeMeshDesc> mm = parse::allocateDesc<parse::MergeMeshDesc>(ctx.descriptorAllocator());
-    mm->points.resize(totalPoints);
-    mm->indices.resize(totalIndices);
-    mm->faces.resize(totalFaces);
-    mm->holes.resize(totalHoles);
-
-    parse::Matrix4d parentWorldM4d;
-    impl.source.getLocalToWorldTransform(parentKey, parentWorldM4d);
-    const PXR_NS::GfMatrix4d parentWorld(
-        parentWorldM4d.data[0],  parentWorldM4d.data[1],  parentWorldM4d.data[2],  parentWorldM4d.data[3],
-        parentWorldM4d.data[4],  parentWorldM4d.data[5],  parentWorldM4d.data[6],  parentWorldM4d.data[7],
-        parentWorldM4d.data[8],  parentWorldM4d.data[9],  parentWorldM4d.data[10], parentWorldM4d.data[11],
-        parentWorldM4d.data[12], parentWorldM4d.data[13], parentWorldM4d.data[14], parentWorldM4d.data[15]);
-    const PXR_NS::GfMatrix4d parentWorldInv = parentWorld.GetInverse();
-
-    for (const auto& e : entries)
-    {
-        parse::Matrix4d childWorldM4d;
-        impl.source.getLocalToWorldTransform(e.key, childWorldM4d);
-        const PXR_NS::GfMatrix4d childWorld(
-            childWorldM4d.data[0],  childWorldM4d.data[1],  childWorldM4d.data[2],  childWorldM4d.data[3],
-            childWorldM4d.data[4],  childWorldM4d.data[5],  childWorldM4d.data[6],  childWorldM4d.data[7],
-            childWorldM4d.data[8],  childWorldM4d.data[9],  childWorldM4d.data[10], childWorldM4d.data[11],
-            childWorldM4d.data[12], childWorldM4d.data[13], childWorldM4d.data[14], childWorldM4d.data[15]);
-        const PXR_NS::GfMatrix4d relMatrix = childWorld * parentWorldInv;
-
-        for (size_t i = 0; i < e.points.count; ++i)
-        {
-            const carb::Float3& p = e.points[i];
-            const PXR_NS::GfVec3f xformed(relMatrix.Transform(PXR_NS::GfVec3f(p.x, p.y, p.z)));
-            mm->points[e.pointsOffset + i] = { xformed[0], xformed[1], xformed[2] };
-        }
-
-        std::memcpy(mm->faces.data() + e.facesOffset, e.faceCounts.data,
-                    sizeof(int32_t) * e.faceCounts.count);
-
-        if (!e.changeIndicesOrder)
-        {
-            for (size_t i = 0; i < e.indices.count; ++i)
-                mm->indices[e.indicesOffset + i] = e.indices[i] + int32_t(e.pointsOffset);
-        }
-        else
-        {
-            size_t faceOffset = 0;
-            for (size_t f = 0; f < e.faceCounts.count; ++f)
-            {
-                const int32_t faceIndices = e.faceCounts[f];
-                if (faceIndices > 0)
-                {
-                    size_t newIndex = 0;
-                    for (size_t i = faceOffset + size_t(faceIndices) - 1; i >= faceOffset; --i)
-                    {
-                        mm->indices[e.indicesOffset + faceOffset + newIndex] =
-                            e.indices[faceOffset + i] + int32_t(e.pointsOffset);
-                        ++newIndex;
-                        if (i == faceOffset) break;
-                    }
-                    faceOffset += size_t(faceIndices);
-                }
-            }
-        }
-
-        for (size_t i = 0; i < e.holes.count; ++i)
-            mm->holes[e.holesOffset + i] = e.holes[i] + int32_t(e.facesOffset);
-    }
-
-    desc->mergedMesh = mm.get();
-    impl.scan.retainOwnedMesh(std::move(mm));
-}
-
 // Build a custom-mesh-merge shape: discriminate the parent's mesh
 // approximation + assemble mergedMesh from the `collisionMeshes`
 // collection.
@@ -2542,7 +2406,7 @@ parse::DescPtr<parse::PhysxShapeDesc> buildMeshMergeCustomShape(
     {
         // Bounding-sphere: emit the BoundingSpherePhysxShapeDesc subclass;
         // the consumer fills positionOffset / radius from mergedMesh
-        // (populated by populateMergedMeshFromChildrenNative below).
+        // (filled from the merged members below).
         parse::DescPtr<parse::BoundingSpherePhysxShapeDesc> bs = parse::allocateDesc<parse::BoundingSpherePhysxShapeDesc>(ctx.descriptorAllocator());
         typed = parse::descPtrCast<parse::MergeMeshPhysxShapeDesc>(std::move(bs));
         break;
@@ -2565,7 +2429,20 @@ parse::DescPtr<parse::PhysxShapeDesc> buildMeshMergeCustomShape(
         break;
     }
     }
-    populateMergedMeshFromChildrenNative(ctx, impl, typed.get(), shapeKey);
+    // The shared parse::buildMergedMesh (path order, right-handed, inconsistent members
+    // skipped) fills a MergeMeshDesc the scan owns; a merge without member geometry emits
+    // no shape. The merged points sit in the collider's frame without its scale: the
+    // cooked types carry that in meshScale, but the bounding fits read the points
+    // directly, so they get the collider's world scale baked in, as the standalone
+    // bounding path does for a gprim's points.
+    parse::DescPtr<parse::MergeMeshDesc> mergedMesh = parse::allocateDesc<parse::MergeMeshDesc>(ctx.descriptorAllocator());
+    if (parse::buildMergedMesh(ctx, shapeKey, *mergedMesh) == 0)
+        return parse::DescPtr<parse::PhysxShapeDesc>{};
+    if (approx == parse::MeshApproximation::eBoundingSphere || approx == parse::MeshApproximation::eBoundingCube)
+        for (carb::Float3& point : mergedMesh->points)
+            point = { point.x * meshScale.x, point.y * meshScale.y, point.z * meshScale.z };
+    typed->mergedMesh = mergedMesh.get();
+    impl.scan.retainOwnedMesh(std::move(mergedMesh));
     return parse::descPtrCast<parse::PhysxShapeDesc>(std::move(typed));
 }
 
@@ -3997,7 +3874,8 @@ PXR_NS::SdfPath getMaterialBindingPath(const PXR_NS::UsdPrim& usdPrim)
 ScannedStage scanStageNative(PXR_NS::UsdStageWeakPtr stage,
                              omni::physics::schema::PrimIteratorBase& primIterator,
                              parse::IDescriptorAllocator& allocator,
-                             UsdSource* attachedSource)
+                             UsdSource* attachedSource,
+                             bool outputVelocitiesLocalSpaceDefault)
 {
     if (!stage)
         return {};
@@ -4013,6 +3891,7 @@ ScannedStage scanStageNative(PXR_NS::UsdStageWeakPtr stage,
     ScannedStage out{parse::makeScannedStageFromSource(std::move(owned))};
     UsdWalkCtx impl{ usdSource, stage, out };
     parse::ParseContext ctx(usdSource, allocator);
+    ctx.setOutputVelocitiesLocalSpaceDefault(outputVelocitiesLocalSpaceDefault);
     WalkState walk;
     std::vector<parse::ObjectKey> collisionGroupKeys;
 

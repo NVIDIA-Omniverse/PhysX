@@ -16,7 +16,7 @@ import os
 
 import numpy as np
 import pytest
-from ovphysx import ConfigKey, GlobalConfigKey, get_global_config, set_global_config
+from ovphysx import ConfigKey, GlobalConfigKey, TaskError, get_global_config, set_global_config
 from ovphysx.types import ObjectScope, SimObjectType
 from test_utils import load_usd_with_ovstage, register_physx_schemas_with_ovstage
 
@@ -166,14 +166,16 @@ def test_update_from_ovstage_invalid_range_raises(physx_sdk):
 
 
 def test_update_from_ovstage_without_ovstage_raises(physx_sdk):
-    """update_from_ovstage requires a prior attach_ovstage call."""
-    with pytest.raises(RuntimeError):
-        physx_sdk.wait_task(physx_sdk.update_from_ovstage(1, 1))
+    """update_from_ovstage requires a prior attach_ovstage call; the queued update's task fails."""
+    task = physx_sdk.update_from_ovstage(1, 1)
+    with pytest.raises(TaskError, match="no ovstage is attached"):
+        physx_sdk.wait_task(task)
 
 
 def test_attach_ovstage_and_update_range(physx_sdk):
     """Attach a populated stage, then drain a subsequent ordinal range."""
     ovstage = pytest.importorskip("ovstage")
+    from ovphysx.population import physics_population_descs
     if not ovstage.population.available():
         pytest.skip("ovstage population bridge is unavailable")
 
@@ -185,11 +187,12 @@ def test_attach_ovstage_and_update_range(physx_sdk):
 
     try:
         ordinal = 1
-        ovstage.population.open_usd(
+        ovstage.population.open_usd_with_desc(
             stage,
             data_path("basic_simulation.usda"),
             ordinal=ordinal,
-            domains=ovstage.PopulationDomain.PHYSICS,
+            time=ovstage.population.DEFAULT_TIME,
+            descs=physics_population_descs(),
         )
         stage.advance_write_floor(ordinal=ordinal).wait()
         physx_sdk.wait_task(physx_sdk.attach_ovstage(stage, read_ordinal=ordinal))

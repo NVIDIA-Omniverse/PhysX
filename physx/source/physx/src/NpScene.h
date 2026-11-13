@@ -554,6 +554,7 @@ class NpScene : public NpSceneAccessor, public PxUserAllocated
 					void							scRemoveArticulationMimicJoint(NpArticulationMimicJoint&);
 
 #if PX_SUPPORT_OMNI_PVD
+	PX_FORCE_INLINE	bool							areOmniPvdContactsValid() const { return mSceneOvdClient.areContactsValid(); }
 					// (Re-)emit the PxScene object + its nested PxGpuDynamicsMemoryConfig + all
 					// scalar/enum properties, plus open the scene's first frame. Sourced entirely
 					// from live getters and cached members (no PxSceneDesc), so it is callable both
@@ -568,11 +569,9 @@ class NpScene : public NpSceneAccessor, public PxUserAllocated
 					// device and emit it for the snapshot (the live direct-GPU write callback already emits
 					// it during stepping). No-op unless this is a GPU scene with OVD readback on.
 					void							streamRigidDynamicGPUForcesToOmniPvd();
+					bool                            streamGPUStateToOmniPvd(bool snapshot = false);
 					// Same, for articulation link force/torque set through the direct-GPU articulation API.
 					void							streamArticulationGPUForcesToOmniPvd();
-					// Reused gather buffer for the two snapshots above so they do not heap-allocate per call
-					// (both GPU index types are PxU32; the snapshots run one after the other, never concurrently).
-					PxArray<PxU32>					mOvdSnapshotGpuIndices;
 #endif
 
 	PX_FORCE_INLINE	void							updatePvdProperties()

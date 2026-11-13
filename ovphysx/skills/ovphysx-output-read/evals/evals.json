@@ -41,7 +41,7 @@
         "Selects ovphysx-output-read for new simulation-output code",
         "Reads the poses as native-device Warp arrays and uses Warp's supported PyTorch interoperability path",
         "Copies the poses into the caller's preallocated PyTorch CUDA tensor with matching row layout and CUDA stream ordering, rather than only converting or returning a view",
-        "Does not select the deprecated tensor-bindings-gpu skill"
+        "Keeps new code on ovphysx-output-read rather than deprecated tensor-binding APIs"
       ]
     },
     {
@@ -60,7 +60,7 @@
     {
       "id": 5,
       "prompt": "My Python read of rigid-body position and a second attribute name came back with no groups. How can my code tell apart no matching bodies, a name the type cannot read, and a DirectGPU scene that has not stepped yet?",
-      "expected_output": "Opens the read with metadata=True over an explicit completed Query and inspects result.metadata.attributes in request order: omission_reasons flags ReadOmission.UNSUPPORTED_ATTRIBUTE (token 0) versus ReadOmission.NOT_READY, and zero groups with no flags is a valid empty match; a failed operation raises TaskError rather than looking empty.",
+      "expected_output": "Opens the read with metadata=True over an explicit completed Query and inspects result.metadata.attributes in request order: omission_reasons flags ReadOmission.UNSUPPORTED_ATTRIBUTE (token OVX_INVALID_TOKEN, 2**64 - 1) versus ReadOmission.NOT_READY, and zero groups with no flags is a valid empty match; a failed operation raises TaskError rather than looking empty.",
       "files": [],
       "expectations": [
         "Uses PhysX.read(query, [...], metadata=True) (or read_sync(..., metadata=True)) and reads result.metadata rather than inferring from tensor counts",
@@ -82,6 +82,35 @@
         "Explains that sleeping-disabled scenes report 0 for every emitted row, including disabled CPU bodies; DirectGPU preserves its pre-step and disabled-row omissions",
         "Explains that ARTICULATION_LINK rows report the owning articulation's state, with no whole-articulation root column or point-instancer array form",
         "Does not infer sleep from zero velocity or the last wake command, and routes waking bodies to ovphysx-session-write instead of writing isSleeping"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "I render a volume deformable in Rerun from its skinned mesh, not from the simulation tets. After each step I need the skinned render-mesh vertex positions on the GPU, per mesh prim. How do I read them in Python?",
+      "expected_output": "Reads SimObjectType.DEFORMABLE_SKIN_MESH with the single attribute \"points\" through read_sync (or query plus read), gets one array group with one device-resident tensor per skin mesh prim in that prim's local frame ordered through the group's CUDA event, pairs tensors with prims by index, and explains that the type is read-only and serves no velocities.",
+      "files": [],
+      "expectations": [
+        "Selects ovphysx-output-read",
+        "Uses PhysX.read_sync(SimObjectType.DEFORMABLE_SKIN_MESH, [\"points\"]) or PhysX.query(SimObjectType.DEFORMABLE_SKIN_MESH) followed by PhysX.read, not DEFORMABLE_VOLUME / DEFORMABLE_SURFACE points, which are the simulation-mesh nodes",
+        "Pairs each tensor with the prim at the same index in the group's prim list and treats the values as skin-mesh-local positions, one tensor per skin mesh prim",
+        "States that points is the type's only attribute and that velocities is not served because skinning produces positions only",
+        "Notes that skin prims exist in the ovstage instance only when the rendering domain was populated, and that the type is read-only: drive the owning body's sim-mesh points instead"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "I am replacing tensor-binding name getters with session reads. How do I map whole-articulation Jacobian rows and DOF columns to their links and joints, and match tendon property rows when two tendons share a root prim? Include fixed joints and a spherical joint with locked twist.",
+      "expected_output": "Uses articulation identity descriptors and count companions, resolves path handles and instance tokens in the attached Stage dictionary, and joins by identity instead of assuming query row order or leaf-name uniqueness.",
+      "files": [],
+      "expectations": [
+        "Reads references/scope_and_layout.md and the selected language reference",
+        "Uses linkPath in getLinkIndex order: fixed-base link 0 has no Jacobian rows and link L>0 starts at 6*(L-1); floating-base link L starts at 6*L",
+        "Uses linkInboundJoint in those same slots, including fixed inter-link joints and zero at the root; does not substitute dofJointPath for this map",
+        "Uses dofJointPath entry k for Jacobian column (isFixedBase ? 0 : 6)+k; distinguishes unlocked-axis ordinal dofAxisIndex from PhysX joint-frame dofAxisKind (locked twist leaves swing1 kind 1 and ordinal 0)",
+        "Uses dofJointType to distinguish spherical axis-suffixed legacy names from revolute/prismatic names, and keeps full prim paths as identity when leaf names collide",
+        "Pairs fixedTendonRoot/fixedTendonInstance or spatialTendonRoot/spatialTendonInstance in PhysX tendon index order with property-row prim plus tendonInstance; never matches by root prim alone or assumes database row order equals slot order",
+        "Uses dofCount, linkCount, fixedTendonCount, and spatialTendonCount to discard padding; does not discard every zero as padding because twist and the root inbound-joint slot legitimately use zero",
+        "Treats descriptors as host columns even on DirectGPU and keeps dictionary resolution within the live read/attachment"
       ]
     }
   ]

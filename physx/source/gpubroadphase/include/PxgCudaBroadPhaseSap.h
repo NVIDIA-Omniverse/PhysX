@@ -71,6 +71,7 @@ class PxgCudaBroadPhaseSap : public Bp::BroadPhase
 
 	PX_FORCE_INLINE	PxgTypedCudaBuffer<PxBounds3>& getBoundsBuffer()			{ return mBoxFpBoundsBuf;				}
 	PX_FORCE_INLINE	PxgTypedCudaBuffer<PxReal>&	getContactDistBuffer()			{ return mBoxContactDistancesBuf;		}
+	PX_FORCE_INLINE	PxgTypedCudaBuffer<PxU32>&	getGroupsBuffer()				{ return mBoxGroupsBuf;					}
 //	PX_FORCE_INLINE	PxCudaContextManager*		getCudaContextManager()			{ return mCudaContextManager;			}
 	PX_FORCE_INLINE	CUstream					getBpStream()					{ return mStream;						}
 	PX_FORCE_INLINE	PxgDevicePointer<PxgBroadPhaseDesc>	getBroadPhaseDescDevicePtr() { return mBPDescBuf.getTypedDevicePtr();}
@@ -97,6 +98,7 @@ class PxgCudaBroadPhaseSap : public Bp::BroadPhase
 
 					void						createGpuStreamsAndEvents();
 					void						releaseGpuStreamsAndEvents();
+					void						computeIncrementalSapGridDim();
 
 					void						translateAABBsKernel();
 					void						markRemovedPairsKernel();
@@ -141,6 +143,9 @@ class PxgCudaBroadPhaseSap : public Bp::BroadPhase
 
 					PxCudaContextManager*			mCudaContextManager;
 					PxCudaContext*					mCudaContext;
+
+					// Number of blocks per axis for performIncrementalSAP, see computeIncrementalSapGridDim()
+					PxU32							mIncrementalSapGridDimX;
 
 					PxgTypedCudaBuffer<PxU32>       mCreatedHandlesBuf;
 					PxgTypedCudaBuffer<PxU32>       mRemovedHandlesBuf;
@@ -190,6 +195,7 @@ class PxgCudaBroadPhaseSap : public Bp::BroadPhase
 					PxgTypedCudaBuffer<PxgHandleRegion>  mOverlapChecksHandleRegionBuf;
 	
 					PxgCudaBufferN<3>           mIncrementalComparisons;
+					PxgCudaBufferN<3>           mIncrementalWarpComparisons;
 					PxgCudaBufferN<3>           mIncrementalBlockComparisons;
 	
 					PxgCudaBufferN<2>           mAggregateReportBlockBuf;

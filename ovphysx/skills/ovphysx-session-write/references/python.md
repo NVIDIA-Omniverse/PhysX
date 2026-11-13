@@ -84,13 +84,16 @@ deadlock. Keep public API calls serialized.
 
 ## Fill every mapped entry
 
-A group has no fill mask; never commit a group with some tensors unfilled. A
+Never commit a group with some tensors unfilled unless a row mask
+(`commit(group, mask=...)`) leaves those rows out. A
 mid-fill exception that abandons the `with` block discards the uncommitted group.
 Previously committed groups remain applied: commits are not transactional, and they
 run in the order you issue them.
 
-For an array object type -- `ARTICULATION_JOINT` carries one tensor per joint --
-fill every tensor in the group, not just `tensors[0]`. One session can carry several
+Fill every tensor in the group: an array object type (a deformable body) carries one
+tensor per prim, so `tensors[0]` alone is not the whole group. `ARTICULATION_JOINT`
+carries one tensor with one row per DOF; its prim list names each row's joint, and
+`ovphysx.utils.split_joint_group` gives one view per joint. One session can carry several
 attributes; identify each group's attribute by `attribute_index`, never by shape.
 This example uses the default operations with an explicit query:
 

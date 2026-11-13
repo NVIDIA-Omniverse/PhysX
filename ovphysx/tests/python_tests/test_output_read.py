@@ -7,7 +7,7 @@ through the ovstage backend (load_usd_with_ovstage).
 """
 
 # @implements REQ-PYTHON-READ-001
-# @covers AC-1 AC-3 AC-5
+# @covers AC-1 AC-3 AC-5 AC-9
 # @maps_to TEST-PYTHON-READ-001
 # @implements REQ-CAPI-SLEEP-001
 # @covers AC-2
@@ -72,11 +72,34 @@ def test_rigid_body_output_read(physx_sdk):
         assert data.device.is_cuda
         assert _col_rows(data) > 0 and _col_width(data) == 3
         assert g.prim_count == _col_rows(data)
-        # Interned identifiers come back as non-zero handles (valid within the block).
-        assert g.attribute != 0
-        assert g.prim_list != 0
+        # Interned identifiers come back as non-zero OVStage handles (valid within the block).
+        assert isinstance(g.attribute, ovstage.Token) and g.attribute.raw_id != 0
+        assert isinstance(g.prim_list, ovstage.PrimPathList) and g.prim_list.raw_id != 0
         # A fixed column has no element-axis scatter.
         assert g.index_map is None
+
+
+def test_world_scale_is_stored_device_column(physx_sdk):
+    """worldScale is the signed creation scale ovphysx stores per body. On this GPU fixture it is a
+    device column beside the pose: the mirror reads all-negative and the nested body reads its
+    parent-composed scale, unchanged by stepping."""
+    stage = attach_usd_with_ovstage(physx_sdk, data_path("ovstage_output_bodies_gpu.usda"))
+    expected = {"/World/Mirrored": [-2.0, -3.0, -4.0], "/World/Parent/Body": [1.0, 6.0, 1.0]}
+    for _ in range(2):
+        physx_sdk.step_sync(1.0 / 60.0)
+        with physx_sdk.read_sync(SimObjectType.RIGID_BODY, ["worldScale"], scope=ObjectScope.ALL) as result:
+            assert len(result.groups) == 1
+            group = result.groups[0]
+            assert not group.is_array and not group.is_delete
+            column = group.tensors[0]
+            assert _is_read_column(column)
+            assert column.device.is_cuda
+            assert column.dtype == wp.float32
+            assert _col_width(column) == 3
+        values = _selected_read_values(physx_sdk, stage, SimObjectType.RIGID_BODY, "worldScale")
+        assert sorted(values) == sorted(expected)
+        for path, scale in expected.items():
+            np.testing.assert_allclose(values[path], scale, rtol=1e-6)
 
 
 def _read_scalar_ints(physx_sdk, attribute):
@@ -166,7 +189,6 @@ def test_sleeping_state_is_host_uint8_and_accepts_tokens(physx_sdk):
         expected = values.numpy().copy()
 
     physx_sdk.step_sync(1.0 / 60.0)
-    assert (values.numpy() == expected).all()
     with physx_sdk.read_tokens_sync(SimObjectType.RIGID_BODY, [attribute_token]) as result:
         assert len(result.groups) == 1
         assert result.groups[0].attribute == attribute_token

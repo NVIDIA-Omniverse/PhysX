@@ -17,6 +17,9 @@
  * @implements REQ-SIM-SCENEQUERY-002
  * @covers AC-1 AC-2 AC-3
  *
+ * @implements REQ-SIM-SCENEQUERY-003
+ * @covers AC-1
+ *
  * @implements REQ-MATH-001
  * @covers AC-13
  */
@@ -51,7 +54,7 @@ namespace physx
 
 // `tok` must already be interned by the caller (AttachedStage::getKnownTokens(),
 // cached once per attach) -- these helpers run once per doShapeSceneQuery() call,
-// so re-interning the ~659-field vocabulary here would double the cost of every
+// so re-interning the several-hundred-name vocabulary here would double the cost of every
 // single query (REQ-SIM-SCENEQUERY-001).
 static PxBoxGeometry usdToPxBoxGeometry(const AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, const PxVec3& scale, const omni::physics::parse::KnownTokens& tok)
 {
@@ -61,7 +64,9 @@ static PxBoxGeometry usdToPxBoxGeometry(const AttachedStage& attachedStage, omni
         getValue(attachedStage, key, tok.size, omni::physics::parse::ReadTime::defaultTime(), sizeAttr);
     }
     sizeAttr = abs(sizeAttr) * 0.5f; // convert cube edge length to half extend
-    return PxBoxGeometry(scale * float(sizeAttr));
+    // Mirroring a cube must not make its box half-extents negative.
+    const PxVec3 absScale(PxAbs(scale[0]), PxAbs(scale[1]), PxAbs(scale[2]));
+    return PxBoxGeometry(absScale * float(sizeAttr));
 }
 
 static PxSphereGeometry usdToPxSphereGeometry(const AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, const PxVec3& scale, const omni::physics::parse::KnownTokens& tok)

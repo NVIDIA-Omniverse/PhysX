@@ -137,8 +137,10 @@ def test_wheel_columns_and_public_ground_identities(vehicles):
     with ovstage.PathDictionary(stage) as dictionary:
         for wheel in wheels:
             if columns["isOnGround"][wheel]:
-                assert dictionary.path_to_string(int(columns["groundShapePath"][wheel])) == "/World/CollisionPlane"
-                assert dictionary.path_to_string(int(columns["groundMaterialPath"][wheel])) == "/World/TarmacMaterial"
+                ground_shape = ovstage.PrimPath(int(columns["groundShapePath"][wheel]))
+                ground_material = ovstage.PrimPath(int(columns["groundMaterialPath"][wheel]))
+                assert dictionary.path_to_string(ground_shape) == "/World/CollisionPlane"
+                assert dictionary.path_to_string(ground_material) == "/World/TarmacMaterial"
             else:
                 for name in ("groundPlane", "groundHitPosition", "groundActorPath",
                              "groundShapePath", "groundMaterialPath"):

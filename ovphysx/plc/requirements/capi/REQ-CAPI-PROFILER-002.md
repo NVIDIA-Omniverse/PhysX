@@ -96,8 +96,9 @@ REQ-SIM-PROFILER-001.
   `compressProfile` off so the artifact is directly readable, and `filePath` from
   `/physics/profilerOutputPath` when that is non-empty. With no path configured the
   plugin's own timestamped default in the working directory is used, and the choice
-  is logged either way. The file is written by the AC-4 release, so it exists once
-  the last instance has shut down and not before. Because the destination is fixed on
+  is logged either way. The AC-4 release finalizes the trace JSON when the last
+  instance shuts down; the file may exist and contain partial JSON earlier.
+  Because the destination is fixed on
   the plugin before it starts, a later instance in the same epoch asking for a
   different path does not get one and is told so at `WARN` -- otherwise it would go
   looking for a trace that was never going to be written there.

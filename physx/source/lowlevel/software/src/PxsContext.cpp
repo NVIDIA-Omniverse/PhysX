@@ -298,12 +298,24 @@ void PxsContext::createCache(Gu::Cache& cache, PxGeometryType::Enum geomType0, P
 
 void PxsContext::destroyContactManager(PxsContactManager* cm)
 {
-	const PxU32 idx = cm->getIndex();
-	if(cm->getCCD())
-		mActiveContactManagersWithCCD.growAndReset(idx);
-	//mActiveContactManager.growAndReset(idx);
-	mContactManagerTouchEvent.growAndReset(idx);
-	mContactManagerPool.put(cm);
+	destroyContactManager(cm->getIndex(), cm->getCCD() != 0);
+}
+
+void PxsContext::destroyContactManager(PxU32 cmIndex, bool ccd)
+{
+	if(ccd)
+		mActiveContactManagersWithCCD.growAndReset(cmIndex);
+	//mActiveContactManager.growAndReset(cmIndex);
+	mContactManagerTouchEvent.growAndReset(cmIndex);
+	mContactManagerPool.putByIndex(cmIndex);
+}
+
+void PxsContext::destroyManifold(Gu::PersistentContactManifold* manifold)
+{
+	if(manifold->mCapacity == GU_SPHERE_MANIFOLD_CACHE_SIZE)
+		mSphereManifoldPool.deallocate(static_cast<Gu::SpherePersistentContactManifold*>(manifold));
+	else
+		mManifoldPool.deallocate(static_cast<Gu::LargePersistentContactManifold*>(manifold));
 }
 
 void PxsContext::destroyCache(Gu::Cache& cache)
@@ -311,13 +323,7 @@ void PxsContext::destroyCache(Gu::Cache& cache)
 	if(cache.isManifold())
 	{
 		if(!cache.isMultiManifold())
-		{
-			Gu::PersistentContactManifold& manifold = cache.getManifold();
-			if(manifold.mCapacity == GU_SPHERE_MANIFOLD_CACHE_SIZE)
-				mSphereManifoldPool.deallocate(static_cast<Gu::SpherePersistentContactManifold*>(&manifold));
-			else
-				mManifoldPool.deallocate(static_cast<Gu::LargePersistentContactManifold*>(&manifold));
-		}
+			destroyManifold(&cache.getManifold());
 		cache.mCachedData = NULL;
 		cache.mManifoldFlags = 0;
 	}

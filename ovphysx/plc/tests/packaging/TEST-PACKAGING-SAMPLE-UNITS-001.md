@@ -14,7 +14,7 @@ metadata on each CPU/GPU sublayer variant (AC-1).
 
 ## Given
 
-- The four sample variants listed in the requirement and their base scenes.
+- The five sample variants listed in the requirement and their base scenes.
 - OpenUSD in the separate `utils_tests` Python process, with codeless PhysX
   schemas registered before opening any stage.
 

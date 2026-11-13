@@ -60,7 +60,8 @@ ovphysx is a standalone library for USD-based physics simulation, offering a C A
 - Python **3.10+**
 - **Linux** (x86_64, aarch64) or **Windows** (x86_64)
 - **x86_64 CPUs must support AVX** (Advanced Vector Extensions). Pre-built Linux and Windows x86_64 binaries are compiled with AVX enabled and do not include a non-AVX fallback. `ovphysx_initialize()` / creating a Python `PhysX()` instance fails fast with a clear error when AVX is unavailable. Linux aarch64 wheels are unaffected. Check Linux x86_64 hosts with `grep -qw avx /proc/cpuinfo`; on Windows, confirm AVX support in your CPU specifications.
-- NVIDIA GPU + driver **recommended** for acceleration (CPU-only simulation also supported)
+- NVIDIA GPU + driver **recommended** for acceleration (CPU-only simulation also supported). Capturing reads and
+  writes into a CUDA graph needs a driver for CUDA 12.5 or newer.
 - **A writable Warp cache directory.** Python `PhysX.read()` and `PhysX.write()`
   create [Warp](https://github.com/NVIDIA/warp) arrays, initializing Warp on first
   use. Warp initializes its cache at a platform-specific default location. If
@@ -72,8 +73,21 @@ ovphysx is a standalone library for USD-based physics simulation, offering a C A
 
 ## 5. Licensing
 
-- **Source code:** Apache License 2.0 — permissive, free for commercial and non-commercial use.
-- **Pre-built binaries** (SDK packages and Python wheels): distributed under the **NVIDIA Omniverse License**.
+- **Source code:** [Apache License 2.0](LICENSE.txt), except for the separately licensed components listed below.
+- **Pre-built binaries** (SDK packages and Python wheels): distributed under the [NVIDIA Omniverse License](licenses/LICENSE-binary.txt).
+
+[Third-party and separately licensed source notices](THIRD_PARTY_NOTICES.md)
+identify the included components, original copyright holders, and source paths.
+
+| Component or distribution | License and full text |
+|---|---|
+| DLPack header under include/ovphysx/dlpack/ | [Apache License 2.0](tools/internal-licenses/dlpack-LICENSE.txt) |
+| OpenUSD-derived math routines under ovruntime/source/common/ | [Tomorrow Open Source Technology License 1.0](tools/internal-licenses/OpenUSD-LICENSE.txt) |
+| V-HACD code under ovruntime/source/omni.convexdecomposition/plugins/ | [BSD 3-Clause](tools/internal-licenses/vhacd-LICENSE.txt) |
+| Repoman bootstrap files under tools/repoman/, plus repo.sh and repo.bat | [MIT](tools/internal-licenses/repoman-LICENSE.txt) |
+| Packman bootstrap files under tools/packman/ and ovruntime/tools/packman/ | [Apache License 2.0](LICENSE.txt) |
+| ovphysx SDK packages and Python wheels | [NVIDIA Omniverse terms](licenses/LICENSE-binary.txt) |
+| Omniverse Extensions dependency | [NVIDIA Omniverse terms](tools/internal-licenses/Omniverse-Extensions-LICENSE.txt) |
 
 > ovphysx is pre-release; APIs may change before 1.0. Applications install
 > `physx-usd-schemas` separately and register it before USD population or
@@ -96,6 +110,7 @@ from pathlib import Path
 import ovphysx
 from ovphysx.samples.python_samples.schema_support import physx_schema_paths
 import ovstage
+from ovphysx.population import physics_population_descs
 from ovphysx import PhysX
 
 usd_path = (
@@ -112,8 +127,12 @@ ovstage.population.register_usd_schemas(
     [*[str(p) for p in physx_schema_paths()], str(ovphysx.newton_schema_root())]
 )
 stage = ovstage.Stage("scene")
-ovstage.population.open_usd(
-    stage, str(usd_path), ordinal=1, domains=ovstage.PopulationDomain.ALL
+ovstage.population.open_usd_with_desc(
+    stage,
+    str(usd_path),
+    ordinal=1,
+    time=ovstage.population.DEFAULT_TIME,
+    descs=physics_population_descs(rendering=True),
 )
 # attach_ovstage() reads at a sealed ordinal.
 stage.advance_write_floor(ordinal=1).wait()
@@ -126,28 +145,12 @@ physx.destroy()
 stage.destroy()
 ```
 
-Applications that own an `ovstage.Stage` attach it directly and push committed
-ovstage ranges into PhysX explicitly. This helper takes a populated Stage whose
-initial ordinal and later edit range have already been sealed:
-
-```python
-from ovphysx import PhysX
-import ovstage
-
-
-def step_ovstage_range(
-    stage: ovstage.Stage, initial_ordinal: int, from_ordinal: int, to_ordinal: int
-) -> None:
-    physx = PhysX()
-    try:
-        # Attach parses the initial snapshot at initial_ordinal.
-        physx.wait_task(physx.attach_ovstage(stage, read_ordinal=initial_ordinal))
-        # Drain only later application-authored edits.
-        physx.wait_task(physx.update_from_ovstage(from_ordinal, to_ordinal))
-        physx.step_sync(1.0 / 60.0)
-    finally:
-        physx.destroy()
-```
+Applications that own an `ovstage.Stage` attach it at the final sealed population
+ordinal before authoring later edits. A lower `read_ordinal` does not reconstruct
+an earlier Stage state. To start from the initial values, complete attach before
+authoring later edits; then seal and drain each later range explicitly. See the
+[ovstage integration guide](docs/ovstage_integration.md) for the complete
+control/output loop.
 
 ## Environment Cloning
 
@@ -161,6 +164,7 @@ from ovphysx.samples.python_samples.schema_support import physx_schema_paths
 from ovphysx import PhysX
 from ovphysx.types import ObjectScope, SimObjectType
 import ovstage
+from ovphysx.population import physics_population_descs
 
 usd_path = (
     Path(ovphysx.__file__).resolve().parent
@@ -178,8 +182,12 @@ ovstage.population.register_usd_schemas(
     [*[str(p) for p in physx_schema_paths()], str(ovphysx.newton_schema_root())]
 )
 stage = ovstage.Stage("scene")
-ovstage.population.open_usd(
-    stage, str(usd_path), ordinal=1, domains=ovstage.PopulationDomain.ALL
+ovstage.population.open_usd_with_desc(
+    stage,
+    str(usd_path),
+    ordinal=1,
+    time=ovstage.population.DEFAULT_TIME,
+    descs=physics_population_descs(rendering=True),
 )
 # attach_ovstage() reads at a sealed ordinal.
 stage.advance_write_floor(ordinal=1).wait()
@@ -193,8 +201,8 @@ clone_task = physx.clone("/World/envs/env0", targets)
 physx.wait_task(clone_task)
 
 # Read rigid-body positions from the source and every clone.
-# CPU mode aliases the read buffer. Copy the values and drop the read
-# before destroy(); a live borrow raises and skips teardown.
+# CPU mode aliases the read buffer, which is invalid once the read is
+# closed: copy the values inside the block.
 with physx.read_sync(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
     positions = [group.tensors[0].numpy().copy() for group in result.groups]
 del result
@@ -241,7 +249,7 @@ Each sample has its own `CMakeLists.txt` that uses `find_package(ovphysx)`.
 - Python 3.10+
 - Linux (x86_64, aarch64) or Windows (x86_64)
 - **x86_64 only:** CPU must support AVX (see [System requirements](#4-system-requirements) above). Linux aarch64 is unaffected. ovphysx fails fast at initialize when AVX is missing.
-- NVIDIA GPU + driver recommended (CPU-only simulation also supported)
+- NVIDIA GPU + driver recommended (CPU-only simulation also supported); CUDA graph capture needs a driver for CUDA 12.5 or newer
 
 
 ## Links
@@ -262,7 +270,9 @@ This section is for developers who build, test, or modify ovphysx from source.
 - C++17 compatible compiler (GCC/Clang on Linux, MSVC 2019+ on Windows). On Linux, use a compiler from the tested matrix in the PhysX SDK [Linux platform readme](https://github.com/NVIDIA-Omniverse/PhysX/blob/main/physx/documentation/platformreadme/linux/README_LINUX.md) rather than the newest available — a too-new GCC can exceed the CUDA host-compiler ceiling.
 - **On Linux,** `binutils` (`strip`, `readelf`). The install and wheel steps use `readelf` to detect unstripped ELF binaries and `strip` to remove those symbols. `readelf` also verifies the ABI baseline. `binutils` usually arrives with the compiler.
 - UV (https://docs.astral.sh/uv/getting-started/installation/) for Python management
-- CUDA Toolkit and a compatible NVIDIA driver for GPU simulation (CPU-only builds do not need CUDA). Match the version in the PhysX SDK [Linux platform readme](https://github.com/NVIDIA-Omniverse/PhysX/blob/main/physx/documentation/platformreadme/linux/README_LINUX.md); if `nvcc` is not on `PATH`, CMake fails with `No CMAKE_CUDA_COMPILER could be found`.
+- The source build downloads its pinned CUDA Toolkit through Packman on Linux
+  and Windows; no manual toolkit installation is needed. GPU simulation also
+  requires a compatible NVIDIA GPU and driver.
 - **Linux ABI baseline:** the SDK and wheel target a glibc 2.35 (`manylinux_2_35`) baseline, enforced by a readelf check during install/wheel/validate. On a newer distro (glibc > 2.35) that check fails fast; pass `SKIP_GLIBC_CHECK=ON` for local development, e.g. `cmake -DSKIP_GLIBC_CHECK=ON -P scripts/install.cmake`. Meeting that baseline is the build environment's job, and the source tree ships
   no container image for it: on Linux the compile uses whatever toolchain it runs under, so an Ubuntu
   22.04 (or equivalent glibc 2.35) environment has to be arranged.
@@ -468,7 +478,9 @@ separate application-owned provider installation.
 Dependencies auto-download during build (carb_sdk_plugins, omni_physics_dev, USD, etc.) by invoking packman and building the required PhysX runtime extensions.
 
 Centralized extension cache in `_build/lib/deps/`, which is then installed into `_install/plugins/`.
-Wheel packaging mirrors the install layout under `ovphysx/lib/`, `ovphysx/plugins/`, and `ovphysx/schemas/`;
+Wheel packaging mirrors the install layout under `ovphysx/lib/` and `ovphysx/plugins/`.
+Schema resources come from the separately installed `physx-usd-schemas` provider;
+see [Physics Schemas](docs/physics_schemas.md#installing-the-external-physx-schemas).
 Python exposes the session read/write API and retains deprecated tensor bindings;
 the legacy `ovphysx.tensors` compatibility layer is no longer shipped.
 

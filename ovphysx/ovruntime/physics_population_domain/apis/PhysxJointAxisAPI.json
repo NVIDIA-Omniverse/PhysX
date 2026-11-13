@@ -1,0 +1,263 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxJointAxisAPI",
+  "title": "PhysxJointAxisAPI",
+  "summary": "Per-axis PhysX properties of an articulation joint (armature, maximum joint velocity, static, dynamic and viscous friction), applied as PhysxJointAxisAPI:<inst>. Only effective inside an articulation: on a standalone joint the runtime strips the API with a warning. Rotational instances are stored in degrees where the schema says so and the parser converts maxJointVelocity degrees to radians and multiplies viscousFrictionCoefficient by 57.29577951308232.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "PhysicsJoint"
+  ],
+  "multi_apply": true,
+  "instances": [
+    "angular",
+    "linear",
+    "rotX",
+    "rotY",
+    "rotZ"
+  ],
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "producer_scope": "All five declared attributes of every applied instance are published at their resolved values. physxJointAxis:<inst>:maxJointVelocity is rewritten to FLT_MAX when unauthored for each applied instance.",
+  "columns": [
+    {
+      "name": "physxJointAxis:<inst>:armature",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "verify": {
+        "target": "linkJoint",
+        "expr": "linkJoint->getArmature(harness::articulationAxis(inst))",
+        "kind": "float",
+        "sample": 0.05,
+        "notes": "Absent check observes newton:armature, then zero."
+      },
+      "parser_default": 0.0,
+      "absent": "newton:armature, then 0 survives on this axis. Only a strictly positive per-axis value displaces that seed, including on USD; an explicit PhysX zero cannot clear a nonzero Newton seed.",
+      "raw_fallback_diverges": false,
+      "units": "linear/transX..Z: mass; angular/rotX..Z: mass*length^2",
+      "conversion": "none",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseJoint.cpp",
+        "source/omni.physics.parse/KnownTokens.cpp"
+      ],
+      "notes": "No rotational conversion for armature on any instance."
+    },
+    {
+      "name": "physxJointAxis:<inst>:maxJointVelocity",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "inf",
+      "producer": {
+        "writes": "FLT_MAX",
+        "via": "derive",
+        "when": "unauthored",
+        "notes": "For each applied PhysxJointAxisAPI instance."
+      },
+      "verify": {
+        "target": "linkJoint",
+        "expr": "linkJoint->getMaxJointVelocity(harness::articulationAxis(inst))",
+        "kind": "float",
+        "map": "(harness::isRotational(inst) && v < 3.4028234663852886e38) ? v * 0.017453292519943295 : v",
+        "sample": 720.0,
+        "notes": "Degrees to radians on rotational instances only for values below FLT_MAX; the sentinel passes through."
+      },
+      "parser_default": "FLT_MAX",
+      "absent": "A finite newton:velocityLimit, then legacy physxJoint:maxJointVelocity, then FLT_MAX survives on this axis. A value >= FLT_MAX counts as unauthored.",
+      "raw_fallback_diverges": false,
+      "sentinel": "FLT_MAX or inf means unauthored.",
+      "units": "linear: length/s; angular/rotX..Z: deg/s",
+      "conversion": "deg_to_rad",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseJoint.cpp",
+        "source/omni.physics.parse/KnownTokens.cpp"
+      ],
+      "notes": "conversion deg_to_rad on angular/rotX/rotY/rotZ only and only when the value is below FLT_MAX."
+    },
+    {
+      "name": "physxJointAxis:<inst>:staticFrictionEffort",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "verify": {
+        "target": "linkJoint",
+        "expr": "linkJoint->getFrictionParams(harness::articulationAxis(inst)).staticFrictionEffort",
+        "kind": "float",
+        "sample": 2.0
+      },
+      "parser_default": 0.0,
+      "absent": "newton:friction seeds both friction efforts, or zero when absent. If either per-axis PhysX effort is strictly positive, both efforts come from PhysX (zero for a missing effort), so the parser never mixes the two sources.",
+      "raw_fallback_diverges": false,
+      "units": "linear: force; angular: torque",
+      "conversion": "none",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseJoint.cpp",
+        "source/omni.physics.parse/KnownTokens.cpp"
+      ]
+    },
+    {
+      "name": "physxJointAxis:<inst>:dynamicFrictionEffort",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "verify": {
+        "target": "linkJoint",
+        "expr": "linkJoint->getFrictionParams(harness::articulationAxis(inst)).dynamicFrictionEffort",
+        "kind": "float",
+        "sample": 1.5
+      },
+      "parser_default": 0.0,
+      "absent": "newton:friction seeds both friction efforts, or zero when absent. If either per-axis PhysX effort is strictly positive, both efforts come from PhysX (zero for a missing effort), so the parser never mixes the two sources.",
+      "raw_fallback_diverges": false,
+      "units": "linear: force; angular: torque",
+      "conversion": "none",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseJoint.cpp",
+        "source/omni.physics.parse/KnownTokens.cpp"
+      ]
+    },
+    {
+      "name": "physxJointAxis:<inst>:viscousFrictionCoefficient",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "verify": {
+        "target": "linkJoint",
+        "expr": "linkJoint->getFrictionParams(harness::articulationAxis(inst)).viscousFrictionCoefficient",
+        "kind": "float",
+        "map": "harness::isRotational(inst) ? v * 57.29577951308232 : v",
+        "sample": 0.1
+      },
+      "parser_default": 0.0,
+      "absent": "newton:damping, or zero when absent, survives unless the per-axis PhysX coefficient is strictly positive. Explicit PhysX zero also preserves the Newton seed.",
+      "raw_fallback_diverges": false,
+      "units": "linear: force*s/length; angular: torque*s/deg",
+      "conversion": "none",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseJoint.cpp",
+        "source/omni.physics.parse/KnownTokens.cpp"
+      ],
+      "notes": "The parser multiplies by 57.29577951308232 (180/pi) unconditionally on rotational instances (angular, rotX, rotY, rotZ), converting torque*s/deg to torque*s/rad; the schema's conversion enum cannot express the product, hence conversion none."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysicsJoint",
+      "rule": "On a standalone joint every applied instance is removed from the prim with a 'supported only for joints that are part of an articulation' warning."
+    }
+  ],
+  "findings": [
+    {
+      "column": "physxJointAxis:<inst>:armature",
+      "severity": "fragile",
+      "side": "consumer",
+      "summary": "Only strictly positive PhysX armature values displace the seed (newton:armature, then zero), because zero is both the fallback and a legal authored value and ovstage has no authored bit. Explicit PhysX zero therefore cannot clear a nonzero seed on either backend.",
+      "tracking": "ADR-0002"
+    },
+    {
+      "column": "physxJointAxis:<inst>:maxJointVelocity",
+      "severity": "fragile",
+      "side": "consumer",
+      "summary": "Only a PhysX value below FLT_MAX displaces the seed (newton:velocityLimit, then FLT_MAX), because unlimited is both the fallback and a legal authored value and ovstage has no authored bit. An explicitly unlimited PhysX value therefore cannot clear a finite Newton limit on either backend.",
+      "tracking": "ADR-0020"
+    },
+    {
+      "column": "physxJointAxis:<inst>:staticFrictionEffort",
+      "severity": "fragile",
+      "side": "consumer",
+      "summary": "The PhysX friction efforts displace the seed (newton:friction for both, then zero) only when either of them is strictly positive, because zero is both the fallback and a legal authored value and ovstage has no authored bit. Explicit PhysX zeros for both efforts therefore cannot clear a nonzero seed on either backend.",
+      "tracking": "ADR-0020"
+    },
+    {
+      "column": "physxJointAxis:<inst>:dynamicFrictionEffort",
+      "severity": "fragile",
+      "side": "consumer",
+      "summary": "The PhysX friction efforts displace the seed (newton:friction for both, then zero) only when either of them is strictly positive, because zero is both the fallback and a legal authored value and ovstage has no authored bit. Explicit PhysX zeros for both efforts therefore cannot clear a nonzero seed on either backend.",
+      "tracking": "ADR-0020"
+    },
+    {
+      "column": "physxJointAxis:<inst>:viscousFrictionCoefficient",
+      "severity": "fragile",
+      "side": "consumer",
+      "summary": "Only strictly positive PhysX coefficients displace the seed (newton:damping, then zero), because zero is both the fallback and a legal authored value and ovstage has no authored bit. Explicit PhysX zero therefore cannot clear a nonzero seed on either backend.",
+      "tracking": "ADR-0020"
+    }
+  ],
+  "notes": [
+    "Per-joint-type instance matrix: Fixed none; Revolute angular; Prismatic linear (no rotational conversion); Spherical rotX, rotY, rotZ (all three, each with rotational conversions); Distance none; D6 (PhysicsJoint) rotX, rotY, rotZ only, translational axes are never read; Gear, Rack, Custom none.",
+    "Articulation axis mapping: angular and rotX -> PxArticulationAxis::eTWIST; rotY -> eSWING1; rotZ -> eSWING2; linear -> eX.",
+    "The D6 descriptor's per-axis joint properties always have exactly three entries (rotX, rotY, rotZ) even when no instance is applied; unapplied entries have the Newton seeds or the defaults.",
+    "Unrecognised instance names fall back to the qualified name PhysxJointAxisAPI:<inst>, interned at runtime, and are read the same way.",
+    "At attachment, newton:armature seeds armature, newton:friction seeds both friction efforts, and newton:damping seeds viscous friction on each supported axis. Newton values use the same units and conversions as their PhysX counterparts. Register the Newton schema before the first USD schema read, including population or export.",
+    "PhysX friction efforts override the Newton pair together if either is positive; positive PhysX viscous friction overrides Newton damping. Applying an API only for another property preserves these seeds. Explicit PhysX zeros cannot clear the Newton seeds.",
+    "Edits of the NewtonJointAPI values are forwarded to every axis without a per-axis opinion on the same quantity, and removing a PhysxJointAxisAPI instance at runtime reseeds the axis from them."
+  ]
+}

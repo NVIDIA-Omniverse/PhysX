@@ -13,3 +13,5 @@ ovphysx_result_t enable_ovd_recording_capability(void)
         OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLE,
         ovphysx_config_value_bool(true));
 }
+
+#include <ovphysx/ovphysx_attribute_tokens.h>

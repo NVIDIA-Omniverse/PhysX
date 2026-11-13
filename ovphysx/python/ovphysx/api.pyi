@@ -5,6 +5,9 @@
 # @covers AC-3 AC-4
 # @implements REQ-PYTHON-FRAME-001
 # @covers AC-1
+# @implements REQ-PYTHON-OMNIPVD-CAPTURE-001
+# @covers AC-2 AC-4
+
 # @implements REQ-CAPI-CONTACT-003
 # @covers AC-1 AC-2 AC-3 AC-4
 
@@ -37,13 +40,13 @@ from dataclasses import dataclass
 from typing import Any, NamedTuple, TypedDict, Generic, TypeVar
 from enum import IntFlag
 # The standalone stub check excludes this pinned runtime dependency.
-from ovstage import PathDictionary, Stage  # pyright: ignore[reportMissingImports]
+from ovstage import PathDictionary, PrimPath, PrimPathList, Stage, Token  # pyright: ignore[reportMissingImports]
 
 from typing_extensions import deprecated
 
 import warp as wp
 
-from .config import OmniPvdDestination, PhysXConfig
+from .config import OmniPvdFilter, OmniPvdDestination, PhysXConfig
 from .dlpack import DLDataType, DLDevice
 from .types import (
     ApiStatus,
@@ -57,6 +60,7 @@ from .types import (
     SceneQueryGeometryType,
     SceneQueryMode,
     SimObjectType,
+    TaskStatus,
 )
 
 
@@ -74,11 +78,13 @@ class TaskError(RuntimeError):
 
 
 class TaskTimeoutError(TimeoutError):
-    def __init__(self, errors: tuple[tuple[Task, str], ...], pending_task: Task) -> None: ...
+    def __init__(self, errors: tuple[tuple[Task, str], ...], pending_task: Task | None) -> None: ...
     @property
     def errors(self) -> tuple[tuple[Task, str], ...]: ...
     @property
-    def pending_task(self) -> Task: ...
+    def pending_task(self) -> Task | None:
+        """Native timeouts supply a retryable task; None is a defensive fallback."""
+        ...
 
 
 T = TypeVar("T")
@@ -97,7 +103,7 @@ class Operation(Generic[T]):
 @dataclass(frozen=True, slots=True)
 class QueryMetadata:
     total_prim_count: int
-    attributes: tuple[int, ...]
+    attributes: tuple[Token, ...]
 
 class ReadOmission(IntFlag):
     NONE = 0
@@ -107,7 +113,7 @@ class ReadOmission(IntFlag):
 
 @dataclass(frozen=True, slots=True)
 class ReadAttributeResult:
-    attribute: int
+    attribute: Token
     group_count: int
     omission_reasons: ReadOmission
 
@@ -118,7 +124,7 @@ class ReadMetadata:
 
 @dataclass(frozen=True, slots=True)
 class WriteAttributeResult:
-    attribute: int
+    attribute: Token
     group_count: int
 
 @dataclass(frozen=True, slots=True)
@@ -164,13 +170,13 @@ class TensorBindingSpec(NamedTuple):
 
 
 class ReadGroup(NamedTuple):
-    attribute: int
+    attribute: Token
     object_type: SimObjectType
     ordinal: int
     is_array: bool
     is_delete: bool
     semantic: int
-    prim_list: int
+    prim_list: PrimPathList
     prim_offset: int
     prim_count: int
     prim_index_map: wp.array | None
@@ -196,12 +202,12 @@ class ReadResult:
 
 
 class WriteGroup(NamedTuple):
-    prim_list: int
+    prim_list: PrimPathList
     prim_offset: int
     prim_count: int
     tensors: list[wp.array]
     attribute_index: int
-    attribute: int
+    attribute: Token
 
 
 class WriteSession:
@@ -209,16 +215,21 @@ class WriteSession:
     metadata: WriteMetadata | None
     def fetch_next(self) -> Operation[WriteGroup | None]: ...
     def commit(self, group: WriteGroup, cuda_stream: int = ..., cuda_wait_event: int = ...,
-               *, event_owner: Any = ...) -> Operation[None]:
+               *, mask: Any = ..., event_owner: Any = ...) -> Operation[None]:
         """Publish with producer dependencies; both nonzero handles are honored.
 
-        Keep handles valid through completion. Stream 1 uses the caller's current
-        CUDA context; these handles do not select PhysX's execution stream.
+        A DirectGPU device group is ordered on the device after them, without blocking;
+        other groups wait for them on the host. Keep handles valid through completion.
+        Stream 1 uses the caller's current CUDA context. ``mask`` (1-D bool or uint8, one
+        entry per row, on the group's device) commits only the rows it selects; it is read
+        after the producer handoff, like the fill, and must stay valid until that device
+        work has run, or while a graph that captured the commit may be replayed. A mask
+        that does not match the group raises, leaving the group live.
         event_owner retains Python owners through collection.
         """
         ...
     def commit_sync(self, group: WriteGroup, cuda_stream: int = ..., cuda_wait_event: int = ...,
-                    *, event_owner: Any = ...) -> None: ...
+                    *, mask: Any = ..., event_owner: Any = ...) -> None: ...
     def close(self) -> Operation[None]: ...
     def release(self) -> Operation[None]: ...
     def close_sync(self) -> None: ...
@@ -417,7 +428,7 @@ class PhysX:
     ) -> Task: ...
     @deprecated("Object-type lookup is deprecated.")
     def get_object_type(self, prim_path: str) -> ObjectType: ...
-    def start_recording(self, destination: OmniPvdDestination) -> None: ...
+    def start_recording(self, destination: OmniPvdDestination, *, filter: OmniPvdFilter | None = None, wait_for_selection: bool = False) -> None: ...
     def stop_recording(self) -> None: ...
     def is_recording(self) -> bool: ...
     def step(self, dt: float) -> Task: ...
@@ -427,8 +438,11 @@ class PhysX:
         *,
         flags: ArticulationKinematicFlag = ...,
         scope: ObjectScope = ...,
-        prim_paths: list[int] | None = ...,
+        prim_paths: list[PrimPath | int] | None = ...,
         pattern: str | None = ...,
+        query: Query | None = ...,
+        cuda_stream: int = ...,
+        cuda_wait_event: int = ...,
     ) -> None:
         """Wait for the native update task; raise admission or execution failures."""
         ...
@@ -437,7 +451,7 @@ class PhysX:
         points: Any,
         out: Any,
         *,
-        prim_paths: list[int] | None = ...,
+        prim_paths: list[PrimPath | int] | None = ...,
         pattern: str | None = ...,
         cuda_stream: int = ...,
         cuda_wait_event: int = ...,
@@ -446,6 +460,7 @@ class PhysX:
         ...
     def wait_task(self, task: Task, *, timeout_ns: int | None = ...) -> None: ...
     def wait_all(self, *, timeout_ns: int | None = ...) -> None: ...
+    def task_status(self, task: Task) -> TaskStatus: ...
     def subscribe_object_changes(
         self,
         *,
@@ -459,23 +474,24 @@ class PhysX:
     def detach_ovstage(self) -> Task: ...
     def is_stage_attached(self, stage: Any = None) -> bool: ...
     def query(self, object_type: SimObjectType, *, scope: ObjectScope = ...,
-              prim_paths: Sequence[int] | None = ..., pattern: str | None = ...,
+              prim_paths: Sequence[PrimPath | int] | None = ..., pattern: str | None = ...,
               contacts: Sequence[ContactSelection] | None = ..., metadata: bool = ...) -> Operation[Query]: ...
-    def read(self, query: Query, attributes: Sequence[str | int], *,
-             metadata: bool = ...) -> Operation[ReadResult]: ...
-    def write(self, query: Query, attributes: Sequence[str | int], *,
+    def read(self, query: Query, attributes: Sequence[str | Token | int], *,
+             metadata: bool = ..., cuda_stream: int = ..., cuda_wait_event: int = ...,
+             event_owner: Any = ...) -> Operation[ReadResult]: ...
+    def write(self, query: Query, attributes: Sequence[str | Token | int], *,
               metadata: bool = ...) -> Operation[WriteSession]: ...
-    def read_sync(self, object_type: SimObjectType, attribute_names: Sequence[str | int], *,
-                  scope: ObjectScope = ..., prim_paths: Sequence[int] | None = ...,
+    def read_sync(self, object_type: SimObjectType, attribute_names: Sequence[str | Token | int], *,
+                  scope: ObjectScope = ..., prim_paths: Sequence[PrimPath | int] | None = ...,
                   pattern: str | None = ..., contacts: Sequence[ContactSelection] | None = ...,
                   metadata: bool = ...) -> ReadResult: ...
-    def read_tokens_sync(self, object_type: SimObjectType, attribute_tokens: Sequence[int], *,
-                         scope: ObjectScope = ..., prim_paths: Sequence[int] | None = ...,
+    def read_tokens_sync(self, object_type: SimObjectType, attribute_tokens: Sequence[Token | int], *,
+                         scope: ObjectScope = ..., prim_paths: Sequence[PrimPath | int] | None = ...,
                          pattern: str | None = ..., contacts: Sequence[ContactSelection] | None = ...,
                          metadata: bool = ...) -> ReadResult: ...
-    def write_sync(self, object_type: SimObjectType, attributes: str | int | Sequence[str | int], *,
-                   scope: ObjectScope = ..., prim_paths: Sequence[int] | None = ...,
-                   pattern: str | None = ..., metadata: bool = ..., values: Sequence[int | float] | None = ...) -> WriteSession: ...
+    def write_sync(self, object_type: SimObjectType, attributes: str | Token | int | Sequence[str | Token | int], *,
+                   scope: ObjectScope = ..., prim_paths: Sequence[PrimPath | int] | None = ...,
+                   pattern: str | None = ..., metadata: bool = ..., values: Sequence[PrimPath | int | float] | None = ...) -> WriteSession: ...
     def set_config(self, key: ConfigKey, value: bool | int | float | str) -> None: ...
     def get_config(self, key: ConfigKey) -> bool | int | float | str | None: ...
     def destroy(self) -> None:

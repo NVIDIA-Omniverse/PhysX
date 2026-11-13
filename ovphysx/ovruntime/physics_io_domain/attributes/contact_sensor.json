@@ -1,0 +1,1117 @@
+{
+  "$schema": "../contract.schema.json",
+  "schema_version": 1,
+  "attributes": [
+    {
+      "id": "net_normal_contact_force",
+      "name": "netNormalContactForce",
+      "public": true,
+      "semantic": "VECTOR",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "the sensor's contact-point impulses, summed, / dt",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "force",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": false,
+          "notes": "Separate child-collider rows exist only on CPU or GPU with CPU readback. DirectGPU omits them; standalone static collider rows remain but read zero force."
+        }
+      ]
+    },
+    {
+      "id": "net_friction_contact_force",
+      "name": "netFrictionContactForce",
+      "public": true,
+      "semantic": "VECTOR",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "the sensor's friction-anchor impulses, summed, / dt",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "force",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": false,
+          "notes": "Separate child-collider rows exist only on CPU or GPU with CPU readback. DirectGPU omits them; standalone static collider rows remain but read zero force. Opposing friction-anchor forces cancel in the net vector, so it does not represent friction torque."
+        }
+      ]
+    },
+    {
+      "id": "normal_contact_force_matrix",
+      "name": "normalContactForceMatrix",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "normal force from each filter's body; filter f at lanes 3f..3f+2",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "force",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": "3 * filter_count",
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup",
+              "contact_filters"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "friction_contact_force_matrix",
+      "name": "frictionContactForceMatrix",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "friction force from each filter's body, same layout",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "force",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": "3 * filter_count",
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup",
+              "contact_filters"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "filtered_contact_force",
+      "name": "filteredContactForce",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "per point: its normal force (see below)",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "force",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "array",
+              "lanes": 1,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup",
+              "contact_filters"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "filtered_contact_point",
+      "name": "filteredContactPoint",
+      "public": true,
+      "semantic": "POINT",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "per point: its position",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "length",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup",
+              "contact_filters"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "filtered_contact_normal",
+      "name": "filteredContactNormal",
+      "public": true,
+      "semantic": "NORMAL",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "per point: its normal, as reported",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "dimensionless",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup",
+              "contact_filters"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "filtered_contact_separation",
+      "name": "filteredContactSeparation",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "per point: its separation",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "length",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "array",
+              "lanes": 1,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup",
+              "contact_filters"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "filtered_contact_count",
+      "name": "filteredContactCount",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "contact points from each filter's body",
+          "dtype": "i32",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": "filter_count",
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup",
+              "contact_filters"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "filtered_friction_force",
+      "name": "filteredFrictionForce",
+      "public": true,
+      "semantic": "VECTOR",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "per anchor: its impulse / dt",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "force",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup",
+              "contact_filters"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "filtered_friction_point",
+      "name": "filteredFrictionPoint",
+      "public": true,
+      "semantic": "POINT",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "per anchor: its position",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "length",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup",
+              "contact_filters"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "filtered_friction_count",
+      "name": "filteredFrictionCount",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "friction anchors from each filter's body",
+          "dtype": "i32",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": "filter_count",
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup",
+              "contact_filters"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "raw_contact_force",
+      "name": "rawContactForce",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "per point: its normal force (see below)",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "force",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "array",
+              "lanes": 1,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "raw_contact_point",
+      "name": "rawContactPoint",
+      "public": true,
+      "semantic": "POINT",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "per point: its position",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "length",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "raw_contact_normal",
+      "name": "rawContactNormal",
+      "public": true,
+      "semantic": "NORMAL",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "per point: its normal, as reported",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "dimensionless",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "raw_contact_separation",
+      "name": "rawContactSeparation",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "per point: its separation",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "length",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "array",
+              "lanes": 1,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "raw_contact_other_body",
+      "name": "rawContactOtherBody",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "per point: the other body's prim",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "array",
+              "lanes": 1,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "contact_event_type",
+      "name": "contactEventType",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "0 found, 1 lost, 2 persist",
+          "dtype": "i32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "array",
+              "lanes": 1,
+              "shape": [
+                "events"
+              ]
+            },
+            "conditions": [
+              "session",
+              "contact_events"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "contact_event_sensor_side",
+      "name": "contactEventSensorSide",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "the pair side (0 or 1) the sensor is",
+          "dtype": "i32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "array",
+              "lanes": 1,
+              "shape": [
+                "events"
+              ]
+            },
+            "conditions": [
+              "session",
+              "contact_events"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "contact_event_collider",
+      "name": "contactEventCollider",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "the sensor's own collider prim",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "array",
+              "lanes": 1,
+              "shape": [
+                "events"
+              ]
+            },
+            "conditions": [
+              "session",
+              "contact_events"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "contact_event_other_body",
+      "name": "contactEventOtherBody",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "the other body's prim",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "array",
+              "lanes": 1,
+              "shape": [
+                "events"
+              ]
+            },
+            "conditions": [
+              "session",
+              "contact_events"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "contact_event_other_collider",
+      "name": "contactEventOtherCollider",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "the other collider's prim",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "array",
+              "lanes": 1,
+              "shape": [
+                "events"
+              ]
+            },
+            "conditions": [
+              "session",
+              "contact_events"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "contact_event_proto_index",
+      "name": "contactEventProtoIndex",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "the collider's instance index in its point instancer \u2014 its slot in `protoIndices`, not the prototype it selects \u2014 own / other (0xFFFFFFFF: not an instance)",
+          "dtype": "u32",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "array",
+              "lanes": 1,
+              "shape": [
+                "events"
+              ]
+            },
+            "conditions": [
+              "session",
+              "contact_events"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "contact_event_other_proto_index",
+      "name": "contactEventOtherProtoIndex",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "the collider's instance index in its point instancer \u2014 its slot in `protoIndices`, not the prototype it selects \u2014 own / other (0xFFFFFFFF: not an instance)",
+          "dtype": "u32",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "array",
+              "lanes": 1,
+              "shape": [
+                "events"
+              ]
+            },
+            "conditions": [
+              "session",
+              "contact_events"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "contact_event_point_count",
+      "name": "contactEventPointCount",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "the event's contact points / friction anchors",
+          "dtype": "i32",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "array",
+              "lanes": 1,
+              "shape": [
+                "events"
+              ]
+            },
+            "conditions": [
+              "session",
+              "contact_events"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "contact_event_anchor_count",
+      "name": "contactEventAnchorCount",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "the event's contact points / friction anchors",
+          "dtype": "i32",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "array",
+              "lanes": 1,
+              "shape": [
+                "events"
+              ]
+            },
+            "conditions": [
+              "session",
+              "contact_events"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "contact_event_point_position",
+      "name": "contactEventPointPosition",
+      "public": true,
+      "semantic": "POINT",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "position (world)",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "length",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "event_points"
+              ]
+            },
+            "conditions": [
+              "session",
+              "contact_events"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "contact_event_point_normal",
+      "name": "contactEventPointNormal",
+      "public": true,
+      "semantic": "NORMAL",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "normal, as reported (world)",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "dimensionless",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "event_points"
+              ]
+            },
+            "conditions": [
+              "session",
+              "contact_events"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "contact_event_point_impulse",
+      "name": "contactEventPointImpulse",
+      "public": true,
+      "semantic": "VECTOR",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "impulse, as reported (world)",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "impulse",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "event_points"
+              ]
+            },
+            "conditions": [
+              "session",
+              "contact_events"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "contact_event_point_separation",
+      "name": "contactEventPointSeparation",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "separation",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "length",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "array",
+              "lanes": 1,
+              "shape": [
+                "event_points"
+              ]
+            },
+            "conditions": [
+              "session",
+              "contact_events"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "contact_event_point_face_index",
+      "name": "contactEventPointFaceIndex",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "triangle-mesh face index, own / other",
+          "dtype": "u32",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "array",
+              "lanes": 1,
+              "shape": [
+                "event_points"
+              ]
+            },
+            "conditions": [
+              "session",
+              "contact_events"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "contact_event_point_other_face_index",
+      "name": "contactEventPointOtherFaceIndex",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "triangle-mesh face index, own / other",
+          "dtype": "u32",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "array",
+              "lanes": 1,
+              "shape": [
+                "event_points"
+              ]
+            },
+            "conditions": [
+              "session",
+              "contact_events"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "contact_event_point_material",
+      "name": "contactEventPointMaterial",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "material prim, own / other",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "array",
+              "lanes": 1,
+              "shape": [
+                "event_points"
+              ]
+            },
+            "conditions": [
+              "session",
+              "contact_events"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "contact_event_point_other_material",
+      "name": "contactEventPointOtherMaterial",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "material prim, own / other",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "array",
+              "lanes": 1,
+              "shape": [
+                "event_points"
+              ]
+            },
+            "conditions": [
+              "session",
+              "contact_events"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "contact_event_anchor_position",
+      "name": "contactEventAnchorPosition",
+      "public": true,
+      "semantic": "POINT",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "position (world)",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "length",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "event_anchors"
+              ]
+            },
+            "conditions": [
+              "session",
+              "contact_events"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "contact_event_anchor_impulse",
+      "name": "contactEventAnchorImpulse",
+      "public": true,
+      "semantic": "VECTOR",
+      "uses": [
+        {
+          "target": "CONTACT_SENSOR",
+          "description": "impulse, as reported (world)",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "impulse",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "event_anchors"
+              ]
+            },
+            "conditions": [
+              "session",
+              "contact_events"
+            ]
+          },
+          "write": false
+        }
+      ]
+    }
+  ]
+}

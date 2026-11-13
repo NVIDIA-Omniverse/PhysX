@@ -8,7 +8,7 @@
 # @covers AC-4
 #
 # Options (passed via -D flags):
-#   -DCLEAN_BUILD=ON|OFF          Clean build directory (default: OFF)
+#   -DCLEAN_BUILD=ON|OFF          Clean local build outputs (default: OFF)
 #   -DCLEAN_ONLY=ON|OFF           Exit after cleaning, skip build (default: ON when CLEAN_BUILD)
 #   -DBUILD_TYPE=Debug|Release    Build type (default: Release)
 #   -DVERBOSE=ON|OFF              Verbose build output (default: OFF)
@@ -85,72 +85,67 @@ endif()
 
 
 if(CLEAN_BUILD)
-    message(STATUS "Cleaning build directories and artifacts...")
-
-    # The ovruntime build artifacts are removed directly. build.sh -x would also rebuild.
-    file(GLOB OVRUNTIME_UNDERSCORE_DIRS "${OVRUNTIME_DIR}/_*")
-    foreach(_DIR ${OVRUNTIME_UNDERSCORE_DIRS})
-        if(IS_DIRECTORY "${_DIR}")
-            message(STATUS " Removing ovruntime: ${_DIR}")
-            file(REMOVE_RECURSE "${_DIR}")
+    # Check fixed output roots and the parents of the legacy cleanup rules before
+    # discovering any candidates. Never use a caller-selected path for deletion.
+    set(_CLEAN_ROOTS "${OVPHYSX_BUILD_ROOT}" "${PROJECT_ROOT}/_install"
+                    "${PROJECT_ROOT}/_repo" "${PROJECT_ROOT}/_dist"
+                    "${OVRUNTIME_DIR}" "${PROJECT_ROOT}/packaging_lock")
+    foreach(_CLEAN_PATH IN LISTS _CLEAN_ROOTS)
+        if(IS_SYMLINK "${_CLEAN_PATH}")
+            message(FATAL_ERROR "Cleanup directories must not use symbolic links or junctions: '${_CLEAN_PATH}'.")
         endif()
     endforeach()
 
-    # Find and remove the common build/cache directories. CMake globbing does not match
-    # directories by name, so the tree is walked and filtered here.
-    file(GLOB_RECURSE ALL_ITEMS LIST_DIRECTORIES true "${PROJECT_ROOT}/*")
-    set(DIRS_TO_REMOVE "")
-    foreach(ITEM ${ALL_ITEMS})
-        if(IS_DIRECTORY "${ITEM}")
-            get_filename_component(DIR_NAME "${ITEM}" NAME)
-            if(DIR_NAME STREQUAL "__pycache__" OR 
-               DIR_NAME STREQUAL ".venv" OR 
-               DIR_NAME STREQUAL "_build" OR
-               DIR_NAME STREQUAL "_install" OR
-               DIR_NAME STREQUAL "_repo" OR
-               DIR_NAME STREQUAL "_dist")
-                list(APPEND DIRS_TO_REMOVE "${ITEM}")
-            endif()
-        endif()
-    endforeach()
-    if(DIRS_TO_REMOVE)
-        list(REMOVE_DUPLICATES DIRS_TO_REMOVE)
-        list(SORT DIRS_TO_REMOVE)
-        
-        # Subdirectories whose parents are already being removed are dropped.
-        set(FILTERED_DIRS "")
-        foreach(DIR ${DIRS_TO_REMOVE})
-            set(IS_SUBDIR FALSE)
-            foreach(PARENT ${FILTERED_DIRS})
-                string(FIND "${DIR}" "${PARENT}/" SUBDIR_POS)
-                if(SUBDIR_POS EQUAL 0)
-                    set(IS_SUBDIR TRUE)
-                    break()
+    # Preserve the existing cleanup categories without walking through directory
+    # links into shared dependencies. Stop at selected directories; removing them
+    # also removes their contents, but only unlinks any nested directory links.
+    set(_CLEAN_DIRS)
+    set(_CLEAN_FILES)
+    function(_collect_clean_paths directory)
+        file(GLOB _ENTRIES LIST_DIRECTORIES true "${directory}/*")
+        foreach(_ENTRY IN LISTS _ENTRIES)
+            get_filename_component(_NAME "${_ENTRY}" NAME)
+            if(directory STREQUAL "${PROJECT_ROOT}/packaging_lock"
+               AND _NAME MATCHES "_new\\.json$" AND NOT IS_DIRECTORY "${_ENTRY}")
+                list(APPEND _CLEAN_FILES "${_ENTRY}")
+            elseif(IS_DIRECTORY "${_ENTRY}" OR IS_SYMLINK "${_ENTRY}")
+                if(_NAME MATCHES "^(_build|_install|_repo|_dist|\\.venv|__pycache__)$"
+                   OR (directory STREQUAL "${OVRUNTIME_DIR}" AND _NAME MATCHES "^_"))
+                    list(APPEND _CLEAN_DIRS "${_ENTRY}")
+                elseif(NOT IS_SYMLINK "${_ENTRY}")
+                    _collect_clean_paths("${_ENTRY}")
                 endif()
-            endforeach()
-            if(NOT IS_SUBDIR)
-                list(APPEND FILTERED_DIRS "${DIR}")
             endif()
         endforeach()
-        
-        foreach(DIR ${FILTERED_DIRS})
-            message(STATUS " Removing: ${DIR}")
-            file(REMOVE_RECURSE "${DIR}")
-        endforeach()
-    endif()
+        set(_CLEAN_DIRS "${_CLEAN_DIRS}" PARENT_SCOPE)
+        set(_CLEAN_FILES "${_CLEAN_FILES}" PARENT_SCOPE)
+    endfunction()
+    _collect_clean_paths("${PROJECT_ROOT}")
 
-    # Remove the transient packaging-lock snapshots generated on lock mismatches.
-    # The canonical lock files (without the _new suffix) stay untouched.
-    set(PACKAGING_LOCK_DIR "${PROJECT_ROOT}/packaging_lock")
-    if(IS_DIRECTORY "${PACKAGING_LOCK_DIR}")
-        file(GLOB PACKAGING_LOCK_NEW_FILES "${PACKAGING_LOCK_DIR}/*_new.json")
-        foreach(LOCK_NEW_FILE ${PACKAGING_LOCK_NEW_FILES})
-            message(STATUS " Removing packaging lock snapshot: ${LOCK_NEW_FILE}")
-            file(REMOVE "${LOCK_NEW_FILE}")
-        endforeach()
-    endif()
+    foreach(_CLEAN_PATH IN LISTS _CLEAN_DIRS _CLEAN_FILES)
+        get_filename_component(_CLEAN_ABSOLUTE "${_CLEAN_PATH}" ABSOLUTE)
+        string(FIND "${_CLEAN_ABSOLUTE}" "${PROJECT_ROOT}/" _CLEAN_PREFIX)
+        if(NOT IS_ABSOLUTE "${_CLEAN_PATH}" OR NOT _CLEAN_PREFIX EQUAL 0)
+            message(FATAL_ERROR "Cleanup path must be inside '${PROJECT_ROOT}': '${_CLEAN_PATH}'.")
+        endif()
+    endforeach()
+    foreach(_CLEAN_PATH IN LISTS _CLEAN_DIRS)
+        message(STATUS "Removing local build output: ${_CLEAN_PATH}")
+        file(REMOVE_RECURSE "${_CLEAN_PATH}")
+        if(EXISTS "${_CLEAN_PATH}" OR IS_SYMLINK "${_CLEAN_PATH}")
+            message(FATAL_ERROR "Could not remove '${_CLEAN_PATH}'. "
+                                "Close processes using this directory before retrying.")
+        endif()
+    endforeach()
+    foreach(_CLEAN_PATH IN LISTS _CLEAN_FILES)
+        message(STATUS "Removing packaging lock snapshot: ${_CLEAN_PATH}")
+        file(REMOVE "${_CLEAN_PATH}")
+        if(EXISTS "${_CLEAN_PATH}" OR IS_SYMLINK "${_CLEAN_PATH}")
+            message(FATAL_ERROR "Could not remove '${_CLEAN_PATH}'. "
+                                "Close processes using this file before retrying.")
+        endif()
+    endforeach()
 
-    message(STATUS "Build directories and artifacts cleaned.")
     if(NOT DEFINED CLEAN_ONLY)
         set(CLEAN_ONLY ON)
     endif()
@@ -312,49 +307,63 @@ if(WIN32)
     # Internal checkouts pull the packaged MSVC/WinSDK via packman. The public
     # source drop does not ship them (non-redistributable, not on the public
     # remotes), so it falls back to a local Visual Studio installation.
-    if(EXISTS "${PACKAGED_MSVC}/VC/Tools/MSVC")
+    #
+    # OVPHYSX_VS_ROOT pins a specific local installation, and the pin is taken
+    # ahead of the packaged MSVC: an explicit choice beats the default, so a
+    # checkout that carries the packaged toolchain can still be configured
+    # against a chosen Visual Studio. ovphysx-windows-ninja-guard relies on
+    # this to put a spaced MSVC root in front of nvcc. A value that does not
+    # hold VC/Tools/MSVC is ignored, with a warning. The pin suits the Ninja
+    # generator or a registered installation: the VS generator takes MSVC_ROOT
+    # as CMAKE_GENERATOR_INSTANCE and rejects a junction or any path the VS
+    # Installer does not know. Standalone sample builds
+    # (host_toolchain.cmake) keep the packaged toolchain regardless.
+    if(DEFINED ENV{OVPHYSX_VS_ROOT} AND NOT EXISTS "$ENV{OVPHYSX_VS_ROOT}/VC/Tools/MSVC")
+        message(WARNING "OVPHYSX_VS_ROOT is set to '$ENV{OVPHYSX_VS_ROOT}' but holds no VC/Tools/MSVC; ignoring it.")
+    endif()
+    if(DEFINED ENV{OVPHYSX_VS_ROOT} AND EXISTS "$ENV{OVPHYSX_VS_ROOT}/VC/Tools/MSVC")
+        set(TOOLCHAIN_MODE "local")
+        set(MSVC_ROOT "$ENV{OVPHYSX_VS_ROOT}")
+        message(STATUS "  Using OVPHYSX_VS_ROOT override: ${MSVC_ROOT}")
+    elseif(EXISTS "${PACKAGED_MSVC}/VC/Tools/MSVC")
         set(TOOLCHAIN_MODE "packaged")
         set(MSVC_ROOT "${PACKAGED_MSVC}")
         set(WINSDK_ROOT "${PACKAGED_WINSDK}")
     else()
         set(TOOLCHAIN_MODE "local")
-        # OVPHYSX_VS_ROOT pins a specific installation. Otherwise the newest
-        # supported VS (2022, then 2019) is picked, falling back to the absolute
-        # newest installation.
-        if(DEFINED ENV{OVPHYSX_VS_ROOT} AND EXISTS "$ENV{OVPHYSX_VS_ROOT}/VC/Tools/MSVC")
-            set(MSVC_ROOT "$ENV{OVPHYSX_VS_ROOT}")
-            message(STATUS "  Using OVPHYSX_VS_ROOT override: ${MSVC_ROOT}")
-        else()
-            if(NOT EXISTS "${VSWHERE}")
-                message(FATAL_ERROR "Packaged MSVC not present and vswhere.exe not found.\n"
-                                    "Install Visual Studio 2019/2022 with the 'Desktop development with C++' workload.")
-            endif()
-            # NOTE: list elements must not carry the surrounding [..) brackets.
-            # An unbalanced '[' makes CMake's list parser swallow the ';'
-            # separators, collapsing the list into one garbage element. The
-            # brackets are added when the vswhere argument is composed.
-            set(_vs_ranges "17.0,18.0" "16.0,17.0")
-            # Last resort: the newest of anything, since GENERATOR=ninja works with any VS.
-            list(APPEND _vs_ranges "16.0,")
-            set(MSVC_ROOT "")
-            foreach(_vs_range IN LISTS _vs_ranges)
-                execute_process(
-                    COMMAND "${VSWHERE}" -latest -products * -version "[${_vs_range})"
-                            -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64
-                            -property installationPath
-                    OUTPUT_VARIABLE MSVC_ROOT
-                    OUTPUT_STRIP_TRAILING_WHITESPACE
-                )
-                if(MSVC_ROOT AND EXISTS "${MSVC_ROOT}/VC/Tools/MSVC")
-                    break()
-                endif()
-            endforeach()
-            if(NOT MSVC_ROOT OR NOT EXISTS "${MSVC_ROOT}/VC/Tools/MSVC")
-                message(FATAL_ERROR "Packaged MSVC not present and no local Visual Studio installation found.\n"
-                                    "Install Visual Studio 2019/2022 with the 'Desktop development with C++' workload.")
-            endif()
-            message(STATUS "  Using local Visual Studio: ${MSVC_ROOT}")
+        # The newest supported VS (2022, then 2019) is picked, falling back to
+        # the absolute newest installation.
+        if(NOT EXISTS "${VSWHERE}")
+            message(FATAL_ERROR "Packaged MSVC not present and vswhere.exe not found.\n"
+                                "Install Visual Studio 2019/2022 with the 'Desktop development with C++' workload.")
         endif()
+        # NOTE: list elements must not carry the surrounding [..) brackets.
+        # An unbalanced '[' makes CMake's list parser swallow the ';'
+        # separators, collapsing the list into one garbage element. The
+        # brackets are added when the vswhere argument is composed.
+        set(_vs_ranges "17.0,18.0" "16.0,17.0")
+        # Last resort: the newest of anything, since GENERATOR=ninja works with any VS.
+        list(APPEND _vs_ranges "16.0,")
+        set(MSVC_ROOT "")
+        foreach(_vs_range IN LISTS _vs_ranges)
+            execute_process(
+                COMMAND "${VSWHERE}" -latest -products * -version "[${_vs_range})"
+                        -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64
+                        -property installationPath
+                OUTPUT_VARIABLE MSVC_ROOT
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+            if(MSVC_ROOT AND EXISTS "${MSVC_ROOT}/VC/Tools/MSVC")
+                break()
+            endif()
+        endforeach()
+        if(NOT MSVC_ROOT OR NOT EXISTS "${MSVC_ROOT}/VC/Tools/MSVC")
+            message(FATAL_ERROR "Packaged MSVC not present and no local Visual Studio installation found.\n"
+                                "Install Visual Studio 2019/2022 with the 'Desktop development with C++' workload.")
+        endif()
+        message(STATUS "  Using local Visual Studio: ${MSVC_ROOT}")
+    endif()
+    if(TOOLCHAIN_MODE STREQUAL "local")
         # The local WinSDK is installed with the VS C++ workload.
         if(DEFINED ENV{WindowsSdkDir} AND EXISTS "$ENV{WindowsSdkDir}/Include")
             set(WINSDK_ROOT "$ENV{WindowsSdkDir}")

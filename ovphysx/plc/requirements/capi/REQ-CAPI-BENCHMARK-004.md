@@ -102,6 +102,14 @@ anchors.
   duplicate, zero, malformed, and wrongly decorated reports. The existing
   GPU-capable benchmark CI job runs this contract while the frozen
   Authoring/WriteScaling L1B command remains unchanged.
+- AC-6: **Optional placement synchronization.** On Linux, an external runner
+  may opt into `--contact-affinity-fds=<notify:release>` for the single DirectGPU
+  Contact row with default worker counts. The harness sends `R` after the full
+  unrecorded warmup and waits for `A` before measured runs. It sends `E` after
+  those runs and waits for `A` before statistics and teardown. Invalid pipe
+  descriptors, a disconnected runner, or a missing acknowledgement within
+  thirty seconds fails execution. Normal runs do not synchronize or change
+  affinity. The runner owns placement and result qualification.
 
 ## Test References
 
@@ -121,6 +129,10 @@ anchors.
   `ovphysx/tests/benchmarks/Harness.cpp`
 - AC-5: `ovphysx/scripts/test_benchmark_contract.cmake` and
   `ovphysx/tests/benchmarks/CMakeLists.txt`
+- AC-6: `ovphysx/tests/benchmarks/Harness.cpp`,
+  `ovphysx/tests/benchmarks/Harness.h`,
+  `ovphysx/tests/benchmarks/ContactAffinityBarrier.h`, and
+  `ovphysx/tests/benchmarks/tests/ContactAffinityBarrierTest.cpp`
 
 ## Dependencies
 

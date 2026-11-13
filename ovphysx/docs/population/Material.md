@@ -5,11 +5,11 @@
 
 # Material
 
-UsdShade Material prim. Owns no physics columns: the physics surface comes entirely from PhysicsMaterialAPI and PhysxMaterialAPI applied to it. The prim type itself is never queried by the consumer.
+UsdShade [Material](glossary.md#material) [prim](glossary.md#prim). Owns no physics columns: the physics surface comes entirely from PhysicsMaterialAPI and PhysxMaterialAPI applied to it. The prim type itself is never queried by the consumer.
 
-- **Type chain:** `Typed`
-- **Applicable APIs:** [`PhysicsMaterialAPI`](PhysicsMaterialAPI.md), [`PhysxMaterialAPI`](PhysxMaterialAPI.md), [`PhysxSceneAPI`](PhysxSceneAPI.md)
-- **Transform columns:** none, not `Xformable`
+- **Type chain:** [`Typed`](glossary.md#typed)
+- **Applicable APIs:** [`CollectionAPI`](CollectionAPI.md), [`GeomInstanceAPI`](GeomInstanceAPI.md), [`GeomInstanceRootAPI`](GeomInstanceRootAPI.md), [`GeomPrototypeAPI`](GeomPrototypeAPI.md), [`OmniPhysicsBaseMaterialAPI`](OmniPhysicsBaseMaterialAPI.md), [`OmniPhysicsDeformableMaterialAPI`](OmniPhysicsDeformableMaterialAPI.md), [`OmniPhysicsSurfaceDeformableMaterialAPI`](OmniPhysicsSurfaceDeformableMaterialAPI.md), [`PhysicsMaterialAPI`](PhysicsMaterialAPI.md), [`PhysxDeformableMaterialAPI`](PhysxDeformableMaterialAPI.md), [`PhysxMaterialAPI`](PhysxMaterialAPI.md), [`PhysxPBDMaterialAPI`](PhysxPBDMaterialAPI.md), [`PhysxSceneAPI`](PhysxSceneAPI.md), [`PhysxSurfaceDeformableMaterialAPI`](PhysxSurfaceDeformableMaterialAPI.md), [`PhysxVehicleAutoGearBoxAPI`](PhysxVehicleAutoGearBoxAPI.md), [`PhysxVehicleClutchAPI`](PhysxVehicleClutchAPI.md), [`PhysxVehicleDriveBasicAPI`](PhysxVehicleDriveBasicAPI.md), [`PhysxVehicleDriveStandardAPI`](PhysxVehicleDriveStandardAPI.md), [`PhysxVehicleEngineAPI`](PhysxVehicleEngineAPI.md), [`PhysxVehicleGearsAPI`](PhysxVehicleGearsAPI.md), [`PhysxVehicleNonlinearCommandResponseAPI`](PhysxVehicleNonlinearCommandResponseAPI.md), [`PhysxVehicleSuspensionAPI`](PhysxVehicleSuspensionAPI.md), [`PhysxVehicleTireAPI`](PhysxVehicleTireAPI.md), [`PhysxVehicleWheelAPI`](PhysxVehicleWheelAPI.md), [`PrototypeRootAPI`](PrototypeRootAPI.md)
+- **Transform columns:** none, not [`Xformable`](glossary.md#xformable)
 
 ## What USD population writes
 
@@ -17,8 +17,8 @@ The producer gives a Material a row of its own only because PhysicsMaterialAPI i
 
 ## Interactions
 
-- **[`PhysicsMaterialAPI`](PhysicsMaterialAPI.md):** Materials are enumerated by usd-schemas CONTAINS PhysicsMaterialAPI (probe column physics:dynamicFriction), never by the prim type Material. A Material prim without PhysicsMaterialAPI is invisible to physics: no PxMaterial, and a binding to it leaves the shape on the scene default material. Conversely the type is not checked, so PhysicsMaterialAPI on any Typed prim yields a PxMaterial.
-- **[`MaterialBindingAPI`](MaterialBindingAPI.md):** Binding is irrelevant to creation. Every enumerated material becomes a PxMaterial (runtime type ePTMaterial at the Material path) whether or not any shape binds it. Shapes reach it through material:binding:physics resolved on the shape or its GeomSubsets, see MaterialBindingAPI.
+- **[`PhysicsMaterialAPI`](PhysicsMaterialAPI.md):** Materials are enumerated by [usd-schemas](prim.md#columns) CONTAINS PhysicsMaterialAPI (probe column physics:dynamicFriction), never by the prim type Material. A Material prim without PhysicsMaterialAPI is invisible to physics: no PxMaterial, and a binding to it leaves the shape on the scene default material. Conversely the type is not checked, so PhysicsMaterialAPI on any Typed prim yields a PxMaterial.
+- **[`MaterialBindingAPI`](MaterialBindingAPI.md):** Binding is irrelevant to creation. Every enumerated material becomes a PxMaterial, registered at the Material path, whether or not any shape binds it. Shapes reach it through material:binding:physics resolved on the shape or its GeomSubsets, see MaterialBindingAPI.
 - **[`PhysicsScene`](PhysicsScene.md):** The scene default material is the PhysicsScene prim's own resolved material:binding:physics, parsed with the same PhysicsMaterialAPI rules; with no binding it is 0.5 / 0.5 / 0.0 / density unset / average combine modes. A Material whose path is the scene default material path is not created a second time; the scene's PxMaterial is reused.
 
 ## Notes

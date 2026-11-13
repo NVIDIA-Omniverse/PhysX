@@ -15,6 +15,38 @@ import pytest
 from ovphysx_companion.output import capture_deformable_output
 
 
+def test_body_output_resolves_an_uncollected_attach(physics):
+    from pathlib import Path
+    import ovstage
+    from ovphysx.population import physics_population_descs
+    from ovphysx_companion.output import capture_body_output, capture_deformable_output
+
+    stage = ovstage.Stage("output-uncollected-attach")
+    try:
+        ovstage.population.open_usd_with_desc(
+            stage,
+            str(Path(__file__).resolve().parents[1] / "samples/scenes/two_boxes.usda"),
+            ordinal=1,
+            time=ovstage.population.DEFAULT_TIME,
+            descs=physics_population_descs(rendering=True),
+        )
+        stage.advance_write_floor(ordinal=1).wait()
+        attach = physics.attach_ovstage(stage, read_ordinal=1)
+        physics.wait_task(physics.step(1 / 60))
+        assert physics._attached_ovstage is None
+        output = capture_body_output(
+            physics, source_revision=1, step=1, simulation_time=1 / 60, meters_per_unit=1
+        )
+        assert output
+        assert capture_deformable_output(
+            physics, kind="volume", step=1, simulation_time=1 / 60
+        ) == ()
+        physics.wait_task(attach)
+    finally:
+        physics.wait_task(physics.detach_ovstage())
+        stage.destroy()
+
+
 def test_ragged_output_all_primitives_and_explicit_gpu_copy(attached, monkeypatch):
     import ovstage
     calls = []
@@ -56,10 +88,11 @@ def test_ragged_output_all_primitives_and_explicit_gpu_copy(attached, monkeypatc
 def test_scalar_body_output_reports_point_instance_scope_and_allows_filtered_read(physics):
     from pathlib import Path
     import ovstage
+    from ovphysx.population import physics_population_descs
     from ovphysx_companion.output import capture_body_output
     stage=ovstage.Stage('mixed-output-scope')
     try:
-        ovstage.population.open_usd(stage,str(Path(__file__).resolve().parents[1]/'samples/scenes/interaction.usda'),ordinal=1,domains=ovstage.PopulationDomain.ALL)
+        ovstage.population.open_usd_with_desc(stage,str(Path(__file__).resolve().parents[1]/'samples/scenes/interaction.usda'),ordinal=1,time=ovstage.population.DEFAULT_TIME,descs=physics_population_descs(rendering=True))
         stage.advance_write_floor(ordinal=1).wait();physics.wait_task(physics.attach_ovstage(stage,read_ordinal=1));physics.step_sync(.01)
         arguments=dict(source_revision=1,step=1,simulation_time=.01,meters_per_unit=1)
         with pytest.raises(ValueError,match='scalar bodies only.*PointInstancer'):

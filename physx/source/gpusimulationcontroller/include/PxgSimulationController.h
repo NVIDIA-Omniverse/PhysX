@@ -33,6 +33,11 @@ namespace physx
 		class BroadPhase;
 	}
 
+	namespace Dy
+	{
+		struct ArticulationLink;
+	}
+
 	class PxsKernelWranglerManager;
 
 	class PxgSimulationCore;
@@ -386,6 +391,7 @@ namespace physx
 		virtual void releaseSoftBody(Dy::DeformableVolume* deformableVolume)	PX_OVERRIDE;
 
 		virtual void releaseDeferredSoftBodyIds()	PX_OVERRIDE;
+		virtual PxU32 getNbReservedSoftBodyIds()	const	PX_OVERRIDE;
 		virtual void activateSoftbody(Dy::DeformableVolume* deformableVolume)	PX_OVERRIDE;
 		virtual void deactivateSoftbody(Dy::DeformableVolume* deformableVolume)	PX_OVERRIDE;
 		virtual void activateSoftbodySelfCollision(Dy::DeformableVolume* deformableVolume)	PX_OVERRIDE;
@@ -395,6 +401,7 @@ namespace physx
 		virtual void addFEMCloth(Dy::DeformableSurface* deformableSurface, const PxNodeIndex& nodeIndex)	PX_OVERRIDE;
 		virtual void releaseFEMCloth(Dy::DeformableSurface* deformableSurface)	PX_OVERRIDE;
 		virtual void releaseDeferredFEMClothIds()	PX_OVERRIDE;
+		virtual PxU32 getNbReservedFEMClothIds()	const	PX_OVERRIDE;
 		virtual void activateCloth(Dy::DeformableSurface* deformableSurface)	PX_OVERRIDE;
 		virtual void deactivateCloth(Dy::DeformableSurface* deformableSurface)	PX_OVERRIDE;
 		virtual void setClothWakeCounter(Dy::DeformableSurface* deformableSurface)	PX_OVERRIDE;
@@ -404,6 +411,7 @@ namespace physx
 		virtual void releaseDeferredParticleSystemIds()	PX_OVERRIDE;
 
 		virtual void updateDynamic(Dy::FeatherstoneArticulation* articulation, const PxNodeIndex& nodeIndex)	PX_OVERRIDE;
+		virtual void setKinematicTargetDirectGPU(const PxNodeIndex& nodeIndex, const PxTransform& body2World)	PX_OVERRIDE;
 		virtual void updateBodies(PxsRigidBody** rigidBodies, PxU32* nodeIndices, const PxU32 nbBodies, PxsExternalAccelerationProvider* externalAccelerations)	PX_OVERRIDE;
 		virtual void addJoint(const Dy::Constraint&) PX_OVERRIDE;
 		virtual void updateJoint(const PxU32 edgeIndex, Dy::Constraint* constraint)	PX_OVERRIDE;
@@ -522,13 +530,27 @@ namespace physx
 
 
 		virtual void setEnableOVDReadback(bool enableOVDReadback) PX_OVERRIDE;
-		virtual bool getEnableOVDReadback() const PX_OVERRIDE;
+		virtual PxsOVDReadbackMode::Enum getOVDReadbackMode() const PX_OVERRIDE;
 
 		virtual void setEnableOVDCollisionReadback(bool enableOVDCollisionsReadback) PX_OVERRIDE;
 		virtual bool getEnableOVDCollisionReadback() const PX_OVERRIDE;
+		virtual bool getEnableOVDContactCollection() const PX_OVERRIDE { return mEnableOVDCollisionReadback; }
+
+		virtual bool isArticulationUploadPending(PxU32 gpuIndex) const PX_OVERRIDE { return mBodySimManager.mPendingArticulationUploads.boundedTest(gpuIndex) != 0; }
 
 #if PX_SUPPORT_OMNI_PVD
 		virtual void setOVDCallbacks(PxsSimulationControllerOVDCallbacks& ovdCallbacks) PX_OVERRIDE;
+		virtual bool ovdReadbackRigidDynamicData(const PxRigidDynamicGPUIndex* indices, PxU32 nbElements, PxRigidDynamicGPUAPIReadType::Enum dataType) PX_OVERRIDE;
+		virtual bool ovdReadbackArticulationData(const PxArticulationGPUIndex* indices, PxU32 nbElements, PxArticulationGPUAPIReadType::Enum dataType) PX_OVERRIDE;
+		virtual bool ovdIsContactPairCaptured(const PxActor& actor0, const PxActor& actor1) const PX_OVERRIDE;
+		virtual bool ovdBeginContactReadback() PX_OVERRIDE;
+		virtual void ovdQueueContactReadback(const void* patches, const void* points, const void* friction, const PxReal* forces, PxU32 nbContacts, PxU32 nbPatches) PX_OVERRIDE;
+		virtual bool ovdFinishContactReadback() PX_OVERRIDE;
+		virtual bool ovdReadbackContactPair(const void* patches, const void* points, const void* friction, const PxReal* forces, PxU32 nbContacts, PxU32 nbPatches) PX_OVERRIDE;
+		virtual PxU64 getOmniPvdReadbackBytes() const PX_OVERRIDE { return mOmniPvdReadbackBytes; }
+		virtual void recordOmniPvdReadbackBytes(PxU64 bytes) PX_OVERRIDE { mOmniPvdReadbackBytes += bytes; }
+		virtual PxU64 getOmniPvdReadbackCopyCount() const PX_OVERRIDE { return mOmniPvdReadbackCopyCount; }
+		virtual void recordOmniPvdReadbackCopy(PxU64 bytes) PX_OVERRIDE { mOmniPvdReadbackBytes += bytes; ++mOmniPvdReadbackCopyCount; }
 		PX_FORCE_INLINE PxsSimulationControllerOVDCallbacks* getOVDCallbacks() { return mOvdCallbacks; }
 		virtual void ovdSnapshotRigidDynamicForces(const PxRigidDynamicGPUIndex* gpuIndices, PxU32 nbElements) PX_OVERRIDE;
 		virtual void ovdSnapshotArticulationForces(const PxArticulationGPUIndex* gpuIndices, PxU32 nbElements) PX_OVERRIDE;
@@ -565,6 +587,10 @@ namespace physx
 			PxI32* sharedFixedTendonIndex, PxI32* sharedFixedTendonJointIndex,
 			PxI32* sharedMimicJointIndex);
 
+		// Writes the complete staged GPU record of an articulation link at a slot of the link pools: the link,
+		// its properties, its poses and its parent. The GPU copies these whole, so every field must be written.
+		void stageArticulationLink(PxU32 index, const Dy::ArticulationLink& cpuLink);
+
 		void copyToGpuSoftBodySim(PxU32 startIndex, PxU32 nbToCopy);
 
 		void copyToGpuFEMClothSim(PxU32 startIndex, PxU32 nbToCopy);
@@ -581,7 +607,7 @@ namespace physx
 		void mergeBoundsAndTransformsChanges(PxgBoundsArray& directGPUBoundsArray,
 																	  PxsTransformCache& transformCache,
 																	  PxgCudaBuffer& gpuTransformCache, PxU32 boundsArraySize, PxU32 totalTransformCacheSize,
-																		 PxU32 numChanges, CUdeviceptr updatedActorDescd, CUstream npStream);
+																	  PxU32 numChanges, CUstream npStream);
 
 		PxgPostCopyToShapeSimTask								mPostCopyShapeSimTask;
 		PxgPostCopyToBodySimTask								mPostCopyBodySimTask;
@@ -708,6 +734,25 @@ namespace physx
 		bool													mEnableOVDCollisionReadback;
 #if PX_SUPPORT_OMNI_PVD
 		PxsSimulationControllerOVDCallbacks*					mOvdCallbacks;
+		PxU64 mOmniPvdReadbackBytes;
+		PxU64 mOmniPvdReadbackCopyCount;
+		struct OmniPvdContactPair
+		{
+			const void* patches;
+			const void* points;
+			const void* friction;
+			const PxReal* forces;
+			PxU32 nbContacts;
+			PxU32 nbPatches;
+		};
+		struct OmniPvdContactRange { PxU64 offset; PxU64 bytes; };
+		struct OmniPvdContactRangeLess
+		{
+			bool operator()(const OmniPvdContactRange& first, const OmniPvdContactRange& second) const { return first.offset < second.offset; }
+		};
+		PxArray<OmniPvdContactPair> mOmniPvdContactPairs;
+		PxArray<OmniPvdContactRange> mOmniPvdContactRanges;
+		bool mOmniPvdContactBatchPrepared;
 #endif
 		friend class PxgCopyToBodySimTask;
 		friend class PxgCopyToArticulationSimTask;

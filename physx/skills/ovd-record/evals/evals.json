@@ -1,0 +1,75 @@
+{
+  "skill_name": "ovd-record",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Capture six CPU physics steps to a new OVD file and show that the file can be inspected.",
+      "expected_output": "Run installed ovd-record with a new path, check success and verifiedSamples, then ovd-inspect summary on the finalized file.",
+      "files": [],
+      "expectations": ["Uses ovd-record with an unused output path", "Checks command success before inspection", "Uses checked, profile or debug SDK rather than Release"]
+    },
+    {
+      "id": 2,
+      "prompt": "My PhysX scene has already run twenty steps. Record the next two, preserving the final actor state.",
+      "expected_output": "Explain initial PxOmniPvd attachment, idle late start full snapshot, two completed steps, stopSampling and checked closeStream before teardown.",
+      "files": [],
+      "expectations": ["Requires PxOmniPvd to have been passed to PxCreatePhysics", "Binds a new file stream before startSampling at an idle scene boundary", "Checks stopSampling and closeStream before actor or scene teardown", "Distinguishes local recorded frames from application step numbers"]
+    },
+    {
+      "id": 3,
+      "prompt": "Run the headless GPU OVD recording example. Is a no-GPU result enough to say capture works?",
+      "expected_output": "Run ovd-record with --gpu where supported, report exit77 as unavailable, and keep independent real CPU verification.",
+      "files": [],
+      "expectations": ["Uses --gpu only with a GPU-capable SDK build", "Reports exit77 as a skip, not GPU success", "Does not substitute a GPU skip for CPU evidence"]
+    },
+    {
+      "id": 4,
+      "prompt": "Find the first linear velocity divergence in two existing finalized OVD files.",
+      "expected_output": "Route to ovd-compare for explicit object matching and frame alignment.",
+      "files": [],
+      "expectations": ["Selects ovd-compare", "Does not recapture or overwrite supplied recordings"]
+    },
+    {
+      "id": 5,
+      "prompt": "In my existing OmniPVD-enabled SDK app, capture only a robot, one particle buffer and a deformable, without contacts or forces. Can I select one articulation link or request transforms alone? What if I later enable collisions on DirectGPU?",
+      "expected_output": "Uses a copied PxOmniPvdFilterDesc with selected owning objects and recordSecondaryData=false at a synchronized start; explains whole-articulation, particle-buffer and contact dependency behavior and data limits.",
+      "files": [],
+      "expectations": [
+        "Passes PxOmniPvdFilterDesc to startSampling after binding the stream, optionally validateFilterDesc under the same external synchronization",
+        "Explains scene/object union, all-object empty lists and future members of selected scenes; selects whole articulations, individual particle buffers and deformable actors rather than links/resources",
+        "Explains mandatory primary geometry, state and materials, with no transform-only mask; bool recordSecondaryData=true adds all supported secondary data",
+        "Includes either-selected-endpoint contacts and required counterpart state without recursively selecting other contacts; selection does not change DirectGPU mode",
+        "Distinguishes base particle primary data from secondary diffuse data and states that unrecorded producer payloads cannot be enabled by a filter",
+        "Stops and restarts for a local policy change and explicitly closes the owned FILE stream after stop before inspecting"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Connect the SDK producer to a TCP viewer without copying a full GPU scene first. Let the viewer discover/select objects, then replace selection live. How do I service requests, and will an older TCP stream still open?",
+      "expected_output": "Starts an identity-only startCaptureDiscovery session on the bound TCP stream, pumps processCaptureRequests at an all-scene safe point and waits for applied forward acknowledgments, preserving older one-way producers.",
+      "files": [],
+      "expectations": [
+        "Starts the listening receiver before the outbound producer connection and uses startCaptureDiscovery(scope) instead of an initial unrestricted startSampling",
+        "Explains catalog identities without payload/GPU readback, fixed maximum scope, isSampling=false until selection and stopSampling ending discovery as well as sampling",
+        "Uses OmniPvdSocketReadStream.requestCapture with run/connection-local handles and increasing nonzero IDs; requestCaptureCatalog can refresh a supported active discovery catalog",
+        "Externally synchronizes processCaptureRequests with every scene, fetchResults including particle fetch, object creation/release and membership changes; a successful poll/send alone does not mean applied",
+        "Checks matching captureRequestId, status 1 applied versus 2 invalid/3 busy/4 denied, and captureEpoch; accepted policy writes a fresh snapshot on the same connection",
+        "Uses negotiated reverse-control capability rather than just integration-version metadata; unsupported old producers receive no control bytes and remain readable",
+        "Does not treat concurrent close of a blocking reader as supported cancellation and does not claim ovd-inspect is a live TCP receiver"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Our plugin writes custom OVD data. Will SDK selection automatically filter those writes? How should we handle a receiver reset and keep the filter or replacement arrays alive?",
+      "expected_output": "Distinguishes raw writer responsibility from built-in filtering, explains event/reset callback locking and temporary descriptors, and the application filter's replacement-array lifetime.",
+      "files": [],
+      "expectations": [
+        "States raw OmniPvdWriter writes are not filtered automatically; plugin honors onStartSampling's active policy and applicable object selection",
+        "Copies any retained callback descriptor/list data rather than retaining temporary pointers",
+        "Uses onCaptureReset to retire custom records before replay and ScopedExclusiveWriter for reset callback writes because the writer lock is not held",
+        "Keeps PxOmniPvdCaptureFilter replacement arrays valid until processCaptureRequests returns and preserves external synchronization",
+        "Does not present isObjectRecorded=false as proof that no counterpart state was emitted"
+      ]
+    }
+  ]
+}

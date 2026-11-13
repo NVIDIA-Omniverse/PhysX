@@ -38,6 +38,18 @@ OmniPvdWriter* writer = writeLock.getWriter();
 #define OMNI_PVD_GET_REGISTRATION_DATA(registrationData) \
 const OmniPvdPxExtensionsRegistrationData* registrationData = physx::Ext::OmniPvdGetPxExtensionsRegistrationData();
 
+#undef OMNI_PVD_SHOULD_RECORD_CREATION
+#undef OMNI_PVD_SHOULD_RECORD_DESTRUCTION
+#undef OMNI_PVD_SHOULD_RECORD_VALUE
+#define OMNI_PVD_SHOULD_RECORD_CREATION(writer, regData, classID, objectRef) \
+physx::Ext::OmniPvdShouldRecordCreation(#classID, regData->pvd##classID.getObjectHandle(objectRef))
+#define OMNI_PVD_SHOULD_RECORD_DESTRUCTION(writer, regData, classID, objectRef) \
+physx::Ext::OmniPvdShouldRecordDestruction(regData->pvd##classID.getObjectHandle(objectRef))
+#define OMNI_PVD_SHOULD_RECORD_VALUE(writer, regData, classID, attributeID, objectRef) \
+physx::Ext::OmniPvdShouldRecordValue(#classID, #attributeID, regData->pvd##classID.getObjectHandle(objectRef))
+
+// This schema has no unique-list attributes and defines no ADDITION or REMOVAL predicate.
+
 #endif  // PX_SUPPORT_OMNI_PVD
 
 

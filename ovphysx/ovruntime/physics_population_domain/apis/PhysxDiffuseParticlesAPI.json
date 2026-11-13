@@ -1,0 +1,312 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxDiffuseParticlesAPI",
+  "title": "PhysxDiffuseParticlesAPI",
+  "summary": "Spawns render-only diffuse particles (spray, foam, bubbles) from a particle set. Read in the particle-set parse only when the prim lists both this API and PhysxParticleSetAPI; an absent column reads as 0 (false for the enable flag), so nearly every absent column diverges from its USD fallback.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "PointBased",
+    "PointInstancer"
+  ],
+  "requires": [
+    "PhysxParticleSetAPI"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "columns": [
+    {
+      "name": "physxDiffuseParticles:diffuseParticlesEnabled",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": true,
+      "parser_default": false,
+      "absent": "false: no diffuse particles are spawned (the diffuse capacity is 0). USD's fallback is true, so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceParticle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXParticlePropertiesUpdate.cpp",
+        "source/omni.physx/plugins/internal/InternalParticle.cpp"
+      ],
+      "notes": "On change the property update enables or disables diffuse particles on the set, rebuilding its buffers when the capacity grows."
+    },
+    {
+      "name": "physxDiffuseParticles:maxDiffuseParticleMultiplier",
+      "usd_type": "uniform float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "-inf",
+      "parser_default": 0.0,
+      "absent": "0: the diffuse capacity (particle capacity x multiplier) is 0, so no diffuse particles are spawned even when they are enabled. Write a negative value (USD's -inf) for the default multiplier 1.5.",
+      "raw_fallback_diverges": true,
+      "sentinel": "A negative value (USD fallback -inf) means the default multiplier 1.5.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceParticle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXParticlePropertiesUpdate.cpp",
+        "source/omni.physx/plugins/internal/InternalParticle.cpp"
+      ],
+      "notes": "On change the set rebuilds its diffuse buffers from a fresh parse of the whole API."
+    },
+    {
+      "name": "physxDiffuseParticles:threshold",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.01,
+      "parser_default": 0.0,
+      "absent": "0, passed to PhysX as the diffuse threshold (the potential above which a particle spawns diffuse particles). USD's fallback is 0.01, so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "mass*length^2/s^2",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceParticle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXParticlePropertiesUpdate.cpp"
+      ],
+      "notes": "On change the property update writes the value into the set's PhysX diffuse particle parameters."
+    },
+    {
+      "name": "physxDiffuseParticles:lifetime",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 5.0,
+      "parser_default": 0.0,
+      "absent": "0, passed to PhysX as the diffuse particle lifetime. USD's fallback is 5, so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "s",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceParticle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXParticlePropertiesUpdate.cpp"
+      ],
+      "notes": "On change the property update writes the value into the set's PhysX diffuse particle parameters."
+    },
+    {
+      "name": "physxDiffuseParticles:airDrag",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0, passed to PhysX as the air drag; USD's fallback is 0 too.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceParticle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXParticlePropertiesUpdate.cpp"
+      ],
+      "notes": "On change the property update writes the value into the set's PhysX diffuse particle parameters."
+    },
+    {
+      "name": "physxDiffuseParticles:bubbleDrag",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.5,
+      "parser_default": 0.0,
+      "absent": "0, passed to PhysX as the bubble drag. USD's fallback is 0.5, so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceParticle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXParticlePropertiesUpdate.cpp"
+      ],
+      "notes": "On change the property update writes the value into the set's PhysX diffuse particle parameters."
+    },
+    {
+      "name": "physxDiffuseParticles:buoyancy",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.8,
+      "parser_default": 0.0,
+      "absent": "0, passed to PhysX as the buoyancy. USD's fallback is 0.8, so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceParticle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXParticlePropertiesUpdate.cpp"
+      ],
+      "notes": "On change the property update writes the value into the set's PhysX diffuse particle parameters."
+    },
+    {
+      "name": "physxDiffuseParticles:kineticEnergyWeight",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.01,
+      "parser_default": 0.0,
+      "absent": "0, passed to PhysX as the kinetic energy weight. USD's fallback is 0.01, so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceParticle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXParticlePropertiesUpdate.cpp"
+      ],
+      "notes": "On change the property update writes the value into the set's PhysX diffuse particle parameters."
+    },
+    {
+      "name": "physxDiffuseParticles:pressureWeight",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 1.0,
+      "parser_default": 0.0,
+      "absent": "0, passed to PhysX as the pressure weight. USD's fallback is 1, so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceParticle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXParticlePropertiesUpdate.cpp"
+      ],
+      "notes": "On change the property update writes the value into the set's PhysX diffuse particle parameters."
+    },
+    {
+      "name": "physxDiffuseParticles:divergenceWeight",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 5.0,
+      "parser_default": 0.0,
+      "absent": "0, passed to PhysX as the divergence weight. USD's fallback is 5, so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceParticle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXParticlePropertiesUpdate.cpp"
+      ],
+      "notes": "On change the property update writes the value into the set's PhysX diffuse particle parameters."
+    },
+    {
+      "name": "physxDiffuseParticles:collisionDecay",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.5,
+      "parser_default": 0.0,
+      "absent": "0, passed to PhysX as the collision decay. USD's fallback is 0.5, so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceParticle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXParticlePropertiesUpdate.cpp"
+      ],
+      "notes": "On change the property update writes the value into the set's PhysX diffuse particle parameters."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysxParticleSetAPI",
+      "rule": "Read inside the particle-set parse; without PhysxParticleSetAPI the prim is not a particle set and nothing is read. Without this API the set's diffuse settings are all 0 and diffuse particles are off."
+    }
+  ],
+  "notes": [
+    "The PhysX diffuse parameters always come from these columns (0 when absent), never from PxDiffuseParticleParams' own defaults (threshold 100, lifetime 5, ...).",
+    "physxDiffuseParticles:useAccurateVelocity is declared by the schema but never read; PhysX keeps that setting false.",
+    "The runtime applies a live change of any column of this API to the set without checking that the API is listed. Applying or removing the API at runtime rebuilds or tears down the set's diffuse buffers."
+  ]
+}

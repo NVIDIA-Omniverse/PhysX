@@ -16,6 +16,17 @@ cmake_minimum_required(VERSION 3.16)
 include("${CMAKE_CURRENT_LIST_DIR}/cmake/RequireCMakeVersion.cmake")
 ovphysx_require_cmake_version()
 
+# Standalone builds keep all local state under _build. Embedded consumers own
+# their binary directory, so this policy does not apply to add_subdirectory().
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    function(ovphysx_check_top_level_build_directory)
+        set(PROJECT_ROOT "${CMAKE_CURRENT_SOURCE_DIR}")
+        set(BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+        include("${PROJECT_ROOT}/scripts/build_directory.cmake")
+    endfunction()
+    ovphysx_check_top_level_build_directory()
+endif()
+
 if(POLICY CMP0091)
     cmake_policy(SET CMP0091 NEW)
 endif()
@@ -687,7 +698,9 @@ add_library(ovphysx SHARED
     src/ovphysx/LogManager.cpp
     src/ovphysx/Profiling.cpp
     src/ovphysx/OvStageOutput.cpp
+    src/ovphysx/ovphysxUtils.cpp
     src/ovphysx/ovphysx.cpp
+    src/ovphysx/InstanceExecutor.cpp
     companion/src/Companion.cpp
     companion/src/Preview.cpp
     companion/src/Mesh.cpp
@@ -711,7 +724,8 @@ add_library(ovphysx SHARED
     src/ovphysx/PhysXWrapper.cpp
     src/ovphysx/TensorBindingWrapper.cpp
     src/ovphysx/ovphysxPhysXInterop.cpp
-    src/ovphysx/ovphysxDebugRenderSession.cpp
+    src/ovphysx/ovphysxAttributeNames.cpp
+    src/ovphysx/ovphysxPopulation.cpp
     src/ovphysx/ovphysxObjectChangeCallbacks.cpp
     src/ovphysx/ovphysxSceneQuery.cpp
     src/ovphysx/ovphysxSidecarLoader.cpp
@@ -930,6 +944,12 @@ if(WIN32)
 else()
     # dlopen/dlsym for runtime driver loading
     target_link_libraries(ovphysx PRIVATE ${CMAKE_DL_LIBS})
+    # Loading libovphysx.so must load libovstage.so, whose RUNPATH brings in the
+    # TBB that the Carbonite TBB global-control plugin needs; ovphysx ships no
+    # TBB. OVStage's data-plane calls are inline vtable dispatch, so with
+    # --as-needed nothing references libovstage.so and the linker drops it.
+    target_link_options(ovphysx PRIVATE
+        "LINKER:--push-state,--no-as-needed,${OVSTAGE_LIBRARY},--pop-state")
 endif()
 
 # Do not export private build-tree targets such as OvruntimePhysX to downstream
@@ -993,9 +1013,11 @@ source_group(TREE ${OVPHYSX_PUBLIC_INCLUDE_DIR} FILES
     ${OVPHYSX_PUBLIC_INCLUDE_DIR}/ovphysx/ovphysx_attributes.h
     ${OVPHYSX_PUBLIC_INCLUDE_DIR}/ovphysx/ovphysx_config.h
     ${OVPHYSX_PUBLIC_INCLUDE_DIR}/ovphysx/ovphysx_geometry_query.h
+    ${OVPHYSX_PUBLIC_INCLUDE_DIR}/ovphysx/ovphysx_utils.h
     ${OVPHYSX_PUBLIC_INCLUDE_DIR}/ovphysx/ovphysx_legacy.h
     ${OVPHYSX_PUBLIC_INCLUDE_DIR}/ovphysx/ovphysx_legacy_config.h
     ${OVPHYSX_PUBLIC_INCLUDE_DIR}/ovphysx/ovphysx_legacy_types.h
+    ${OVPHYSX_PUBLIC_INCLUDE_DIR}/ovphysx/ovphysx_population.h
     ${OVPHYSX_PUBLIC_INCLUDE_DIR}/ovphysx/ovphysx_types.h
     ${OVPHYSX_PUBLIC_INCLUDE_DIR}/ovphysx/experimental/Helpers.hpp
     ${OVPHYSX_PUBLIC_INCLUDE_DIR}/ovphysx/experimental/ovphysx.hpp
@@ -1099,16 +1121,12 @@ if(WIN32)
             CONFIGURATIONS Debug OPTIONAL)
 endif()
 
-# Install headers
-install(DIRECTORY ${OVPHYSX_PUBLIC_INCLUDE_DIR}/
+# Install the source headers using the same selection as docs-only validation.
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/public_headers.cmake")
+ovphysx_public_header_sources("${CMAKE_CURRENT_SOURCE_DIR}" _PUBLIC_HEADER_DIRS _PUBLIC_HEADER_PATTERNS)
+install(DIRECTORY ${_PUBLIC_HEADER_DIRS}
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
-)
-
-# Companion entry points live in the existing library, with separate headers.
-install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/companion/include/"
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
+    FILES_MATCHING ${_PUBLIC_HEADER_PATTERNS}
 )
 
 # ovstage is not installed: no headers, library, runtime, or Python package.
@@ -1473,6 +1491,14 @@ add_custom_target(validate_runtime
 )
 add_dependencies(validate_runtime install_sdk)
 
+add_custom_target(build_ovd_inspector
+    COMMAND ${CMAKE_COMMAND} ${_SCRIPT_BUILD_ARGS}
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/scripts/build_ovd_inspector.cmake"
+    COMMENT "Install the SDK inspector for capture workflow tests"
+    USES_TERMINAL
+    VERBATIM
+)
+
 add_custom_target(validate_wheel
     COMMAND ${CMAKE_CTEST_COMMAND} ${_CTEST_CONFIG_ARGS} -L wheel --output-on-failure
     WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -1480,6 +1506,10 @@ add_custom_target(validate_wheel
     USES_TERMINAL
 )
 add_dependencies(validate_wheel build_wheel)
+if(NOT DEFINED ENV{OVPHYSX_OVD_INSPECTOR} OR "$ENV{OVPHYSX_OVD_INSPECTOR}" STREQUAL "")
+    add_dependencies(validate_wheel build_ovd_inspector)
+    add_dependencies(test_python_samples build_ovd_inspector)
+endif()
 
 add_custom_target(validate_benchmarks
     COMMAND ${CMAKE_CTEST_COMMAND} ${_CTEST_CONFIG_ARGS} -L benchmarks --output-on-failure
@@ -1501,6 +1531,9 @@ add_custom_target(validate_all
     USES_TERMINAL
 )
 add_dependencies(validate_all build_wheel)
+if(NOT DEFINED ENV{OVPHYSX_OVD_INSPECTOR} OR "$ENV{OVPHYSX_OVD_INSPECTOR}" STREQUAL "")
+    add_dependencies(validate_all build_ovd_inspector)
+endif()
 
 endif() # OVPHYSX_IS_TOP_LEVEL
 

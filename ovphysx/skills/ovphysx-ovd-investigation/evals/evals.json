@@ -1,0 +1,183 @@
+{
+  "skill_name": "ovphysx-ovd-investigation",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I installed the ovphysx wheel and the SDK inspector separately. Record a small CPU scene and prove that the file can be inspected before the app shuts down; preserve the capture and evidence.",
+      "expected_output": "Installs the required physx-usd-schemas provider in the wheel environment before running the installed omnipvd_inspection.py sample with explicit --inspector, a fresh --output-dir and --device cpu, then reports motion and sample provenance from evidence.json.",
+      "files": [],
+      "expectations": [
+        "Explicitly installs physx-usd-schemas in the wheel's Python environment before the first sample run; optional Newton schemas do not replace the required PhysX provider",
+        "Locates samples/python_samples/omnipvd_inspection.py relative to ovphysx.__file__, not a monorepo sibling",
+        "Supplies the separately installed inspector executable and a new persistent output directory",
+        "Checks subprocess success and retains capture.ovd, scene.usda and evidence.json",
+        "Explains that stop_recording succeeds before inspection while the instance and stage are alive, with a further step before teardown",
+        "Uses the two dynamic body observations and carried kinematic metadata without presenting the latter as exact per-frame writes"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Please get one GPU capture and a CPU reference for this falling-body sample. Our machine sometimes falls back to CPU, so I need evidence of what actually ran.",
+      "expected_output": "Runs the sample in separate CPU/GPU processes and fresh output directories, checks CUDA-backed live reads, and compares finalized captures using explicit aligned names, contexts, frames and tolerance.",
+      "files": [],
+      "expectations": [
+        "Uses separate processes because PhysX.set_cpu_mode(True) is sticky",
+        "Uses --device gpu and verifies CUDA-backed simulation-state reads rather than claiming GPU execution from availability alone",
+        "Treats a failed GPU request or CPU fallback as failure and reports it separately from CPU evidence",
+        "Uses each capture's own context and explicit semantic name mapping, never a pointer handle as cross-run identity",
+        "Restricts the sample-specific post-step frame mapping to this verified producer and preserves comparison status, tolerance and units"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Add recording to my existing OvPhysX loop, then export an annotation report for a velocity discrepancy. Also tell me the joint reaction forces and contact impulses from the OVD.",
+      "expected_output": "Adapts the supported recording lifecycle, discovers and aligns finalized recordings, routes to SDK ovd-compare for a new sidecar, and distinguishes scene contact impulses from unrecorded joint reaction forces.",
+      "files": [],
+      "expectations": [
+        "Calls set_global_config(GlobalConfigKey.OVD_RECORDING_CAPABLE, True) before the first PhysX instance and uses OmniPvdDestination.file; admitted start creates missing parent directories",
+        "Preserves schema_support when copying the sample or imports physx_schema_paths from ovphysx.samples.python_samples.schema_support, and registers both required PhysX roots before population",
+        "Catches FileNotFoundError only around optional Newton discovery for scenes without newton attributes; missing PhysX schemas always fail",
+        "Checks stop_recording before invoking the inspector and successfully collects wait_task(detach_ovstage()) before releasing the borrowed stage",
+        "Uses installed ovd-inspect compare with explicit object/frame alignment and --annotations pointing to a new non-source path",
+        "Distinguishes Different exit 1 from Incomparable or invalid exit 2 and reviews source sample provenance",
+        "States that contacts may produce scene-level contact impulse arrays which this inspector cannot report; a compatible reader or viewer is needed",
+        "States that PxJoint reaction forces are distinct and not recorded; does not infer any force or impulse from velocity",
+        "Does not promise viewer import of the sidecar or propose a second parser or MCP service"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "I only want to read current body positions into Warp after each OvPhysX step. I do not need recordings or offline inspection.",
+      "expected_output": "Routes to ovphysx-output-read for live PhysX.read output without enabling recording or requiring an inspector.",
+      "files": [],
+      "expectations": [
+        "Selects ovphysx-output-read for PhysX.read of RIGID_BODY position",
+        "Does not require recording capability, an OVD file, or an installed inspector for the live-read task",
+        "Does not replace the live-read request with the capture sample"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "My OVD opens in the OmniPVD viewer, but ovd-inspect exits 2 with a physx.ovd.error version-1 object: code Invalid, message Attribute payload does not match schema, byteOffset 4096, commandIndex 774, role input and limitOption null. Stderr repeats the error. Should I raise its budget, recover the stopped recording or call it corrupt? Where do I get this inspector for a fresh setup?",
+      "expected_output": "Explains this bounded inspector rejected the capture without proving corruption, keeps the original OVD for a compatible reader, and points to the PhysX SDK source build/install guide for the tool.",
+      "files": [],
+      "expectations": [
+        "Finds the standalone inspector build/install instructions at physx/pvddom/README.md and enables both PVDDOM_BUILD_INSPECTION and PVDDOM_BUILD_TOOLS",
+        "Distinguishes physx.ovd.error load rejection from every Incomparable comparison (including selection/query failures such as missing actor/frame and valid queries lacking exact samples), which emits physx.ovd.inspection-evidence JSON with status Incomparable, an explanatory message, stderr and exit 2, and from stderr-only command-line parsing or summary/inspect selection/query failures",
+        "Preserves the source for a compatible OmniPVD reader or viewer and does not label it corrupt",
+        "Explains that Invalid payload/schema data is not a justified budget retry or truncated-tail recovery case, even when the recording is stopped",
+        "Does not infer that requested data is absent from the rejected load"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Five trusted captures exit 2 with physx.ovd.error code Limit and limitOption values --max-retained-bytes, --max-creates, --max-commands, --max-handler-steps and --max-stream-bytes. Their producers justify the sizes. A sixth Limit has null limitOption and the English message Attribute path depth exceeds 32. Can I raise all the limits to guarantee they load, and what if a retry reveals another limit?",
+      "expected_output": "Uses known machine-readable limitOption values for justified bounded increases, one diagnosed limit at a time, and stops retries on null identity despite its English message.",
+      "files": [],
+      "expectations": [
+        "Uses Limit plus a known limitOption verified against ovd-inspect --help to choose the adjustable option, never English diagnostic prefixes",
+        "Stops budget retries for the sixth capture because null limitOption identifies no justified adjustable limit",
+        "Uses positive integers and a justified bounded increase only for the reported limit, not a blanket increase of every budget",
+        "Allows another bounded adjustment only after a later, separately diagnosed limit; never guarantees that increasing budgets will make a capture valid"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "A capture with missing referenced objects loads in ovd-inspect, but captures with incompatible object edges, malformed schema, or truncated commands fail. Does accepting the first one mean I can relax validation to accept the others? What does a failed load tell me about whether the requested velocity exists?",
+      "expected_output": "Distinguishes accepted optional missing references from strict validation failures and keeps conclusions within the evidence actually loaded.",
+      "files": [],
+      "expectations": [
+        "Says optional missing object references may be accepted, without claiming all missing references are optional or accepted",
+        "Keeps incompatible edges and malformed schema rejected; explicitly passes --recover-tail to either summary or inspect only for an immutable stopped recording cut during its final command, with recoveredTail and terminalError checked",
+        "Keeps comparison strict and excludes malformed payloads, limits, I/O failures and required-reference failures from recovery; does not advise weakening validation",
+        "Does not infer corruption or absence of the requested velocity from load rejection; preserves the capture for a compatible reader or further diagnosis"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Compare Body's globalPose orientation in two stopped captures over recorded frames 0 through 3, offset 0, stride 1, tolerance 0.01 radians. The producer confirms alignment. Explain the result here without saving annotations. The v2 result is Equal, with leftFrameCompleted false and rightFrameCompleted true.",
+      "expected_output": "Routes to the installed SDK ovd-compare skill, discovers each capture's contexts and segments, requests paired globalPose/orientation flags, and explains orientation equality separately from asymmetric frame completion.",
+      "files": [],
+      "expectations": [
+        "Checks --version and both summaries, resolves Body uniquely and binds each capture's scene context and segment before comparing",
+        "Uses installed ovd-inspect compare with --attribute globalPose --distance orientation and radians, not a separate ovd-compare executable",
+        "Reads nested measure fields, leftValue/rightValue and componentCount 4 as version-2 evidence; quaternion order is xyzw",
+        "Reports Equal at the compared samples while the retained left frame is open and right frame completed; does not claim simulation completion",
+        "Keeps the explanation in the ordinary conversation and does not add --annotations or claim viewer import"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "A trusted capture exits 2 with physx.ovd.error code Limit, message Attribute payload exceeds the payload limit, limitOption --max-attribute-bytes. The producer justifies a larger payload. After a bounded retry, code Limit names --max-retained-bytes. Should I recover the tail or increase both budgets at once?",
+      "expected_output": "Uses the known machine-readable payload limit, adjusts that option alone by a justified bounded amount, and treats the later retained-byte limit as a separate justified retry while keeping both caps active.",
+      "files": [],
+      "expectations": [
+        "Chooses --max-attribute-bytes from limitOption rather than the English message",
+        "Uses positive integers and only a justified bounded adjustment to the currently identified option; does not raise every limit at once",
+        "Explains that both attribute and retained-byte caps remain active and the later --max-retained-bytes diagnosis needs separate justification",
+        "Does not use --recover-tail for Limit failures or promise that increasing budgets guarantees acceptance"
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "I requested an annotation sidecar. compare returned valid physx.ovd.inspection-evidence JSON with status Different, then exit 2 and stderr says the annotation could not be written. Another output write left partial stdout and exit 2. Did either save evidence successfully?",
+      "expected_output": "Reports output failure from exit status and diagnostics, distinguishes it from load rejection and Incomparable, and does not claim a saved sidecar from valid or partial stdout.",
+      "files": [],
+      "expectations": [
+        "Checks exit status and stderr even when valid comparison JSON was emitted; does not claim the annotation was saved",
+        "Does not misclassify output failure as physx.ovd.error load rejection or status Incomparable",
+        "Acknowledges that output failure may follow valid or partial stdout rather than promising empty stdout",
+        "Preserves the source captures and only uses a new non-source annotation path when retrying the requested export"
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "Adapt the capture sample to my scene with rigid bodies beneath a translated parent. I need correct world-space poses and synchronous live snapshots to corroborate the recording. Which population domain and live-read API should the adaptation retain?",
+      "expected_output": "Register schemas, populate with descs=physics_population_descs(rendering=True) before sealing and attaching, and retain PhysX.read_sync for the sample's synchronous type-based live snapshots.",
+      "files": [],
+      "expectations": ["Registers both external physx-usd-schemas directories via schema_support.physx_schema_paths before population with physics_population_descs(rendering=True), sealing and collected attach", "Retains PhysX.read_sync rather than passing type/scope arguments to query-based PhysX.read", "If attach collection fails, checks is_stage_attached and collects detach before stage release; preserves recording lifecycle and sample-specific evidence checks"]
+    },
+    {
+      "id": 12,
+      "prompt": "On OvPhysX 0.8, record only /World/Robot's motion without forces or contacts. Keep repeated captures in captures/factory, which does not exist yet. Can I use a transform-only mask or change the filter while recording to disk? How do mixed scene/object lists, future scene members and empty lists affect scope?",
+      "expected_output": "Enables recording capability before creation, attaches the owner's stage, and starts an explicit directory destination with OmniPvdFilter(record_secondary_data=False, objects=['/World/Robot']); explains primary data, path rules and stop/restart.",
+      "files": [],
+      "expectations": [
+        "Uses the real filter keyword of start_recording and a bool record_secondary_data=False, not an invented channel mask or per-attribute transform-only API",
+        "Uses exact absolute scene/object paths as a union within the owner's attachment; selecting a scene includes future members, while a plain parent prim is not a subtree selector",
+        "Explains that primary state also includes geometry, materials, velocities and joint state; omitting the filter or leaving both lists empty selects all shared-runtime objects",
+        "Explains the literal case-sensitive .ovd exact-file rule, automatic recursive directory creation at admitted start, timestamped directory filenames and the overwrite risk of exact-file mode",
+        "Stops and restarts FILE recording for a new filter, checks stop before inspection and retains the instance/stage through inspection"
+      ]
+    },
+    {
+      "id": 13,
+      "prompt": "Our 0.8 factory is too large for an initial full snapshot. Let a TCP viewer discover /World/Robot and choose the data first, then change its selection live. The old viewer also needs to read legacy streams. Is sending a request enough, and can status polling apply it?",
+      "expected_output": "Starts a ready TCP receiver, then the attached recording owner uses start_recording(..., filter=..., wait_for_selection=True); explains catalog scope, native requests, safe-point pumping and applied acknowledgments.",
+      "files": [],
+      "expectations": [
+        "Uses wait_for_selection=True with a TCP destination and the owner's own live attachment, avoiding the initial detailed snapshot and GPU readback",
+        "Explains that initial scene/object lists bound discovery and all later selections, while the receiver chooses secondary data; is_recording is true while waiting",
+        "Uses native OmniPvdSocketReadStream.requestCapture with connection-local catalog handles and increasing nonzero request IDs; does not invent a Python receiver API",
+        "Keeps submitting the recording owner's step or step_sync; status queries and warmup do not pump control",
+        "Waits for matching captureRequestId and captureRequestStatus=1 with captureEpoch before treating selection as applied; invalid/busy/denied requests retain the prior policy",
+        "Distinguishes forward stream/integration versions from reverse-control capability negotiation, and sends no control bytes to unsupported older producers",
+        "Reports that stop_recording ends waiting or sampling, FILE cannot use discovery, and the inspector consumes a finalized saved capture rather than acting as the TCP receiver"
+      ]
+    },
+    {
+      "id": 14,
+      "prompt": "Debug selected particles, a deformable and a robot on DirectGPU in 0.8. Do I select links individually? Which contacts and forces appear? A recorded scalar is Missing: does that prove its value was zero?",
+      "expected_output": "Selects supported owning objects, separates primary and secondary payloads and contact counterparts, and interprets supported numeric inspection with sample provenance and producer limitations.",
+      "files": [],
+      "expectations": [
+        "Selects whole articulations, particle systems or individual buffers, and deformable surfaces/volumes; links, joints, shapes and meshes follow owners rather than being explicit selectors",
+        "Explains particle positions/velocities/phases and deformable vertex state are primary, diffuse payloads and supported forces/contacts are secondary, and selection does not switch DirectGPU simulation mode",
+        "Includes a contact when either endpoint is selected with secondary data enabled; counterparts needed for the connection can appear without recursively selecting their other connections",
+        "Does not infer force mode, unrecorded applied-force arrays or joint reaction forces from velocity, or promise the bounded inspector can decode contact arrays",
+        "Uses ovd-inspect for supported scalar/integer/raw-flag values and distinguishes Exact, Carried and Missing; a filtered-out or unwritten value is not zero",
+        "Records the selection policy and capture epoch alongside frame/context/segment identity instead of comparing across policy changes without alignment"
+      ]
+    }
+  ]
+}

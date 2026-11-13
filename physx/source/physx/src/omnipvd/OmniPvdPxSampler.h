@@ -8,6 +8,7 @@
 
 #if PX_SUPPORT_OMNI_PVD
 #include "foundation/PxSimpleTypes.h"
+#include "foundation/PxTransform.h"
 #include "foundation/PxHashMap.h"
 #include "foundation/PxArray.h"
 #include "foundation/PxHashSet.h"
@@ -16,6 +17,7 @@
 #include "foundation/PxErrorCallback.h"
 #include "common/PxPhysXCommonConfig.h"
 #include "OmniPvdChunkAlloc.h"
+#include "omnipvd/PxOmniPvd.h"
 
 namespace physx
 {
@@ -24,12 +26,15 @@ namespace physx
 	class NpScene;
 	class PxActor;
 	class PxShape;
+	class PxConstraint;
+	class PxConstraintConnector;
 	class PxMaterial;
 
 	class PxArticulationReducedCoordinate;
 	class PxArticulationJointReducedCoordinate;
 	class PxArticulationLink;
 	class PxRigidDynamic;
+	class PxRigidActor;
 	class PxRigidBody;
 	class PxArticulationMimicJoint;
 
@@ -43,6 +48,7 @@ namespace physx
 	class PxPBDMaterial;
 	class PxDiffuseParticleParams;
 	class PxParticleBuffer;
+	class PxPBDParticleSystem;
 
 	struct OmniPvdPxCoreRegistrationData;
 
@@ -133,21 +139,28 @@ public:
 	void addArticulationFromLinkFlagChangeReset(const physx::PxArticulationLink* link);
 	void addArticulationLinksForceReset(const physx::PxArticulationReducedCoordinate* articulation);
 	void addArticulationLinksTorqueReset(const physx::PxArticulationReducedCoordinate* articulation);
-	void addArticulationJointsForceReset(const physx::PxArticulationReducedCoordinate* articulation);
 	void removeArticulationReset(const physx::PxArticulationReducedCoordinate* articulation);
 	
 	void resetForces();
+	bool areContactsValid() const { return mContactsValid; }
+	void setContactsValid(bool valid) { mContactsValid = valid; }
+	bool contactArraysCaptured() const { return mContactArraysCaptured; }
+	void setContactArraysCaptured(bool captured) { mContactArraysCaptured = captured; }
+	physx::PxArray<physx::PxU32>& getGpuSnapshotIndices() { return mGpuSnapshotIndices; }
 
 private:
 	physx::PxScene& mScene;
 	physx::PxU64 mFrameId;
+	bool mFrameOpen;
+	bool mContactsValid;
+	bool mContactArraysCaptured;
+	physx::PxArray<physx::PxU32> mGpuSnapshotIndices;
 
 	physx::PxHashSet<const PxRigidDynamic*> mResetRigidDynamicForce;
 	physx::PxHashSet<const PxRigidDynamic*> mResetRigidDynamicTorque;
 
 	physx::PxHashSet<const PxArticulationReducedCoordinate*> mResetArticulationLinksForce;
 	physx::PxHashSet<const PxArticulationReducedCoordinate*> mResetArticulationLinksTorque;
-	physx::PxHashSet<const PxArticulationReducedCoordinate*> mResetArticulationJointsForce;
 };
 
 }
@@ -162,8 +175,11 @@ public:
 	// harmless. It is required before starting another recording, but optional for final
 	// teardown: PxPhysics destruction emits final remove notifications before deleting the
 	// sampler. A later snapshotAll() (driven by startSampling()) records the current state again.
+	// Retain particle mirrors on stop; release excluded mirrors at the next snapshot and all on buffer teardown.
+	// Primary-only snapshots also release diffuse mirrors.
 	bool stopSampling();
 	bool isSampling();
+	bool isTakingSnapshot() const;
 	// Emits a full snapshot of the current live simulation state to the currently
 	// bound write stream, in referenced-before-referrer order: registers the full
 	// schema + singletons, then walks shared resources -> shapes -> actors /
@@ -174,6 +190,38 @@ public:
 	// registration re-mints identical handles. Ensures sampling is on (emission flows via
 	// onObjectAdd). Returns false if there is no sampler.
 	bool snapshotAll();
+	bool streamCaptureCatalog(bool initialize);
+	static void getCaptureObjectIdentity(const physx::PxBase& object, const physx::PxScene*& scene,
+		const physx::PxBase*& owner, const char*& name);
+	bool setCaptureDesc(const physx::PxOmniPvdFilterDesc& desc);
+	physx::PxU32 validateCaptureDesc(const physx::PxOmniPvdFilterDesc& desc) const;
+	static void buildCaptureObjectCatalog(physx::PxHashMap<physx::PxU64, const physx::PxBase*>& catalog);
+	void resetCaptureObjects(OmniPvdWriter& writer);
+	void clearRetiredCaptureHandles();
+	bool isCaptureHandleRetired(physx::PxU64 handle) const;
+	bool isObjectRecorded(const physx::PxBase& object) const;
+	bool isCapturingAllObjects() const;
+	void prepareSceneJointState(const physx::PxScene& scene);
+	void updateConstraintOmniPvdProperties(const physx::PxConstraint& constraint);
+	// Skip connector updates during NpPhysics::createConstraint(): its owner is still initializing.
+	void beginConstraintCreation(const physx::PxConstraintConnector& connector);
+	void endConstraintCreation(const physx::PxConstraintConnector& connector);
+	bool isJointStateActor(const physx::PxActor& actor) const;
+	void storeJointActorPose(const physx::PxActor& actor, const physx::PxTransform& pose);
+	void storeJointActorVelocity(const physx::PxActor& actor, const physx::PxVec3& velocity, bool angular);
+	bool getJointActorPose(const physx::PxRigidActor& actor, physx::PxTransform& pose) const;
+	bool getJointActorVelocity(const physx::PxRigidActor& actor, physx::PxVec3& linear, physx::PxVec3& angular) const;
+	void streamArticulationReactions(OmniPvdWriter* writer, const physx::OmniPvdPxCoreRegistrationData* registrationData,
+		const physx::PxArticulationReducedCoordinate& articulation);
+#if PX_SUPPORT_GPU_PHYSX
+	void beginSceneGpuReadback(const physx::PxScene& scene);
+	bool streamDeformableState(OmniPvdWriter* writer, const physx::OmniPvdPxCoreRegistrationData* registrationData,
+		const physx::PxDeformableBody& body);
+	bool streamParticleBufferState(OmniPvdWriter* writer, const physx::OmniPvdPxCoreRegistrationData* registrationData,
+		const physx::PxParticleBuffer& buffer);
+	bool streamParticleSystemState(OmniPvdWriter* writer, const physx::OmniPvdPxCoreRegistrationData* registrationData,
+		const physx::PxPBDParticleSystem& system);
+#endif
 	void setOmniPvdInstance(physx::NpOmniPvd* omniPvdIntance);
 
 	// writes all contacts to the stream
@@ -189,7 +237,12 @@ public:
 	// The single-object onObjectAdd(object) above opens exactly one scope and forwards here.
 	void onObjectAdd(OmniPvdWriter* pvdWriter, const physx::OmniPvdPxCoreRegistrationData* pvdRegData, const physx::PxBase& object);
 	void onObjectRemove(const physx::PxBase& object);
+	void onConstraintActorsChange(const physx::PxConstraint& constraint);
+#if PX_SUPPORT_GPU_PHYSX
+	void onParticlePhaseChange(const physx::PxPBDParticleSystem& system);
+#endif
 	
+	void reportAlreadySamplingError();
 	virtual void reportError(physx::PxErrorCode::Enum code, const char* message, const char* file, int line) PX_OVERRIDE;
 };
 
@@ -205,6 +258,21 @@ NpOmniPvd* NpOmniPvdGetInstance();
 // OVD write macros gate on this so that no PhysX operation writes OVD data when not sampling. Used
 // only inside PhysX core; the extensions write path gates on PxOmniPvd::isSampling() instead.
 bool NpOmniPvdSampling();
+bool NpOmniPvdRecordSecondaryData();
+bool NpOmniPvdCaptureActor(const PxActor& actor);
+bool NpOmniPvdCaptureActorState(const PxActor& actor);
+bool NpOmniPvdCaptureArticulation(const PxArticulationReducedCoordinate& articulation);
+bool NpOmniPvdCaptureScene(const PxScene& scene);
+bool NpOmniPvdCaptureIsSelective();
+void NpOmniPvdCaptureDependency(const void* object);
+void NpOmniPvdCaptureRetireHandle(PxU64 handle);
+bool NpOmniPvdShouldRecordCreation(const char* className, PxU64 objectHandle);
+bool NpOmniPvdShouldRecordDestruction(const char* className, PxU64 objectHandle);
+bool NpOmniPvdShouldRecordValue(OmniPvdWriter* writer, const OmniPvdPxCoreRegistrationData* registrationData,
+	const char* className, const char* attributeName, PxU64 objectHandle);
+bool NpOmniPvdShouldRecordAddition(OmniPvdWriter* writer, const OmniPvdPxCoreRegistrationData* registrationData,
+	const char* className, const char* attributeName, PxU64 objectHandle, PxU64 valueHandle);
+bool NpOmniPvdShouldRecordRemoval(OmniPvdWriter* writer, const OmniPvdPxCoreRegistrationData* registrationData, const char* className, const char* attributeName, PxU64 objectHandle, PxU64 valueHandle);
 
 }
 

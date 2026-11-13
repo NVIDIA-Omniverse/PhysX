@@ -5,7 +5,7 @@
 
 # Dynamic rigid body on a Cube
 
-Convenience composition: one Cube prim that is both the body and its only collider. Owns no columns; everything comes from the listed components.
+Convenience composition: one Cube [prim](glossary.md#prim) that is both the body and its only collider. Owns no columns; everything comes from the listed components.
 
 - **Type:** [`Cube`](Cube.md)
 - **Required APIs:** [`PhysicsRigidBodyAPI`](PhysicsRigidBodyAPI.md), [`PhysicsCollisionAPI`](PhysicsCollisionAPI.md)

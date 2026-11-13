@@ -20,7 +20,7 @@ ordinal, and attach with `attach_ovstage()`. Drain later edits with
 `update_from_ovstage()`, and tear down its physics attachment with
 `detach_ovstage()`. Collect each lifecycle task with `wait_task()` before using
 its result or destroying the Stage. See
-`basic-workflow` and `docs/ovstage_integration.md` for the populate/seal/attach
+`ovphysx-basic-workflow` and `docs/ovstage_integration.md` for the populate/seal/attach
 sequence.
 
 ## When to Use
@@ -29,10 +29,10 @@ Use this skill when you need to create or edit USD content that defines physics:
 a rigid body, a collider, mass properties, or the physics scene itself.
 
 Do not use this skill for the runtime API (creating an instance, stepping,
-reading or writing simulation state). Those are covered by `basic-workflow`,
-`ovphysx-output-read` (the session read/write API; the deprecated
-`tensor-bindings-cpu` / `tensor-bindings-gpu` skills remain only for existing binding
-code), and `clone-environments`.
+reading or writing simulation state). Those are covered by `ovphysx-basic-workflow`,
+`ovphysx-output-read`, `ovphysx-session-write`, and `ovphysx-clone-environments`.
+The deprecated tensor-binding APIs remain available for compatibility, but use
+the session read/write skills for supported runtime I/O guidance.
 
 ## Prerequisites
 
@@ -134,7 +134,7 @@ separate reference files.
 Populate the authored file into an `ovstage.Stage`, seal the write ordinal,
 attach the stage to ovphysx, and step it; a dynamic body above the ground should
 fall and come to rest. Use the synchronous populate/seal/attach/step/destroy
-pattern in the `basic-workflow` skill (Python and C), replacing its input path
+pattern in the `ovphysx-basic-workflow` skill (Python and C), replacing its input path
 with the file you authored.
 
 ## References
@@ -144,5 +144,5 @@ with the file you authored.
   `tests/data/simple_physics_scene.usda`, `tests/data/basic_simulation.usda`
 - Runtime populate/attach/step: `tests/python_samples/hello_world.py` (installed in the
   wheel only as `samples/python_samples/hello_world.py`; SDK ships the C
-  equivalent `samples/c_samples/hello_world_c/main.c`); `basic-workflow` skill
+  equivalent `samples/c_samples/hello_world_c/main.c`); `ovphysx-basic-workflow` skill
 - Omni Physics documentation: https://docs.omniverse.nvidia.com/kit/docs/omni_physics/latest/index.html

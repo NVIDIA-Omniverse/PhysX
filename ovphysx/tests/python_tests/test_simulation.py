@@ -43,7 +43,7 @@ def test_step_variants(physx_sdk, dt, should_error, step_method):
         with pytest.raises(RuntimeError, match="finite"):
             step(dt)
     else:
-        # step() rejects stage-less handles (NVBugs 6433668), so a stage is attached first.
+        # A step without an attached stage fails its task (NVBugs 6433668), so a stage is attached first.
         test_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         load_usd_with_ovstage(physx_sdk, os.path.join(test_dir, "data", "basic_simulation.usda"))
         physx_sdk.wait_all()
@@ -144,7 +144,7 @@ def test_step_extreme_valid_values(physx_sdk):
     Returns:
         None: Ensures extreme values are handled appropriately.
     """
-    # step() rejects stage-less handles (NVBugs 6433668), so a stage is attached first.
+    # A step without an attached stage fails its task (NVBugs 6433668), so a stage is attached first.
     test_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     load_usd_with_ovstage(physx_sdk, os.path.join(test_dir, "data", "basic_simulation.usda"))
     physx_sdk.wait_all()
@@ -183,7 +183,7 @@ def test_multiple_step_calls_rapid(physx_sdk):
     Returns:
         None: Ensures rapid step calls are handled correctly.
     """
-    # step() rejects stage-less handles (NVBugs 6433668), so a stage is attached first.
+    # A step without an attached stage fails its task (NVBugs 6433668), so a stage is attached first.
     test_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     load_usd_with_ovstage(physx_sdk, os.path.join(test_dir, "data", "basic_simulation.usda"))
     physx_sdk.wait_all()
@@ -211,7 +211,7 @@ def test_wait_task_timeout_boundary(physx_sdk):
     Returns:
         None: Ensures timeout mechanism works and operations complete properly.
     """
-    # step() rejects stage-less handles (NVBugs 6433668), so a stage is attached first.
+    # A step without an attached stage fails its task (NVBugs 6433668), so a stage is attached first.
     test_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     load_usd_with_ovstage(physx_sdk, os.path.join(test_dir, "data", "basic_simulation.usda"))
     physx_sdk.wait_all()
@@ -239,7 +239,7 @@ def test_wait_all_operations(physx_sdk):
     Returns:
         None: Ensures waiting for all operations works correctly.
     """
-    # step() rejects stage-less handles (NVBugs 6433668), so a stage is attached first.
+    # A step without an attached stage fails its task (NVBugs 6433668), so a stage is attached first.
     test_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     load_usd_with_ovstage(physx_sdk, os.path.join(test_dir, "data", "basic_simulation.usda"))
     physx_sdk.wait_all()
@@ -299,7 +299,7 @@ def test_wait_task_timeout_variants(physx_sdk):
     Returns:
         None: Validates that different timeout values work as expected.
     """
-    # step() rejects stage-less handles (NVBugs 6433668), so a stage is attached first.
+    # A step without an attached stage fails its task (NVBugs 6433668), so a stage is attached first.
     test_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     load_usd_with_ovstage(physx_sdk, os.path.join(test_dir, "data", "basic_simulation.usda"))
     physx_sdk.wait_all()

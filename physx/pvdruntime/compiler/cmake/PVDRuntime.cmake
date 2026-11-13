@@ -15,6 +15,7 @@ endif()
 include(${_PVDRUNTIME_ROOT}/${PROJECT_CMAKE_FILES_DIR}/${TARGET_BUILD_PLATFORM}/PVDRuntime.cmake)
 
 SET(PVDRUNTIME_HEADERS
+  ${_PVDRUNTIME_ROOT}/include/OmniPvdCaptureRequest.h
   ${_PVDRUNTIME_ROOT}/include/OmniPvdLibraryFunctions.h
   ${_PVDRUNTIME_ROOT}/include/OmniPvdCommands.h
   ${_PVDRUNTIME_ROOT}/include/OmniPvdDefines.h

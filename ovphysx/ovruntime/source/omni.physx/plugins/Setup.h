@@ -1,6 +1,12 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-OMNIPVD-CONTROL-001
+// @covers AC-2 AC-3 AC-4 AC-5
+
+// @implements REQ-OMNIPVD-CAPTURE-001
+// @covers AC-1 AC-3 AC-4
+
 // @implements REQ-ATTACH-SERVICES-001
 // @covers AC-1 AC-2 AC-3 AC-4
 
@@ -16,6 +22,9 @@
 
 // @implements REQ-SDK-INIT-001
 // @covers AC-1 AC-4
+
+// @implements REQ-SDK-LIFECYCLE-002
+// @covers AC-1 AC-3
 
 #pragma once
 #include <carb/tasking/TaskingUtils.h>
@@ -37,7 +46,6 @@
 #include "SceneMultiGPUMode.h"
 
 class CarbPhysXErrorCallback;
-class OmniPvdFileWriteStream;
 class OmniPvdSocketWriteStream;
 class OmniPvdWriteStream;
 
@@ -69,7 +77,7 @@ const size_t kDefaultPhysXSceneId = 0;
 using PhysXScenesMap = std::unordered_map<const ::physx::PxScene*, PhysXScene*>;
 
 // Class holding and handling PhysX global objects like PxPhysics, PxFoundation
-class PhysXSetup : private ::physx::PxOmniPvdEventCallback
+class PhysXSetup : private ::physx::PxOmniPvdEventCallback, private ::physx::PxOmniPvdCaptureFilter
 {
 public:
     PhysXSetup();
@@ -105,8 +113,10 @@ public:
     }
     void reportCudaContextError(const usdparser::AttachedStage& owner, ::physx::PxCudaContextManager* manager);
 
+    // Attachments on different threads (compiled cache, replicator) share one registry.
     ::physx::PxSerializationRegistry* getSerializationRegistry()
     {
+        std::lock_guard<std::mutex> lock(mSerializationRegistryMutex);
         if (!mSerializationRegistry)
         {
             ::physx::PxPhysics* physics = getPhysics();
@@ -130,7 +140,7 @@ public:
     // Exact native-scene ownership lookup; foreign and retired scenes return null.
     PhysXScene* findPhysXScene(const ::physx::PxScene* scene) const
     {
-        std::lock_guard<carb::tasking::MutexWrapper> lock(mSceneRegistryMutex);
+        std::lock_guard<std::mutex> lock(mSceneRegistryMutex);
         const auto it = mPhysXScenes.find(scene);
         return it == mPhysXScenes.end() ? nullptr : it->second;
     }
@@ -146,7 +156,7 @@ public:
 
     PhysXScenesMap getPhysXScenes() const
     {
-        std::lock_guard<carb::tasking::MutexWrapper> lock(mSceneRegistryMutex);
+        std::lock_guard<std::mutex> lock(mSceneRegistryMutex);
         return mPhysXScenes;
     }
 
@@ -177,13 +187,42 @@ public:
     }
     // Runtime change of PVD settings - CAVEAT: this must NOT be called in a running simulation
     // (no synchronization is provided between post-frame-end pvd flushing and client reconnection)
-    void changePVDSettings(bool enableLegacyPVD, bool enableOmniPVD);
+    void changePVDSettings(bool enableLegacyPVD);
 
-    // Called after successful attachment publication. Never replaces an active session.
-    void startConfiguredOmniPvdRecording();
-    OmniPvdRecordingResult startOmniPvdRecording(const OmniPvdDestination& destination, bool startupFile = false);
+    // carb.settings subscriptions owned by this object (the legacy PVD switch, kSettingPVDEnabled,
+    // routed to changePVDSettings). The started runtime owns their lifetime: OmniPhysX::onStartup() subscribes and
+    // OmniPhysX::onShutdown() unsubscribes, next to OmniPhysX's own subscriptions. The destructor
+    // is a backstop, not the release point: the OmniPhysX instance holding this member is not
+    // destroyed at shutdown, while carb.settings outlives it and keeps dispatching to every
+    // subscription it still holds -- into this retired object after a restart, or into unmapped
+    // code once the module that held the callback is unloaded.
+    void subscribeToSettingsChangeEvents(); // no-op while already subscribed
+    void unsubscribeFromSettingsChangeEvents(); // idempotent, safe without a prior subscribe
+    size_t getSettingsSubscriptionCount() const
+    {
+        return mSubscribedSettings.size();
+    }
+
+    OmniPvdRecordingResult startOmniPvdRecording(
+        const OmniPvdDestination& destination,
+        const ::physx::PxOmniPvdFilterDesc* capture = nullptr,
+        AttachHandle selectionOwner = omni::physics::kNoAttach, bool discovery = false);
     OmniPvdRecordingResult stopOmniPvdRecording();
     bool isOmniPvdRecording() const;
+    bool isOmniPvdSecondaryDataEnabled() const
+    {
+        return mOmniPvdRecordSecondaryData;
+    }
+    AttachHandle getOmniPvdCaptureOwner() const { return mOmniPvdCaptureOwner.load(std::memory_order_acquire); }
+    bool shouldProcessOmniPvdCaptureRequests(AttachHandle attach) const
+    {
+        if (!mOmniPvdCaptureControlEnabled.load(std::memory_order_acquire))
+            return false;
+        const AttachHandle owner = getOmniPvdCaptureOwner();
+        return owner == attach || owner == omni::physics::kNoAttach;
+    }
+    bool hasPendingOmniPvdCaptureRequest(AttachHandle attach);
+    void processOmniPvdCaptureRequests(AttachHandle attach);
 
     inline const ::physx::PxVehiclePvdAttributeHandles* getVehiclePvdRegistrationHandles() const
     {
@@ -198,7 +237,7 @@ public:
     // If any scene is async return true
     bool isAsyncSimEnabled() const
     {
-        std::lock_guard<carb::tasking::MutexWrapper> registry(mSceneRegistryMutex);
+        std::lock_guard<std::mutex> registry(mSceneRegistryMutex);
         for (PhysXScenesMap::const_reference ref : mPhysXScenes)
         {
             if (ref.second->getUpdateType() == usdparser::eAsynchronous)
@@ -228,12 +267,13 @@ private:
     void createCookingAsyncContext();
     void releaseCookingAsyncContext();
     void cleanupPhysics(); // called with scene destruction, this should not be required in the end
-    void setOmniPVDoutputDirectory(const char* directory);
-    void setOmniPVDTimeStampedFileName(const char* fileName);
-    void writeOutOmniPVDFile(bool omniPVDWasActive, bool fileWriteStreamClosedOk);
     bool releaseOmniPvdWriteStream();
     bool closeOmniPvdWriteStream();
-    void onStartSampling(::physx::PxOmniPvd& omniPvd) override;
+    void onStartSampling(::physx::PxOmniPvd& omniPvd, const ::physx::PxOmniPvdFilterDesc* filter) override;
+    void onCaptureReset(::physx::PxOmniPvd& omniPvd, const ::physx::PxOmniPvdFilterDesc& filter) override;
+    bool filterCaptureRequest(::physx::PxOmniPvdFilterDesc& filter) override;
+    bool restrictOmniPvdCaptureToOwner(::physx::PxOmniPvdFilterDesc& filter, AttachHandle owner,
+                                     std::vector<const ::physx::PxScene*>& sceneStorage, bool expandEmpty = true);
     void registerVehiclePvdCallback();
     void unregisterVehiclePvdCallback();
     void releaseVehiclePvdRegistrationHandles();
@@ -242,6 +282,7 @@ private:
     ::physx::PxPhysics* mPhysics{ nullptr };
     std::unordered_set<const usdparser::AttachedStage*> mAttachmentBorrowers;
     ::physx::PxSerializationRegistry* mSerializationRegistry{ nullptr };
+    std::mutex mSerializationRegistryMutex;
     carb::settings::ISettings* mISettings{ nullptr };
 
     ::physx::PxDefaultAllocator mAllocator;
@@ -264,17 +305,17 @@ private:
     enum class OmniPvdStreamKind : uint8_t
     {
         eNone,
-        eStartupFile,
-        eFile,
+        eRuntimeFile,
         eTcp,
     };
     OmniPvdWriteStream* mOmniPvdWriteStream{ nullptr };
     OmniPvdStreamKind mOmniPvdStreamKind{ OmniPvdStreamKind::eNone };
+    std::atomic<AttachHandle> mOmniPvdCaptureOwner{ omni::physics::kNoAttach };
+    std::atomic<bool> mOmniPvdCaptureControlEnabled{ false };
+    std::vector<const ::physx::PxScene*> mOmniPvdCaptureScenes;
     ::physx::PxVehiclePvdAttributeHandles* mVehiclePvdRegistrationHandles{ nullptr };
     bool mVehiclePvdSnapshotSucceeded{ false };
-    bool mWasOmniPVDSimStarted{ false };
-    std::string mOmniPVDOutputDirectory;
-    std::string mOmniPVDTimeStampedFileName;
+    bool mOmniPvdRecordSecondaryData{ true };
 
     uint32_t mThreadCount{ 8 };
 
@@ -291,7 +332,10 @@ private:
     // between attachments, so an address cannot alias a stale kernel cache entry.
     std::vector<AttachmentCudaResource> mAttachmentCudaResources;
     mutable carb::tasking::RecursiveMutexWrapper mResourceMutex;
-    mutable carb::tasking::MutexWrapper mSceneRegistryMutex;
+    // Native PhysX query callbacks look up scenes inside thread-local API-check scopes.
+    // This lock must not suspend or migrate the calling task. Keep its critical sections
+    // limited to registry access; never call task-aware locks or callbacks while holding it.
+    mutable std::mutex mSceneRegistryMutex;
     bool mReleasingPhysXScenes{ false };
     bool mExtensionsInitialized{ false };
     bool mVehicleSDKInitialized{ false }; // guards against multiple de-init, since scene release can be called

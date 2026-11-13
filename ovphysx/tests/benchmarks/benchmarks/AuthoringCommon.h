@@ -102,19 +102,19 @@ inline ovx_string_t stringView(std::string_view s)
 }
 
 
-inline ovx_string_or_token_t nameString(std::string_view s)
+inline ovx_token_or_string_t nameString(std::string_view s)
 {
-    ovx_string_or_token_t name;
-    name.token = 0;
+    ovx_token_or_string_t name;
+    name.token = ovx_token_t{0};
     name.string.ptr = s.data();
     name.string.length = s.size();
     return name;
 }
 
 
-inline ovx_string_or_token_t nameToken(ovx_token_t token)
+inline ovx_token_or_string_t nameToken(ovx_token_t token)
 {
-    ovx_string_or_token_t name;
+    ovx_token_or_string_t name;
     name.token = token;
     name.string.ptr = nullptr;
     name.string.length = 0;
@@ -131,7 +131,7 @@ inline bool internAttr(ovstage_instance_t* stage, const char* name, ovx_token_t*
     }
     ovx_string_t s = stringView(name);
     const ovx_api_result_t result = path_dictionary_create_tokens_from_strings(dict, &s, 1, out);
-    return result.status == OVX_API_SUCCESS && *out != 0;
+    return result.status == OVX_API_SUCCESS && out->raw_id != 0;
 }
 
 
@@ -245,7 +245,7 @@ inline bool releaseCompletedStageOp(ovstage_instance_t* stage, ovstage_op_id_t o
     if (releaseStatus != OVSTAGE_OK)
     {
         bmRecordFailure(row, "%s release_op failed: op_id=%llu status=%d (%s)", what,
-                        static_cast<unsigned long long>(opIndex), static_cast<int>(releaseStatus),
+                        static_cast<unsigned long long>(opIndex.raw_id), static_cast<int>(releaseStatus),
                         ovstage_get_error_string(stage, releaseStatus));
         return false;
     }
@@ -267,7 +267,7 @@ inline bool recordStageWaitErrors(
     {
         const ovstage_op_id_t failedOp = waitResult.error_op_ids[i];
         const ovx_string_t detail = ovstage_get_last_op_error(stage, failedOp);
-        bmRecordFailure(row, "%s dependency failed: op_id=%llu %.*s", what, static_cast<unsigned long long>(failedOp),
+        bmRecordFailure(row, "%s dependency failed: op_id=%llu %.*s", what, static_cast<unsigned long long>(failedOp.raw_id),
                         static_cast<int>(detail.length), detail.ptr ? detail.ptr : "");
         operationFailed = true;
     }
@@ -299,7 +299,7 @@ inline bool waitStage(
                         "%s timed out after %llu s: lowest_pending_op_id=%llu; waiting for final completion before "
                         "teardown",
                         what, static_cast<unsigned long long>(kWaitTimeoutNs / 1000000000ULL),
-                        static_cast<unsigned long long>(waitResult.lowest_pending_op_id));
+                        static_cast<unsigned long long>(waitResult.lowest_pending_op_id.raw_id));
         std::memset(&waitResult, 0, sizeof(waitResult));
         status = ovstage_wait_op(stage, opIndex, OVSTAGE_TIMEOUT_INFINITE, &waitResult);
         operationFailed = recordStageWaitErrors(stage, waitResult, row, what) || operationFailed;
@@ -314,7 +314,7 @@ inline bool waitStage(
     {
         bmRecordFailure(row, "%s %s failed before completion: op_id=%llu status=%d (%s)", what,
                         timedOut ? "final wait" : "wait",
-                        static_cast<unsigned long long>(opIndex), static_cast<int>(status),
+                        static_cast<unsigned long long>(opIndex.raw_id), static_cast<int>(status),
                         ovstage_get_error_string(stage, status));
         return false;
     }
@@ -322,7 +322,7 @@ inline bool waitStage(
     if (status != OVSTAGE_OK && !operationFailed)
     {
         const ovx_string_t detail = ovstage_get_last_op_error(stage, opIndex);
-        bmRecordFailure(row, "%s failed: op_id=%llu status=%d %.*s", what, static_cast<unsigned long long>(opIndex),
+        bmRecordFailure(row, "%s failed: op_id=%llu status=%d %.*s", what, static_cast<unsigned long long>(opIndex.raw_id),
                         static_cast<int>(status), static_cast<int>(detail.length), detail.ptr ? detail.ptr : "");
         operationFailed = true;
     }
@@ -340,7 +340,7 @@ inline bool recordPopulationWaitErrors(
     {
         const ovstage_population_op_id_t failedOp = waitResult.error_op_ids[i];
         const ovx_string_t detail = ovstage_population_get_last_op_error(failedOp);
-        bmRecordFailure(row, "%s dependency failed: op_id=%llu %.*s", what, static_cast<unsigned long long>(failedOp),
+        bmRecordFailure(row, "%s dependency failed: op_id=%llu %.*s", what, static_cast<unsigned long long>(failedOp.raw_id),
                         static_cast<int>(detail.length), detail.ptr ? detail.ptr : "");
         operationFailed = true;
     }
@@ -364,7 +364,7 @@ inline bool waitPopulation(ovstage_instance_t* stage, ovstage_population_op_id_t
                         "teardown",
                         what,
                         static_cast<unsigned long long>(kWaitTimeoutNs / 1000000000ULL),
-                        static_cast<unsigned long long>(waitResult.lowest_pending_op_id));
+                        static_cast<unsigned long long>(waitResult.lowest_pending_op_id.raw_id));
         std::memset(&waitResult, 0, sizeof(waitResult));
         status = ovstage_population_wait_op(stage, opIndex, OVSTAGE_TIMEOUT_INFINITE, &waitResult);
         operationFailed = recordPopulationWaitErrors(waitResult, row, what) || operationFailed;
@@ -530,6 +530,57 @@ inline bool sealAndDrain(ovphysx_instance_handle_t handle,
 }
 
 
+// Like sealAndDrain, but seals only the listed attribute floors (SCOPE_INCLUDE) instead of SCOPE_ALL. A
+// SCOPE_ALL seal advances the structural floors (usd-path / usd-schemas / usd-prim-type / usd-typeName)
+// every drain, extra structural-reconcile work a real control loop never triggers -- so a row that wants to
+// measure the steady-state device drain seals only the columns it wrote (SCOPE_INCLUDE), the realistic
+// authoring pattern, keeping a stable topology across drains.
+inline bool sealAndDrainScoped(ovphysx_instance_handle_t handle,
+                               ovstage_instance_t* stage,
+                               ovstage_ordinal_t* lastDrained,
+                               ovstage_ordinal_t ordinal,
+                               const ovx_token_t* attributes,
+                               size_t attributeCount,
+                               const char* row,
+                               bool* outSealCompleted = nullptr)
+{
+    if (outSealCompleted)
+    {
+        *outSealCompleted = false;
+    }
+    ovstage_write_floor_desc_t writeFloor;
+    std::memset(&writeFloor, 0, sizeof(writeFloor));
+    writeFloor.ordinal = ordinal;
+    writeFloor.scope = OVSTAGE_SCOPE_INCLUDE;
+    writeFloor.attributes = attributes;
+    writeFloor.attribute_count = attributeCount;
+
+    const ovstage_enqueue_result_t seal = ovstage_advance_write_floor(stage, &writeFloor);
+    if (seal.status != OVSTAGE_OK)
+    {
+        bmRecordFailure(row, "advance_write_floor (SCOPE_INCLUDE) enqueue rejected: %d", static_cast<int>(seal.status));
+        return false;
+    }
+    if (!waitStage(stage, seal.op_index, row, "advance_write_floor", outSealCompleted))
+    {
+        return false;
+    }
+
+    ovstage_ordinal_range_t range;
+    std::memset(&range, 0, sizeof(range));
+    range.has_start_ordinal = true;
+    range.start_ordinal = (*lastDrained) + 1;
+    range.end_ordinal = ordinal;
+    if (!waitOvphysxTaskChecked(handle, ovphysx_update_from_ovstage(handle, range), row, "update_from_ovstage"))
+    {
+        return false;
+    }
+
+    *lastDrained = ordinal;
+    return true;
+}
+
+
 // Every ovphysx release returns a status. Discarding it hides both the
 // internal failure that stopped the reclaim and the programming error of
 // releasing a handle that was never issued (OVPHYSX_API_NOT_FOUND), so a row
@@ -580,9 +631,9 @@ inline bool countRigidBodies(ovphysx_instance_handle_t handle, uint32_t* outCoun
         return false;
     }
 
-    const ovx_string_or_token_t name = nameString(OVPHYSX_ATTR_POSITION);
+    const ovx_token_or_string_t name = nameString(OVPHYSX_ATTR_POSITION);
     ovphysx_read_handle_t read = 0;
-    if (bmCompleteTask(handle, ovphysx_read(handle, query, &name, 1, &read, nullptr)).status != OVPHYSX_API_SUCCESS || read == 0)
+    if (bmCompleteTask(handle, ovphysx_read(handle, query, &name, 1, ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr)).status != OVPHYSX_API_SUCCESS || read == 0)
     {
         releaseOvphysxResultChecked(bmCompleteTask(handle, ovphysx_release_query(handle, query)), row, "rigid-body query");
         return false;
@@ -603,9 +654,10 @@ inline bool countRigidBodies(ovphysx_instance_handle_t handle, uint32_t* outCoun
             break;
         }
 
-        if (!group->is_delete && !group->is_array && group->data.tensor_count == 1 && group->data.tensors)
+        if (!group->columns[0].is_delete && !group->columns[0].is_array && group->columns[0].data.tensor_count == 1
+            && group->columns[0].data.tensors)
         {
-            const DLTensor* tensor = &group->data.tensors[0];
+            const DLTensor* tensor = &group->columns[0].data.tensors[0];
             if (!tensor->data || tensor->device.device_type != kDLCPU || tensor->dtype.code != kDLFloat ||
                 tensor->dtype.bits != 32 || tensor->dtype.lanes < 3 || tensor->ndim != 1 || !tensor->shape)
             {
@@ -719,6 +771,61 @@ inline bool releaseQueryChecked(ovstage_instance_t* stage, ovstage_query_handle_
 }
 
 
+/**
+ * @implements REQ-CAPI-BENCHMARK-008
+ * @covers AC-4
+ */
+// Own a query across several completed operations. Explicit close reports its
+// outcome; the destructor also retires it on an early return or exception.
+// A failed checked wait can still have completed the release, so close consumes
+// ownership before calling the API and never retries an ambiguous release.
+// The releaser parameter lets the ownership transitions be tested without a
+// stage or instrumentation in a benchmark's per-write path.
+class ScopedQuery
+{
+public:
+    using Releaser = bool (*)(ovstage_instance_t*, ovstage_query_handle_t, const char*);
+
+    ScopedQuery(ovstage_instance_t* stage,
+                ovstage_query_handle_t query,
+                const char* row,
+                Releaser releaser = releaseQueryChecked)
+        : mStage(stage), mQuery(query), mRow(row), mReleaser(releaser)
+    {
+    }
+
+    ~ScopedQuery()
+    {
+        close();
+    }
+
+    ScopedQuery(const ScopedQuery&) = delete;
+    ScopedQuery& operator=(const ScopedQuery&) = delete;
+
+    ovstage_query_handle_t get() const
+    {
+        return mQuery;
+    }
+
+    bool close()
+    {
+        if (mQuery == OVSTAGE_INVALID_QUERY_HANDLE)
+        {
+            return true;
+        }
+        const ovstage_query_handle_t query = mQuery;
+        mQuery = OVSTAGE_INVALID_QUERY_HANDLE;
+        return mReleaser(mStage, query, mRow);
+    }
+
+private:
+    ovstage_instance_t* mStage = nullptr;
+    ovstage_query_handle_t mQuery = OVSTAGE_INVALID_QUERY_HANDLE;
+    const char* mRow = nullptr;
+    Releaser mReleaser = releaseQueryChecked;
+};
+
+
 // ---------------------------------------------------------------------------
 // Bounded, checked OVStage setup and teardown.
 // ---------------------------------------------------------------------------
@@ -817,10 +924,10 @@ inline bool populateAndAttachChecked(ovphysx::PhysX* physx,
     const ovx_string_t payloadView = stringView(payload);
     const ovstage_population_enqueue_result_t populate =
         source == UsdSource::eFile ?
-            ovstage_population_open_usd_from_file(
-                attachment.stage, payloadView, attachment.ordinal, 0.0, OVSTAGE_POPULATION_DOMAIN_PHYSICS) :
-            ovstage_population_open_usd_from_string(
-                attachment.stage, payloadView, attachment.ordinal, 0.0, OVSTAGE_POPULATION_DOMAIN_PHYSICS);
+            ovphysx_sample_open_usd_from_file(
+                attachment.stage, payloadView, attachment.ordinal, 0.0, /*with_rendering=*/false) :
+            ovphysx_sample_open_usd_from_string(
+                attachment.stage, payloadView, attachment.ordinal, 0.0, /*with_rendering=*/false);
     if (populate.status != OVSTAGE_OK)
     {
         const ovx_string_t err = ovstage_population_get_last_error();

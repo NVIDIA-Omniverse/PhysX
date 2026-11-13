@@ -99,6 +99,12 @@ namespace Cm
 			return IDPoolBase<FreeBuffer>::getNumUsedID() - mDeferredFreeIDs.size();
 		}
 
+		//unlike getNumUsedID(), this includes the released indices still in the deferred list
+		PxU32 getNumReservedIDs()	const
+		{
+			return IDPoolBase<FreeBuffer>::getNumUsedID();
+		}
+
 		FreeBuffer& getDeferredFreeIDs() { return mDeferredFreeIDs; }
 	};
 

@@ -821,7 +821,17 @@ void PxgAABBManager::preBpUpdate_GPU()
 	if (stateChanged || gpuStateChanged)
 	{
 		//dma changedAABBMgrHandles to GPU.
-		Local::dmaBitmap(mCudaContext, bpStream, mChangedAABBMgrHandlesBuf, mChangedHandleMap);
+		// markAggregateBoundsBitmap() sets the bit of every aggregate at its element ID, also of aggregates added after the
+		// host map was sized in the last step. Every element ID in use is below mUsedSize, so the device copy covers mUsedSize
+		// bits as well, and its words past the host map are zeroed.
+		const PxU32 nbHostWords = mChangedHandleMap.getWordCount();
+		const PxU32 nbWords = PxMax(nbHostWords, (mUsedSize + 31) / 32);
+		mChangedAABBMgrHandlesBuf.allocate(sizeof(PxU32) * nbWords, PX_FL);
+		mCudaContext->memcpyHtoDAsync(mChangedAABBMgrHandlesBuf.getDevicePtr(), mChangedHandleMap.getWords(), sizeof(PxU32) * nbHostWords, bpStream);
+		if (nbWords > nbHostWords)
+		{
+			mCudaContext->memsetD32Async(mChangedAABBMgrHandlesBuf.getDevicePtr() + sizeof(PxU32) * nbHostWords, 0, nbWords - nbHostWords, bpStream);
+		}
 	}
 }
 
@@ -1379,6 +1389,11 @@ void PxgAABBManager::computeAggregateBounds()
 
 void PxgAABBManager::markAggregateBoundsBitmap()
 {
+	if (mCudaContext->isInAbortMode())
+	{
+		return;
+	}
+
 	if(mNumAggregatesSlots > 0)
 	{
 		PxScopedCudaLock _lock_(*mCudaContextManager);
@@ -1389,10 +1404,9 @@ void PxgAABBManager::markAggregateBoundsBitmap()
 		CUdeviceptr aggDescd = mAggregateDescBuf.getDevicePtr();
 		CUdeviceptr changedHandles = mChangedAABBMgrHandlesBuf.getDevicePtr();
 
-		// in the first step, this array does not exist yet, but by definition there are also 
-		// no changed handles. Everything is new.
-		if (!changedHandles)
-			return;
+		// preBpUpdate_GPU() has uploaded the map in this step. The kernel marks each aggregate at its element ID, so the
+		// device copy has to cover the used element range.
+		PX_ASSERT(changedHandles && mChangedAABBMgrHandlesBuf.getSize() >= sizeof(PxU32) * ((mUsedSize + 31) / 32));
 		
 		KERNEL_PARAM_TYPE kernelParams[] = {
 			CUDA_KERNEL_PARAM(aggDescd),

@@ -5,7 +5,7 @@
 
 # A hinged pinion Cube and a sliding rack Cube coupled by a rack-and-pinion joint
 
-Multi-prim test composition: a pinion Cube rigid body hinged to the world by a PhysicsRevoluteJoint, a rack Cube rigid body (translated +3 in x) on a PhysicsPrismaticJoint to the world, and a PhysxPhysicsRackAndPinionJoint between the bodies that references the hinge and the prismatic joint and couples angular to linear velocity. Only the rack-and-pinion prim is verified: it is a native PxRackAndPinionJoint at runtime, so the PhysicsJoint base columns are observed on it together with physics:ratio. Owns no columns and generates no helper.
+Multi-prim test composition: a pinion Cube rigid body hinged to the world by a PhysicsRevoluteJoint, a rack Cube rigid body (translated +3 in x) on a PhysicsPrismaticJoint to the world, and a PhysxPhysicsRackAndPinionJoint between the bodies that references the hinge and the prismatic joint and couples angular to linear velocity. Only the rack-and-pinion [prim](glossary.md#prim) is verified: it is a native PxRackAndPinionJoint at runtime, so the [PhysicsJoint](glossary.md#physicsjoint) base columns are observed on it together with physics:ratio. Owns no columns and generates no helper.
 
 - **Form:** multi-prim; no helper, the contract test builds each prim with `PrimBatch`.
 

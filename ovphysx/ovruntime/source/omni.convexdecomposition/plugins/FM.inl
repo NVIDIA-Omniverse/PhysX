@@ -736,24 +736,6 @@ void fm_eulerToQuatDX(REAL x, REAL y, REAL z, REAL* quat) // convert euler angle
     fm_matrixToQuat(matrix, quat);
 }
 
-// implementation copied from: http://blogs.msdn.com/mikepelton/archive/2004/10/29/249501.aspx
-void fm_eulerToMatrixDX(REAL x, REAL y, REAL z, REAL* matrix) // convert euler angles to quaternion using the fucked up
-                                                              // DirectX method.
-{
-    fm_identity(matrix);
-    matrix[0 * 4 + 0] = (REAL)(cos(z) * cos(y) + sin(z) * sin(x) * sin(y));
-    matrix[0 * 4 + 1] = (REAL)(sin(z) * cos(x));
-    matrix[0 * 4 + 2] = (REAL)(cos(z) * -sin(y) + sin(z) * sin(x) * cos(y));
-
-    matrix[1 * 4 + 0] = (REAL)(-sin(z) * cos(y) + cos(z) * sin(x) * sin(y));
-    matrix[1 * 4 + 1] = (REAL)(cos(z) * cos(x));
-    matrix[1 * 4 + 2] = (REAL)(sin(z) * sin(y) + cos(z) * sin(x) * cos(y));
-
-    matrix[2 * 4 + 0] = (REAL)(cos(x) * sin(y));
-    matrix[2 * 4 + 1] = (REAL)(-sin(x));
-    matrix[2 * 4 + 2] = (REAL)(cos(x) * cos(y));
-}
-
 
 void fm_scale(REAL x, REAL y, REAL z, REAL* fscale) // apply scale to the matrix.
 {

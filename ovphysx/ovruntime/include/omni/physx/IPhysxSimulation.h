@@ -1,6 +1,12 @@
 // SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-OMNIPVD-CONTROL-001
+// @covers AC-1 AC-2 AC-4 AC-5
+
+// @implements REQ-OMNIPVD-CAPTURE-001
+// @covers AC-1 AC-2
+
 // @implements REQ-ATTACH-LIFETIME-001
 // @covers AC-1 AC-3 AC-4
 
@@ -34,6 +40,11 @@
 #include "RuntimeResult.h"
 #include "TriggerEvent.h"
 #include "AttachOptions.h"
+
+namespace physx
+{
+struct PxOmniPvdFilterDesc;
+}
 
 namespace omni
 {
@@ -590,6 +601,8 @@ struct IPhysxSimulation
     /// ordinal are skipped: a fully consumed range succeeds as a no-op, while an
     /// overlapping range drains only its unread suffix. The attach read ordinal
     /// starts consumed. Only the selected attachment's feed and queues are consumed.
+    /// Both endpoints must fit signed int64 and fromOrdinal must not exceed toOrdinal.
+    /// Invalid ranges fail before consuming any changes; correcting the range remains possible.
     /// \param[in] attach Exact live attachment; zero, active and stale handles fail.
     /// \return True if the range was drained (false if no ovstage feed or the
     ///         range could not be served → caller should re-attach).
@@ -634,6 +647,7 @@ struct IPhysxSimulation
                                       const uint32_t* envIds, bool useEnvIds);
 
     /// Start a late OmniPVD recording on the shared runtime.
+    /// For FILE transport (0), target is a UTF-8 file or directory path.
     /// Returns eBusy while runtime work is pending or from a runtime callback.
     OmniPvdRecordingResult(CARB_ABI* startOmniPvdRecording)(
         uint32_t transport, const char* target, uint16_t tcpPort, uint32_t tcpTimeoutMs);
@@ -642,9 +656,38 @@ struct IPhysxSimulation
     /// Returns eBusy while runtime work is pending or from a runtime callback.
     OmniPvdRecordingResult(CARB_ABI* stopOmniPvdRecording)();
 
-    /// Query sampling status. Failure leaves the output untouched.
+    /// Query recording or discovery session status. Failure leaves the output untouched.
     /// Returns eBusy while runtime work is pending or from a runtime callback.
     RuntimeResult(CARB_ABI* getOmniPvdRecordingStatus)(bool* recording);
+
+    /// Start with a copied native capture policy. Null preserves unrestricted capture.
+    /// Appended to the owner-built table; existing callback offsets are unchanged.
+    /// Returns eBusy while runtime work is pending or from a runtime callback.
+    OmniPvdRecordingResult(CARB_ABI* startOmniPvdRecordingWithFilter)(
+        uint32_t transport, const char* target, uint16_t tcpPort, uint32_t tcpTimeoutMs,
+        const ::physx::PxOmniPvdFilterDesc* capture);
+
+    /// Start with a recording owner for receiver request admission.
+    /// Appended separately so the local capture callback retains its signature.
+    /// Returns eBusy while runtime work is pending or from a runtime callback.
+    OmniPvdRecordingResult(CARB_ABI* startOmniPvdRecordingWithFilterOwner)(
+        uint32_t transport, const char* target, uint16_t tcpPort, uint32_t tcpTimeoutMs,
+        const ::physx::PxOmniPvdFilterDesc* capture, AttachHandle selectionOwner);
+
+    /// Buffer one complete receiver request or a terminal transport error.
+    /// Nonblocking; takes only the native writer lock and no owner admission.
+    bool(CARB_ABI* hasPendingOmniPvdCaptureRequest)(AttachHandle attach);
+
+    /// Apply buffered work after the frontend drains all owners and excludes
+    /// dispatch/attachment transitions. Busy preserves the buffered request.
+    RuntimeResult(CARB_ABI* processOmniPvdCaptureRequests)(AttachHandle attach);
+
+    /// Open TCP discovery bounded to one live attachment before emitting its catalog.
+    /// The session remains active while waiting for a receiver recording selection.
+    /// Returns eBusy while runtime work is pending or from a runtime callback.
+    OmniPvdRecordingResult(CARB_ABI* startOmniPvdDiscoveryWithFilterOwner)(
+        const char* target, uint16_t tcpPort, uint32_t tcpTimeoutMs,
+        const ::physx::PxOmniPvdFilterDesc* scope, AttachHandle selectionOwner);
 };
 
 

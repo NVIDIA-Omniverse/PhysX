@@ -89,7 +89,6 @@ bool readAttributeAs(const OmniPvdAttributeSample* sample, T& out)
 // Read a 3-float vector.  Returns false if sample payload is too short.
 bool readVec3(const OmniPvdAttributeSample* sample, float out[3]);
 
-// Read a PxTransform-shaped sample: 3 floats position, 4 floats quaternion.
-// Layout matches how the pvdruntime writes PxTransform (pos then quat).
+// Read SDK PxTransform bytes: quaternion xyzw, then position xyz.
 // Returns false if sample payload is too short.
 bool readTransform(const OmniPvdAttributeSample* sample, float outPos[3], float outQuat[4]);

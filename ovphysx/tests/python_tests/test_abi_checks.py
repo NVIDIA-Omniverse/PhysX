@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# @implements REQ-PYTHON-OMNIPVD-CAPTURE-001
+# @covers AC-3
+
 import ctypes
 from ctypes import c_int, c_uint64
 
@@ -12,6 +15,7 @@ from ovphysx._bindings import (
     ovphysx_config_value_t,
     ovphysx_create_args,
     ovphysx_omnipvd_destination_t,
+    ovphysx_omnipvd_recording_options_t,
 )
 
 from ovphysx import _bindings as physx_bindings
@@ -88,6 +92,18 @@ def test_omnipvd_destination_layout_matches():
         "ovphysx_internal_omnipvd_destination_sizeof",
         "ovphysx_internal_omnipvd_destination_alignof",
         "ovphysx_internal_omnipvd_destination_offset",
+    )
+
+
+def test_omnipvd_filter_layout_matches():
+    """Verify all selective-capture fields against the public C ABI."""
+    assert ovphysx_omnipvd_recording_options_t._fields_[0] == ("record_secondary_data", ctypes.c_bool)
+    _check_struct_layout(
+        "ovphysx_omnipvd_recording_options_t",
+        ovphysx_omnipvd_recording_options_t,
+        "ovphysx_internal_omnipvd_recording_options_sizeof",
+        "ovphysx_internal_omnipvd_recording_options_alignof",
+        "ovphysx_internal_omnipvd_recording_options_offset",
     )
 
 

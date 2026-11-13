@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# @implements REQ-PYTHON-TASK-001
+# @covers AC-5
+
 """Python tests for clone functionality.
 
 Tests the high-level Python API for cloning USD prim hierarchies.
@@ -12,6 +15,7 @@ import os
 
 import ovstage
 import pytest
+from ovphysx import TaskError
 from ovphysx.dlpack import DLDataTypeCode
 from ovphysx.types import ObjectScope, SimObjectType
 from test_utils import attach_usd_with_ovstage, clone_bare_leaf_body_and_step, load_usd_with_ovstage
@@ -157,11 +161,12 @@ def test_clone_with_env_ids(physx_sdk):
 
 
 def test_clone_error_no_usd_loaded(physx_sdk):
-    """Verify clone without an attached ovstage raises RuntimeError."""
+    """Verify a clone without an attached ovstage fails its task when it runs."""
     sdk = physx_sdk
 
-    with pytest.raises(RuntimeError, match="no ovstage is attached"):
-        sdk.clone("/World/envs/env0", ["/World/envs/env1"])
+    task = sdk.clone("/World/envs/env0", ["/World/envs/env1"])
+    with pytest.raises(TaskError, match="no ovstage is attached"):
+        sdk.wait_task(task)
 
 
 def test_clone_preserves_source_scale(physx_sdk):
@@ -228,8 +233,8 @@ def test_clone_after_warmup_raises_runtime_error(physx_sdk):
     """Regression test for NVBug 6172717: cloning after warmup must raise.
 
     Cloning after :meth:`warmup` reallocates physics structures and corrupts
-    already-initialised solver state. The C runtime rejects this ordering with
-    ``OVPHYSX_API_INVALID_ARGUMENT``, which the Python wrapper propagates as
+    already-initialised solver state. The clone job rejects this ordering when it
+    runs, so the clone's task fails and its wait raises ``TaskError``, a
     ``RuntimeError``. This guard applies in both CPU and GPU mode.
     """
     sdk = physx_sdk
@@ -241,8 +246,9 @@ def test_clone_after_warmup_raises_runtime_error(physx_sdk):
     # Lock in warmup. It is idempotent and synchronous, and subsequent clones must fail.
     sdk.warmup()
 
-    with pytest.raises(RuntimeError, match="clone\\(\\) must be called before warmup"):
-        sdk.clone("/World/envs/env0", ["/World/envs/env_after_warmup"])
+    task = sdk.clone("/World/envs/env0", ["/World/envs/env_after_warmup"])
+    with pytest.raises(TaskError, match="clone\\(\\) must be called before warmup"):
+        sdk.wait_task(task)
 
 
 def test_clone_after_reset_succeeds(physx_sdk):
@@ -275,13 +281,12 @@ def test_clone_after_reset_succeeds(physx_sdk):
 
 
 def test_clone_failed_after_warmup_then_reset_succeeds(physx_sdk):
-    """Documented recovery: warmup -> clone (raises) -> detach -> ovstage attach/update -> clone.
+    """Documented recovery: warmup -> clone (task fails) -> detach -> ovstage attach/update -> clone.
 
     This is the exact user-facing path the error message advises (detach, then
     reload or reattach the source stage). Regression for NVBug 6172717 and the
-    orphan async op: the synchronous precondition failure in ``ovphysx_clone``
-    uses ``set_enqueue_error`` rather than ``fail_with_event``, so no failed op
-    is registered for ``ovphysx_detach_ovstage()``'s pending-op drain to trip over.
+    orphan async op: the failed clone's task is collected by its own wait, so the
+    wait after the detach must not report that failure again.
     """
     sdk = physx_sdk
     test_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -290,12 +295,12 @@ def test_clone_failed_after_warmup_then_reset_succeeds(physx_sdk):
     sdk.wait_all()
     sdk.warmup()
 
-    # First: clone() must raise.
-    with pytest.raises(RuntimeError, match="clone\\(\\) must be called before warmup"):
-        sdk.clone("/World/envs/env0", ["/World/envs/env_after_warmup"])
+    # First: the clone's task must fail.
+    with pytest.raises(TaskError, match="clone\\(\\) must be called before warmup"):
+        sdk.wait_task(sdk.clone("/World/envs/env0", ["/World/envs/env_after_warmup"]))
 
-    # The rejected clone has no task outcome. Detach completes teardown, and the
-    # following explicit wait must not report a spurious clone task failure.
+    # The failure was collected. Detach completes teardown, and the following
+    # explicit wait must not report a spurious clone task failure.
     sdk.detach_ovstage()
     sdk.wait_all()
     load_usd_with_ovstage(sdk, usd_path)

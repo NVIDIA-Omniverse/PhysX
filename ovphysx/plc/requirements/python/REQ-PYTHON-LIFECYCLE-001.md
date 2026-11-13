@@ -84,7 +84,8 @@ only as a non-throwing safety net for missed explicit cleanup.
   defers retries while retaining the native handle, Stage and lifecycle token
   until native admission allows destruction; it never treats busy as an
   invocation exception or abandons a known-live owner. The attached Stage is
-  held from module scope for the duration of the attachment, not only by its
+  held from module scope while attachment is pending and for its attached lifetime,
+  not only by its
   owner, so an unreachable owner/host cycle that also contains the Stage cannot
   run the Stage's native-destroying finalizer before the owner's immediate or
   deferred teardown detaches it. If both native
@@ -94,7 +95,7 @@ only as a non-throwing safety net for missed explicit cleanup.
   ownership so the Python token cannot outlive the Python object. The token is
   process-lifecycle accounting rather than native-instance ownership; retaining
   it cannot make an otherwise unreachable native handle recoverable. If the
-  finalizer runs from native log-callback delivery, it retains the object while
+  finalizer runs from native log or object-change callback delivery, it retains the object while
   deferring the same cleanup policy off the callback thread; callback delivery
   does not wait for that cleanup. An unreachable cycle can retain read-array
   borrows, so terminal finalization bypasses AC-9's explicit-destruction
@@ -106,7 +107,7 @@ only as a non-throwing safety net for missed explicit cleanup.
   ownership was acquired.
 
 - AC-7: Constructing `PhysX` or destroying a live/partially constructed
-  instance from a native log callback raises `RuntimeError` before waiting on
+  instance from a native log or object-change callback raises `RuntimeError` before waiting on
   the process-lifecycle lock or mutating instance/lifecycle ownership. The
   caller can retry after callback delivery returns. Concurrent construction
   racing process initialization waits on a condition while native work runs
@@ -126,8 +127,11 @@ only as a non-throwing safety net for missed explicit cleanup.
   Missed explicit cleanup that reaches `__del__` in callback context follows
   AC-5's deferred finalizer path instead of stranding its lifecycle token.
 
-- AC-8: After the first successful native instance construction, Python
-  registers one `atexit` callback and tracks every live `PhysX` instance in
+- AC-8: Importing the `ovphysx` package registers one `atexit` cleanup callback
+  without loading native code. Handlers registered after this import run before
+  library cleanup, including handlers registered before the first `PhysX()`.
+  Handlers registered before the import run after library cleanup and must not
+  use borrowed read arrays. Python tracks every live `PhysX` instance in
   an identity-keyed weak registry that does not hash or compare the object,
   so an `__eq__`-only or equal-hashable subclass cannot raise, coalesce, or
   extend ordinary garbage-collection lifetime. Terminal `destroy()` untracks
@@ -140,7 +144,7 @@ only as a non-throwing safety net for missed explicit cleanup.
   it keeps its native instance, Stage and lifecycle token, is reported with a
   `RuntimeWarning`, and process shutdown is skipped rather than collapsing that
   token. This terminal path bypasses
-  AC-9's live-array precondition: interpreter exit ends all borrowed lifetimes.
+  AC-9's live-array precondition: library exit cleanup ends all borrowed lifetimes.
   After those instances are
   destroyed, any process-lifecycle tokens still held by exit-reachable
   `read()` Warp arrays are collapsed and take the existing
@@ -169,6 +173,7 @@ only as a non-throwing safety net for missed explicit cleanup.
 
 ## Code References
 
+- ovphysx/python/ovphysx/__init__.py (package exit-hook registration)
 - ovphysx/python/ovphysx/api.py (`PhysX.destroy`, `PhysX.__del__`)
 - ovphysx/python/ovphysx/api.pyi
 - ovphysx/src/ovphysx/ovphysx.cpp (`omni_sdk_physx_destroy` returned-status invariant)

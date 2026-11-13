@@ -137,6 +137,32 @@ void Sc::Scene::kinematicsSetup(PxBaseTask* continuation)
 	PxMemCopy(mActiveKinematicsCopy, kinematics, nbKinematics*sizeof(BodyCore*));
 	kinematics = mActiveKinematicsCopy;
 
+	if((mPublicFlags & PxSceneFlag::eENABLE_GPU_DYNAMICS))
+	{
+		// PT: running this serially for now because it's unsafe: mNPhaseCore->updateDirtyInteractions() (called after this)
+		// can also call mSimulationController.updateDynamic() via BodySim::internalWakeUpBase
+		// This runs before ScKinematicUpdateTask is dispatched. The task clears the settling bits in the internal flags word
+		// that BF_KINEMATIC_MOVED is read from here, so running alongside it would be a data race.
+		for(PxU32 i = 0; i < nbKinematics; i++)
+		{
+			Sc::BodyCore* b = kinematics[i];
+			Sc::BodySim* bodySim = b->getSim();
+			PX_ASSERT(!bodySim->getArticulation());
+			// With the direct GPU API, the upload keeps the GPU velocity of a body unless it is flagged, and the velocity of an
+			// active kinematic is set on the CPU in every step. The target is applied to the GPU pose after the solver.
+			if(mPublicFlags & PxSceneFlag::eENABLE_DIRECT_GPU_API)
+			{
+				bodySim->getLowLevelBody().mInternalFlags |= PxsRigidBody::eVELOCITY_COPY_GPU;
+				PxTransform target;
+				if(bodySim->readInternalFlag(BodySim::BF_KINEMATIC_MOVED) && b->getKinematicTarget(target))
+				{
+					mSimulationController->setKinematicTargetDirectGPU(bodySim->getNodeIndex(), target);
+				}
+			}
+			mSimulationController->updateDynamic(NULL, bodySim->getNodeIndex());
+		}
+	}
+
 	Cm::FlushPool& flushPool = mLLContext->getTaskPool();
 
 	// PT: TASK-CREATION TAG
@@ -148,20 +174,6 @@ void Sc::Scene::kinematicsSetup(PxBaseTask* continuation)
 
 		task->setContinuation(continuation);
 		task->removeReference();
-	}
-
-	if((mPublicFlags & PxSceneFlag::eENABLE_GPU_DYNAMICS))
-	{
-		// PT: running this serially for now because it's unsafe: mNPhaseCore->updateDirtyInteractions() (called after this)
-		// can also call mSimulationController.updateDynamic() via BodySim::internalWakeUpBase
-		PxU32 nb = nbKinematics;
-		while(nb--)
-		{
-			Sc::BodyCore* b = *kinematics++;
-			Sc::BodySim* bodySim = b->getSim();
-			PX_ASSERT(!bodySim->getArticulation());
-			mSimulationController->updateDynamic(NULL, bodySim->getNodeIndex());
-		}
 	}
 }
 
@@ -289,7 +301,6 @@ public:
 			PX_ASSERT(b->getSim()->isKinematic());
 			PX_ASSERT(b->getSim()->isActive());
 
-			// PT: TODO: this one does not reach the GPU code. This is only an issue when Direct GPU is enabled.
 			b->getSim()->updateCached(mParams, mChangedAABBMap, true, true);
 		}
 	}
@@ -355,10 +366,23 @@ void Sc::Scene::updateKinematicCached(PxBaseTask* continuation)
 	{
 		mLLContext->getTransformCache().setChangedState();
 		mBoundsArray->setChangedState();
+		// Direct GPU API steps without solver work write kinematic targets but skip the GPU shape update. Marking every moved
+		// kinematic ensures the next step recomputes its shape bounds and transforms from the GPU pose before collision detection.
+		const bool trackChanges = mBoundsArray->isChangeTrackingEnabled();
 		for (PxU32 i = 0; i < nbKinematics; ++i)
 		{
 			Sc::BodySim* bodySim = kinematics[i]->getSim();
 			mSimulationController->updateDynamic(NULL, bodySim->getNodeIndex());
+			if(trackChanges && bodySim->readInternalFlag(BodySim::BF_KINEMATIC_MOVED))
+			{
+				PxU32 nbElems = bodySim->getNbElements();
+				ElementSim** elems = bodySim->getElements();
+				while(nbElems--)
+				{
+					const ShapeSim* shapeSim = static_cast<const ShapeSim*>(*elems++);
+					mBoundsArray->markForUpdate(shapeSim->getElementID(), true);
+				}
+			}
 		}
 	}
 }

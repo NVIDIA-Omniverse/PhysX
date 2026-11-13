@@ -46,6 +46,10 @@ drift.
 ## Installing the External PhysX Schemas
 
 Applications install **`physx-usd-schemas`** separately from ovphysx.
+This separation is intentional: ovphysx declares no dependency or optional extra
+for the provider. Applications choose and provision their schema data, then
+register it before the first USD schema read. Installing `ovphysx` alone does
+not provision the data required by the sample `physx_schema_paths()` helper.
 The same platform-independent wheel supplies Python and native applications on
 Linux x86_64/aarch64 and Windows x64. The SDK and ovphysx wheel contain no schema
 resources and expose no PhysX schema-location API. OVPhysX builds require neither the
@@ -83,6 +87,9 @@ export PHYSX_USD_SCHEMAS_ROOT=/path/to/app-deps/physx-schemas
 
 On Windows, set `$env:PHYSX_USD_SCHEMAS_ROOT` to that extracted directory.
 An offline installation can pass `--wheel /path/to/physx_usd_schemas-<version>-py3-none-any.whl`.
+On a network that drops requests, `--retry-timeout <seconds>` (or the environment variable
+`OVSTAGE_FETCH_RETRY_TIMEOUT`, which the SDK's OVStage download honors as well) retries transient download
+failures for that long. The default is one attempt.
 Python is needed only for this installation step; native schema discovery and
 registration use no Python runtime. The directory contains:
 
@@ -134,6 +141,7 @@ The build records the provider directory in `ovphysx_dev_schema.stamp` under
 the selected build directory (`_build` by default). For a custom directory,
 pass `-DBUILD_DIR=<path>` to CMake scripts or set `OVPHYSX_BUILD_DIR` for scripts
 and `run_pytest.sh`/`.bat`; relative paths are resolved from `ovphysx/`.
+Custom paths must remain inside `ovphysx/_build`, for example `_build/debug`.
 Native test/sample/benchmark runners use it as `PHYSX_USD_SCHEMAS_ROOT`. Python
 runtime, sample, and benchmark runners, including `run_pytest.sh`/`.bat`, prepend
 it to `PYTHONPATH`, so metadata discovery and authoring utilities see the local
@@ -236,9 +244,18 @@ make a later attach succeed even though population lost the schema data.
 Always restart after a registration-ordering error; a successful attach is not
 proof that the schemas were available during population.
 
-The legacy Carbonite setting `/ovphysx/schemas/requireRegistration` defaults to
-`true`. Set it to `false` at instance creation only when accepting this missing
-registration, for example in a host whose registration ovstage cannot observe:
+Probe setup or other verification failures also refuse attachment, even when
+both families are registered or USD's registry is still open. The OS temporary
+directory must permit private probe creation; on Windows its volume must support
+persistent ACLs. Correct directory access, free space, or volume support if the
+error reports that verification could not complete. These operational errors are
+not cached as missing-family results, so a later attach retries verification.
+
+The raw Carbonite setting `/ovphysx/schemas/requireRegistration` defaults to
+`true`. The native guard reads its current value on each attach whose verification
+fails; the value is not latched at instance creation. Set it to `false` only when
+accepting missing or unverifiable registration, for example in a host whose
+registration ovstage cannot observe. Python can supply it at instance creation:
 
 ```python
 from ovphysx import PhysX, PhysXConfig
@@ -248,10 +265,18 @@ physx = PhysX(config=PhysXConfig(carbonite_overrides={
 }))
 ```
 
-This downgrades the refusal to a warning and permits attachment; it does not
-register schemas or repair lost data. Native callers use the same key in the
-legacy create-time Carbonite configuration. There is no scoped `GlobalConfigKey`
-for this setting.
+This downgrades either refusal to a warning and permits attachment; it does not
+register schemas, repair lost data, or clear a cached missing-family result.
+Native callers can supply the same key through the raw Carbonite configuration
+at instance creation. There is no scoped `GlobalConfigKey` for this setting.
+
+Legacy assets may still author `physxJoint:maxJointVelocity` even though
+`PhysxJointAPI` has been removed from the schema. Population preserves this
+attribute and parsing issues one deprecation warning per process. Migrate to
+`newton:velocityLimit` from `NewtonJointAPI`. A finite per-axis velocity limit
+wins over a finite Newton value, which wins over the legacy limit; unlimited
+values leave the next fallback in effect. Reattach after changing the legacy
+attribute. Newton runtime edits take precedence over the legacy limit.
 
 ### Registering the Newton USD schema
 
@@ -261,7 +286,7 @@ ovphysx also reads a subset of the
 `NewtonJointAPI` sets the velocity limit, armature, friction and damping for all
 degrees of freedom of a joint. `PhysxJointAxisAPI` values take precedence. A
 per-axis `maxJointVelocity` left unlimited (`inf` or `FLT_MAX`) counts as no PhysX
-opinion and yields to an authored Newton limit; the per-attribute contract is in
+opinion and yields to a finite Newton limit, then a finite legacy joint limit; the per-attribute contract is in
 [PhysxJointAxisAPI](population/PhysxJointAxisAPI.md). ovphysx does not ship this
 schema. It is a separate package that the application installs and registers, in
 the same call and under the same ordering rule as the PhysX schemas:
@@ -295,21 +320,23 @@ the directory holding its `plugInfo.json` to `register_usd_schemas()` (in C,
 ovstage populates an attribute only when a registered schema defines it, so a
 scene that authors `newton:*` attributes without this registration loses them
 silently: a joint authoring only `newton:velocityLimit` simulates unlimited.
-`PhysX.attach_ovstage()` therefore checks registration of the installed
-`newton-usd-schemas` package once per process before the native attach and emits
-a `RuntimeWarning` if ovstage reports late registration. When the
-package is not installed at all it logs a warning on the `ovphysx` Python logger
+`PhysX.attach_ovstage()` therefore checks the Newton schema definitions once per
+process before the native attach and emits a `RuntimeWarning` if a private
+population probe cannot populate a Newton joint attribute. This also detects
+an application registration that ovstage already rejected as late: recording
+the plugin does not repair the frozen schema definitions. When
+`newton-usd-schemas` is not installed at all it logs a warning on the `ovphysx` Python logger
 instead: nothing is wrong for a scene without `newton:*` attributes, and a suite
-that promotes warnings to errors keeps running. ovstage keys registration on the plugin
-family, so a complete copy of the Newton schema registered from any directory
+that promotes warnings to errors keeps running. If the private probe fails,
+it logs that schema availability could not be verified and lets attach proceed.
+A complete copy of the Newton schema registered from any directory
 (a GitHub checkout) is recognized. The check probes only once USD has built its
 schema definitions, whether through population or export; a stage authored
 procedurally through `ovphysx.population` and attached while those definitions
 remain unbuilt is left alone, so the check never registers a schema on the
-application's behalf. A registration ovstage cannot observe (another USD
-consumer in the process read
-the schema definitions first) is not detected; silence the check in that case
-with the legacy `PhysXConfig(carbonite_overrides={"/ovphysx/schemas/warnMissingNewtonSchema": False})`
+application's behalf. The private probe does not change the application's stage
+or recover previously dropped attributes. Silence the check with the legacy
+`PhysXConfig(carbonite_overrides={"/ovphysx/schemas/warnMissingNewtonSchema": False})`
 (the string `"false"` is accepted too). There is no scoped `GlobalConfigKey` for this check. The C API cannot locate the package and
 performs no such check.
 

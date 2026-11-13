@@ -98,6 +98,9 @@ typedef struct ovphysx_companion_mass_result
 
 /** Borrowed sessions never attach or step. Serialize their operations with core
  *  operations on the same owner, following the core single-instance contract.
+ *  Companion operations that work on a core owner's attachment never wait for its
+ *  core work: they return BUSY while any is queued or running, and core work
+ *  submitted during such an operation starts after it returns.
  *  Opening retains the owner until close; core destroy/shutdown return
  *  INVALID_STATE while leases exist. Detach is allowed and makes sessions stale.
  *  Close accepts stale sessions and releases their lease. Handles are never reused.

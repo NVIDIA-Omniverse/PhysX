@@ -7,7 +7,7 @@
 
 Multi-prim test composition: a two-link reduced-coordinate articulation. /World/Base and /World/Link are Cube rigid bodies one unit apart joined by /World/Hinge, a PhysicsRevoluteJoint with body0 the parent (Base) so no sign flip applies to drive and state. PhysicsArticulationRootAPI and PhysxArticulationAPI sit on /World/Base itself; with no joint to world the articulation floats (no eFIX_BASE) and Base is the root link. Base is verified for its body and articulation columns. The hinge is verified through the articulation joint (PhysxJointAxisAPI, PhysicsJointStateAPI, PhysxDrivePerformanceEnvelopeAPI columns); its standalone PxJoint columns are unobservable here (NaN on both sides). Owns no columns and generates no helper.
 
-- **Form:** multi-prim; no helper, the contract test builds each prim with `PrimBatch`.
+- **Form:** multi-prim; no helper, the contract test builds each [prim](glossary.md#prim) with `PrimBatch`.
 
 | Path | Type | Applied APIs | Authored values | Relationships | Verified |
 |---|---|---|---|---|---|

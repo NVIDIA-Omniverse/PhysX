@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-CACHE-ATTACH-001
+ * @covers AC-9
+ */
+
 /**
  * @implements REQ-PARSE-BACKEND-001
  * @covers AC-2 AC-6
@@ -25,6 +29,9 @@ namespace
 class OvstageParseBackend final : public parse::IParseBackend
 {
 public:
+    explicit OvstageParseBackend(bool defer) : mDeferInitialBaseline(defer)
+    {
+    }
     std::string_view id() const override
     {
         return "ovstage";
@@ -51,17 +58,21 @@ public:
         // Change feed (ADR-0003 M3): pull-based, drained over an explicit ordinal
         // range via IPhysxSimulation::updateFromOvStage. Null for an unconfigured
         // source. The write sink stays null (no ovstage write path, by design).
-        bundle.changeFeed = source->createChangeFeed();
+        bundle.changeFeed = source->createChangeFeed(mDeferInitialBaseline);
+        mDeferInitialBaseline = false;
         bundle.source = std::move(source);
         return bundle;
     }
+
+private:
+    bool mDeferInitialBaseline;
 };
 
 } // namespace
 
-std::unique_ptr<parse::IParseBackend> makeOvstageParseBackend()
+std::unique_ptr<parse::IParseBackend> makeOvstageParseBackend(bool deferInitialChangeFeedBaseline)
 {
-    return std::make_unique<OvstageParseBackend>();
+    return std::make_unique<OvstageParseBackend>(deferInitialChangeFeedBaseline);
 }
 
 } // namespace ovstage

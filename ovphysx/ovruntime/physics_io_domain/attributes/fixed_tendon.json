@@ -1,0 +1,490 @@
+{
+  "$schema": "../contract.schema.json",
+  "schema_version": 1,
+  "attributes": [
+    {
+      "id": "tendon_stiffness",
+      "name": "tendonStiffness",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "FIXED_TENDON",
+          "description": "stiffness",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "tendon_stiffness",
+          "writability": "WRITABLE",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        },
+        {
+          "target": "SPATIAL_TENDON",
+          "description": "stiffness",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "linear_stiffness",
+          "writability": "WRITABLE",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "tendon_damping",
+      "name": "tendonDamping",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "FIXED_TENDON",
+          "description": "damping",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "tendon_damping",
+          "writability": "WRITABLE",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        },
+        {
+          "target": "SPATIAL_TENDON",
+          "description": "damping",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "linear_damping",
+          "writability": "WRITABLE",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "tendon_limit_stiffness",
+      "name": "tendonLimitStiffness",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "FIXED_TENDON",
+          "description": "limit-region stiffness",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "tendon_stiffness",
+          "writability": "WRITABLE",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        },
+        {
+          "target": "SPATIAL_TENDON",
+          "description": "limit-region stiffness",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "linear_stiffness",
+          "writability": "WRITABLE",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "tendon_limit",
+      "name": "tendonLimit",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "FIXED_TENDON",
+          "description": "(low, high) length limit",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "tendon_coordinate",
+          "writability": "WRITABLE",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 2,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 2,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "tendon_rest_length",
+      "name": "tendonRestLength",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "FIXED_TENDON",
+          "description": "rest length",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "tendon_coordinate",
+          "writability": "WRITABLE",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "tendon_offset",
+      "name": "tendonOffset",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "FIXED_TENDON",
+          "description": "offset",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "tendon_coordinate",
+          "writability": "WRITABLE",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        },
+        {
+          "target": "SPATIAL_TENDON",
+          "description": "offset",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "length",
+          "writability": "WRITABLE",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "tendon_instance",
+      "name": "tendonInstance",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "FIXED_TENDON",
+          "description": "multi-apply instance name for this tendon row",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": false,
+          "notes": "One interned instance token per tendon row, in the same order as the other FIXED_TENDON columns. The row prim is the root prim and may repeat. Pair this token with that prim to match fixedTendonRoot and fixedTendonInstance; that pair is articulation slot T. This row order is database order, not getFixedTendons order."
+        },
+        {
+          "target": "SPATIAL_TENDON",
+          "description": "multi-apply instance name for this tendon row",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": false,
+          "notes": "One interned instance token per tendon row, in the same order as the other SPATIAL_TENDON columns. The row prim is the root prim and may repeat. Pair this token with that prim to match spatialTendonRoot and spatialTendonInstance; that pair is articulation slot T. This row order is database order, not getSpatialTendons order."
+        }
+      ]
+    }
+  ]
+}

@@ -55,6 +55,10 @@ public:
 	// recv: returns the number of bytes read (> 0), 0 on an orderly peer close,
 	//       or < 0 on error.
 	int64_t recv(uint8_t* bytes, uint64_t nbrBytes);
+	// A single nonblocking receive: positive bytes, 0 when idle, eRECEIVE_CLOSED
+	// on an orderly peer half-close, or -1 on an error.
+	enum { eRECEIVE_CLOSED = -2 };
+	int64_t recvAvailable(uint8_t* bytes, uint32_t nbrBytes);
 
 	// Closes the data connection and any listening socket. If nothing is open, a second
 	// call is a no-op.
@@ -65,6 +69,7 @@ public:
 
 private:
 	friend class OmniPvdSocketReadStreamTestAccess;
+	friend class OmniPvdCaptureControlTestAccess;
 
 	OmniPvdSocket(const OmniPvdSocket&);
 	OmniPvdSocket& operator=(const OmniPvdSocket&);

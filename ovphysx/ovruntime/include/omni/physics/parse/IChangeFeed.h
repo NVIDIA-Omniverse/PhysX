@@ -3,6 +3,9 @@
 
 /** @implements REQ-PARSE-FEED-006
  * @covers AC-1
+ *
+ * @implements REQ-SIM-OVSTAGE-WRITEAPPLY-001
+ * @covers AC-20
  */
 
 #pragma once
@@ -52,6 +55,22 @@ struct ColumnView
     int         device = -1;
     size_t      count  = 0;
     const void* data   = nullptr;
+    //! Producer-ordering handles for a device column (`device >= 0`), mirroring
+    //! ovstage's `ovstage_cuda_sync_t { stream, wait_event }` as opaque values so
+    //! this parse interface stays CUDA-free. A consumer that borrows the device
+    //! buffer must wait on `deviceWaitEvent` (on its own stream) before reading
+    //! it, so its work is ordered behind the producer that filled the column.
+    //! Both `0` ⇒ host-resident or already-synchronized data (no wait needed).
+    uint64_t    deviceStream    = 0;
+    uint64_t    deviceWaitEvent = 0;
+    //! Optional HOST indirection array of `count` indices into `data`'s rows. When non-null, logical
+    //! row `i`'s element is at `data[rowMap[i]]` (so `data` addresses a shared buffer of more than
+    //! `count` rows); when null, `data` is the ordinary `count` contiguous elements. It lets a feed that
+    //! cannot compact a device buffer itself (it holds no device context) deliver a SELECTION of a shared
+    //! device column without a copy — a device consumer uploads `rowMap` and gathers through it. The
+    //! array, like `data`, is valid only for the OnChangeFn callback. Stays CUDA-free: it is plain host
+    //! indices, not a device pointer.
+    const uint32_t* rowMap = nullptr;
 };
 
 /// @brief One change group, delivered per (objectType, property).
@@ -170,6 +189,18 @@ public:
 
     /// @brief Pause/resume change accumulation without dropping registrations.
     virtual void setEnabled(bool enabled) = 0;
+
+    /// @brief Declare the consumer's residency for value delivery: `-1` host
+    /// (default), `>= 0` a CUDA device ordinal. A columnar backend that can read
+    /// device-resident may then deliver value columns straight from device memory
+    /// (with `ColumnView::device`/`deviceWaitEvent` set) so the consumer borrows
+    /// them with no host copy. Set per drain by the engine, which learns the sim's
+    /// residency only once its scenes exist. The default is a no-op — a backend
+    /// that only produces host columns (USD) ignores it.
+    virtual void setDeviceOrdinal(int ordinal)
+    {
+        (void)ordinal;
+    }
 
     /// Opt in only when all consumers initialize added prims from a full source
     /// resync before completing the update. A supporting backend may omit initial

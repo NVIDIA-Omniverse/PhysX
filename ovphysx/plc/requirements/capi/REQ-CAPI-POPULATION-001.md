@@ -30,7 +30,10 @@ generated doctest suite, not an ovphysx test.
   use only) expose one `define<Type>` per prim type component, one
   `apply<API>` per API schema component, `write`, stage-unit authoring,
   ancestor path derivation, resolved-default tables and one helper per
-  composition. The header ships in the SDK through the public-header install
+  composition. A component the contract marks `"authoring": false` has no
+  builder; its page says so, and the consumer reads its columns when another
+  population writes them. A half-precision column takes floats in both
+  surfaces and is written as binary16, rounded to nearest even. The header ships in the SDK through the public-header install
   and the module in the wheel through the package glob.
 - AC-2: **Same contract, same rules.** Both surfaces are generated from the
   runtime contract by the same emitters as the runtime's own header, differing
@@ -39,7 +42,9 @@ generated doctest suite, not an ovphysx test.
   co-applied API is missing (same instance when both are multi-apply), every
   Xformable prim receives the local transform and reset-stack columns, the
   type and schema-list columns are written last, contract `bool` columns are
-  published as DLPack `kDLBool`, and every write releases the path list and
+  published as DLPack `kDLBool`, an array column of tuples (vectors,
+  quaternions) carries the tuple width in DLPack `dtype.lanes` so each element
+  reads back as one tuple, and every write releases the path list and
   query it created. A value equal to a divergent raw schema fallback is not
   vetoed (a value does not encode authoredness); the divergence table is
   exposed for documentation.
@@ -63,8 +68,8 @@ generated doctest suite, not an ovphysx test.
 - ovphysx/docs/population/ (generated), ovphysx/docs/index.md (toctree) (AC-3)
 - ovphysx/ovruntime/physics_population_domain/tools/gen_contract.py (`emit_cpp`, `emit_python`, `emit_component_md`, `render_all`) (AC-1 to AC-4)
 - ovphysx CI pipeline definition, job `ovphysx-population-contract-check` (AC-4; the file itself is not part of the open-source tree)
-- ovphysx/tests/c_unittests/test_population_header.cpp (C++17 compile and rule smoke of the shipped header) (AC-1, AC-2)
-- ovphysx/tests/python_tests/test_population_builder.py (lazy import, DLPack dtypes, rules, path-list ownership) (AC-1, AC-2)
+- ovphysx/tests/c_unittests/test_population_header.cpp (C++17 compile and rule smoke of the shipped header, array tuple width) (AC-1, AC-2)
+- ovphysx/tests/python_tests/test_population_builder.py (lazy import, DLPack dtypes, array tuple width, rules, path-list ownership) (AC-1, AC-2)
 
 ## Dependencies
 

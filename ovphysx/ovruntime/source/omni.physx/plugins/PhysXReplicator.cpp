@@ -18,7 +18,7 @@
  * @covers AC-3
  *
  * @implements REQ-REPLICATE-001
- * @covers AC-2 AC-4 AC-6 AC-11 AC-12
+ * @covers AC-2 AC-4 AC-5 AC-6 AC-11 AC-12
  *
  * @implements REQ-SIM-OVSTAGE-ATTACH-001
  * @covers AC-2
@@ -839,8 +839,6 @@ namespace omni
                 void* memblock = malloc(alignedSize * (numReplications)+PX_SERIAL_FILE_ALIGN);
                 void* memblockAligned = (void*)((size_t(memblock) + PX_SERIAL_FILE_ALIGN) & ~(PX_SERIAL_FILE_ALIGN - 1));
                 const void* mirrorMemoryAligned = (const void*)((size_t(mirrorMemory) + PX_SERIAL_FILE_ALIGN) & ~(PX_SERIAL_FILE_ALIGN - 1));
-                attachedStage->addReplicatorMemoryBlock(memblock);
-                attachedStage->addReplicatorMemoryBlock(mirrorMemory);
 
                 struct MaterialInfo
                 {
@@ -859,7 +857,7 @@ namespace omni
                 struct ProcessReplicationData
                 {
                     omni::physics::parse::ObjectKey newReplicateKey;
-                    PxCollection* collection;
+                    PxCollection* collection = nullptr;
                     std::vector<omni::physics::parse::ObjectKey> objectKeys;
                     std::vector<omni::physics::parse::ObjectKey> shapeSourceKeys;
                     std::vector<omni::physics::parse::ObjectKey> schemaKeys;
@@ -1612,8 +1610,40 @@ namespace omni
                             nm, *physxSetup.getSerializationRegistry(), sharedCollection);
 
                         replicationOutData[i].collection = collection1;
+                        if (!collection1)
+                            break;
                     }
                 }
+
+                // PhysX returns no collection when a replica cannot be deserialized; a full 64K PhysX
+                // material table is one cause. No replica has been added to the scene or the object
+                // database yet, so release the replicas that did deserialize and fail the clone.
+                const auto failedReplica = std::find_if(replicationOutData.begin(), replicationOutData.end(),
+                    [](const ProcessReplicationData& data) { return data.collection == nullptr; });
+                if (failedReplica != replicationOutData.end())
+                {
+                    for (ProcessReplicationData& data : replicationOutData)
+                    {
+                        if (data.collection)
+                        {
+                            ::physx::PxCollectionExt::releaseObjects(*data.collection);
+                            data.collection->release();
+                        }
+                    }
+                    sharedCollection->release();
+                    free(memblock);
+                    free(mirrorMemory);
+                    OVX_RUNTIME_ERROR(
+                        "clone: replica %zu of %u could not be created in PhysX; a full 64K PhysX material "
+                        "table is one cause (see the preceding PhysX error). No replica was added to the "
+                        "scene. AttachHandle: %llu",
+                        size_t(failedReplica - replicationOutData.begin()) + 1, numReplications,
+                        static_cast<unsigned long long>(attachHandle));
+                    return false;
+                }
+
+                attachedStage->addReplicatorMemoryBlock(memblock);
+                attachedStage->addReplicatorMemoryBlock(mirrorMemory);
 
                 {
                     PHYSICS_PROFILE("PhysXReplicator::replicate::proccessReplication");

@@ -55,21 +55,22 @@ def test_cpu_joint_velocity_read_returns_cpu_warp_arrays(physx_sdk_cpu):
         assert dof_rows >= 1, "expected at least one unlocked joint DOF velocity"
 
 
-def test_cpu_read_column_is_safe_to_keep_past_the_block(physx_sdk_cpu):
-    """A borrowed CPU Warp array keeps its read-session storage alive after close."""
+def test_cpu_read_column_is_safe_to_keep_once_its_result_is_dropped(physx_sdk_cpu):
+    """A borrowed CPU Warp array keeps the storage of a read result dropped without a close alive."""
     _load_and_step(physx_sdk_cpu, "boxes_falling_on_groundplane.usda", n_steps=10)
-    with physx_sdk_cpu.read_sync(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
-        assert result.groups and result.groups[0].tensors
-        live = result.groups[0].tensors[0]
-        assert isinstance(live, wp.array) and live.device.is_cpu
-        snapshot = live.numpy().copy()
+    result = physx_sdk_cpu.read_sync(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL)
+    assert result.groups and result.groups[0].tensors
+    live = result.groups[0].tensors[0]
+    assert isinstance(live, wp.array) and live.device.is_cpu
+    snapshot = live.numpy().copy()
+    del result
 
     assert np.all(np.isfinite(live.numpy()))
     np.testing.assert_array_equal(live.numpy(), snapshot)
 
 
 def test_downstream_numpy_view_keeps_cpu_read_session_alive(physx_sdk_cpu, monkeypatch):
-    """A downstream DLPack consumer retains the Warp source session."""
+    """A downstream DLPack consumer retains the Warp source session of a result dropped without a close."""
     _load_and_step(physx_sdk_cpu, "boxes_falling_on_groundplane.usda", n_steps=5)
     calls = []
     original = physx_sdk_cpu._lib.ovphysx_release_read
@@ -81,10 +82,10 @@ def test_downstream_numpy_view_keeps_cpu_read_session_alive(physx_sdk_cpu, monke
     monkeypatch.setattr(physx_sdk_cpu._lib, "ovphysx_release_read", release_read)
     owner_thread = threading.get_ident()
 
-    with physx_sdk_cpu.read_sync(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
-        source = result.groups[0].tensors[0]
-        expected = source.numpy().copy()
-        consumer = np.from_dlpack(source)
+    result = physx_sdk_cpu.read_sync(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL)
+    source = result.groups[0].tensors[0]
+    expected = source.numpy().copy()
+    consumer = np.from_dlpack(source)
 
     del result
     del source

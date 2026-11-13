@@ -150,7 +150,6 @@ namespace
 				{
 					nbBpUpdates++;
 
-					// PT: TODO: this one does not reach the GPU code. This is only an issue when Direct GPU is enabled.
 					bodySim->updateCached(mParams, &changedAABBMgrHandles, true, true);
 				}
 
@@ -643,6 +642,8 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 	mProcessNarrowPhaseLostTouchTasks(contextID, this, "ScScene.processNpLostTouchTask"),
 	mProcessNPLostTouchEvents		(contextID, this, "ScScene.processNPLostTouchEvents"),
 	mPostThirdPassIslandGenTask		(contextID, this, "ScScene.postThirdPassIslandGenTask"),
+	mFinishPutObjectsToSleepTask	(contextID, this, "ScScene.finishPutObjectsToSleepTask"),
+	mFinishPutInteractionsToSleepTask(contextID, this, "ScScene.finishPutInteractionsToSleepTask"),
 #if !USE_SPLIT_SECOND_PASS_ISLAND_GEN
 	mPostIslandGen					(contextID, this, "ScScene.postIslandGen"),
 #endif
@@ -681,6 +682,8 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 	mOverlapFilterTaskHead			(NULL),
 	mOverlapCreatedTaskHead			(NULL),
 	mIslandInsertionTaskHead		(NULL),
+	mBodySleepRecords				("sceneBodySleepRecords"),
+	mPairSleepRecords				("scenePairSleepRecords"),
 	mIsCollisionPhaseActive			(false),
 	mIsDirectGPUAPIInitialized		(false),
 	mOnSleepingStateChanged			(NULL)
@@ -1247,6 +1250,15 @@ void Sc::Scene::removeFromActiveList(ActorSim& actorSim)
 
 		BodySim& bodySim = static_cast<BodySim&>(actorSim);
 
+		// The bodies just below the end of the array are the swap partners of the next removals. The nearer one had
+		// its core prefetched by an earlier call, so its sim can be fetched now.
+		const PxU32 partnerDistance = 8;
+		if(newSize > partnerDistance)
+		{
+			PxPrefetchLine(mActiveBodies[newSize - partnerDistance]);
+			mActiveBodies[newSize - partnerDistance/2]->getSim()->prefetchActivationState();
+		}
+
 		// Sort: kinematic before dynamic,
 		if (removedActiveIndex < mActiveKinematicBodyCount)	// PT: same as 'body.isKinematic()' but without accessing the Core data
 		{
@@ -1280,6 +1292,61 @@ void Sc::Scene::removeFromActiveList(ActorSim& actorSim)
 	else
 		gpu_removeFromActiveList(actorSim, removedActiveIndex);
 #endif
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+namespace
+{
+	// Fills the holes of the active body range [begin, end) with the survivors of [end, top), taking the survivors from the
+	// top down so that only as many bodies move as there are holes. Entries below forcedHoleEnd count as holes whatever the
+	// bitmap says. The caller guarantees that the survivors are exactly as many as the holes. Moved bodies get their new index.
+	void fillActiveBodyHoles(Sc::BodyCore** bodies, const PxBitMap& holes, PxU32 begin, PxU32 end, PxU32 top, PxU32 forcedHoleEnd)
+	{
+		PxU32 dst = begin;
+		PxU32 src = top;
+		while(true)
+		{
+			while(dst < end && dst >= forcedHoleEnd && !holes.test(dst))
+				dst++;
+			if(dst == end)
+				break;
+
+			do
+			{
+				PX_ASSERT(src > end);
+				src--;
+			} while(holes.test(src));
+
+			if(src > end + 4)
+				PxPrefetchLine(bodies[src - 4]);
+
+			Sc::BodyCore* body = bodies[src];
+			bodies[dst] = body;
+			body->getSim()->setActiveListIndex(dst);
+			dst++;
+		}
+	}
+}
+
+// Removes many bodies from the active list at once. The holes bitmap marks their slots, which the bodies have already
+// given up through BodySim::deactivateThreadSafe(). Kinematics come first in mActiveBodies, see addToActiveList(), so
+// the two ranges are compacted on their own: the kinematic range shrinks by nbKinematicHoles and the slots it gives up
+// become holes of the dynamic range.
+void Sc::Scene::compactActiveBodies(const PxBitMap& holes, PxU32 nbHoles, PxU32 nbKinematicHoles)
+{
+	const PxU32 size = mActiveBodies.size();
+	const PxU32 nbKinematics = mActiveKinematicBodyCount;
+	PX_ASSERT(nbHoles <= size && nbKinematicHoles <= nbKinematics);
+	const PxU32 newNbKinematics = nbKinematics - nbKinematicHoles;
+	const PxU32 newSize = size - nbHoles;
+
+	BodyCore** bodies = mActiveBodies.begin();
+	fillActiveBodyHoles(bodies, holes, 0, newNbKinematics, nbKinematics, 0);
+	fillActiveBodyHoles(bodies, holes, newNbKinematics, newSize, size, nbKinematics);
+
+	mActiveKinematicBodyCount = newNbKinematics;
+	mActiveBodies.forceSize_Unsafe(newSize);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1324,6 +1391,15 @@ void Sc::Scene::swapInActiveBodyList(BodySim& body)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// The scene keeps the active interactions of a type in the first entries of the type's interaction array. Overlaps are the
+// exception: with hundreds of thousands of pairs, moving each one across the active boundary when an island falls asleep
+// or wakes up costs more than the few readers of that prefix save. Readers of the overlap array test
+// InteractionFlag::eIS_ACTIVE on each entry instead, see initContactsIterator() and visualizeContacts().
+static PX_FORCE_INLINE bool tracksActivePrefix(InteractionType::Enum type)
+{
+	return type != InteractionType::eOVERLAP;
+}
+
 void Sc::Scene::registerInteraction(ElementSimInteraction* interaction, bool active)
 {
 	const InteractionType::Enum type = interaction->getType();
@@ -1331,7 +1407,7 @@ void Sc::Scene::registerInteraction(ElementSimInteraction* interaction, bool act
 	interaction->setInteractionId(sceneArrayIndex);
 
 	mInteractions[type].pushBack(interaction);
-	if (active)
+	if (active && tracksActivePrefix(type))
 	{
 		if (sceneArrayIndex > mActiveInteractionCount[type])
 			swapInteractionArrayIndices(sceneArrayIndex, mActiveInteractionCount[type], type);
@@ -1392,6 +1468,8 @@ void Sc::Scene::notifyInteractionActivated(Interaction* interaction)
 	PX_ASSERT(interaction->getInteractionId() != PX_INVALID_INTERACTION_SCENE_ID);
 
 	const InteractionType::Enum type = interaction->getType();
+	if(!tracksActivePrefix(type))
+		return;
 
 	PX_ASSERT(interaction->getInteractionId() >= mActiveInteractionCount[type]);
 	
@@ -1409,10 +1487,19 @@ void Sc::Scene::notifyInteractionDeactivated(Interaction* interaction)
 	PX_ASSERT(interaction->getInteractionId() != PX_INVALID_INTERACTION_SCENE_ID);
 
 	const InteractionType::Enum type = interaction->getType();
-	PX_ASSERT(interaction->getInteractionId() < mActiveInteractionCount[type]);
+	if(!tracksActivePrefix(type))
+		return;
 
-	if (mActiveInteractionCount[type] > 1)
-		swapInteractionArrayIndices(mActiveInteractionCount[type]-1, interaction->getInteractionId(), type);
+	const PxU32 nbActive = mActiveInteractionCount[type];
+	PX_ASSERT(interaction->getInteractionId() < nbActive);
+
+	// The interactions just below the active count are the swap targets of the next deactivations.
+	const PxU32 prefetchDistance = 4;
+	if(nbActive > prefetchDistance)
+		PxPrefetchLine(mInteractions[type][nbActive - 1 - prefetchDistance]);
+
+	if (nbActive > 1)
+		swapInteractionArrayIndices(nbActive-1, interaction->getInteractionId(), type);
 	mActiveInteractionCount[type]--;
 }
 
@@ -2516,8 +2603,9 @@ void Sc::Scene::finishBatchInsertion(BatchInsertionState& state)
 void Sc::Scene::initContactsIterator(ContactIterator& contactIterator, PxsContactManagerOutputIterator& outputs)
 {
 	outputs = mLLContext->getNphaseImplementationContext()->getContactManagerOutputs();
+	// The overlap array is not sorted by activation state, the iterator skips the sleeping pairs itself.
 	ElementSimInteraction** first = mInteractions[Sc::InteractionType::eOVERLAP].begin();
-	contactIterator = ContactIterator(first, first + mActiveInteractionCount[Sc::InteractionType::eOVERLAP], outputs);
+	contactIterator = ContactIterator(first, first + mInteractions[Sc::InteractionType::eOVERLAP].size(), outputs);
 }
 
 void Sc::Scene::setDominanceGroupPair(PxDominanceGroup group1, PxDominanceGroup group2, const PxDominanceGroupPair& dominance)
@@ -2944,6 +3032,10 @@ bool Sc::activateInteraction(Sc::Interaction* interaction)
 
 void Sc::activateInteractions(Sc::ActorSim& actorSim)
 {
+	// Overlaps and markers are handled by island generation, so the array only has to be visited for the other types.
+	if(!actorSim.readInternalFlag(ActorSim::BF_HAS_NON_IG_INTERACTIONS))
+		return;
+
 	const PxU32 nbInteractions = actorSim.getActorInteractionCount();
 	if(!nbInteractions)
 		return;
@@ -2959,9 +3051,7 @@ void Sc::activateInteractions(Sc::ActorSim& actorSim)
 		if(!interaction->readInteractionFlag(InteractionFlag::eIS_ACTIVE))
 		{
 			const InteractionType::Enum type = interaction->getType();
-			const bool isNotIGControlled = type != InteractionType::eOVERLAP && type != InteractionType::eMARKER;
-
-			if(isNotIGControlled)
+			if(!isIslandGenControlled(type))
 			{
 				const bool proceed = activateInteraction(interaction);
 				if(proceed && (type < InteractionType::eTRACKED_IN_SCENE_COUNT))
@@ -2973,6 +3063,9 @@ void Sc::activateInteractions(Sc::ActorSim& actorSim)
 
 void Sc::deactivateInteractions(Sc::ActorSim& actorSim)
 {
+	if(!actorSim.readInternalFlag(ActorSim::BF_HAS_NON_IG_INTERACTIONS))
+		return;
+
 	const PxU32 nbInteractions = actorSim.getActorInteractionCount();
 	if(!nbInteractions)
 		return;
@@ -2988,8 +3081,7 @@ void Sc::deactivateInteractions(Sc::ActorSim& actorSim)
 		if(interaction->readInteractionFlag(InteractionFlag::eIS_ACTIVE))
 		{
 			const InteractionType::Enum type = interaction->getType();
-			const bool isNotIGControlled = type != InteractionType::eOVERLAP && type != InteractionType::eMARKER;
-			if(isNotIGControlled)
+			if(!isIslandGenControlled(type))
 			{
 				const bool proceed = deactivateInteraction(interaction, type);
 				if(proceed && (type < InteractionType::eTRACKED_IN_SCENE_COUNT))

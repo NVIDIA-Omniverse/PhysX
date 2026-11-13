@@ -1,0 +1,138 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxSphereFillCollisionAPI",
+  "title": "PhysxSphereFillCollisionAPI",
+  "summary": "Sphere fill cooking parameters for a Mesh collider with physics:approximation sphereFill. Cooking inputs only; nothing here is verified. voxelResolution's schema fallback differs from the consumer's absent-column seed.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "Gprim"
+  ],
+  "requires": [
+    "PhysicsCollisionAPI"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "producer_scope": "Every declared attribute of an applied collision API is published at its resolved value; all four columns land as their raw fallbacks when unauthored. No derivation.",
+  "columns": [
+    {
+      "name": "physxSphereFillCollision:maxSpheres",
+      "usd_type": "int",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "int",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 128,
+      "parser_default": 128,
+      "absent": "128, the sphere-fill cooking default.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseCollision.cpp"
+      ]
+    },
+    {
+      "name": "physxSphereFillCollision:seedCount",
+      "usd_type": "int",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "int",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 1000,
+      "parser_default": 1000,
+      "absent": "1000, the cooking default.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseCollision.cpp"
+      ]
+    },
+    {
+      "name": "physxSphereFillCollision:voxelResolution",
+      "usd_type": "int",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "int",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 50000,
+      "parser_default": 100000,
+      "absent": "100000, the cooking default. The USD schema fallback is 50000 and the producer publishes it, so a hand-populated stage that omits the column voxelises twice as finely as USD population.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseCollision.cpp"
+      ]
+    },
+    {
+      "name": "physxSphereFillCollision:fillMode",
+      "usd_type": "token",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "TOKEN_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "flood",
+      "parser_default": "flood",
+      "absent": "flood, the cooking default. Accepted tokens flood, raycast, surface; an absent column or any other token keeps the current value.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseCollision.cpp"
+      ]
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysicsMeshCollisionAPI",
+      "rule": "Read only for descriptor kind sphereFill. No usd-schemas gate: the columns are read whenever they exist on the collider."
+    }
+  ],
+  "findings": [
+    {
+      "column": "physxSphereFillCollision:voxelResolution",
+      "severity": "note",
+      "side": "consumer",
+      "summary": "Absent column seeds 100000 (the cooking default shared with convex decomposition) while the USD schema fallback published by the producer is 50000. Only a hand-populated stage that omits the column is affected. Cooking input, not a PhysX default.",
+      "tracking": "follow-up to file"
+    }
+  ],
+  "notes": [
+    "Cooking APIs on a Mesh cannot be verified by the generated tests: the parameters only change the set of PxSphereGeometry shapes the cooking service emits, PhysX exposes no getter for them, and the builder writes no mesh arrays."
+  ]
+}

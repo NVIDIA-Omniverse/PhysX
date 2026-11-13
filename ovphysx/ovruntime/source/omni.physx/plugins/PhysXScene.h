@@ -7,6 +7,9 @@
 // @implements REQ-ATTACH-RESOLVE-001
 // @covers AC-4
 
+// @implements REQ-CACHE-ATTACH-001
+// @covers AC-3
+
 /**
  * @implements REQ-SIM-MULTISCENE-001
  * @covers AC-2
@@ -507,6 +510,13 @@ private:
 };
 
 bool isRigidBodyDynamic(const omni::physx::usdparser::AttachedStage& attachedStage, omni::physx::usdparser::ObjectId id);
+// Whether a scene of the attachment can simulate on the GPU: false when its GPU pipeline
+// override selects the CPU, or the process runs in CPU mode or lacks the CUDA library.
+bool attachmentMayUseGpu(const usdparser::AttachedStage& attachedStage);
+// Whether the scene created from `desc` asks for a CUDA context: the attachment may use the
+// GPU, and its GPU pipeline override selects the GPU, or leaves the choice to the scene,
+// which enables GPU dynamics or the GPU broadphase.
+bool sceneRequestsGpu(const usdparser::AttachedStage& attachedStage, const usdparser::PhysxSceneDesc& desc);
 
 
 } // namespace physx

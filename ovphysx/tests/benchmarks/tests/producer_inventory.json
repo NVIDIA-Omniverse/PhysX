@@ -1,5 +1,5 @@
 {
-    "_comment": "Frozen L1B hidden benchmark row contract. See current/agent_tasks/2026-08-21-ovphysx_l1b_benchmarks.md. The contract has 18 rows (12 CPU, 6 GPU): the Authoring.* producer rows plus the two 4,096-body WriteScaling.* CPU rows.",
+    "_comment": "Frozen L1B hidden benchmark row contract. See current/agent_tasks/2026-08-21-ovphysx_l1b_benchmarks.md. The contract has 22 rows (12 CPU, 10 GPU): the Authoring.* producer rows (including the scaled device-drain rows) plus the two 4,096-body WriteScaling.* CPU rows.",
     "rows": [
         { "name": "Authoring.population_add_drip_cpu", "device": "cpu" },
         { "name": "Authoring.population_add_drip_gpu", "device": "gpu" },
@@ -15,6 +15,10 @@
         { "name": "Authoring.teleport_tensor_cpu", "device": "cpu" },
         { "name": "Authoring.teleport_tensor_gpu", "device": "gpu" },
         { "name": "Authoring.drain_ovstage_cpu", "device": "cpu" },
+        { "name": "Authoring.drain_ovstage_gpu", "device": "gpu" },
+        { "name": "Authoring.drain_ovstage_scaled_4096_gpu", "device": "gpu" },
+        { "name": "Authoring.drain_ovstage_scaled_16384_gpu", "device": "gpu" },
+        { "name": "Authoring.drain_ovstage_scaled_65536_gpu", "device": "gpu" },
         { "name": "Authoring.drain_tensor_cpu", "device": "cpu" },
         { "name": "Authoring.drain_step_only_cpu", "device": "cpu" },
         { "name": "WriteScaling.velocity_ovstage_4096_cpu", "device": "cpu" },

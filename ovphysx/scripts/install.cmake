@@ -192,67 +192,13 @@ if(NOT EXISTS "${_OVSTAGE_NOTICES}")
     message(FATAL_ERROR "Required ovstage third-party notices were not installed: ${_OVSTAGE_NOTICES}")
 endif()
 
-
-# Preprocess and copy public portable docs, excluding internal docs.
-# Docs land at _install/docs/ (same relative structure as source) so that
-# SDK_README.md links (docs/...) resolve correctly from _install/.
-include("${SCRIPT_DIR}/preprocess_docs.cmake")
-preprocess_public_docs(
-    "${TARGET_PYTHON}" "${PROJECT_ROOT}"
-    "${PROJECT_ROOT}/docs" "${PROJECT_ROOT}/_install/docs"
-)
-
-# SDK_README.md becomes _install/README.md, the consumer-facing entry point.
-# Its links use the docs/ prefix, matching the installed layout.
-execute_process(
-    COMMAND "${TARGET_PYTHON}" "${SCRIPT_DIR}/preprocess_markdown.py"
-        "${PROJECT_ROOT}/SDK_README.md" "${PROJECT_ROOT}/_install/README.md"
-        --project-root "${PROJECT_ROOT}"
-    WORKING_DIRECTORY "${PROJECT_ROOT}"
-    RESULT_VARIABLE _SDK_README_RESULT
-)
-if(NOT _SDK_README_RESULT EQUAL 0)
-    message(FATAL_ERROR "Failed to preprocess SDK_README.md")
-endif()
-
-# The skills index and skills ship with the SDK. AGENTS.md is a monorepo
-# developer doc and is intentionally not shipped.
-if(EXISTS "${PROJECT_ROOT}/SKILLS.md")
-    copy_file_if_different("${PROJECT_ROOT}/SKILLS.md" "${PROJECT_ROOT}/_install/SKILLS.md")
-    message(STATUS "  Copied SKILLS.md to _install/")
-else()
-    message(FATAL_ERROR "SKILLS.md not found at ${PROJECT_ROOT}/SKILLS.md")
-endif()
-if(EXISTS "${PROJECT_ROOT}/skills")
-    copy_tree_if_different("${PROJECT_ROOT}/skills" "${PROJECT_ROOT}/_install/skills")
-    message(STATUS "  Copied skills/ to _install/")
-else()
-    message(FATAL_ERROR "skills/ directory not found at ${PROJECT_ROOT}/skills")
-endif()
-
-# Public sample source code and data ship with the SDK. This avoids duplicating
-# sample code under skills/ and ships what CI already tests.
-set(SAMPLES_DST "${PROJECT_ROOT}/_install/samples")
-file(MAKE_DIRECTORY "${SAMPLES_DST}")
-# Python samples do not ship in the C/C++ SDK artifact. A stale directory from
-# a previous install would confuse SDK consumers.
-if(EXISTS "${SAMPLES_DST}/python_samples")
-    file(REMOVE_RECURSE "${SAMPLES_DST}/python_samples")
-endif()
-
-if(EXISTS "${PROJECT_ROOT}/tests/c_samples")
-    copy_tree_if_different("${PROJECT_ROOT}/tests/c_samples" "${SAMPLES_DST}/c_samples" EXCLUDE_DIRS _build)
-    message(STATUS "  Copied tests/c_samples -> _install/samples/c_samples/")
-else()
-    message(FATAL_ERROR "tests/c_samples not found at ${PROJECT_ROOT}/tests/c_samples")
-endif()
-
-if(EXISTS "${PROJECT_ROOT}/tests/data")
-    copy_tree_if_different("${PROJECT_ROOT}/tests/data" "${SAMPLES_DST}/data")
-    message(STATUS "  Copied tests/data -> _install/samples/data/")
-else()
-    message(FATAL_ERROR "tests/data not found at ${PROJECT_ROOT}/tests/data")
-endif()
+# Portable documentation, skills, and samples use the same staging rules as the
+# docs-only validation job. HTML remains optional for public source builds.
+include("${SCRIPT_DIR}/stage_documentation.cmake")
+set(_DOC_HTML "")
+set(_DOC_REQUIRE_HTML OFF)
+stage_documentation_payload("${TARGET_PYTHON}" "${PROJECT_ROOT}" "${PROJECT_ROOT}/_install"
+    sdk "${_DOC_HTML}" "${_DOC_REQUIRE_HTML}")
 
 # Package dependencies into flat _install/plugins/ structure.
 # Sources: ovruntime install, ovphysx target-deps, ovruntime_deps via omni_physics.

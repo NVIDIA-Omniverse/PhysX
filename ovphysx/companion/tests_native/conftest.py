@@ -32,9 +32,11 @@ def physics():
 @pytest.fixture
 def attached(physics):
     import ovstage
+    from ovphysx.population import physics_population_descs
     stage = ovstage.Stage("companion-bridge-test")
-    ovstage.population.open_usd(stage, str(COMPANION / "samples/scenes/two_boxes.usda"), ordinal=1,
-                                domains=ovstage.PopulationDomain.ALL)
+    ovstage.population.open_usd_with_desc(stage, str(COMPANION / "samples/scenes/two_boxes.usda"), ordinal=1,
+                                time=ovstage.population.DEFAULT_TIME,
+                                descs=physics_population_descs(rendering=True))
     stage.advance_write_floor(ordinal=1).wait()
     physics.wait_task(physics.attach_ovstage(stage, read_ordinal=1))
     physics.step(1 / 60)

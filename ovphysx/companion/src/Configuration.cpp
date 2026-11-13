@@ -4,7 +4,7 @@
 // @implements REQ-COMP-CONFIG-001
 // @covers AC-1 AC-2 AC-3 AC-4
 // @implements REQ-CAPI-COMPANION-001
-// @covers AC-1
+// @covers AC-1 AC-3
 #include "ovphysx_companion/configuration.h"
 #include "internal/sdk/CompanionRuntime.hpp"
 #include <omni/physx/NativeConfiguration.h>
@@ -16,6 +16,8 @@ ovphysx_companion_status_t execute(uint64_t attachment,uint32_t action,uint32_t 
     if (!output || size!=sizeof(*output) || disabled>1) return OVPHYSX_COMPANION_INVALID_ARGUMENT;
     CompanionOperationGuard guard(companionRuntime());
     if (!guard) return OVPHYSX_COMPANION_BUSY;
+    CompanionOwnerLane owner;
+    if (!owner.tryAcquireForAttachment(attachment)) return OVPHYSX_COMPANION_BUSY;
     using namespace omni::physx::native;
     ConfigurationSnapshot result;
     switch(configureAttachment(attachment,action,disabled!=0,result))

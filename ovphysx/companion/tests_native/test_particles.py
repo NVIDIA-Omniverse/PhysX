@@ -98,10 +98,12 @@ def test_resample_revision_cancel_and_release_drain(physics):
 def test_sampling_during_pending_preview_preserves_simulation(physics):
     from pathlib import Path
     import ovstage
+    from ovphysx.population import physics_population_descs
     stage=ovstage.Stage('sampling-pending')
     try:
-        ovstage.population.open_usd(stage,str(Path(__file__).resolve().parents[1]/'samples/scenes/two_boxes.usda'),ordinal=1,
-                                    domains=ovstage.PopulationDomain.ALL)
+        ovstage.population.open_usd_with_desc(stage,str(Path(__file__).resolve().parents[1]/'samples/scenes/two_boxes.usda'),ordinal=1,
+                                    time=ovstage.population.DEFAULT_TIME,
+                                    descs=physics_population_descs(rendering=True))
         stage.advance_write_floor(ordinal=1).wait()
         with SamplingService(physics) as service,service.sampler(SamplingInput(('cube',1),POINTS,TRIANGLES)) as sampler:
             with PreviewSession(physics,stage,read_ordinal=1) as preview:

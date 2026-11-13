@@ -23,6 +23,7 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     # An implicit declaration error catches any C++-only symbol leaking into the C sample.
     target_compile_options(output_read_c PRIVATE
         -Werror=implicit-function-declaration
+        -Werror=deprecated-declarations
         -pedantic
     )
 endif()

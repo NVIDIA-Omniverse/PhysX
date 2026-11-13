@@ -7,12 +7,14 @@
 #define OMNI_PVD_RUNTIME_READER_IMPL_H
 
 #include "OmniPvdReader.h"
+#include "OmniPvdDefinesInternal.h"
 #include "OmniPvdLog.h"
+#include "OmniPvdLibraryFunctions.h"
 
 
 class OmniPvdReaderImpl : public OmniPvdReader {
 public:
-	OmniPvdReaderImpl();
+	OmniPvdReaderImpl(uint32_t maxAttributeBytes = 1u << 30, uint8_t maxPathDepth = 32);
 	~OmniPvdReaderImpl();
 
 	void OMNI_PVD_CALL setLogFunction(OmniPvdLogFunction logFunction) override;
@@ -55,11 +57,22 @@ public:
 	// Internal helper. Returns false if the length is implausibly large (a corrupt/truncated
 	// stream, e.g. a live socket FIN mid-command) or the payload read came up short, in which
 	// case the caller must treat the command as invalid rather than trusting the buffer.
-	bool readLongDataFromStream(uint32_t streamByteLen);
-	bool readStringFromStream(char* string, uint16_t& stringLength);
+	bool readLongDataFromStream(OmniPvdAttributeDataLengthStorageType streamByteLen);
+	bool readStringFromStream(char* string, OmniPvdStringLengthStorageType& stringLength);
 	void resetCommandParams();
+	void logCommand(OmniPvdCommand::Enum command);
+	bool readExact(uint8_t* destination, uint64_t size, bool allowEmpty = false);
+	template<class T> bool readValue(T& value)
+	{
+		value = T();
+		return readExact(reinterpret_cast<uint8_t*>(&value), sizeof(value));
+	}
+	uint32_t mMaxAttributeBytes;
+	uint8_t mMaxPathDepth;
+	OmniPvdReaderStatus::Code mStatus;
 
 	OmniPvdLog mLog;
+	bool mVerbose;
 
 	// Borrowed from the caller; the reader never closes or destroys it.
 	OmniPvdReadStream *mStream;
@@ -75,31 +88,31 @@ public:
 	OmniPvdContextHandle mCmdContextHandle;
 	OmniPvdObjectHandle mCmdObjectHandle;
 
-	uint32_t mCmdClassHandle;
-	uint32_t mCmdBaseClassHandle;
-	uint32_t mCmdAttributeHandle;
+	OmniPvdClassHandle mCmdClassHandle;
+	OmniPvdClassHandle mCmdBaseClassHandle;
+	OmniPvdAttributeHandle mCmdAttributeHandle;
 		
 	char mCmdClassName[OMNI_PVD_MAX_STRING_LENGTH];
 	char mCmdAttributeName[OMNI_PVD_MAX_STRING_LENGTH];
 	char mCmdObjectName[OMNI_PVD_MAX_STRING_LENGTH];
 
-	uint16_t mCmdClassNameLen;
-	uint16_t mCmdAttributeNameLen;
-	uint16_t mCmdObjectNameLen;
+	OmniPvdStringLengthStorageType mCmdClassNameLen;
+	OmniPvdStringLengthStorageType mCmdAttributeNameLen;
+	OmniPvdStringLengthStorageType mCmdObjectNameLen;
 
 	uint8_t* mCmdAttributeDataPtr;
 	OmniPvdDataType::Enum mCmdAttributeDataType;
-	uint32_t mCmdAttributeDataLen;
-	uint32_t mCmdAttributeNbElements;
+	OmniPvdAttributeDataLengthStorageType mCmdAttributeDataLen;
+	OmniPvdAttributeElementCountStorageType mCmdAttributeNbElements;
 	OmniPvdEnumValueType mCmdEnumValue;
 	OmniPvdClassHandle mCmdEnumClassHandle;
 	OmniPvdClassHandle mCmdAttributeClassHandle;
 
 	OmniPvdAttributeHandle mCmdAttributeHandleStack[32];
-	uint8_t mCmdAttributeHandleDepth;
+	OmniPvdAttributeHandleDepthStorageType mCmdAttributeHandleDepth;
 	
-	uint64_t mCmdFrameTimeStart;
-	uint64_t mCmdFrameTimeStop;
+	OmniPvdFrameTimestampStorageType mCmdFrameTimeStart;
+	OmniPvdFrameTimestampStorageType mCmdFrameTimeStop;
 
 	uint8_t *mDataBuffer;
 	uint32_t mDataBuffAllocatedLen;
@@ -109,12 +122,12 @@ public:
 
 	// Messages
 	bool mCmdMessageParsed;
-	uint16_t mCmdMessageLength;
+	OmniPvdStringLengthStorageType mCmdMessageLength;
 	char mCmdMessage[OMNI_PVD_MAX_STRING_LENGTH];
-	uint16_t mCmdMessageFileLength;
+	OmniPvdStringLengthStorageType mCmdMessageFileLength;
 	char mCmdMessageFile[OMNI_PVD_MAX_STRING_LENGTH];
-	uint32_t mCmdMessageLine;
-	uint32_t mCmdMessageType;
+	OmniPvdMessageLineStorageType mCmdMessageLine;
+	OmniPvdMessageTypeStorageType mCmdMessageType;
 	OmniPvdClassHandle mCmdMessageClassHandle;
 };
 

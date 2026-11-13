@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-READ-CCT-001
+ * @covers AC-3
+ *
  * @implements REQ-READ-CORE-001
  * @covers AC-7 AC-8
  *
@@ -12,7 +15,7 @@
  * @covers AC-1
  *
  * @implements REQ-READ-ATTRS-001
- * @covers AC-1, AC-5
+ * @covers AC-1, AC-5, AC-30
  *
  * @implements REQ-TENSOR-INDEX-001
  * @covers AC-1 AC-2 AC-3
@@ -20,10 +23,13 @@
  * @covers AC-1 AC-2 AC-4
  *
  * @implements REQ-INPUT-DEVICE-001
- * @covers AC-1 AC-1b AC-2 AC-3 AC-8 AC-9
+ * @covers AC-1 AC-1b AC-2 AC-3 AC-8 AC-9 AC-14
  *
  * @implements REQ-INPUT-CORE-001
  * @covers AC-4 AC-5 AC-10
+ *
+ * @implements REQ-TENSOR-VIEW-001
+ * @covers AC-16
  */
 
 #include "tensors/gpu/CudaKernels.h"
@@ -41,6 +47,7 @@
 
 #include <omni/physics/tensors/TensorUtils.h>
 
+#include <cstring>
 #include <set>
 
 using omni::physics::tensors::checkRecordIndices;
@@ -88,6 +95,7 @@ GpuRigidBodyView::GpuRigidBodyView(GpuSimulationView* sim,
     {
         GpuRigidBodyRecord& rb = rbRecords[i];
         rbIndices[i] = i;
+        rb.orientationFixup = mEntries[i].orientationFixup;
 
         if (mEntries[i].subspace)
         {
@@ -146,11 +154,6 @@ GpuRigidBodyView::GpuRigidBodyView(GpuSimulationView* sim,
             PxArticulationReducedCoordinate* arti = &link->getArticulation();
             PxArticulationGPUIndex artiIdx = arti->getGPUIndex();
             PxU32 linkIdx = link->getLinkIndex();
-            PxU32 numLinks = arti->getNbLinks();
-            if (numLinks > mMaxLinks)
-            {
-                mMaxLinks = numLinks;
-            }
 
             rb.linkIdx = linkIdx;
             rb.physxArtiIdx = artiIdx;
@@ -184,6 +187,11 @@ GpuRigidBodyView::GpuRigidBodyView(GpuSimulationView* sim,
     mNumArtis = PxU32(artiIndices.size());
     mNumArtiRoots = numArtiRoots;
     mNumLinkRecords = PxU32(linkMap.size());
+
+    // Every device buffer of the view lives in the scene's CUDA context, which need not be current on the caller's
+    // thread.
+    PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
+
     if (mNumRds > 0 || mNumArtis > 0)
     {
         // cMass is indexed by entry/record index (see updateCMassData and submitRbForcesKernel's
@@ -199,14 +207,23 @@ GpuRigidBodyView::GpuRigidBodyView(GpuSimulationView* sim,
     if (mNumRds > 0 || mNumArtis > 0)
         updateCMassData();
 
-    PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
-
-    if (!SHIM_CU_EVENT_CREATE(&mOvStageIdxReadyEvent, CU_EVENT_DISABLE_TIMING))
-        CARB_LOG_ERROR("Failed to create the ovstage rigid packed-index ready event");
-
     prepareDeviceData((void**)&mRbIndicesDev, rbIndices.data(), numBodies * sizeof(PxU32), "mRbIndicesDev");
     // rb indexing data
     prepareDeviceData((void**)&mRbRecordsDev, rbRecords.data(), numBodies * sizeof(GpuRigidBodyRecord), "mRbRecordsDev");
+    {
+        std::vector<PxVec3> worldScales(numBodies);
+        for (PxU32 i = 0; i < numBodies; i++)
+            worldScales[i] = mEntries[i].worldScale;
+        // A failed copy leaves the buffer allocated but unwritten. Freed, so the eWorldScale gather finds no buffer
+        // and fails the read instead of publishing whatever the allocation held.
+        if (!prepareDeviceData((void**)&mWorldScalesDev, worldScales.data(), numBodies * sizeof(PxVec3),
+                               "mWorldScalesDev") &&
+            mWorldScalesDev)
+        {
+            CHECK_CUDA(cudaFree(mWorldScalesDev));
+            mWorldScalesDev = nullptr;
+        }
+    }
 
     // Size the rd buffers by the total rigid-dynamic entry count, not just the
     // initially-enabled count: refreshRdGpuIndices() rebuilds the compacted
@@ -222,9 +239,8 @@ GpuRigidBodyView::GpuRigidBodyView(GpuSimulationView* sim,
                           "mRdGpuIndicesDev");
         if (!rdGpuIndices.empty())
         {
-            CHECK_CUDA(cudaMemcpy(mRdGpuIndicesDev, rdGpuIndices.data(),
-                                  rdGpuIndices.size() * sizeof(PxRigidDynamicGPUIndex),
-                                  cudaMemcpyHostToDevice));
+            uploadToDevice(
+                mRdGpuIndicesDev, rdGpuIndices.data(), rdGpuIndices.size() * sizeof(PxRigidDynamicGPUIndex));
         }
         prepareDeviceData(
             (void**)&mDirtyRdGpuIndices, nullptr, rdEntryCount * sizeof(PxRigidDynamicGPUIndex), "mDirtyRdGpuIndices");
@@ -236,8 +252,9 @@ GpuRigidBodyView::GpuRigidBodyView(GpuSimulationView* sim,
     {
         prepareDeviceData(
             (void**)&mArtiDirtyFlagsDev, nullptr, mNumArtis * sizeof(PxArticulationCacheFlags), "mArtiDirtyFlagsDev");
+        // Strided by the simulation data's links, as the force submission and fillArtiFT index it, not the view's.
         prepareDeviceData((void**)&mArtiLinksDirtyFlagsDev, nullptr,
-                          mNumArtis * mMaxLinks * sizeof(PxArticulationCacheFlags),
+                          mNumArtis * mGpuSimData->mMaxLinks * sizeof(PxArticulationCacheFlags),
                           "mArtiLinksDirtyFlagsDev");
         prepareDeviceData((void**)&mDirtyArtiGpuIndices, nullptr, mNumArtis * sizeof(PxArticulationGPUIndex), "mDirtyArtiGpuIndices");
         prepareDeviceData((void**)&mArtiIndicesDev, artiIndices.data(), mNumArtis * sizeof(PxArticulationGPUIndex), "mArtiIndicesDev");
@@ -266,11 +283,13 @@ GpuRigidBodyView::~GpuRigidBodyView()
     {
         CudaContextGuard ctxGuard(mGpuSimData->mCtx);
 
-        // Drain before freeing: an ovstage gather is launched on the null stream and returns without
+        // Drain before freeing: an ovstage gather launched on the null stream returns without
         // synchronizing, so a view destroyed in the same frame as its last read can free records the
         // kernel is still reading. cudaFree has historically synchronized implicitly; that is not a
-        // guarantee to rely on. Same reason GpuArticulationView drains before its selection buffer.
+        // guarantee to rely on. A stream-ordered read or commit reads them on its caller's stream
+        // instead, which the drain does not cover: it is waited for as well.
         CHECK_CUDA(cudaStreamSynchronize(nullptr));
+        mGpuSimData->waitForTableReaders();
 
         // PhysX consumes the ovstage write buffers on its own streams, which the drain above does not
         // cover: wait for the last pose/velocity and wrench applies before freeing what they read.
@@ -278,13 +297,12 @@ GpuRigidBodyView::~GpuRigidBodyView()
             CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(applyDone), nullptr));
         if (CUevent wrenchDone = mGpuSimData->mApplySignalEvents[ApplyEvent::eRdForces])
             CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(wrenchDone), nullptr));
-        if (mOvStageIdxReadyEvent)
-            CHECK_CU(getCudaShim()->eventDestroy(reinterpret_cast<uintptr_t>(mOvStageIdxReadyEvent), nullptr));
 
         CHECK_CUDA(cudaFree(mRbIndicesDev));
         CHECK_CUDA(cudaFree(mRdGpuIndicesDev));
         CHECK_CUDA(cudaFree(mArtiIndicesDev));
         CHECK_CUDA(cudaFree(mRbRecordsDev));
+        CHECK_CUDA(cudaFree(mWorldScalesDev));
         for (OvStageRowsSlot& rowsSlot : mOvStageRows)
             CHECK_CUDA(cudaFree(rowsSlot.dev));
         CHECK_CUDA(cudaFree(mOvStageWrenchDev));
@@ -318,7 +336,7 @@ bool GpuRigidBodyView::clearDataFlagsAndIndices()
             return false;
         }
         if (!CHECK_CUDA(cudaMemset(
-                mArtiLinksDirtyFlagsDev, 0, mNumArtis * mMaxLinks * sizeof(PxArticulationCacheFlags))))
+                mArtiLinksDirtyFlagsDev, 0, mNumArtis * mGpuSimData->mMaxLinks * sizeof(PxArticulationCacheFlags))))
         {
             return false;
         }
@@ -342,7 +360,7 @@ bool GpuRigidBodyView::clearDataFlagsAndIndices()
 bool GpuRigidBodyView::getTransforms(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, mNumArtis > 0, false);
 
     if (!dstTensor || !dstTensor->data)
     {
@@ -534,8 +552,8 @@ void GpuRigidBodyView::invalidateMappingForDisabledRd(const char* reason) const
 {
     CARB_LOG_ERROR(
         "Rigid body tensor view mapping invalidated: %s. DirectGPU has no row for "
-        "eDISABLE_SIMULATION rigid dynamics. getValid() is now false — recreate the "
-        "simulation view / tensor binding for the enabled set (OMPE-103213).",
+        "eDISABLE_SIMULATION rigid dynamics. getValid() is now false; recreate the "
+        "simulation view / tensor binding for the enabled set.",
         reason ? reason : "disabled rigid dynamic in view");
     if (mSim)
         mSim->invalidate();
@@ -662,7 +680,7 @@ bool GpuRigidBodyView::refreshRdGpuIndices() const
         mRdIndexDirty = false;
         return true;
     }
-    // cudaMemcpy needs the view's CUDA context current; callers acquire
+    // The upload needs the view's CUDA context current; callers acquire
     // PhysxCudaContextGuard later for their own DirectGPU calls, but this
     // helper runs before that point in getTransforms/getVelocities/etc.
     // Match the convention used by other CUDA entry points in this file.
@@ -670,9 +688,8 @@ bool GpuRigidBodyView::refreshRdGpuIndices() const
     bool uploaded = true;
     if (mNumRds > 0)
     {
-        uploaded = CHECK_CUDA(cudaMemcpy(mRdGpuIndicesDev, mRdGpuIndicesHost.data(),
-                                         mNumRds * sizeof(PxRigidDynamicGPUIndex),
-                                         cudaMemcpyHostToDevice));
+        uploaded = mGpuSimData->rewriteTable(
+            mRdGpuIndicesDev, mRdGpuIndicesHost.data(), mNumRds * sizeof(PxRigidDynamicGPUIndex));
     }
     // Upload only the changed record sub-range rather than all numBodies
     // records: a workload toggling disable each step changes only the toggled
@@ -690,9 +707,8 @@ bool GpuRigidBodyView::refreshRdGpuIndices() const
         const PxU32 last = mDeviceUploadPending ? PxU32(rbRecords.size()) - 1u : lastChanged;
         const PxU32 rangeCount = last - first + 1;
         // Evaluated first so the second upload is attempted even if the first failed.
-        uploaded = CHECK_CUDA(cudaMemcpy(mRbRecordsDev + first, rbRecords.data() + first,
-                                         rangeCount * sizeof(GpuRigidBodyRecord),
-                                         cudaMemcpyHostToDevice)) &&
+        uploaded = mGpuSimData->rewriteTable(
+                       mRbRecordsDev + first, rbRecords.data() + first, rangeCount * sizeof(GpuRigidBodyRecord)) &&
                    uploaded;
     }
 
@@ -741,6 +757,8 @@ bool GpuRigidBodyView::ovStageWriteBuffers(const char* const attribName,
                                            const PxU32* rows,
                                            const PxU32 numOutputs,
                                            const uint64_t token,
+                                           const OvStageDeviceWriteArgs& deviceArgs,
+                                           const size_t payloadBytes,
                                            const PxU32*& outRowsDev,
                                            void*& outPacked,
                                            PxRigidDynamicGPUIndex*& outIdx)
@@ -748,48 +766,68 @@ bool GpuRigidBodyView::ovStageWriteBuffers(const char* const attribName,
     if (numOutputs == 0)
         return false;
 
-    outRowsDev = rows ? ovStageRowsDevice(rows, numOutputs, token) : nullptr;
-    if (rows && !outRowsDev)
+    PxRigidDynamicGPUIndex* idxDev = nullptr;
+    if (deviceArgs.sessionOwned())
     {
-        CARB_LOG_ERROR("%s: ovstage record-list upload failed", attribName);
-        return false;
-    }
-
-    if (numOutputs > mOvStageWriteCapacity)
-    {
-        int status = 0;
-        // The scratch being freed here is the one the LAST setRigidDynamicData was handed, and that
-        // call is asynchronous -- it signals mApplySignalEvents[eRdData] when PhysX is done reading.
-        // Freeing device memory out from under an in-flight read is cudaErrorIllegalAddress, which
-        // poisons the context for every later CUDA call in the process rather than failing here.
-        //
-        // A session reaches this with a live write in flight whenever a later group needs MORE rows
-        // than an earlier one, which is routine: one attribute write emits the
-        // standalone group AND one array group per instancer, and those sizes differ.
-        if (!waitOvStageWriteDone())
+        // A session's own row list (uploaded at open), index list and payload, so a captured replay reads
+        // nothing another operation can resize or overwrite.
+        OvStageScratch scratch(deviceArgs.scratch);
+        outRowsDev = scratch.take<PxU32>(numOutputs);
+        idxDev = scratch.take<PxRigidDynamicGPUIndex>(numOutputs);
+        outPacked = static_cast<char*>(deviceArgs.scratch) + scratch.used();
+        if (!deviceArgs.scratchHolds(static_cast<char*>(outPacked) + payloadBytes, attribName))
             return false;
-        if (mOvStagePackedDev)
-            CHECK_CU(getCudaShim()->memFree(reinterpret_cast<uintptr_t>(mOvStagePackedDev), &status));
-        if (mOvStageIdxDev)
-            CHECK_CU(getCudaShim()->memFree(reinterpret_cast<uintptr_t>(mOvStageIdxDev), &status));
-        mOvStagePackedDev = nullptr;
-        mOvStageIdxDev = nullptr;
-        mOvStageWriteCapacity = 0;
-        mOvStageIdxToken = 0; // the index list did not survive the reallocation
-
-        uintptr_t packed = 0;
-        uintptr_t idx = 0;
-        if (!getCudaShim()->memAlloc(&packed, size_t(numOutputs) * sizeof(PxTransform), &status) || !packed ||
-            !getCudaShim()->memAlloc(&idx, size_t(numOutputs) * sizeof(PxRigidDynamicGPUIndex), &status) || !idx)
+    }
+    else
+    {
+        outRowsDev = rows ? ovStageRowsDevice(rows, numOutputs, token) : nullptr;
+        if (rows && !outRowsDev)
         {
-            if (packed)
-                CHECK_CU(getCudaShim()->memFree(packed, &status));
-            CARB_LOG_ERROR("%s: ovstage write buffer allocation failed (%u rows)", attribName, numOutputs);
+            CARB_LOG_ERROR("%s: ovstage record-list upload failed", attribName);
             return false;
         }
-        mOvStagePackedDev = reinterpret_cast<PxTransform*>(packed);
-        mOvStageIdxDev = reinterpret_cast<PxRigidDynamicGPUIndex*>(idx);
-        mOvStageWriteCapacity = numOutputs;
+
+        if (numOutputs > mOvStageWriteCapacity)
+        {
+            int status = 0;
+            // The scratch being freed here is the one the LAST setRigidDynamicData was handed, and that
+            // call is asynchronous -- it signals mApplySignalEvents[eRdData] when PhysX is done reading.
+            // Freeing device memory out from under an in-flight read is cudaErrorIllegalAddress, which
+            // poisons the context for every later CUDA call in the process rather than failing here.
+            // A wrench write reads the same index list and signals eRdForces instead, so wait for both.
+            //
+            // A drain reaches this with a live write in flight whenever a later group needs MORE rows
+            // than an earlier one.
+            const CUevent wrenchDone = mGpuSimData ? mGpuSimData->mApplySignalEvents[ApplyEvent::eRdForces] : nullptr;
+            if (!waitOvStageWriteDone() ||
+                (wrenchDone &&
+                 !CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(wrenchDone), nullptr))))
+                return false;
+            if (mOvStagePackedDev)
+                CHECK_CU(getCudaShim()->memFree(reinterpret_cast<uintptr_t>(mOvStagePackedDev), &status));
+            if (mOvStageIdxDev)
+                CHECK_CU(getCudaShim()->memFree(reinterpret_cast<uintptr_t>(mOvStageIdxDev), &status));
+            mOvStagePackedDev = nullptr;
+            mOvStageIdxDev = nullptr;
+            mOvStageWriteCapacity = 0;
+            mOvStageIdxToken = 0; // the index list did not survive the reallocation
+
+            uintptr_t packed = 0;
+            uintptr_t idx = 0;
+            if (!getCudaShim()->memAlloc(&packed, size_t(numOutputs) * sizeof(PxTransform), &status) || !packed ||
+                !getCudaShim()->memAlloc(&idx, size_t(numOutputs) * sizeof(PxRigidDynamicGPUIndex), &status) || !idx)
+            {
+                if (packed)
+                    CHECK_CU(getCudaShim()->memFree(packed, &status));
+                CARB_LOG_ERROR("%s: ovstage write buffer allocation failed (%u rows)", attribName, numOutputs);
+                return false;
+            }
+            mOvStagePackedDev = reinterpret_cast<PxTransform*>(packed);
+            mOvStageIdxDev = reinterpret_cast<PxRigidDynamicGPUIndex*>(idx);
+            mOvStageWriteCapacity = numOutputs;
+        }
+        idxDev = mOvStageIdxDev;
+        outPacked = mOvStagePackedDev;
     }
 
     // The packed index list depends on TWO things, and only one of them is the row list.
@@ -842,30 +880,152 @@ bool GpuRigidBodyView::ovStageWriteBuffers(const char* const attribName,
         mOvStageIdxToken = token;
         mOvStageIdxDisableEpoch = mLastSeenRdDisableEpoch;
     }
-    if (!submitRbPackedIndicesOvStage(mOvStageIdxDev, mRdGpuIndicesDev, mRbRecordsDev, outRowsDev, numOutputs))
+    // On the write's stream: every PhysX call that reads the list is forked from that stream after this
+    // kernel (physxOnStream), so PhysX never gathers through an unbuilt list.
+    if (!submitRbPackedIndicesOvStage(idxDev, mRdGpuIndicesDev, mRbRecordsDev, outRowsDev, numOutputs,
+                                      deviceArgs.stream))
     {
         CARB_LOG_ERROR("%s: packed index build failed", attribName);
         return false;
     }
+    outIdx = idxDev;
+    return true;
+}
 
-    // PhysX's DirectGPU copies run on CU_STREAM_NON_BLOCKING streams, which the null stream this kernel
-    // ran on does not order against: every consumer of the list passes this event as startEvent,
-    // including the pre-reads issued before the caller's own post-scatter record. Without it PhysX
-    // gathers through an unbuilt list -- garbage indices, an illegal address, a poisoned context.
-    // A failed record falls back to a drain (recordKernelDone's convention); a failed drain refuses.
-    if (!mOvStageIdxReadyEvent ||
-        !getCudaShim()->eventRecord(reinterpret_cast<uintptr_t>(mOvStageIdxReadyEvent), uintptr_t(0), nullptr))
+OvStageDeviceWriteArgs GpuRigidBodyView::drainDeviceWriteArgs(const int applyEvent, const CUstream stream) const
+{
+    OvStageDeviceWriteArgs deviceArgs;
+    // Run on the stream the read handed back (the producer's), so the drain's kernels and the PhysX call it forks
+    // share one stream -- ordered by the stream, no extra event. null (the current synchronous read) is the
+    // legacy default stream, the drain's behaviour before deferred sync.
+    deviceArgs.stream = stream;
+    deviceArgs.fork = mGpuSimData->mApplyWaitEvents[applyEvent];
+    deviceArgs.join = mGpuSimData->mApplySignalEvents[applyEvent];
+    return deviceArgs;
+}
+
+bool GpuRigidBodyView::rdIndicesRefreshPending() const
+{
+    return mRdIndexDirty || mDeviceUploadPending ||
+           (mGpuSimData && mGpuSimData->mRdDisableEpoch != mLastSeenRdDisableEpoch);
+}
+
+bool GpuRigidBodyView::refreshRdIndicesForWrite(const char* const attribName,
+                                                const OvStageDeviceWriteArgs& deviceArgs) const
+{
+    if (deviceArgs.capturing && rdIndicesRefreshPending())
     {
-        if (!CHECK_CUDA(cudaStreamSynchronize(nullptr)))
+        CARB_LOG_ERROR("%s: a rigid body was enabled or disabled since this write was opened, and a captured "
+                       "commit cannot upload the refreshed GPU index map. Reopen the write and capture again.",
+                       attribName);
+        return false;
+    }
+    return refreshRdGpuIndices();
+}
+
+size_t GpuRigidBodyView::ovStageWriteScratchBytes(const OvStageRigidWrite kind, const PxU32 numOutputs) const
+{
+    // The order every session setter carves its scratch in: the row list first, then the kind's arrays.
+    OvStageScratch layout(nullptr);
+    layout.take<PxU32>(numOutputs);
+    const PxU32 linkBlock = mNumArtis * (mGpuSimData ? mGpuSimData->mMaxLinks : 0u);
+    switch (kind)
+    {
+    case OvStageRigidWrite::ePose:
+    case OvStageRigidWrite::eInstancerPose:
+        layout.take<PxRigidDynamicGPUIndex>(numOutputs);
+        layout.take<PxTransform>(numOutputs);
+        break;
+    case OvStageRigidWrite::eVec3:
+    case OvStageRigidWrite::eInstancerVelocity:
+        layout.take<PxRigidDynamicGPUIndex>(numOutputs);
+        layout.take<PxVec3>(numOutputs);
+        break;
+    case OvStageRigidWrite::eWrench:
+        layout.take<PxRigidDynamicGPUIndex>(numOutputs);
+        layout.take<PxTransform>(numOutputs);
+        layout.take<PxVec3>(numOutputs);
+        layout.take<PxVec3>(numOutputs);
+        break;
+    case OvStageRigidWrite::eLinkForce:
+    case OvStageRigidWrite::eLinkWrench:
+        layout.take<PxU32>(numOutputs); // row -> applied-articulation slot
+        layout.take<PxArticulationGPUIndex>(mNumArtis);
+        layout.take<PxVec3>(linkBlock);
+        if (kind == OvStageRigidWrite::eLinkWrench)
         {
-            CARB_LOG_ERROR("%s: could not order the packed index build ahead of PhysX", attribName);
-            return false;
+            layout.take<PxVec3>(linkBlock);
+            layout.take<PxTransform>(linkBlock);
         }
+        break;
+    }
+    return layout.used();
+}
+
+bool GpuRigidBodyView::prepareOvStageWrite(const OvStageRigidWrite kind,
+                                           const PxU32* const rows,
+                                           const PxU32 numOutputs,
+                                           const bool wholeSet,
+                                           OvStageDeviceWriteArgs& deviceArgs)
+{
+    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
+    const bool wrench = kind == OvStageRigidWrite::eWrench || kind == OvStageRigidWrite::eLinkWrench;
+    // The COM table a wrench reads is refreshed on the host, which a captured commit cannot do.
+    if (wrench && !getComsCacheStateValid() && !updateCMassData())
+        return false;
+    if (kind != OvStageRigidWrite::eLinkForce && kind != OvStageRigidWrite::eLinkWrench)
+        return true;
+    if (mNumArtis == 0 || mGpuSimData->mMaxLinks == 0)
+    {
+        CARB_LOG_ERROR("link force: this view holds no articulation links");
+        return false;
     }
 
-    outPacked = mOvStagePackedDev;
-    outIdx = mOvStageIdxDev;
-    return true;
+    // A whole-set write (`wholeSet`) that names every link record in this view writes every articulation, so it
+    // applies the whole view and skips the dedup. `wholeSet` alone is not enough: an articulation not yet in a
+    // scene when the write was opened is left out of it and joins this view at the next step. Otherwise the
+    // written articulations are resolved here from the query's records and, when they are a subset, only they
+    // are applied, so every other articulation's input from earlier this step survives.
+    deviceArgs.applyWholeView = wholeSet && numOutputs == mNumLinkRecords;
+    deviceArgs.applyCount = mNumArtis;
+    if (deviceArgs.applyWholeView)
+        return true;
+
+    std::vector<PxU32> artiToCompact(mNumArtis, 0xffffffffu); // tensorArtiIdx -> compact slot
+    std::vector<PxArticulationGPUIndex> writtenArtis; // compact slot -> GPU index
+    std::vector<PxU32> rowCompactArti(numOutputs); // written row -> compact slot
+    for (PxU32 i = 0; i < numOutputs; ++i)
+    {
+        const GpuRigidBodyRecord& r = rbRecords[rows[i]];
+        PxU32 slot = (r.tensorArtiIdx < mNumArtis) ? artiToCompact[r.tensorArtiIdx] : 0xffffffffu;
+        if (slot == 0xffffffffu)
+        {
+            slot = static_cast<PxU32>(writtenArtis.size());
+            if (r.tensorArtiIdx < mNumArtis)
+                artiToCompact[r.tensorArtiIdx] = slot;
+            writtenArtis.push_back(r.physxArtiIdx);
+        }
+        rowCompactArti[i] = slot;
+    }
+    deviceArgs.applyCount = static_cast<PxU32>(writtenArtis.size());
+    if (deviceArgs.applyCount == mNumArtis)
+    {
+        // Every articulation is written after all: the whole-view defaults stand and nothing is uploaded.
+        deviceArgs.applyWholeView = true;
+        return true;
+    }
+    if (deviceArgs.applyCount == 0)
+        return true;
+
+    OvStageScratch scratch(deviceArgs.scratch);
+    scratch.take<PxU32>(numOutputs); // the row list, uploaded by the caller
+    PxU32* const rowCompactDev = scratch.take<PxU32>(numOutputs);
+    PxArticulationGPUIndex* const artisDev = scratch.take<PxArticulationGPUIndex>(mNumArtis);
+    if (!deviceArgs.scratchHolds(artisDev + mNumArtis, "link force"))
+        return false;
+    PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
+    return uploadToDevice(rowCompactDev, rowCompactArti.data(), size_t(numOutputs) * sizeof(PxU32)) &&
+           uploadToDevice(artisDev, writtenArtis.data(), writtenArtis.size() * sizeof(PxArticulationGPUIndex));
 }
 
 const PxU32* GpuRigidBodyView::ovStageRowsDevice(const PxU32* rows, uint32_t count, uint64_t token) const
@@ -876,11 +1036,12 @@ const PxU32* GpuRigidBodyView::ovStageRowsDevice(const PxU32* rows, uint32_t cou
     CudaContextGuard ctxGuard(mGpuSimData ? mGpuSimData->mCtx : nullptr);
 
     // Hit: a slot already holds this exact list. The token must identify the row list ITSELF -- the
-    // reader mints a version whenever it builds a new list. A cheaper token will not do: one built from
+    // caller mints a version whenever it builds a new list, or hashes the list's contents into the
+    // other half of the token space (OvStageRowsVersion.h). A cheaper token will not do: one built from
     // view generation, object type and scope leaves all three unchanged across two different queries of
-    // the same type and scope, and kOvxActive rebuilds its rows every read. Count is compared too -- it
-    // bounds the memcpy and the slot's count, whatever the caller derives its token from. Touching the
-    // slot refreshes its recency so a list read every frame is never the eviction victim.
+    // the same type and scope. Count is compared too -- it bounds the memcpy and the slot's count,
+    // whatever the caller derives its token from. Touching the slot refreshes its recency so a list
+    // written every frame is never the eviction victim.
     for (OvStageRowsSlot& hit : mOvStageRows)
     {
         if (hit.token != 0 && hit.token == token && hit.count == count)
@@ -891,10 +1052,8 @@ const PxU32* GpuRigidBodyView::ovStageRowsDevice(const PxU32* rows, uint32_t cou
     }
 
     // Miss: evict the least-recently-used slot (an empty slot, tick 0, wins first) so every
-    // concurrently-live list -- the stable rigid-body and link reads, an active read, the write scratch
-    // -- keeps its own device copy. A warm read refreshed its slot this frame, so while the live lists
-    // fit the slots the victim is an empty slot or the oldest churning list; once they exceed
-    // kOvStageRowsSlots (a many-instancer write burst) even a warm read can be the victim.
+    // concurrently-live write list keeps its own device copy; once they exceed kOvStageRowsSlots (a
+    // many-instancer write burst) a list still in use can be the victim.
     uint32_t victim = 0;
     for (uint32_t i = 1; i < kOvStageRowsSlots; ++i)
     {
@@ -924,7 +1083,7 @@ const PxU32* GpuRigidBodyView::ovStageRowsDevice(const PxU32* rows, uint32_t cou
         s.tick = 0;
         return nullptr;
     }
-    if (!CHECK_CUDA(cudaMemcpy(s.dev, rows, count * sizeof(PxU32), cudaMemcpyHostToDevice)))
+    if (!uploadToDevice(s.dev, rows, count * sizeof(PxU32)))
     {
         s.token = 0; // a failed upload must not be mistaken for a held copy
         s.tick = 0;
@@ -937,228 +1096,392 @@ const PxU32* GpuRigidBodyView::ovStageRowsDevice(const PxU32* rows, uint32_t cou
     return s.dev;
 }
 
-// One bulk read of the pose source, then the gather that slices it. Shared by position and
-// orientation, which differ only in which slice they take.
-bool GpuRigidBodyView::getPoseColumnOvStage(const char* const attribName,
-                                            const TensorDesc* const dstTensor,
-                                            const bool wantOrientation,
-                                            const PxU32* outRecordIdx,
-                                            const PxU32 numOutputs,
-                                            const uint64_t rowsToken) const
+namespace
 {
-    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+// The PhysX copy a rigid read column slices. Position and orientation share the pose.
+enum RigidReadSource : uint32_t
+{
+    kRigidReadPose,
+    kRigidReadLinearVelocity,
+    kRigidReadAngularVelocity,
+    kRigidReadLinearAcceleration,
+    kRigidReadAngularAcceleration,
+    kRigidReadSourceCount
+};
 
-    // Everything the call can be rejected for, before any of it happens: the work below rebuilds the
-    // GPU index map and issues two full-scene DirectGPU reads.
-    if (!dstTensor || !dstTensor->data)
-        return false;
-    if (!checkTensorDevice(*dstTensor, mDevice, attribName, __FUNCTION__) ||
-        !checkTensorFloat32(*dstTensor, attribName, __FUNCTION__) ||
-        !checkTensorSizeExact(*dstTensor, numOutputs * (wantOrientation ? 4u : 3u), attribName, __FUNCTION__))
+RigidReadSource rigidReadSource(const GpuRigidBodyView::OvStageRigidRead kind)
+{
+    using Read = GpuRigidBodyView::OvStageRigidRead;
+    switch (kind)
     {
-        return false;
+    case Read::ePosition:
+    case Read::eOrientation:
+        return kRigidReadPose;
+    case Read::eLinearVelocity:
+        return kRigidReadLinearVelocity;
+    case Read::eAngularVelocity:
+        return kRigidReadAngularVelocity;
+    case Read::eLinearAcceleration:
+        return kRigidReadLinearAcceleration;
+    case Read::eAngularAcceleration:
+        return kRigidReadAngularAcceleration;
+    case Read::eWorldScale: // stored, never copied: see rigidReadIsStored
+    case Read::eNone:
+        break;
     }
-
-    // Must precede the read: it indexes through mRdGpuIndicesDev, and a disabled rigid dynamic's
-    // GPU row is freed and recycled. On the ovstage superset the refresh keeps that record as a
-    // sentinel; the ovstage read layer is what omits disabled rows from `outRecordIdx`, so this
-    // gather never slices one. A fixed-membership view instead invalidates and fails here.
-    if (!refreshRdGpuIndices())
-        return false;
-
-    PxScene* scene = mGpuSimData->mScene;
-    PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
-
-    const PxU32* outRecordIdxDev = nullptr;
-    if (outRecordIdx)
-    {
-        outRecordIdxDev = ovStageRowsDevice(outRecordIdx, numOutputs, rowsToken);
-        if (!outRecordIdxDev)
-        {
-            CARB_LOG_ERROR("%s: ovstage record-list upload failed", attribName);
-            return false;
-        }
-    }
-
-    // Rigid dynamics and articulation links are separate engine buffers; each is read only if this
-    // view holds any.
-    CUevent rdEvent = mGpuSimData->mCopyEvents[CopyEvent::eRdData];
-    CUevent artiEvent = mGpuSimData->mCopyEvents[CopyEvent::eArtiLinkTransforms];
-    // Both getters' status is checked: PhysX refuses these calls outright in states the caller cannot
-    // see -- pre-step being the documented one -- and writes NOTHING when it does. The scratch is not
-    // zeroed, so an unchecked refusal is gathered as whatever the buffer last held and served as
-    // poses (ADR-0008 Decision 10).
-    if (mNumRds > 0)
-    {
-        // startEvent, not nullptr: a gather from a PREVIOUS read of this buffer may still be running
-        // on our stream, and position and orientation both fill it within a single read. Without
-        // this PhysX overwrites it underneath that gather (ADR-0008 Decision 7).
-        if (!mGpuSimData->awaitDirectGpuFetch(
-                scene->getDirectGPUAPI().getRigidDynamicData(
-                    (void*)mGpuSimData->mRdPoseDev, mRdGpuIndicesDev, PxRigidDynamicGPUAPIReadType::eGLOBAL_POSE,
-                    mNumRds, mGpuSimData->kernelDoneEvent(SharedDeviceBuffer::eRdPose), rdEvent),
-                rdEvent, __FUNCTION__))
-        {
-            CARB_LOG_ERROR("%s: PxDirectGPUAPI::getRigidDynamicData(eGLOBAL_POSE) refused the read", attribName);
-            return false;
-        }
-    }
-    if (mNumArtis > 0)
-    {
-        if (!mGpuSimData->awaitDirectGpuFetch(
-                scene->getDirectGPUAPI().getArticulationData(
-                    (void*)mGpuSimData->mLinkOrRootTransformsDev, mArtiIndicesDev,
-                    PxArticulationGPUAPIReadType::eLINK_GLOBAL_POSE, mNumArtis,
-                    mGpuSimData->kernelDoneEvent(SharedDeviceBuffer::eLinkOrRootTransforms), artiEvent),
-                artiEvent, __FUNCTION__))
-        {
-            CARB_LOG_ERROR("%s: PxDirectGPUAPI::getArticulationData(eLINK_GLOBAL_POSE) refused the read", attribName);
-            return false;
-        }
-    }
-
-    // Our kernels are done with these buffers; the next DirectGPU call on one may take over
-    // (ADR-0008 Decision 7). Unconditional, and never behind an early return: the gather reports
-    // failure via CHECK_CUDA(cudaGetLastError()), which can surface an error raised EARLIER with this
-    // launch still in flight -- exactly the case where the next DirectGPU call must wait.
-    const bool gathered = gatherPoseColumnOvStage(wantOrientation, outRecordIdxDev, numOutputs, dstTensor);
-    mGpuSimData->recordKernelDone(SharedDeviceBuffer::eRdPose);
-    mGpuSimData->recordKernelDone(SharedDeviceBuffer::eLinkOrRootTransforms);
-    return gathered;
+    return kRigidReadSourceCount;
 }
 
-// As above for a velocity source. The caller names which engine reads and scratch buffers to use,
-// so linear and angular share this without either paying for the other.
-bool GpuRigidBodyView::getVelocityColumnOvStage(const char* const attribName,
-                                                const TensorDesc* const dstTensor,
-                                                const PxRigidDynamicGPUAPIReadType::Enum rdType,
-                                                const PxArticulationGPUAPIReadType::Enum artiType,
-                                                const PxVec3* rdScratch,
-                                                const PxVec3* artiScratch,
-                                                const PxU32 rdBuf,
-                                                const PxU32 artiBuf,
-                                                const int artiCopyEvent,
-                                                const PxU32* outRecordIdx,
-                                                const PxU32 numOutputs,
-                                                const uint64_t rowsToken) const
+// A column gathered from a copy this view holds rather than from a PhysX copy the read makes.
+bool rigidReadIsStored(const GpuRigidBodyView::OvStageRigidRead kind)
 {
-    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
-
-    // As above: rejected before any engine work, not after it.
-    if (!dstTensor || !dstTensor->data)
-        return false;
-    if (!checkTensorDevice(*dstTensor, mDevice, attribName, __FUNCTION__) ||
-        !checkTensorFloat32(*dstTensor, attribName, __FUNCTION__) ||
-        !checkTensorSizeExact(*dstTensor, numOutputs * 3u, attribName, __FUNCTION__))
-    {
-        return false;
-    }
-
-    // As above: refresh before indexing through mRdGpuIndicesDev; disabled rows are never handed
-    // to this gather rather than being patched over.
-    if (!refreshRdGpuIndices())
-        return false;
-
-    PxScene* scene = mGpuSimData->mScene;
-    PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
-
-    const PxU32* outRecordIdxDev = nullptr;
-    if (outRecordIdx)
-    {
-        outRecordIdxDev = ovStageRowsDevice(outRecordIdx, numOutputs, rowsToken);
-        if (!outRecordIdxDev)
-        {
-            CARB_LOG_ERROR("%s: ovstage record-list upload failed", attribName);
-            return false;
-        }
-    }
-
-    CUevent rdEvent = mGpuSimData->mCopyEvents[CopyEvent::eRdData];
-    CUevent artiEvent = mGpuSimData->mCopyEvents[artiCopyEvent];
-    // Checked, for the reason spelled out in getPoseColumnOvStage: a refused read writes nothing and
-    // leaves the scratch holding whatever was there before.
-    if (mNumRds > 0)
-    {
-        if (!mGpuSimData->awaitDirectGpuFetch(
-                scene->getDirectGPUAPI().getRigidDynamicData(
-                    (void*)rdScratch, mRdGpuIndicesDev, rdType, mNumRds, mGpuSimData->kernelDoneEvent(rdBuf), rdEvent),
-                rdEvent, __FUNCTION__))
-        {
-            CARB_LOG_ERROR("%s: PxDirectGPUAPI::getRigidDynamicData refused the read", attribName);
-            return false;
-        }
-    }
-    if (mNumArtis > 0)
-    {
-        if (!mGpuSimData->awaitDirectGpuFetch(
-                scene->getDirectGPUAPI().getArticulationData((void*)artiScratch, mArtiIndicesDev, artiType, mNumArtis,
-                                                             mGpuSimData->kernelDoneEvent(artiBuf), artiEvent),
-                artiEvent, __FUNCTION__))
-        {
-            CARB_LOG_ERROR("%s: PxDirectGPUAPI::getArticulationData refused the read", attribName);
-            return false;
-        }
-    }
-
-    // Unconditional, for the reason spelled out in getPoseColumnOvStage: a failed gather can mean an
-    // earlier error surfacing with this launch still running, which is when the record matters most.
-    const bool gathered = gatherVelocityColumnOvStage(rdScratch, artiScratch, outRecordIdxDev, numOutputs, dstTensor);
-    mGpuSimData->recordKernelDone(rdBuf);
-    mGpuSimData->recordKernelDone(artiBuf);
-    return gathered;
+    return kind == GpuRigidBodyView::OvStageRigidRead::eWorldScale;
 }
 
-// The point-instancer columns. They live on the rigid view because everything they need is here: the
-// per-read GPU-index rebuild, the shared pose/velocity scratch, and the event protocol around it
-// (ADR-0008 Decision 7). The instancer view owns the instancer-shaped device arrays and hands them in.
-//
-// The instances are read through the SUPERSET view, which already covers them (collectSupersetRigidEntries
-// does not filter instanced bodies out), so this is the same bulk fetch the standalone bodies pay for.
-bool GpuRigidBodyView::getInstancerPoseColumnOvStage(const bool wantOrientation,
-                                                     float* const dstDev,
-                                                     const GpuPointInstancerRecord* const recordsDev,
-                                                     const InstancerAffine* const instancerInversesDev,
-                                                     const PxU32* const offsetsDev,
-                                                     const PxU32 numInstances) const
+constexpr PxRigidDynamicGPUAPIReadType::Enum kRigidDynamicReadType[kRigidReadSourceCount] = {
+    PxRigidDynamicGPUAPIReadType::eGLOBAL_POSE, PxRigidDynamicGPUAPIReadType::eLINEAR_VELOCITY,
+    PxRigidDynamicGPUAPIReadType::eANGULAR_VELOCITY, PxRigidDynamicGPUAPIReadType::eLINEAR_ACCELERATION,
+    PxRigidDynamicGPUAPIReadType::eANGULAR_ACCELERATION
+};
+constexpr PxArticulationGPUAPIReadType::Enum kLinkReadType[kRigidReadSourceCount] = {
+    PxArticulationGPUAPIReadType::eLINK_GLOBAL_POSE, PxArticulationGPUAPIReadType::eLINK_LINEAR_VELOCITY,
+    PxArticulationGPUAPIReadType::eLINK_ANGULAR_VELOCITY, PxArticulationGPUAPIReadType::eLINK_LINEAR_ACCELERATION,
+    PxArticulationGPUAPIReadType::eLINK_ANGULAR_ACCELERATION
+};
+} // namespace
+
+bool GpuRigidBodyView::planOvStageRead(const PxU32* const rows,
+                                       const PxU32 numOutputs,
+                                       const uint64_t rowsToken,
+                                       const OvStageRigidReadColumn* const columns,
+                                       const PxU32 columnCount,
+                                       OvStageRigidReadPlan& plan,
+                                       std::shared_ptr<const std::vector<uint8_t>>& head,
+                                       size_t& scratchBytes) const
+{
+    plan = OvStageRigidReadPlan();
+    head.reset();
+    scratchBytes = 0;
+    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
+    if (!rows || numOutputs == 0 || !columns || columnCount == 0)
+        return false;
+    // The columns shape the plan only through the copies they need; a stored column needs none.
+    uint32_t sources = 0;
+    for (PxU32 c = 0; c < columnCount; ++c)
+    {
+        if (rigidReadIsStored(columns[c].kind))
+            continue;
+        const RigidReadSource source = rigidReadSource(columns[c].kind);
+        if (source == kRigidReadSourceCount)
+            return false;
+        sources |= 1u << source;
+    }
+    // The view's rigid-dynamic count decides the fetch, and moves when a body outside the rows is enabled or disabled.
+    const std::vector<uint64_t> signature{ sources, numOutputs, mNumRds };
+    if (rowsToken)
+    {
+        if (const OvStageReadPlans<OvStageRigidReadPlan>::Entry* const kept =
+                mOvStageReadPlans.find(rowsToken, 0, signature))
+        {
+            plan = kept->plan;
+            head = kept->head;
+            scratchBytes = kept->scratchBytes;
+            return true;
+        }
+    }
+    plan.sources = sources;
+    // Once per plan, on the host: the gathers index records[rows[i]] with no bound of their own.
+    if (!checkRecordIndices(rows, numOutputs, mEntries.size(), "ovstage record list", __FUNCTION__))
+        return false;
+
+    plan.numOutputs = numOutputs;
+    plan.links = ovStageRowsAreLinks(rows, numOutputs);
+    std::vector<PxArticulationGPUIndex> artis;
+    std::vector<PxU32> artiSlot;
+    if (plan.links)
+    {
+        if (mNumArtis == 0 || mGpuSimData->mMaxLinks == 0)
+        {
+            CARB_LOG_ERROR("ovstage link read: this view holds no articulation links");
+            return false;
+        }
+        // The articulations the rows belong to, each fetched once, in the order the rows first name them.
+        std::vector<PxU32> slotOfArti(mNumArtis, 0xffffffffu);
+        artiSlot.resize(numOutputs);
+        for (PxU32 i = 0; i < numOutputs; ++i)
+        {
+            const GpuRigidBodyRecord& r = rbRecords[rows[i]];
+            if (r.physxLinkIdx == 0xffffffff || r.tensorArtiIdx >= mNumArtis)
+            {
+                CARB_LOG_ERROR("ovstage link read: row %u is not an articulation link of this view", i);
+                return false;
+            }
+            PxU32& slot = slotOfArti[r.tensorArtiIdx];
+            if (slot == 0xffffffffu)
+            {
+                slot = static_cast<PxU32>(artis.size());
+                artis.push_back(r.physxArtiIdx);
+            }
+            artiSlot[i] = slot;
+        }
+        // Rows touching every articulation fetch them all through the view's own list, which costs the same.
+        plan.wholeView = artis.size() == mNumArtis;
+        plan.numFetched = plan.wholeView ? mNumArtis : static_cast<PxU32>(artis.size());
+    }
+    else
+    {
+        // A link among rigid-dynamic rows would be gathered from a link copy the read does not make.
+        for (PxU32 i = 0; i < numOutputs; ++i)
+        {
+            if (rbRecords[rows[i]].physxLinkIdx != 0xffffffff)
+            {
+                CARB_LOG_ERROR("ovstage rigid read: row %u is an articulation link among rigid dynamics", i);
+                return false;
+            }
+        }
+        // The view's index list holds every enabled rigid dynamic, so it serves any read; a read of fewer
+        // fetches only its own rows. A read's rows never hold a disabled body, which has no index: the read omits
+        // disabled bodies from its rows.
+        plan.wholeView = numOutputs >= mNumRds;
+        plan.numFetched = plan.wholeView ? mNumRds : numOutputs;
+    }
+
+    // The head readOvStageColumns finds at the start of its scratch, laid out as it carves it.
+    OvStageScratch layout(nullptr);
+    layout.take<PxU32>(numOutputs);
+    size_t artisAt = 0;
+    size_t slotsAt = 0;
+    if (plan.links && !plan.wholeView)
+    {
+        artisAt = layout.used();
+        layout.take<PxArticulationGPUIndex>(plan.numFetched);
+        slotsAt = layout.used();
+        layout.take<PxU32>(numOutputs);
+    }
+    std::vector<uint8_t> built(layout.used(), 0);
+    std::memcpy(built.data(), rows, size_t(numOutputs) * sizeof(PxU32));
+    if (plan.links && !plan.wholeView)
+    {
+        std::memcpy(built.data() + artisAt, artis.data(), artis.size() * sizeof(PxArticulationGPUIndex));
+        std::memcpy(built.data() + slotsAt, artiSlot.data(), artiSlot.size() * sizeof(PxU32));
+    }
+    if (!plan.links && !plan.wholeView)
+        layout.take<PxRigidDynamicGPUIndex>(numOutputs);
+    const PxU32 perCopy = plan.links ? plan.numFetched * mGpuSimData->mMaxLinks : plan.numFetched;
+    for (uint32_t source = 0; source < kRigidReadSourceCount; ++source)
+    {
+        if (!(plan.sources & (1u << source)))
+            continue;
+        if (source == kRigidReadPose)
+            layout.take<PxTransform>(perCopy);
+        else
+            layout.take<PxVec3>(perCopy);
+    }
+    scratchBytes = layout.used();
+    head = std::make_shared<const std::vector<uint8_t>>(std::move(built));
+    if (rowsToken)
+        mOvStageReadPlans.keep(rowsToken, 0, signature, plan, head, scratchBytes);
+    return true;
+}
+
+bool GpuRigidBodyView::readOvStageColumns(const OvStageDeviceReadArgs& args,
+                                          const OvStageRigidReadPlan& plan,
+                                          const OvStageRigidReadColumn* const columns,
+                                          const PxU32 columnCount) const
+{
+    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, plan.links, false);
+    if (!args.scratch || !args.fork || !args.join || plan.numOutputs == 0 || !columns)
+        return false;
+    // The plan addresses the GPU index map as it was when the plan was made, in this same call.
+    if (rdIndicesRefreshPending())
+    {
+        CARB_LOG_ERROR("ovstage rigid read: a rigid body was enabled or disabled after the read was planned");
+        return false;
+    }
+
+    PxScene* const scene = mGpuSimData->mScene;
+    PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
+    const PxU32 n = plan.numOutputs;
+    OvStageScratch scratch(args.scratch);
+    const PxU32* const rowsDev = scratch.take<PxU32>(n);
+    const PxArticulationGPUIndex* artisDev = nullptr;
+    const PxU32* artiSlotDev = nullptr;
+    PxRigidDynamicGPUIndex* idxDev = nullptr;
+    if (plan.links && !plan.wholeView)
+    {
+        artisDev = scratch.take<PxArticulationGPUIndex>(plan.numFetched);
+        artiSlotDev = scratch.take<PxU32>(n);
+    }
+    if (!plan.links && !plan.wholeView)
+        idxDev = scratch.take<PxRigidDynamicGPUIndex>(n);
+    const PxU32 perCopy = plan.links ? plan.numFetched * mGpuSimData->mMaxLinks : plan.numFetched;
+    void* staging[kRigidReadSourceCount] = {};
+    for (uint32_t source = 0; source < kRigidReadSourceCount; ++source)
+    {
+        if (!(plan.sources & (1u << source)))
+            continue;
+        staging[source] = source == kRigidReadPose ? static_cast<void*>(scratch.take<PxTransform>(perCopy)) :
+                                                     static_cast<void*>(scratch.take<PxVec3>(perCopy));
+    }
+    if (!args.scratchHolds(static_cast<char*>(args.scratch) + scratch.used(), "ovstage rigid read"))
+        return false;
+
+    // Everything below reads this view's tables on `args.stream`; the host rewrites them only once it is done.
+    const auto noteReader = [&]() { return args.capturing || mGpuSimData->noteTableReader(args.stream); };
+
+    if (idxDev && !submitRbPackedIndicesOvStage(idxDev, mRdGpuIndicesDev, mRbRecordsDev, rowsDev, n, args.stream))
+    {
+        noteReader();
+        CARB_LOG_ERROR("ovstage rigid read: packed index build failed");
+        return false;
+    }
+    // Status IS checked: PhysX refuses these copies in states the caller cannot see and writes nothing when it does,
+    // and a gather over the scratch would then publish whatever it last held.
+    bool fetched = true;
+    for (uint32_t source = 0; source < kRigidReadSourceCount && fetched; ++source)
+    {
+        if (!staging[source])
+            continue;
+        fetched = physxOnStream(args, [&](CUevent start, CUevent finish) {
+            if (plan.links)
+                return scene->getDirectGPUAPI().getArticulationData(
+                    staging[source], plan.wholeView ? mArtiIndicesDev : artisDev, kLinkReadType[source],
+                    plan.numFetched, start, finish);
+            return scene->getDirectGPUAPI().getRigidDynamicData(
+                staging[source], plan.wholeView ? mRdGpuIndicesDev : idxDev, kRigidDynamicReadType[source],
+                plan.numFetched, start, finish);
+        });
+        if (!fetched)
+            CARB_LOG_ERROR("ovstage rigid read: PxDirectGPUAPI refused the %s copy",
+                           plan.links ? "articulation link" : "rigid dynamic");
+    }
+    bool gathered = fetched;
+    const bool packedRd = !plan.links && !plan.wholeView;
+    for (PxU32 c = 0; c < columnCount && gathered; ++c)
+    {
+        if (rigidReadIsStored(columns[c].kind))
+        {
+            gathered = columns[c].dst && mWorldScalesDev &&
+                       fetchRbWorldScaleColumnOvStage(columns[c].dst, mWorldScalesDev, rowsDev, n, args.stream);
+            continue;
+        }
+        const RigidReadSource source = rigidReadSource(columns[c].kind);
+        if (source == kRigidReadSourceCount || !staging[source] || !columns[c].dst)
+        {
+            gathered = false;
+            break;
+        }
+        const void* const rdSource = plan.links ? nullptr : staging[source];
+        const void* const linkSource = plan.links ? staging[source] : nullptr;
+        if (source == kRigidReadPose)
+            gathered = fetchRbPoseColumnOvStage(columns[c].dst, static_cast<const PxTransform*>(rdSource),
+                                                static_cast<const PxTransform*>(linkSource), mRbRecordsDev, rowsDev, n,
+                                                mGpuSimData->mMaxLinks,
+                                                columns[c].kind == OvStageRigidRead::eOrientation, args.stream,
+                                                packedRd, artiSlotDev, plan.numFetched);
+        else
+            gathered = fetchRbVelocityColumnOvStage(columns[c].dst, static_cast<const PxVec3*>(rdSource),
+                                                    static_cast<const PxVec3*>(linkSource), mRbRecordsDev, rowsDev, n,
+                                                    mGpuSimData->mMaxLinks, args.stream, packedRd, artiSlotDev,
+                                                    plan.numFetched);
+    }
+    return noteReader() && gathered;
+}
+
+// The PhysX copies an instancer read's columns need, each holding every rigid dynamic of the view.
+static void instancerReadScratchLayout(OvStageScratch& layout,
+                                       const GpuRigidBodyView::OvStageInstancerReadColumn* columns,
+                                       const PxU32 columnCount,
+                                       const PxU32 numRds,
+                                       void* staging[kRigidReadSourceCount])
+{
+    uint32_t sources = 0;
+    for (PxU32 c = 0; c < columnCount; ++c)
+        sources |= 1u << rigidReadSource(columns[c].kind);
+    for (uint32_t source = 0; source < kRigidReadSourceCount; ++source)
+    {
+        staging[source] = nullptr;
+        if (!(sources & (1u << source)))
+            continue;
+        staging[source] = source == kRigidReadPose ? static_cast<void*>(layout.take<PxTransform>(numRds)) :
+                                                     static_cast<void*>(layout.take<PxVec3>(numRds));
+    }
+}
+
+size_t GpuRigidBodyView::ovStageInstancerReadScratchBytes(const OvStageInstancerReadColumn* columns,
+                                                          const PxU32 columnCount) const
+{
+    OvStageScratch layout(nullptr);
+    void* staging[kRigidReadSourceCount];
+    instancerReadScratchLayout(layout, columns, columnCount, mNumRds, staging);
+    return layout.used();
+}
+
+bool GpuRigidBodyView::readOvStageInstancerColumns(const OvStageDeviceReadArgs& args,
+                                                   const OvStageInstancerReadColumn* columns,
+                                                   const PxU32 columnCount,
+                                                   const GpuPointInstancerRecord* recordsDev,
+                                                   const InstancerAffine* inversesDev,
+                                                   const PxU32 numInstances) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
     GPUAPI_CHECK_READY(mGpuSimData, false);
-
-    if (!dstDev || !recordsDev || !instancerInversesDev || !offsetsDev)
+    if (!args.scratch || !args.fork || !args.join || !columns || !recordsDev || !inversesDev)
         return false;
-    if (numInstances == 0)
+    if (numInstances == 0 || mNumRds == 0)
         return true;
-
-    // As in getPoseColumnOvStage. An instancer array keeps authored slot identity, so a disabled
-    // instance's slot is left unwritten rather than gathered through a sentinel record.
-    if (!refreshRdGpuIndices())
-        return false;
-
-    const char* const attribName = wantOrientation ? "instancer orientation (ovstage)" : "instancer position (ovstage)";
-    PxScene* scene = mGpuSimData->mScene;
-    PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
-
-    CUevent rdEvent = mGpuSimData->mCopyEvents[CopyEvent::eRdData];
-    if (mNumRds > 0)
+    // The copies address the GPU index map as it was when the read was planned, in this same call.
+    if (rdIndicesRefreshPending())
     {
-        if (!mGpuSimData->awaitDirectGpuFetch(
-                scene->getDirectGPUAPI().getRigidDynamicData(
-                    (void*)mGpuSimData->mRdPoseDev, mRdGpuIndicesDev, PxRigidDynamicGPUAPIReadType::eGLOBAL_POSE,
-                    mNumRds, mGpuSimData->kernelDoneEvent(SharedDeviceBuffer::eRdPose), rdEvent),
-                rdEvent, __FUNCTION__))
-        {
-            CARB_LOG_ERROR("%s: PxDirectGPUAPI::getRigidDynamicData(eGLOBAL_POSE) refused the read", attribName);
-            return false;
-        }
+        CARB_LOG_ERROR("ovstage instancer read: a rigid body was enabled or disabled after the read was planned");
+        return false;
     }
 
-    // Recorded whether or not the gather reported success; see getPoseColumnOvStage.
-    const bool ok = fetchInstancerPoseColumnOvStage(dstDev, mGpuSimData->mRdPoseDev, mRbRecordsDev, recordsDev,
-                                                    instancerInversesDev, offsetsDev, numInstances, wantOrientation);
-    mGpuSimData->recordKernelDone(SharedDeviceBuffer::eRdPose);
-    return ok;
+    PxScene* const scene = mGpuSimData->mScene;
+    PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
+    OvStageScratch scratch(args.scratch);
+    void* staging[kRigidReadSourceCount];
+    instancerReadScratchLayout(scratch, columns, columnCount, mNumRds, staging);
+    if (!args.scratchHolds(static_cast<char*>(args.scratch) + scratch.used(), "ovstage instancer read"))
+        return false;
+
+    // Status IS checked: a refused copy writes nothing, and a gather would publish whatever the scratch held.
+    bool fetched = true;
+    for (uint32_t source = 0; source < kRigidReadSourceCount && fetched; ++source)
+    {
+        if (!staging[source])
+            continue;
+        fetched = physxOnStream(args, [&](CUevent start, CUevent finish) {
+            return scene->getDirectGPUAPI().getRigidDynamicData(staging[source], mRdGpuIndicesDev,
+                                                                kRigidDynamicReadType[source], mNumRds, start,
+                                                                finish);
+        });
+        if (!fetched)
+            CARB_LOG_ERROR("ovstage instancer read: PxDirectGPUAPI refused the rigid dynamic copy");
+    }
+    bool gathered = fetched;
+    for (PxU32 c = 0; c < columnCount && gathered; ++c)
+    {
+        const RigidReadSource source = rigidReadSource(columns[c].kind);
+        if (source == kRigidReadSourceCount || !columns[c].dst || !columns[c].offsetsDev)
+        {
+            gathered = false;
+            break;
+        }
+        if (source == kRigidReadPose)
+            gathered = fetchInstancerPoseColumnOvStage(
+                columns[c].dst, static_cast<const PxTransform*>(staging[source]), mRbRecordsDev, recordsDev,
+                inversesDev, columns[c].offsetsDev, numInstances, columns[c].kind == OvStageRigidRead::eOrientation,
+                args.stream);
+        else
+            gathered = fetchInstancerVelocityColumnOvStage(columns[c].dst, static_cast<const PxVec3*>(staging[source]),
+                                                           mRbRecordsDev, recordsDev, columns[c].offsetsDev,
+                                                           numInstances, args.stream);
+    }
+    // The gathers read this view's tables and the instancer's frames on `args.stream`.
+    const bool noted = args.capturing || mGpuSimData->noteTableReader(args.stream);
+    return noted && gathered;
 }
 
 bool GpuRigidBodyView::setInstancerPoseColumnOvStage(const bool wantOrientation,
@@ -1169,7 +1492,8 @@ bool GpuRigidBodyView::setInstancerPoseColumnOvStage(const bool wantOrientation,
                                                      const PxU32* const rbRows,
                                                      const PxU32 numOutputs,
                                                      const PxU32 instancerIdx,
-                                                     const uint64_t rowsToken)
+                                                     const uint64_t rowsToken,
+                                                     const OvStageDeviceWriteArgs& sessionDeviceArgs)
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
     GPUAPI_CHECK_READY(mGpuSimData, false);
@@ -1177,31 +1501,52 @@ bool GpuRigidBodyView::setInstancerPoseColumnOvStage(const bool wantOrientation,
         return true;
     if (!srcDev || !recordsDev || !instancerInversesDev || !instancerForwardsDev || !rbRows)
         return false;
-    if (!refreshRdGpuIndices())
-        return false;
 
     const char* const attribName =
         wantOrientation ? "instancer orientation (ovstage write)" : "instancer position (ovstage write)";
+    const bool session = sessionDeviceArgs.sessionOwned();
+    const OvStageDeviceWriteArgs deviceArgs = session ? sessionDeviceArgs : drainDeviceWriteArgs(ApplyEvent::eRdData);
+    if (!refreshRdIndicesForWrite(attribName, deviceArgs))
+        return false;
     PxScene* scene = mGpuSimData->mScene;
     PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
 
     const PxU32* rowsDev = nullptr;
     void* packed = nullptr;
     PxRigidDynamicGPUIndex* packedIdx = nullptr;
-    if (!ovStageWriteBuffers(attribName, rbRows, numOutputs, rowsToken, rowsDev, packed, packedIdx))
+    if (!ovStageWriteBuffers(attribName, rbRows, numOutputs, rowsToken, deviceArgs,
+                             size_t(numOutputs) * sizeof(PxTransform), rowsDev, packed, packedIdx))
         return false;
     if (!packed)
         return false;
 
-    // The bodies' CURRENT poses, for the read-modify-write. Read into the shared rd-pose buffer the
-    // gather uses, so this takes that buffer's ordering event (ADR-0008 Decision 7).
-    CUevent rdEvent = mGpuSimData->mCopyEvents[CopyEvent::eRdData];
-    if (mNumRds > 0)
+    // The bodies' CURRENT poses, for the read-modify-write. A session reads exactly its instances through
+    // its own index list into its own block, which the scatter then overwrites in place. The drain reads
+    // every body into the shared rd-pose buffer the gather uses, so it takes that buffer's ordering event
+    // (ADR-0008 Decision 7).
+    const PxTransform* current = nullptr;
+    if (session)
+    {
+        current = static_cast<const PxTransform*>(packed);
+        if (!physxOnStream(deviceArgs, [&](CUevent start, CUevent finish) {
+                return scene->getDirectGPUAPI().getRigidDynamicData(packed, packedIdx,
+                                                                    PxRigidDynamicGPUAPIReadType::eGLOBAL_POSE,
+                                                                    numOutputs, start, finish);
+            }))
+        {
+            CARB_LOG_ERROR("%s: PxDirectGPUAPI::getRigidDynamicData(eGLOBAL_POSE) refused the read that "
+                           "preserves the pose half this column does not carry",
+                           attribName);
+            return false;
+        }
+    }
+    else if (mNumRds > 0)
     {
         // awaitDirectGpuFetch, not a bare call: the finish event here is the non-null shared rd-pose
         // event, so PhysX may have queued work and recorded it even on refusal. The ordering edge --
         // and the producer drain plus buffer quarantine when that edge cannot be established -- has to
-        // run either way, exactly as the getInstancerPoseColumnOvStage read does over this same buffer.
+        // run either way.
+        CUevent rdEvent = mGpuSimData->mCopyEvents[CopyEvent::eRdData];
         if (!mGpuSimData->awaitDirectGpuFetch(
                 scene->getDirectGPUAPI().getRigidDynamicData(
                     (void*)mGpuSimData->mRdPoseDev, mRdGpuIndicesDev, PxRigidDynamicGPUAPIReadType::eGLOBAL_POSE,
@@ -1217,19 +1562,25 @@ bool GpuRigidBodyView::setInstancerPoseColumnOvStage(const bool wantOrientation,
 
     const bool scattered = submitInstancerPoseColumnOvStage(
         static_cast<PxTransform*>(packed), srcDev, mGpuSimData->mRdPoseDev, mRbRecordsDev, recordsDev,
-        instancerInversesDev, instancerForwardsDev, numOutputs, instancerIdx, wantOrientation);
-    mGpuSimData->recordKernelDone(SharedDeviceBuffer::eRdPose);
+        instancerInversesDev, instancerForwardsDev, numOutputs, instancerIdx, wantOrientation, deviceArgs.stream,
+        deviceArgs.mask, current);
+    if (!session)
+        mGpuSimData->recordKernelDone(SharedDeviceBuffer::eRdPose);
     if (!scattered)
     {
         CARB_LOG_ERROR("%s: ovstage instancer scatter failed", attribName);
         return false;
     }
 
-    CHECK_CU(getCudaShim()->eventRecord(
-        reinterpret_cast<uintptr_t>(mGpuSimData->mApplyWaitEvents[ApplyEvent::eRdData]), uintptr_t(0), nullptr));
-    scene->getDirectGPUAPI().setRigidDynamicData(packed, packedIdx, PxRigidDynamicGPUAPIWriteType::eGLOBAL_POSE,
-                                                 numOutputs, mGpuSimData->mApplyWaitEvents[ApplyEvent::eRdData],
-                                                 mGpuSimData->mApplySignalEvents[ApplyEvent::eRdData]);
+    if (!physxOnStream(deviceArgs, [&](CUevent start, CUevent finish) {
+            return scene->getDirectGPUAPI().setRigidDynamicData(packed, packedIdx,
+                                                                PxRigidDynamicGPUAPIWriteType::eGLOBAL_POSE,
+                                                                numOutputs, start, finish);
+        }))
+    {
+        CARB_LOG_ERROR("%s: PxDirectGPUAPI::setRigidDynamicData(eGLOBAL_POSE) refused the write", attribName);
+        return false;
+    }
     return true;
 }
 
@@ -1238,7 +1589,8 @@ bool GpuRigidBodyView::setInstancerVelocityColumnOvStage(const bool wantAngular,
                                                          const GpuPointInstancerRecord* const recordsDev,
                                                          const PxU32* const rbRows,
                                                          const PxU32 numOutputs,
-                                                         const uint64_t rowsToken)
+                                                         const uint64_t rowsToken,
+                                                         const OvStageDeviceWriteArgs& sessionDeviceArgs)
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
     GPUAPI_CHECK_READY(mGpuSimData, false);
@@ -1246,197 +1598,70 @@ bool GpuRigidBodyView::setInstancerVelocityColumnOvStage(const bool wantAngular,
         return true;
     if (!srcDev || !recordsDev || !rbRows)
         return false;
-    if (!refreshRdGpuIndices())
-        return false;
 
     const char* const attribName = wantAngular ? "instancer angularVelocity (ovstage write)" :
                                                  "instancer linearVelocity (ovstage write)";
+    const OvStageDeviceWriteArgs deviceArgs =
+        sessionDeviceArgs.sessionOwned() ? sessionDeviceArgs : drainDeviceWriteArgs(ApplyEvent::eRdData);
+    if (!refreshRdIndicesForWrite(attribName, deviceArgs))
+        return false;
     PxScene* scene = mGpuSimData->mScene;
     PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
 
     const PxU32* rowsDev = nullptr;
     void* packed = nullptr;
     PxRigidDynamicGPUIndex* packedIdx = nullptr;
-    if (!ovStageWriteBuffers(attribName, rbRows, numOutputs, rowsToken, rowsDev, packed, packedIdx))
+    if (!ovStageWriteBuffers(attribName, rbRows, numOutputs, rowsToken, deviceArgs,
+                             size_t(numOutputs) * sizeof(PxVec3), rowsDev, packed, packedIdx))
         return false;
     if (!packed)
         return false;
 
     // No pre-read: linear and angular velocity are separate PhysX write types, so neither has to
-    // preserve the other -- the same reason the standalone velocity path needs no RMW.
+    // preserve the other -- the same reason the standalone velocity path needs no RMW. A masked commit
+    // does read the current velocities back, for the instances it does not select.
     //
-    // The packed block is PxTransform-sized, which is larger than the PxVec3[N] this needs; reusing
-    // it rather than allocating a second buffer is what the standalone paths do too.
-    if (!submitInstancerVelocityColumnOvStage(static_cast<PxVec3*>(packed), srcDev, recordsDev, numOutputs))
+    // The drain's packed block is PxTransform-sized, which is larger than the PxVec3[N] this needs;
+    // reusing it rather than allocating a second buffer is what the standalone paths do too.
+    if (deviceArgs.mask &&
+        !physxOnStream(deviceArgs, [&](CUevent start, CUevent finish) {
+            return scene->getDirectGPUAPI().getRigidDynamicData(
+                packed, packedIdx,
+                wantAngular ? PxRigidDynamicGPUAPIReadType::eANGULAR_VELOCITY :
+                              PxRigidDynamicGPUAPIReadType::eLINEAR_VELOCITY,
+                numOutputs, start, finish);
+        }))
+    {
+        CARB_LOG_ERROR("%s: PxDirectGPUAPI::getRigidDynamicData refused the read that keeps the instances this "
+                       "masked commit does not select",
+                       attribName);
+        return false;
+    }
+    if (!submitInstancerVelocityColumnOvStage(static_cast<PxVec3*>(packed), srcDev, recordsDev, numOutputs,
+                                              deviceArgs.stream, deviceArgs.mask))
     {
         CARB_LOG_ERROR("%s: ovstage instancer velocity scatter failed", attribName);
         return false;
     }
 
-    CHECK_CU(getCudaShim()->eventRecord(
-        reinterpret_cast<uintptr_t>(mGpuSimData->mApplyWaitEvents[ApplyEvent::eRdData]), uintptr_t(0), nullptr));
-    scene->getDirectGPUAPI().setRigidDynamicData(
-        packed, packedIdx,
-        wantAngular ? PxRigidDynamicGPUAPIWriteType::eANGULAR_VELOCITY :
-                      PxRigidDynamicGPUAPIWriteType::eLINEAR_VELOCITY,
-        numOutputs, mGpuSimData->mApplyWaitEvents[ApplyEvent::eRdData],
-        mGpuSimData->mApplySignalEvents[ApplyEvent::eRdData]);
+    if (!physxOnStream(deviceArgs, [&](CUevent start, CUevent finish) {
+            return scene->getDirectGPUAPI().setRigidDynamicData(
+                packed, packedIdx,
+                wantAngular ? PxRigidDynamicGPUAPIWriteType::eANGULAR_VELOCITY :
+                              PxRigidDynamicGPUAPIWriteType::eLINEAR_VELOCITY,
+                numOutputs, start, finish);
+        }))
+    {
+        CARB_LOG_ERROR("%s: PxDirectGPUAPI::setRigidDynamicData refused the write", attribName);
+        return false;
+    }
     return true;
 }
 
-bool GpuRigidBodyView::getInstancerVelocityColumnOvStage(const bool wantAngular,
-                                                         const bool wantAcceleration,
-                                                         float* const dstDev,
-                                                         const GpuPointInstancerRecord* const recordsDev,
-                                                         const PxU32* const offsetsDev,
-                                                         const PxU32 numInstances) const
-{
-    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
-
-    if (!dstDev || !recordsDev || !offsetsDev)
-        return false;
-    if (numInstances == 0)
-        return true;
-
-    if (!refreshRdGpuIndices())
-        return false;
-
-    const char* const attribName =
-        wantAcceleration ? (wantAngular ? "instancer angular acceleration (ovstage)" :
-                                          "instancer linear acceleration (ovstage)") :
-                           (wantAngular ? "instancer angular velocity (ovstage)" :
-                                          "instancer linear velocity (ovstage)");
-    // The scratch and the buffer id below are deliberately NOT selected on wantAcceleration: velocity
-    // and acceleration are read into the same per-component buffer (hence mRd*VelAccDev), one at a
-    // time, and are never in flight together. Only the read type changes.
-    const PxRigidDynamicGPUAPIReadType::Enum rdType =
-        wantAcceleration ? (wantAngular ? PxRigidDynamicGPUAPIReadType::eANGULAR_ACCELERATION :
-                                          PxRigidDynamicGPUAPIReadType::eLINEAR_ACCELERATION) :
-                           (wantAngular ? PxRigidDynamicGPUAPIReadType::eANGULAR_VELOCITY :
-                                          PxRigidDynamicGPUAPIReadType::eLINEAR_VELOCITY);
-    const PxVec3* const rdScratch =
-        wantAngular ? mGpuSimData->mRdAngularVelAccDev : mGpuSimData->mRdLinearVelAccDev;
-    const PxU32 rdBuf = wantAngular ? SharedDeviceBuffer::eRdAngularVel : SharedDeviceBuffer::eRdLinearVel;
-
-    PxScene* scene = mGpuSimData->mScene;
-    PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
-
-    CUevent rdEvent = mGpuSimData->mCopyEvents[CopyEvent::eRdData];
-    if (mNumRds > 0)
-    {
-        if (!mGpuSimData->awaitDirectGpuFetch(
-                scene->getDirectGPUAPI().getRigidDynamicData(
-                    (void*)rdScratch, mRdGpuIndicesDev, rdType, mNumRds, mGpuSimData->kernelDoneEvent(rdBuf), rdEvent),
-                rdEvent, __FUNCTION__))
-        {
-            CARB_LOG_ERROR("%s: PxDirectGPUAPI::getRigidDynamicData refused the read", attribName);
-            return false;
-        }
-    }
-
-    const bool ok =
-        fetchInstancerVelocityColumnOvStage(dstDev, rdScratch, mRbRecordsDev, recordsDev, offsetsDev, numInstances);
-    mGpuSimData->recordKernelDone(rdBuf);
-    return ok;
-}
-
-bool GpuRigidBodyView::getPositionsOvStage(const TensorDesc* dstTensor,
-                                           const PxU32* outRecordIdx,
-                                           const PxU32 numOutputs,
-                                           const uint64_t rowsToken) const
-{
-    return getPoseColumnOvStage("position (ovstage)", dstTensor, /*wantOrientation=*/false, outRecordIdx, numOutputs,
-                                rowsToken);
-}
-
-bool GpuRigidBodyView::getOrientationsOvStage(const TensorDesc* dstTensor,
-                                              const PxU32* outRecordIdx,
-                                              const PxU32 numOutputs,
-                                              const uint64_t rowsToken) const
-{
-    return getPoseColumnOvStage("orientation (ovstage)", dstTensor, /*wantOrientation=*/true, outRecordIdx, numOutputs,
-                                rowsToken);
-}
-
-bool GpuRigidBodyView::getLinearVelocitiesOvStage(const TensorDesc* dstTensor,
-                                                  const PxU32* outRecordIdx,
-                                                  const PxU32 numOutputs,
-                                                  const uint64_t rowsToken) const
-{
-    return getVelocityColumnOvStage("linear velocity (ovstage)", dstTensor,
-                                    PxRigidDynamicGPUAPIReadType::eLINEAR_VELOCITY,
-                                    PxArticulationGPUAPIReadType::eLINK_LINEAR_VELOCITY,
-                                    mGpuSimData->mRdLinearVelAccDev, mGpuSimData->mLinkOrRootLinearVelAccDev,
-                                    SharedDeviceBuffer::eRdLinearVel, SharedDeviceBuffer::eLinkOrRootLinearVel,
-                                    CopyEvent::eArtiLinkLinearVelocities, outRecordIdx, numOutputs, rowsToken);
-}
-
-bool GpuRigidBodyView::getAngularVelocitiesOvStage(const TensorDesc* dstTensor,
-                                                   const PxU32* outRecordIdx,
-                                                   const PxU32 numOutputs,
-                                                   const uint64_t rowsToken) const
-{
-    return getVelocityColumnOvStage("angular velocity (ovstage)", dstTensor,
-                                    PxRigidDynamicGPUAPIReadType::eANGULAR_VELOCITY,
-                                    PxArticulationGPUAPIReadType::eLINK_ANGULAR_VELOCITY,
-                                    mGpuSimData->mRdAngularVelAccDev, mGpuSimData->mLinkOrRootAngularVelAccDev,
-                                    SharedDeviceBuffer::eRdAngularVel, SharedDeviceBuffer::eLinkOrRootAngularVel,
-                                    CopyEvent::eArtiLinkAngularVelocities, outRecordIdx, numOutputs, rowsToken);
-}
-
-bool GpuRigidBodyView::getLinearAccelerationsOvStage(const TensorDesc* dstTensor,
-                                                    const PxU32* outRecordIdx,
-                                                    const PxU32 numOutputs,
-                                                    const uint64_t rowsToken) const
-{
-    return getVelocityColumnOvStage("linear acceleration (ovstage)", dstTensor,
-                                    PxRigidDynamicGPUAPIReadType::eLINEAR_ACCELERATION,
-                                    PxArticulationGPUAPIReadType::eLINK_LINEAR_ACCELERATION,
-                                    mGpuSimData->mRdLinearVelAccDev, mGpuSimData->mLinkOrRootLinearVelAccDev,
-                                    SharedDeviceBuffer::eRdLinearVel, SharedDeviceBuffer::eLinkOrRootLinearVel,
-                                    CopyEvent::eArtiLinkLinearVelocities, outRecordIdx, numOutputs, rowsToken);
-}
-
-bool GpuRigidBodyView::getAngularAccelerationsOvStage(const TensorDesc* dstTensor,
-                                                     const PxU32* outRecordIdx,
-                                                     const PxU32 numOutputs,
-                                                     const uint64_t rowsToken) const
-{
-    return getVelocityColumnOvStage("angular acceleration (ovstage)", dstTensor,
-                                    PxRigidDynamicGPUAPIReadType::eANGULAR_ACCELERATION,
-                                    PxArticulationGPUAPIReadType::eLINK_ANGULAR_ACCELERATION,
-                                    mGpuSimData->mRdAngularVelAccDev, mGpuSimData->mLinkOrRootAngularVelAccDev,
-                                    SharedDeviceBuffer::eRdAngularVel, SharedDeviceBuffer::eLinkOrRootAngularVel,
-                                    CopyEvent::eArtiLinkAngularVelocities, outRecordIdx, numOutputs, rowsToken);
-}
-
-bool GpuRigidBodyView::gatherPoseColumnOvStage(const bool wantOrientation,
-                                               const PxU32* outRecordIdxDev,
-                                               const PxU32 numOutputs,
-                                               const TensorDesc* dstTensor) const
-{
-    // dstTensor was validated by the caller, before it did any engine work.
-    return fetchRbPoseColumnOvStage(static_cast<float*>(dstTensor->data), mGpuSimData->mRdPoseDev,
-                                    mGpuSimData->mLinkOrRootTransformsDev, mRbRecordsDev, outRecordIdxDev, numOutputs,
-                                    mGpuSimData->mMaxLinks, wantOrientation);
-}
-
-bool GpuRigidBodyView::gatherVelocityColumnOvStage(const PxVec3* rdSrc,
-                                                   const PxVec3* linkSrc,
-                                                   const PxU32* outRecordIdxDev,
-                                                   const PxU32 numOutputs,
-                                                   const TensorDesc* dstTensor) const
-{
-    // dstTensor was validated by the caller, before it did any engine work.
-    return fetchRbVelocityColumnOvStage(static_cast<float*>(dstTensor->data), rdSrc, linkSrc, mRbRecordsDev,
-                                        outRecordIdxDev, numOutputs, mGpuSimData->mMaxLinks);
-}
-
-// ADR-0012: the ovstage column WRITE, mirroring getPoseColumnOvStage above -- and, like it,
-// carrying NO host block. The count PhysX needs is numOutputs, known before anything launches, so
-// nothing has to be read back from the device; that is what a flags-and-compaction scatter cannot
-// do, since its count comes off a thrust iterator on the host.
+// ADR-0012: the ovstage column WRITE, carrying NO host block, as the read carries none. The count
+// PhysX needs is numOutputs, known before anything launches, so nothing has to be read back from the
+// device; that is what a flags-and-compaction scatter cannot do, since its count comes off a thrust
+// iterator on the host.
 //
 // Reads the covered bodies' current poses first, because PxRigidDynamicGPUAPIWriteType carries one
 // eGLOBAL_POSE and a session writes one attribute -- the half not being written has to come from
@@ -1447,7 +1672,8 @@ bool GpuRigidBodyView::setPoseColumnOvStage(const char* const attribName,
                                             const bool wantOrientation,
                                             const PxU32* outRecordIdx,
                                             const PxU32 numOutputs,
-                                            const uint64_t rowsToken)
+                                            const uint64_t rowsToken,
+                                            const OvStageDeviceWriteArgs& sessionDeviceArgs)
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
     GPUAPI_CHECK_READY(mGpuSimData, false);
@@ -1460,7 +1686,9 @@ bool GpuRigidBodyView::setPoseColumnOvStage(const char* const attribName,
     {
         return false;
     }
-    if (!refreshRdGpuIndices())
+    const OvStageDeviceWriteArgs deviceArgs =
+        sessionDeviceArgs.sessionOwned() ? sessionDeviceArgs : drainDeviceWriteArgs(ApplyEvent::eRdData);
+    if (!refreshRdIndicesForWrite(attribName, deviceArgs))
         return false;
     if (numOutputs == 0)
         return true;
@@ -1469,52 +1697,48 @@ bool GpuRigidBodyView::setPoseColumnOvStage(const char* const attribName,
     PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
 
     const PxU32* outRecordIdxDev = nullptr;
-    PxTransform* packedPose = nullptr;
+    void* payload = nullptr;
     PxRigidDynamicGPUIndex* packedIdx = nullptr;
-    if (!ovStageWriteBuffers(attribName, outRecordIdx, numOutputs, rowsToken, outRecordIdxDev,
-                             reinterpret_cast<void*&>(packedPose), packedIdx))
+    if (!ovStageWriteBuffers(attribName, outRecordIdx, numOutputs, rowsToken, deviceArgs,
+                             size_t(numOutputs) * sizeof(PxTransform), outRecordIdxDev, payload, packedIdx))
         return false;
+    PxTransform* const packedPose = static_cast<PxTransform*>(payload);
 
     // Current poses for exactly the covered rows. Status IS checked: PhysX refuses these calls in
     // states the caller cannot see (pre-step being the documented one) and writes NOTHING when it
     // does; the scratch is not zeroed, so an unchecked refusal would overlay the caller's component
     // onto stale contents and publish that as poses.
-    //
-    // startEvent orders PhysX behind the index build (see ovStageWriteBuffers). This read used to pass
-    // NULL and was the TestOvstageWriteScatter context-poisoning flake.
-    CUevent rdEvent = mGpuSimData->mCopyEvents[CopyEvent::eRdData];
-    if (!scene->getDirectGPUAPI().getRigidDynamicData((void*)packedPose, packedIdx,
-                                                      PxRigidDynamicGPUAPIReadType::eGLOBAL_POSE, numOutputs,
-                                                      mOvStageIdxReadyEvent, rdEvent))
+    if (!physxOnStream(deviceArgs, [&](CUevent start, CUevent finish) {
+            return scene->getDirectGPUAPI().getRigidDynamicData((void*)packedPose, packedIdx,
+                                                                PxRigidDynamicGPUAPIReadType::eGLOBAL_POSE, numOutputs,
+                                                                start, finish);
+        }))
     {
         CARB_LOG_ERROR("%s: PxDirectGPUAPI::getRigidDynamicData(eGLOBAL_POSE) refused the read that preserves "
                        "the component this write does not set",
                        attribName);
         return false;
     }
-    // Stream-ordered, not blocking: the scatter below waits for the fill on the device.
-    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(rdEvent), 0, nullptr));
 
+    // An unselected row of a masked commit keeps the pose just read.
     if (!submitRbPackedPoseOvStage(packedPose, static_cast<const float*>(srcTensor->data), mRbRecordsDev,
-                                    outRecordIdxDev, numOutputs, wantOrientation))
+                                    outRecordIdxDev, numOutputs, wantOrientation, deviceArgs.stream, deviceArgs.mask))
     {
         CARB_LOG_ERROR("%s: scatter failed", attribName);
         return false;
     }
 
-    // Record-then-pass-as-startEvent: PhysX is ordered behind our scatter on the device, with no
-    // host round trip. This is the convention the articulation write already follows
-    // (GpuArticulationView::setRootTransforms); the legacy rigid write is the one that blocks
-    // instead, which is what ADR-0008 flagged as left for this work.
-    //
-    // The buffers are private to this view, so this is the WHOLE of the ordering: nothing here
-    // touches mRdPoseDev, so there is no shared scene buffer for a sibling read to race on.
-    CHECK_CU(getCudaShim()->eventRecord(
-        reinterpret_cast<uintptr_t>(mGpuSimData->mApplyWaitEvents[ApplyEvent::eRdData]), uintptr_t(0), nullptr));
-    scene->getDirectGPUAPI().setRigidDynamicData((void*)packedPose, packedIdx,
-                                                 PxRigidDynamicGPUAPIWriteType::eGLOBAL_POSE, numOutputs,
-                                                 mGpuSimData->mApplyWaitEvents[ApplyEvent::eRdData],
-                                                 mGpuSimData->mApplySignalEvents[ApplyEvent::eRdData]);
+    // Ordered behind the scatter on the device, with no host round trip. The buffers are private to
+    // this write, so there is no shared scene buffer for a sibling read to race on.
+    if (!physxOnStream(deviceArgs, [&](CUevent start, CUevent finish) {
+            return scene->getDirectGPUAPI().setRigidDynamicData((void*)packedPose, packedIdx,
+                                                                PxRigidDynamicGPUAPIWriteType::eGLOBAL_POSE,
+                                                                numOutputs, start, finish);
+        }))
+    {
+        CARB_LOG_ERROR("%s: PxDirectGPUAPI::setRigidDynamicData(eGLOBAL_POSE) refused the write", attribName);
+        return false;
+    }
     return true;
 }
 
@@ -1522,13 +1746,16 @@ bool GpuRigidBodyView::setPoseColumnOvStage(const char* const attribName,
 // eANGULAR_VELOCITY are separate write types, so there is nothing to preserve and no pre-read.
 //
 // The caller's column is ALREADY the packed payload -- a dense [numOutputs, 3] float column is
-// exactly PxVec3[numOutputs] -- so it is handed to PhysX directly. No scatter kernel, no copy.
+// exactly PxVec3[numOutputs] -- so it is handed to PhysX directly. A masked commit (ADR-0052) merges
+// instead: the selected rows from the column, the rest read back first (a velocity) or zero (a force or
+// torque, which PhysX cannot read back), in the session's own buffer.
 bool GpuRigidBodyView::setVelocityColumnOvStage(const char* const attribName,
                                                 const TensorDesc* const srcTensor,
                                                 const PxRigidDynamicGPUAPIWriteType::Enum rdType,
                                                 const PxU32* outRecordIdx,
                                                 const PxU32 numOutputs,
-                                                const uint64_t rowsToken)
+                                                const uint64_t rowsToken,
+                                                const OvStageDeviceWriteArgs& sessionDeviceArgs)
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
     GPUAPI_CHECK_READY(mGpuSimData, false);
@@ -1541,7 +1768,12 @@ bool GpuRigidBodyView::setVelocityColumnOvStage(const char* const attribName,
     {
         return false;
     }
-    if (!refreshRdGpuIndices())
+    // The drain carries the producer's stream in sessionDeviceArgs.stream (scratch null, so not sessionOwned);
+    // run on that stream so the scale and this write share it. Session commits bring their own full args.
+    const OvStageDeviceWriteArgs deviceArgs =
+        sessionDeviceArgs.sessionOwned() ? sessionDeviceArgs
+                                         : drainDeviceWriteArgs(ApplyEvent::eRdData, sessionDeviceArgs.stream);
+    if (!refreshRdIndicesForWrite(attribName, deviceArgs))
         return false;
     if (numOutputs == 0)
         return true;
@@ -1550,19 +1782,51 @@ bool GpuRigidBodyView::setVelocityColumnOvStage(const char* const attribName,
     PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
 
     const PxU32* outRecordIdxDev = nullptr;
-    void* packedData = nullptr; // unused on this path; the caller's column IS the payload
+    void* payload = nullptr;
     PxRigidDynamicGPUIndex* packedIdx = nullptr;
-    if (!ovStageWriteBuffers(attribName, outRecordIdx, numOutputs, rowsToken, outRecordIdxDev, packedData,
-                             packedIdx))
+    if (!ovStageWriteBuffers(attribName, outRecordIdx, numOutputs, rowsToken, deviceArgs,
+                             size_t(numOutputs) * sizeof(PxVec3), outRecordIdxDev, payload, packedIdx))
         return false;
 
-    // Only the index build ran on our stream, but the ordering obligation is identical: PhysX must
-    // not read the index list before that kernel finishes.
-    CHECK_CU(getCudaShim()->eventRecord(
-        reinterpret_cast<uintptr_t>(mGpuSimData->mApplyWaitEvents[ApplyEvent::eRdData]), uintptr_t(0), nullptr));
-    scene->getDirectGPUAPI().setRigidDynamicData(srcTensor->data, packedIdx, rdType, numOutputs,
-                                                 mGpuSimData->mApplyWaitEvents[ApplyEvent::eRdData],
-                                                 mGpuSimData->mApplySignalEvents[ApplyEvent::eRdData]);
+    const void* data = srcTensor->data;
+    if (deviceArgs.mask)
+    {
+        PxVec3* const merged = static_cast<PxVec3*>(payload);
+        const bool readable = rdType == PxRigidDynamicGPUAPIWriteType::eLINEAR_VELOCITY ||
+                              rdType == PxRigidDynamicGPUAPIWriteType::eANGULAR_VELOCITY;
+        if (readable &&
+            !physxOnStream(deviceArgs, [&](CUevent start, CUevent finish) {
+                return scene->getDirectGPUAPI().getRigidDynamicData(
+                    (void*)merged, packedIdx,
+                    rdType == PxRigidDynamicGPUAPIWriteType::eLINEAR_VELOCITY ?
+                        PxRigidDynamicGPUAPIReadType::eLINEAR_VELOCITY :
+                        PxRigidDynamicGPUAPIReadType::eANGULAR_VELOCITY,
+                    numOutputs, start, finish);
+            }))
+        {
+            CARB_LOG_ERROR("%s: PxDirectGPUAPI::getRigidDynamicData refused the read that keeps the rows this "
+                           "masked commit does not select",
+                           attribName);
+            return false;
+        }
+        if (!overlayVec3ColumnOvStage(merged, static_cast<const float*>(srcTensor->data), deviceArgs.mask, numOutputs,
+                                      !readable, deviceArgs.stream))
+        {
+            CARB_LOG_ERROR("%s: masked merge failed", attribName);
+            return false;
+        }
+        data = merged;
+    }
+
+    // Only our kernels ran on the write's stream, but the ordering obligation is identical: PhysX must
+    // not read the index list or the column before they finish.
+    if (!physxOnStream(deviceArgs, [&](CUevent start, CUevent finish) {
+            return scene->getDirectGPUAPI().setRigidDynamicData(data, packedIdx, rdType, numOutputs, start, finish);
+        }))
+    {
+        CARB_LOG_ERROR("%s: PxDirectGPUAPI::setRigidDynamicData refused the write", attribName);
+        return false;
+    }
     return true;
 }
 
@@ -1583,18 +1847,21 @@ bool GpuRigidBodyView::waitOvStageWriteDone() const
 bool GpuRigidBodyView::setPositionsOvStage(const TensorDesc* srcTensor,
                                            const PxU32* outRecordIdx,
                                            const PxU32 numOutputs,
-                                           const uint64_t rowsToken, bool)
+                                           const uint64_t rowsToken, bool,
+                                           const OvStageDeviceWriteArgs& deviceArgs)
 {
-    return setPoseColumnOvStage("position", srcTensor, /*wantOrientation*/ false, outRecordIdx, numOutputs, rowsToken);
+    return setPoseColumnOvStage("position", srcTensor, /*wantOrientation*/ false, outRecordIdx, numOutputs, rowsToken,
+                                deviceArgs);
 }
 
 bool GpuRigidBodyView::setOrientationsOvStage(const TensorDesc* srcTensor,
                                               const PxU32* outRecordIdx,
                                               const PxU32 numOutputs,
-                                              const uint64_t rowsToken, bool)
+                                              const uint64_t rowsToken, bool,
+                                              const OvStageDeviceWriteArgs& deviceArgs)
 {
     return setPoseColumnOvStage("orientation", srcTensor, /*wantOrientation*/ true, outRecordIdx, numOutputs,
-                                rowsToken);
+                                rowsToken, deviceArgs);
 }
 
 bool GpuRigidBodyView::ovStageRowsAreLinks(const PxU32* rows, const PxU32 numOutputs) const
@@ -1612,10 +1879,11 @@ bool GpuRigidBodyView::setLinkWrenchOvStage(const char* const attribName,
                                            const PxU32* const outRecordIdx,
                                            const PxU32 numOutputs,
                                            const uint64_t rowsToken,
-                                           const PxU32 comps, bool wholeSet)
+                                           const PxU32 comps, bool wholeSet,
+                                           const OvStageDeviceWriteArgs& sessionDeviceArgs)
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     if (!srcTensor || !srcTensor->data)
         return false;
     if (numOutputs == 0)
@@ -1632,131 +1900,177 @@ bool GpuRigidBodyView::setLinkWrenchOvStage(const char* const attribName,
         return false;
     }
 
+    const bool session = sessionDeviceArgs.sessionOwned();
+    const OvStageDeviceWriteArgs deviceArgs =
+        session ? sessionDeviceArgs : drainDeviceWriteArgs(ApplyEvent::eArtiLinkForces);
     PxScene* scene = mGpuSimData->mScene;
     PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
+    const PxU32 linkBlock = mNumArtis * mGpuSimData->mMaxLinks;
 
     // Rows only. ovStageWriteBuffers is deliberately NOT used here: its packed index build reads
     // tensorRdIdx, which a link does not have, and its validation rejects exactly this case.
-    const PxU32* rowsDev = ovStageRowsDevice(outRecordIdx, numOutputs, rowsToken);
-    if (!rowsDev)
-        return false;
-
-    if (!getComsCacheStateValid())
-        updateCMassData();
-
-    // A whole-set write (`wholeSet`) that names every link record in this view writes every articulation, so it
-    // applies the whole view (rowCompactArg == nullptr) and skips the host dedup. `wholeSet` alone covers only the
-    // links the attachment owns; this view also holds articulations created directly through PhysX. Otherwise the
-    // written articulations are resolved on the host from the query's records and, when they are a subset, only
-    // they are applied, so every other articulation's input from earlier this step survives. Scratch is cached
-    // on the view.
+    const PxU32* rowsDev = nullptr;
     PxArticulationGPUIndex* applyIndices = mArtiIndicesDev;
     PxU32 applyCount = mNumArtis;
     const PxU32* rowCompactArg = nullptr;
-    const bool coversView = wholeSet && numOutputs == mNumLinkRecords;
-    if (!coversView)
+    PxVec3* linkForces = mGpuSimData->mLinkForcesDev;
+    PxVec3* linkTorques = mGpuSimData->mLinkTorquesDev;
+    PxTransform* linkPoses = mGpuSimData->mLinkOrRootTransformsDev;
+    if (session)
     {
-        std::vector<PxU32>& artiToCompact = mLinkWrenchArtiToCompact;                 // tensorArtiIdx -> compact slot
-        std::vector<PxArticulationGPUIndex>& writtenArtis = mLinkWrenchWrittenArtis;  // compact slot -> GPU index
-        std::vector<PxU32>& rowCompactArti = mLinkWrenchRowCompact;                   // written row -> compact slot
-        artiToCompact.assign(mNumArtis, 0xffffffffu);
-        writtenArtis.clear();
-        rowCompactArti.resize(numOutputs);
-        for (PxU32 i = 0; i < numOutputs; ++i)
+        // Everything resolved at open (prepareOvStageWrite) lives in the session's scratch, laid out as
+        // ovStageWriteScratchBytes describes.
+        OvStageScratch scratch(deviceArgs.scratch);
+        rowsDev = scratch.take<PxU32>(numOutputs);
+        PxU32* const rowCompactDev = scratch.take<PxU32>(numOutputs);
+        PxArticulationGPUIndex* const artisDev = scratch.take<PxArticulationGPUIndex>(mNumArtis);
+        linkForces = scratch.take<PxVec3>(linkBlock);
+        if (comps == 9)
         {
-            const GpuRigidBodyRecord& r = rbRecords[outRecordIdx[i]];
-            PxU32 slot = (r.tensorArtiIdx < mNumArtis) ? artiToCompact[r.tensorArtiIdx] : 0xffffffffu;
-            if (slot == 0xffffffffu)
-            {
-                slot = static_cast<PxU32>(writtenArtis.size());
-                if (r.tensorArtiIdx < mNumArtis)
-                    artiToCompact[r.tensorArtiIdx] = slot;
-                writtenArtis.push_back(r.physxArtiIdx);
-            }
-            rowCompactArti[i] = slot;
+            linkTorques = scratch.take<PxVec3>(linkBlock);
+            linkPoses = scratch.take<PxTransform>(linkBlock);
         }
-        const PxU32 numWrittenArtis = static_cast<PxU32>(writtenArtis.size());
-        if (numWrittenArtis == 0)
-            return true; // no resolvable articulation among the written rows -- nothing to apply
-
-        // A true subset: upload the per-row compact slots and the written-articulation index list (host-known,
-        // so a plain upload, not the device->host readback the binding's masked path pays). Grown-and-cached
-        // like mOvStageWrenchDev; freed in the destructor. A grow of the index buffer waits on the link-force
-        // apply signal first, since PhysX reads it asynchronously (ADR-0008 D7). If the dedup finds EVERY
-        // articulation written, the whole-view defaults above already stand and no upload is needed -- the
-        // runtime safety net for an over-broad !wholeSet (it cannot wrongly clear, only miss the fast path).
-        if (numWrittenArtis != mNumArtis)
+        const void* const end = comps == 9 ? static_cast<const void*>(linkPoses + linkBlock) :
+                                             static_cast<const void*>(linkForces + linkBlock);
+        if (!deviceArgs.scratchHolds(end, attribName))
+            return false;
+        if (!deviceArgs.applyWholeView)
         {
-            if (numOutputs > mOvStageLinkWrenchRowArtiCapacity)
+            applyIndices = artisDev;
+            applyCount = deviceArgs.applyCount;
+            rowCompactArg = rowCompactDev;
+        }
+        if (applyCount == 0)
+            return true; // no resolvable articulation among the written rows -- nothing to apply
+        if (comps == 9 && !getComsCacheStateValid())
+        {
+            if (deviceArgs.capturing)
             {
-                if (mOvStageLinkWrenchRowArtiDev)
-                    CHECK_CUDA(cudaFree(mOvStageLinkWrenchRowArtiDev));
-                mOvStageLinkWrenchRowArtiDev = nullptr;
-                mOvStageLinkWrenchRowArtiCapacity = 0;
-                if (!CHECK_CUDA(cudaMalloc((void**)&mOvStageLinkWrenchRowArtiDev, size_t(numOutputs) * sizeof(PxU32))))
-                    return false;
-                mOvStageLinkWrenchRowArtiCapacity = numOutputs;
+                CARB_LOG_ERROR("%s: a centre of mass changed since this write was opened, and a captured commit "
+                               "cannot refresh it. Reopen the write and capture again.",
+                               attribName);
+                return false;
             }
-            if (numWrittenArtis > mOvStageLinkWrenchArtisCapacity)
+            updateCMassData();
+        }
+    }
+    else
+    {
+        rowsDev = ovStageRowsDevice(outRecordIdx, numOutputs, rowsToken);
+        if (!rowsDev)
+            return false;
+
+        if (!getComsCacheStateValid())
+            updateCMassData();
+
+        // A whole-set write (`wholeSet`) that names every link record in this view writes every articulation, so
+        // it applies the whole view (rowCompactArg == nullptr) and skips the host dedup. `wholeSet` alone is not
+        // enough: an articulation not yet in a scene when the write was opened is left out of it and joins this
+        // view at the next step. Otherwise the written articulations are resolved on the host from the query's
+        // records and, when they are a subset, only they are applied, so every other articulation's input from
+        // earlier this step survives. Scratch is cached on the view.
+        const bool coversView = wholeSet && numOutputs == mNumLinkRecords;
+        if (!coversView)
+        {
+            std::vector<PxU32>& artiToCompact = mLinkWrenchArtiToCompact;                 // tensorArtiIdx -> compact slot
+            std::vector<PxArticulationGPUIndex>& writtenArtis = mLinkWrenchWrittenArtis;  // compact slot -> GPU index
+            std::vector<PxU32>& rowCompactArti = mLinkWrenchRowCompact;                   // written row -> compact slot
+            artiToCompact.assign(mNumArtis, 0xffffffffu);
+            writtenArtis.clear();
+            rowCompactArti.resize(numOutputs);
+            for (PxU32 i = 0; i < numOutputs; ++i)
             {
-                CUevent forcesDone = mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiLinkForces];
-                if (mOvStageLinkWrenchArtisDev && forcesDone)
-                    CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(forcesDone), nullptr));
-                if (mOvStageLinkWrenchArtisDev)
-                    CHECK_CUDA(cudaFree(mOvStageLinkWrenchArtisDev));
-                mOvStageLinkWrenchArtisDev = nullptr;
-                mOvStageLinkWrenchArtisCapacity = 0;
-                if (!CHECK_CUDA(cudaMalloc((void**)&mOvStageLinkWrenchArtisDev,
-                                           size_t(numWrittenArtis) * sizeof(PxArticulationGPUIndex))))
-                    return false;
-                mOvStageLinkWrenchArtisCapacity = numWrittenArtis;
+                const GpuRigidBodyRecord& r = rbRecords[outRecordIdx[i]];
+                PxU32 slot = (r.tensorArtiIdx < mNumArtis) ? artiToCompact[r.tensorArtiIdx] : 0xffffffffu;
+                if (slot == 0xffffffffu)
+                {
+                    slot = static_cast<PxU32>(writtenArtis.size());
+                    if (r.tensorArtiIdx < mNumArtis)
+                        artiToCompact[r.tensorArtiIdx] = slot;
+                    writtenArtis.push_back(r.physxArtiIdx);
+                }
+                rowCompactArti[i] = slot;
             }
-            CHECK_CUDA(cudaMemcpyAsync(mOvStageLinkWrenchRowArtiDev, rowCompactArti.data(),
-                                       size_t(numOutputs) * sizeof(PxU32), cudaMemcpyHostToDevice, nullptr));
-            CHECK_CUDA(cudaMemcpyAsync(mOvStageLinkWrenchArtisDev, writtenArtis.data(),
-                                       size_t(numWrittenArtis) * sizeof(PxArticulationGPUIndex),
-                                       cudaMemcpyHostToDevice, nullptr));
-            applyIndices = mOvStageLinkWrenchArtisDev;
-            applyCount = numWrittenArtis;
-            rowCompactArg = mOvStageLinkWrenchRowArtiDev;
+            const PxU32 numWrittenArtis = static_cast<PxU32>(writtenArtis.size());
+            if (numWrittenArtis == 0)
+                return true; // no resolvable articulation among the written rows -- nothing to apply
+
+            // A true subset: upload the per-row compact slots and the written-articulation index list
+            // (host-known, so a plain upload, not the device->host readback the binding's masked path pays).
+            // Grown-and-cached like mOvStageWrenchDev; freed in the destructor. A grow of the index buffer
+            // waits on the link-force apply signal first, since PhysX reads it asynchronously (ADR-0008 D7). If
+            // the dedup finds EVERY articulation written, the whole-view defaults above already stand and no
+            // upload is needed.
+            if (numWrittenArtis != mNumArtis)
+            {
+                if (numOutputs > mOvStageLinkWrenchRowArtiCapacity)
+                {
+                    if (mOvStageLinkWrenchRowArtiDev)
+                        CHECK_CUDA(cudaFree(mOvStageLinkWrenchRowArtiDev));
+                    mOvStageLinkWrenchRowArtiDev = nullptr;
+                    mOvStageLinkWrenchRowArtiCapacity = 0;
+                    if (!CHECK_CUDA(cudaMalloc((void**)&mOvStageLinkWrenchRowArtiDev,
+                                               size_t(numOutputs) * sizeof(PxU32))))
+                        return false;
+                    mOvStageLinkWrenchRowArtiCapacity = numOutputs;
+                }
+                if (numWrittenArtis > mOvStageLinkWrenchArtisCapacity)
+                {
+                    CUevent forcesDone = mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiLinkForces];
+                    if (mOvStageLinkWrenchArtisDev && forcesDone)
+                        CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(forcesDone), nullptr));
+                    if (mOvStageLinkWrenchArtisDev)
+                        CHECK_CUDA(cudaFree(mOvStageLinkWrenchArtisDev));
+                    mOvStageLinkWrenchArtisDev = nullptr;
+                    mOvStageLinkWrenchArtisCapacity = 0;
+                    if (!CHECK_CUDA(cudaMalloc((void**)&mOvStageLinkWrenchArtisDev,
+                                               size_t(numWrittenArtis) * sizeof(PxArticulationGPUIndex))))
+                        return false;
+                    mOvStageLinkWrenchArtisCapacity = numWrittenArtis;
+                }
+                CHECK_CUDA(cudaMemcpyAsync(mOvStageLinkWrenchRowArtiDev, rowCompactArti.data(),
+                                           size_t(numOutputs) * sizeof(PxU32), cudaMemcpyHostToDevice, nullptr));
+                CHECK_CUDA(cudaMemcpyAsync(mOvStageLinkWrenchArtisDev, writtenArtis.data(),
+                                           size_t(numWrittenArtis) * sizeof(PxArticulationGPUIndex),
+                                           cudaMemcpyHostToDevice, nullptr));
+                applyIndices = mOvStageLinkWrenchArtisDev;
+                applyCount = numWrittenArtis;
+                rowCompactArg = mOvStageLinkWrenchRowArtiDev;
+            }
         }
     }
 
     // Zero only the blocks the apply pushes: the whole view, or the written articulations' compact blocks.
-    // A written articulation's unnamed links are zeroed with it; an unwritten one is not applied at all.
+    // A written articulation's unnamed links are zeroed with it, as are the unselected links of a masked
+    // commit; an unwritten articulation is not applied at all.
     const PxU32 zeroLinks = applyCount * mGpuSimData->mMaxLinks;
-    CHECK_CUDA(cudaMemsetAsync(mGpuSimData->mLinkForcesDev, 0, size_t(zeroLinks) * sizeof(PxVec3), nullptr));
+    CHECK_CUDA(cudaMemsetAsync(linkForces, 0, size_t(zeroLinks) * sizeof(PxVec3), deviceArgs.stream));
     if (comps == 9)
-        CHECK_CUDA(cudaMemsetAsync(mGpuSimData->mLinkTorquesDev, 0, size_t(zeroLinks) * sizeof(PxVec3), nullptr));
+        CHECK_CUDA(cudaMemsetAsync(linkTorques, 0, size_t(zeroLinks) * sizeof(PxVec3), deviceArgs.stream));
 
-    // Link poses, needed only by the wrench conversion. Read into the shared link-transform buffer,
-    // so this takes the ADR-0008 Decision 7 start event that buffer's protocol requires.
-    if (comps == 9)
+    // Link poses, needed only by the wrench conversion. The drain reads them into the shared
+    // link-transform buffer, which is why it releases that buffer after the scatter (ADR-0008 Decision 7).
+    if (comps == 9 &&
+        !physxOnStream(deviceArgs, [&](CUevent start, CUevent finish) {
+            return scene->getDirectGPUAPI().getArticulationData((void*)linkPoses, mArtiIndicesDev,
+                                                                PxArticulationGPUAPIReadType::eLINK_GLOBAL_POSE,
+                                                                mNumArtis, start, finish);
+        }))
     {
-        CUevent poseEvent = nullptr;
-        if (!scene->getDirectGPUAPI().getArticulationData(
-                (void*)mGpuSimData->mLinkOrRootTransformsDev, mArtiIndicesDev,
-                PxArticulationGPUAPIReadType::eLINK_GLOBAL_POSE, mNumArtis,
-                mGpuSimData->kernelDoneEvent(SharedDeviceBuffer::eLinkOrRootTransforms), poseEvent))
-        {
-            CARB_LOG_ERROR("%s: PxDirectGPUAPI::getArticulationData refused the link-pose read the "
-                           "torque-about-COM conversion needs",
-                           attribName);
-            return false;
-        }
-        if (poseEvent)
-            CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(poseEvent), 0, nullptr));
+        CARB_LOG_ERROR("%s: PxDirectGPUAPI::getArticulationData refused the link-pose read the "
+                       "torque-about-COM conversion needs",
+                       attribName);
+        return false;
     }
 
-    if (!submitLinkWrenchOvStage(mGpuSimData->mLinkForcesDev, mGpuSimData->mLinkTorquesDev,
-                                  static_cast<const float*>(srcTensor->data),
-                                  mGpuSimData->mLinkOrRootTransformsDev, cMassLocalPosePosDev, mRbRecordsDev,
-                                  rowsDev, rowCompactArg, numOutputs, mGpuSimData->mMaxLinks, comps))
+    if (!submitLinkWrenchOvStage(linkForces, linkTorques, static_cast<const float*>(srcTensor->data), linkPoses,
+                                  cMassLocalPosePosDev, mRbRecordsDev, rowsDev, rowCompactArg, numOutputs,
+                                  mGpuSimData->mMaxLinks, comps, deviceArgs.stream, deviceArgs.mask))
     {
         CARB_LOG_ERROR("%s: ovstage link scatter failed", attribName);
         return false;
     }
-    if (comps == 9)
+    if (comps == 9 && !session)
         mGpuSimData->recordKernelDone(SharedDeviceBuffer::eLinkOrRootTransforms);
 
     // applyIndices[slot] is the PhysX GPU index of the articulation whose (compact or whole-view) block the
@@ -1764,46 +2078,37 @@ bool GpuRigidBodyView::setLinkWrenchOvStage(const char* const attribName,
     // the written articulations' link forces and leaves every other articulation's input from earlier this
     // step in place; on the write-all path this is the whole view. Either way, no device->host readback --
     // the count came from the host-side query, not a device compaction (the binding's fillArtiFT block).
-    CHECK_CU(getCudaShim()->eventRecord(
-        reinterpret_cast<uintptr_t>(mGpuSimData->mApplyWaitEvents[ApplyEvent::eArtiLinkForces]), uintptr_t(0),
-        nullptr));
-    scene->getDirectGPUAPI().setArticulationData(
-        (void*)mGpuSimData->mLinkForcesDev, applyIndices, PxArticulationGPUAPIWriteType::eLINK_FORCE,
-        applyCount, mGpuSimData->mApplyWaitEvents[ApplyEvent::eArtiLinkForces],
-        mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiLinkForces]);
-    if (comps == 9)
+    //
+    // The write's stream waits for both applies, so the next write cannot clear these blocks mid-apply.
+    if (!physxOnStream(deviceArgs, [&](CUevent start, CUevent finish) {
+            bool applied = scene->getDirectGPUAPI().setArticulationData(
+                (void*)linkForces, applyIndices, PxArticulationGPUAPIWriteType::eLINK_FORCE, applyCount, start, finish);
+            if (comps == 9)
+                applied = scene->getDirectGPUAPI().setArticulationData((void*)linkTorques, applyIndices,
+                                                                       PxArticulationGPUAPIWriteType::eLINK_TORQUE,
+                                                                       applyCount, start, finish) &&
+                          applied;
+            return applied;
+        }))
     {
-        scene->getDirectGPUAPI().setArticulationData(
-            (void*)mGpuSimData->mLinkTorquesDev, applyIndices,
-            PxArticulationGPUAPIWriteType::eLINK_TORQUE, applyCount,
-            mGpuSimData->mApplyWaitEvents[ApplyEvent::eArtiLinkTorques],
-            mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiLinkTorques]);
+        CARB_LOG_ERROR("%s: PxDirectGPUAPI::setArticulationData refused the link force write", attribName);
+        return false;
     }
-
-    // PhysX's applies above read mLinkForcesDev/mLinkTorquesDev ASYNC (finishEvent = mApplySignalEvents).
-    // The next setLinkWrenchOvStage zeros those same shared buffers with cudaMemsetAsync on our stream,
-    // so order our stream behind the applies here -- without this the memset could clear them mid-apply
-    // (ADR-0008 D7, the reverse direction the host block used to cover).
-    CHECK_CU(getCudaShim()->streamWaitEvent(
-        uintptr_t(0), reinterpret_cast<uintptr_t>(mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiLinkForces]), 0,
-        nullptr));
-    if (comps == 9)
-        CHECK_CU(getCudaShim()->streamWaitEvent(
-            uintptr_t(0), reinterpret_cast<uintptr_t>(mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiLinkTorques]),
-            0, nullptr));
     return true;
 }
 
 bool GpuRigidBodyView::setWrenchesOvStage(const TensorDesc* const srcTensor,
                                          const PxU32* const outRecordIdx,
                                          const PxU32 numOutputs,
-                                         const uint64_t rowsToken, bool wholeSet)
+                                         const uint64_t rowsToken, bool wholeSet,
+                                         const OvStageDeviceWriteArgs& sessionDeviceArgs)
 {
     // A LINK query cannot use the rigid-dynamic packed path -- a link has no rd index to pack, and
     // ovStageWriteBuffers rejects exactly that. Detected from the first row's record rather than
     // passed in: a query is one object type, so the rows are all links or all rigid dynamics.
     if (ovStageRowsAreLinks(outRecordIdx, numOutputs))
-        return setLinkWrenchOvStage("wrench", srcTensor, outRecordIdx, numOutputs, rowsToken, 9u, wholeSet);
+        return setLinkWrenchOvStage("wrench", srcTensor, outRecordIdx, numOutputs, rowsToken, 9u, wholeSet,
+                                    sessionDeviceArgs);
 
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
     GPUAPI_CHECK_READY(mGpuSimData, false);
@@ -1815,7 +2120,9 @@ bool GpuRigidBodyView::setWrenchesOvStage(const TensorDesc* const srcTensor,
     {
         return false;
     }
-    if (!refreshRdGpuIndices())
+    const bool session = sessionDeviceArgs.sessionOwned();
+    const OvStageDeviceWriteArgs deviceArgs = session ? sessionDeviceArgs : drainDeviceWriteArgs(ApplyEvent::eRdForces);
+    if (!refreshRdIndicesForWrite("wrench", deviceArgs))
         return false;
     if (numOutputs == 0)
         return true;
@@ -1824,63 +2131,80 @@ bool GpuRigidBodyView::setWrenchesOvStage(const TensorDesc* const srcTensor,
     PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
 
     const PxU32* rowsDev = nullptr;
-    void* packed = nullptr;
+    void* payload = nullptr;
     PxRigidDynamicGPUIndex* packedIdx = nullptr;
-    if (!ovStageWriteBuffers("wrench", outRecordIdx, numOutputs, rowsToken, rowsDev, packed, packedIdx))
+    if (!ovStageWriteBuffers("wrench", outRecordIdx, numOutputs, rowsToken, deviceArgs, 0, rowsDev, payload,
+                             packedIdx))
         return false;
-    if (!packed)
+    if (!payload)
         return false;
 
-    // The COM table the conversion needs. Refreshed on the same condition the binding's force path
-    // uses -- setCMassLocalPose invalidates it and nothing else does.
+    // The COM table the conversion needs, stale once any centre of mass changed since it was built
+    // (centerOfMassEpoch). A session refreshed it at open.
     if (!getComsCacheStateValid())
-        updateCMassData();
-
-    if (numOutputs > mOvStageWrenchCapacity)
     {
-        // The old buffer may still be read by an in-flight wrench apply: setRigidDynamicData(eFORCE/
-        // eTORQUE) below signals eRdForces and does NOT block, so a later group needing more rows can
-        // reach this free while PhysX is still reading it. Freeing device memory out from under an
-        // in-flight read is cudaErrorIllegalAddress, which poisons the context for every later CUDA
-        // call rather than failing here -- so wait for the wrench apply first, as ovStageWriteBuffers
-        // does for its pose/index buffers (but on the wrench signal, eRdForces, not eRdData).
-        CUevent wrenchDone = mGpuSimData->mApplySignalEvents[ApplyEvent::eRdForces];
-        if (wrenchDone)
-            CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(wrenchDone), nullptr));
-        CHECK_CUDA(cudaFree(mOvStageWrenchDev));
-        mOvStageWrenchDev = nullptr;
-        mOvStageWrenchCapacity = 0;
-        if (!prepareDeviceData((void**)&mOvStageWrenchDev, nullptr, size_t(numOutputs) * 2 * sizeof(PxVec3),
-                               "mOvStageWrenchDev"))
+        if (deviceArgs.capturing)
+        {
+            CARB_LOG_ERROR("wrench: a centre of mass changed since this write was opened, and a captured commit "
+                           "cannot refresh it. Reopen the write and capture again.");
             return false;
-        mOvStageWrenchCapacity = numOutputs;
+        }
+        updateCMassData();
     }
-    PxVec3* outForces = mOvStageWrenchDev;
-    PxVec3* outTorques = mOvStageWrenchDev + numOutputs;
+
+    PxTransform* poses = static_cast<PxTransform*>(payload);
+    PxVec3* outForces = nullptr;
+    PxVec3* outTorques = nullptr;
+    if (session)
+    {
+        OvStageScratch scratch(payload);
+        poses = scratch.take<PxTransform>(numOutputs);
+        outForces = scratch.take<PxVec3>(numOutputs);
+        outTorques = scratch.take<PxVec3>(numOutputs);
+        if (!deviceArgs.scratchHolds(outTorques + numOutputs, "wrench"))
+            return false;
+    }
+    else
+    {
+        if (numOutputs > mOvStageWrenchCapacity)
+        {
+            // The old buffer may still be read by an in-flight wrench apply: setRigidDynamicData(eFORCE/
+            // eTORQUE) below signals eRdForces and does NOT block, so a later group needing more rows can
+            // reach this free while PhysX is still reading it. Freeing device memory out from under an
+            // in-flight read is cudaErrorIllegalAddress, which poisons the context for every later CUDA
+            // call rather than failing here -- so wait for the wrench apply first, as ovStageWriteBuffers
+            // does for its pose/index buffers (but on the wrench signal, eRdForces, not eRdData).
+            CUevent wrenchDone = mGpuSimData->mApplySignalEvents[ApplyEvent::eRdForces];
+            if (wrenchDone)
+                CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(wrenchDone), nullptr));
+            CHECK_CUDA(cudaFree(mOvStageWrenchDev));
+            mOvStageWrenchDev = nullptr;
+            mOvStageWrenchCapacity = 0;
+            if (!prepareDeviceData((void**)&mOvStageWrenchDev, nullptr, size_t(numOutputs) * 2 * sizeof(PxVec3),
+                                   "mOvStageWrenchDev"))
+                return false;
+            mOvStageWrenchCapacity = numOutputs;
+        }
+        outForces = mOvStageWrenchDev;
+        outTorques = mOvStageWrenchDev + numOutputs;
+    }
 
     // Poses for exactly the addressed rows, read through the same packed index list, so the kernel
-    // indexes them by output slot rather than by record.
-    //
-    // startEvent orders PhysX behind the index build (see ovStageWriteBuffers). That is the only edge
-    // this read needs: mOvStagePackedDev belongs to THIS view and this write is its only user, so the
-    // ADR-0008 Decision 7 protocol for the SHARED buffers does not apply here.
-    //
-    // The completion event is a local, since CopyEvent indexes articulation copies only -- the rigid
-    // paths in this file take PhysX's out-event the same way.
-    PxTransform* poses = static_cast<PxTransform*>(packed);
-    CUevent readEvent = nullptr;
-    if (!scene->getDirectGPUAPI().getRigidDynamicData(poses, packedIdx, PxRigidDynamicGPUAPIReadType::eGLOBAL_POSE,
-                                                      numOutputs, mOvStageIdxReadyEvent, readEvent))
+    // indexes them by output slot rather than by record. The pose block belongs to this write alone.
+    if (!physxOnStream(deviceArgs, [&](CUevent start, CUevent finish) {
+            return scene->getDirectGPUAPI().getRigidDynamicData(poses, packedIdx,
+                                                                PxRigidDynamicGPUAPIReadType::eGLOBAL_POSE,
+                                                                numOutputs, start, finish);
+        }))
     {
         CARB_LOG_ERROR("wrench: PxDirectGPUAPI::getRigidDynamicData refused the pose read the "
                        "torque-about-COM conversion needs");
         return false;
     }
-    if (readEvent)
-        CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(readEvent), 0, nullptr));
 
+    // An unselected row of a masked commit applies no load: PhysX cannot read one back to keep.
     if (!submitRbWrenchOvStage(outForces, outTorques, static_cast<const float*>(srcTensor->data), poses,
-                                cMassLocalPosePosDev, rowsDev, numOutputs))
+                                cMassLocalPosePosDev, rowsDev, numOutputs, deviceArgs.stream, deviceArgs.mask))
     {
         CARB_LOG_ERROR("wrench: ovstage scatter failed");
         return false;
@@ -1889,27 +2213,31 @@ bool GpuRigidBodyView::setWrenchesOvStage(const TensorDesc* const srcTensor,
     // Two write types, one packed index list, and no compaction anywhere: numOutputs IS the count,
     // known before the launch. The tensor binding's equivalent flags every body and takes the count
     // off the device through thrust::copy_if, which is the host block this path exists without.
-    CHECK_CU(getCudaShim()->eventRecord(
-        reinterpret_cast<uintptr_t>(mGpuSimData->mApplyWaitEvents[ApplyEvent::eRdForces]), uintptr_t(0), nullptr));
-    scene->getDirectGPUAPI().setRigidDynamicData(outForces, packedIdx, PxRigidDynamicGPUAPIWriteType::eFORCE,
-                                                 numOutputs, mGpuSimData->mApplyWaitEvents[ApplyEvent::eRdForces],
-                                                 mGpuSimData->mApplySignalEvents[ApplyEvent::eRdForces]);
-    scene->getDirectGPUAPI().setRigidDynamicData(outTorques, packedIdx, PxRigidDynamicGPUAPIWriteType::eTORQUE,
-                                                 numOutputs, mGpuSimData->mApplyWaitEvents[ApplyEvent::eRdForces],
-                                                 mGpuSimData->mApplySignalEvents[ApplyEvent::eRdForces]);
+    if (!physxOnStream(deviceArgs, [&](CUevent start, CUevent finish) {
+            const bool forces = scene->getDirectGPUAPI().setRigidDynamicData(
+                outForces, packedIdx, PxRigidDynamicGPUAPIWriteType::eFORCE, numOutputs, start, finish);
+            const bool torques = scene->getDirectGPUAPI().setRigidDynamicData(
+                outTorques, packedIdx, PxRigidDynamicGPUAPIWriteType::eTORQUE, numOutputs, start, finish);
+            return forces && torques;
+        }))
+    {
+        CARB_LOG_ERROR("wrench: PxDirectGPUAPI::setRigidDynamicData refused the write");
+        return false;
+    }
     return true;
 }
 
 bool GpuRigidBodyView::setForcesOvStage(const TensorDesc* srcTensor,
                                        const PxU32* outRecordIdx,
                                        const PxU32 numOutputs,
-                                       const uint64_t rowsToken, bool wholeSet)
+                                       const uint64_t rowsToken, bool wholeSet,
+                                       const OvStageDeviceWriteArgs& deviceArgs)
 {
     // A LINK query cannot use the rigid-dynamic packed path -- a link has no rd index to pack, and
     // ovStageWriteBuffers rejects exactly that. Detected from the first row's record rather than
     // passed in: a query is one object type, so the rows are all links or all rigid dynamics.
     if (ovStageRowsAreLinks(outRecordIdx, numOutputs))
-        return setLinkWrenchOvStage("force", srcTensor, outRecordIdx, numOutputs, rowsToken, 3u, wholeSet);
+        return setLinkWrenchOvStage("force", srcTensor, outRecordIdx, numOutputs, rowsToken, 3u, wholeSet, deviceArgs);
 
     // Routed through the vec3-column path, whose name says "velocity" only because velocity was its
     // first caller: what it actually does is hand a dense [N,3] column and a packed index list to one
@@ -1921,31 +2249,33 @@ bool GpuRigidBodyView::setForcesOvStage(const TensorDesc* srcTensor,
     // pose path was rewritten to remove. Here the row list IS the set being written, so the count is
     // numOutputs, known before the launch, and no compaction is needed at all.
     return setVelocityColumnOvStage("force", srcTensor, PxRigidDynamicGPUAPIWriteType::eFORCE, outRecordIdx,
-                                    numOutputs, rowsToken);
+                                    numOutputs, rowsToken, deviceArgs);
 }
 
 bool GpuRigidBodyView::setLinearVelocitiesOvStage(const TensorDesc* srcTensor,
                                                   const PxU32* outRecordIdx,
                                                   const PxU32 numOutputs,
-                                                  const uint64_t rowsToken, bool)
+                                                  const uint64_t rowsToken, bool,
+                                                  const OvStageDeviceWriteArgs& deviceArgs)
 {
     return setVelocityColumnOvStage("linearVelocity", srcTensor, PxRigidDynamicGPUAPIWriteType::eLINEAR_VELOCITY,
-                                    outRecordIdx, numOutputs, rowsToken);
+                                    outRecordIdx, numOutputs, rowsToken, deviceArgs);
 }
 
 bool GpuRigidBodyView::setAngularVelocitiesOvStage(const TensorDesc* srcTensor,
                                                    const PxU32* outRecordIdx,
                                                    const PxU32 numOutputs,
-                                                   const uint64_t rowsToken, bool)
+                                                   const uint64_t rowsToken, bool,
+                                                   const OvStageDeviceWriteArgs& deviceArgs)
 {
     return setVelocityColumnOvStage("angularVelocity", srcTensor, PxRigidDynamicGPUAPIWriteType::eANGULAR_VELOCITY,
-                                    outRecordIdx, numOutputs, rowsToken);
+                                    outRecordIdx, numOutputs, rowsToken, deviceArgs);
 }
 
 bool GpuRigidBodyView::getVelocities(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, mNumArtis > 0, false);
 
     if (!dstTensor || !dstTensor->data)
     {
@@ -1973,7 +2303,7 @@ bool GpuRigidBodyView::getVelocities(const TensorDesc* dstTensor) const
 bool GpuRigidBodyView::getAccelerations(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, mNumArtis > 0, false);
 
     if (!dstTensor || !dstTensor->data)
     {
@@ -2000,7 +2330,7 @@ bool GpuRigidBodyView::getAccelerations(const TensorDesc* dstTensor) const
 bool GpuRigidBodyView::setTransforms(const TensorDesc* srcTensor, const TensorDesc* indexTensor)
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, mNumArtis > 0, false);
     if (!refreshRdGpuIndices())
         return false;
 
@@ -2085,7 +2415,7 @@ bool GpuRigidBodyView::setTransforms(const TensorDesc* srcTensor, const TensorDe
 bool GpuRigidBodyView::setVelocities(const TensorDesc* srcTensor, const TensorDesc* indexTensor)
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, mNumArtis > 0, false);
     if (!refreshRdGpuIndices())
         return false;
 
@@ -2182,7 +2512,7 @@ bool GpuRigidBodyView::setVelocities(const TensorDesc* srcTensor, const TensorDe
 
 bool GpuRigidBodyView::applyForces(const TensorDesc* srcTensor, const TensorDesc* indexTensor)
 {
-    CARB_LOG_WARN("Deprecated function IArticulationView::applyForces, please use IArticulationView::applyForcesAndTorquesAtPosition instead.");
+    CARB_LOG_WARN("Deprecated function IRigidBodyView::applyForces, please use IRigidBodyView::applyForcesAndTorquesAtPosition instead.");
     return applyForcesAndTorquesAtPosition(srcTensor, nullptr, nullptr, indexTensor, true);
 }
 
@@ -2199,8 +2529,7 @@ bool GpuRigidBodyView::updateCMassData()
             cMassLocalPosePos[idx] = mEntries[idx].body->getCMassLocalPose().p;
         }
     }
-    if (!CHECK_CUDA(cudaMemcpy(cMassLocalPosePosDev, cMassLocalPosePos.data(),
-                               mEntries.size() * sizeof(PxVec3), cudaMemcpyHostToDevice)))
+    if (!mGpuSimData->rewriteTable(cMassLocalPosePosDev, cMassLocalPosePos.data(), mEntries.size() * sizeof(PxVec3)))
     {
         return false;
     }
@@ -2216,7 +2545,7 @@ bool GpuRigidBodyView::applyForcesAndTorquesAtPosition(const TensorDesc* srcForc
                                                        const bool isGlobal)
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, mNumArtis > 0, false);
     if (!refreshRdGpuIndices())
         return false;
     bool validForceTensor = false;

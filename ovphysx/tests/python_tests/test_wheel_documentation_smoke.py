@@ -4,9 +4,11 @@
 # @implements REQ-PACKAGING-DOCS-001
 # @covers AC-1 AC-2
 
+from io import BytesIO
 from pathlib import Path
 
 import pytest
+from PIL import Image
 from wheel_documentation_smoke import _broken_relative_links, validate
 
 
@@ -164,6 +166,8 @@ def _add_rendered_docs(package_root: Path, *, headers: bool = True) -> Path:
             "ovphysx_types.h",
             "ovphysx_config.h",
             "ovphysx_geometry_query.h",
+            "ovphysx_population.h",
+            "ovphysx_utils.h",
             "ovphysx_legacy.h",
             "ovphysx_legacy_config.h",
             "ovphysx_legacy_types.h",
@@ -207,3 +211,61 @@ def test_validate_accepts_complete_rendered_docs(tmp_path: Path) -> None:
     _add_rendered_docs(package_root)
 
     validate(package_root, source_docs, require_rendered_docs=True)
+
+
+def _image_bytes(format: str) -> bytes:
+    stream = BytesIO()
+    Image.new("RGB", (8, 8), (15, 70, 140)).save(stream, format=format)
+    return stream.getvalue()
+
+
+def _package_images(tmp_path: Path, suffix: str) -> tuple[Path, Path, Path, Path]:
+    package_root, source_docs = _portable_docs_package(tmp_path)
+    rendered = _add_rendered_docs(package_root) / "_images"
+    rendered.mkdir()
+    portable_image = package_root / "docs" / f"diagram{suffix}"
+    rendered_image = rendered / f"diagram{suffix}"
+    data = _image_bytes("PNG" if suffix == ".png" else "JPEG")
+    (source_docs / portable_image.name).write_bytes(data)
+    portable_image.write_bytes(data)
+    rendered_image.write_bytes(data)
+    return package_root, source_docs, portable_image, rendered_image
+
+
+@pytest.mark.parametrize("suffix", [".png", ".jpg"])
+@pytest.mark.parametrize("layout", ["portable", "rendered"])
+def test_validate_rejects_lfs_pointer_images(tmp_path: Path, suffix: str, layout: str) -> None:
+    package_root, source_docs, portable, rendered = _package_images(tmp_path, suffix)
+    pointer = b"version https://git-lfs.github.com/spec/v1\noid sha256:" + b"0" * 64 + b"\nsize 1000\n"
+    target = portable if layout == "portable" else rendered
+    target.write_bytes(pointer)
+    if layout == "portable":
+        # Matching source and artifact bytes used to conceal the broken payload.
+        (source_docs / portable.name).write_bytes(pointer)
+    with pytest.raises(RuntimeError, match="Git LFS pointer"):
+        validate(package_root, source_docs, require_rendered_docs=True)
+
+
+@pytest.mark.parametrize("suffix", [".png", ".jpg"])
+@pytest.mark.parametrize("layout", ["portable", "rendered"])
+def test_validate_rejects_truncated_images(tmp_path: Path, suffix: str, layout: str) -> None:
+    package_root, source_docs, portable, rendered = _package_images(tmp_path, suffix)
+    target = portable if layout == "portable" else rendered
+    target.write_bytes(target.read_bytes()[:40])
+    if layout == "portable":
+        (source_docs / portable.name).write_bytes(target.read_bytes())
+    with pytest.raises(RuntimeError, match="Invalid documentation images"):
+        validate(package_root, source_docs, require_rendered_docs=True)
+
+
+@pytest.mark.parametrize("suffix", [".png", ".jpg"])
+def test_validate_accepts_decodable_images(tmp_path: Path, suffix: str) -> None:
+    package_root, source_docs, _, _ = _package_images(tmp_path, suffix)
+    validate(package_root, source_docs, require_rendered_docs=True)
+
+
+def test_validate_rejects_wrong_image_format(tmp_path: Path) -> None:
+    package_root, source_docs, portable, rendered = _package_images(tmp_path, ".png")
+    rendered.write_bytes(_image_bytes("JPEG"))
+    with pytest.raises(RuntimeError, match="expected PNG, found JPEG"):
+        validate(package_root, source_docs, require_rendered_docs=True)

@@ -12,7 +12,6 @@
 #include "PhysXStageUpdate.h"
 #include "PhysXPropertyQuery.h"
 #include "RuntimeExecution.h"
-#include <private/omni/physx/IPhysxStageUpdate.h>
 #include <optional>
 
 namespace omni::physx
@@ -132,16 +131,4 @@ RuntimeResult updatePropertyQueries()
     OmniPhysX::getInstance().getPropertyQueryManager().updateQueuedRequests();
     return RuntimeResult::eSuccess;
 }
-}
-
-void fillInterface(omni::physx::IPhysxStageUpdate& iface)
-{
-    iface.onAttach = omni::physx::onPhysXAttach;
-    iface.onDetach = omni::physx::onPhysXDetach;
-    iface.onPause = omni::physx::physXPause;
-    iface.onReset = omni::physx::physXReset;
-    iface.onResume = omni::physx::physXResume;
-    iface.onUpdate = omni::physx::physXStageUpdate;
-    iface.handleRaycast = omni::physx::handleRaycast;
-    iface.updatePropertyQueries = omni::physx::updatePropertyQueries;
 }

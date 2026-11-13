@@ -7,9 +7,11 @@
 #define PXS_MATERIAL_MANAGER_H
 
 #include "PxsMaterialCore.h"
-#include "PxsDeformableSurfaceMaterialCore.h"
-#include "PxsDeformableVolumeMaterialCore.h"
-#include "PxsPBDMaterialCore.h"
+#if PX_SUPPORT_GPU_PHYSX
+	#include "PxsDeformableSurfaceMaterialCore.h"
+	#include "PxsDeformableVolumeMaterialCore.h"
+	#include "PxsPBDMaterialCore.h"
+#endif
 #include "foundation/PxAlignedMalloc.h"
 
 namespace physx
@@ -101,6 +103,7 @@ namespace physx
 	{
 	};
 
+#if PX_SUPPORT_GPU_PHYSX
 	class PxsDeformableSurfaceMaterialManager : public PxsMaterialManagerT<PxsDeformableSurfaceMaterialCore>
 	{
 	};
@@ -112,6 +115,7 @@ namespace physx
 	class PxsPBDMaterialManager : public PxsMaterialManagerT<PxsPBDMaterialCore>
 	{
 	};
+#endif
 
 	template<class MaterialCore>
 	class PxsMaterialManagerIterator

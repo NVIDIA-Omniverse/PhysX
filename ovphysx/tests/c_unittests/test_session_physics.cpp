@@ -27,12 +27,20 @@
  * @maps_to TEST-READ-ARTICULATION-001
  *
  * @implements REQ-READ-INVDYN-001
- * @covers AC-1 AC-5
+ * @covers AC-1 AC-5 AC-6
  * @maps_to TEST-READ-INVDYN-001
  *
  * @implements REQ-READ-MATERIAL-001
  * @covers AC-1
  * @maps_to TEST-READ-MATERIAL-001
+ *
+ * @implements REQ-CAPI-ATTRIBUTE-NAMES-001
+ * @covers AC-1
+ * @maps_to TEST-CAPI-ATTRIBUTE-NAMES-001
+ *
+ * @implements REQ-CAPI-SESSION-001
+ * @covers AC-10
+ * @maps_to TEST-CAPI-SESSION-001
  */
 // Session read/write physics tests: the successor coverage for the physics facts the deprecated tensor-binding
 // tests checked (disable gravity/simulation, wake, forces and wrenches, drive type, projected joint force,
@@ -246,7 +254,7 @@ TEST_F(SessionPhysicsCpuTest, SessionReadOnlyArticulationAttributesRefuseWrites)
 
 
 // Session counterpart of the three CpuArticulationCentroidalMomentum* binding tests. The session read
-// SERVES centroidal momentum for a floating-base articulation (one flat 6*(maxDofs+7) row per articulation),
+// SERVES centroidal momentum for a floating-base articulation (one 6 x (dofs+7) matrix per articulation),
 // and, unlike the binding, expresses "undefined for a fixed base" by OMITTING the fixed-base cohort from the
 // read rather than rejecting the whole request. mixed_base_articulations.usda holds both a fixed-base
 // (/World/articulation) and a floating-base (/World/articulation2) articulation, so one read shows the
@@ -265,11 +273,62 @@ TEST_F(SessionPhysicsCpuTest, SessionArticulationCentroidalMomentumServedFloatin
     EXPECT_EQ(momentum.count("/World/articulation2"), 1u) << "the floating-base articulation must be served";
     EXPECT_EQ(momentum.count("/World/articulation"), 0u) << "the fixed-base articulation must be omitted";
 
-    // The served row is a flat 6*(maxDofs+7) momentum matrix: 6 rows, at least 7 columns.
+    // The served row is a 6 x (dofs + 7) momentum matrix, carried as the group's own dimensions.
     const std::vector<double>& row = momentum.at("/World/articulation2");
-    ASSERT_GT(row.size(), 0u);
-    EXPECT_EQ(row.size() % 6u, 0u) << "centroidal momentum is 6 rows of maxDofs+7 columns";
-    EXPECT_GE(row.size() / 6u, 7u) << "column count is maxDofs + 7, at least 7";
+    std::vector<std::vector<int64_t>> shapes;
+    ASSERT_TRUE(readGroupShapes(m_handle, OVPHYSX_QUERY_TARGET_ARTICULATION, OVPHYSX_ATTR_CENTROIDAL_MOMENTUM, shapes));
+    ASSERT_EQ(shapes.size(), 1u) << "one cohort: the floating-base articulation";
+    ASSERT_EQ(shapes[0].size(), 3u) << "[N, 6, dofs + 7]";
+    EXPECT_EQ(shapes[0][0], 1);
+    EXPECT_EQ(shapes[0][1], 6);
+    EXPECT_GE(shapes[0][2], 7) << "column count is dofs + 7, at least 7";
+    EXPECT_EQ(row.size(), static_cast<size_t>(shapes[0][1] * shapes[0][2]));
+}
+
+// jacobianShape was removed with the native inverse-dynamics shape (ADR-0060): the jacobian's own dimensions replace
+// it. A read naming it is an unknown attribute -- no group, reported in the summary -- while the jacobian requested
+// beside it is served as [N, rows, cols] with one lane.
+TEST_F(SessionPhysicsCpuTest, SessionReadReportsRemovedJacobianShapeAsUnsupported) {
+    using namespace session_test;
+    ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/mixed_base_articulations.usda"))
+        << "Failed to load mixed_base_articulations.usda";
+    ASSERT_TRUE(stepN(m_handle, 1)); // inverse-dynamics columns are sized on the first simulate
+
+    ovphysx_query_handle_t query = 0;
+    ASSERT_TRUE(detail::openQuery(m_handle, OVPHYSX_QUERY_TARGET_ARTICULATION, nullptr, query));
+    const ovx_token_or_string_t attributes[] = { detail::attributeName("jacobianShape"),
+                                                 detail::attributeName(OVPHYSX_ATTR_JACOBIAN) };
+    ovphysx_read_handle_t read = 0;
+    ovphysx_read_result_t summary{};
+    ASSERT_TRUE(waitForTaskSuccess(
+        m_handle, ovphysx_read(m_handle, query, attributes, 2, ovstage_cuda_sync_t{ 0, 0 }, &read, &summary)));
+    ASSERT_EQ(summary.attribute_count, 2u);
+    ASSERT_NE(summary.attributes, nullptr);
+    EXPECT_EQ(summary.attributes[0].attribute, OVX_INVALID_TOKEN);
+    EXPECT_EQ(summary.attributes[0].group_count, 0u);
+    EXPECT_EQ(summary.attributes[0].omission_reasons, OVPHYSX_READ_OMISSION_UNSUPPORTED_ATTRIBUTE);
+    EXPECT_GT(summary.attributes[1].group_count, 0u);
+    EXPECT_EQ(summary.attributes[1].omission_reasons, 0u);
+
+    size_t groups = 0;
+    for (;;)
+    {
+        const ovstage_read_group_t* group = nullptr;
+        ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_fetch_read_next(m_handle, read, &group)));
+        if (!group)
+            break;
+        ASSERT_EQ(group->column_count, 1u);
+        EXPECT_TRUE(group->columns[0].attribute == summary.attributes[1].attribute) << "only the jacobian is served";
+        ASSERT_GE(group->columns[0].data.tensor_count, 1u);
+        const DLTensor& tensor = group->columns[0].data.tensors[0];
+        EXPECT_EQ(tensor.ndim, 3) << "[N, rows, cols]";
+        EXPECT_EQ(tensor.dtype.lanes, 1u);
+        ++groups;
+        ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_group(m_handle, read, group->read_group_id)));
+    }
+    EXPECT_EQ(groups, summary.attributes[1].group_count);
+    ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_read(m_handle, read)));
+    ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_query(m_handle, query)));
 }
 
 // Projected joint forces read before the first full step must be about 0. The session serves an
@@ -1441,7 +1500,7 @@ protected:
         ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_query(m_handle, objectType, OVPHYSX_SCOPE_ALL, &guard.query, nullptr)).status,
                   OVPHYSX_API_SUCCESS);
 
-        const ovx_string_or_token_t attribute = {
+        const ovx_token_or_string_t attribute = {
             0,
             { attributeName, std::strlen(attributeName) }
         };
@@ -1777,8 +1836,8 @@ TEST_F(SessionPhysicsGpuTest, GpuDeformableBodyReadWriteAndReadOnly) {
     EXPECT_NE(writeOpenStatus(m_handle, kVolume, OVPHYSX_ATTR_REST_POINTS, bodies), OVPHYSX_API_SUCCESS)
         << "rest nodal positions are read-only";
 
-    // Kinematic targets: xyz plus w per node, where w = 0 drives the node. The read serves the targets of
-    // a driven body only, so every node is driven here.
+    // Kinematic targets: xyz plus w per node, where w = 0 drives the node. Every node is pinned here, so the
+    // read returns exactly what was written.
     std::vector<double> targets(20, 0.0);
     for (size_t vertex = 0; vertex < 5; ++vertex)
     {

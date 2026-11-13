@@ -5,10 +5,10 @@
 
 # PhysicsScene
 
-A simulation scene. Discovered by prim type, not by schema, and not Xformable, so it carries no transform columns. The producer never synthesizes a scene; the consumer does, in memory, when a whole-stage scan finds none. PhysX tuning lives on the separate PhysxSceneAPI component (not yet written).
+A simulation scene. Discovered by [prim](glossary.md#prim) type, not by schema, and not [Xformable](glossary.md#xformable), so it carries no transform columns. The producer never synthesizes a scene; the consumer does, in memory, when a whole-stage scan finds none. [PhysX](glossary.md#physx) tuning lives on the separate PhysxSceneAPI component (not yet written).
 
-- **Type chain:** `Typed`
-- **Applicable APIs:** [`PhysicsMaterialAPI`](PhysicsMaterialAPI.md), [`PhysxMaterialAPI`](PhysxMaterialAPI.md), [`PhysxSceneAPI`](PhysxSceneAPI.md)
+- **Type chain:** [`Typed`](glossary.md#typed)
+- **Applicable APIs:** [`CollectionAPI`](CollectionAPI.md), [`GeomInstanceAPI`](GeomInstanceAPI.md), [`GeomInstanceRootAPI`](GeomInstanceRootAPI.md), [`GeomPrototypeAPI`](GeomPrototypeAPI.md), [`NewtonSceneAPI`](NewtonSceneAPI.md), [`PhysicsMaterialAPI`](PhysicsMaterialAPI.md), [`PhysxMaterialAPI`](PhysxMaterialAPI.md), [`PhysxSceneAPI`](PhysxSceneAPI.md), [`PhysxSceneQuasistaticAPI`](PhysxSceneQuasistaticAPI.md), [`PhysxVehicleAutoGearBoxAPI`](PhysxVehicleAutoGearBoxAPI.md), [`PhysxVehicleClutchAPI`](PhysxVehicleClutchAPI.md), [`PhysxVehicleContextAPI`](PhysxVehicleContextAPI.md), [`PhysxVehicleDriveBasicAPI`](PhysxVehicleDriveBasicAPI.md), [`PhysxVehicleDriveStandardAPI`](PhysxVehicleDriveStandardAPI.md), [`PhysxVehicleEngineAPI`](PhysxVehicleEngineAPI.md), [`PhysxVehicleGearsAPI`](PhysxVehicleGearsAPI.md), [`PhysxVehicleNonlinearCommandResponseAPI`](PhysxVehicleNonlinearCommandResponseAPI.md), [`PhysxVehicleSuspensionAPI`](PhysxVehicleSuspensionAPI.md), [`PhysxVehicleTireAPI`](PhysxVehicleTireAPI.md), [`PhysxVehicleWheelAPI`](PhysxVehicleWheelAPI.md), [`PrototypeRootAPI`](PrototypeRootAPI.md)
 - **Discovery:** by prim_type, probe `physics:gravityMagnitude`
 - **Transform columns:** none, not `Xformable`
 - **Uses blocks:** [`prim`](prim.md), [`stage_units`](stage_units.md)
@@ -19,7 +19,7 @@ Published whenever the prim type is PhysicsScene, regardless of applied APIs. Ev
 
 ## Columns
 
-*Raw fallback* is the USD schema value. *Producer writes* is what ovstage population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
+*Raw fallback* is the [USD](glossary.md#usd) schema value. *Producer writes* is what [ovstage](glossary.md#ovstage) population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
 
 | Column | Type | Units | Raw fallback | Producer writes | Parser default | If absent |
 |---|---|---|---|---|---|---|
@@ -34,15 +34,15 @@ Published whenever the prim type is PhysicsScene, regardless of applied APIs. Ev
 
 - **[`PhysicsRigidBodyAPI`](PhysicsRigidBodyAPI.md):** Bodies and shapes join this scene through physics:simulationOwner, or the sole or default scene when the relationship is empty.
 - **[`prim`](prim.md):** The consumer's synthetic default scene is suppressed by any authored PhysicsScene prim and is never created on a scoped scan (explicit scan roots or excludes).
+- **[`NewtonSceneAPI`](NewtonSceneAPI.md):** Read on this prim by attribute name, without checking usd-schemas: newton:timeStepsPerSecond backs physxScene:timeStepsPerSecond and newton:gravityEnabled false zeroes the gravity magnitude.
+- **[`PhysxPBDMaterialAPI`](PhysxPBDMaterialAPI.md):** The bound default material is also parsed as a PBD material, without checking PhysxPBDMaterialAPI.
 
 ## Known divergences
 
-- **defect** (consumer) `physics:gravityMagnitude`: An authored PhysicsScene with no gravity columns gets the consumer's unscaled SI defaults (9.81 along -Z) instead of the units- and up-axis-aware values both the producer and the consumer's synthetic default scene produce. The scene walker copies the columns into a default-constructed SceneInfo and the parser overwrites the units-aware overlay with it. The raw fallbacks (0,0,0) and -inf are also not resolved on the consumer. Masked on producer-populated stages because the producer always resolves them.
+- **defect** (consumer) `physics:gravityMagnitude`: An authored PhysicsScene with no gravity columns gets the consumer's unscaled [SI](glossary.md#si) defaults (9.81 along -Z) instead of the units- and up-axis-aware values both the producer and the consumer's synthetic default scene produce. The scene walker copies the columns into a default-constructed scene record and the parser overwrites the units-aware overlay with it. The raw fallbacks (0,0,0) and -inf are also not resolved on the consumer. Masked on producer-populated stages because the producer always resolves them.
 - **note** (producer) `physics:gravityDirection`: The producer requirements describe replacing a ZERO direction with negative up axis; the code replaces an UNAUTHORED direction and keeps an authored zero. Documented here as the code behaves.
 
 ## Notes
 
-- newton:gravityEnabled (NewtonSceneAPI family, read on this prim by attribute name, no schema gate): when the column is present and false, physics:gravityMagnitude is forced to 0. Unconditional: an authored physics:gravityMagnitude does not suppress it, and on ovstage presence of the column is the whole gate because every column reads as authored. Absent: gravity applies.
-- newton:timeStepsPerSecond: fallback for physxScene:timeStepsPerSecond, applied only when the PhysX column is absent or out of range (an in-range PhysX value wins). Clamped to [1, UINT_MAX]. On a producer-populated stage with PhysxSceneAPI applied the published 60 counts as authored, so the fallback is unreachable there.
-- PhysxSceneAPI creation without the API: the producer creates physxScene:frictionOffsetThreshold = 0.04 / metersPerUnit and physxScene:frictionCorrelationDistance = 0.025 / metersPerUnit on every PhysicsScene prim when unauthored, whether or not PhysxSceneAPI is applied. The consumer reads them only when PhysxSceneAPI is in usd-schemas; without it the same values come from the units-aware setToDefault, so the result is identical either way.
+- PhysxSceneAPI creation without the API: the producer creates physxScene:frictionOffsetThreshold = 0.04 / metersPerUnit and physxScene:frictionCorrelationDistance = 0.025 / metersPerUnit on every PhysicsScene prim when unauthored, whether or not PhysxSceneAPI is applied. The consumer reads them only when PhysxSceneAPI is in [usd-schemas](prim.md#columns); without it the same values come from the consumer's units-aware defaults, so the result is identical either way.
 - physxScene:envIdInBoundsBitCount is read on this prim without a PhysxSceneAPI gate, but only when the resolved broadphase is GPU (the default when PhysxSceneAPI is absent). -1 is the unset sentinel. See PhysxSceneAPI.

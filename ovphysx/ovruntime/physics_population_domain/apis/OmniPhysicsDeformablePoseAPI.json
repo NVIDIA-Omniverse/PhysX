@@ -1,0 +1,67 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "OmniPhysicsDeformablePoseAPI",
+  "title": "OmniPhysicsDeformablePoseAPI (bind pose)",
+  "summary": "Named point sets of a deformable body's meshes, applied as OmniPhysicsDeformablePoseAPI:<name> with an arbitrary instance name. The walkers pick the instance whose purposes name bindPose as the bind pose of the simulation, collision, skin and cooking-source meshes, and each mesh's own points serve without one; see the notes for the purposes name the walkers actually read.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "PointBased"
+  ],
+  "multi_apply": true,
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "columns": [
+    {
+      "name": "deformablePose:<inst>:omniphysics:points",
+      "usd_type": "point3f[]",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "POINT",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 3,
+        "is_array": true
+      },
+      "required": false,
+      "absent": "Read only for the instance the walker chose as bind pose. Without the column the simulation mesh's bind points fall back to its points (as for any length mismatch), a skin mesh contributes no bind points, and volume cooking with a separate collision mesh fails ('Cooking failed').",
+      "units": "length",
+      "implemented_in": [
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceDeformable.cpp",
+        "source/omni.physx/plugins/CookingDataAsync.cpp",
+        "source/omni.physics.ovstage/OvstageSource.cpp"
+      ],
+      "notes": "The runtime builds the instance's column name from the template. The cooker writes the bind-pose instance's points for a PhysxAutoDeformableBodyAPI body, and a change re-parses the deformable body or schedules a re-cook."
+    },
+    {
+      "name": "deformablePose:<inst>:omniphysics:purposes",
+      "usd_type": "uniform token[]",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "TOKEN_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": true
+      },
+      "required": false,
+      "absent": "Not read when parsing: both walkers look for the bindPose purpose under omniphysics:<inst>:purposes instead (see notes), so this column, absent or present, selects no bind pose. The runtime only watches it for changes (re-cook check, re-parse of a registered bind-pose instance).",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physx/plugins/ChangeRegister.cpp",
+        "source/omni.physx/plugins/CookingDataAsync.cpp",
+        "source/omni.physics.ovstage/OvstageWalker.cpp"
+      ],
+      "notes": "Token-dictionary ids; the schema allows bindPose and selfCollisionFilterPose."
+    }
+  ],
+  "notes": [
+    "Instance names are arbitrary, so no instances are declared.",
+    "Reader mismatch: both walkers read omniphysics:<inst>:purposes (the ovstage walker as one scalar token, the USD walker as a token array), not the schema property deformablePose:<inst>:omniphysics:purposes. On a schema-conformant stage no bind-pose instance is found, so every mesh uses its own points as bind pose and deformablePose:<inst>:omniphysics:points is never read."
+  ]
+}

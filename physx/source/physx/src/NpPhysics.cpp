@@ -205,6 +205,8 @@ NpPhysics::~NpPhysics()
 		// The ctor stashed mOmniPvdSampler into the (ref-counted) PxOmniPvd singleton, which
 		// can outlive this PxPhysics. Clear that pointer before deleting the sampler so a
 		// later PxOmniPvd::startSampling()/stopSampling() cannot dereference a freed sampler.
+		// End discovery too: the singleton must not revive its scope for a later PxPhysics.
+		mOmniPvd->stopSampling();
 		static_cast<NpOmniPvd*>(mOmniPvd)->mPhysXSampler = NULL;
 		mFoundation.deregisterErrorCallback(*mOmniPvdSampler);
 		NpOmniPvd::decRefCount();
@@ -518,7 +520,16 @@ PxRigidDynamic* NpPhysics::createRigidDynamic(const PxTransform& globalPose)
 
 PxConstraint* NpPhysics::createConstraint(PxRigidActor* actor0, PxRigidActor* actor1, PxConstraintConnector& connector, const PxConstraintShaderTable& shaders, PxU32 dataSize)
 {
-	return NpFactory::getInstance().createConstraint(actor0, actor1, connector, shaders, dataSize);
+#if PX_SUPPORT_OMNI_PVD
+	if (mOmniPvdSampler)
+		mOmniPvdSampler->beginConstraintCreation(connector);
+#endif
+	PxConstraint* constraint = NpFactory::getInstance().createConstraint(actor0, actor1, connector, shaders, dataSize);
+#if PX_SUPPORT_OMNI_PVD
+	if (mOmniPvdSampler)
+		mOmniPvdSampler->endConstraintCreation(connector);
+#endif
+	return constraint;
 }
 
 PxU32 NpPhysics::getNbConstraints() const

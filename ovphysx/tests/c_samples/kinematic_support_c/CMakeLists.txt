@@ -23,5 +23,8 @@ if(MSVC)
     # directories have to reach the process through PATH.
     ovphysx_set_ovstage_runtime_env(kinematic_support_c)
 elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(kinematic_support_c PRIVATE -Werror=implicit-function-declaration -pedantic)
+    target_compile_options(kinematic_support_c PRIVATE
+        -Werror=implicit-function-declaration
+        -Werror=deprecated-declarations
+        -pedantic)
 endif()

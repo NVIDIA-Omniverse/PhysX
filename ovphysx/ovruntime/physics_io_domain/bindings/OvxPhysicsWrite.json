@@ -1,0 +1,1485 @@
+{
+  "schema_version": 1,
+  "source": "source/omni.physx/plugins/OvxPhysicsWrite.cpp",
+  "tables": [
+    {
+      "name": "kRigidWriteAttributes",
+      "row_type": "WriteAttributeRow",
+      "target": "RIGID_BODY",
+      "direction": "write",
+      "fields": [
+        "token",
+        "components",
+        "wholeTransform",
+        "dtype",
+        "hostOnly",
+        "perShape",
+        "linkWritable",
+        "gpuWrite",
+        "cpuWrite",
+        "baseWrite"
+      ],
+      "rows": [
+        {
+          "attribute": "wrench",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "wholeTransform": {
+              "cpp": "false"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "linkWritable": {
+              "metadata": "linkWritable"
+            },
+            "gpuWrite": {
+              "cpp": "&omni::physx::tensors::GpuRigidBodyView::setWrenchesOvStage"
+            },
+            "cpuWrite": {
+              "cpp": "&omni::physx::tensors::CpuRigidBodyView::setWrenchesOvStage"
+            },
+            "baseWrite": {
+              "cpp": "nullptr"
+            }
+          }
+        },
+        {
+          "attribute": "force",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "wholeTransform": {
+              "cpp": "false"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "linkWritable": {
+              "metadata": "linkWritable"
+            },
+            "gpuWrite": {
+              "cpp": "&omni::physx::tensors::GpuRigidBodyView::setForcesOvStage"
+            },
+            "cpuWrite": {
+              "cpp": "&omni::physx::tensors::CpuRigidBodyView::setForcesOvStage"
+            },
+            "baseWrite": {
+              "cpp": "nullptr"
+            }
+          }
+        },
+        {
+          "attribute": "position",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "wholeTransform": {
+              "cpp": "true"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "linkWritable": {
+              "metadata": "linkWritable"
+            },
+            "gpuWrite": {
+              "cpp": "&omni::physx::tensors::GpuRigidBodyView::setPositionsOvStage"
+            },
+            "cpuWrite": {
+              "cpp": "&omni::physx::tensors::CpuRigidBodyView::setPositionsOvStage"
+            },
+            "baseWrite": {
+              "cpp": "nullptr"
+            }
+          }
+        },
+        {
+          "attribute": "orientation",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "wholeTransform": {
+              "cpp": "true"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "linkWritable": {
+              "metadata": "linkWritable"
+            },
+            "gpuWrite": {
+              "cpp": "&omni::physx::tensors::GpuRigidBodyView::setOrientationsOvStage"
+            },
+            "cpuWrite": {
+              "cpp": "&omni::physx::tensors::CpuRigidBodyView::setOrientationsOvStage"
+            },
+            "baseWrite": {
+              "cpp": "nullptr"
+            }
+          }
+        },
+        {
+          "attribute": "linear_velocity",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "wholeTransform": {
+              "cpp": "false"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "linkWritable": {
+              "metadata": "linkWritable"
+            },
+            "gpuWrite": {
+              "cpp": "&omni::physx::tensors::GpuRigidBodyView::setLinearVelocitiesOvStage"
+            },
+            "cpuWrite": {
+              "cpp": "&omni::physx::tensors::CpuRigidBodyView::setLinearVelocitiesOvStage"
+            },
+            "baseWrite": {
+              "cpp": "nullptr"
+            }
+          }
+        },
+        {
+          "attribute": "angular_velocity",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "wholeTransform": {
+              "cpp": "false"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "linkWritable": {
+              "metadata": "linkWritable"
+            },
+            "gpuWrite": {
+              "cpp": "&omni::physx::tensors::GpuRigidBodyView::setAngularVelocitiesOvStage"
+            },
+            "cpuWrite": {
+              "cpp": "&omni::physx::tensors::CpuRigidBodyView::setAngularVelocitiesOvStage"
+            },
+            "baseWrite": {
+              "cpp": "nullptr"
+            }
+          }
+        },
+        {
+          "attribute": "mass",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "wholeTransform": {
+              "cpp": "false"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "linkWritable": {
+              "metadata": "linkWritable"
+            },
+            "gpuWrite": {
+              "cpp": "nullptr"
+            },
+            "cpuWrite": {
+              "cpp": "nullptr"
+            },
+            "baseWrite": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::setMassesOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "inertia",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "wholeTransform": {
+              "cpp": "false"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "linkWritable": {
+              "metadata": "linkWritable"
+            },
+            "gpuWrite": {
+              "cpp": "nullptr"
+            },
+            "cpuWrite": {
+              "cpp": "nullptr"
+            },
+            "baseWrite": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::setInertiasOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "center_of_mass_position",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "wholeTransform": {
+              "cpp": "false"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "linkWritable": {
+              "metadata": "linkWritable"
+            },
+            "gpuWrite": {
+              "cpp": "nullptr"
+            },
+            "cpuWrite": {
+              "cpp": "nullptr"
+            },
+            "baseWrite": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::setComPositionsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "center_of_mass_orientation",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "wholeTransform": {
+              "cpp": "false"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "linkWritable": {
+              "metadata": "linkWritable"
+            },
+            "gpuWrite": {
+              "cpp": "nullptr"
+            },
+            "cpuWrite": {
+              "cpp": "nullptr"
+            },
+            "baseWrite": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::setComOrientationsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "disable_gravity",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "wholeTransform": {
+              "cpp": "false"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "linkWritable": {
+              "metadata": "linkWritable"
+            },
+            "gpuWrite": {
+              "cpp": "nullptr"
+            },
+            "cpuWrite": {
+              "cpp": "nullptr"
+            },
+            "baseWrite": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::setDisableGravitiesOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "disable_simulation",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "wholeTransform": {
+              "cpp": "false"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "linkWritable": {
+              "metadata": "linkWritable"
+            },
+            "gpuWrite": {
+              "cpp": "nullptr"
+            },
+            "cpuWrite": {
+              "cpp": "nullptr"
+            },
+            "baseWrite": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::setDisableSimulationsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "wake",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "wholeTransform": {
+              "cpp": "false"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "linkWritable": {
+              "metadata": "linkWritable"
+            },
+            "gpuWrite": {
+              "cpp": "nullptr"
+            },
+            "cpuWrite": {
+              "cpp": "nullptr"
+            },
+            "baseWrite": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::setWakeStatesOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "kinematic_target_position",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "wholeTransform": {
+              "cpp": "false"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "linkWritable": {
+              "metadata": "linkWritable"
+            },
+            "gpuWrite": {
+              "cpp": "nullptr"
+            },
+            "cpuWrite": {
+              "cpp": "nullptr"
+            },
+            "baseWrite": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::setKinematicTargetPositionsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "kinematic_target_orientation",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "wholeTransform": {
+              "cpp": "false"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "linkWritable": {
+              "metadata": "linkWritable"
+            },
+            "gpuWrite": {
+              "cpp": "nullptr"
+            },
+            "cpuWrite": {
+              "cpp": "nullptr"
+            },
+            "baseWrite": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::setKinematicTargetOrientationsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "static_friction",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "wholeTransform": {
+              "cpp": "false"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "linkWritable": {
+              "metadata": "linkWritable"
+            },
+            "gpuWrite": {
+              "cpp": "nullptr"
+            },
+            "cpuWrite": {
+              "cpp": "nullptr"
+            },
+            "baseWrite": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::setStaticFrictionsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "dynamic_friction",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "wholeTransform": {
+              "cpp": "false"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "linkWritable": {
+              "metadata": "linkWritable"
+            },
+            "gpuWrite": {
+              "cpp": "nullptr"
+            },
+            "cpuWrite": {
+              "cpp": "nullptr"
+            },
+            "baseWrite": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::setDynamicFrictionsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "restitution",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "wholeTransform": {
+              "cpp": "false"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "linkWritable": {
+              "metadata": "linkWritable"
+            },
+            "gpuWrite": {
+              "cpp": "nullptr"
+            },
+            "cpuWrite": {
+              "cpp": "nullptr"
+            },
+            "baseWrite": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::setRestitutionsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "contact_offset",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "wholeTransform": {
+              "cpp": "false"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "linkWritable": {
+              "metadata": "linkWritable"
+            },
+            "gpuWrite": {
+              "cpp": "nullptr"
+            },
+            "cpuWrite": {
+              "cpp": "nullptr"
+            },
+            "baseWrite": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::setContactOffsetsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "rest_offset",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "wholeTransform": {
+              "cpp": "false"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "linkWritable": {
+              "metadata": "linkWritable"
+            },
+            "gpuWrite": {
+              "cpp": "nullptr"
+            },
+            "cpuWrite": {
+              "cpp": "nullptr"
+            },
+            "baseWrite": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::setRestOffsetsOvStage"
+            }
+          }
+        }
+      ],
+      "required_fields": 10,
+      "targets": [
+        "RIGID_BODY",
+        "ARTICULATION_LINK"
+      ]
+    },
+    {
+      "name": "kJointWriteAttributes",
+      "row_type": "JointWriteAttributeRow",
+      "target": "ARTICULATION_JOINT",
+      "direction": "write",
+      "fields": [
+        "token",
+        "gpuWrite",
+        "cpuWrite"
+      ],
+      "rows": [
+        {
+          "attribute": "joint_position",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "gpuWrite": {
+              "cpp": "&omni::physx::tensors::GpuArticulationView::setDofPositionsOvStage"
+            },
+            "cpuWrite": {
+              "cpp": "&omni::physx::tensors::CpuArticulationView::setDofPositionsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "joint_velocity",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "gpuWrite": {
+              "cpp": "&omni::physx::tensors::GpuArticulationView::setDofVelocitiesOvStage"
+            },
+            "cpuWrite": {
+              "cpp": "&omni::physx::tensors::CpuArticulationView::setDofVelocitiesOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "joint_position_target",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "gpuWrite": {
+              "cpp": "&omni::physx::tensors::GpuArticulationView::setDofPositionTargetsOvStage"
+            },
+            "cpuWrite": {
+              "cpp": "&omni::physx::tensors::CpuArticulationView::setDofPositionTargetsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "joint_velocity_target",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "gpuWrite": {
+              "cpp": "&omni::physx::tensors::GpuArticulationView::setDofVelocityTargetsOvStage"
+            },
+            "cpuWrite": {
+              "cpp": "&omni::physx::tensors::CpuArticulationView::setDofVelocityTargetsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "joint_actuation_force",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "gpuWrite": {
+              "cpp": "&omni::physx::tensors::GpuArticulationView::setDofActuationForcesOvStage"
+            },
+            "cpuWrite": {
+              "cpp": "&omni::physx::tensors::CpuArticulationView::setDofActuationForcesOvStage"
+            }
+          }
+        }
+      ],
+      "required_fields": 3,
+      "targets": [
+        "ARTICULATION_JOINT"
+      ]
+    },
+    {
+      "name": "kJointPropertyWriteAttributes",
+      "row_type": "JointPropertyWriteRow",
+      "target": "ARTICULATION_JOINT",
+      "direction": "write",
+      "fields": [
+        "token",
+        "prop"
+      ],
+      "rows": [
+        {
+          "attribute": "joint_stiffness",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::DofProperty::eStiffness"
+            }
+          }
+        },
+        {
+          "attribute": "joint_damping",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::DofProperty::eDamping"
+            }
+          }
+        },
+        {
+          "attribute": "joint_limit",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::DofProperty::eLimit"
+            }
+          }
+        },
+        {
+          "attribute": "joint_max_velocity",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::DofProperty::eMaxVelocity"
+            }
+          }
+        },
+        {
+          "attribute": "joint_max_force",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::DofProperty::eMaxForce"
+            }
+          }
+        },
+        {
+          "attribute": "joint_armature",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::DofProperty::eArmature"
+            }
+          }
+        },
+        {
+          "attribute": "joint_static_friction",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::DofProperty::eStaticFriction"
+            }
+          }
+        },
+        {
+          "attribute": "joint_dynamic_friction",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::DofProperty::eDynamicFriction"
+            }
+          }
+        },
+        {
+          "attribute": "joint_viscous_friction",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::DofProperty::eViscousFriction"
+            }
+          }
+        },
+        {
+          "attribute": "joint_speed_effort_gradient",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::DofProperty::eSpeedEffortGradient"
+            }
+          }
+        },
+        {
+          "attribute": "joint_max_actuator_velocity",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::DofProperty::eMaxActuatorVelocity"
+            }
+          }
+        },
+        {
+          "attribute": "joint_velocity_dependent_resistance",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::DofProperty::eVelocityDependentResistance"
+            }
+          }
+        },
+        {
+          "attribute": "joint_drive_type",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::DofProperty::eDriveType"
+            }
+          }
+        }
+      ],
+      "required_fields": 2,
+      "targets": [
+        "ARTICULATION_JOINT"
+      ]
+    },
+    {
+      "name": "kArtiWriteAttributes",
+      "row_type": "ArtiWriteAttributeRow",
+      "target": "ARTICULATION",
+      "direction": "write",
+      "fields": [
+        "token",
+        "components",
+        "gpuWrite",
+        "cpuWrite"
+      ],
+      "rows": [
+        {
+          "attribute": "root_position",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "gpuWrite": {
+              "cpp": "&omni::physx::tensors::GpuArticulationView::setRootPositionsOvStage"
+            },
+            "cpuWrite": {
+              "cpp": "&omni::physx::tensors::CpuArticulationView::setRootPositionsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "root_orientation",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "gpuWrite": {
+              "cpp": "&omni::physx::tensors::GpuArticulationView::setRootOrientationsOvStage"
+            },
+            "cpuWrite": {
+              "cpp": "&omni::physx::tensors::CpuArticulationView::setRootOrientationsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "root_linear_velocity",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "gpuWrite": {
+              "cpp": "&omni::physx::tensors::GpuArticulationView::setRootLinearVelocitiesOvStage"
+            },
+            "cpuWrite": {
+              "cpp": "&omni::physx::tensors::CpuArticulationView::setRootLinearVelocitiesOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "root_angular_velocity",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "gpuWrite": {
+              "cpp": "&omni::physx::tensors::GpuArticulationView::setRootAngularVelocitiesOvStage"
+            },
+            "cpuWrite": {
+              "cpp": "&omni::physx::tensors::CpuArticulationView::setRootAngularVelocitiesOvStage"
+            }
+          }
+        }
+      ],
+      "required_fields": 4,
+      "targets": [
+        "ARTICULATION"
+      ]
+    },
+    {
+      "name": "kTendonWriteAttributes",
+      "row_type": "TendonWriteAttributeRow",
+      "target": "FIXED_TENDON",
+      "direction": "write",
+      "fields": [
+        "token",
+        "prop",
+        "fixedOnly"
+      ],
+      "rows": [
+        {
+          "attribute": "tendon_stiffness",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::TendonProperty::eStiffness"
+            },
+            "fixedOnly": {
+              "cpp": "false"
+            }
+          }
+        },
+        {
+          "attribute": "tendon_damping",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::TendonProperty::eDamping"
+            },
+            "fixedOnly": {
+              "cpp": "false"
+            }
+          }
+        },
+        {
+          "attribute": "tendon_limit_stiffness",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::TendonProperty::eLimitStiffness"
+            },
+            "fixedOnly": {
+              "cpp": "false"
+            }
+          }
+        },
+        {
+          "attribute": "tendon_offset",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::TendonProperty::eOffset"
+            },
+            "fixedOnly": {
+              "cpp": "false"
+            }
+          }
+        },
+        {
+          "attribute": "tendon_limit",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::TendonProperty::eLimit"
+            },
+            "fixedOnly": {
+              "cpp": "true"
+            }
+          }
+        },
+        {
+          "attribute": "tendon_rest_length",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::TendonProperty::eRestLength"
+            },
+            "fixedOnly": {
+              "cpp": "true"
+            }
+          }
+        }
+      ],
+      "required_fields": 3,
+      "targets": [
+        "FIXED_TENDON",
+        "SPATIAL_TENDON"
+      ]
+    },
+    {
+      "name": "kDeformableMaterialWriteAttributes",
+      "row_type": "DeformableMaterialWriteRow",
+      "target": "DEFORMABLE_MATERIAL",
+      "direction": "write",
+      "fields": [
+        "token",
+        "surfaceOnly",
+        "write"
+      ],
+      "rows": [
+        {
+          "attribute": "deformable_dynamic_friction",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "surfaceOnly": {
+              "cpp": "false"
+            },
+            "write": {
+              "cpp": "ioWriteDeformableDynamicFriction"
+            }
+          }
+        },
+        {
+          "attribute": "deformable_youngs_modulus",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "surfaceOnly": {
+              "cpp": "false"
+            },
+            "write": {
+              "cpp": "ioWriteDeformableYoungsModulus"
+            }
+          }
+        },
+        {
+          "attribute": "deformable_poissons_ratio",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "surfaceOnly": {
+              "cpp": "false"
+            },
+            "write": {
+              "cpp": "ioWriteDeformablePoissonsRatio"
+            }
+          }
+        },
+        {
+          "attribute": "deformable_elasticity_damping",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "surfaceOnly": {
+              "cpp": "false"
+            },
+            "write": {
+              "cpp": "ioWriteDeformableElasticityDamping"
+            }
+          }
+        },
+        {
+          "attribute": "deformable_bending_stiffness",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "surfaceOnly": {
+              "cpp": "true"
+            },
+            "write": {
+              "cpp": "ioWriteDeformableBendingStiffness"
+            }
+          }
+        },
+        {
+          "attribute": "deformable_thickness",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "surfaceOnly": {
+              "cpp": "true"
+            },
+            "write": {
+              "cpp": "ioWriteDeformableThickness"
+            }
+          }
+        },
+        {
+          "attribute": "deformable_bending_damping",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "surfaceOnly": {
+              "cpp": "true"
+            },
+            "write": {
+              "cpp": "ioWriteDeformableBendingDamping"
+            }
+          }
+        }
+      ],
+      "required_fields": 3,
+      "targets": [
+        "DEFORMABLE_MATERIAL"
+      ]
+    },
+    {
+      "name": "kVehicleWriteAttributes",
+      "row_type": "VehicleWriteAttributeRow",
+      "target": "VEHICLE_WHEEL",
+      "direction": "write",
+      "fields": [
+        "token",
+        "control"
+      ],
+      "rows": [
+        {
+          "attribute": "drive_torque",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "control": {
+              "cpp": "omni::physx::tensors::BaseVehicleView::WheelControl::eDriveTorque"
+            }
+          }
+        },
+        {
+          "attribute": "brake_torque",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "control": {
+              "cpp": "omni::physx::tensors::BaseVehicleView::WheelControl::eBrakeTorque"
+            }
+          }
+        },
+        {
+          "attribute": "steer_angle",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "control": {
+              "cpp": "omni::physx::tensors::BaseVehicleView::WheelControl::eSteerAngle"
+            }
+          }
+        }
+      ],
+      "required_fields": 2,
+      "targets": [
+        "VEHICLE_WHEEL"
+      ]
+    },
+    {
+      "name": "kCctWriteAttributes",
+      "row_type": "CctWriteAttributeRow",
+      "target": "CHARACTER_CONTROLLER",
+      "direction": "write",
+      "fields": [
+        "token",
+        "components"
+      ],
+      "rows": [
+        {
+          "attribute": "cct_move",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            }
+          }
+        }
+      ],
+      "required_fields": 2,
+      "targets": [
+        "CHARACTER_CONTROLLER"
+      ]
+    },
+    {
+      "name": "kVehicleControlAttributes",
+      "row_type": "VehicleControlAttributeRow",
+      "target": "VEHICLE",
+      "direction": "write",
+      "fields": [
+        "token",
+        "control",
+        "dtype"
+      ],
+      "rows": [
+        {
+          "attribute": "accelerator",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "control": {
+              "cpp": "omni::physx::tensors::BaseVehicleView::VehicleControl::eAccelerator"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            }
+          }
+        },
+        {
+          "attribute": "brake0",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "control": {
+              "cpp": "omni::physx::tensors::BaseVehicleView::VehicleControl::eBrake0"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            }
+          }
+        },
+        {
+          "attribute": "brake1",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "control": {
+              "cpp": "omni::physx::tensors::BaseVehicleView::VehicleControl::eBrake1"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            }
+          }
+        },
+        {
+          "attribute": "steer",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "control": {
+              "cpp": "omni::physx::tensors::BaseVehicleView::VehicleControl::eSteer"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            }
+          }
+        },
+        {
+          "attribute": "requested_gear",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "control": {
+              "cpp": "omni::physx::tensors::BaseVehicleView::VehicleControl::eRequestedGear"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            }
+          }
+        },
+        {
+          "attribute": "thrust0",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "control": {
+              "cpp": "omni::physx::tensors::BaseVehicleView::VehicleControl::eThrust0"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            }
+          }
+        },
+        {
+          "attribute": "thrust1",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "control": {
+              "cpp": "omni::physx::tensors::BaseVehicleView::VehicleControl::eThrust1"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            }
+          }
+        },
+        {
+          "attribute": "reset_to_rest_state",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "control": {
+              "cpp": "omni::physx::tensors::BaseVehicleView::VehicleControl::eResetToRestState"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            }
+          }
+        }
+      ],
+      "required_fields": 3,
+      "targets": [
+        "VEHICLE"
+      ]
+    }
+  ]
+}

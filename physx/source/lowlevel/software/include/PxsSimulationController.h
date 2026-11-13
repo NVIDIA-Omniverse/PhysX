@@ -65,6 +65,30 @@ namespace physx
 
 	struct PxsExternalAccelerationProvider;
 	
+	// How a GPU scene provides rigid body and articulation state to OmniPVD. NpScene turns OmniPVD readback on
+	// with setEnableOVDReadback(true) when its PxPhysics has an OmniPVD sampler. getOVDReadbackMode() derives the
+	// mode from that flag, PxSceneFlag::eENABLE_DIRECT_GPU_API and the current recording, so the mode changes with
+	// startSampling() and stopSampling(). A full recording has no scene or object list and records secondary data,
+	// as startSampling() without a filter does.
+	struct PxsOVDReadbackMode
+	{
+		enum Enum
+		{
+			// No OmniPVD readback: the PxPhysics has no OmniPVD sampler, or the scene does not use GPU dynamics.
+			// The base PxsSimulationController always returns eDISABLED.
+			eDISABLED,
+			// Direct GPU API scene, unless a full recording runs. This includes the time when nothing is recorded.
+			// The per-step bulk copies of rigid body and articulation state to the host stay off. OmniPVD reads
+			// only the recorded objects from the device, by GPU index.
+			eINDEXED,
+			// The per-step bulk copies of rigid body and articulation state to the host run. A Direct GPU API scene
+			// uses this mode only during a full recording, because that recording reads the pose and velocity of
+			// every active actor from the host. A GPU scene without the Direct GPU API makes these copies in every
+			// mode, and reports eFULL whenever OmniPVD readback is on.
+			eFULL
+		};
+	};
+
 	class PxsSimulationControllerCallback : public PxUserAllocated
 	{
 	public:
@@ -79,6 +103,23 @@ namespace physx
 	{
 	public:
 		virtual void    processRigidDynamicSet(const PxsRigidBody* const * rigids, const void* dataVec, const PxRigidDynamicGPUIndex* gpuIndices, PxRigidDynamicGPUAPIWriteType::Enum dataType, PxU32 nbElements) = 0;
+		virtual bool isCaptureActive() const = 0;
+		virtual bool isSelectiveCapture() const = 0;
+		virtual bool isCapturingAllObjects() const = 0;
+		virtual bool isTakingSnapshot() const = 0;
+		virtual bool isRigidDynamicReadEnabled(PxRigidDynamicGPUAPIReadType::Enum dataType) const = 0;
+		virtual bool isRigidDynamicWriteEnabled(PxRigidDynamicGPUAPIWriteType::Enum dataType) const = 0;
+		virtual bool isArticulationReadEnabled(PxArticulationGPUAPIReadType::Enum dataType) const = 0;
+		virtual bool isArticulationWriteEnabled(PxArticulationGPUAPIWriteType::Enum dataType) const = 0;
+		virtual bool isRigidDynamicCaptured(const PxsRigidBody& rigidBody) const = 0;
+		virtual bool isArticulationCaptured(const Dy::FeatherstoneArticulation& articulation) const = 0;
+		virtual bool isRigidDynamicStateRequired(const PxsRigidBody& rigidBody, PxRigidDynamicGPUAPIReadType::Enum dataType) const = 0;
+		virtual bool isArticulationStateRequired(const Dy::FeatherstoneArticulation& articulation, PxArticulationGPUAPIReadType::Enum dataType) const = 0;
+		virtual bool isContactReadEnabled() const = 0;
+		virtual bool isContactPairCaptured(const PxActor& actor0, const PxActor& actor1) const = 0;
+		virtual void reportReadbackFailure() = 0;
+		virtual void processRigidDynamicRead(const PxsRigidBody* const* rigids, const void* data, const PxRigidDynamicGPUIndex* indices, PxRigidDynamicGPUAPIReadType::Enum dataType, PxU32 nbElements) = 0;
+		virtual void processArticulationRead(const Dy::FeatherstoneArticulation* const* articulations, const void* data, const PxArticulationGPUIndex* nodeIndices, PxArticulationGPUAPIReadType::Enum dataType, PxU32 nbElements, PxU32 maxLinks, PxU32 maxDofs) = 0;
 		virtual void    processArticulationSet(const Dy::FeatherstoneArticulation* const * simBodyVec, const void* dataVec, const PxArticulationGPUIndex* indexVec, PxArticulationGPUAPIWriteType::Enum dataType, PxU32 nbElements,
 			PxU32 maxLinks, PxU32 maxDofs, PxU32 maxFixedTendons, PxU32 maxTendonJoints, PxU32 maxSpatialTendons, PxU32 maxSpatialTendonAttachments) = 0;
 		
@@ -110,6 +151,7 @@ namespace physx
 		virtual void addSoftBody(Dy::DeformableVolume* /*deformableVolume*/, const PxNodeIndex& /*nodeIndex*/)	{}
 		virtual void releaseSoftBody(Dy::DeformableVolume* /*deformableVolume*/) 	{}
 		virtual void releaseDeferredSoftBodyIds() 	{}
+		virtual PxU32 getNbReservedSoftBodyIds()	const	{ return 0; }
 		virtual void activateSoftbody(Dy::DeformableVolume* /*deformableVolume*/) 	{}
 		virtual void deactivateSoftbody(Dy::DeformableVolume* /*deformableVolume*/) 	{}
 		virtual void activateSoftbodySelfCollision(Dy::DeformableVolume* /*deformableVolume*/) 	{}
@@ -155,6 +197,7 @@ namespace physx
 		virtual void addFEMCloth(Dy::DeformableSurface*, const PxNodeIndex&) {}
 		virtual void releaseFEMCloth(Dy::DeformableSurface*) 	{}
 		virtual void releaseDeferredFEMClothIds() 	{}
+		virtual PxU32 getNbReservedFEMClothIds()	const	{ return 0; }
 		virtual void activateCloth(Dy::DeformableSurface*) 	{}
 		virtual void deactivateCloth(Dy::DeformableSurface*) 	{}
 		virtual void setClothWakeCounter(Dy::DeformableSurface*) 	{}
@@ -189,12 +232,30 @@ namespace physx
 #endif
 
 		virtual void setEnableOVDReadback(bool) {}
-		virtual bool getEnableOVDReadback() const { return false; }
+		virtual PxsOVDReadbackMode::Enum getOVDReadbackMode() const { return PxsOVDReadbackMode::eDISABLED; }
 		virtual void setEnableOVDCollisionReadback(bool) {}
 		virtual bool getEnableOVDCollisionReadback() const { return false; }
+		virtual bool getEnableOVDContactCollection() const { return getEnableOVDCollisionReadback(); }
+
+		// True from the insertion of an articulation until its first upload to the GPU is queued, not run. The next bounds merge
+		// waits for the simulation stream, so it reads the uploaded articulation.
+		virtual bool isArticulationUploadPending(PxU32 /*gpuIndex*/) const { return false; }
 
 #if PX_SUPPORT_OMNI_PVD
 		virtual void setOVDCallbacks(PxsSimulationControllerOVDCallbacks& /*ovdCallbacks*/) {}
+		virtual bool ovdReadbackRigidDynamicData(const PxRigidDynamicGPUIndex* /*indices*/, PxU32 /*nbElements*/, PxRigidDynamicGPUAPIReadType::Enum /*dataType*/) { return true; }
+		virtual bool ovdReadbackArticulationData(const PxArticulationGPUIndex* /*indices*/, PxU32 /*nbElements*/, PxArticulationGPUAPIReadType::Enum /*dataType*/) { return true; }
+		virtual bool ovdIsContactPairCaptured(const PxActor& /*actor0*/, const PxActor& /*actor1*/) const { return true; }
+		virtual bool ovdBeginContactReadback() { return false; }
+		virtual void ovdQueueContactReadback(const void* /*patches*/, const void* /*points*/, const void* /*friction*/, const PxReal* /*forces*/, PxU32 /*nbContacts*/, PxU32 /*nbPatches*/) {}
+		virtual bool ovdFinishContactReadback() { return true; }
+		virtual bool ovdReadbackContactPair(const void* /*patches*/, const void* /*points*/, const void* /*friction*/, const PxReal* /*forces*/, PxU32 /*nbContacts*/, PxU32 /*nbPatches*/) { return true; }
+		// Explicit OmniPVD payload copies, excluding shared simulation synchronization and index metadata.
+		virtual PxU64 getOmniPvdReadbackBytes() const { return 0; }
+		virtual void recordOmniPvdReadbackBytes(PxU64) {}
+		// Explicit rigid body, articulation and contact payload copies, excluding index metadata.
+		virtual PxU64 getOmniPvdReadbackCopyCount() const { return 0; }
+		virtual void recordOmniPvdReadbackCopy(PxU64 bytes) { recordOmniPvdReadbackBytes(bytes); }
 		// Read back and emit to OVD the force/torque the given rigid dynamics hold on the GPU, for a
 		// full-state snapshot (late attach). gpuIndices are PxRigidDynamic node indices. No-op on CPU.
 		virtual void ovdSnapshotRigidDynamicForces(const PxRigidDynamicGPUIndex* /*gpuIndices*/, PxU32 /*nbElements*/) {}
@@ -204,6 +265,8 @@ namespace physx
 #endif
 
 		virtual void updateDynamic(Dy::FeatherstoneArticulation* /*articulation*/, const PxNodeIndex& /*nodeIndex*/) {}
+		// Direct GPU API: the body2World target of a kinematic for this step. It is applied to the GPU pose after the solver.
+		virtual void setKinematicTargetDirectGPU(const PxNodeIndex& /*nodeIndex*/, const PxTransform& /*body2World*/) {}
 		virtual void addJoint(const Dy::Constraint&) {}
 		virtual void updateJoint(const PxU32 /*edgeIndex*/, Dy::Constraint* /*constraint*/){}
 		virtual void updateBodies(PxsRigidBody** /*rigidBodies*/, PxU32* /*nodeIndices*/, const PxU32 /*nbBodies*/, PxsExternalAccelerationProvider* /*externalAccelerations*/) {}

@@ -630,13 +630,24 @@ __device__ static bool satEdgeCrossDirection2(const ConvexScratch* s_scratch, Px
 						}
 						else
 						{
-							if (_separation < tempOverlap0)
+							// The axis is an edge-edge axis only if the triangle edge is the feature of the triangle that
+							// is closest to the convex along the axis. Otherwise another feature of the triangle sets the
+							// separation along the axis, for example an inactive edge shared with a coplanar triangle, and
+							// the contact normal would point across that edge. The third vertex of the triangle must then
+							// not be closer to the convex than the edge.
+							const PxVec3 toThirdVertex = s_scratch->triLocVerts[(vStartIndex + 2) % 3] - s_scratch->triLocVerts[vStartIndex];
+							const PxReal thirdVertexProj = shapeSpaceV.dot(toThirdVertex);
+							const PxReal tolerance = 1e-4f * toThirdVertex.magnitude();
+
+							// The convex is on the negative side of the axis, the triangle on the positive side.
+							if (thirdVertexProj >= -tolerance && _separation < tempOverlap0)
 							{
 								_separation = tempOverlap0;
 								_faceNormal = shapeSpaceV;
 							}
 
-							if (_separation < tempOverlap1)
+							// The convex is on the positive side of the axis, the triangle on the negative side.
+							if (thirdVertexProj <= tolerance && _separation < tempOverlap1)
 							{
 								_separation = tempOverlap1;
 								_faceNormal = -shapeSpaceV;
@@ -891,9 +902,10 @@ __device__ inline static bool convexMeshSAT(ConvexScratch* s_scratch, PxU32 & fe
 // the early outs are not actually an optimization, but have a functional purpose in an edge case: with two polys 
 // exactly on top of one another, we don't want to generate the points multiple times
 
-__device__ __forceinline__ void addContacts(int flags, PxVec3 pos, PxReal sep, PxReal maxSep, volatile float * s_contactsTransposed, int& nbContacts)
+// Contacts with a separation above maxSep or below minSep are not added.
+__device__ __forceinline__ void addContacts(int flags, PxVec3 pos, PxReal sep, PxReal minSep, PxReal maxSep, volatile float * s_contactsTransposed, int& nbContacts)
 {
-	flags &= __ballot_sync(FULL_MASK, !(sep > maxSep)); //Inverting test covers us for nans
+	flags &= __ballot_sync(FULL_MASK, !(sep > maxSep) && !(sep < minSep)); //Inverting test covers us for nans
 
 	int index = warpScanExclusive(flags, threadIdx.x) + nbContacts;
 
@@ -916,7 +928,8 @@ __device__ __forceinline__ void addContacts(int flags, PxVec3 pos, PxReal sep, P
 }
 
 //plane0 is convex, plane1 is triangle
-__device__ static int polyClip(const PxPlane plane0, PxVec3 v0, PxU32 nbVerts0, const PxPlane plane1, PxVec3 v1, const PxVec3 axis, PxReal maxSep, PxU32 triEdgeMask,
+//Contacts with a separation along the axis below minSep are not added, see convexTriangleContactGen()
+__device__ static int polyClip(const PxPlane plane0, PxVec3 v0, PxU32 nbVerts0, const PxPlane plane1, PxVec3 v1, const PxVec3 axis, PxReal minSep, PxReal maxSep, PxU32 triEdgeMask,
 	volatile float * s_contactsTransposed, PxU32 initContacts)
 {
 	int tI = threadIdx.x;
@@ -963,7 +976,7 @@ __device__ static int polyClip(const PxPlane plane0, PxVec3 v0, PxU32 nbVerts0, 
 	b &= __shfl_xor_sync(FULL_MASK, b, 1);
 
 	//ML: if b is the bit map for the 3 verts from the triangles, We need to keep the last 3 bits in b for the 3 verts and clear all other bits
-	addContacts(b&7, v1 - s1*axis, s1, maxSep, s_contactsTransposed, nbContacts);
+	addContacts(b&7, v1 - s1*axis, s1, minSep, maxSep, s_contactsTransposed, nbContacts);
 
 	if (!__any_sync(FULL_MASK, out1))										// all poly1 points inside poly0, so done
 		return nbContacts;
@@ -987,7 +1000,7 @@ __device__ static int polyClip(const PxPlane plane0, PxVec3 v0, PxU32 nbVerts0, 
 	}
 
 	in0 &= (1 << 3) - 1, out0 &= (1 << 3) - 1;
-	addContacts(__ballot_sync(FULL_MASK, !out0) & ((1 << nbVerts0) - 1), v0, s0, maxSep, s_contactsTransposed, nbContacts);
+	addContacts(__ballot_sync(FULL_MASK, !out0) & ((1 << nbVerts0) - 1), v0, s0, minSep, maxSep, s_contactsTransposed, nbContacts);
 
 	if (!__any_sync(FULL_MASK, out0))										// all poly0 points inside poly1, so done
 		return nbContacts;
@@ -1105,7 +1118,7 @@ __device__ static int polyClip(const PxPlane plane0, PxVec3 v0, PxU32 nbVerts0, 
 			//       No need to test e1MagnSqr for zero because we should not get such a degenerate edge.
 		}
 		
-		addContacts(__ballot_sync(FULL_MASK, c & lowestSetBit(a)),p, sep, maxSep, s_contactsTransposed, nbContacts);
+		addContacts(__ballot_sync(FULL_MASK, c & lowestSetBit(a)),p, sep, minSep, maxSep, s_contactsTransposed, nbContacts);
 	}
 
 	return nbContacts;
@@ -1776,6 +1789,13 @@ static __device__ void convexTriangleContactGen(
 
 		const PxReal contactDist = s_scratch->contactDist;
 
+		// A contact pairs a point of the convex with a point of the triangle, so its separation along the SAT axis cannot be
+		// smaller than the separation of the convex and the triangle along that axis. Projecting along an axis almost
+		// parallel to the triangle or to the convex face can produce contacts far below it, which are discarded. The margin
+		// covers rounding errors, which grow with the distance of the triangle vertices from the origin of the convex.
+		const PxReal maxVertexDistSq = PxMax(PxMax(s_scratch->triLocVerts[0].magnitudeSquared(), s_scratch->triLocVerts[1].magnitudeSquared()), s_scratch->triLocVerts[2].magnitudeSquared());
+		const PxReal minSeparation = separation - 0.1f * contactDist - 1e-5f * PxMax(1.0f, PxSqrt(maxVertexDistSq));
+
 		PxPlane plane0(planeNs[faceIndex1], planeDs[faceIndex1]);
 		PxPlane plane1;
 		if(faceIndex2 != 0xFFFFFFFF)
@@ -1807,7 +1827,7 @@ static __device__ void convexTriangleContactGen(
 				PxU32 triEdgeMask = 0xFFffFFff;
 #endif
 				numContactsGenerated = polyClip(plane0, verts0, getNbVerts(polyDesc), triPlane, verts1,
-					minNormal, contactDist, triEdgeMask, s_contactsTransposed, numContactsGenerated);
+					minNormal, minSeparation, contactDist, triEdgeMask, s_contactsTransposed, numContactsGenerated);
 
 			}
 

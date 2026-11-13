@@ -15,7 +15,7 @@
 #include <stdexcept>
 #include <string>
 
-static_assert(OVPHYSX_INTERNAL_INTERFACE_VERSION == 17,
+static_assert(OVPHYSX_INTERNAL_INTERFACE_VERSION == 18,
               "sidecar loader ABI version must move with the sidecar export set");
 
 namespace
@@ -56,9 +56,11 @@ constexpr uint64_t kReadHandle = 17;
 constexpr uint64_t kWriteHandle = 18;
 size_t g_readReleaseCalls = 0;
 size_t g_writeReleaseCalls = 0;
+size_t g_groupReleaseCalls = 0;
+bool g_groupReleaseBusy = false;
 
-omni::physx::OvxReadHandle fakeRead(uint64_t, const ovx_string_or_token_t*, size_t,
-                                 omni::physx::OvxReadResult* summary)
+omni::physx::OvxReadHandle fakeRead(uint64_t, const ovx_token_or_string_t*, size_t,
+                                 omni::physx::OvxReadResult* summary, ovstage_cuda_sync_t)
 {
     static const omni::physx::OvxReadAttributeResult attribute{101, 1, 0};
     if (summary)
@@ -69,7 +71,7 @@ omni::physx::OvxReadHandle fakeRead(uint64_t, const ovx_string_or_token_t*, size
 omni::physx::OvxReadStatus fakeFetchRead(uint64_t, ovstage_read_group_t* group)
 {
     *group = {};
-    group->read_group_id = 23;
+    group->read_group_id = ovstage_read_group_id_t{ 23 };
     return omni::physx::kOvxReadStatusOk;
 }
 
@@ -79,7 +81,13 @@ bool fakeReleaseRead(uint64_t)
     return true;
 }
 
-omni::physx::OvxWriteHandle fakeWrite(uint64_t, const ovx_string_or_token_t*, size_t,
+bool fakeReleaseGroup(uint64_t, const ovstage_read_group_t*)
+{
+    ++g_groupReleaseCalls;
+    return !g_groupReleaseBusy;
+}
+
+omni::physx::OvxWriteHandle fakeWrite(uint64_t, const ovx_token_or_string_t*, size_t,
                                    omni::physx::OvxWriteResult* summary)
 {
     static const omni::physx::OvxWriteAttributeResult attribute{102, 1};
@@ -101,8 +109,11 @@ protected:
     {
         g_readReleaseCalls = 0;
         g_writeReleaseCalls = 0;
+        g_groupReleaseCalls = 0;
+        g_groupReleaseBusy = false;
         ovphysx_internal_set_ovx_read_accessors(nullptr, nullptr, reinterpret_cast<void*>(&fakeRead),
-            reinterpret_cast<void*>(&fakeFetchRead), nullptr, reinterpret_cast<void*>(&fakeReleaseRead), nullptr);
+            reinterpret_cast<void*>(&fakeFetchRead), reinterpret_cast<void*>(&fakeReleaseGroup),
+            reinterpret_cast<void*>(&fakeReleaseRead), nullptr);
         ovphysx_internal_set_ovx_write_accessors(reinterpret_cast<void*>(&fakeWrite), nullptr, nullptr,
             reinterpret_cast<void*>(&fakeReleaseWrite));
     }
@@ -120,7 +131,7 @@ protected:
 
 TEST(SidecarAbi, VersionAndLoaderSourceMoveTogether)
 {
-    EXPECT_EQ(ovphysx_plugin_version(), 17u);
+    EXPECT_EQ(ovphysx_plugin_version(), 18u);
 
     std::ifstream header("src/include/internal/sidecar/ovphysxInternal.h");
     std::ifstream loader("src/ovphysx/ovphysxSidecarLoader.cpp");
@@ -139,7 +150,8 @@ TEST(SidecarAbi, VersionAndLoaderSourceMoveTogether)
               std::string::npos);
     EXPECT_NE(headerText.find("16 -> 17: object-change subscribe takes a lifetime_keep so unsubscribe can"),
               std::string::npos);
-    EXPECT_NE(headerText.find("#define OVPHYSX_INTERNAL_INTERFACE_VERSION 17"), std::string::npos);
+    EXPECT_NE(headerText.find("17 -> 18: read takes the caller's cuda_sync."), std::string::npos);
+    EXPECT_NE(headerText.find("#define OVPHYSX_INTERNAL_INTERFACE_VERSION 18"), std::string::npos);
     const size_t versionCheck = loaderText.find("if (version != OVPHYSX_INTERNAL_INTERFACE_VERSION)");
     const size_t tokenResolve = loaderText.find("ovphysx_internal_set_visualization_scope_tokens");
     ASSERT_NE(versionCheck, std::string::npos);
@@ -155,7 +167,7 @@ TEST(SidecarAbi, VersionAndLoaderSourceMoveTogether)
 TEST(SidecarTokenScope, MissingInjectedInterfaceFails)
 {
     AccessorGuard guard;
-    const ovx_primpath_t token = 1u;
+    const ovx_primpath_t token{1u};
     EXPECT_FALSE(ovphysx_internal_set_visualization_scope_tokens(1u, &token, 1u));
 }
 
@@ -165,7 +177,7 @@ TEST(SidecarTokenScope, NullAppendedSlotFails)
     omni::physx::IPhysxVisualization visualization{};
     g_visualization = &visualization;
     ovphysx_internal_set_physx_runtime_accessors(nullptr, &fakeGetVisualization);
-    const ovx_primpath_t token = 1u;
+    const ovx_primpath_t token{1u};
     EXPECT_FALSE(ovphysx_internal_set_visualization_scope_tokens(1u, &token, 1u));
 }
 
@@ -176,7 +188,7 @@ TEST(SidecarTokenScope, PluginFalsePropagates)
     visualization.setVisualizationScopeTokens = &pluginFalse;
     g_visualization = &visualization;
     ovphysx_internal_set_physx_runtime_accessors(nullptr, &fakeGetVisualization);
-    const ovx_primpath_t token = 1u;
+    const ovx_primpath_t token{1u};
     EXPECT_FALSE(ovphysx_internal_set_visualization_scope_tokens(1u, &token, 1u));
 }
 
@@ -187,7 +199,7 @@ TEST(SidecarTokenScope, ThrowingPluginFails)
     visualization.setVisualizationScopeTokens = &pluginThrow;
     g_visualization = &visualization;
     ovphysx_internal_set_physx_runtime_accessors(nullptr, &fakeGetVisualization);
-    const ovx_primpath_t token = 1u;
+    const ovx_primpath_t token{1u};
     EXPECT_FALSE(ovphysx_internal_set_visualization_scope_tokens(1u, &token, 1u));
 }
 
@@ -195,21 +207,21 @@ TEST(SidecarTokenScope, ThrowingPluginFails)
 // @covers AC-2 AC-4
 TEST_F(SidecarSessionIdentity, DuplicateReadPreservesExistingSession)
 {
-    const ovx_string_or_token_t attribute{101, {nullptr, 0}};
+    const ovx_token_or_string_t attribute{101, {nullptr, 0}};
     ovphysx_read_result_t original{};
-    ASSERT_EQ(ovphysx_internal_read_outputs(1, &attribute, 1, &original), kReadHandle);
+    ASSERT_EQ(ovphysx_internal_read_outputs(1, &attribute, 1, ovstage_cuda_sync_t{ 0, 0 }, &original), kReadHandle);
     ASSERT_NE(original.attributes, nullptr);
     const ovstage_read_group_t* group = nullptr;
     ASSERT_EQ(ovphysx_internal_fetch_read_next(kReadHandle, &group), 1);
     ASSERT_NE(group, nullptr);
 
     ovphysx_read_result_t duplicate{};
-    EXPECT_EQ(ovphysx_internal_read_outputs(1, &attribute, 1, &duplicate), 0u);
+    EXPECT_EQ(ovphysx_internal_read_outputs(1, &attribute, 1, ovstage_cuda_sync_t{ 0, 0 }, &duplicate), 0u);
     EXPECT_EQ(duplicate.attributes, nullptr);
     ASSERT_EQ(g_readReleaseCalls, 0u);
-    EXPECT_EQ(original.attributes[0].attribute, 101u);
+    EXPECT_EQ(original.attributes[0].attribute.raw_id, 101u);
     EXPECT_EQ(original.attributes[0].group_count, 1u);
-    EXPECT_EQ(group->read_group_id, 23u);
+    EXPECT_EQ(group->read_group_id.raw_id, 23u);
     EXPECT_EQ(ovphysx_internal_fetch_read_next(kReadHandle, &group), 1);
 }
 
@@ -217,7 +229,7 @@ TEST_F(SidecarSessionIdentity, DuplicateReadPreservesExistingSession)
 // @covers AC-3 AC-4
 TEST_F(SidecarSessionIdentity, DuplicateWritePreservesExistingSummary)
 {
-    const ovx_string_or_token_t attribute{102, {nullptr, 0}};
+    const ovx_token_or_string_t attribute{102, {nullptr, 0}};
     ovphysx_write_result_t original{};
     ASSERT_EQ(ovphysx_internal_write_attribute(1, &attribute, 1, &original), kWriteHandle);
     ASSERT_NE(original.attributes, nullptr);
@@ -226,6 +238,58 @@ TEST_F(SidecarSessionIdentity, DuplicateWritePreservesExistingSummary)
     EXPECT_EQ(ovphysx_internal_write_attribute(1, &attribute, 1, &duplicate), 0u);
     EXPECT_EQ(duplicate.attributes, nullptr);
     ASSERT_EQ(g_writeReleaseCalls, 0u);
-    EXPECT_EQ(original.attributes[0].attribute, 102u);
+    EXPECT_EQ(original.attributes[0].attribute.raw_id, 102u);
     EXPECT_EQ(original.attributes[0].group_count, 1u);
+}
+
+// @implements REQ-CAPI-RELEASE-001
+// @covers AC-2
+TEST_F(SidecarSessionIdentity, RejectedGroupReleasePreservesDescriptor)
+{
+    const ovx_token_or_string_t attribute{101, {nullptr, 0}};
+    ASSERT_EQ(ovphysx_internal_read_outputs(1, &attribute, 1, ovstage_cuda_sync_t{ 0, 0 }, nullptr), kReadHandle);
+    const ovstage_read_group_t* group = nullptr;
+    ASSERT_EQ(ovphysx_internal_fetch_read_next(kReadHandle, &group), 1);
+    ASSERT_NE(group, nullptr);
+    const ovstage_read_group_id_t groupId = group->read_group_id;
+
+    g_groupReleaseBusy = true;
+    EXPECT_EQ(ovphysx_internal_release_group(kReadHandle, groupId), -1);
+    EXPECT_EQ(g_groupReleaseCalls, 1u);
+
+    g_groupReleaseBusy = false;
+    EXPECT_EQ(ovphysx_internal_release_group(kReadHandle, groupId), 1);
+    EXPECT_EQ(g_groupReleaseCalls, 2u);
+    EXPECT_EQ(ovphysx_internal_release_group(kReadHandle, groupId), 1);
+    EXPECT_EQ(g_groupReleaseCalls, 2u);
+}
+
+namespace
+{
+bool releaseQueryFails(uint64_t)
+{
+    return false;
+}
+bool releaseQueryOk(uint64_t)
+{
+    return true;
+}
+} // namespace
+
+// A runtime-reported query release failure is terminal (0); an unavailable accessor or a caught
+// exception leaves cleanup unconfirmed (-1).
+// @implements REQ-CAPI-RELEASE-001
+// @covers AC-1
+TEST(SidecarReleaseStatus, ReleaseQueryReportsReportedFailureAsTerminalZero)
+{
+    ovphysx_internal_set_ovx_read_accessors(
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, reinterpret_cast<void*>(&releaseQueryFails));
+    EXPECT_EQ(ovphysx_internal_release_query(7u), 0); // reported failure -> terminal 0 (was -1)
+
+    ovphysx_internal_set_ovx_read_accessors(
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, reinterpret_cast<void*>(&releaseQueryOk));
+    EXPECT_EQ(ovphysx_internal_release_query(7u), 1); // success -> 1
+
+    ovphysx_internal_set_ovx_read_accessors(nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+    EXPECT_EQ(ovphysx_internal_release_query(7u), -1); // accessor unavailable -> unconfirmed -1
 }

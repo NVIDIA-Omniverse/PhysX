@@ -12,8 +12,16 @@ namespace physx
 {
 	struct PxgBoundTransformUpdate
 	{
-		PxU32 indexTo;
-		PxU32 indexFrom; //MSB stores info if the bound is new. New is copied from cpu array, not new - from gpu array
+		// The top bit of index holds where the merge takes the bounds and the transform of the element from.
+		enum Kind : PxU32
+		{
+			eCOMPUTE_FROM_GPU_POSE	= 0u,		// computed on the gpu from the pose of the dynamic rigid
+			eCOPY_FROM_CPU			= 1u << 31,	// copied from the cpu array
+			eKIND_MASK				= 1u << 31,
+			eINDEX_MASK				= 0x7FFFFFFF
+		};
+
+		PxU32 index;
 	};
 }
 

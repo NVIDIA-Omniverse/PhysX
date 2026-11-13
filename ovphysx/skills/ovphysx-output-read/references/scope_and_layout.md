@@ -72,8 +72,7 @@ index maps, tensor shapes, and destination layout before consuming another
 frame. Ordinary value changes and simulation steps do not require this rebuild.
 
 This applies with extra force to the whole-articulation inverse dynamics matrices
-(`jacobian`, `jacobianShape`, `massMatrix`, `coriolisForce`, `gravityForce`,
-`centroidalMomentum`).
+(`jacobian`, `massMatrix`, `coriolisForce`, `gravityForce`, `centroidalMomentum`).
 They are emitted one group per cohort of structurally identical articulations, so a
 structural edit can change how many groups a read returns and which rows each covers,
 not just their contents. Cohort membership is re-derived every read, so the data is
@@ -101,3 +100,35 @@ Unlike the inverse dynamics matrices above, these two columns are emitted as ONE
 row per articulation, the per-DOF array padded to the widest selected articulation's `dofCount` -- like
 the topology-metadata columns. So read them alongside `dofCount` / `isFixedBase` from that one group,
 not per cohort, and use `dofCount` as each row's real length.
+
+`dofAxisKind` is that same padded DOF column. Each entry is the PhysX joint-frame axis id
+(0 twist, 1 swing1, 2 swing2, 3 x, 4 y, 5 z), not a USD axis token and not the unlocked-axis
+ordinal in `dofAxisIndex`. A revolute about Y is 0 and a prismatic along Y is 3. A 0 inside
+`dofCount` is twist; only entries past `dofCount` are padding. A locked twist leaves swing1 as
+kind 1 and ordinal 0.
+
+`dofJointType` is that same padded DOF column. Each entry is the PhysX joint type: 1 prismatic,
+2 revolute, 3 revolute unwrapped, 4 spherical. A 0 past `dofCount` is padding. For unique joint leaf names, the legacy DOF
+name is the leaf of `dofJointPath`, plus `:` and `dofAxisKind`, only when the type is spherical.
+Colliding joint leaves receive numeric suffixes before the spherical axis suffix; use full prim paths for identity.
+
+`linkPath` is the link prim for each `getLinkIndex()` slot, padded to the widest selected
+articulation's `linkCount`, with 0 past that count. Slot 0 is the root link. The articulation row
+prim may be that link, an ancestor Xform, or a fixed joint that is a child of slot 0. Fixed base:
+link 0 has no Jacobian rows, and link L>0 occupies rows `6*(L-1)` through `6*L-1`. Floating base:
+link L occupies rows `6*L` through `6*L+5`. Shape columns are link-major in this order, then
+per-shape within the link. An `ARTICULATION_LINK` query stays in database order and is not
+guaranteed to match `linkPath` order.
+
+`linkInboundJoint` is the inbound joint prim of each `linkPath` slot. A 0 inside `linkCount`
+means that link has no inbound joint. Slot 0 is 0. A fixed joint between two links is included.
+`dofJointPath` skips zero-DOF joints. For unique joint leaf names, the legacy joint-name list is the leaf of each non-zero slot.
+Legacy names disambiguate colliding leaves with numeric suffixes.
+
+Tendon identity is four host columns, each in its own scene-wide group: `fixedTendonRoot` and
+`fixedTendonInstance`, counted by `fixedTendonCount`, and `spatialTendonRoot` and
+`spatialTendonInstance`, counted by `spatialTendonCount`. Slot T is the index
+`getFixedTendons` / `getSpatialTendons` already uses. Each tendon is the root prim plus the
+multi-apply instance name; a root prim alone is not unique. That index is not database order.
+`FIXED_TENDON` and `SPATIAL_TENDON` rows carry `tendonInstance` in database order. Pair that token
+with the row prim to find slot T. A zero-width group is omitted while its count column stays.

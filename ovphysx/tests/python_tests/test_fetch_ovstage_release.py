@@ -25,6 +25,7 @@ sys.path.insert(0, str(SCRIPTS_DIR))
 import fetch_ovstage_release as m  # noqa: E402
 
 _VERSION = "0.2.0.999999.deadbeef"
+_DEV_VERSION = "0.4.0.dev1793576840+main.2fce4391"
 
 
 class _Clock:
@@ -269,6 +270,7 @@ def test_download_discards_partial_archive_when_retry_window_expires(tmp_path, m
 
 @pytest.mark.parametrize("environment,argument,expected", [
     (None, None, 0),
+    ("", None, 0),
     ("1800", None, 1800),
     (None, "1800", 1800),
     ("1800", "0", 0),
@@ -375,6 +377,8 @@ def test_numeric_version_drops_trailing_git_hash():
     assert m._numeric_version("0.1.0") == "0.1.0"                         # M.m.p
     # An all-digit hash is still the 5th component, dropped by position.
     assert m._numeric_version("0.1.0.888888.12345678") == "0.1.0.888888"
+    # A dev build's whole PEP 440 version is its pip version.
+    assert m._numeric_version(_DEV_VERSION) == _DEV_VERSION
 
 
 def test_semver_and_githash_split_by_position():
@@ -383,6 +387,9 @@ def test_semver_and_githash_split_by_position():
     assert m._githash("0.2.0.999999") is None
     # All-digit hashes are taken by position, like _numeric_version.
     assert m._githash("0.1.0.888888.12345678") == "12345678"
+    assert m._semver(_DEV_VERSION) == "0.4.0"
+    assert m._githash(_DEV_VERSION) == "2fce4391"
+    assert m._githash("0.4.0.dev1793576840+main.12345678") == "12345678"
 
 
 def test_zip_name_matches_the_published_archive_convention():
@@ -391,6 +398,9 @@ def test_zip_name_matches_the_published_archive_convention():
     # The zip uses its own platform tokens -- no win_amd64 mapping, unlike the wheel.
     assert m._zip_name(_VERSION, "windows-x86_64") == \
         "ovstage@0.2.0.999999.deadbeef.windows-x86_64.zip"
+    # A dev build's archive repeats its git hash after the full PEP 440 version.
+    assert m._zip_name(_DEV_VERSION, "windows-x86_64") == \
+        "ovstage@0.4.0.dev1793576840+main.2fce4391.2fce4391.windows-x86_64.zip"
 
 
 def test_zip_name_requires_a_githash():
@@ -405,6 +415,11 @@ def test_zip_url_renders_both_mirror_shapes(monkeypatch):
     assert m._zip_url(_VERSION, "windows-x86_64") == (
         "https://artifactory.invalid/artifactory/ct-omniverse-pypi-local/ovstage/"
         "0.2.0.999999/ovstage@0.2.0.999999.deadbeef.windows-x86_64.zip")
+    # A dev build's release folder is its full PEP 440 version.
+    assert m._zip_url(_DEV_VERSION, "manylinux_2_35_aarch64") == (
+        "https://artifactory.invalid/artifactory/ct-omniverse-pypi-local/ovstage/"
+        "0.4.0.dev1793576840+main.2fce4391/"
+        "ovstage@0.4.0.dev1793576840+main.2fce4391.2fce4391.manylinux_2_35_aarch64.zip")
 
     # The public mirror keys off the release tag (v<semver>), not the build number.
     monkeypatch.setattr(

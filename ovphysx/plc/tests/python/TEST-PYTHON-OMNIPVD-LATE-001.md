@@ -14,7 +14,8 @@ FILE/TCP sessions, including capture before the first simulation step.
 
 ## Given
 
-- Canonical and invalid Python destinations.
+- Canonical and invalid Python destinations, including inferred directories and
+  exact filenames with missing parents.
 - Separate fresh subprocesses for default and capability-enabled creation;
   Windows x86_64 and Linux x86_64/aarch64 execute these cases.
 - A ready loopback TCP listener.
@@ -32,8 +33,12 @@ FILE/TCP sessions, including capture before the first simulation step.
   pending value until replaced.
 - Pass the global capability key to the instance setter in a fresh subprocess,
   then read capability and instance GPU selection and query recording status.
-- A directory-open failure is followed by an exact-file retry, rejected active retarget, stop, unrecorded step, and a
+- An existing `.ovd` directory fails exact-file open and is followed by an exact-file retry, rejected active retarget, stop, unrecorded step, and a
   second exact-file recording.
+- Forward a directory path unchanged as FILE, explicitly start after attach,
+  stop and restart into it, then compare the first capture's bytes.
+- Forward `runs/capture.ovd/` unchanged through the native-call string lifetime
+  probe. In a subprocess with a temporary cwd, start bare `capture.ovd`.
 - A late TCP destination is marshalled through `PhysX.start_recording()`, sampled, stopped, and followed by an exact
   late FILE session on the same handle.
 - TCP subprocesses explicitly start before or after the first simulation step;
@@ -45,7 +50,9 @@ FILE/TCP sessions, including capture before the first simulation step.
 
 ## Then
 
-- Only canonical destination tuples are accepted (REQ AC-1).
+- Only canonical destination tuples are accepted; directory paths, including
+  non-ASCII strings and the `.ovd/` directory escape, remain FILE tuples and
+  are forwarded without a new factory or transport (REQ AC-1).
 - `GlobalConfigKey.OVD_RECORDING_CAPABLE` is `0x0000000c`, defaults false,
   uses BOOL, and provisions dormant capability through plain `PhysX()`.
   Rejected writes leave it unchanged; cross-scope instance writes raise
@@ -57,14 +64,20 @@ FILE/TCP sessions, including capture before the first simulation step.
 - On Windows x86_64 and Linux x86_64/aarch64, Python default start reports `INVALID_STATE`,
   directs callers to set `OVD_RECORDING_CAPABLE` before the first instance, and opted-in
   FILE/TCP recording succeeds (REQ AC-3).
-- The three `PhysX` methods invoke the corresponding native operations in the late FILE/TCP paths, and both exact
+- The three `PhysX` methods invoke the corresponding native operations in the late FILE/TCP paths, and
   destination strings remain valid for the complete synchronous native call (REQ AC-4).
 - Failure leaves recording inactive, retry succeeds, active retarget reports `INVALID_STATE`, and stop clears active
   state (REQ AC-5).
 - The same handle restarts from late FILE to FILE and from late TCP to FILE after stop, and each completed exact FILE
   recording extends beyond the OVD header; the native C test's canonical reader is authoritative for semantic
   `CREATE_OBJECT` and teardown validation (REQ AC-6).
-- Create, attach, and reattach remain dormant. Explicit start before any step
+- Missing parents of an exact `.ovd` filename are created at admitted start.
+  A bare exact filename writes beyond the header in the caller's cwd;
+  canonical C reader coverage remains authoritative for objects and frames.
+  Inferred directories stay absent before attach/start and during rejected
+  active retarget, then contain distinct timestamped captures after restart.
+  Earlier bytes are preserved, and no `tmp.ovd` is used (REQ AC-5, AC-6, AC-7).
+- Create, attach, and reattach do not auto-start a session. Explicit start before any step
   captures the first simulated frame. Only the starting object reports active
   and can stop its session; after detach and dormant reattach, a peer may own a
   new explicitly started session (REQ AC-7).
@@ -79,7 +92,11 @@ FILE/TCP sessions, including capture before the first simulation step.
 - `test_tcp_streams_to_ready_listener` (before-first-step and after-first-step)
 - `TestOvdRecording.test_ovd_file_produced_before_first_step`
 - `TestOvdRecording.test_ovd_not_produced_until_explicit_start`
-- `TestOvdRecording.test_ovd_missing_parent_fails_without_starting`
+- `TestOvdRecording.test_ovd_exact_filename_creates_missing_parents_at_start`
+- `test_file_path_infers_directory_only_after_explicit_start_and_preserves_captures`
+- `test_late_file_recording_retries_rejects_takeover_and_restarts`
+- `test_start_recording_keeps_destination_strings_alive_through_native_call`
+- `test_bare_exact_filename_records_in_current_directory`
 - `test_retired_ovd_carbonite_overrides_rejected_without_freezing_capability`
 - `test_global_ovd_capability_rejects_instance_scope_without_mutation`
 

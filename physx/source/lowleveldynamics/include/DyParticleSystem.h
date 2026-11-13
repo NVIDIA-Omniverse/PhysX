@@ -35,7 +35,6 @@ namespace physx
 				eUPDATE_MATERIAL					= 1 << 2,
 				eUPDATE_PHASE						= 1 << 3,
 				eUPDATE_ACTIVE_PARTICLECOUNT		= 1 << 4,
-				eENABLE_GPU_DATA_SYNC				= 1 << 5,
 			};
 		};
 

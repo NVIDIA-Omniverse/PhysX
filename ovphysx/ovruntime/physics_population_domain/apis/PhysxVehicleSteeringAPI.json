@@ -1,0 +1,38 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxVehicleSteeringAPI",
+  "title": "PhysxVehicleSteeringAPI",
+  "summary": "Basic steering: which wheels follow the steer control and their maximum steer angle, applied on the vehicle prim. Outside the steering parse the runtime only checks that the vehicle prim lists it (or PhysxVehicleAckermannSteeringAPI), to attach the parsed steering to the vehicle.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "Xformable"
+  ],
+  "requires": [
+    "PhysxVehicleAPI"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "columns": [],
+  "interactions": [
+    {
+      "with": "PhysxVehicleAPI",
+      "rule": "When a steering API is listed on the vehicle prim but no steering was parsed for it, the vehicle is not created. A vehicle with steering needs a drive, and the wheel indices must be below the wheel count."
+    },
+    {
+      "with": "PhysxVehicleAckermannSteeringAPI",
+      "rule": "When both steering APIs are listed only this one is parsed; the Ackermann steering is ignored without a message."
+    },
+    {
+      "with": "PhysxVehicleControllerAPI",
+      "rule": "physxVehicleController:steer commands this steering; without a steering API the deprecated steerLeft and steerRight are applied instead."
+    }
+  ],
+  "notes": [
+    "The parser reads physxVehicleSteering:wheels, angleMultipliers and maxSteerAngle, and the runtime applies their live changes. They are not described yet."
+  ]
+}

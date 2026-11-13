@@ -13,12 +13,12 @@
 // @implements REQ-OMNIPVD-LATE-001
 // @covers AC-9
 
+// @implements REQ-SDK-LIFECYCLE-002
+// @covers AC-1 AC-2 AC-4
+
 /**
  * @implements REQ-COOK-LIFETIME-001
  * @covers AC-1 AC-3
- *
- * @implements REQ-SIM-DEFAULT-001
- * @covers AC-2
  *
  * @implements REQ-SIM-OVSTAGE-ATTACH-001
  * @covers AC-1 AC-2
@@ -111,8 +111,7 @@ AttachHandle OmniPhysX::physXAttachOvstage(const void* ovstageAttachPayload,
                                   uint64_t readOrdinal,
                                   AttachOvstageBackingStageHandle backingStage,
                                   uint64_t effectiveBackingStageId,
-                                  const PhysxAttachOptions& options,
-                                  bool startConfiguredRecording)
+                                  const PhysxAttachOptions& options)
 {
     // Candidates snapshot these parser defaults during construction. Do not
     // create an active database or change a live attachment's clocks here.
@@ -122,7 +121,7 @@ AttachHandle OmniPhysX::physXAttachOvstage(const void* ovstageAttachPayload,
 
     return UsdLoad::getUsdLoad()->attachOvstage(ovstageAttachPayload, readOrdinal,
         effectiveBackingStageId, &getPhysXUsdPhysicsInterface(), /*loadPhysics=*/true,
-        backingStage, &options, startConfiguredRecording);
+        backingStage, &options);
 }
 
 bool OmniPhysX::physXUpdateFromOvStage(AttachHandle attach, uint64_t fromOrdinal, uint64_t toOrdinal)
@@ -432,6 +431,7 @@ void OmniPhysX::onStartup()
     enableLogChannel(kRoboticsLogChannel, mISettings->getAsBool(kSettingLogRobotics));
     enableLogChannel(kSceneMultiGPULogChannel, mISettings->getAsBool(kSettingLogSceneMultiGPU));
     subscribeToSettingsChangeEvents();
+    mPhysXSetup.subscribeToSettingsChangeEvents();
 
     mWasStarted = true;
 
@@ -447,6 +447,10 @@ void OmniPhysX::onShutdown()
 {
     mWasStarted = false;
     unsubscribeFromSettingsChangeEvents();
+    // This object is not destroyed by shutdown (only unregistered as the instance below), so
+    // ~PhysXSetup() never releases these. carb.settings would keep dispatching to the retired setup
+    // after a restart, or into unloaded code once the hosting module is gone (OMPE-112612).
+    mPhysXSetup.unsubscribeFromSettingsChangeEvents();
     while (!UsdLoad::getUsdLoad()->getAttachedStages().empty())
     {
         const AttachHandle attach = UsdLoad::getUsdLoad()->getAttachedStages().begin()->first;
@@ -727,18 +731,6 @@ void OmniPhysX::subscribeToSettingsChangeEvents()
         },
         nullptr);
     mCachedSettings.disableContactProcessing = mISettings->getAsBool(kSettingDisableContactProcessing);
-    mSubscribedSettings.push_back(subID);
-
-    subID = mISettings->subscribeToNodeChangeEvents(
-        kSettingDefaultSimulator,
-        [](const carb::dictionary::Item* changedItem, carb::dictionary::ChangeEventType eventType, void* userData) {
-            OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-            carb::dictionary::IDictionary* dict = carb::getCachedInterface<carb::dictionary::IDictionary>();
-            omniPhysX.mCachedSettings.physxDefaultSimulator = dict->get<std::string>(changedItem) == "PhysX";
-        },
-        nullptr);
-    const char* defaultSimulator = mISettings->getStringBuffer(kSettingDefaultSimulator);
-    mCachedSettings.physxDefaultSimulator = defaultSimulator && std::strcmp(defaultSimulator, "PhysX") == 0;
     mSubscribedSettings.push_back(subID);
 
     subID = mISettings->subscribeToNodeChangeEvents(

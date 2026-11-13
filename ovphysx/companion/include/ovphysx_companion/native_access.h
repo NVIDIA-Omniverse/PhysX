@@ -18,6 +18,8 @@ enum class AccessKind:uint32_t {RigidActor=1,Dynamic=2,Static=3,Link=4,Joint=5,A
 // outlive this call. No mutation, object release, physics wait, nested API or
 // interpreter entry is permitted. Even const SDK methods can return mutable child
 // pointers; those remain read-only under this contract. The host owns scheduling.
+// The borrow is admitted only while no core work of the owning instance is queued or
+// running (otherwise BUSY), and core work submitted during it starts after it ends.
 class ObjectLease
 {
 public:

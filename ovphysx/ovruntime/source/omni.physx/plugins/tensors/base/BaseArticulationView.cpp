@@ -1935,6 +1935,7 @@ bool BaseArticulationView::setCOMs(const TensorDesc* srcTensor, const TensorDesc
     // is true, so a setCOMs that leaves the flag set computes lever arms against
     // the pre-setCOMs COMs.
     setComsCacheStateValid(false);
+    centerOfMassChanged();
     return true;
 }
 
@@ -1995,7 +1996,7 @@ bool BaseArticulationView::setInertias(const TensorDesc* srcTensor, const Tensor
             }
         }
     }
-
+    centerOfMassChanged();
     return true;
 }
 
@@ -2257,39 +2258,51 @@ bool BaseArticulationView::getRestOffsetsOvStage(const TensorDesc* dstTensor, co
     return getShapePropertyOvStage(OvStageShapeProperty::eRestOffset, dstTensor, rows, count);
 }
 
-PxU32 BaseArticulationView::inverseDynamicsColumnWidthForRow(PxU32 row, InverseDynamicsColumn column) const
+std::vector<int64_t> BaseArticulationView::inverseDynamicsColumnShapeForRow(PxU32 row,
+                                                                          InverseDynamicsColumn column) const
 {
     if (row >= mEntries.size() || !mEntries[row].metatype)
-        return 0;
+        return {};
 
     switch (column)
     {
     case InverseDynamicsColumn::eNone:
-        return 0;
+        return {};
     case InverseDynamicsColumn::eJacobian:
     {
         PxU32 jacobianRows = 0, jacobianCols = 0;
-        return jacobianShapeForRow(row, jacobianRows, jacobianCols) ? jacobianRows * jacobianCols : 0u;
+        if (!jacobianShapeForRow(row, jacobianRows, jacobianCols))
+            return {};
+        return { int64_t(jacobianRows), int64_t(jacobianCols) };
     }
     case InverseDynamicsColumn::eMassMatrix:
     {
-        const PxU32 m = generalizedCoordinateCountForRow(row);
-        return m * m;
+        const int64_t m = generalizedCoordinateCountForRow(row);
+        return { m, m };
     }
     case InverseDynamicsColumn::eCoriolisForce:
     case InverseDynamicsColumn::eGravityForce:
-        // One case for both: their width rule is identical (M).
-        return generalizedCoordinateCountForRow(row);
+        // One case for both: their shape rule is identical (M).
+        return { int64_t(generalizedCoordinateCountForRow(row)) };
     case InverseDynamicsColumn::eCentroidalMomentum:
-        // Floating base only. Zero is the honest answer for a fixed-base row: the reader omits the
+        // Floating base only. No dimensions is the honest answer for a fixed-base row: the reader omits the
         // group rather than emitting an empty one (REQ-READ-INVDYN-001 AC-5).
-        return mEntries[row].metatype->getFixedBase() ? 0u : 6u * (mEntries[row].numDofs + 7u);
-    case InverseDynamicsColumn::eJacobianShape:
-        // Constant two int32 lanes, the jacobian's rows and cols; this entry exists to put the
-        // column on the cohort partitioning, not to compute a width.
-        return 2u;
+        if (mEntries[row].metatype->getFixedBase())
+            return {};
+        return { 6, int64_t(mEntries[row].numDofs) + 7 };
     }
-    return 0;
+    return {};
+}
+
+PxU32 BaseArticulationView::inverseDynamicsColumnWidthForRow(PxU32 row, InverseDynamicsColumn column) const
+{
+    const std::vector<int64_t> shape = inverseDynamicsColumnShapeForRow(row, column);
+    if (shape.empty())
+        return 0;
+    int64_t width = 1;
+    for (const int64_t dimension : shape)
+        width *= dimension;
+    return static_cast<PxU32>(width);
 }
 
 bool BaseArticulationView::checkInverseDynamicsColumn(const TensorDesc& dstTensor,
@@ -2320,11 +2333,12 @@ bool BaseArticulationView::checkInverseDynamicsColumn(const TensorDesc& dstTenso
             return false;
         }
 
-        // Metatype identity, not merely equal width: getGeneralizedForceColumnOvStage resolves its
-        // dof-record block from the cohort's FIRST row and applies that row's per-dof parentage to
-        // every row, which only holds under identity. Two topologies can agree on generalized
-        // coordinate count and disagree on parentage, and a width-only check would let the device
-        // gather flip signs on every row after the first while the CPU sibling stays right.
+        // Metatype identity, not merely equal width: the device read
+        // (GpuArticulationView::readOvStageColumns) resolves its dof-record block from the cohort's
+        // FIRST row and applies that row's per-dof parentage to every row, which only holds under
+        // identity. Two topologies can agree on generalized coordinate count and disagree on parentage,
+        // and a width-only check would let the device gather flip signs on every row after the first
+        // while the CPU sibling stays right.
         if (i == 0)
         {
             cohortMetatype = mEntries[row].metatype;
@@ -2345,42 +2359,6 @@ bool BaseArticulationView::checkInverseDynamicsColumn(const TensorDesc& dstTenso
                            funcName, label, row, want, widthOut);
             return false;
         }
-    }
-    return true;
-}
-
-bool BaseArticulationView::getJacobianShapesOvStage(const TensorDesc* dstTensor,
-                                                    const PxU32* rows,
-                                                    PxU32 count) const
-{
-    CHECK_VALID_DATA_SIM_RETURN(mSimData, mSim, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-    if (!dstTensor || !dstTensor->data)
-    {
-        return false;
-    }
-
-    const char* label = "articulation jacobian shape";
-    if (!checkTensorDevice(*dstTensor, -1, label, __FUNCTION__) ||
-        !checkTensorInt32(*dstTensor, label, __FUNCTION__) ||
-        !checkTensorSizeExact(*dstTensor, count * 2u, label, __FUNCTION__) ||
-        !checkRecordIndices(rows, count, mEntries.size(), label, __FUNCTION__))
-    {
-        return false;
-    }
-
-    int32_t* dst = static_cast<int32_t*>(dstTensor->data);
-    for (PxU32 i = 0; i < count; i++)
-    {
-        const PxU32 row = rows ? rows[i] : i;
-        uint32_t jacobianRows = 0, jacobianCols = 0;
-        if (!jacobianShapeForRow(row, jacobianRows, jacobianCols))
-        {
-            CARB_LOG_ERROR("%s: row %u has no resolvable articulation metatype", __FUNCTION__, row);
-            return false;
-        }
-        dst[size_t(i) * 2 + 0] = static_cast<int32_t>(jacobianRows);
-        dst[size_t(i) * 2 + 1] = static_cast<int32_t>(jacobianCols);
     }
     return true;
 }

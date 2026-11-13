@@ -17,10 +17,10 @@ Runtime interaction binds an explicit borrowed ToolsSession or owned PreviewSess
 - AC-1: **Native leases.** A native-access lease validates owner, attachment generation and SDK type and permits only documented operations at a quiescent phase or owner execution callback; raw pointers cannot outlive the lease.
 - AC-2: **Force semantics.** Interaction defines force/impulse mode, frame, application point, instancing and CPU/GPU support, reusing core writes only where their semantics match.
 - AC-3: **Restoration.** Drag end/cancel, deletion and stage close release temporary constraints and restore temporary angular damping and CCD/axis-lock settings, applying the declared velocity-reset policy.
-- AC-4: **Scheduling.** Interaction mutations and invalidation share core ordering; waits requiring the same held lease/lock are rejected rather than deadlocking.
+- AC-4: **Scheduling.** Interaction mutations and invalidation share core ordering; waits requiring the same held lease/lock are rejected rather than deadlocking. A native-access lease prevents queued core work on its owner from starting until the lease ends; an accepted step remains pending during the lease and then executes normally.
 
 - AC-5: **Default force grab.** Python grab/drag/pick default to native managed force picking; D6 mode requires explicit selection. Preserve the existing C interaction ABI and expose force picking through a separate versioned table. The native service retains the picked local point/distance, uses k=50*pickingForce (nonnegative and tunable per grab while idle) and J=k*m*(target-p-0.02*vPoint)*h per actual substep, adds legacy COM gravity assistance, and restores angular damping on cancellation. No joint, axis-lock or CCD changes occur in force mode.
-- AC-6: **Ray and lifetime.** Normalize ray directions and retain the original hit distance, owner, generation and exact instance across updates. Invalid/busy/stale commands preserve outputs/state. Input updates never step physics. Close cancels without a due step; retirement exposes inactive metadata. CPU links support preserve-velocity force grabbing, while static/kinematic/disabled/GPU/deformable targets are unavailable. Host-provided filters govern visibility and Pause/Stop/focus events close the grab.
+- AC-6: **Ray and lifetime.** Normalize ray directions and retain the original hit distance, owner, generation and exact instance across updates. Invalid/busy/stale commands preserve outputs/state. Input updates never step physics. Close cancels without a due step; retirement exposes inactive metadata. Links support preserve-velocity force grabbing. CPU and GPU-dynamics scenes are supported, while static/kinematic/disabled/DirectGPU/deformable targets are unavailable. Host-provided filters govern visibility and Pause/Stop/focus events close the grab.
 
 ## Test References
 
@@ -38,11 +38,11 @@ Runtime interaction binds an explicit borrowed ToolsSession or owned PreviewSess
 
 ## Advertised behavior
 
-CPU dynamic rigid bodies support force/impulse accumulation for the next host
-step, world or actor-local vectors and points, and exact point-instance identity.
-Static, kinematic, disabled and GPU dynamics return Unavailable.
+Dynamic rigid bodies in CPU or GPU-dynamics scenes support force/impulse accumulation
+for the next host step, world or actor-local vectors and points, and exact point-instance
+identity. Static, kinematic and disabled bodies and DirectGPU scenes return Unavailable.
 Direct force writes and D6 joint drags require dynamic rigid bodies. Managed force
-picking also supports CPU articulation links with preserve velocity. grab/drag/pick
+picking also supports articulation links with preserve velocity. grab/drag/pick
 default to force, retain a local anchor, and apply legacy impulses and COM gravity
 assistance per actual scene substep. Angular damping is temporarily at least
 0.025*initial k and restores on close; live coefficient changes affect subsequent impulses only. Ray target is origin+normalized_direction*initial_distance.

@@ -1,0 +1,91 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxSurfaceDeformableBodyAPI",
+  "title": "PhysxSurfaceDeformableBodyAPI",
+  "summary": "PhysX collision substepping for a surface deformable body, read on the prim carrying OmniPhysicsDeformableBodyAPI only when its simulation mesh is a surface (OmniPhysicsSurfaceDeformableSimAPI) and PhysxSurfaceDeformableBodyAPI is listed in its usd-schemas. Without the API, or with a column absent, both values are 0, not the schema fallback 1.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "Xformable"
+  ],
+  "requires": [
+    "OmniPhysicsDeformableBodyAPI"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "producer_scope": "Published like any applied physics API: every declared attribute at its resolved value. USD population also lists the built-in PhysxBaseDeformableBodyAPI in usd-schemas. No column is rewritten or created by the producer.",
+  "columns": [
+    {
+      "name": "physxDeformableBody:collisionIterationMultiplier",
+      "usd_type": "uint",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "uint",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 1,
+      "parser_default": 0,
+      "absent": "0, the descriptor default, not the schema fallback 1 (the legacy USD loader defaulted to 1). PhysX then reports 0 collision substeps for the body, but the GPU solver runs the scene-wide maximum over all surface bodies, which starts at 1, so the simulation matches 1.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physics.ovstage/OvstageDeformableBatch.h",
+        "include/omni/physics/parse/Descriptors.h",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceDeformable.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXDeformablePropertiesUpdate.cpp"
+      ],
+      "notes": "Ignored for a volume body. The property update applies a change to a surface body only."
+    },
+    {
+      "name": "physxDeformableBody:collisionPairUpdateFrequency",
+      "usd_type": "uint",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "uint",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 1,
+      "parser_default": 0,
+      "absent": "0, the descriptor default, not the schema fallback 1 (the legacy USD loader defaulted to 1). With the TGS solver 0 makes PhysX update surface collision pairs adaptively, and because the GPU solver keeps one value per scene, a single surface body with 0 makes pair updates adaptive for every surface body in the scene. Under PGS the pairs are updated once per step regardless.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physics.ovstage/OvstageDeformableBatch.h",
+        "include/omni/physics/parse/Descriptors.h",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceDeformable.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXDeformablePropertiesUpdate.cpp"
+      ],
+      "notes": "Ignored for a volume body. The property update applies a change to a surface body only. The runtime's body defaults seed 1, but the parsed value (0) always replaces that seed."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "OmniPhysicsDeformableBodyAPI",
+      "rule": "Read only on a prim enumerated by OmniPhysicsDeformableBodyAPI that the ovstage walker accepts as a deformable body: a Mesh, TetMesh or BasisCurves, or an Xformable that is not a Gprim, with exactly one simulation mesh (OmniPhysicsVolumeDeformableSimAPI or OmniPhysicsSurfaceDeformableSimAPI) on the prim itself or an immediate child."
+    },
+    {
+      "with": "OmniPhysicsSurfaceDeformableSimAPI",
+      "rule": "Read only when the body's simulation mesh carries this API (a surface body); a volume body ignores both columns."
+    },
+    {
+      "with": "PhysxBaseDeformableBodyAPI",
+      "rule": "USD applies PhysxBaseDeformableBodyAPI as a built-in of this API; the parser checks that name separately, so a hand-populated body lists both."
+    }
+  ]
+}

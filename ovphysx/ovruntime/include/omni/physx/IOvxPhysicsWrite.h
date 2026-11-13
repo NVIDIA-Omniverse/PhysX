@@ -15,7 +15,7 @@
 
 #include <ovstage/ovx_path_dictionary.h>           // ovx_primpath_list_t / ovx_path_dictionary_t
 #include <ovstage/ovstage_api/ovstage_api_types.h> // ovstage_map_group_t / ovstage_cuda_sync_t
-#include <ovx/string_types.h>                      // ovx_string_or_token_t
+#include <ovx/string_types.h>                      // ovx_token_or_string_t
 
 #include <omni/physx/IOvxPhysicsRead.h> // OvxObjectType / OvxObjectScope / OvxAttr / ovxQuery
 
@@ -106,14 +106,15 @@ extern "C"
 
 // An owner reset/reload that changes its record epoch invalidates existing write
 // sessions. Discard their groups and open a fresh query/session before writing.
-// Open a session for a nonempty attribute array. Token ids take precedence over
-// strings and resolve in the query owner's dictionary. Canonical duplicates and
-// unsupported/read-only attributes reject the entire plan before publication.
+// Open a session for a nonempty attribute array. A non-NULL string takes precedence;
+// an entry with a NULL string names its token, resolved in the query owner's dictionary.
+// Canonical duplicates and unsupported/read-only attributes reject the entire plan
+// before publication.
 // The optional summary's nested rows belong to the session until release; owner
 // teardown invalidates their tokens. A null outSummary skips optional row allocation,
 // token interning and query membership counting. No output is published on failure.
 OMNI_OVX_WRITE_API OvxWriteHandle ovxWriteAttributes(OvxOutputQueryHandle query,
-                                                    const ovx_string_or_token_t* attributes,
+                                                    const ovx_token_or_string_t* attributes,
                                                     size_t attributeCount,
                                                     OvxWriteResult* outSummary = nullptr);
 
@@ -137,6 +138,10 @@ OMNI_OVX_WRITE_API OvxWriteHandle ovxWriteAttributes(OvxOutputQueryHandle query,
 // through setBodyPropertyOvStage unaffected. Re-plan (open a fresh session) if a body in a live
 // device-backed group is disabled before that group is committed.
 //
+// A DirectGPU device group (see ovxCommitGroup) may reuse the column, record list and scratch an
+// earlier session over the same query used; its data.cuda_sync then names the event that
+// earlier commit recorded, which the caller's fill must wait on (on the device) before writing.
+//
 // No group is produced for a scene whose every matched body is filtered out -- on a
 // DirectGPU scene a disabled rigid dynamic has no device state and is omitted, exactly as
 // the read omits it (`disableSimulation` excepted). End-of-iteration with no group is
@@ -159,27 +164,50 @@ enum OvxCommitFailure : int32_t
     kOvxCommitFailurePublish = 2, //!< the group WAS live and is spent. RuntimeErrorScope captures
                                   //!< the reason, including a preflight refusal when nothing was written.
                                   //!< A later scatter failure can have applied only part of the group.
+    kOvxCommitFailureInvalidArgument = 4, //!< refused before the group was accepted: a masked commit's row
+                                          //!< mask was malformed, a group applied on the host was committed
+                                          //!< on a stream being captured into a CUDA graph, the commit would
+                                          //!< use the legacy default stream while a blocking stream of its
+                                          //!< context is being captured, or the driver could not tell whether
+                                          //!< the stream is being captured. The group remains live and nothing
+                                          //!< was written.
 };
 
 // COMMIT (ovstage `unmap_group` analog): publish `group` and transfer ownership of its
-// buffers to physics. The caller must have filled EVERY mapped entry; there is no
-// fill-mask, so a partially filled group publishes whatever its unfilled entries hold.
-// Once a live group is accepted, its mapped pointers belong to physics even if
-// publication fails. Dereferencing them is undefined behavior -- a raw
+// buffers to physics. The caller must have filled EVERY mapped entry, so a partially
+// filled group publishes whatever its unfilled entries hold; ovxCommitGroupMasked below
+// writes only the rows it selects. Once a live group is accepted, its mapped pointers
+// belong to physics even if publication fails, and a stream-ordered group's storage stays
+// with the session until release, so a captured commit can replay against it.
+// Dereferencing them is undefined behavior -- a raw
 // data.tensors[i].data access makes no call this could reject. Busy and NotLive
 // refusals do not accept a group or consume a producer handoff.
 //
-// `writeDoneSync` hands off producer completion; it does not select the engine's
-// consumer stream. Every nonzero field is honored before any backend preflight:
-// this call drains `stream`, then waits for `wait_event`, observing completion on
-// the host for both host and device groups. Only `{0, 0}` asserts nothing is
-// outstanding and makes no CUDA call. Host-resident storage alone does not imply it.
+// `writeDoneSync` hands off producer completion. How it is honored depends on where the
+// group is applied (ADR-0052):
+// - A DirectGPU device group (rigid-body, link, articulation-root, joint, tendon and
+//   point-instancer columns) is ordered on the device, like a CUDA library call on
+//   `stream`: its work runs after everything queued there and after `wait_event`, and
+//   everything queued on `stream` afterwards runs after it. Nothing blocks the host, so
+//   the commit can be captured into a CUDA graph -- pass the capturing stream -- and the
+//   graph replayed while the session stays open. A null `stream` orders the work on the
+//   legacy default stream. A `stream` of another CUDA context than the scene's is drained
+//   on the host instead, and the work then runs on the scene's own stream. Completion of
+//   the caller's producer is not proven on the host:
+//   a fault in it surfaces at the next synchronization.
+// - Every other group is applied on the host: this call drains `stream`, then waits for
+//   `wait_event`, observing completion on the host. Only `{0, 0}` asserts nothing is
+//   outstanding and makes no CUDA call. Host-resident storage alone does not imply it.
+//   Such a group cannot be committed on a stream being captured.
+// While a blocking stream of a context is being captured, CUDA refuses work on that
+// context's legacy default stream, and an attempt would invalidate the capture, so a
+// commit given it -- the legacy sentinel, or a null `stream` for a group in device
+// memory -- is refused first.
 // Context-relative stream sentinels resolve in the caller's current producer
-// context; this handoff does not push the engine context. Keep both supplied
-// handles valid until this call returns. A failed wait spends the group with
-// kOvxCommitFailurePublish, reads and publishes nothing, and makes release retain
-// its unsafe storage. The runtime additionally rejects a commit as Busy while
-// an owner step is in flight.
+// context. Keep both supplied handles valid until this call returns. A failed wait
+// spends the group with kOvxCommitFailurePublish, reads and publishes nothing, and
+// makes release retain its unsafe storage. The runtime additionally rejects a commit
+// as Busy while an owner step is in flight.
 //
 // The current inline handoff releases the process-wide output-cache mutex while
 // waiting, so independent owners can progress. It retains this owner's admission:
@@ -198,6 +226,39 @@ OMNI_OVX_WRITE_API bool ovxCommitGroup(OvxWriteHandle write,
                                        const ovstage_map_group_t* group,
                                        ovstage_cuda_sync_t writeDoneSync,
                                        OvxCommitFailure* outFailure = nullptr);
+
+/// Checks a commit of a live group without committing: false, with a runtime error, when ovxCommitGroup (null
+/// `rowMask`) or ovxCommitGroupMasked would refuse it with kOvxCommitFailureInvalidArgument -- a row mask that does
+/// not fit the group, a group applied on the host committed on a stream being captured into a CUDA graph, the
+/// legacy default stream while a blocking stream of its context is being captured, or a stream whose capture status
+/// the driver cannot report.
+/// Changes nothing, so a caller can refuse the commit before it admits it, leaving the group live. True for a group
+/// the commit would report as not live.
+OMNI_OVX_WRITE_API bool ovxValidateCommit(OvxWriteHandle write,
+                                          const ovstage_map_group_t* group,
+                                          const DLTensor* rowMask,
+                                          ovstage_cuda_sync_t writeDoneSync);
+
+// COMMIT the rows `rowMask` selects (ADR-0052). `rowMask` is a contiguous 1-D bool or uint8
+// tensor with one entry per row of the group -- the leading dimension of a fixed group's
+// tensor (one per DOF for a joint group, ADR-0059), or one per tensor of a ragged group (a
+// deformable body) -- nonzero selecting the row. It lives where the group does: on the group's CUDA device, or in
+// host memory for a host-resident group. A device mask is read on the device when the commit
+// runs, so a captured commit reads the mask's contents at each replay.
+//
+// An unselected row keeps its value; its entries in the column need not be filled. Rigid and
+// link force, torque and wrench rows are the exception: PhysX cannot read an applied load back,
+// so an unselected row applies none. On a DirectGPU scene that also replaces a load another write
+// set on that row earlier in the same step; elsewhere loads add up. On a DirectGPU scene an articulation root,
+// joint or tendon commit also writes its unselected articulations back with their current values: until the next
+// step they read zero link accelerations and incoming joint forces, and a root whose centre of mass is offset can
+// drift slightly with each such commit. A rejected mask fails with kOvxCommitFailureInvalidArgument and leaves the
+// group live; otherwise this behaves as ovxCommitGroup.
+OMNI_OVX_WRITE_API bool ovxCommitGroupMasked(OvxWriteHandle write,
+                                             const ovstage_map_group_t* group,
+                                             const DLTensor* rowMask,
+                                             ovstage_cuda_sync_t writeDoneSync,
+                                             OvxCommitFailure* outFailure = nullptr);
 
 // Release the session. Every group that was never committed is discarded, not
 // published. Finish external CPU and CUDA work filling uncommitted groups before
@@ -245,5 +306,11 @@ enum class DrainResult : int32_t
 OMNI_OVX_WRITE_API DrainResult applyOvstageValueBatch(usdparser::AttachedStage& owner, omni::physics::parse::IPhysicsSource& source,
                                                       const ::omni::physics::parse::ChangeBatch& batch,
                                                       ::std::vector<uint32_t>* unresolvedRows = nullptr);
+
+// The CUDA device ordinal shared by the attachment's scenes, or -1 unless EVERY attached scene is
+// DirectGPU on the same device (a mixed DirectGPU + CPU or multi-device stage, or no scenes, gives -1).
+// The engine sets it on the ovstage change feed each drain so device-eligible value columns are
+// read straight from that device (device-resident, zero host copy).
+OMNI_OVX_WRITE_API int ovxDirectGpuDeviceOrdinal(usdparser::AttachedStage& owner);
 
 } // namespace omni::physx

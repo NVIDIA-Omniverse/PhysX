@@ -10,7 +10,7 @@
 
 /**
  * @implements REQ-TENSOR-VIEW-001
- * @covers AC-6 AC-8
+ * @covers AC-6 AC-8 AC-14
  */
 
 #include "tensors/CommonTypes.h" // RigidBodyEntry / ArticulationEntry (cached superset entries)
@@ -124,6 +124,11 @@ public:
     // Saying so in the signature keeps callers from reaching for a static_cast.
     GpuSimulationView* acquireSceneView(::physx::PxScene* scene, uint64_t* outGeneration = nullptr);
 
+    // The cached view acquireSceneView would return, when it is built and current; null when acquireSceneView would
+    // build or rebuild it. Builds, releases and calls into CUDA for nothing, so a call being captured into a CUDA
+    // graph can use it in place of acquireSceneView (ADR-0055).
+    GpuSimulationView* currentSceneView(::physx::PxScene* scene, uint64_t* outGeneration = nullptr);
+
     // The CPU counterpart, with the same ownership and generation contract. Separate entry point
     // rather than one returning a base pointer, for the reason above: the caller needs the concrete
     // type to reach supersetRigidView(). Returns null when the scene runs the GPU pipeline.
@@ -178,6 +183,10 @@ private:
     // instances behind one attach and double every contact-bucket registration.
     std::unordered_map<AttachHandle, CpuSimulationDataPtr>      mCpuSimDataByAttach;
     std::unordered_map<SceneKey, GpuSimulationDataPtr, SceneKeyHash> mGpuSimDataByScene;
+    // One disable state per scene, given to every GpuSimulationData built for it. A rebuild or an
+    // invalidateSceneCache replaces the data while older views keep their copy, and a disable through
+    // either copy must still reach the views on the other. Dropped with the scene or the attach.
+    std::unordered_map<SceneKey, std::shared_ptr<GpuRdDisableState>, SceneKeyHash> mRdDisableByScene;
     // Views indexed per attach so resetStage() can invalidate only that attach's
     // views; the flattened set of all live views is the union of these vectors.
     std::unordered_map<AttachHandle, std::vector<ISimulationView*>> mViewsByAttach;
@@ -275,7 +284,8 @@ private:
     usdparser::AttachedStage* attachedStageFor(const ::physx::PxScene* scene) const;
 
     // The scene's GPU simulation data, rebuilt when the scene no longer matches the topology its
-    // buffers were sized from. Every path that hands this data to a view must go through here.
+    // buffers were sized from or a record was created or removed since it was built. Every path that
+    // hands this data to a view must go through here.
     // Caller must hold mStageDataMutex. Returns null if the data could not be built.
     GpuSimulationDataPtr ensureGpuSimDataLocked(AttachHandle attachHandle, ::physx::PxScene* scene);
 

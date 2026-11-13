@@ -22,13 +22,18 @@ namespace tensors
 // The device copy is re-uploaded exactly when this value changes, so a producer must mint a NEW one
 // when the row CONTENTS change and reuse the SAME one while they do not.
 //
-// Homed here, next to the row cache it identifies, so every producer -- the ovstage reads, the
-// loose-rigid write, and the point-instancer write -- mints from ONE counter into ONE keyspace. Two
-// counters would eventually hand out the same value for different lists, and the shared view would
-// then keep one list's rows and index another list's data through them: wrong values, silently. A
-// token derived from an object address is the same hazard once the address is reused (a freed view
-// re-created at the old pointer aliases its predecessor's slot). The atomic starts at 1 because a
-// cache slot reads token 0 as empty. Inline so the static is a single instance across the plugin.
+// Homed here, next to the row cache it identifies, so every producer that mints -- the ovstage reads, whose
+// rows a write over the same query reuses, the loose-rigid write, and the point-instancer write -- mints from
+// ONE counter into ONE keyspace. Two counters would eventually hand out the same value for different
+// lists, and the shared view would then keep one list's rows and index another list's data through
+// them: wrong values, silently. A token derived from an object address is the same hazard once the
+// address is reused (a freed view re-created at the old pointer aliases its predecessor's slot). The
+// atomic starts at 1 because a cache slot reads token 0 as empty. Inline so the static is a single
+// instance across the plugin.
+//
+// The cache takes one other kind of token: a 64-bit hash of a list's contents, for a list resolved again on
+// every write, such as the ovstage drain's (rowListVersion in OvxPhysicsWrite.cpp). It has its top bit set,
+// which this counter never reaches, so the two kinds never meet; two lists share a hash only by a collision.
 inline uint64_t nextOvStageRowsVersion()
 {
     static std::atomic<uint64_t> sVersion{ 0 };

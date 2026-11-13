@@ -14,7 +14,7 @@ Borrowed tools sessions retain an existing owner and cannot create another simul
 
 ## Acceptance Criteria
 
-- AC-1: **Borrowing.** Opening a tools session does not attach, detach, reset or step the simulation; all live operations validate the supplied instance owner and attachment generation.
+- AC-1: **Borrowing.** Opening a tools session does not attach, detach, reset or step the simulation; all live operations validate the supplied instance owner and attachment generation. Operations requiring attachment access return Busy without waiting while the core owner has queued or running work; they do not collect its task outcomes and can be retried once it is idle.
 - AC-2: **Teardown.** Session close stops admission and drains accepted work/subscriptions; owner destruction returns a retryable lifecycle refusal (core `INVALID_STATE`; companion `Busy` where applicable) while external native leases or zero-copy views still require it, unless their storage has been made independently owned.
 - AC-3: **Isolation.** Foreign-session and stale-generation handles fail without mutating another session; independent companion-native and public core attachments may coexist; duplicate live ovstage sources remain rejected.
 - AC-4: **Reuse.** Repeated open/close and detach/reattach do not retain callbacks, registrations, buffers or references to the previous attachment.

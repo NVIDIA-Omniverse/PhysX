@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-CAPI-OMNIPVD-CAPTURE-001
+// @covers AC-1
+
 #ifndef OVPHYSX_ABI_CHECK_H
 #define OVPHYSX_ABI_CHECK_H
 
@@ -44,6 +47,16 @@ enum ovphysx_omnipvd_destination_field
     OVPHYSX_OD_TCP_ADDRESS = 2,
     OVPHYSX_OD_TCP_PORT = 3,
     OVPHYSX_OD_TCP_TIMEOUT_MS = 4
+};
+
+enum ovphysx_omnipvd_recording_options_field
+{
+    OVPHYSX_ORO_RECORD_SECONDARY_DATA = 0,
+    OVPHYSX_ORO_SCENE_PATHS = 1,
+    OVPHYSX_ORO_SCENE_COUNT = 2,
+    OVPHYSX_ORO_OBJECT_PATHS = 3,
+    OVPHYSX_ORO_OBJECT_COUNT = 4,
+    OVPHYSX_ORO_WAIT_FOR_SELECTION = 5
 };
 
 
@@ -128,6 +141,10 @@ OVPHYSX_API size_t ovphysx_internal_config_value_offset(int field);
 OVPHYSX_API size_t ovphysx_internal_omnipvd_destination_sizeof();
 OVPHYSX_API size_t ovphysx_internal_omnipvd_destination_alignof();
 OVPHYSX_API size_t ovphysx_internal_omnipvd_destination_offset(int field);
+
+OVPHYSX_API size_t ovphysx_internal_omnipvd_recording_options_sizeof();
+OVPHYSX_API size_t ovphysx_internal_omnipvd_recording_options_alignof();
+OVPHYSX_API size_t ovphysx_internal_omnipvd_recording_options_offset(int field);
 
 OVPHYSX_API size_t ovphysx_internal_dl_data_type_sizeof();
 OVPHYSX_API size_t ovphysx_internal_dl_data_type_alignof();

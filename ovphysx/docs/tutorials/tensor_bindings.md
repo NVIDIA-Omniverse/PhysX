@@ -146,8 +146,8 @@ Symbols:
 - `D`: max DOF count across matched articulations
 - `T`: max tendon count across matched articulations (fixed or spatial, depending on type)
 - `M`: generalized coordinate count — `numDofs` for fixed-base, `numDofs + 6` for floating-base articulations
-- `S`: max collision shape count per body/link in the binding
-- `R`, `C`: Jacobian shape from `getJacobianShape()` — fixed-base: `R=(L-1)*6, C=D`; floating-base: `R=(L-1)*6+6, C=D+6`
+- `S`: max collision shape count in the binding — per body for a rigid-body binding, and the total across all links of a matched articulation for an articulation binding (so an articulation's `S` rows span every shape of every link, not one per link)
+- `R`, `C`: Jacobian rows and columns — fixed-base: `R=(L-1)*6, C=D`; floating-base: `R=(L-1)*6+6, C=D+6`
 - `B`: volume deformable body count in the binding
 - `V`: max simulation node count across matched volume deformables
 - `Vr`: max rest node count across matched volume deformables
@@ -328,7 +328,7 @@ articulation binding:
 
 | Constant | Shape | Dimensionality | Read | Write | Component layout | Behavioral note |
 |---|---|---|---|---|---|---|
-| `OVPHYSX_TENSOR_ARTICULATION_SHAPE_FRICTION_AND_RESTITUTION_F32` | `(A, S, 3)` | 3D | yes | yes | `(static_friction, dynamic_friction, restitution)` | Per-shape material properties per link |
+| `OVPHYSX_TENSOR_ARTICULATION_SHAPE_FRICTION_AND_RESTITUTION_F32` | `(A, S, 3)` | 3D | yes | yes | `(static_friction, dynamic_friction, restitution)` | Per-shape material properties across all links of the articulation |
 | `OVPHYSX_TENSOR_ARTICULATION_CONTACT_OFFSET_F32` | `(A, S)` | 2D | yes | yes | offset scalar per shape | Distance at which contacts are generated |
 | `OVPHYSX_TENSOR_ARTICULATION_REST_OFFSET_F32` | `(A, S)` | 2D | yes | yes | offset scalar per shape | Rest separation between shapes |
 
@@ -342,8 +342,8 @@ solver:
 
 | Constant | Shape | Dimensionality | Read | Write | Component layout | Behavioral note |
 |---|---|---|---|---|---|---|
-| `OVPHYSX_TENSOR_ARTICULATION_JACOBIAN_F32` | `(A, R, C)` | 3D | yes | no | row-major | Shape from `getJacobianShape()`; refer to `R` and `C` in the [Tensor Type Reference](#tensor-type-reference) symbol list |
-| `OVPHYSX_TENSOR_ARTICULATION_MASS_MATRIX_F32` | `(A, M, M)` | 3D | yes | no | row-major square | Generalized mass matrix; shape from `getGeneralizedMassMatrixShape()` |
+| `OVPHYSX_TENSOR_ARTICULATION_JACOBIAN_F32` | `(A, R, C)` | 3D | yes | no | row-major | Refer to `R` and `C` in the [Tensor Type Reference](#tensor-type-reference) symbol list |
+| `OVPHYSX_TENSOR_ARTICULATION_MASS_MATRIX_F32` | `(A, M, M)` | 3D | yes | no | row-major square | Generalized mass matrix |
 | `OVPHYSX_TENSOR_ARTICULATION_CORIOLIS_AND_CENTRIFUGAL_FORCE_F32` | `(A, M)` | 2D | yes | no | force scalar per generalized coordinate | Combined Coriolis and centrifugal forces |
 | `OVPHYSX_TENSOR_ARTICULATION_GRAVITY_FORCE_F32` | `(A, M)` | 2D | yes | no | force scalar per generalized coordinate | Gravity compensation forces |
 | `OVPHYSX_TENSOR_ARTICULATION_LINK_INCOMING_JOINT_FORCE_F32` | `(A, L, 6)` | 3D | yes | no | `force.xyz + torque.xyz` | Incoming joint force and torque per link |

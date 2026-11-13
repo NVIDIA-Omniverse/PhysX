@@ -17,9 +17,9 @@ interval, and wait indefinitely for an asynchronous simulation operation.
 - A pure-C compatibility translation unit that includes the public OVPhysX
   header.
 - An asynchronous simulation step held pending by a deterministic test gate.
-- An operation whose event has already reached a terminal state.
-- A deterministic readiness harness whose first check is pending and whose
-  final check observes readiness exactly at the finite deadline.
+- An operation whose task has already reached a terminal state.
+- The executor deadline conversion checks in
+  `tests/internal_unittests/test_instance_executor.cpp` and a completed task.
 
 ## When
 
@@ -29,8 +29,8 @@ interval, and wait indefinitely for an asynchronous simulation operation.
   positive timeout before the test gate is released.
 - The terminal operation is waited with a finite budget shorter than ordinary
   call overhead.
-- The readiness helper is exercised with the clock advanced exactly to the
-  finite deadline between its pending and ready observations.
+- Poll, finite and infinite deadline conversions are checked, including a large
+  finite value that must not overflow the clock representation.
 - The gate is released and the same operation is waited with
   `OVPHYSX_TIMEOUT_INFINITE`.
 
@@ -46,7 +46,9 @@ interval, and wait indefinitely for an asynchronous simulation operation.
 - The terminal operation reports and consumes its actual result instead of
   being downgraded to a pending timeout at the deadline boundary, satisfying
   AC-4.
-- Readiness observed by the final boundary check wins over timeout and proceeds
-  toward terminal result finalization, satisfying AC-4.
+- A completed task wins over an expired readiness budget and is collected;
+  source inspection of `InstanceExecutor::waitLocked` verifies the final
+  readiness check at the deadline (AC-4). There is no deterministic injected-clock
+  test for simultaneous publication at that exact boundary.
 - The infinite wait treats the sentinel as unbounded and consumes the operation
   only after the released step reaches a terminal state, satisfying AC-5.

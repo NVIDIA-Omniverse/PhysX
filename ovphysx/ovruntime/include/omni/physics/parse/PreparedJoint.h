@@ -77,6 +77,7 @@ struct PreparedJoint
     // First seven entries match JointAxis, then angular, linear and cone.
     std::array<PreparedJointInstance, 10> instances;
     PreparedAttribute<float> newtonVelocity, newtonArmature, newtonFriction, newtonDamping;
+    PreparedAttribute<float> legacyMaxVelocity;
     bool distanceSpring = false;
     PreparedAttribute<bool> springEnabled;
     PreparedAttribute<float> springStiffness, springDamping, ratio;
@@ -123,6 +124,7 @@ void readJointAttributes(const Reader& src, const KnownTokens& tok, const JointR
     const bool hasAxis = type == eJointRevolute || type == eJointPrismatic || type == eJointSpherical || type == eJointD6;
     if (hasAxis)
     {
+        input.legacyMaxVelocity = prepareAttribute<float>(src, key, tok.physxJointMaxJointVelocity);
         input.newtonVelocity = prepareAttribute<float>(src, key, tok.newtonVelocityLimit, true);
         input.newtonArmature = prepareAttribute<float>(src, key, tok.newtonArmature, true);
         input.newtonFriction = prepareAttribute<float>(src, key, tok.newtonFriction, true);

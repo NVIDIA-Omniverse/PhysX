@@ -45,14 +45,14 @@ populates an attribute only when a registered schema defines it, so a scene
 that authors `newton:*` attributes loses them silently unless the application
 registers that schema too (NVBugs 6742287: a joint authoring only
 `newton:velocityLimit` ran unlimited once the pinned OVStage stopped bundling
-the schema). OVStage keeps no queryable record of registered schema families;
-the only observable is the status of a registration that arrives after
-the first USD schema read. That status reflects plugin family identity,
-independent of the registered path. The Newton warning probes the installed
-`newton-usd-schemas` Python package because it can locate that package's
-descriptor; registration of the same family from another complete copy is
-recognized. The Python wrapper performs that check and
-warns; the C API, which cannot locate the package, documents the obligation.
+the schema). Re-registration status reflects plugin bookkeeping, including
+plugins recorded by rejected late registrations, rather than schema availability.
+When `newton-usd-schemas` is installed, the Python wrapper instead probes a
+Newton joint attribute in a private population after the schema definitions
+are built. This recognizes timely registration from any complete copy and
+warns when the definitions are missing. Without the installed package it logs
+installation guidance. The C API documents the obligation and performs no
+Newton check.
 
 Provenance: this replaces the implicit registration ovphysx used to perform
 (an `OV_PXR_PLUGINPATH_2511` environment append at library start, on `import
@@ -74,7 +74,11 @@ not ovphysx, owns USD.
   declare supported-version constraints and `uv.lock` fixes resolved artifacts;
   unsatisfied constraints fail during dependency resolution. The native sample
   installer reads its artifact URL/digest from `common/physx_schemas.lock.json`
-  and verifies the SHA-256 before extraction. Discovery imposes no exact release
+  and verifies the SHA-256 before extraction. The installer retries transient download
+  failures (5xx, 408, 429, a temporary 404, timeouts and dropped connections) for an
+  opt-in window, `--retry-timeout` or `OVSTAGE_FETCH_RETRY_TIMEOUT` (the variable the
+  OVStage fetcher reads), and makes a single attempt by default; a digest mismatch and
+  authentication, certificate or local file errors are never retried. Discovery imposes no exact release
   number: both recipes require both modules' `plugInfo.json` and
   `generatedSchema.usda`. Missing providers and incompatible/incomplete resource
   layouts fail before population with installation/root repair guidance. The
@@ -102,11 +106,16 @@ not ovphysx, owns USD.
   raises `FileNotFoundError` naming `pip install newton-usd-schemas`, the
   GitHub repository and `register_usd_schemas` when it is not installed;
   `ovphysx.schemas.find_newton_schema_root()` returns `None` instead. Before
-  its native attach, `PhysX.attach_ovstage()` checks this package's registration
-  once per process after USD schema definitions are built by passing its path
-  to `ovstage.population.register_usd_schemas()`: `OVSTAGE_OK` is silent; an
-  error (USD already read schema definitions without it, through population or
-  export) emits a `RuntimeWarning` naming the `newton:*` attributes population can
+  its native attach, `PhysX.attach_ovstage()` checks Newton schema availability
+  once per process after USD schema definitions are built, by populating a
+  Newton joint attribute in a private stage. Available definitions are silent;
+  missing definitions (USD already read schema definitions without them, through
+  population or export) emit a `RuntimeWarning`, including when an application
+  already attempted registration and received a late-registration error.
+  The probe neither registers a Newton provider nor modifies the application's
+  stage. If the probe itself fails, it logs one cannot-verify warning and lets
+  attach proceed without claiming missing schema definitions.
+  The warning for missing definitions names the `newton:*` attributes population can
   drop, registration together with the external PhysX schemas, the schema
   documentation and `newton_schema_root()`, and the
   silencing setting. When the package is
@@ -121,15 +130,14 @@ not ovphysx, owns USD.
   any `newton:*` attributes already dropped by population remain missing.
   OVStage keys registration on the plugin family, so a complete Newton schema
   registered from any other directory before the first USD schema read is
-  recognized and produces no warning. The probe is a real registration while USD's registry
-  is still open, so it runs only once USD has built its schema definitions,
+  recognized and produces no warning. Population would freeze USD's registry
+  if it were still open, so the probe runs only once USD has built its schema definitions,
   which the wrapper learns by registering a uniquely named throwaway
   descriptor that declares no schema types (OVStage reports it late exactly
   then, and a typeless plugin selects no schema for anyone); a procedurally
   authored stage attached while USD schema definitions remain unbuilt is left
   alone, the check stays armed, and the application's own later registration
-  of the family is the one USD uses. A registration OVStage cannot observe (another USD consumer
-  read the schema definitions first) is not detected; the Carbonite setting
+  of the family is the one USD uses. The Carbonite setting
   `/ovphysx/schemas/warnMissingNewtonSchema` (create-time config entry,
   `PhysXConfig(carbonite_overrides=...)`, default `true`) set to `false`, or to
   the string forms the native parser accepts (`"false"`, `"0"`), disables the
@@ -177,12 +185,18 @@ not ovphysx, owns USD.
   Probe directories are created exclusively with owner-only mode on Linux and
   a protected effective-user/SYSTEM DACL on Windows; their descriptors inherit
   those restrictions and are removed after synchronous registration.
+  Failure to create or secure the probe directory, write its descriptors, or
+  complete verification also rejects admission by default, even with registered
+  families or an unbuilt registry. On Windows the temporary volume must support
+  persistent ACLs. These verification errors are not cached as missing-family
+  results; a later attach retries after the underlying problem is corrected.
   While USD schema definitions remain unbuilt, attach does not probe the real
   family identities and leaves the check armed; an application can still register
-  its own provider afterwards. The legacy
-  Carbonite setting `/ovphysx/schemas/requireRegistration` defaults to `true`;
-  setting it to `false` downgrades refusal to a warning without repairing the
-  missing data or clearing the failed result. This escape hatch also supports
+  its own provider afterwards. The raw Carbonite setting
+  `/ovphysx/schemas/requireRegistration` defaults to `true` and is read on each
+  attach whose verification fails; it is not latched at instance creation.
+  Setting it to `false` downgrades either refusal to a warning without repairing
+  missing data or clearing a cached missing-family result. This escape hatch also supports
   procedural stages in a process whose earlier USD schema read, including an
   export with no USD population, occurred without the PhysX schemas. Python
   reaches the same native guard; its separate Newton warning remains governed

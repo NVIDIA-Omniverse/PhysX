@@ -1,0 +1,10 @@
+t=0.00 s  /World/Box z = 2.000 m
+t=0.25 s  /World/Box z = 1.692 m
+t=0.50 s  /World/Box z = 0.771 m
+t=0.75 s  /World/Box z = 0.500 m
+Added /World/Box2 at ordinal 2
+t=1.00 s  /World/Box z = 0.500 m  /World/Box2 z = 2.000 m
+t=1.25 s  /World/Box z = 0.500 m  /World/Box2 z = 1.692 m
+t=1.50 s  /World/Box z = 0.500 m  /World/Box2 z = 0.771 m
+t=1.75 s  /World/Box z = 0.500 m  /World/Box2 z = 0.500 m
+t=2.00 s  /World/Box z = 0.500 m  /World/Box2 z = 0.500 m

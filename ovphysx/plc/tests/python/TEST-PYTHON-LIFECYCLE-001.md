@@ -64,6 +64,8 @@ cannot be reinitialized safely within one Python process.
 - The callback attempts `PhysX` construction and destruction. During process
   initialization it starts but does not wait on an ordinary constructor; during
   final shutdown it waits on a constructor that must reject immediately.
+- A real object-change callback attempts both default construction and construction
+  with `active_cuda_gpus="0"`, with a guard witnessing any native create call.
 - Independent threads race lifecycle acquisition with initialization,
   including native failure and injected Python interruption paths.
 - Python is interrupted when native initialization may already have committed
@@ -116,6 +118,10 @@ cannot be reinitialized safely within one Python process.
   racing acquisition fails fast instead of observing a synthetic token.
   Acquisition racing ordinary final shutdown also fails fast before it can
   deadlock callback draining (REQ AC-7).
+- `test_constructor_in_object_change_callback_rejects_before_native_ownership`
+  in `cpu_tests/test_async_lifecycle_cpu.py` rejects both constructor forms before
+  native creation, leaves the process refcount unchanged, and clears callback
+  context after delivery (REQ AC-7).
 - An ambiguous post-initialize interruption is propagated only after the
   conservative native outcome is balanced through final shutdown. An
   interruption during that handoff cannot strand an initialization/shutdown
@@ -128,7 +134,8 @@ cannot be reinitialized safely within one Python process.
 
 `lifecycle_tests/test_read_borrow_destroy_cpu.py` and
 `lifecycle_tests/test_read_borrow_destroy_gpu.py` each run a real instance in an
-isolated process. A Warp slice outlives its source array and closed ReadResult.
+isolated process. A Warp slice outlives its source array and its ReadResult, dropped
+without a close.
 Destroy rejects before changing the handle or attachment; the slice remains
 readable before and after another simulation step. Dropping it permits checked,
 idempotent destruction (REQ AC-9).

@@ -14,7 +14,8 @@ Installing ovphysx itself is separate:
   source (the build fetches OVStage automatically)
 
 Notes:
-- These skills cover public ovphysx authoring and runtime workflows, including ovstage integration and TensorBindingsAPI.
+- These skills cover public ovphysx authoring and runtime workflows, including
+  ovstage integration and the session read/write API.
 - The bundled samples are CI-tested and are the authoritative full examples;
   skills keep only the shortest task-oriented pattern.
 - Each `SKILL.md` declares its required name and invocation description.
@@ -41,27 +42,41 @@ Notes:
   dependencies = ["ovphysx", "torch"]
   ```
 
-## Population domains
+## Populating physics
 
-The USD population examples use `domains=ovstage.PopulationDomain.ALL` so
-OVStage 0.3 resolves nested world transforms via the rendering domain. For
-physics-only producers, see the local world-matrix seed handling in
-[Population domains](docs/ovstage_integration.md#population-domains).
+The USD population examples pass `descs=physics_population_descs(rendering=True)`:
+ovphysx's physics population description, with RENDERING beside it for colliders
+under native scene-graph instances. Sealing the population ordinal composes world
+transforms with or without it; see
+[Populating physics](docs/ovstage_integration.md#populating-physics-the-physics-population-description).
 
 ## Quick start
 
 - Author a USD scene for ovstage to populate and ovphysx to simulate (rigid
   bodies, colliders): use `ovphysx-usd-authoring`.
-- Smallest possible workflow: use `basic-workflow`.
+- Smallest possible workflow: use `ovphysx-basic-workflow`.
 - Read simulation output or write it back through ovstage: use `ovphysx-output-read`.
-- Replicated environments for RL: use `clone-environments`.
+- Record selected objects to FILE or TCP, use receiver discovery/control, and investigate finalized captures: use `ovphysx-ovd-investigation` with a compatible receiver or separately installed SDK inspector.
+- Replicated environments for RL: use `ovphysx-clone-environments`.
 - Bulk simulation I/O: use the session read/write API — `ovphysx-output-read` to read output back
   (ovstage-native, identity-preserving), and `ovphysx-session-write` to push control inputs and state
-  in (`ovphysx_write` / `PhysX.write`). The tensor-binding skills `tensor-bindings-cpu` /
-  `tensor-bindings-gpu` are deprecated (ovphysx 0.6) and kept only for maintaining existing
-  caller-owned bulk NumPy/CUDA binding code.
+  in (`ovphysx_write` / `PhysX.write`). The deprecated tensor-binding APIs remain
+  available for compatibility, but their product skills have been removed; use
+  the session skills for supported NumPy/CUDA read and write guidance.
 
 ## Skills
+
+### `ovphysx-ovd-investigation`
+- **Goal**: Bound an OvPhysX 0.8 capture by scene/object and primary/secondary data, discover objects before TCP sampling, and corroborate finalized recorded state with live CPU/GPU reads.
+- **APIs**: `set_global_config(GlobalConfigKey.OVD_RECORDING_CAPABLE, True)` before the first `PhysX()`, collected attach/detach, `OmniPvdDestination.file` / `.tcp`, `OmniPvdFilter`, `PhysX.start_recording(..., filter=..., wait_for_selection=...)`, `PhysX.stop_recording`, `PhysX.read_sync`; native receiver `requestCapture` / `requestCaptureCatalog` and separately installed SDK `ovd-inspect`.
+- **Doc**: [skills/ovphysx-ovd-investigation/SKILL.md](skills/ovphysx-ovd-investigation/SKILL.md)
+- **Evaluation**: `skills/ovphysx-ovd-investigation/evals/evals.json` covers installed sample discovery and required `physx-usd-schemas` installation, global recording capability, schema-support preservation, external schema registration and collected attach/detach, physics-description population with RENDERING and synchronous live snapshots, CPU/GPU runtime evidence, carried-snapshot provenance, structured load/output errors, machine-readable payload budgets, opt-in stopped-tail recovery, typed orientation and independent frame completion, optional annotations, scene-level contact impulse limitations, and routing live-only reads to `ovphysx-output-read`.
+  Selection cases cover timestamped directory paths, exact object/scene unions, primary/secondary payloads, particle/deformable/DirectGPU scope, contact counterparts, discovery bounds, owner-step control pumping, applied acknowledgments, legacy TCP peers and missing-data interpretation.
+- **References**:
+  - [Recording tutorial](docs/tutorials/omnipvd_recording.md)
+  - Wheel sample: `samples/python_samples/omnipvd_inspection.py` (source: `tests/python_samples/omnipvd_inspection.py`)
+  - Inspector build/install guide: `physx/pvddom/README.md` in a PhysX SDK source distribution (`PVDDOM_BUILD_INSPECTION=ON` and `PVDDOM_BUILD_TOOLS=ON`).
+  - SDK inspection/comparison playbooks: `share/physx/SKILLS.md` after installing that inspector.
 
 ### `ovphysx-usd-authoring`
 - **Goal**: Author USD physics content (rigid bodies, colliders, mass, physics
@@ -75,25 +90,26 @@ physics-only producers, see the local world-matrix seed handling in
 - **References**:
   - Physics scene and ground: `skills/ovphysx-usd-authoring/references/scene_setup.md`
   - Rigid body: `skills/ovphysx-usd-authoring/references/rigid_body.md`
-- **Evaluation**: `skills/ovphysx-usd-authoring/evals/evals.json` covers `.usda` and Python authoring of scene/collider/rigid-body/mass, the codeless PhysX schema path for PhysX-only attributes, and routing runtime stepping/reads to `basic-workflow` / `ovphysx-output-read` while routing cloning and rendering away.
+- **Evaluation**: `skills/ovphysx-usd-authoring/evals/evals.json` covers `.usda` and Python authoring of scene/collider/rigid-body/mass, the codeless PhysX schema path for PhysX-only attributes, and routing runtime stepping/reads to `ovphysx-basic-workflow` / `ovphysx-output-read` while routing cloning and rendering away.
 
-### `basic-workflow`
+### `ovphysx-basic-workflow`
 - **Goal**: Create an instance, attach an ovstage scene, step simulation, clean up.
-- **Skill version**: 0.1.9
+- **Skill version**: 0.1.11
 - **APIs**: `PhysX()`, `set_global_config` / `PhysX.set_config` (GPU ordinal after create), `attach_ovstage()`, `step_sync()` (default) / `step()` + `wait_task()`, `destroy()` / C: `ovphysx_create_instance()`, `ovphysx_set_global_config` / `ovphysx_set_config`, `ovphysx_attach_ovstage()`, `ovphysx_step_sync()` / `ovphysx_step()` + `ovphysx_wait_task()`, `ovphysx_destroy_instance()`
-- **Doc**: [skills/basic-workflow/SKILL.md](skills/basic-workflow/SKILL.md)
-- **Evaluation**: `skills/basic-workflow/evals/evals.json` covers Python installation and registration of both PhysX and Newton schemas before population, `ALL` population for nested transforms, the minimal Python/C lifecycle including config-before-create and config-after-create ordering, async Task/wait_task/TaskError handling, complete post-attach population additions and drains, Windows CMake runtime helpers, schema environment setup, separate build directories, and generator-specific launcher paths, and routing clone/control work to `clone-environments` / `ovphysx-session-write`.
+- **Doc**: [skills/ovphysx-basic-workflow/SKILL.md](skills/ovphysx-basic-workflow/SKILL.md)
+- **Evaluation**: `skills/ovphysx-basic-workflow/evals/evals.json` covers the Python 3.10-3.13 prerequisite, installation and registration of both PhysX and Newton schemas before population, populating through `open_usd_with_desc` and `physics_population_descs(rendering=True)` for native-instance compatibility, with no RENDERING needed for a translated parent because sealing composes world transforms, the minimal Python/C lifecycle including config-before-create and config-after-create ordering, async Task/wait_task/TaskError handling, the packaged population-update helper, following the SDK C sample's source and build/launch recipe, Windows runtime helpers and schema setup, and routing clone/control work to `ovphysx-clone-environments` / `ovphysx-session-write`.
 - **References**:
   - Docs: `docs/tutorials/hello_world.md`
   - Python sample: `samples/python_samples/hello_world.py` (wheel; source: `tests/python_samples/hello_world.py`)
-  - C sample: `samples/c_samples/hello_world_c/main.c` (SDK; source: `tests/c_samples/hello_world_c/main.c`)
+  - C sample and build/launch recipe: `samples/c_samples/basic_workflow_c/main.c`, `samples/c_samples/basic_workflow_c/CMakeLists.txt`, and `samples/c_samples/basic_workflow_c/README.md` (SDK; source: `tests/c_samples/basic_workflow_c/`)
+  - Later population edits: `samples/python_samples/population_update.py` (wheel; source: `tests/python_samples/population_update.py`)
 
 ### `ovphysx-output-read`
 - **Goal**: Read simulation output by type and attribute, or write ovstage-native output groups back into the attached Stage with separate control/output ordinals.
 - **Metadata**: Canonical skill version, author, tags, and ovphysx compatibility are declared in the skill frontmatter.
 - **APIs**: Python: `PhysX.query()` + `PhysX.read()` operations, `PhysX.read_sync()` / `PhysX.read_tokens_sync()`; C: `ovphysx_query()`, `ovphysx_read()` (with optional query/read results), `ovphysx_fetch_read_next()`, and matching release calls
 - **Doc**: [skills/ovphysx-output-read/SKILL.md](skills/ovphysx-output-read/SKILL.md)
-- **Evaluation**: `skills/ovphysx-output-read/evals/evals.json` covers Python reads and framework interoperability, C task completion/null exhaustion and no-repack write-back through the attached Stage's dictionary, read-result omission flags that separate empty, unsupported, and not-ready answers, deprecation-aware new-code routing, `ACTIVE`/layout guardrails, and host sleep-state snapshots with body/device semantics and wake-command handoff.
+- **Evaluation**: `skills/ovphysx-output-read/evals/evals.json` covers Python reads and framework interoperability, C task completion/null exhaustion and no-repack write-back through the attached Stage's dictionary, read-result omission flags that separate empty, unsupported, and not-ready answers, deprecation-aware new-code routing, `ACTIVE`/layout guardrails, host sleep-state snapshots with body/device semantics and wake-command handoff, articulation link/DOF/tendon identity joins with count-based padding, and the read-only `DEFORMABLE_SKIN_MESH` skinned-mesh read (skin-local device `points`, one tensor per skin prim).
 - **References**:
   - Bundled: `skills/ovphysx-output-read/references/{python,c_api,scope_and_layout,closed_loop}.md`
   - Public docs: <https://nvidia-omniverse.github.io/PhysX/ovphysx/latest/index.html>
@@ -111,36 +127,13 @@ physics-only producers, see the local world-matrix seed handling in
   - Public docs: <https://nvidia-omniverse.github.io/PhysX/ovphysx/latest/index.html>
   - Worked example: `samples/python_samples/session_write.py` (wheel; source: `tests/python_samples/session_write.py`); C write loop in `tests/c_unittests/test_joint_datamovement.cpp`
 
-### `tensor-bindings-cpu` (deprecated)
-- **Goal**: Exchange CPU simulation state (poses, velocities, joint targets) as caller-owned NumPy arrays through tensor bindings: create tensor bindings, write control inputs, step, read back state on CPU. The tensor-binding CODE API is deprecated (ovphysx 0.6) in favor of the session read/write API; use the ovphysx-session-write skill for the write path and ovphysx-output-read for reads. Kept only for maintaining existing caller-owned bulk-NumPy binding code.
-- **Skill version**: 0.1.7
-- **APIs**: `create_tensor_binding()`, `.native_device`, `.read()`, `.write()` / C: `ovphysx_create_tensor_binding()`, `ovphysx_get_tensor_binding_native_device()`, `ovphysx_read_tensor_binding()`, `ovphysx_write_tensor_binding()`
-- **Doc**: [skills/tensor-bindings-cpu/SKILL.md](skills/tensor-bindings-cpu/SKILL.md)
-- **Evaluation**: `skills/tensor-bindings-cpu/evals/evals.json` covers Python installation and registration of both PhysX and Newton schemas before population, `ALL` population for nested transforms, maintaining/extending existing binding code, `raise_if_empty` / `binding.count`, the target-vs-state read pitfall, and routing new code (and GPU / ovstage-identity needs) to the session skills -- `ovphysx-session-write` / `ovphysx-output-read`.
-- **References**:
-  - Docs: `docs/tutorials/tensor_bindings.md`
-  - Python sample: `samples/python_samples/tensor_bindings.py` (wheel; source: `tests/python_samples/tensor_bindings.py`)
-  - C sample: `samples/c_samples/tensor_bindings_c/main.c` (SDK; source: `tests/c_samples/tensor_bindings_c/main.c`)
-
-### `clone-environments`
+### `ovphysx-clone-environments`
 - **Goal**: Clone one USD environment subtree into many runtime-only PhysX environments before `warmup()` or the first simulation step.
-- **Skill version**: 0.1.7
+- **Skill version**: 0.1.9
 - **APIs**: Python: `PhysX.clone()`, `PhysX.wait_task()` / `PhysX.wait_all()` / C: `ovphysx_clone()`, `ovphysx_wait_task()` / `ovphysx_wait_all()`
-- **Doc**: [skills/clone-environments/SKILL.md](skills/clone-environments/SKILL.md)
-- **Evaluation**: `skills/clone-environments/evals/evals.json` covers Python installation and registration of both PhysX and Newton schemas before population, `ALL` population for nested transforms, clone-before-step ordering, `anchor_transforms`, CPU collision-isolation guidance, C++ wait-result cleanup, and routing away from USD authoring.
+- **Doc**: [skills/ovphysx-clone-environments/SKILL.md](skills/ovphysx-clone-environments/SKILL.md)
+- **Evaluation**: `skills/ovphysx-clone-environments/evals/evals.json` covers the Python 3.10-3.13 prerequisite, installation and registration of both PhysX and Newton schemas before population, populating through `open_usd_with_desc` and `physics_population_descs(rendering=True)` for native-instance compatibility, with no RENDERING needed for a translated parent because sealing composes world transforms, clone-before-step ordering, `anchor_transforms`, CPU collision-isolation guidance, C++ wait-result cleanup, and routing away from USD authoring.
 - **References**:
   - Docs: `docs/tutorials/cloning.md`
   - Python sample: `samples/python_samples/clone.py` (wheel; source: `tests/python_samples/clone.py`)
   - C sample: `samples/c_samples/clone_c/main.c` (SDK; source: `tests/c_samples/clone_c/main.c`)
-
-### `tensor-bindings-gpu` (deprecated)
-- **Goal**: Exchange GPU simulation state as caller-owned CUDA tensors (DLPack, GPU-to-GPU with no CPU staging) through tensor bindings: read and write simulation data on GPU using CUDA device pointers and DLPack. The tensor-binding CODE API is deprecated (ovphysx 0.6) in favor of the session read/write API; use the ovphysx-session-write skill for the write path and ovphysx-output-read for reads. Kept only for maintaining existing caller-owned bulk-CUDA binding code.
-- **Skill version**: 0.1.8
-- **APIs**: Same as CPU bindings; query `.native_device` (or the C getter)
-  before allocating because native CUDA state bindings require DirectGPU and
-  CPU-only binding types remain on CPU.
-- **Doc**: [skills/tensor-bindings-gpu/SKILL.md](skills/tensor-bindings-gpu/SKILL.md)
-- **Evaluation**: `skills/tensor-bindings-gpu/evals/evals.json` covers Python installation and registration of both PhysX and Newton schemas before population, `ALL` population for nested transforms, maintaining existing DLPack CUDA binding code, post-create GPU ordinal configuration, the legacy DirectGPU override, clone-then-bind with `raise_if_empty`, the DirectGPU vs contact-modification tradeoff, and routing new code (and CPU-only needs) to the session skills or clone.
-- **References**:
-  - Docs: `docs/tutorials/tensor_bindings.md`; `docs/developer_guide.md` for GPU/DirectGPU specifics
-  - C sample: `samples/c_samples/tensor_bindings_gpu_c/main.c` (SDK; source: `tests/c_samples/tensor_bindings_gpu_c/main.c`)

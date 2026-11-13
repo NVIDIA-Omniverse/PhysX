@@ -1,0 +1,166 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxDrivePerformanceEnvelopeAPI",
+  "title": "PhysxDrivePerformanceEnvelopeAPI",
+  "summary": "Actuator performance envelope of one joint drive (maximum actuator velocity, velocity-dependent resistance, speed-effort gradient), applied as PhysxDrivePerformanceEnvelopeAPI:<inst> alongside PhysicsDriveAPI:<inst>. Effective only on articulation joints: standalone joints strip it with a warning. Every instance except linear is treated as rotational and converted.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "PhysicsJoint"
+  ],
+  "multi_apply": true,
+  "instances": [
+    "angular",
+    "linear",
+    "rotX",
+    "rotY",
+    "rotZ"
+  ],
+  "requires": [
+    "PhysicsDriveAPI"
+  ],
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "producer_scope": "All three declared attributes of every applied instance are published at their resolved values. physxDrivePerformanceEnvelope:<inst>:maxActuatorVelocity is rewritten to FLT_MAX when unauthored for each applied instance.",
+  "columns": [
+    {
+      "name": "physxDrivePerformanceEnvelope:<inst>:maxActuatorVelocity",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "inf",
+      "producer": {
+        "writes": "FLT_MAX",
+        "via": "derive",
+        "when": "unauthored",
+        "notes": "For each applied PhysxDrivePerformanceEnvelopeAPI instance."
+      },
+      "verify": {
+        "target": "linkJoint",
+        "expr": "linkJoint->getDriveParams(harness::articulationAxis(inst)).envelope.maxActuatorVelocity",
+        "kind": "float",
+        "map": "(std::strcmp(inst, \"linear\") != 0 && v < 3.4028234663852886e38) ? v * 0.017453292519943295 : v",
+        "sample": 360.0,
+        "notes": "Degrees to radians on every instance except linear, and only below FLT_MAX; the sentinel passes through."
+      },
+      "parser_default": "FLT_MAX",
+      "absent": "Unbounded actuator speed.",
+      "raw_fallback_diverges": false,
+      "sentinel": "FLT_MAX or inf means unbounded and is never converted.",
+      "units": "linear: length/s; others: deg/s",
+      "conversion": "deg_to_rad",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseJoint.cpp"
+      ],
+      "notes": "conversion deg_to_rad applies when the instance is not linear and the value is below FLT_MAX."
+    },
+    {
+      "name": "physxDrivePerformanceEnvelope:<inst>:velocityDependentResistance",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "verify": {
+        "target": "linkJoint",
+        "expr": "linkJoint->getDriveParams(harness::articulationAxis(inst)).envelope.velocityDependentResistance",
+        "kind": "float",
+        "map": "std::strcmp(inst, \"linear\") != 0 ? v * 57.29577951308232 : v",
+        "sample": 0.5
+      },
+      "parser_default": 0.0,
+      "absent": "No slope on the maximum-effort line (constant maxForce over speed).",
+      "raw_fallback_diverges": false,
+      "units": "linear: force*s/length; others: torque*s/deg",
+      "conversion": "none",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseJoint.cpp"
+      ],
+      "notes": "The parser multiplies by 57.29577951308232 (180/pi) on every instance except linear, converting torque*s/deg to torque*s/rad; the schema's conversion enum cannot express the product, hence conversion none."
+    },
+    {
+      "name": "physxDrivePerformanceEnvelope:<inst>:speedEffortGradient",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "verify": {
+        "target": "linkJoint",
+        "expr": "linkJoint->getDriveParams(harness::articulationAxis(inst)).envelope.speedEffortGradient",
+        "kind": "float",
+        "map": "std::strcmp(inst, \"linear\") != 0 ? v * 0.017453292519943295 : v",
+        "sample": 0.01
+      },
+      "parser_default": 0.0,
+      "absent": "No back-EMF term (maximum velocity independent of effort).",
+      "raw_fallback_diverges": false,
+      "units": "linear: length/s per force; others: deg/s per torque",
+      "conversion": "deg_to_rad",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseJoint.cpp"
+      ],
+      "notes": "conversion deg_to_rad applies when the instance is not linear."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysicsDriveAPI",
+      "rule": "Read only when the matching PhysicsDriveAPI:<inst> drive exists; applying the envelope marks the drive as envelope-driven, and the runtime then builds the PxArticulationDrive with a PxPerformanceEnvelope whose maximum effort is the drive's maxForce."
+    },
+    {
+      "with": "PhysicsJoint",
+      "rule": "On a standalone joint every applied instance is removed from the prim with a 'supported only for joints that are part of an articulation' warning and the plain drive is kept."
+    }
+  ],
+  "findings": [
+    {
+      "column": "physxDrivePerformanceEnvelope:<inst>:maxActuatorVelocity",
+      "severity": "note",
+      "side": "consumer",
+      "summary": "The rotational branch is instance != linear, so angular, rotX, rotY, rotZ and any unrecognised instance name receive the degrees-to-radians conversions. Unlike PhysxJointAxisAPI, whose conversions are selected explicitly per joint type, an unknown instance here is silently treated as rotational.",
+      "tracking": "follow-up to file"
+    }
+  ],
+  "notes": [
+    "Per-joint-type instance matrix: Fixed none; Revolute angular; Prismatic linear; Spherical none; Distance none; D6 (PhysicsJoint) rotX, rotY, rotZ only, translational D6 drives skip the envelope entirely; Gear, Rack, Custom none.",
+    "Articulation axis mapping: angular/rotX -> PxArticulationAxis::eTWIST, rotY -> eSWING1, rotZ -> eSWING2, linear -> eX."
+  ]
+}

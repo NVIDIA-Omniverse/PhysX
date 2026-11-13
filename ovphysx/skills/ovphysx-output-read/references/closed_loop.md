@@ -23,12 +23,20 @@ An update range is closed and does not skip intervening ordinals. For example,
 - Author every change intended to affect physics at a sealed control ordinal
   that `update_from_ovstage()` / `ovphysx_update_from_ovstage()` will cover.
 - Do not mix a physics input into an output ordinal. Excluding that ordinal
-  would hide the input; including it would also re-ingest physics output.
+  would hide the input; including it can re-ingest output written to input
+  attributes, such as point-instancer `positions` and `orientations`.
 - Output ordinals are excluded only from ovphysx input ranges. They remain
   available to downstream readers and other participants.
 - With more participants, assign explicit lanes per producer or purpose and
   define which lanes each consumer drains. Do not extend the odd/even convention
   as if parity were part of the ovstage protocol.
+
+World-matrix-only edits (`omni:fabric:worldMatrix`) do not trigger physics
+transform updates. Author local transforms through `omni:xform` and the
+appropriate `omni:resetXformStack`. Update any existing resolved world matrices
+to match the local edits at the same control ordinal, including matrices seeded
+by population and affected descendants. See [Transform Inputs](../../../docs/ovstage_integration.md#transform-inputs)
+for the DirectGPU and kinematic-motion restrictions.
 
 For each frame:
 
@@ -46,10 +54,13 @@ For each frame:
 
 Use the group's interned prim list rather than rebuilding paths. Use the emitted
 attribute token rather than assuming it equals the requested semantic name. Both are
-interned integers; resolve them through `ovstage.PathDictionary(stage)` —
+interned handles (`ovstage.PrimPathList` and `ovstage.Token`); resolve them through `ovstage.PathDictionary(stage)` —
 `get_path_strings(group.prim_list)` for the prim paths and `token_to_string(group.attribute)`
 for the emitted name (see `references/python.md`). Forward `semantic` and `is_array`;
-tensor count and shape do not determine whether the attribute is an array.
+tensor count and shape do not determine whether the attribute is an array. An
+`ARTICULATION_JOINT` group is the exception: it has one row per DOF and repeats a joint's
+path once per axis, so regroup it per joint before an ovstage write
+(`ovphysx_create_joint_arrays_from_read_group` in C, `ovphysx.utils.split_joint_group` in Python).
 
 In C, the group's DLPack tensors are borrowed and can feed the ovstage write
 payload without repacking. Wait for the write to finish before releasing the

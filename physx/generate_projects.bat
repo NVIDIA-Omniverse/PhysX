@@ -1,3 +1,6 @@
+:: SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+:: SPDX-License-Identifier: Apache-2.0
+
 :: Reset errorlevel status so we are not inheriting this state from the calling process:
 :: @call :CLEAN_EXIT
 @echo off

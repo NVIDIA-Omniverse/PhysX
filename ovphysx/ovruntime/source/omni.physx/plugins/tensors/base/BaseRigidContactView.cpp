@@ -5,6 +5,9 @@
  * @implements REQ-TENSOR-CONTACT-001
  * @covers AC-5 AC-6 AC-7
  *
+ * @implements REQ-TENSOR-CONTACT-005
+ * @covers AC-6
+ *
  * @implements REQ-TENSOR-PATH-001
  * @covers AC-7
  *
@@ -58,6 +61,17 @@ BaseRigidContactView::BaseRigidContactView(BaseSimulationView* sim,
     {
         // acquire a shared data pointer so the stuff we need doesn't get deleted
         mSimData = mSim->getBaseSimulationData();
+
+        // Destroying a sensor invalidates the simulation view, as for the other view types.
+        for (const RigidContactSensorEntry& entry : mEntries)
+        {
+            if (entry.rd)
+                mSim->rigidBodies.insert(entry.rd);
+            if (entry.link)
+                mSim->links.insert(entry.link);
+            if (entry.shape)
+                mSim->shapes.insert(entry.shape);
+        }
     }
 }
 

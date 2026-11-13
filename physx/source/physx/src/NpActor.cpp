@@ -29,6 +29,7 @@ using namespace physx;
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#if PX_SUPPORT_GPU_PHYSX
 const Sc::RigidCore* physx::getRigidCore(const PxRigidActor* actor)
 {
 	if(actor && actor->getConcreteType() == PxConcreteType::eRIGID_STATIC)
@@ -36,6 +37,7 @@ const Sc::RigidCore* physx::getRigidCore(const PxRigidActor* actor)
 
 	return getBodyCore(actor);
 }
+#endif
 
 const Sc::BodyCore* physx::getBodyCore(const PxRigidActor* actor)
 {

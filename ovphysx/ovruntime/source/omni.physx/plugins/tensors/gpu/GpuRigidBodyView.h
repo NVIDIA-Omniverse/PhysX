@@ -11,6 +11,8 @@
 #include "tensors/CommonTypes.h"
 #include "tensors/base/BaseRigidBodyView.h"
 #include "tensors/gpu/GpuSimulationData.h"
+#include "tensors/gpu/OvStageDeviceArgs.h"
+#include "tensors/gpu/OvStageReadPlans.h"
 #include "PxDirectGPUAPI.h"
 
 #include <omni/physics/tensors/IRigidBodyView.h>
@@ -35,60 +37,97 @@ public:
 
     ~GpuRigidBodyView() override;
 
-    // Test-only: number of ovstage row-list host-to-device uploads this view has performed. A read that
-    // reuses a cached slot does not increment it, so a test can assert that several concurrent lists --
-    // the two stable kOvxAll reads (loose rigid bodies, articulation links) and a now-cacheable DirectGPU
-    // kOvxActive read -- all stay warm in their own LRU slots at once, the row-cache reuse this class
-    // exists to provide.
+    // Test-only: number of ovstage row-list host-to-device uploads this view has performed. A write that
+    // reuses a cached slot does not increment it, so a test can tell a reused list from a new upload.
     uint64_t ovStageRowsUploadCount() const { return mOvStageRowsUploadCount; }
 
     bool getTransforms(const TensorDesc* dstTensor) const override;
     bool getVelocities(const TensorDesc* dstTensor) const override;
     bool getAccelerations(const TensorDesc* dstTensor) const override;
 
-    // Fused ovstage column read (ADR-0008): one self-contained call per attribute. Each issues the
-    // bulk DirectGPU read its column is sourced from, waits on it, and gathers the packed
-    // destination straight from the PhysX-layout scratch. Stream-ordered; the caller syncs once.
+    // The device columns an ovstage read gathers from this view (ADR-0055). Position and orientation are two slices
+    // of one eGLOBAL_POSE copy, and an acceleration has its own copy beside its velocity's.
     //
-    // `outRecordIdx` maps destination slot -> view record (null = identity), so a subset or
-    // reordering of a larger view is served without rebuilding it; `rowsToken` identifies that list
-    // for the device copy this view holds across reads.
-    //
-    // Position and orientation are two slices of one eGLOBAL_POSE read, so asking for both issues it
-    // twice.
-    bool getPositionsOvStage(const TensorDesc* dstTensor,
-                             const ::physx::PxU32* outRecordIdx,
-                             ::physx::PxU32 numOutputs,
-                             uint64_t rowsToken) const;
-    bool getOrientationsOvStage(const TensorDesc* dstTensor,
-                                const ::physx::PxU32* outRecordIdx,
-                                ::physx::PxU32 numOutputs,
-                                uint64_t rowsToken) const;
-    bool getLinearVelocitiesOvStage(const TensorDesc* dstTensor,
-                                    const ::physx::PxU32* outRecordIdx,
-                                    ::physx::PxU32 numOutputs,
-                                    uint64_t rowsToken) const;
-    bool getAngularVelocitiesOvStage(const TensorDesc* dstTensor,
-                                     const ::physx::PxU32* outRecordIdx,
-                                     ::physx::PxU32 numOutputs,
-                                     uint64_t rowsToken) const;
-    // Acceleration reads the SAME scratch buffers velocity does (mRd*VelAccDev) under a different
-    // DirectGPU read type, so a velocity and an acceleration in one read serialise on it -- covered
-    // by ADR-0008 Decision 7's per-buffer event; the pair needs no buffer or event of its own.
-    //
-    // Requires PxSceneFlag::eENABLE_BODY_ACCELERATIONS, which PhysXScene sets on every scene it
+    // The accelerations require PxSceneFlag::eENABLE_BODY_ACCELERATIONS, which PhysXScene sets on every scene it
     // creates. Without it PhysX reports zero rather than refusing.
-    bool getLinearAccelerationsOvStage(const TensorDesc* dstTensor,
-                                       const ::physx::PxU32* outRecordIdx,
-                                       ::physx::PxU32 numOutputs,
-                                       uint64_t rowsToken) const;
-    bool getAngularAccelerationsOvStage(const TensorDesc* dstTensor,
-                                        const ::physx::PxU32* outRecordIdx,
-                                        ::physx::PxU32 numOutputs,
-                                        uint64_t rowsToken) const;
+    //
+    // eWorldScale has no PhysX copy: PhysX simulates no scale, so it is gathered from mWorldScalesDev, the
+    // creation-time scale this view uploaded once (RigidBodyEntry::worldScale).
+    enum class OvStageRigidRead : uint8_t
+    {
+        eNone,
+        ePosition,
+        eOrientation,
+        eLinearVelocity,
+        eAngularVelocity,
+        eLinearAcceleration,
+        eAngularAcceleration,
+        eWorldScale
+    };
+    struct OvStageRigidReadColumn
+    {
+        OvStageRigidRead kind = OvStageRigidRead::eNone;
+        // [numOutputs, 3] float32 on this view's device, [numOutputs, 4] for an orientation.
+        float* dst = nullptr;
+    };
+    // What one read fetches, decided on the host when its plan is made. Its rows are rigid dynamics or links, never
+    // both, as its query type is. A read covering every body of its kind in the view fetches the view through the
+    // view's full index list; any other fetches only its rows.
+    struct OvStageRigidReadPlan
+    {
+        ::physx::PxU32 numOutputs = 0;
+        uint32_t sources = 0; // one bit per PhysX copy the columns need, by OvStageRigidRead's fetch
+        bool links = false;
+        bool wholeView = false;
+        ::physx::PxU32 numFetched = 0; // rigid dynamics, or articulations for links, each copy holds
+    };
 
-    // The WRITE counterpart of the two instancer gathers below (ADR-0012). Lives here, not on the
-    // instancer view, for the reason the gathers do: this class owns the DirectGPU call, the packed
+    // Plans a read of `columns` (their kinds; destinations may still be unset) over `rows` (destination slot -> view
+    // record): the plan, the bytes of device scratch it runs in, and the list that heads that scratch -- the rows,
+    // then for a packed link read the articulations fetched and each row's fetched slot -- which the caller uploads
+    // before the read whenever its content changed. A nonzero `rowsToken` names the content of `rows`
+    // (nextOvStageRowsVersion): a plan this view already made for it and the same column kinds is reused without
+    // walking the rows. Call after the GPU index map is current (refreshDisabledRowsOvStage).
+    bool planOvStageRead(const ::physx::PxU32* rows,
+                         ::physx::PxU32 numOutputs,
+                         uint64_t rowsToken,
+                         const OvStageRigidReadColumn* columns,
+                         ::physx::PxU32 columnCount,
+                         OvStageRigidReadPlan& plan,
+                         std::shared_ptr<const std::vector<uint8_t>>& head,
+                         size_t& scratchBytes) const;
+
+    // Queues a planned read on `args.stream`: a packed read's index build, one PhysX copy per source into
+    // `args.scratch`, and one gather per column. It blocks nothing, allocates nothing and uploads nothing, so a
+    // capture records it. Outside a capture it then registers `args.stream` as a reader of this view's tables.
+    bool readOvStageColumns(const OvStageDeviceReadArgs& args,
+                            const OvStageRigidReadPlan& plan,
+                            const OvStageRigidReadColumn* columns,
+                            ::physx::PxU32 columnCount) const;
+
+    // The point-instancer columns of an ovstage read (ADR-0055): the instanced bodies' state, from one copy of the
+    // view's rigid dynamics per source, scattered into each instancer's run of `dst` at its float offset in
+    // `offsetsDev`; a pose is reframed into its instancer's frame. A slot with no live instance is left as the
+    // caller zeroed it.
+    struct OvStageInstancerReadColumn
+    {
+        OvStageRigidRead kind = OvStageRigidRead::eNone;
+        float* dst = nullptr;
+        const ::physx::PxU32* offsetsDev = nullptr;
+    };
+    // The bytes of device scratch the copies for `columns` take. Call after the GPU index map is current.
+    size_t ovStageInstancerReadScratchBytes(const OvStageInstancerReadColumn* columns,
+                                            ::physx::PxU32 columnCount) const;
+    // Queues the copies into `args.scratch` and the gathers on `args.stream`, as readOvStageColumns does.
+    bool readOvStageInstancerColumns(const OvStageDeviceReadArgs& args,
+                                     const OvStageInstancerReadColumn* columns,
+                                     ::physx::PxU32 columnCount,
+                                     const GpuPointInstancerRecord* recordsDev,
+                                     const InstancerAffine* inversesDev,
+                                     ::physx::PxU32 numInstances) const;
+
+    // The WRITE counterpart of readOvStageInstancerColumns above (ADR-0012). Lives here, not on the
+    // instancer view, for the reason that read does: this class owns the DirectGPU call, the packed
     // index machinery and the rigid records the instances resolve through.
     //
     // `records` points at ONE instancer's range and `numOutputs` is its length, so the packed pair
@@ -105,41 +144,20 @@ public:
                                        const ::physx::PxU32* rbRows,
                                        ::physx::PxU32 numOutputs,
                                        ::physx::PxU32 instancerIdx,
-                                       uint64_t rowsToken);
+                                       uint64_t rowsToken,
+                                       const OvStageDeviceWriteArgs& deviceArgs);
     bool setInstancerVelocityColumnOvStage(bool wantAngular,
                                            const float* srcDev,
                                            const GpuPointInstancerRecord* recordsDev,
                                            const ::physx::PxU32* rbRows,
                                            ::physx::PxU32 numOutputs,
-                                           uint64_t rowsToken);
+                                           uint64_t rowsToken,
+                                           const OvStageDeviceWriteArgs& deviceArgs);
 
-    // Point-instancer columns, for the ovstage read's instancer groups. `dstDev` is one device
-    // buffer the caller has sub-allocated per instancer; `offsetsDev` gives each instancer's start
-    // in FLOATS -- not "elements", which in this codebase means the dtype.lanes tuple. One offsets
-    // array per column, since a column's sub-array is sized by its own width. Slots with no live
-    // instance are left untouched, so the caller's zero fill stands.
-    //
-    // Sourced from the same bulk DirectGPU read the standalone-body columns use, over this view's
-    // rows -- the superset view covers instanced bodies too.
-    bool getInstancerPoseColumnOvStage(bool wantOrientation,
-                                       float* dstDev,
-                                       const GpuPointInstancerRecord* recordsDev,
-                                       const InstancerAffine* instancerInversesDev,
-                                       const ::physx::PxU32* offsetsDev,
-                                       ::physx::PxU32 numInstances) const;
 
-    // `wantAcceleration` selects the acceleration read type over the velocity one; everything else --
-    // scratch buffer, buffer id, gather kernel -- is shared, since both are a plain PxVec3 per body.
-    bool getInstancerVelocityColumnOvStage(bool wantAngular,
-                                           bool wantAcceleration,
-                                           float* dstDev,
-                                           const GpuPointInstancerRecord* recordsDev,
-                                           const ::physx::PxU32* offsetsDev,
-                                           ::physx::PxU32 numInstances) const;
-
-    // Fused ovstage column WRITE (ADR-0012): the return direction of the four getters above, and
-    // deliberately the same shape -- one self-contained call per attribute, taking the caller's dense
-    // column plus the destination-slot -> view-record list, and carrying NO host block.
+    // Fused ovstage column WRITE (ADR-0012): the return direction of readOvStageColumns above -- one
+    // self-contained call per attribute, taking the caller's dense column plus the destination-slot ->
+    // view-record list, and carrying NO host block.
     //
     // Each builds a PACKED (data, gpuIndex) pair straight from the row list and issues one
     // PxDirectGPUAPI write over it. Not a flags-and-compaction scatter, and that is a correctness
@@ -155,11 +173,13 @@ public:
     bool setPositionsOvStage(const TensorDesc* srcTensor,
                              const ::physx::PxU32* outRecordIdx,
                              ::physx::PxU32 numOutputs,
-                             uint64_t rowsToken, bool wholeSet);
+                             uint64_t rowsToken, bool wholeSet,
+                             const OvStageDeviceWriteArgs& deviceArgs);
     bool setOrientationsOvStage(const TensorDesc* srcTensor,
                                 const ::physx::PxU32* outRecordIdx,
                                 ::physx::PxU32 numOutputs,
-                                uint64_t rowsToken, bool wholeSet);
+                                uint64_t rowsToken, bool wholeSet,
+                                const OvStageDeviceWriteArgs& deviceArgs);
     // True when this row list names articulation LINKS rather than rigid dynamics. Decided from the
     // FIRST valid row, not by scanning: an ovstage query carries one object type, so a mixed list is
     // not a state this API can produce.
@@ -176,7 +196,39 @@ public:
                               ::physx::PxU32 numOutputs,
                               uint64_t rowsToken,
                               ::physx::PxU32 comps,
-                              bool wholeSet);
+                              bool wholeSet,
+                              const OvStageDeviceWriteArgs& deviceArgs);
+
+    // Session writes (ADR-0052) run in device memory the session owns, sized by this for `kind` and the
+    // group's row count. Its leading u32 array is the group's superset row list, uploaded at open.
+    enum class OvStageRigidWrite
+    {
+        ePose, // position or orientation: packed poses, read-modify-written
+        eVec3, // linear or angular velocity, or a force: a dense column merged under a mask
+        eWrench,
+        eLinkForce,
+        eLinkWrench,
+        eInstancerPose,
+        eInstancerVelocity
+    };
+    size_t ovStageWriteScratchBytes(OvStageRigidWrite kind, ::physx::PxU32 numOutputs) const;
+    // The host work a session write does once, at open, so its commit only enqueues: a wrench refreshes the
+    // centre-of-mass table, and a link force or wrench resolves which articulations it applies, uploading the
+    // row-to-articulation map and the applied GPU index list into `deviceArgs.scratch` (whose row list must already
+    // be uploaded) and recording the count in `deviceArgs`.
+    bool prepareOvStageWrite(OvStageRigidWrite kind,
+                             const ::physx::PxU32* rows,
+                             ::physx::PxU32 numOutputs,
+                             bool wholeSet,
+                             OvStageDeviceWriteArgs& deviceArgs);
+    // True when the next device operation would first upload a refreshed GPU index map: a body was
+    // enabled or disabled since the last one. A captured write cannot upload, so it refuses instead.
+    bool rdIndicesRefreshPending() const;
+    // The scene's enable/disable epoch, which every supported toggle of eDISABLE_SIMULATION advances.
+    uint64_t rdDisableEpoch() const
+    {
+        return mGpuSimData ? mGpuSimData->mRdDisableEpoch : 0;
+    }
 
     // ovstage WRENCH write (ADR-0012). One [N,9] column -- force, torque, world
     // application point -- becoming PhysX's eFORCE and eTORQUE in a single pass.
@@ -187,7 +239,8 @@ public:
     bool setWrenchesOvStage(const TensorDesc* srcTensor,
                             const ::physx::PxU32* outRecordIdx,
                             ::physx::PxU32 numOutputs,
-                            uint64_t rowsToken, bool wholeSet);
+                            uint64_t rowsToken, bool wholeSet,
+                            const OvStageDeviceWriteArgs& deviceArgs);
 
     // ovstage FORCE write (ADR-0012). Write-only: the solver consumes it and clears it
     // each step, so there is nothing to read back and nothing to preserve -- which is why this needs
@@ -198,16 +251,19 @@ public:
     bool setForcesOvStage(const TensorDesc* srcTensor,
                           const ::physx::PxU32* outRecordIdx,
                           ::physx::PxU32 numOutputs,
-                          uint64_t rowsToken, bool wholeSet);
+                          uint64_t rowsToken, bool wholeSet,
+                          const OvStageDeviceWriteArgs& deviceArgs);
 
     bool setLinearVelocitiesOvStage(const TensorDesc* srcTensor,
                                     const ::physx::PxU32* outRecordIdx,
                                     ::physx::PxU32 numOutputs,
-                                    uint64_t rowsToken, bool wholeSet);
+                                    uint64_t rowsToken, bool wholeSet,
+                                    const OvStageDeviceWriteArgs& deviceArgs);
     bool setAngularVelocitiesOvStage(const TensorDesc* srcTensor,
                                      const ::physx::PxU32* outRecordIdx,
                                      ::physx::PxU32 numOutputs,
-                                     uint64_t rowsToken, bool wholeSet);
+                                     uint64_t rowsToken, bool wholeSet,
+                                     const OvStageDeviceWriteArgs& deviceArgs);
 
     // Block until the last ovstage write issued through this view has completed on the device.
     //
@@ -280,49 +336,32 @@ public:
     }
 
 private:
-    // Generic ovstage column read behind the thin methods above. `attribName` is the label the
-    // tensor checks report under; `artiCopyEvent` indexes GpuSimulationData::mCopyEvents (an int
-    // because CopyEvent's enum is unnamed).
-    bool getPoseColumnOvStage(const char* attribName,
-                              const TensorDesc* dstTensor,
-                              bool wantOrientation,
-                              const ::physx::PxU32* outRecordIdx,
-                              ::physx::PxU32 numOutputs,
-                              uint64_t rowsToken) const;
-    bool getVelocityColumnOvStage(const char* attribName,
-                                  const TensorDesc* dstTensor,
-                                  ::physx::PxRigidDynamicGPUAPIReadType::Enum rdType,
-                                  ::physx::PxArticulationGPUAPIReadType::Enum artiType,
-                                  const ::physx::PxVec3* rdScratch,
-                                  const ::physx::PxVec3* artiScratch,
-                                  // Which SharedDeviceBuffer each scratch pointer IS, so the
-                                  // ordering event can be keyed to it (ADR-0008 Decision 7).
-                                  ::physx::PxU32 rdBuf,
-                                  ::physx::PxU32 artiBuf,
-                                  int artiCopyEvent,
-                                  const ::physx::PxU32* outRecordIdx,
-                                  ::physx::PxU32 numOutputs,
-                                  uint64_t rowsToken) const;
-
-    // Device copy of the ovstage reader's row list, uploaded only when `token` differs from the
+    // Device copy of an ovstage write's row list, uploaded only when `token` differs from the
     // one the held copy was uploaded under. Returns null on allocation or upload failure; the
     // buffer stays owned by this view and must not be freed by the caller.
     const ::physx::PxU32* ovStageRowsDevice(const ::physx::PxU32* rows, uint32_t count, uint64_t token) const;
-    // Generic ovstage column writes the four thin setters above pass their own engine values to,
-    // mirroring getPoseColumnOvStage / getVelocityColumnOvStage. `attribName` is the label the tensor
-    // checks report under.
+    // Generic ovstage column writes the four thin setters above pass their own engine values to.
+    // `attribName` is the label the tensor checks report under.
     bool setPoseColumnOvStage(const char* attribName,
                               const TensorDesc* srcTensor,
                               bool wantOrientation,
                               const ::physx::PxU32* outRecordIdx,
                               ::physx::PxU32 numOutputs,
-                              uint64_t rowsToken);
+                              uint64_t rowsToken,
+                              const OvStageDeviceWriteArgs& deviceArgs);
     bool setVelocityColumnOvStage(const char* attribName,
                                   const TensorDesc* srcTensor,
                                   ::physx::PxRigidDynamicGPUAPIWriteType::Enum rdType,
                                   const ::physx::PxU32* outRecordIdx,
                                   ::physx::PxU32 numOutputs,
-                                  uint64_t rowsToken);
+                                  uint64_t rowsToken,
+                                  const OvStageDeviceWriteArgs& deviceArgs);
+    // The ovstage drain's execution: `stream` (the stream the read handed back, so the drain's kernels and the
+    // PhysX call it forks share one stream -- ordered without an extra event; null -> the legacy default stream,
+    // the drain's behaviour before deferred sync) and this view's apply events for `applyEvent`.
+    OvStageDeviceWriteArgs drainDeviceWriteArgs(int applyEvent, CUstream stream = nullptr) const;
+    // Refreshes the GPU index map before a write, which a captured write cannot do.
+    bool refreshRdIndicesForWrite(const char* attribName, const OvStageDeviceWriteArgs& deviceArgs) const;
 
     // The device state an ovstage write needs: the uploaded row list, a packed transform block sized
     // for the write, and the packed GPU-index list PhysX pairs with it by position.
@@ -333,23 +372,19 @@ private:
     //
     // `outPacked` is left untouched when the caller does not need a data block (the velocity paths
     // hand PhysX the caller's column directly, a dense [N,3] float column being exactly PxVec3[N]).
+    //
+    // A session write's (`deviceArgs.sessionOwned()`) row list and index list are the first two arrays of its own
+    // scratch, and `outPacked` is the rest of it, which the caller lays out: `payloadBytes` of it, checked against the
+    // scratch's size. The index build runs on `deviceArgs.stream`.
     bool ovStageWriteBuffers(const char* attribName,
                              const ::physx::PxU32* rows,
                              ::physx::PxU32 numOutputs,
                              uint64_t token,
+                             const OvStageDeviceWriteArgs& deviceArgs,
+                             size_t payloadBytes,
                              const ::physx::PxU32*& outRowsDev,
                              void*& outPacked,
                              ::physx::PxRigidDynamicGPUIndex*& outIdx);
-
-    bool gatherPoseColumnOvStage(bool wantOrientation,
-                                 const ::physx::PxU32* outRecordIdxDev,
-                                 ::physx::PxU32 numOutputs,
-                                 const TensorDesc* dstTensor) const;
-    bool gatherVelocityColumnOvStage(const ::physx::PxVec3* rdSrc,
-                                     const ::physx::PxVec3* linkSrc,
-                                     const ::physx::PxU32* outRecordIdxDev,
-                                     ::physx::PxU32 numOutputs,
-                                     const TensorDesc* dstTensor) const;
 
     bool updateCMassData();
     bool clearDataFlagsAndIndices();
@@ -388,8 +423,9 @@ private:
     mutable uint64_t mLastSeenRdDisableEpoch = 0;
     uint32_t mNumArtis = 0;
     uint32_t mNumArtiRoots = 0;
-    // Link records in this view: every link of every articulation it holds, including articulations the
-    // attachment does not own. A whole-set link write may skip its dedup only when it names this many rows.
+    // Link records in this view: every link of every articulation it holds. A whole-set link write may skip its
+    // dedup only when it names this many rows: it leaves out an articulation not yet in a scene when the write
+    // was opened, and the next step adds that articulation to this view.
     uint32_t mNumLinkRecords = 0;
 
     // will keep this until direct GPU API for articulation link mass properties is available
@@ -403,6 +439,9 @@ private:
 
     // indexing data for all rigid bodies
     GpuRigidBodyRecord* mRbRecordsDev = nullptr;
+    // RigidBodyEntry::worldScale per record, uploaded once: an actor's stored scale never changes in
+    // place, because a scale edit either recreates the actor, and with it the view, or is not applied.
+    ::physx::PxVec3* mWorldScalesDev = nullptr;
 
     // all body indices in this view
     // Set at construction when an entry's actor was not in the simulation data's actor map.
@@ -420,8 +459,6 @@ private:
     ArticulationGpuFlags* mArtiLinksDirtyFlagsDev = nullptr;
     ActorGpuFlags* mRdDirtyFlagsDev = nullptr;
 
-    uint32_t mMaxLinks = 0;
-
     SingleAllocPolicy mArtiIndexSingleAllocPolicy;
     SingleAllocPolicy mRdIndexSingleAllocPolicy;
 
@@ -438,26 +475,21 @@ private:
     // for the same const-read-path reason as the buffers above.
     mutable std::vector<::physx::PxRigidDynamicGPUIndex> mRdGpuIndicesHost;
 
-    // Device copies of the ovstage reader's destination-slot -> superset-row lists, held across reads.
+    // Device copies of the ovstage writes' destination-slot -> superset-row lists, held across writes.
     // Owned here rather than by the reader: this view already frees its device memory under the right
     // context in its destructor. Each slot's `token` identifies its contents, so an unchanged list is
     // not re-uploaded.
     //
     // A SMALL LRU, not one slot: this superset view is the single row cache shared by every ovstage
-    // list that gathers a subset through it -- kOvxAll rigid-body and articulation-link reads (a
-    // PxArticulationLink is a PxRigidBody), kept warm across frames; kOvxActive reads (cacheable on a
-    // DirectGPU scene, keyed on the record + kinematic-toggle epochs, so warm like an ALL read there; a
-    // fresh list every read on CPU); and the rigid write path -- a standalone list plus one per point
-    // instancer, each rebuilt per commit. (Instancer READS do not pass through here.) Several are live at
-    // once in a normal read/write loop, so one slot would evict the previous list on every access and
-    // re-upload it, and the token gate would never hit. The LRU holds kOvStageRowsSlots distinct lists. A
-    // stable read hits its slot every frame, keeping its recency newest, so a churning list -- a write
-    // (or a CPU active read), whose token changes every time and is never seen again -- cycles through the
-    // surplus slots and does not evict a warm read WHILE A SLOT IS FREE. Thrash-free while the concurrently-live
-    // lists number <= kOvStageRowsSlots; beyond that the least-recently-used list is evicted -- warm
-    // reads no longer exempt -- never worse than the single slot it replaced (see kOvStageRowsSlots for
-    // what that bound does and does not buy). ovStageRowsDevice picks the smallest-tick slot as the
-    // victim (an empty slot, tick 0, wins first).
+    // write outside a write session that scatters a subset through it -- the drain's rigid-body and
+    // articulation-link lists (a PxArticulationLink is a PxRigidBody), and one list per point instancer.
+    // Reads keep their row lists on their query (ADR-0055), and write sessions in their own scratch
+    // (ADR-0052). Several are live at once in a normal write loop, so one slot would evict the previous list
+    // on every access and re-upload it, and the token gate would never hit. The LRU holds kOvStageRowsSlots
+    // distinct lists. Thrash-free while the concurrently-live lists number <= kOvStageRowsSlots; beyond that
+    // the least-recently-used list is evicted, never worse than the single slot it replaced (see
+    // kOvStageRowsSlots for what that bound does and does not buy). ovStageRowsDevice picks the smallest-tick
+    // slot as the victim (an empty slot, tick 0, wins first).
     struct OvStageRowsSlot
     {
         ::physx::PxU32* dev = nullptr;
@@ -466,14 +498,12 @@ private:
         uint64_t token = 0; // 0 marks an empty slot; never matched by the hit check
         uint64_t tick = 0; // recency stamp; the smallest-tick slot is the eviction victim
     };
-    // Six is a pragmatic bound, NOT a guarantee against thrash. It holds the COMMON interleave -- the
-    // two stable reads plus a few churning lists (an active read, a write's standalone and a handful of
-    // per-instancer groups). It does not bound the worst case: a scene has arbitrarily many point
-    // instancers and a write emits one row list per range, so once the concurrently-live lists exceed
-    // kOvStageRowsSlots the LRU thrashes -- e.g. seven ranges committed in one order hit zero times on
-    // the next pass (each miss evicts the entry needed next), and a burst that large evicts the warm
-    // rigid/link reads too. Throughput then falls back to the pre-LRU single-slot cost (never worse);
-    // only the warmth is lost. The current test exercises three lists (<= six), so it does NOT cover
+    // Six is a pragmatic bound, NOT a guarantee against thrash. It holds the COMMON interleave -- a
+    // write's standalone list and a handful of per-instancer groups. It does not bound the worst case: a
+    // scene has arbitrarily many point instancers and a write emits one row list per range, so once the
+    // concurrently-live lists exceed kOvStageRowsSlots the LRU thrashes -- e.g. seven ranges committed in
+    // one order hit zero times on the next pass (each miss evicts the entry needed next). Throughput then
+    // falls back to the pre-LRU single-slot cost (never worse); only the warmth is lost. No test covers
     // this pattern.
     //
     // The memory cost is real and scales with the slot count: a slot's capacity only ever grows (see
@@ -485,6 +515,8 @@ private:
     mutable OvStageRowsSlot mOvStageRows[kOvStageRowsSlots];
     mutable uint64_t mOvStageRowsClock = 0; // monotonic recency source; ++ on every hit and upload
     mutable uint64_t mOvStageRowsUploadCount = 0; // test-only: row-list H2D uploads; see ovStageRowsUploadCount()
+    // The read plans planOvStageRead made for tokened row lists.
+    mutable OvStageReadPlans<OvStageRigidReadPlan> mOvStageReadPlans;
 
     // The ovstage WRITE's packed pair, held across writes alongside the row list above and owned
     // here for the same reason: this view already frees its device memory under the right context in
@@ -517,10 +549,6 @@ private:
     // ovStageWriteBuffers for why it runs every write.
     uint64_t mOvStageIdxToken = 0;
     mutable uint64_t mOvStageIdxDisableEpoch = 0;
-    // Recorded on the null stream right after the packed index build; the startEvent of every
-    // DirectGPU call that reads mOvStageIdxDev. PhysX copies on non-blocking streams, so without it
-    // PhysX can read the list before the kernel has written it (see ovStageWriteBuffers).
-    CUevent mOvStageIdxReadyEvent = nullptr;
 
     // Rebuild the compacted rd GPU-index list (mRdGpuIndicesDev), per-entry
     // tensorRdIdx/physxRdIdx, and mNumRds from each body's LIVE getGPUIndex(),

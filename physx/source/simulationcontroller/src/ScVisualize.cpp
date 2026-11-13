@@ -255,12 +255,17 @@ void Sc::Scene::visualizeContacts()
 		{
 			PxsContactManagerOutputIterator outputs = mLLContext->getNphaseImplementationContext()->getContactManagerOutputs();
 
-			ElementSimInteraction** interactions = getActiveInteractions(InteractionType::eOVERLAP);
-			PxU32 nbActiveInteractions = getNbActiveInteractions(InteractionType::eOVERLAP);
-			while(nbActiveInteractions--)
-				static_cast<ShapeInteraction*>(*interactions++)->visualize(	out, outputs,
-																			scale, contactImpulse, contactNormal, contactError, contactPoint,
-																			frictionImpulse, frictionNormal, frictionPoint);
+			// Sleeping pairs stay in the overlap array, see Scene::notifyInteractionDeactivated().
+			ElementSimInteraction** interactions = getInteractions(InteractionType::eOVERLAP);
+			PxU32 nbInteractions = getNbInteractions(InteractionType::eOVERLAP);
+			while(nbInteractions--)
+			{
+				ShapeInteraction* si = static_cast<ShapeInteraction*>(*interactions++);
+				if(si->readInteractionFlag(InteractionFlag::eIS_ACTIVE))
+					si->visualize(	out, outputs,
+									scale, contactImpulse, contactNormal, contactError, contactPoint,
+									frictionImpulse, frictionNormal, frictionPoint);
+			}
 		}
 	}
 #else

@@ -1,0 +1,107 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxTendonAttachmentLeafAPI",
+  "title": "PhysxTendonAttachmentLeafAPI",
+  "summary": "Leaf attachment of a spatial tendon, applied as PhysxTendonAttachmentLeafAPI:<name>; it closes one sub-tendon and carries its rest length and limits.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "Xformable"
+  ],
+  "multi_apply": true,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "producer_scope": "Every declared attribute of an applied instance is published at its resolved value; USD auto-applies PhysxTendonAttachmentAPI:<name> with it.",
+  "columns": [
+    {
+      "name": "physxTendon:<inst>:restLength",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "-inf",
+      "parser_default": "-FLT_MAX",
+      "absent": "-FLT_MAX (unset).",
+      "raw_fallback_diverges": false,
+      "units": "length",
+      "clamp": [
+        "-FLT_MAX",
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseSpatialTendon.cpp"
+      ]
+    },
+    {
+      "name": "physxTendon:<inst>:lowerLimit",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "-inf",
+      "parser_default": "-FLT_MAX",
+      "absent": "-FLT_MAX: no lower limit.",
+      "raw_fallback_diverges": false,
+      "units": "length",
+      "clamp": [
+        "-FLT_MAX",
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseSpatialTendon.cpp"
+      ]
+    },
+    {
+      "name": "physxTendon:<inst>:upperLimit",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "inf",
+      "parser_default": "FLT_MAX",
+      "absent": "FLT_MAX: no upper limit. Clamped to at least the lower limit.",
+      "raw_fallback_diverges": false,
+      "units": "length",
+      "clamp": [
+        "-FLT_MAX",
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseSpatialTendon.cpp"
+      ]
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysxTendonAttachmentAPI",
+      "rule": "Owns gearing, localPos, parentAttachment and parentLink, which the parser reads for the leaf too."
+    }
+  ],
+  "notes": [
+    "Instance names are arbitrary (one per tendon), so the compiled cache declares every physxTendon:* column."
+  ]
+}

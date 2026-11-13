@@ -11,6 +11,12 @@
  *
  * @implements REQ-CAPI-PROFILER-001
  * @covers AC-5
+ *
+ * @implements REQ-CAPI-LANE-001
+ * @covers AC-1
+ *
+ * @implements REQ-CAPI-REENTRY-001
+ * @covers AC-2
  */
 
 #include "ovphysx/ovphysx.h"
@@ -93,18 +99,21 @@ ovphysx_result_t encodeShapePrimPath(omni::physics::AttachHandle attach, const o
     return success();
 }
 
+// Takes the instance lane into `lane`; the caller keeps it for the whole query.
 ovphysx_result_t validateSceneQueryArgs(
     ovphysx_instance_handle_t handle,
     const ovphysx_scene_query_hit_t** out_hits,
     uint32_t* out_count,
-    InstanceData** out_instance)
+    InstanceData** out_instance,
+    ovphysx::InstanceLane& lane)
 {
     if (!out_hits || !out_count)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "output pointer is NULL");
     *out_hits = nullptr;
     *out_count = 0;
 
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
     InstanceData* instance = get_instance_ptr(handle);
@@ -137,8 +146,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_raycast(
 {
     OVPHYSX_API_PROFILE_ZONE(raycast);
     InstanceData* instance = nullptr;
+    ovphysx::InstanceLane lane;
     {
-        auto check = validateSceneQueryArgs(handle, out_hits, out_count, &instance);
+        auto check = validateSceneQueryArgs(handle, out_hits, out_count, &instance, lane);
         if (check.status != OVPHYSX_API_SUCCESS)
             return check;
     }
@@ -211,8 +221,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_sweep(
 {
     OVPHYSX_API_PROFILE_ZONE(sweep);
     InstanceData* instance = nullptr;
+    ovphysx::InstanceLane lane;
     {
-        auto check = validateSceneQueryArgs(handle, out_hits, out_count, &instance);
+        auto check = validateSceneQueryArgs(handle, out_hits, out_count, &instance, lane);
         if (check.status != OVPHYSX_API_SUCCESS)
             return check;
     }
@@ -378,8 +389,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_overlap(
 {
     OVPHYSX_API_PROFILE_ZONE(overlap);
     InstanceData* instance = nullptr;
+    ovphysx::InstanceLane lane;
     {
-        auto check = validateSceneQueryArgs(handle, out_hits, out_count, &instance);
+        auto check = validateSceneQueryArgs(handle, out_hits, out_count, &instance, lane);
         if (check.status != OVPHYSX_API_SUCCESS)
             return check;
     }
@@ -507,7 +519,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_scene_query_get_paths_from_ids(
     if (!out_paths && max_paths > 0)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "out_paths is NULL");
 
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
     InstanceData* instance = get_instance_ptr(handle);

@@ -32,6 +32,8 @@ def _fake_sdk(lib):
     sdk._pending_read_releases = []
     sdk._pending_write_lock = threading.Lock()
     sdk._pending_write_releases = []
+    sdk._pending_binding_lock = threading.Lock()
+    sdk._pending_binding_destroys = []
     return sdk
 
 
@@ -46,6 +48,21 @@ def test_task_is_an_immutable_native_receipt_copy():
     native_copy = task._as_native()
     native_copy.op_index = 55
     assert task.op_index == 4
+
+
+def test_wait_all_defensively_handles_timeout_without_pending_receipt():
+    # Synthetic native result: real wait_all TIMEOUT returns a pending receipt.
+    def wait(instance, timeout, result):
+        return ovphysx_result_t(ApiStatus.TIMEOUT)
+
+    sdk = _fake_sdk(SimpleNamespace(
+        ovphysx_wait_all=wait,
+        ovphysx_destroy_wait_task_result=lambda result: None,
+    ))
+    with pytest.raises(TaskTimeoutError, match="timed out without a pending task receipt") as caught:
+        sdk.wait_all(timeout_ns=0)
+    assert caught.value.pending_task is None
+    assert caught.value.errors == ()
 
 
 @pytest.mark.parametrize("value", [None, 1, "1", (ApiStatus.SUCCESS, 1, 17), object()])
@@ -214,7 +231,8 @@ def test_task_error_entries_are_immutable():
     [(ApiStatus.SUCCESS, False, False), (ApiStatus.SUCCESS, True, True), (ApiStatus.ERROR, False, True)],
 )
 def test_detach_retains_stage_until_collected_and_native_detach_is_confirmed(query_status, attached, keeps_stage):
-    stage = object()
+    # Ownership is confirmed for this exact Stage, so the double carries a native pointer.
+    stage = SimpleNamespace(_inst=ctypes.c_void_p(1))
 
     def query(instance, stage, out_handle):
         ctypes.cast(out_handle, ctypes.POINTER(ctypes.c_bool)).contents.value = attached

@@ -30,12 +30,16 @@ payloads are converted once, on first result access.
 - **AC-3: Failure values.** `TaskError(RuntimeError)` exposes immutable `(Task,
   message)` entries. `TaskTimeoutError(TimeoutError)` exposes partial errors and
   the pending task. Timeout takes precedence over completed execution failures.
+  Native timeouts always supply a pending receipt: `wait_all` captures its cutoff
+  before timed waiting and reports the earliest unfinished task within it.
+  Defensive handling of an incomplete result retains `pending_task=None` without
+  inventing a receipt or attributing the timeout to runtime admission.
 - **AC-4: Cleanup.** Python copies all result receipts and messages before native
   cleanup in `finally`. Retained exception messages survive later waits and
   instance destruction, including when translation itself raises.
 - **AC-5: Producer semantics.** `step`, `clone`, `attach_ovstage`,
   `update_from_ovstage` and `detach_ovstage` return `Task` on
-  successful admission. Accepted inline execution failures raise only when
+  successful admission. Accepted execution failures raise only when
   collected by a wait; rejection raises immediately without a Task.
 
 - **AC-6: Typed session operations.** `PhysX.query`, `PhysX.read`, `PhysX.write`,
@@ -66,7 +70,8 @@ payloads are converted once, on first result access.
   outcomes; payloads still pending across teardown fail materialization as
   invalidated. Accepted detach retires the Python write generation; rejected
   native admission does not. Attach/detach keep the Stage alive through outcome
-  collection, even when their receipts are dropped. A timeout retains it; after
+  collection, even when their receipts are dropped. Pending candidate Stages are
+  pinned from module scope, not only by the owner. A timeout retains them; after
   collection, including failure, native ownership must confirm detachment before
   releasing the keepalive. `reset_stage()` is removed.
 - **AC-8: Articulation convenience.** `update_articulations_kinematic` opens and
@@ -74,7 +79,13 @@ payloads are converted once, on first result access.
   `prim_paths=` or `pattern=` is given (the selection rules of
   [REQ-CAPI-SELECT-001](../capi/REQ-CAPI-SELECT-001.md) AC-6), applies the
   requested POSITION/VELOCITY flags, waits the update, and releases the query.
-  The default updates both position and velocity for all articulations.
+  The default updates both position and velocity for all articulations. With
+  `query=` it updates the members of a held `ARTICULATION` query instead and does
+  not release it; combining `query=` with a selection or a non-`ALL` scope, or
+  passing a query of another type, raises `ValueError`. On a DirectGPU scene the
+  update is ordered on `cuda_stream=` and `cuda_wait_event=` as a commit is
+  ([REQ-CAPI-WRITE-001](../capi/REQ-CAPI-WRITE-001.md) AC-17); with a held query it
+  performs no other teardown, so it can be captured into a CUDA graph.
 - **AC-9: Outcome dispatch.** `wait_task` records the outcome of the one task it
   collects; `wait_all` records every registered operation it collects and includes their
   failures in its aggregate `TaskError`. A timed-out `wait_all` records only the
@@ -91,12 +102,21 @@ payloads are converted once, on first result access.
   dropped. A dropped operation whose creation succeeded has its query, read or write
   output released submit-only on the owning thread after collection, without
   materializing Warp arrays; an unexposed read group is retired through its parent. No
-  native call runs on a garbage-collection thread. Callers that submit without waiting
+  native call runs on a garbage-collection thread; log/object-change callbacks
+  defer cleanup until it can run safely outside callback context. Native clone
+  submission copies its path/transform/environment-ID inputs. Callers that submit without waiting
   call `wait_all` periodically to bound retained storage and observe failures.
+- **AC-11: Task status.** `PhysX.task_status(task)` returns the `TaskStatus`
+  (`NOT_FOUND`, `PENDING`, `RUNNING`, `SUCCEEDED`, `FAILED`) reported by
+  `ovphysx_query_task_status` without waiting, collecting or dispatching outcomes,
+  so a finished task keeps its status until a wait collects it. Non-Task arguments
+  raise `TypeError`; native validation failures raise `RuntimeError`. `TaskStatus`
+  mirrors `ovphysx_task_status_t` and is exported from `ovphysx` and `ovphysx.types`.
 
 ## Test References
 
 - [TEST-PYTHON-TASK-001](../../tests/python/TEST-PYTHON-TASK-001.md)
+- [TEST-PYTHON-TASK-002](../../tests/python/TEST-PYTHON-TASK-002.md)
 
 ## Code References
 
@@ -107,7 +127,7 @@ payloads are converted once, on first result access.
 - `ovphysx/python/ovphysx/_bindings.py`: native receipt, result and session-result
   layouts and functions.
 - `ovphysx/python/ovphysx/api.pyi`: typed public contract.
-- `ovphysx/python/ovphysx/types.py`: articulation kinematic flags.
+- `ovphysx/python/ovphysx/types.py`: articulation kinematic flags and task status.
 - `ovphysx/python/ovphysx/__init__.py`: public exports.
 
 ## Dependencies

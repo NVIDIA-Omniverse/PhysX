@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-CUDA-CAPTURE-001
+// @covers AC-1 AC-2
+
 
 // Runtime-loaded CUDA driver shim for IOptionalCuda.
 //
@@ -60,6 +63,7 @@ struct CudaFns
     CUresult (*cuInit)(unsigned int) = nullptr;
     CUresult (*cuDeviceGetCount)(int*) = nullptr;
     CUresult (*cuDeviceGet)(CUdevice*, int) = nullptr;
+    CUresult (*cuDriverGetVersion)(int*) = nullptr;
 
     // Context
     CUresult (*cuCtxGetCurrent)(CUcontext*) = nullptr;
@@ -84,6 +88,7 @@ struct CudaFns
     CUresult (*cuEventCreate)(CUevent*, unsigned int) = nullptr;
     CUresult (*cuEventDestroy_v2)(CUevent) = nullptr;
     CUresult (*cuEventRecord)(CUevent, CUstream) = nullptr;
+    CUresult (*cuEventRecordWithFlags)(CUevent, CUstream, unsigned int) = nullptr;
     CUresult (*cuEventSynchronize)(CUevent) = nullptr;
 
     // Streams
@@ -91,10 +96,16 @@ struct CudaFns
     CUresult (*cuStreamDestroy_v2)(CUstream) = nullptr;
     CUresult (*cuStreamSynchronize)(CUstream) = nullptr;
     CUresult (*cuStreamWaitEvent)(CUstream, CUevent, unsigned int) = nullptr;
+    CUresult (*cuStreamIsCapturing)(CUstream, CUstreamCaptureStatus*) = nullptr;
+    CUresult (*cuStreamGetCtx)(CUstream, CUcontext*) = nullptr;
 
     // Device info — used by selectBestPhysicsDevice; not required for IOptionalCuda
     CUresult (*cuDeviceTotalMem_v2)(size_t*, CUdevice) = nullptr;
     CUresult (*cuDeviceGetAttribute)(int*, CUdevice_attribute, CUdevice) = nullptr;
+
+    // Per-thread stream-capture mode, used by cuThreadExchangeStreamCaptureMode_; not
+    // required for IOptionalCuda
+    CUresult (*cuThreadExchangeStreamCaptureMode)(CUstreamCaptureMode*) = nullptr;
 };
 
 static std::once_flag g_initOnce;
@@ -192,14 +203,14 @@ static void* getRawSymbol(const char* name)
 #endif
 }
 
-static bool getProcAddress(const char* symbol, void** out)
+static bool getProcAddress(const char* symbol, void** out, int cudaVersion = CUDA_VERSION)
 {
     if (!out) return false;
     *out = nullptr;
     if (g_fns.cuGetProcAddress)
     {
         CUdriverProcAddressQueryResult symbolStatus{};
-        CUresult res = g_fns.cuGetProcAddress(symbol, out, CUDA_VERSION, CU_GET_PROC_ADDRESS_DEFAULT, &symbolStatus);
+        CUresult res = g_fns.cuGetProcAddress(symbol, out, cudaVersion, CU_GET_PROC_ADDRESS_DEFAULT, &symbolStatus);
         if (res == CUDA_SUCCESS && *out) return true;
         // Fallback: some driver/toolkit combinations can have cuGetProcAddress present
         // but fail lookups for a particular CUDA_VERSION. In that case, still try the
@@ -233,6 +244,7 @@ static void initOnce()
     ok &= RESOLVE(cuInit);
     ok &= RESOLVE(cuDeviceGetCount);
     ok &= RESOLVE(cuDeviceGet);
+    ok &= RESOLVE(cuDriverGetVersion);
 
     // Context
     ok &= RESOLVE(cuCtxGetCurrent);
@@ -258,12 +270,18 @@ static void initOnce()
     ok &= RESOLVE(cuEventDestroy_v2);
     ok &= RESOLVE(cuEventRecord);
     ok &= RESOLVE(cuEventSynchronize);
+    // CUDA 11.1; without it only a graph-captured read is refused.
+    RESOLVE(cuEventRecordWithFlags);
 
     // Streams
     ok &= RESOLVE(cuStreamCreate);
     ok &= RESOLVE(cuStreamDestroy_v2);
     ok &= RESOLVE(cuStreamSynchronize);
     ok &= RESOLVE(cuStreamWaitEvent);
+    ok &= RESOLVE(cuStreamIsCapturing);
+    // CUDA 12.5 gave cuStreamGetCtx a green-context parameter under the same name: request the 9.2 form,
+    // which is also the one exported under that name.
+    ok &= getProcAddress("cuStreamGetCtx", reinterpret_cast<void**>(&g_fns.cuStreamGetCtx), 9020);
 
     if (!ok)
     {
@@ -323,6 +341,8 @@ static void initOnce()
     if (!getProcAddress("cuDeviceTotalMem_v2", reinterpret_cast<void**>(&g_fns.cuDeviceTotalMem_v2)) || !g_fns.cuDeviceTotalMem_v2)
         getProcAddress("cuDeviceTotalMem", reinterpret_cast<void**>(&g_fns.cuDeviceTotalMem_v2));
     getProcAddress("cuDeviceGetAttribute", reinterpret_cast<void**>(&g_fns.cuDeviceGetAttribute));
+    getProcAddress("cuThreadExchangeStreamCaptureMode",
+                   reinterpret_cast<void**>(&g_fns.cuThreadExchangeStreamCaptureMode));
 
     constexpr size_t kMinRealGpuMemBytes = 256ULL * 1024ULL * 1024ULL;
     size_t totalMem = 0;
@@ -573,6 +593,18 @@ static bool CARB_ABI impl_eventRecord(uintptr_t event, uintptr_t stream, int* ou
     return r == CUDA_SUCCESS;
 }
 
+static bool CARB_ABI impl_eventRecordWithFlags(uintptr_t event, uintptr_t stream, unsigned int flags, int* outStatus)
+{
+    if (!ensureInit())
+        return failNotInitialized(outStatus);
+    CUresult r = g_fns.cuEventRecordWithFlags ?
+                     g_fns.cuEventRecordWithFlags(reinterpret_cast<CUevent>(event), reinterpret_cast<CUstream>(stream),
+                                                  flags) :
+                     CUDA_ERROR_NOT_SUPPORTED;
+    if (outStatus) *outStatus = static_cast<int>(r);
+    return r == CUDA_SUCCESS;
+}
+
 static bool CARB_ABI impl_eventSynchronize(uintptr_t event, int* outStatus)
 {
     if (!ensureInit())
@@ -622,6 +654,49 @@ static bool CARB_ABI impl_streamWaitEvent(uintptr_t stream, uintptr_t event, uns
     return r == CUDA_SUCCESS;
 }
 
+static bool CARB_ABI impl_streamIsCapturing(uintptr_t stream, bool* outCapturing, int* outStatus)
+{
+    if (outCapturing)
+        *outCapturing = false;
+    if (!ensureInit())
+        return failNotInitialized(outStatus);
+    CUstreamCaptureStatus capture = CU_STREAM_CAPTURE_STATUS_NONE;
+    CUresult r = g_fns.cuStreamIsCapturing(reinterpret_cast<CUstream>(stream), &capture);
+    if (outStatus) *outStatus = static_cast<int>(r);
+    // A capture another call invalidated still owns the stream: queuing work on it fails either way.
+    if (outCapturing)
+        *outCapturing = r == CUDA_SUCCESS && capture != CU_STREAM_CAPTURE_STATUS_NONE;
+    return r == CUDA_SUCCESS;
+}
+
+static bool CARB_ABI impl_streamGetCtx(uintptr_t stream, uintptr_t* outCtx, int* outStatus)
+{
+    if (outCtx)
+        *outCtx = 0;
+    if (!ensureInit())
+        return failNotInitialized(outStatus);
+    CUcontext ctx = nullptr;
+    CUresult r = g_fns.cuStreamGetCtx(reinterpret_cast<CUstream>(stream), &ctx);
+    if (outStatus) *outStatus = static_cast<int>(r);
+    if (outCtx)
+        *outCtx = reinterpret_cast<uintptr_t>(ctx);
+    return r == CUDA_SUCCESS;
+}
+
+static bool CARB_ABI impl_driverGetVersion(int* outVersion, int* outStatus)
+{
+    if (outVersion)
+        *outVersion = 0;
+    if (!ensureInit())
+        return failNotInitialized(outStatus);
+    int version = 0;
+    CUresult r = g_fns.cuDriverGetVersion(&version);
+    if (outStatus) *outStatus = static_cast<int>(r);
+    if (outVersion)
+        *outVersion = version;
+    return r == CUDA_SUCCESS;
+}
+
 } // anonymous namespace
 
 // -- Public entry point ----------------------------------------------------
@@ -655,6 +730,10 @@ void fill(IOptionalCuda& iface)
     iface.streamDestroy     = impl_streamDestroy;
     iface.streamSynchronize = impl_streamSynchronize;
     iface.streamWaitEvent   = impl_streamWaitEvent;
+    iface.streamIsCapturing = impl_streamIsCapturing;
+    iface.streamGetCtx      = impl_streamGetCtx;
+    iface.eventRecordWithFlags = impl_eventRecordWithFlags;
+    iface.driverGetVersion  = impl_driverGetVersion;
 
     iface.memcpy2DDeviceToDevice = impl_memcpy2DDeviceToDevice;
 }
@@ -749,6 +828,15 @@ CUresult cuDeviceGetCount_(int* count)
     if (!g_fns.cuDeviceGetCount)
         return CUDA_ERROR_NOT_INITIALIZED;
     return g_fns.cuDeviceGetCount(count);
+}
+
+CUresult cuThreadExchangeStreamCaptureMode_(CUstreamCaptureMode* mode)
+{
+    if (!ensureInit())
+        return CUDA_ERROR_NOT_INITIALIZED;
+    if (!g_fns.cuThreadExchangeStreamCaptureMode)
+        return CUDA_ERROR_NOT_SUPPORTED;
+    return g_fns.cuThreadExchangeStreamCaptureMode(mode);
 }
 
 bool setDevice(int ordinal)

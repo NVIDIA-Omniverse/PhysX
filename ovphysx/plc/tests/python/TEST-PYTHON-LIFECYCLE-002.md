@@ -19,8 +19,10 @@ finalization.
   instances retained until interpreter exit.
 - At least one instance attaches a scene and waits for its pending work.
 - No instance calls `destroy()` explicitly.
-- A separate subprocess retains a `read()` Warp array (and its `PhysX`
-  instance) until interpreter exit.
+- Separate CPU and CUDA subprocesses retain `read()` Warp arrays and their
+  `PhysX` instance until interpreter exit. Each registers an array reader after
+  package import but before native bootstrap or instance construction.
+- A metadata-only import subprocess never bootstraps the native library.
 - A separate in-process lifecycle case constructs an `__eq__`-only unhashable
   subclass and two equal hashable subclasses.
 - A separate lifecycle case drops the only strong reference to a live
@@ -38,14 +40,19 @@ finalization.
 
 - The registered Python `atexit` callback invokes the finalizer policy once
   for every retained live instance. Tests register a witness *before* the
-  first `PhysX()` so LIFO runs the library callback first; they do not
+  package import so LIFO runs the library callback first; they do not
   unregister or replace that callback (REQ AC-8).
 - A two-instance process discharges both lifecycle tokens and reaches final
   process shutdown without hanging or crashing (REQ AC-8).
 - The read-array subprocess destroys its native instance and invokes
   `ovphysx_shutdown()` before interpreter teardown, not only cache removal.
   This private process-exit path bypasses the explicit-destroy live-array
-  precondition because exit ends all borrowed lifetimes (REQ AC-8 and AC-9).
+  precondition because library exit cleanup ends all borrowed lifetimes. The
+  array reader, whose result was dropped without a close, observes its unchanged snapshot before native destruction, and
+  destruction precedes shutdown; output ordering verifies this even if freed
+  storage would happen to retain its old values (REQ AC-8 and AC-9).
+- A metadata-only package import loads no native API module, including during
+  process-exit cleanup (REQ AC-8).
 - Unhashable and equal-hashable subclasses are each tracked distinctly and
   can be constructed without `TypeError` (REQ AC-8).
 - The normal-exit subprocess succeeds, while the `KeyboardInterrupt` subprocess

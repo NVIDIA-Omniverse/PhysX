@@ -5,7 +5,7 @@
 
 # Rigid-body Cube bound to a physics Material
 
-Multi-prim test composition: a Material prim carrying PhysicsMaterialAPI and PhysxMaterialAPI, bound as the physics material of a Cube rigid body through material:binding:physics. Verifies the PxMaterial the runtime creates for the Material prim and the Cube's body and shape columns. Owns no columns and generates no helper.
+Multi-prim test composition: a [Material](glossary.md#material) [prim](glossary.md#prim) carrying PhysicsMaterialAPI and PhysxMaterialAPI, bound as the physics material of a Cube rigid body through material:binding:physics. Verifies the PxMaterial the runtime creates for the Material prim and the Cube's body and shape columns. Owns no columns and generates no helper.
 
 - **Form:** multi-prim; no helper, the contract test builds each prim with `PrimBatch`.
 

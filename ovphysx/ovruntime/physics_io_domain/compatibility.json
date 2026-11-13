@@ -1,0 +1,2030 @@
+{
+  "schema_version": 1,
+  "symbols": {
+    "OVPHYSX_ATTR_ACCELERATOR": "accelerator",
+    "OVPHYSX_ATTR_ANGULAR_ACCELERATION": "angularAcceleration",
+    "OVPHYSX_ATTR_ANGULAR_VELOCITY": "angularVelocity",
+    "OVPHYSX_ATTR_AUTOBOX_TIME_SINCE_LAST_SHIFT": "autoboxTimeSinceLastShift",
+    "OVPHYSX_ATTR_AUTOMATIC_TRANSMISSION": "automaticTransmission",
+    "OVPHYSX_ATTR_BRAKE0": "brake0",
+    "OVPHYSX_ATTR_BRAKE1": "brake1",
+    "OVPHYSX_ATTR_BRAKE_TORQUE": "brakeTorque",
+    "OVPHYSX_ATTR_CCT_MOVE": "move",
+    "OVPHYSX_ATTR_CENTER_OF_MASS_LOCAL": "centerOfMassLocal",
+    "OVPHYSX_ATTR_CENTER_OF_MASS_ORIENTATION": "centerOfMassOrientation",
+    "OVPHYSX_ATTR_CENTER_OF_MASS_POSITION": "centerOfMassPosition",
+    "OVPHYSX_ATTR_CENTER_OF_MASS_WORLD": "centerOfMassWorld",
+    "OVPHYSX_ATTR_CENTROIDAL_MOMENTUM": "centroidalMomentum",
+    "OVPHYSX_ATTR_CLUTCH": "clutch",
+    "OVPHYSX_ATTR_COLLISION_ELEMENT_INDICES": "collisionElementIndices",
+    "OVPHYSX_ATTR_CONTACT_EVENT_ANCHOR_COUNT": "contactEventAnchorCount",
+    "OVPHYSX_ATTR_CONTACT_EVENT_ANCHOR_IMPULSE": "contactEventAnchorImpulse",
+    "OVPHYSX_ATTR_CONTACT_EVENT_ANCHOR_POSITION": "contactEventAnchorPosition",
+    "OVPHYSX_ATTR_CONTACT_EVENT_COLLIDER": "contactEventCollider",
+    "OVPHYSX_ATTR_CONTACT_EVENT_OTHER_BODY": "contactEventOtherBody",
+    "OVPHYSX_ATTR_CONTACT_EVENT_OTHER_COLLIDER": "contactEventOtherCollider",
+    "OVPHYSX_ATTR_CONTACT_EVENT_OTHER_PROTO_INDEX": "contactEventOtherProtoIndex",
+    "OVPHYSX_ATTR_CONTACT_EVENT_POINT_COUNT": "contactEventPointCount",
+    "OVPHYSX_ATTR_CONTACT_EVENT_POINT_FACE_INDEX": "contactEventPointFaceIndex",
+    "OVPHYSX_ATTR_CONTACT_EVENT_POINT_IMPULSE": "contactEventPointImpulse",
+    "OVPHYSX_ATTR_CONTACT_EVENT_POINT_MATERIAL": "contactEventPointMaterial",
+    "OVPHYSX_ATTR_CONTACT_EVENT_POINT_NORMAL": "contactEventPointNormal",
+    "OVPHYSX_ATTR_CONTACT_EVENT_POINT_OTHER_FACE_INDEX": "contactEventPointOtherFaceIndex",
+    "OVPHYSX_ATTR_CONTACT_EVENT_POINT_OTHER_MATERIAL": "contactEventPointOtherMaterial",
+    "OVPHYSX_ATTR_CONTACT_EVENT_POINT_POSITION": "contactEventPointPosition",
+    "OVPHYSX_ATTR_CONTACT_EVENT_POINT_SEPARATION": "contactEventPointSeparation",
+    "OVPHYSX_ATTR_CONTACT_EVENT_PROTO_INDEX": "contactEventProtoIndex",
+    "OVPHYSX_ATTR_CONTACT_EVENT_SENSOR_SIDE": "contactEventSensorSide",
+    "OVPHYSX_ATTR_CONTACT_EVENT_TYPE": "contactEventType",
+    "OVPHYSX_ATTR_CONTACT_OFFSET": "contactOffset",
+    "OVPHYSX_ATTR_CORIOLIS_FORCE": "coriolisForce",
+    "OVPHYSX_ATTR_CURRENT_GEAR": "currentGear",
+    "OVPHYSX_ATTR_DEBUG_ACTOR_AXES": "actorAxes",
+    "OVPHYSX_ATTR_DEBUG_BODY_ANGULAR_VELOCITY": "bodyAngularVelocity",
+    "OVPHYSX_ATTR_DEBUG_BODY_AXES": "bodyAxes",
+    "OVPHYSX_ATTR_DEBUG_BODY_LINEAR_VELOCITY": "bodyLinearVelocity",
+    "OVPHYSX_ATTR_DEBUG_BODY_MASS_AXES": "bodyMassAxes",
+    "OVPHYSX_ATTR_DEBUG_COLLISION_AABBS": "collisionAABBs",
+    "OVPHYSX_ATTR_DEBUG_COLLISION_AXES": "collisionAxes",
+    "OVPHYSX_ATTR_DEBUG_COLLISION_COMPOUNDS": "collisionCompounds",
+    "OVPHYSX_ATTR_DEBUG_COLLISION_DYNAMIC_PRUNER": "collisionDynamicPruner",
+    "OVPHYSX_ATTR_DEBUG_COLLISION_EDGES": "collisionEdges",
+    "OVPHYSX_ATTR_DEBUG_COLLISION_FACE_NORMALS": "collisionFaceNormals",
+    "OVPHYSX_ATTR_DEBUG_COLLISION_SHAPES": "collisionShapes",
+    "OVPHYSX_ATTR_DEBUG_COLLISION_STATIC_PRUNER": "collisionStaticPruner",
+    "OVPHYSX_ATTR_DEBUG_CONTACT_ERROR": "contactError",
+    "OVPHYSX_ATTR_DEBUG_CONTACT_IMPULSE": "contactImpulse",
+    "OVPHYSX_ATTR_DEBUG_CONTACT_NORMAL": "contactNormal",
+    "OVPHYSX_ATTR_DEBUG_CONTACT_POINT": "contactPoint",
+    "OVPHYSX_ATTR_DEBUG_CULL_BOX": "cullBox",
+    "OVPHYSX_ATTR_DEBUG_CULLING_BOX": "cullingBox",
+    "OVPHYSX_ATTR_DEBUG_ENABLED": "enabled",
+    "OVPHYSX_ATTR_DEBUG_FRICTION_IMPULSE": "frictionImpulse",
+    "OVPHYSX_ATTR_DEBUG_FRICTION_NORMAL": "frictionNormal",
+    "OVPHYSX_ATTR_DEBUG_FRICTION_POINT": "frictionPoint",
+    "OVPHYSX_ATTR_DEBUG_JOINT_LIMITS": "jointLimits",
+    "OVPHYSX_ATTR_DEBUG_JOINT_LOCAL_FRAMES": "jointLocalFrames",
+    "OVPHYSX_ATTR_DEBUG_LINE_COLOR": "lineColor",
+    "OVPHYSX_ATTR_DEBUG_LINE_POSITION": "linePosition",
+    "OVPHYSX_ATTR_DEBUG_MBP_REGIONS": "mbpRegions",
+    "OVPHYSX_ATTR_DEBUG_POINT_COLOR": "pointColor",
+    "OVPHYSX_ATTR_DEBUG_POINT_POSITION": "pointPosition",
+    "OVPHYSX_ATTR_DEBUG_SCALE": "scale",
+    "OVPHYSX_ATTR_DEBUG_SCOPE": "scope",
+    "OVPHYSX_ATTR_DEBUG_SDF": "sdf",
+    "OVPHYSX_ATTR_DEBUG_SIMULATION_MESH": "simulationMesh",
+    "OVPHYSX_ATTR_DEBUG_TRIANGLE_COLOR": "triangleColor",
+    "OVPHYSX_ATTR_DEBUG_TRIANGLE_POSITION": "trianglePosition",
+    "OVPHYSX_ATTR_DEBUG_WORLD_AXES": "worldAxes",
+    "OVPHYSX_ATTR_DEFORMABLE_BENDING_DAMPING": "deformableBendingDamping",
+    "OVPHYSX_ATTR_DEFORMABLE_BENDING_STIFFNESS": "deformableBendingStiffness",
+    "OVPHYSX_ATTR_DEFORMABLE_DYNAMIC_FRICTION": "deformableDynamicFriction",
+    "OVPHYSX_ATTR_DEFORMABLE_ELASTICITY_DAMPING": "deformableElasticityDamping",
+    "OVPHYSX_ATTR_DEFORMABLE_POISSONS_RATIO": "deformablePoissonsRatio",
+    "OVPHYSX_ATTR_DEFORMABLE_THICKNESS": "deformableThickness",
+    "OVPHYSX_ATTR_DEFORMABLE_YOUNGS_MODULUS": "deformableYoungsModulus",
+    "OVPHYSX_ATTR_DISABLE_GRAVITY": "disableGravity",
+    "OVPHYSX_ATTR_DISABLE_SIMULATION": "disableSimulation",
+    "OVPHYSX_ATTR_DOF_AXIS_INDEX": "dofAxisIndex",
+    "OVPHYSX_ATTR_DOF_AXIS_KIND": "dofAxisKind",
+    "OVPHYSX_ATTR_DOF_COUNT": "dofCount",
+    "OVPHYSX_ATTR_DOF_JOINT_PATH": "dofJointPath",
+    "OVPHYSX_ATTR_DOF_JOINT_TYPE": "dofJointType",
+    "OVPHYSX_ATTR_DRIVE_TORQUE": "driveTorque",
+    "OVPHYSX_ATTR_DYNAMIC_FRICTION": "dynamicFriction",
+    "OVPHYSX_ATTR_ENGINE_ROTATION_SPEED": "engineRotationSpeed",
+    "OVPHYSX_ATTR_FILTERED_CONTACT_COUNT": "filteredContactCount",
+    "OVPHYSX_ATTR_FILTERED_CONTACT_FORCE": "filteredContactForce",
+    "OVPHYSX_ATTR_FILTERED_CONTACT_NORMAL": "filteredContactNormal",
+    "OVPHYSX_ATTR_FILTERED_CONTACT_POINT": "filteredContactPoint",
+    "OVPHYSX_ATTR_FILTERED_CONTACT_SEPARATION": "filteredContactSeparation",
+    "OVPHYSX_ATTR_FILTERED_FRICTION_COUNT": "filteredFrictionCount",
+    "OVPHYSX_ATTR_FILTERED_FRICTION_FORCE": "filteredFrictionForce",
+    "OVPHYSX_ATTR_FILTERED_FRICTION_POINT": "filteredFrictionPoint",
+    "OVPHYSX_ATTR_FIXED_TENDON_COUNT": "fixedTendonCount",
+    "OVPHYSX_ATTR_FIXED_TENDON_INSTANCE": "fixedTendonInstance",
+    "OVPHYSX_ATTR_FIXED_TENDON_ROOT": "fixedTendonRoot",
+    "OVPHYSX_ATTR_FORCE": "force",
+    "OVPHYSX_ATTR_FRICTION_CONTACT_FORCE_MATRIX": "frictionContactForceMatrix",
+    "OVPHYSX_ATTR_GEAR_SWITCH_TIME": "gearSwitchTime",
+    "OVPHYSX_ATTR_GRAVITY_FORCE": "gravityForce",
+    "OVPHYSX_ATTR_GROUND_ACTOR_PATH": "groundActorPath",
+    "OVPHYSX_ATTR_GROUND_HIT_POSITION": "groundHitPosition",
+    "OVPHYSX_ATTR_GROUND_MATERIAL_PATH": "groundMaterialPath",
+    "OVPHYSX_ATTR_GROUND_PLANE": "groundPlane",
+    "OVPHYSX_ATTR_GROUND_SHAPE_PATH": "groundShapePath",
+    "OVPHYSX_ATTR_INERTIA": "inertia",
+    "OVPHYSX_ATTR_INVERSE_INERTIA": "inverseInertia",
+    "OVPHYSX_ATTR_INVERSE_MASS": "inverseMass",
+    "OVPHYSX_ATTR_IS_FIXED_BASE": "isFixedBase",
+    "OVPHYSX_ATTR_IS_ON_GROUND": "isOnGround",
+    "OVPHYSX_ATTR_IS_SLEEPING": "isSleeping",
+    "OVPHYSX_ATTR_JACOBIAN": "jacobian",
+    "OVPHYSX_ATTR_JOINT_ACTUATION_FORCE": "jointActuationForce",
+    "OVPHYSX_ATTR_JOINT_ARMATURE": "jointArmature",
+    "OVPHYSX_ATTR_JOINT_COUNT": "jointCount",
+    "OVPHYSX_ATTR_JOINT_DAMPING": "jointDamping",
+    "OVPHYSX_ATTR_JOINT_DRIVE_TYPE": "jointDriveType",
+    "OVPHYSX_ATTR_JOINT_DYNAMIC_FRICTION": "jointDynamicFriction",
+    "OVPHYSX_ATTR_JOINT_LIMIT": "jointLimit",
+    "OVPHYSX_ATTR_JOINT_MAX_ACTUATOR_VELOCITY": "jointMaxActuatorVelocity",
+    "OVPHYSX_ATTR_JOINT_MAX_FORCE": "jointMaxForce",
+    "OVPHYSX_ATTR_JOINT_MAX_VELOCITY": "jointMaxVelocity",
+    "OVPHYSX_ATTR_JOINT_POSITION": "jointPosition",
+    "OVPHYSX_ATTR_JOINT_POSITION_TARGET": "jointPositionTarget",
+    "OVPHYSX_ATTR_JOINT_PROJECTED_FORCE": "jointProjectedForce",
+    "OVPHYSX_ATTR_JOINT_SPEED_EFFORT_GRADIENT": "jointSpeedEffortGradient",
+    "OVPHYSX_ATTR_JOINT_STATIC_FRICTION": "jointStaticFriction",
+    "OVPHYSX_ATTR_JOINT_STIFFNESS": "jointStiffness",
+    "OVPHYSX_ATTR_JOINT_VELOCITY": "jointVelocity",
+    "OVPHYSX_ATTR_JOINT_VELOCITY_DEPENDENT_RESISTANCE": "jointVelocityDependentResistance",
+    "OVPHYSX_ATTR_JOINT_VELOCITY_TARGET": "jointVelocityTarget",
+    "OVPHYSX_ATTR_JOINT_VISCOUS_FRICTION": "jointViscousFriction",
+    "OVPHYSX_ATTR_KINEMATIC_TARGET": "kinematicTarget",
+    "OVPHYSX_ATTR_KINEMATIC_TARGET_ORIENTATION": "kinematicTargetOrientation",
+    "OVPHYSX_ATTR_KINEMATIC_TARGET_POSITION": "kinematicTargetPosition",
+    "OVPHYSX_ATTR_LINEAR_ACCELERATION": "linearAcceleration",
+    "OVPHYSX_ATTR_LINEAR_VELOCITY": "linearVelocity",
+    "OVPHYSX_ATTR_LINK_COUNT": "linkCount",
+    "OVPHYSX_ATTR_LINK_INBOUND_JOINT": "linkInboundJoint",
+    "OVPHYSX_ATTR_LINK_INCOMING_JOINT_FORCE": "linkIncomingJointForce",
+    "OVPHYSX_ATTR_LINK_PATH": "linkPath",
+    "OVPHYSX_ATTR_MASS": "mass",
+    "OVPHYSX_ATTR_MASS_MATRIX": "massMatrix",
+    "OVPHYSX_ATTR_NET_FRICTION_CONTACT_FORCE": "netFrictionContactForce",
+    "OVPHYSX_ATTR_NET_NORMAL_CONTACT_FORCE": "netNormalContactForce",
+    "OVPHYSX_ATTR_NORMAL_CONTACT_FORCE_MATRIX": "normalContactForceMatrix",
+    "OVPHYSX_ATTR_ORIENTATION": "orientation",
+    "OVPHYSX_ATTR_PHYSX_POINTER": "physxPointer",
+    "OVPHYSX_ATTR_POINTS": "points",
+    "OVPHYSX_ATTR_POSITION": "position",
+    "OVPHYSX_ATTR_RAW_CONTACT_FORCE": "rawContactForce",
+    "OVPHYSX_ATTR_RAW_CONTACT_NORMAL": "rawContactNormal",
+    "OVPHYSX_ATTR_RAW_CONTACT_OTHER_BODY": "rawContactOtherBody",
+    "OVPHYSX_ATTR_RAW_CONTACT_POINT": "rawContactPoint",
+    "OVPHYSX_ATTR_RAW_CONTACT_SEPARATION": "rawContactSeparation",
+    "OVPHYSX_ATTR_REQUESTED_GEAR": "requestedGear",
+    "OVPHYSX_ATTR_RESET_TO_REST_STATE": "resetToRestState",
+    "OVPHYSX_ATTR_REST_OFFSET": "restOffset",
+    "OVPHYSX_ATTR_REST_POINTS": "restPoints",
+    "OVPHYSX_ATTR_RESTITUTION": "restitution",
+    "OVPHYSX_ATTR_ROOT_ANGULAR_VELOCITY": "rootAngularVelocity",
+    "OVPHYSX_ATTR_ROOT_LINEAR_VELOCITY": "rootLinearVelocity",
+    "OVPHYSX_ATTR_ROOT_ORIENTATION": "rootOrientation",
+    "OVPHYSX_ATTR_ROOT_POSITION": "rootPosition",
+    "OVPHYSX_ATTR_ROTATION_ANGLE": "rotationAngle",
+    "OVPHYSX_ATTR_ROTATION_SPEED": "rotationSpeed",
+    "OVPHYSX_ATTR_SHAPE_COUNT": "shapeCount",
+    "OVPHYSX_ATTR_SIM_ELEMENT_INDICES": "simElementIndices",
+    "OVPHYSX_ATTR_SPATIAL_TENDON_COUNT": "spatialTendonCount",
+    "OVPHYSX_ATTR_SPATIAL_TENDON_INSTANCE": "spatialTendonInstance",
+    "OVPHYSX_ATTR_SPATIAL_TENDON_ROOT": "spatialTendonRoot",
+    "OVPHYSX_ATTR_STATIC_FRICTION": "staticFriction",
+    "OVPHYSX_ATTR_STEER": "steer",
+    "OVPHYSX_ATTR_STEER_ANGLE": "steerAngle",
+    "OVPHYSX_ATTR_SUSPENSION_FORCE": "suspensionForce",
+    "OVPHYSX_ATTR_SUSPENSION_JOUNCE": "suspensionJounce",
+    "OVPHYSX_ATTR_TARGET_GEAR": "targetGear",
+    "OVPHYSX_ATTR_TENDON_DAMPING": "tendonDamping",
+    "OVPHYSX_ATTR_TENDON_INSTANCE": "tendonInstance",
+    "OVPHYSX_ATTR_TENDON_LIMIT": "tendonLimit",
+    "OVPHYSX_ATTR_TENDON_LIMIT_STIFFNESS": "tendonLimitStiffness",
+    "OVPHYSX_ATTR_TENDON_OFFSET": "tendonOffset",
+    "OVPHYSX_ATTR_TENDON_REST_LENGTH": "tendonRestLength",
+    "OVPHYSX_ATTR_TENDON_STIFFNESS": "tendonStiffness",
+    "OVPHYSX_ATTR_THRUST0": "thrust0",
+    "OVPHYSX_ATTR_THRUST1": "thrust1",
+    "OVPHYSX_ATTR_TIRE_FORCE": "tireForce",
+    "OVPHYSX_ATTR_TIRE_FRICTION": "tireFriction",
+    "OVPHYSX_ATTR_TIRE_LATERAL_DIRECTION": "tireLateralDirection",
+    "OVPHYSX_ATTR_TIRE_LATERAL_SLIP": "tireLateralSlip",
+    "OVPHYSX_ATTR_TIRE_LONGITUDINAL_DIRECTION": "tireLongitudinalDirection",
+    "OVPHYSX_ATTR_TIRE_LONGITUDINAL_SLIP": "tireLongitudinalSlip",
+    "OVPHYSX_ATTR_VELOCITIES": "velocities",
+    "OVPHYSX_ATTR_WAKE": "wake",
+    "OVPHYSX_ATTR_WHEEL_STEER_ANGLE": "wheelSteerAngle",
+    "OVPHYSX_ATTR_WORLD_SCALE": "worldScale",
+    "OVPHYSX_ATTR_WRENCH": "wrench"
+  },
+  "cpp_symbols": {
+    "accelerations": "kAccelerations",
+    "accelerator": "kAccelerator",
+    "angularAcceleration": "kAngularAcceleration",
+    "angularAccelerations": "kAngularAccelerations",
+    "angularVelocities": "kAngularVelocities",
+    "angularVelocity": "kAngularVelocity",
+    "autoboxTimeSinceLastShift": "kAutoboxTimeSinceLastShift",
+    "automaticTransmission": "kAutomaticTransmission",
+    "brake0": "kBrake0",
+    "brake1": "kBrake1",
+    "brakeTorque": "kBrakeTorque",
+    "move": "kMove",
+    "centerOfMassLocal": "kCenterOfMassLocal",
+    "centerOfMassOrientation": "kCenterOfMassOrientation",
+    "centerOfMassPosition": "kCenterOfMassPosition",
+    "centerOfMassWorld": "kCenterOfMassWorld",
+    "centroidalMomentum": "kCentroidalMomentum",
+    "clutch": "kClutch",
+    "collisionElementIndices": "kCollisionElementIndices",
+    "contactEventAnchorCount": "kContactEventAnchorCount",
+    "contactEventAnchorImpulse": "kContactEventAnchorImpulse",
+    "contactEventAnchorPosition": "kContactEventAnchorPosition",
+    "contactEventCollider": "kContactEventCollider",
+    "contactEventOtherBody": "kContactEventOtherBody",
+    "contactEventOtherCollider": "kContactEventOtherCollider",
+    "contactEventOtherProtoIndex": "kContactEventOtherProtoIndex",
+    "contactEventPointCount": "kContactEventPointCount",
+    "contactEventPointFaceIndex": "kContactEventPointFaceIndex",
+    "contactEventPointImpulse": "kContactEventPointImpulse",
+    "contactEventPointMaterial": "kContactEventPointMaterial",
+    "contactEventPointNormal": "kContactEventPointNormal",
+    "contactEventPointOtherFaceIndex": "kContactEventPointOtherFaceIndex",
+    "contactEventPointOtherMaterial": "kContactEventPointOtherMaterial",
+    "contactEventPointPosition": "kContactEventPointPosition",
+    "contactEventPointSeparation": "kContactEventPointSeparation",
+    "contactEventProtoIndex": "kContactEventProtoIndex",
+    "contactEventSensorSide": "kContactEventSensorSide",
+    "contactEventType": "kContactEventType",
+    "contactOffset": "kContactOffset",
+    "coriolisForce": "kCoriolisForce",
+    "currentGear": "kCurrentGear",
+    "actorAxes": "kDebugActorAxes",
+    "bodyAngularVelocity": "kDebugBodyAngularVelocity",
+    "bodyAxes": "kDebugBodyAxes",
+    "bodyLinearVelocity": "kDebugBodyLinearVelocity",
+    "bodyMassAxes": "kDebugBodyMassAxes",
+    "collisionAABBs": "kDebugCollisionAabbs",
+    "collisionAxes": "kDebugCollisionAxes",
+    "collisionCompounds": "kDebugCollisionCompounds",
+    "collisionDynamicPruner": "kDebugCollisionDynamicPruner",
+    "collisionEdges": "kDebugCollisionEdges",
+    "collisionFaceNormals": "kDebugCollisionFaceNormals",
+    "collisionShapes": "kDebugCollisionShapes",
+    "collisionStaticPruner": "kDebugCollisionStaticPruner",
+    "contactError": "kDebugContactError",
+    "contactImpulse": "kDebugContactImpulse",
+    "contactNormal": "kDebugContactNormal",
+    "contactPoint": "kDebugContactPoint",
+    "cullBox": "kDebugCullBox",
+    "cullingBox": "kDebugCullingBox",
+    "enabled": "kDebugEnabled",
+    "frictionImpulse": "kDebugFrictionImpulse",
+    "frictionNormal": "kDebugFrictionNormal",
+    "frictionPoint": "kDebugFrictionPoint",
+    "jointLimits": "kDebugJointLimits",
+    "jointLocalFrames": "kDebugJointLocalFrames",
+    "lineColor": "kDebugLineColor",
+    "linePosition": "kDebugLinePosition",
+    "mbpRegions": "kDebugMbpRegions",
+    "pointColor": "kDebugPointColor",
+    "pointPosition": "kDebugPointPosition",
+    "scale": "kDebugScale",
+    "scope": "kDebugScope",
+    "sdf": "kDebugSdf",
+    "simulationMesh": "kDebugSimulationMesh",
+    "triangleColor": "kDebugTriangleColor",
+    "trianglePosition": "kDebugTrianglePosition",
+    "worldAxes": "kDebugWorldAxes",
+    "deformableBendingDamping": "kDeformableBendingDamping",
+    "deformableBendingStiffness": "kDeformableBendingStiffness",
+    "deformableDynamicFriction": "kDeformableDynamicFriction",
+    "deformableElasticityDamping": "kDeformableElasticityDamping",
+    "deformablePoissonsRatio": "kDeformablePoissonsRatio",
+    "deformableThickness": "kDeformableThickness",
+    "deformableYoungsModulus": "kDeformableYoungsModulus",
+    "disableGravity": "kDisableGravity",
+    "disableSimulation": "kDisableSimulation",
+    "dofAxisIndex": "kDofAxisIndex",
+    "dofAxisKind": "kDofAxisKind",
+    "dofCount": "kDofCount",
+    "dofJointPath": "kDofJointPath",
+    "dofJointType": "kDofJointType",
+    "driveTorque": "kDriveTorque",
+    "dynamicFriction": "kDynamicFriction",
+    "engineRotationSpeed": "kEngineRotationSpeed",
+    "filteredContactCount": "kFilteredContactCount",
+    "filteredContactForce": "kFilteredContactForce",
+    "filteredContactNormal": "kFilteredContactNormal",
+    "filteredContactPoint": "kFilteredContactPoint",
+    "filteredContactSeparation": "kFilteredContactSeparation",
+    "filteredFrictionCount": "kFilteredFrictionCount",
+    "filteredFrictionForce": "kFilteredFrictionForce",
+    "filteredFrictionPoint": "kFilteredFrictionPoint",
+    "fixedTendonCount": "kFixedTendonCount",
+    "fixedTendonInstance": "kFixedTendonInstance",
+    "fixedTendonRoot": "kFixedTendonRoot",
+    "force": "kForce",
+    "frictionContactForceMatrix": "kFrictionContactForceMatrix",
+    "gearSwitchTime": "kGearSwitchTime",
+    "gravityForce": "kGravityForce",
+    "groundActorPath": "kGroundActorPath",
+    "groundHitPosition": "kGroundHitPosition",
+    "groundMaterialPath": "kGroundMaterialPath",
+    "groundPlane": "kGroundPlane",
+    "groundShapePath": "kGroundShapePath",
+    "inertia": "kInertia",
+    "inverseInertia": "kInverseInertia",
+    "inverseMass": "kInverseMass",
+    "isFixedBase": "kIsFixedBase",
+    "isOnGround": "kIsOnGround",
+    "isSleeping": "kIsSleeping",
+    "jacobian": "kJacobian",
+    "jointActuationForce": "kJointActuationForce",
+    "jointArmature": "kJointArmature",
+    "jointCount": "kJointCount",
+    "jointDamping": "kJointDamping",
+    "jointDriveType": "kJointDriveType",
+    "jointDynamicFriction": "kJointDynamicFriction",
+    "jointLimit": "kJointLimit",
+    "jointMaxActuatorVelocity": "kJointMaxActuatorVelocity",
+    "jointMaxForce": "kJointMaxForce",
+    "jointMaxVelocity": "kJointMaxVelocity",
+    "jointPosition": "kJointPosition",
+    "jointPositionTarget": "kJointPositionTarget",
+    "jointProjectedForce": "kJointProjectedForce",
+    "jointSpeedEffortGradient": "kJointSpeedEffortGradient",
+    "jointStaticFriction": "kJointStaticFriction",
+    "jointStiffness": "kJointStiffness",
+    "jointVelocity": "kJointVelocity",
+    "jointVelocityDependentResistance": "kJointVelocityDependentResistance",
+    "jointVelocityTarget": "kJointVelocityTarget",
+    "jointViscousFriction": "kJointViscousFriction",
+    "kinematicTarget": "kKinematicTarget",
+    "kinematicTargetOrientation": "kKinematicTargetOrientation",
+    "kinematicTargetPosition": "kKinematicTargetPosition",
+    "linearAcceleration": "kLinearAcceleration",
+    "linearVelocity": "kLinearVelocity",
+    "linkCount": "kLinkCount",
+    "linkInboundJoint": "kLinkInboundJoint",
+    "linkIncomingJointForce": "kLinkIncomingJointForce",
+    "linkPath": "kLinkPath",
+    "mass": "kMass",
+    "massMatrix": "kMassMatrix",
+    "netFrictionContactForce": "kNetFrictionContactForce",
+    "netNormalContactForce": "kNetNormalContactForce",
+    "normalContactForceMatrix": "kNormalContactForceMatrix",
+    "orientation": "kOrientation",
+    "orientations": "kOrientations",
+    "physxPointer": "kPhysXPointer",
+    "points": "kPoints",
+    "position": "kPosition",
+    "positions": "kPositions",
+    "rawContactForce": "kRawContactForce",
+    "rawContactNormal": "kRawContactNormal",
+    "rawContactOtherBody": "kRawContactOtherBody",
+    "rawContactPoint": "kRawContactPoint",
+    "rawContactSeparation": "kRawContactSeparation",
+    "requestedGear": "kRequestedGear",
+    "resetToRestState": "kResetToRestState",
+    "restOffset": "kRestOffset",
+    "restPoints": "kRestPoints",
+    "restitution": "kRestitution",
+    "rootAngularVelocity": "kRootAngularVelocity",
+    "rootLinearVelocity": "kRootLinearVelocity",
+    "rootOrientation": "kRootOrientation",
+    "rootPosition": "kRootPosition",
+    "rotationAngle": "kRotationAngle",
+    "rotationSpeed": "kRotationSpeed",
+    "shapeCount": "kShapeCount",
+    "simElementIndices": "kSimElementIndices",
+    "spatialTendonCount": "kSpatialTendonCount",
+    "spatialTendonInstance": "kSpatialTendonInstance",
+    "spatialTendonRoot": "kSpatialTendonRoot",
+    "staticFriction": "kStaticFriction",
+    "steer": "kSteer",
+    "steerAngle": "kSteerAngle",
+    "suspensionForce": "kSuspensionForce",
+    "suspensionJounce": "kSuspensionJounce",
+    "targetGear": "kTargetGear",
+    "tendonDamping": "kTendonDamping",
+    "tendonInstance": "kTendonInstance",
+    "tendonLimit": "kTendonLimit",
+    "tendonLimitStiffness": "kTendonLimitStiffness",
+    "tendonOffset": "kTendonOffset",
+    "tendonRestLength": "kTendonRestLength",
+    "tendonStiffness": "kTendonStiffness",
+    "thrust0": "kThrust0",
+    "thrust1": "kThrust1",
+    "tireForce": "kTireForce",
+    "tireFriction": "kTireFriction",
+    "tireLateralDirection": "kTireLateralDirection",
+    "tireLateralSlip": "kTireLateralSlip",
+    "tireLongitudinalDirection": "kTireLongitudinalDirection",
+    "tireLongitudinalSlip": "kTireLongitudinalSlip",
+    "velocities": "kVelocities",
+    "wake": "kWake",
+    "wheelSteerAngle": "kWheelSteerAngle",
+    "worldScale": "kWorldScale",
+    "wrench": "kWrench"
+  },
+  "targets": {
+    "RIGID_BODY": 0,
+    "ARTICULATION_LINK": 1,
+    "ARTICULATION_JOINT": 2,
+    "VEHICLE_WHEEL": 3,
+    "DEFORMABLE_VOLUME": 4,
+    "DEFORMABLE_SURFACE": 5,
+    "PARTICLE_SET": 6,
+    "FIXED_TENDON": 7,
+    "SPATIAL_TENDON": 8,
+    "ARTICULATION": 9,
+    "DEFORMABLE_MATERIAL": 10,
+    "CONTACT_SENSOR": 11,
+    "CHARACTER_CONTROLLER": 12,
+    "VEHICLE": 13,
+    "SCENE": 14,
+    "PHYSX_MATERIAL": 15,
+    "SHAPE": 16,
+    "COMPOUND_SHAPE": 17,
+    "RIGID_ACTOR": 18,
+    "JOINT": 19,
+    "CUSTOM_JOINT": 20,
+    "PARTICLE_SYSTEM": 21,
+    "PHYSICS": 22,
+    "DEBUG_RENDER": 23,
+    "SDF_SHAPE": 24,
+    "DEFORMABLE_SKIN_MESH": 25
+  },
+  "writability": [
+    {
+      "target": "VEHICLE",
+      "name": "accelerator",
+      "classification": "CONDITIONAL"
+    },
+    {
+      "target": "RIGID_BODY",
+      "name": "angularAcceleration",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION_LINK",
+      "name": "angularAcceleration",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "RIGID_BODY",
+      "name": "angularVelocity",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_LINK",
+      "name": "angularVelocity",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "VEHICLE",
+      "name": "autoboxTimeSinceLastShift",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "VEHICLE",
+      "name": "automaticTransmission",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "VEHICLE",
+      "name": "brake0",
+      "classification": "CONDITIONAL"
+    },
+    {
+      "target": "VEHICLE",
+      "name": "brake1",
+      "classification": "CONDITIONAL"
+    },
+    {
+      "target": "VEHICLE_WHEEL",
+      "name": "brakeTorque",
+      "classification": "WRITE_ONLY"
+    },
+    {
+      "target": "CHARACTER_CONTROLLER",
+      "name": "move",
+      "classification": "CONDITIONAL"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "centerOfMassLocal",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "RIGID_BODY",
+      "name": "centerOfMassOrientation",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_LINK",
+      "name": "centerOfMassOrientation",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "RIGID_BODY",
+      "name": "centerOfMassPosition",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_LINK",
+      "name": "centerOfMassPosition",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "centerOfMassWorld",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "centroidalMomentum",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "VEHICLE",
+      "name": "clutch",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "DEFORMABLE_VOLUME",
+      "name": "collisionElementIndices",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "contactEventAnchorCount",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "contactEventAnchorImpulse",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "contactEventAnchorPosition",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "contactEventCollider",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "contactEventOtherBody",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "contactEventOtherCollider",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "contactEventOtherProtoIndex",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "contactEventPointCount",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "contactEventPointFaceIndex",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "contactEventPointImpulse",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "contactEventPointMaterial",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "contactEventPointNormal",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "contactEventPointOtherFaceIndex",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "contactEventPointOtherMaterial",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "contactEventPointPosition",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "contactEventPointSeparation",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "contactEventProtoIndex",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "contactEventSensorSide",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "contactEventType",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "RIGID_BODY",
+      "name": "contactOffset",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_LINK",
+      "name": "contactOffset",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "contactOffset",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "coriolisForce",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "VEHICLE",
+      "name": "currentGear",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "actorAxes",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "bodyAngularVelocity",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "bodyAxes",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "bodyLinearVelocity",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "bodyMassAxes",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "collisionAABBs",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "collisionAxes",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "collisionCompounds",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "collisionDynamicPruner",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "collisionEdges",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "collisionFaceNormals",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "collisionShapes",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "collisionStaticPruner",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "contactError",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "contactImpulse",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "contactNormal",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "contactPoint",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "cullBox",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "cullingBox",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "enabled",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "frictionImpulse",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "frictionNormal",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "frictionPoint",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "jointLimits",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "jointLocalFrames",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "lineColor",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "linePosition",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "mbpRegions",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "pointColor",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "pointPosition",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "scale",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "scope",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "sdf",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "simulationMesh",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "triangleColor",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "trianglePosition",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "DEBUG_RENDER",
+      "name": "worldAxes",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEFORMABLE_MATERIAL",
+      "name": "deformableBendingDamping",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEFORMABLE_MATERIAL",
+      "name": "deformableBendingStiffness",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEFORMABLE_MATERIAL",
+      "name": "deformableDynamicFriction",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEFORMABLE_MATERIAL",
+      "name": "deformableElasticityDamping",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEFORMABLE_MATERIAL",
+      "name": "deformablePoissonsRatio",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEFORMABLE_MATERIAL",
+      "name": "deformableThickness",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEFORMABLE_MATERIAL",
+      "name": "deformableYoungsModulus",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "RIGID_BODY",
+      "name": "disableGravity",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_LINK",
+      "name": "disableGravity",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "RIGID_BODY",
+      "name": "disableSimulation",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_LINK",
+      "name": "disableSimulation",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "dofAxisIndex",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "dofAxisKind",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "dofCount",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "dofJointPath",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "dofJointType",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "VEHICLE_WHEEL",
+      "name": "driveTorque",
+      "classification": "WRITE_ONLY"
+    },
+    {
+      "target": "RIGID_BODY",
+      "name": "dynamicFriction",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_LINK",
+      "name": "dynamicFriction",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "dynamicFriction",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "VEHICLE",
+      "name": "engineRotationSpeed",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "filteredContactCount",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "filteredContactForce",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "filteredContactNormal",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "filteredContactPoint",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "filteredContactSeparation",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "filteredFrictionCount",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "filteredFrictionForce",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "filteredFrictionPoint",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "fixedTendonCount",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "fixedTendonInstance",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "fixedTendonRoot",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "RIGID_BODY",
+      "name": "force",
+      "classification": "WRITE_ONLY"
+    },
+    {
+      "target": "ARTICULATION_LINK",
+      "name": "force",
+      "classification": "WRITE_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "frictionContactForceMatrix",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "VEHICLE",
+      "name": "gearSwitchTime",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "gravityForce",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "VEHICLE_WHEEL",
+      "name": "groundActorPath",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "VEHICLE_WHEEL",
+      "name": "groundHitPosition",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "VEHICLE_WHEEL",
+      "name": "groundMaterialPath",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "VEHICLE_WHEEL",
+      "name": "groundPlane",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "VEHICLE_WHEEL",
+      "name": "groundShapePath",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "RIGID_BODY",
+      "name": "inertia",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_LINK",
+      "name": "inertia",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "RIGID_BODY",
+      "name": "inverseInertia",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION_LINK",
+      "name": "inverseInertia",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "RIGID_BODY",
+      "name": "inverseMass",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION_LINK",
+      "name": "inverseMass",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "isFixedBase",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "VEHICLE_WHEEL",
+      "name": "isOnGround",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "RIGID_BODY",
+      "name": "isSleeping",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION_LINK",
+      "name": "isSleeping",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "jacobian",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION_JOINT",
+      "name": "jointActuationForce",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_JOINT",
+      "name": "jointArmature",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "jointCount",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION_JOINT",
+      "name": "jointDamping",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_JOINT",
+      "name": "jointDriveType",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_JOINT",
+      "name": "jointDynamicFriction",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_JOINT",
+      "name": "jointLimit",
+      "classification": "CONDITIONAL"
+    },
+    {
+      "target": "ARTICULATION_JOINT",
+      "name": "jointMaxActuatorVelocity",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_JOINT",
+      "name": "jointMaxForce",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_JOINT",
+      "name": "jointMaxVelocity",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_JOINT",
+      "name": "jointPosition",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_JOINT",
+      "name": "jointPositionTarget",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_JOINT",
+      "name": "jointProjectedForce",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION_JOINT",
+      "name": "jointSpeedEffortGradient",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_JOINT",
+      "name": "jointStaticFriction",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_JOINT",
+      "name": "jointStiffness",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_JOINT",
+      "name": "jointVelocity",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_JOINT",
+      "name": "jointVelocityDependentResistance",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_JOINT",
+      "name": "jointVelocityTarget",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_JOINT",
+      "name": "jointViscousFriction",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEFORMABLE_VOLUME",
+      "name": "kinematicTarget",
+      "classification": "CONDITIONAL"
+    },
+    {
+      "target": "RIGID_BODY",
+      "name": "kinematicTargetOrientation",
+      "classification": "CONDITIONAL"
+    },
+    {
+      "target": "ARTICULATION_LINK",
+      "name": "kinematicTargetOrientation",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "RIGID_BODY",
+      "name": "kinematicTargetPosition",
+      "classification": "CONDITIONAL"
+    },
+    {
+      "target": "ARTICULATION_LINK",
+      "name": "kinematicTargetPosition",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "RIGID_BODY",
+      "name": "linearAcceleration",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION_LINK",
+      "name": "linearAcceleration",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "RIGID_BODY",
+      "name": "linearVelocity",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_LINK",
+      "name": "linearVelocity",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "linkCount",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "linkInboundJoint",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION_LINK",
+      "name": "linkIncomingJointForce",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "linkPath",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "RIGID_BODY",
+      "name": "mass",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_LINK",
+      "name": "mass",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "massMatrix",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "netFrictionContactForce",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "netNormalContactForce",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "normalContactForceMatrix",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "RIGID_BODY",
+      "name": "orientation",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_LINK",
+      "name": "orientation",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "VEHICLE_WHEEL",
+      "name": "orientation",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION_LINK",
+      "name": "physxPointer",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION_JOINT",
+      "name": "physxPointer",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "PARTICLE_SET",
+      "name": "physxPointer",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "physxPointer",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "SCENE",
+      "name": "physxPointer",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "PHYSX_MATERIAL",
+      "name": "physxPointer",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "SHAPE",
+      "name": "physxPointer",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "COMPOUND_SHAPE",
+      "name": "physxPointer",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "RIGID_ACTOR",
+      "name": "physxPointer",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "JOINT",
+      "name": "physxPointer",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CUSTOM_JOINT",
+      "name": "physxPointer",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "PARTICLE_SYSTEM",
+      "name": "physxPointer",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "PHYSICS",
+      "name": "physxPointer",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "DEFORMABLE_VOLUME",
+      "name": "points",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEFORMABLE_SURFACE",
+      "name": "points",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "PARTICLE_SET",
+      "name": "points",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEFORMABLE_SKIN_MESH",
+      "name": "points",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "RIGID_BODY",
+      "name": "position",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_LINK",
+      "name": "position",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "VEHICLE_WHEEL",
+      "name": "position",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "rawContactForce",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "rawContactNormal",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "rawContactOtherBody",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "rawContactPoint",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "CONTACT_SENSOR",
+      "name": "rawContactSeparation",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "VEHICLE",
+      "name": "requestedGear",
+      "classification": "CONDITIONAL"
+    },
+    {
+      "target": "VEHICLE",
+      "name": "resetToRestState",
+      "classification": "CONDITIONAL"
+    },
+    {
+      "target": "RIGID_BODY",
+      "name": "restOffset",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_LINK",
+      "name": "restOffset",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "restOffset",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "DEFORMABLE_VOLUME",
+      "name": "restPoints",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "DEFORMABLE_SURFACE",
+      "name": "restPoints",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "RIGID_BODY",
+      "name": "restitution",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_LINK",
+      "name": "restitution",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "restitution",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "rootAngularVelocity",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "rootLinearVelocity",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "rootOrientation",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "rootPosition",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "VEHICLE_WHEEL",
+      "name": "rotationAngle",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "VEHICLE_WHEEL",
+      "name": "rotationSpeed",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "RIGID_BODY",
+      "name": "shapeCount",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION_LINK",
+      "name": "shapeCount",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "shapeCount",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "DEFORMABLE_VOLUME",
+      "name": "simElementIndices",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "DEFORMABLE_SURFACE",
+      "name": "simElementIndices",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "spatialTendonCount",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "spatialTendonInstance",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "spatialTendonRoot",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "RIGID_BODY",
+      "name": "staticFriction",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION_LINK",
+      "name": "staticFriction",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "ARTICULATION",
+      "name": "staticFriction",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "VEHICLE",
+      "name": "steer",
+      "classification": "CONDITIONAL"
+    },
+    {
+      "target": "VEHICLE_WHEEL",
+      "name": "steerAngle",
+      "classification": "WRITE_ONLY"
+    },
+    {
+      "target": "VEHICLE_WHEEL",
+      "name": "suspensionForce",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "VEHICLE_WHEEL",
+      "name": "suspensionJounce",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "VEHICLE",
+      "name": "targetGear",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "FIXED_TENDON",
+      "name": "tendonDamping",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "SPATIAL_TENDON",
+      "name": "tendonDamping",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "FIXED_TENDON",
+      "name": "tendonInstance",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "SPATIAL_TENDON",
+      "name": "tendonInstance",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "FIXED_TENDON",
+      "name": "tendonLimit",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "FIXED_TENDON",
+      "name": "tendonLimitStiffness",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "SPATIAL_TENDON",
+      "name": "tendonLimitStiffness",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "FIXED_TENDON",
+      "name": "tendonOffset",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "SPATIAL_TENDON",
+      "name": "tendonOffset",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "FIXED_TENDON",
+      "name": "tendonRestLength",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "FIXED_TENDON",
+      "name": "tendonStiffness",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "SPATIAL_TENDON",
+      "name": "tendonStiffness",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "VEHICLE",
+      "name": "thrust0",
+      "classification": "CONDITIONAL"
+    },
+    {
+      "target": "VEHICLE",
+      "name": "thrust1",
+      "classification": "CONDITIONAL"
+    },
+    {
+      "target": "VEHICLE_WHEEL",
+      "name": "tireForce",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "VEHICLE_WHEEL",
+      "name": "tireFriction",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "VEHICLE_WHEEL",
+      "name": "tireLateralDirection",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "VEHICLE_WHEEL",
+      "name": "tireLateralSlip",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "VEHICLE_WHEEL",
+      "name": "tireLongitudinalDirection",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "VEHICLE_WHEEL",
+      "name": "tireLongitudinalSlip",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "DEFORMABLE_VOLUME",
+      "name": "velocities",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "DEFORMABLE_SURFACE",
+      "name": "velocities",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "PARTICLE_SET",
+      "name": "velocities",
+      "classification": "WRITABLE"
+    },
+    {
+      "target": "RIGID_BODY",
+      "name": "wake",
+      "classification": "CONDITIONAL"
+    },
+    {
+      "target": "VEHICLE_WHEEL",
+      "name": "wheelSteerAngle",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "RIGID_BODY",
+      "name": "worldScale",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "ARTICULATION_LINK",
+      "name": "worldScale",
+      "classification": "READ_ONLY"
+    },
+    {
+      "target": "RIGID_BODY",
+      "name": "wrench",
+      "classification": "WRITE_ONLY"
+    },
+    {
+      "target": "ARTICULATION_LINK",
+      "name": "wrench",
+      "classification": "WRITE_ONLY"
+    }
+  ],
+  "uses": [
+    {"name": "accelerations", "target": "RIGID_BODY", "representation": "instancer", "semantic": "VECTOR", "dtype": "f32", "units": "acceleration", "frame": "world", "read": {"supported": true, "request_name": "linearAcceleration", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["instance_slots"], "padding": 0, "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "accelerator", "target": "VEHICLE", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "accelerator", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "accelerator", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "angularAcceleration", "target": "RIGID_BODY", "representation": "default", "semantic": "VECTOR", "dtype": "f32", "units": "angular_acceleration", "frame": "world", "read": {"supported": true, "request_name": "angularAcceleration", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "angularAcceleration", "target": "ARTICULATION_LINK", "representation": "default", "semantic": "VECTOR", "dtype": "f32", "units": "angular_acceleration", "frame": "world", "read": {"supported": true, "request_name": "angularAcceleration", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "angularAccelerations", "target": "RIGID_BODY", "representation": "instancer", "semantic": "VECTOR", "dtype": "f32", "units": "angular_acceleration", "frame": "world", "read": {"supported": true, "request_name": "angularAcceleration", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["instance_slots"], "padding": 0, "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "angularVelocities", "target": "RIGID_BODY", "representation": "instancer", "semantic": "VECTOR", "dtype": "f32", "units": "angular_velocity", "frame": "world", "read": {"supported": true, "request_name": "angularVelocity", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["instance_slots"], "padding": 0, "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "angularVelocity", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["instance_slots"], "padding": 0, "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "angularVelocity", "target": "RIGID_BODY", "representation": "default", "semantic": "VECTOR", "dtype": "f32", "units": "angular_velocity", "frame": "world", "read": {"supported": true, "request_name": "angularVelocity", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "angularVelocity", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "angularVelocity", "target": "ARTICULATION_LINK", "representation": "default", "semantic": "VECTOR", "dtype": "f32", "units": "angular_velocity", "frame": "world", "read": {"supported": true, "request_name": "angularVelocity", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "autoboxTimeSinceLastShift", "target": "VEHICLE", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "time", "frame": "not_applicable", "read": {"supported": true, "request_name": "autoboxTimeSinceLastShift", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "automaticTransmission", "target": "VEHICLE", "representation": "default", "semantic": "NONE", "dtype": "u8", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "automaticTransmission", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "brake0", "target": "VEHICLE", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "brake0", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "brake0", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "brake1", "target": "VEHICLE", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "brake1", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "brake1", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "brakeTorque", "target": "VEHICLE_WHEEL", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "torque", "frame": "not_applicable", "read": {"supported": false, "aliases": []}, "write": {"supported": true, "request_name": "brakeTorque", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "move", "target": "CHARACTER_CONTROLLER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "length", "frame": "world", "read": {"supported": false, "aliases": []}, "write": {"supported": true, "request_name": "move", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "centerOfMassLocal", "target": "ARTICULATION", "representation": "default", "semantic": "POINT", "dtype": "f32", "units": "length", "frame": "root-link COM", "read": {"supported": true, "request_name": "centerOfMassLocal", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "centerOfMassOrientation", "target": "RIGID_BODY", "representation": "default", "semantic": "QUATERNION", "dtype": "f32", "units": "dimensionless", "frame": "body", "read": {"supported": true, "request_name": "centerOfMassOrientation", "aliases": [], "layout": {"kind": "fixed", "lanes": 4, "shape": ["objects"], "order": "xyzw"}, "residency": "host"}, "write": {"supported": true, "request_name": "centerOfMassOrientation", "aliases": [], "layout": {"kind": "fixed", "lanes": 4, "shape": ["objects"], "order": "xyzw"}, "residency": "host"}},
+    {"name": "centerOfMassOrientation", "target": "ARTICULATION_LINK", "representation": "default", "semantic": "QUATERNION", "dtype": "f32", "units": "dimensionless", "frame": "body", "read": {"supported": true, "request_name": "centerOfMassOrientation", "aliases": [], "layout": {"kind": "fixed", "lanes": 4, "shape": ["objects"], "order": "xyzw"}, "residency": "host"}, "write": {"supported": true, "request_name": "centerOfMassOrientation", "aliases": [], "layout": {"kind": "fixed", "lanes": 4, "shape": ["objects"], "order": "xyzw"}, "residency": "host"}},
+    {"name": "centerOfMassPosition", "target": "RIGID_BODY", "representation": "default", "semantic": "POINT", "dtype": "f32", "units": "length", "frame": "body", "read": {"supported": true, "request_name": "centerOfMassPosition", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "centerOfMassPosition", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "centerOfMassPosition", "target": "ARTICULATION_LINK", "representation": "default", "semantic": "POINT", "dtype": "f32", "units": "length", "frame": "body", "read": {"supported": true, "request_name": "centerOfMassPosition", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "centerOfMassPosition", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "centerOfMassWorld", "target": "ARTICULATION", "representation": "default", "semantic": "POINT", "dtype": "f32", "units": "length", "frame": "world", "read": {"supported": true, "request_name": "centerOfMassWorld", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "centroidalMomentum", "target": "ARTICULATION", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "centroidal_momentum_matrix", "frame": "not_applicable", "read": {"supported": true, "request_name": "centroidalMomentum", "aliases": [], "layout": {"kind": "cohort", "lanes": 1, "shape": ["objects", 6, "num_dofs + 7"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "clutch", "target": "VEHICLE", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "clutch", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "collisionElementIndices", "target": "DEFORMABLE_VOLUME", "representation": "default", "semantic": "NONE", "dtype": "i32", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "collisionElementIndices", "aliases": [], "layout": {"kind": "array", "lanes": 4, "shape": ["elements"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "contactEventAnchorCount", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "NONE", "dtype": "i32", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "contactEventAnchorCount", "aliases": [], "layout": {"kind": "array", "lanes": 1, "shape": ["events"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "contactEventAnchorImpulse", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "VECTOR", "dtype": "f32", "units": "impulse", "frame": "world", "read": {"supported": true, "request_name": "contactEventAnchorImpulse", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["event_anchors"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "contactEventAnchorPosition", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "POINT", "dtype": "f32", "units": "length", "frame": "world", "read": {"supported": true, "request_name": "contactEventAnchorPosition", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["event_anchors"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "contactEventCollider", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "contactEventCollider", "aliases": [], "layout": {"kind": "array", "lanes": 1, "shape": ["events"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "contactEventOtherBody", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "contactEventOtherBody", "aliases": [], "layout": {"kind": "array", "lanes": 1, "shape": ["events"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "contactEventOtherCollider", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "contactEventOtherCollider", "aliases": [], "layout": {"kind": "array", "lanes": 1, "shape": ["events"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "contactEventOtherProtoIndex", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "NONE", "dtype": "u32", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "contactEventOtherProtoIndex", "aliases": [], "layout": {"kind": "array", "lanes": 1, "shape": ["events"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "contactEventPointCount", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "NONE", "dtype": "i32", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "contactEventPointCount", "aliases": [], "layout": {"kind": "array", "lanes": 1, "shape": ["events"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "contactEventPointFaceIndex", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "NONE", "dtype": "u32", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "contactEventPointFaceIndex", "aliases": [], "layout": {"kind": "array", "lanes": 1, "shape": ["event_points"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "contactEventPointImpulse", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "VECTOR", "dtype": "f32", "units": "impulse", "frame": "world", "read": {"supported": true, "request_name": "contactEventPointImpulse", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["event_points"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "contactEventPointMaterial", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "contactEventPointMaterial", "aliases": [], "layout": {"kind": "array", "lanes": 1, "shape": ["event_points"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "contactEventPointNormal", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "NORMAL", "dtype": "f32", "units": "dimensionless", "frame": "world", "read": {"supported": true, "request_name": "contactEventPointNormal", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["event_points"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "contactEventPointOtherFaceIndex", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "NONE", "dtype": "u32", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "contactEventPointOtherFaceIndex", "aliases": [], "layout": {"kind": "array", "lanes": 1, "shape": ["event_points"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "contactEventPointOtherMaterial", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "contactEventPointOtherMaterial", "aliases": [], "layout": {"kind": "array", "lanes": 1, "shape": ["event_points"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "contactEventPointPosition", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "POINT", "dtype": "f32", "units": "length", "frame": "world", "read": {"supported": true, "request_name": "contactEventPointPosition", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["event_points"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "contactEventPointSeparation", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "length", "frame": "not_applicable", "read": {"supported": true, "request_name": "contactEventPointSeparation", "aliases": [], "layout": {"kind": "array", "lanes": 1, "shape": ["event_points"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "contactEventProtoIndex", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "NONE", "dtype": "u32", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "contactEventProtoIndex", "aliases": [], "layout": {"kind": "array", "lanes": 1, "shape": ["events"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "contactEventSensorSide", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "NONE", "dtype": "i32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "contactEventSensorSide", "aliases": [], "layout": {"kind": "array", "lanes": 1, "shape": ["events"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "contactEventType", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "NONE", "dtype": "i32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "contactEventType", "aliases": [], "layout": {"kind": "array", "lanes": 1, "shape": ["events"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "contactOffset", "target": "RIGID_BODY", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "length", "frame": "not_applicable", "read": {"supported": true, "request_name": "contactOffset", "aliases": [], "layout": {"kind": "padded", "lanes": "max_shape_count", "shape": ["objects"], "count": "shapeCount", "padding": 0, "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "contactOffset", "aliases": [], "layout": {"kind": "padded", "lanes": "max_shape_count", "shape": ["objects"], "count": "shapeCount", "padding": 0, "order": "row_major"}, "residency": "host"}},
+    {"name": "contactOffset", "target": "ARTICULATION_LINK", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "length", "frame": "not_applicable", "read": {"supported": true, "request_name": "contactOffset", "aliases": [], "layout": {"kind": "padded", "lanes": "max_shape_count", "shape": ["objects"], "count": "shapeCount", "padding": 0, "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "contactOffset", "aliases": [], "layout": {"kind": "padded", "lanes": "max_shape_count", "shape": ["objects"], "count": "shapeCount", "padding": 0, "order": "row_major"}, "residency": "host"}},
+    {"name": "contactOffset", "target": "ARTICULATION", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "length", "frame": "not_applicable", "read": {"supported": true, "request_name": "contactOffset", "aliases": [], "layout": {"kind": "padded", "lanes": "max_shape_count", "shape": ["objects"], "count": "shapeCount", "padding": 0, "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "coriolisForce", "target": "ARTICULATION", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "joint_effort", "frame": "not_applicable", "read": {"supported": true, "request_name": "coriolisForce", "aliases": [], "layout": {"kind": "cohort", "lanes": 1, "shape": ["objects", "M"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "currentGear", "target": "VEHICLE", "representation": "default", "semantic": "NONE", "dtype": "i32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "currentGear", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "actorAxes", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "actorAxes", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "actorAxes", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "bodyAngularVelocity", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "bodyAngularVelocity", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "bodyAngularVelocity", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "bodyAxes", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "bodyAxes", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "bodyAxes", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "bodyLinearVelocity", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "bodyLinearVelocity", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "bodyLinearVelocity", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "bodyMassAxes", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "bodyMassAxes", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "bodyMassAxes", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "collisionAABBs", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "collisionAABBs", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "collisionAABBs", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "collisionAxes", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "collisionAxes", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "collisionAxes", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "collisionCompounds", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "collisionCompounds", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "collisionCompounds", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "collisionDynamicPruner", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "collisionDynamicPruner", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "collisionDynamicPruner", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "collisionEdges", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "collisionEdges", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "collisionEdges", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "collisionFaceNormals", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "collisionFaceNormals", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "collisionFaceNormals", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "collisionShapes", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "collisionShapes", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "collisionShapes", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "collisionStaticPruner", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "collisionStaticPruner", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "collisionStaticPruner", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "contactError", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "contactError", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "contactError", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "contactImpulse", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "contactImpulse", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "contactImpulse", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "contactNormal", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "contactNormal", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "contactNormal", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "contactPoint", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "contactPoint", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "contactPoint", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "cullBox", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "cullBox", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "cullBox", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "cullingBox", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "length", "frame": "world", "read": {"supported": true, "request_name": "cullingBox", "aliases": [], "layout": {"kind": "fixed", "lanes": 6, "shape": ["zero_or_one"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "cullingBox", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": [7], "order": "row_major"}, "residency": "host", "units": "culling_box_write"}},
+    {"name": "enabled", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "u8", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "enabled", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "enabled", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "frictionImpulse", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "frictionImpulse", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "frictionImpulse", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "frictionNormal", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "frictionNormal", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "frictionNormal", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "frictionPoint", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "frictionPoint", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "frictionPoint", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "jointLimits", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "jointLimits", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "jointLimits", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "jointLocalFrames", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "jointLocalFrames", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "jointLocalFrames", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "lineColor", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "u32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "lineColor", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["primitive_count", 2], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "linePosition", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "length", "frame": "world", "read": {"supported": true, "request_name": "linePosition", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["primitive_count", 2, 3], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "mbpRegions", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "mbpRegions", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "mbpRegions", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "pointColor", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "u32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "pointColor", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["primitive_count"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "pointPosition", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "length", "frame": "world", "read": {"supported": true, "request_name": "pointPosition", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["primitive_count", 3], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "scale", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "scale", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "scale", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "scope", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "scope", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["path_count"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "scope", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": [4097], "order": "row_major"}, "residency": "host"}},
+    {"name": "sdf", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "sdf", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "sdf", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "simulationMesh", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "simulationMesh", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "simulationMesh", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "triangleColor", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "u32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "triangleColor", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["primitive_count", 3], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "trianglePosition", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "length", "frame": "world", "read": {"supported": true, "request_name": "trianglePosition", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["primitive_count", 3, 3], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "worldAxes", "target": "DEBUG_RENDER", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "worldAxes", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "worldAxes", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "deformableBendingDamping", "target": "DEFORMABLE_MATERIAL", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "bending_damping", "frame": "not_applicable", "read": {"supported": true, "request_name": "deformableBendingDamping", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "deformableBendingDamping", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "deformableBendingStiffness", "target": "DEFORMABLE_MATERIAL", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "pressure", "frame": "not_applicable", "read": {"supported": true, "request_name": "deformableBendingStiffness", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "deformableBendingStiffness", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "deformableDynamicFriction", "target": "DEFORMABLE_MATERIAL", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "deformableDynamicFriction", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "deformableDynamicFriction", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "deformableElasticityDamping", "target": "DEFORMABLE_MATERIAL", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "elasticity_damping", "frame": "not_applicable", "read": {"supported": true, "request_name": "deformableElasticityDamping", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "deformableElasticityDamping", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "deformablePoissonsRatio", "target": "DEFORMABLE_MATERIAL", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "deformablePoissonsRatio", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "deformablePoissonsRatio", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "deformableThickness", "target": "DEFORMABLE_MATERIAL", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "length", "frame": "not_applicable", "read": {"supported": true, "request_name": "deformableThickness", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "deformableThickness", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "deformableYoungsModulus", "target": "DEFORMABLE_MATERIAL", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "pressure", "frame": "not_applicable", "read": {"supported": true, "request_name": "deformableYoungsModulus", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "deformableYoungsModulus", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "disableGravity", "target": "RIGID_BODY", "representation": "default", "semantic": "NONE", "dtype": "u8", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "disableGravity", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "disableGravity", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "disableGravity", "target": "ARTICULATION_LINK", "representation": "default", "semantic": "NONE", "dtype": "u8", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "disableGravity", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "disableGravity", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "disableSimulation", "target": "RIGID_BODY", "representation": "default", "semantic": "NONE", "dtype": "u8", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "disableSimulation", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "disableSimulation", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "disableSimulation", "target": "ARTICULATION_LINK", "representation": "default", "semantic": "NONE", "dtype": "u8", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "disableSimulation", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "dofAxisIndex", "target": "ARTICULATION", "representation": "default", "semantic": "NONE", "dtype": "i32", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "dofAxisIndex", "aliases": [], "layout": {"kind": "padded", "lanes": "max_dof_count", "shape": ["objects"], "count": "dofCount", "padding": 0, "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "dofAxisKind", "target": "ARTICULATION", "representation": "default", "semantic": "NONE", "dtype": "i32", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "dofAxisKind", "aliases": [], "layout": {"kind": "padded", "lanes": "max_dof_count", "shape": ["objects"], "count": "dofCount", "padding": 0, "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "dofCount", "target": "ARTICULATION", "representation": "default", "semantic": "NONE", "dtype": "i32", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "dofCount", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "dofJointPath", "target": "ARTICULATION", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "dofJointPath", "aliases": [], "layout": {"kind": "padded", "lanes": "max_dof_count", "shape": ["objects"], "count": "dofCount", "padding": 0, "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "dofJointType", "target": "ARTICULATION", "representation": "default", "semantic": "NONE", "dtype": "i32", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "dofJointType", "aliases": [], "layout": {"kind": "padded", "lanes": "max_dof_count", "shape": ["objects"], "count": "dofCount", "padding": 0, "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "driveTorque", "target": "VEHICLE_WHEEL", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "torque", "frame": "not_applicable", "read": {"supported": false, "aliases": []}, "write": {"supported": true, "request_name": "driveTorque", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "dynamicFriction", "target": "RIGID_BODY", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "dynamicFriction", "aliases": [], "layout": {"kind": "padded", "lanes": "max_shape_count", "shape": ["objects"], "count": "shapeCount", "padding": 0, "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "dynamicFriction", "aliases": [], "layout": {"kind": "padded", "lanes": "max_shape_count", "shape": ["objects"], "count": "shapeCount", "padding": 0, "order": "row_major"}, "residency": "host"}},
+    {"name": "dynamicFriction", "target": "ARTICULATION_LINK", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "dynamicFriction", "aliases": [], "layout": {"kind": "padded", "lanes": "max_shape_count", "shape": ["objects"], "count": "shapeCount", "padding": 0, "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "dynamicFriction", "aliases": [], "layout": {"kind": "padded", "lanes": "max_shape_count", "shape": ["objects"], "count": "shapeCount", "padding": 0, "order": "row_major"}, "residency": "host"}},
+    {"name": "dynamicFriction", "target": "ARTICULATION", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "dynamicFriction", "aliases": [], "layout": {"kind": "padded", "lanes": "max_shape_count", "shape": ["objects"], "count": "shapeCount", "padding": 0, "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "engineRotationSpeed", "target": "VEHICLE", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "angular_velocity", "frame": "not_applicable", "read": {"supported": true, "request_name": "engineRotationSpeed", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "filteredContactCount", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "NONE", "dtype": "i32", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "filteredContactCount", "aliases": [], "layout": {"kind": "fixed", "lanes": "filter_count", "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "filteredContactForce", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "force", "frame": "not_applicable", "read": {"supported": true, "request_name": "filteredContactForce", "aliases": [], "layout": {"kind": "array", "lanes": 1, "shape": ["elements"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "filteredContactNormal", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "NORMAL", "dtype": "f32", "units": "dimensionless", "frame": "world", "read": {"supported": true, "request_name": "filteredContactNormal", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["elements"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "filteredContactPoint", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "POINT", "dtype": "f32", "units": "length", "frame": "world", "read": {"supported": true, "request_name": "filteredContactPoint", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["elements"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "filteredContactSeparation", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "length", "frame": "not_applicable", "read": {"supported": true, "request_name": "filteredContactSeparation", "aliases": [], "layout": {"kind": "array", "lanes": 1, "shape": ["elements"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "filteredFrictionCount", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "NONE", "dtype": "i32", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "filteredFrictionCount", "aliases": [], "layout": {"kind": "fixed", "lanes": "filter_count", "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "filteredFrictionForce", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "VECTOR", "dtype": "f32", "units": "force", "frame": "world", "read": {"supported": true, "request_name": "filteredFrictionForce", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["elements"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "filteredFrictionPoint", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "POINT", "dtype": "f32", "units": "length", "frame": "world", "read": {"supported": true, "request_name": "filteredFrictionPoint", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["elements"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "fixedTendonCount", "target": "ARTICULATION", "representation": "default", "semantic": "NONE", "dtype": "i32", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "fixedTendonCount", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "fixedTendonInstance", "target": "ARTICULATION", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "fixedTendonInstance", "aliases": [], "layout": {"kind": "padded", "lanes": "max_fixed_tendon_count", "shape": ["objects"], "count": "fixedTendonCount", "padding": 0, "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "fixedTendonRoot", "target": "ARTICULATION", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "fixedTendonRoot", "aliases": [], "layout": {"kind": "padded", "lanes": "max_fixed_tendon_count", "shape": ["objects"], "count": "fixedTendonCount", "padding": 0, "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "force", "target": "RIGID_BODY", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "force", "frame": "world", "read": {"supported": false, "aliases": []}, "write": {"supported": true, "request_name": "force", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "force", "target": "ARTICULATION_LINK", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "force", "frame": "world", "read": {"supported": false, "aliases": []}, "write": {"supported": true, "request_name": "force", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "frictionContactForceMatrix", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "force", "frame": "world", "read": {"supported": true, "request_name": "frictionContactForceMatrix", "aliases": [], "layout": {"kind": "fixed", "lanes": "3 * filter_count", "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "gearSwitchTime", "target": "VEHICLE", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "time", "frame": "not_applicable", "read": {"supported": true, "request_name": "gearSwitchTime", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "gravityForce", "target": "ARTICULATION", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "joint_effort", "frame": "not_applicable", "read": {"supported": true, "request_name": "gravityForce", "aliases": [], "layout": {"kind": "cohort", "lanes": 1, "shape": ["objects", "M"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "groundActorPath", "target": "VEHICLE_WHEEL", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "groundActorPath", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "groundHitPosition", "target": "VEHICLE_WHEEL", "representation": "default", "semantic": "POINT", "dtype": "f32", "units": "length", "frame": "world", "read": {"supported": true, "request_name": "groundHitPosition", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "groundMaterialPath", "target": "VEHICLE_WHEEL", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "groundMaterialPath", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "groundPlane", "target": "VEHICLE_WHEEL", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "ground_plane", "frame": "world", "read": {"supported": true, "request_name": "groundPlane", "aliases": [], "layout": {"kind": "fixed", "lanes": 4, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "groundShapePath", "target": "VEHICLE_WHEEL", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "groundShapePath", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "inertia", "target": "RIGID_BODY", "representation": "default", "semantic": "MATRIX", "dtype": "f32", "units": "inertia", "frame": "center_of_mass", "read": {"supported": true, "request_name": "inertia", "aliases": [], "layout": {"kind": "fixed", "lanes": 9, "shape": ["objects"], "order": "column_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "inertia", "aliases": [], "layout": {"kind": "fixed", "lanes": 9, "shape": ["objects"], "order": "column_major"}, "residency": "host"}},
+    {"name": "inertia", "target": "ARTICULATION_LINK", "representation": "default", "semantic": "MATRIX", "dtype": "f32", "units": "inertia", "frame": "center_of_mass", "read": {"supported": true, "request_name": "inertia", "aliases": [], "layout": {"kind": "fixed", "lanes": 9, "shape": ["objects"], "order": "column_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "inertia", "aliases": [], "layout": {"kind": "fixed", "lanes": 9, "shape": ["objects"], "order": "column_major"}, "residency": "host"}},
+    {"name": "inverseInertia", "target": "RIGID_BODY", "representation": "default", "semantic": "MATRIX", "dtype": "f32", "units": "inverse_inertia", "frame": "center_of_mass", "read": {"supported": true, "request_name": "inverseInertia", "aliases": [], "layout": {"kind": "fixed", "lanes": 9, "shape": ["objects"], "order": "column_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "inverseInertia", "target": "ARTICULATION_LINK", "representation": "default", "semantic": "MATRIX", "dtype": "f32", "units": "inverse_inertia", "frame": "center_of_mass", "read": {"supported": true, "request_name": "inverseInertia", "aliases": [], "layout": {"kind": "fixed", "lanes": 9, "shape": ["objects"], "order": "column_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "inverseMass", "target": "RIGID_BODY", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "inverse_mass", "frame": "not_applicable", "read": {"supported": true, "request_name": "inverseMass", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "inverseMass", "target": "ARTICULATION_LINK", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "inverse_mass", "frame": "not_applicable", "read": {"supported": true, "request_name": "inverseMass", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "isFixedBase", "target": "ARTICULATION", "representation": "default", "semantic": "NONE", "dtype": "i32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "isFixedBase", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "isOnGround", "target": "VEHICLE_WHEEL", "representation": "default", "semantic": "NONE", "dtype": "u8", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "isOnGround", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "isSleeping", "target": "RIGID_BODY", "representation": "default", "semantic": "NONE", "dtype": "u8", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "isSleeping", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "isSleeping", "target": "ARTICULATION_LINK", "representation": "default", "semantic": "NONE", "dtype": "u8", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "isSleeping", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "jacobian", "target": "ARTICULATION", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "jacobian", "frame": "not_applicable", "read": {"supported": true, "request_name": "jacobian", "aliases": [], "layout": {"kind": "cohort", "lanes": 1, "shape": ["objects", "jacobian_rows", "jacobian_cols"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "jointActuationForce", "target": "ARTICULATION_JOINT", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "joint_effort", "frame": "not_applicable", "read": {"supported": true, "request_name": "jointActuationForce", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "jointActuationForce", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "jointArmature", "target": "ARTICULATION_JOINT", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "joint_armature", "frame": "not_applicable", "read": {"supported": true, "request_name": "jointArmature", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "jointArmature", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "host"}},
+    {"name": "jointCount", "target": "ARTICULATION", "representation": "default", "semantic": "NONE", "dtype": "i32", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "jointCount", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "jointDamping", "target": "ARTICULATION_JOINT", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "joint_damping", "frame": "not_applicable", "read": {"supported": true, "request_name": "jointDamping", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "jointDamping", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "host"}},
+    {"name": "jointDriveType", "target": "ARTICULATION_JOINT", "representation": "default", "semantic": "NONE", "dtype": "u8", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "jointDriveType", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "jointDriveType", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "host"}},
+    {"name": "jointDynamicFriction", "target": "ARTICULATION_JOINT", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "joint_effort", "frame": "not_applicable", "read": {"supported": true, "request_name": "jointDynamicFriction", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "jointDynamicFriction", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "host"}},
+    {"name": "jointLimit", "target": "ARTICULATION_JOINT", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "joint_coordinate", "frame": "not_applicable", "read": {"supported": true, "request_name": "jointLimit", "aliases": [], "layout": {"kind": "fixed", "lanes": 2, "shape": ["dofs"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "jointLimit", "aliases": [], "layout": {"kind": "fixed", "lanes": 2, "shape": ["dofs"], "order": "row_major"}, "residency": "host"}},
+    {"name": "jointMaxActuatorVelocity", "target": "ARTICULATION_JOINT", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "joint_rate", "frame": "not_applicable", "read": {"supported": true, "request_name": "jointMaxActuatorVelocity", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "jointMaxActuatorVelocity", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "host"}},
+    {"name": "jointMaxForce", "target": "ARTICULATION_JOINT", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "joint_effort", "frame": "not_applicable", "read": {"supported": true, "request_name": "jointMaxForce", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "jointMaxForce", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "host"}},
+    {"name": "jointMaxVelocity", "target": "ARTICULATION_JOINT", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "joint_rate", "frame": "not_applicable", "read": {"supported": true, "request_name": "jointMaxVelocity", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "jointMaxVelocity", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "host"}},
+    {"name": "jointPosition", "target": "ARTICULATION_JOINT", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "joint_coordinate", "frame": "not_applicable", "read": {"supported": true, "request_name": "jointPosition", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "jointPosition", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "jointPositionTarget", "target": "ARTICULATION_JOINT", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "joint_coordinate", "frame": "not_applicable", "read": {"supported": true, "request_name": "jointPositionTarget", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "jointPositionTarget", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "jointProjectedForce", "target": "ARTICULATION_JOINT", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "joint_effort", "frame": "not_applicable", "read": {"supported": true, "request_name": "jointProjectedForce", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "jointSpeedEffortGradient", "target": "ARTICULATION_JOINT", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "rate_per_effort", "frame": "not_applicable", "read": {"supported": true, "request_name": "jointSpeedEffortGradient", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "jointSpeedEffortGradient", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "host"}},
+    {"name": "jointStaticFriction", "target": "ARTICULATION_JOINT", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "joint_effort", "frame": "not_applicable", "read": {"supported": true, "request_name": "jointStaticFriction", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "jointStaticFriction", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "host"}},
+    {"name": "jointStiffness", "target": "ARTICULATION_JOINT", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "joint_stiffness", "frame": "not_applicable", "read": {"supported": true, "request_name": "jointStiffness", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "jointStiffness", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "host"}},
+    {"name": "jointVelocity", "target": "ARTICULATION_JOINT", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "joint_rate", "frame": "not_applicable", "read": {"supported": true, "request_name": "jointVelocity", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "jointVelocity", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "jointVelocityDependentResistance", "target": "ARTICULATION_JOINT", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "effort_per_rate", "frame": "not_applicable", "read": {"supported": true, "request_name": "jointVelocityDependentResistance", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "jointVelocityDependentResistance", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "host"}},
+    {"name": "jointVelocityTarget", "target": "ARTICULATION_JOINT", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "joint_rate", "frame": "not_applicable", "read": {"supported": true, "request_name": "jointVelocityTarget", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "jointVelocityTarget", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "jointViscousFriction", "target": "ARTICULATION_JOINT", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "effort_per_rate", "frame": "not_applicable", "read": {"supported": true, "request_name": "jointViscousFriction", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "jointViscousFriction", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["dofs"], "order": "row_major"}, "residency": "host"}},
+    {"name": "kinematicTarget", "target": "DEFORMABLE_VOLUME", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "kinematic_target", "frame": "sim-mesh-local", "read": {"supported": true, "request_name": "kinematicTarget", "aliases": [], "layout": {"kind": "array", "lanes": 4, "shape": ["elements"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "kinematicTarget", "aliases": [], "layout": {"kind": "array", "lanes": 4, "shape": ["elements"], "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "kinematicTargetOrientation", "target": "RIGID_BODY", "representation": "default", "semantic": "QUATERNION", "dtype": "f32", "units": "dimensionless", "frame": "world", "read": {"supported": true, "request_name": "kinematicTargetOrientation", "aliases": [], "layout": {"kind": "fixed", "lanes": 4, "shape": ["objects"], "order": "xyzw"}, "residency": "host"}, "write": {"supported": true, "request_name": "kinematicTargetOrientation", "aliases": [], "layout": {"kind": "fixed", "lanes": 4, "shape": ["objects"], "order": "xyzw"}, "residency": "host"}},
+    {"name": "kinematicTargetOrientation", "target": "ARTICULATION_LINK", "representation": "default", "semantic": "QUATERNION", "dtype": "f32", "units": "dimensionless", "frame": "world", "read": {"supported": true, "request_name": "kinematicTargetOrientation", "aliases": [], "layout": {"kind": "fixed", "lanes": 4, "shape": ["objects"], "order": "xyzw"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "kinematicTargetPosition", "target": "RIGID_BODY", "representation": "default", "semantic": "POINT", "dtype": "f32", "units": "length", "frame": "world", "read": {"supported": true, "request_name": "kinematicTargetPosition", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "kinematicTargetPosition", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "kinematicTargetPosition", "target": "ARTICULATION_LINK", "representation": "default", "semantic": "POINT", "dtype": "f32", "units": "length", "frame": "world", "read": {"supported": true, "request_name": "kinematicTargetPosition", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "linearAcceleration", "target": "RIGID_BODY", "representation": "default", "semantic": "VECTOR", "dtype": "f32", "units": "acceleration", "frame": "world", "read": {"supported": true, "request_name": "linearAcceleration", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "linearAcceleration", "target": "ARTICULATION_LINK", "representation": "default", "semantic": "VECTOR", "dtype": "f32", "units": "acceleration", "frame": "world", "read": {"supported": true, "request_name": "linearAcceleration", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "linearVelocity", "target": "RIGID_BODY", "representation": "default", "semantic": "VECTOR", "dtype": "f32", "units": "velocity", "frame": "world", "read": {"supported": true, "request_name": "linearVelocity", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "linearVelocity", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "linearVelocity", "target": "ARTICULATION_LINK", "representation": "default", "semantic": "VECTOR", "dtype": "f32", "units": "velocity", "frame": "world", "read": {"supported": true, "request_name": "linearVelocity", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "linkCount", "target": "ARTICULATION", "representation": "default", "semantic": "NONE", "dtype": "i32", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "linkCount", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "linkInboundJoint", "target": "ARTICULATION", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "linkInboundJoint", "aliases": [], "layout": {"kind": "padded", "lanes": "max_link_count", "shape": ["objects"], "count": "linkCount", "padding": 0, "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "linkIncomingJointForce", "target": "ARTICULATION_LINK", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "spatial_force", "frame": "joint", "read": {"supported": true, "request_name": "linkIncomingJointForce", "aliases": [], "layout": {"kind": "fixed", "lanes": 6, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "linkPath", "target": "ARTICULATION", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "linkPath", "aliases": [], "layout": {"kind": "padded", "lanes": "max_link_count", "shape": ["objects"], "count": "linkCount", "padding": 0, "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "mass", "target": "RIGID_BODY", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "mass", "frame": "not_applicable", "read": {"supported": true, "request_name": "mass", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "mass", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "mass", "target": "ARTICULATION_LINK", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "mass", "frame": "not_applicable", "read": {"supported": true, "request_name": "mass", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "mass", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "massMatrix", "target": "ARTICULATION", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "mass_matrix", "frame": "not_applicable", "read": {"supported": true, "request_name": "massMatrix", "aliases": [], "layout": {"kind": "cohort", "lanes": 1, "shape": ["objects", "M", "M"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "netFrictionContactForce", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "VECTOR", "dtype": "f32", "units": "force", "frame": "world", "read": {"supported": true, "request_name": "netFrictionContactForce", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "netNormalContactForce", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "VECTOR", "dtype": "f32", "units": "force", "frame": "world", "read": {"supported": true, "request_name": "netNormalContactForce", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "normalContactForceMatrix", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "force", "frame": "world", "read": {"supported": true, "request_name": "normalContactForceMatrix", "aliases": [], "layout": {"kind": "fixed", "lanes": "3 * filter_count", "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "orientation", "target": "RIGID_BODY", "representation": "default", "semantic": "QUATERNION", "dtype": "f32", "units": "dimensionless", "frame": "world", "read": {"supported": true, "request_name": "orientation", "aliases": [], "layout": {"kind": "fixed", "lanes": 4, "shape": ["objects"], "order": "xyzw"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "orientation", "aliases": [], "layout": {"kind": "fixed", "lanes": 4, "shape": ["objects"], "order": "xyzw"}, "residency": "scene_device"}},
+    {"name": "orientation", "target": "ARTICULATION_LINK", "representation": "default", "semantic": "QUATERNION", "dtype": "f32", "units": "dimensionless", "frame": "world", "read": {"supported": true, "request_name": "orientation", "aliases": [], "layout": {"kind": "fixed", "lanes": 4, "shape": ["objects"], "order": "xyzw"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "orientation", "target": "VEHICLE_WHEEL", "representation": "default", "semantic": "QUATERNION", "dtype": "f32", "units": "dimensionless", "frame": "world", "read": {"supported": true, "request_name": "orientation", "aliases": [], "layout": {"kind": "fixed", "lanes": 4, "shape": ["objects"], "order": "xyzw"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "orientations", "target": "RIGID_BODY", "representation": "instancer", "semantic": "QUATERNION", "dtype": "f32", "units": "dimensionless", "frame": "instancer_local", "read": {"supported": true, "request_name": "orientation", "aliases": [], "layout": {"kind": "array", "lanes": 4, "shape": ["instance_slots"], "order": "xyzw", "padding": 0}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "orientation", "aliases": [], "layout": {"kind": "array", "lanes": 4, "shape": ["instance_slots"], "order": "xyzw", "padding": 0}, "residency": "scene_device"}},
+    {"name": "physxPointer", "target": "ARTICULATION_LINK", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "physxPointer", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "physxPointer", "target": "ARTICULATION_JOINT", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "physxPointer", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "physxPointer", "target": "PARTICLE_SET", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "physxPointer", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "physxPointer", "target": "ARTICULATION", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "physxPointer", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "physxPointer", "target": "SCENE", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "physxPointer", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "physxPointer", "target": "PHYSX_MATERIAL", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "physxPointer", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "physxPointer", "target": "SHAPE", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "physxPointer", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "physxPointer", "target": "COMPOUND_SHAPE", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "physxPointer", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "physxPointer", "target": "RIGID_ACTOR", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "physxPointer", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "physxPointer", "target": "JOINT", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "physxPointer", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "physxPointer", "target": "CUSTOM_JOINT", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "physxPointer", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "physxPointer", "target": "PARTICLE_SYSTEM", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "physxPointer", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "physxPointer", "target": "PHYSICS", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "physxPointer", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "points", "target": "DEFORMABLE_VOLUME", "representation": "default", "semantic": "POINT", "dtype": "f32", "units": "length", "frame": "sim-mesh-local", "read": {"supported": true, "request_name": "points", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["elements"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "points", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["elements"], "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "points", "target": "DEFORMABLE_SURFACE", "representation": "default", "semantic": "POINT", "dtype": "f32", "units": "length", "frame": "sim-mesh-local", "read": {"supported": true, "request_name": "points", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["elements"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "points", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["elements"], "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "points", "target": "PARTICLE_SET", "representation": "default", "semantic": "POINT", "dtype": "f32", "units": "length", "frame": "particle-set-prim-local", "read": {"supported": true, "request_name": "points", "aliases": ["positions"], "layout": {"kind": "array", "lanes": 3, "shape": ["elements"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "points", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["elements"], "order": "row_major"}, "residency": "host"}},
+    {"name": "points", "target": "DEFORMABLE_SKIN_MESH", "representation": "default", "semantic": "POINT", "dtype": "f32", "units": "length", "frame": "skin-mesh-local", "read": {"supported": true, "request_name": "points", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["elements"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "position", "target": "RIGID_BODY", "representation": "default", "semantic": "POINT", "dtype": "f32", "units": "length", "frame": "world", "read": {"supported": true, "request_name": "position", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "position", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "position", "target": "ARTICULATION_LINK", "representation": "default", "semantic": "POINT", "dtype": "f32", "units": "length", "frame": "world", "read": {"supported": true, "request_name": "position", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "position", "target": "VEHICLE_WHEEL", "representation": "default", "semantic": "POINT", "dtype": "f32", "units": "length", "frame": "world", "read": {"supported": true, "request_name": "position", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "positions", "target": "RIGID_BODY", "representation": "instancer", "semantic": "POINT", "dtype": "f32", "units": "length", "frame": "instancer_local", "read": {"supported": true, "request_name": "position", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["instance_slots"], "padding": 0, "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "position", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["instance_slots"], "padding": 0, "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "rawContactForce", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "force", "frame": "not_applicable", "read": {"supported": true, "request_name": "rawContactForce", "aliases": [], "layout": {"kind": "array", "lanes": 1, "shape": ["elements"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "rawContactNormal", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "NORMAL", "dtype": "f32", "units": "dimensionless", "frame": "world", "read": {"supported": true, "request_name": "rawContactNormal", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["elements"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "rawContactOtherBody", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "rawContactOtherBody", "aliases": [], "layout": {"kind": "array", "lanes": 1, "shape": ["elements"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "rawContactPoint", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "POINT", "dtype": "f32", "units": "length", "frame": "world", "read": {"supported": true, "request_name": "rawContactPoint", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["elements"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "rawContactSeparation", "target": "CONTACT_SENSOR", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "length", "frame": "not_applicable", "read": {"supported": true, "request_name": "rawContactSeparation", "aliases": [], "layout": {"kind": "array", "lanes": 1, "shape": ["elements"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "requestedGear", "target": "VEHICLE", "representation": "default", "semantic": "NONE", "dtype": "i32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": false, "aliases": []}, "write": {"supported": true, "request_name": "requestedGear", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "resetToRestState", "target": "VEHICLE", "representation": "default", "semantic": "NONE", "dtype": "u8", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": false, "aliases": []}, "write": {"supported": true, "request_name": "resetToRestState", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "restOffset", "target": "RIGID_BODY", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "length", "frame": "not_applicable", "read": {"supported": true, "request_name": "restOffset", "aliases": [], "layout": {"kind": "padded", "lanes": "max_shape_count", "shape": ["objects"], "count": "shapeCount", "padding": 0, "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "restOffset", "aliases": [], "layout": {"kind": "padded", "lanes": "max_shape_count", "shape": ["objects"], "count": "shapeCount", "padding": 0, "order": "row_major"}, "residency": "host"}},
+    {"name": "restOffset", "target": "ARTICULATION_LINK", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "length", "frame": "not_applicable", "read": {"supported": true, "request_name": "restOffset", "aliases": [], "layout": {"kind": "padded", "lanes": "max_shape_count", "shape": ["objects"], "count": "shapeCount", "padding": 0, "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "restOffset", "aliases": [], "layout": {"kind": "padded", "lanes": "max_shape_count", "shape": ["objects"], "count": "shapeCount", "padding": 0, "order": "row_major"}, "residency": "host"}},
+    {"name": "restOffset", "target": "ARTICULATION", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "length", "frame": "not_applicable", "read": {"supported": true, "request_name": "restOffset", "aliases": [], "layout": {"kind": "padded", "lanes": "max_shape_count", "shape": ["objects"], "count": "shapeCount", "padding": 0, "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "restPoints", "target": "DEFORMABLE_VOLUME", "representation": "default", "semantic": "POINT", "dtype": "f32", "units": "length", "frame": "sim-mesh-local", "read": {"supported": true, "request_name": "restPoints", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["elements"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "restPoints", "target": "DEFORMABLE_SURFACE", "representation": "default", "semantic": "POINT", "dtype": "f32", "units": "length", "frame": "sim-mesh-local", "read": {"supported": true, "request_name": "restPoints", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["elements"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "restitution", "target": "RIGID_BODY", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "restitution", "aliases": [], "layout": {"kind": "padded", "lanes": "max_shape_count", "shape": ["objects"], "count": "shapeCount", "padding": 0, "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "restitution", "aliases": [], "layout": {"kind": "padded", "lanes": "max_shape_count", "shape": ["objects"], "count": "shapeCount", "padding": 0, "order": "row_major"}, "residency": "host"}},
+    {"name": "restitution", "target": "ARTICULATION_LINK", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "restitution", "aliases": [], "layout": {"kind": "padded", "lanes": "max_shape_count", "shape": ["objects"], "count": "shapeCount", "padding": 0, "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "restitution", "aliases": [], "layout": {"kind": "padded", "lanes": "max_shape_count", "shape": ["objects"], "count": "shapeCount", "padding": 0, "order": "row_major"}, "residency": "host"}},
+    {"name": "restitution", "target": "ARTICULATION", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "restitution", "aliases": [], "layout": {"kind": "padded", "lanes": "max_shape_count", "shape": ["objects"], "count": "shapeCount", "padding": 0, "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "rootAngularVelocity", "target": "ARTICULATION", "representation": "default", "semantic": "VECTOR", "dtype": "f32", "units": "angular_velocity", "frame": "world", "read": {"supported": true, "request_name": "rootAngularVelocity", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "rootAngularVelocity", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "rootLinearVelocity", "target": "ARTICULATION", "representation": "default", "semantic": "VECTOR", "dtype": "f32", "units": "velocity", "frame": "world", "read": {"supported": true, "request_name": "rootLinearVelocity", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "rootLinearVelocity", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "rootOrientation", "target": "ARTICULATION", "representation": "default", "semantic": "QUATERNION", "dtype": "f32", "units": "dimensionless", "frame": "world", "read": {"supported": true, "request_name": "rootOrientation", "aliases": [], "layout": {"kind": "fixed", "lanes": 4, "shape": ["objects"], "order": "xyzw"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "rootOrientation", "aliases": [], "layout": {"kind": "fixed", "lanes": 4, "shape": ["objects"], "order": "xyzw"}, "residency": "scene_device"}},
+    {"name": "rootPosition", "target": "ARTICULATION", "representation": "default", "semantic": "POINT", "dtype": "f32", "units": "length", "frame": "world", "read": {"supported": true, "request_name": "rootPosition", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "rootPosition", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "rotationAngle", "target": "VEHICLE_WHEEL", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "angle", "frame": "not_applicable", "read": {"supported": true, "request_name": "rotationAngle", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "rotationSpeed", "target": "VEHICLE_WHEEL", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "angular_velocity", "frame": "not_applicable", "read": {"supported": true, "request_name": "rotationSpeed", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "shapeCount", "target": "RIGID_BODY", "representation": "default", "semantic": "NONE", "dtype": "i32", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "shapeCount", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "shapeCount", "target": "ARTICULATION_LINK", "representation": "default", "semantic": "NONE", "dtype": "i32", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "shapeCount", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "shapeCount", "target": "ARTICULATION", "representation": "default", "semantic": "NONE", "dtype": "i32", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "shapeCount", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "simElementIndices", "target": "DEFORMABLE_VOLUME", "representation": "default", "semantic": "NONE", "dtype": "i32", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "simElementIndices", "aliases": [], "layout": {"kind": "array", "lanes": 4, "shape": ["elements"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "simElementIndices", "target": "DEFORMABLE_SURFACE", "representation": "default", "semantic": "NONE", "dtype": "i32", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "simElementIndices", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["elements"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "spatialTendonCount", "target": "ARTICULATION", "representation": "default", "semantic": "NONE", "dtype": "i32", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "spatialTendonCount", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "spatialTendonInstance", "target": "ARTICULATION", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "spatialTendonInstance", "aliases": [], "layout": {"kind": "padded", "lanes": "max_spatial_tendon_count", "shape": ["objects"], "count": "spatialTendonCount", "padding": 0, "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "spatialTendonRoot", "target": "ARTICULATION", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "spatialTendonRoot", "aliases": [], "layout": {"kind": "padded", "lanes": "max_spatial_tendon_count", "shape": ["objects"], "count": "spatialTendonCount", "padding": 0, "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "staticFriction", "target": "RIGID_BODY", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "staticFriction", "aliases": [], "layout": {"kind": "padded", "lanes": "max_shape_count", "shape": ["objects"], "count": "shapeCount", "padding": 0, "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "staticFriction", "aliases": [], "layout": {"kind": "padded", "lanes": "max_shape_count", "shape": ["objects"], "count": "shapeCount", "padding": 0, "order": "row_major"}, "residency": "host"}},
+    {"name": "staticFriction", "target": "ARTICULATION_LINK", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "staticFriction", "aliases": [], "layout": {"kind": "padded", "lanes": "max_shape_count", "shape": ["objects"], "count": "shapeCount", "padding": 0, "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "staticFriction", "aliases": [], "layout": {"kind": "padded", "lanes": "max_shape_count", "shape": ["objects"], "count": "shapeCount", "padding": 0, "order": "row_major"}, "residency": "host"}},
+    {"name": "staticFriction", "target": "ARTICULATION", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "staticFriction", "aliases": [], "layout": {"kind": "padded", "lanes": "max_shape_count", "shape": ["objects"], "count": "shapeCount", "padding": 0, "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "steer", "target": "VEHICLE", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "steer", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": true, "request_name": "steer", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "steerAngle", "target": "VEHICLE_WHEEL", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "angle", "frame": "not_applicable", "read": {"supported": false, "aliases": []}, "write": {"supported": true, "request_name": "steerAngle", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "suspensionForce", "target": "VEHICLE_WHEEL", "representation": "default", "semantic": "VECTOR", "dtype": "f32", "units": "force", "frame": "world", "read": {"supported": true, "request_name": "suspensionForce", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "suspensionJounce", "target": "VEHICLE_WHEEL", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "length", "frame": "not_applicable", "read": {"supported": true, "request_name": "suspensionJounce", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "targetGear", "target": "VEHICLE", "representation": "default", "semantic": "NONE", "dtype": "i32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "targetGear", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "tendonDamping", "target": "FIXED_TENDON", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "tendon_damping", "frame": "not_applicable", "read": {"supported": true, "request_name": "tendonDamping", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "tendonDamping", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "tendonDamping", "target": "SPATIAL_TENDON", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "linear_damping", "frame": "not_applicable", "read": {"supported": true, "request_name": "tendonDamping", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "tendonDamping", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "tendonInstance", "target": "FIXED_TENDON", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "tendonInstance", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "tendonInstance", "target": "SPATIAL_TENDON", "representation": "default", "semantic": "NONE", "dtype": "u64", "units": "not_applicable", "frame": "not_applicable", "read": {"supported": true, "request_name": "tendonInstance", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "tendonLimit", "target": "FIXED_TENDON", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "tendon_coordinate", "frame": "not_applicable", "read": {"supported": true, "request_name": "tendonLimit", "aliases": [], "layout": {"kind": "fixed", "lanes": 2, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "tendonLimit", "aliases": [], "layout": {"kind": "fixed", "lanes": 2, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "tendonLimitStiffness", "target": "FIXED_TENDON", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "tendon_stiffness", "frame": "not_applicable", "read": {"supported": true, "request_name": "tendonLimitStiffness", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "tendonLimitStiffness", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "tendonLimitStiffness", "target": "SPATIAL_TENDON", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "linear_stiffness", "frame": "not_applicable", "read": {"supported": true, "request_name": "tendonLimitStiffness", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "tendonLimitStiffness", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "tendonOffset", "target": "FIXED_TENDON", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "tendon_coordinate", "frame": "not_applicable", "read": {"supported": true, "request_name": "tendonOffset", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "tendonOffset", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "tendonOffset", "target": "SPATIAL_TENDON", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "length", "frame": "not_applicable", "read": {"supported": true, "request_name": "tendonOffset", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "tendonOffset", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "tendonRestLength", "target": "FIXED_TENDON", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "tendon_coordinate", "frame": "not_applicable", "read": {"supported": true, "request_name": "tendonRestLength", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "tendonRestLength", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "tendonStiffness", "target": "FIXED_TENDON", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "tendon_stiffness", "frame": "not_applicable", "read": {"supported": true, "request_name": "tendonStiffness", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "tendonStiffness", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "tendonStiffness", "target": "SPATIAL_TENDON", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "linear_stiffness", "frame": "not_applicable", "read": {"supported": true, "request_name": "tendonStiffness", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "tendonStiffness", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "thrust0", "target": "VEHICLE", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": false, "aliases": []}, "write": {"supported": true, "request_name": "thrust0", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "thrust1", "target": "VEHICLE", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": false, "aliases": []}, "write": {"supported": true, "request_name": "thrust1", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "tireForce", "target": "VEHICLE_WHEEL", "representation": "default", "semantic": "VECTOR", "dtype": "f32", "units": "force", "frame": "world", "read": {"supported": true, "request_name": "tireForce", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "tireFriction", "target": "VEHICLE_WHEEL", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "tireFriction", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "tireLateralDirection", "target": "VEHICLE_WHEEL", "representation": "default", "semantic": "VECTOR", "dtype": "f32", "units": "dimensionless", "frame": "world", "read": {"supported": true, "request_name": "tireLateralDirection", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "tireLateralSlip", "target": "VEHICLE_WHEEL", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "angle", "frame": "not_applicable", "read": {"supported": true, "request_name": "tireLateralSlip", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "tireLongitudinalDirection", "target": "VEHICLE_WHEEL", "representation": "default", "semantic": "VECTOR", "dtype": "f32", "units": "dimensionless", "frame": "world", "read": {"supported": true, "request_name": "tireLongitudinalDirection", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "tireLongitudinalSlip", "target": "VEHICLE_WHEEL", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": true, "request_name": "tireLongitudinalSlip", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "velocities", "target": "DEFORMABLE_VOLUME", "representation": "default", "semantic": "VECTOR", "dtype": "f32", "units": "velocity", "frame": "world", "read": {"supported": true, "request_name": "velocities", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["elements"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "velocities", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["elements"], "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "velocities", "target": "DEFORMABLE_SURFACE", "representation": "default", "semantic": "VECTOR", "dtype": "f32", "units": "velocity", "frame": "world", "read": {"supported": true, "request_name": "velocities", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["elements"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "velocities", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["elements"], "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "velocities", "target": "PARTICLE_SET", "representation": "default", "semantic": "VECTOR", "dtype": "f32", "units": "velocity", "frame": "world", "read": {"supported": true, "request_name": "velocities", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["elements"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "velocities", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["elements"], "order": "row_major"}, "residency": "host"}},
+    {"name": "velocities", "target": "RIGID_BODY", "representation": "instancer", "semantic": "VECTOR", "dtype": "f32", "units": "velocity", "frame": "world", "read": {"supported": true, "request_name": "linearVelocity", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["instance_slots"], "padding": 0, "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": true, "request_name": "linearVelocity", "aliases": [], "layout": {"kind": "array", "lanes": 3, "shape": ["instance_slots"], "padding": 0, "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "wake", "target": "RIGID_BODY", "representation": "default", "semantic": "NONE", "dtype": "u8", "units": "dimensionless", "frame": "not_applicable", "read": {"supported": false, "aliases": []}, "write": {"supported": true, "request_name": "wake", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}},
+    {"name": "wheelSteerAngle", "target": "VEHICLE_WHEEL", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "angle", "frame": "not_applicable", "read": {"supported": true, "request_name": "wheelSteerAngle", "aliases": [], "layout": {"kind": "fixed", "lanes": 1, "shape": ["objects"], "order": "row_major"}, "residency": "host"}, "write": {"supported": false, "aliases": []}},
+    {"name": "worldScale", "target": "RIGID_BODY", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "world", "read": {"supported": true, "request_name": "worldScale", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "worldScale", "target": "ARTICULATION_LINK", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "dimensionless", "frame": "world", "read": {"supported": true, "request_name": "worldScale", "aliases": [], "layout": {"kind": "fixed", "lanes": 3, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}, "write": {"supported": false, "aliases": []}},
+    {"name": "wrench", "target": "RIGID_BODY", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "wrench", "frame": "world", "read": {"supported": false, "aliases": []}, "write": {"supported": true, "request_name": "wrench", "aliases": [], "layout": {"kind": "fixed", "lanes": 9, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}},
+    {"name": "wrench", "target": "ARTICULATION_LINK", "representation": "default", "semantic": "NONE", "dtype": "f32", "units": "wrench", "frame": "world", "read": {"supported": false, "aliases": []}, "write": {"supported": true, "request_name": "wrench", "aliases": [], "layout": {"kind": "fixed", "lanes": 9, "shape": ["objects"], "order": "row_major"}, "residency": "scene_device"}}
+  ]
+}

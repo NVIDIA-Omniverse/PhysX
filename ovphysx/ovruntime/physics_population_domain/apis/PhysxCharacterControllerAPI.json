@@ -1,0 +1,275 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxCharacterControllerAPI",
+  "title": "PhysxCharacterControllerAPI",
+  "summary": "Turns a Capsule into a PhysX capsule character controller (PxCapsuleController). The walkers enumerate the prims that list it (a prim that is not a Capsule is dropped) and read slopeLimit; the other columns are read when the controller is created, after checking again that the prim lists the API.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "Capsule"
+  ],
+  "multi_apply": false,
+  "uses": [
+    "prim",
+    "stage_units"
+  ],
+  "population": {
+    "physics": true,
+    "row": true,
+    "geometry_role": true
+  },
+  "columns": [
+    {
+      "name": "physxCharacterController:slopeLimit",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.3,
+      "parser_default": 0.0,
+      "absent": "0: slope limiting off. USD resolves the unauthored attribute to 0.3 and USD population publishes it, so only a Stage that omits the column gets 0.",
+      "raw_fallback_diverges": true,
+      "units": "none (cosine of the steepest walkable slope)",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseCct.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterface.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXCctPropertiesUpdate.cpp"
+      ],
+      "notes": "Read without an authored gate. The value always replaces the PhysX descriptor default 0.707. Live changes set the PxController slope limit."
+    },
+    {
+      "name": "physxCharacterController:contactOffset",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.1,
+      "parser_default": "0.1 / metersPerUnit",
+      "absent": "One tenth of the tolerances length (0.1 / metersPerUnit). Ambiguous-fallback collapse: a column that reads exactly 0.1 is treated as unauthored and yields the same default, so writing the raw fallback literally is equivalent to omitting the column and an offset of exactly 0.1 cannot be expressed on a non-meter stage.",
+      "raw_fallback_diverges": false,
+      "units": "length",
+      "implemented_in": [
+        "source/omni.physx/plugins/PhysXUSDProperties.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXCctPropertiesUpdate.cpp"
+      ],
+      "notes": "Any other present value is used as is (an infinite value becomes plus or minus FLT_MAX); a value that is not positive makes PhysX reject the descriptor, so the controller is not created (a warning is logged). Live changes set the PxController contact offset to the raw value."
+    },
+    {
+      "name": "physxCharacterController:stepOffset",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.5,
+      "parser_default": "0.2 * (height + 2 * radius) of the world-scaled capsule",
+      "absent": "A fifth of the capsule's full extent, 0.2 * (height + 2 * radius) with the world-scaled capsule height and radius. Ambiguous-fallback collapse: a column that reads exactly 0.5 is treated as unauthored and yields the same computed default.",
+      "raw_fallback_diverges": false,
+      "units": "length",
+      "implemented_in": [
+        "source/omni.physx/plugins/PhysXUSDProperties.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXCctPropertiesUpdate.cpp"
+      ],
+      "notes": "Any other present value is clamped to [0, height + 2 * radius]. Live changes set the PxController step offset to the raw value."
+    },
+    {
+      "name": "physxCharacterController:invisibleWallHeight",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0 (the PhysX default): no invisible walls around non-walkable triangles.",
+      "raw_fallback_diverges": false,
+      "units": "length",
+      "implemented_in": [
+        "source/omni.physx/plugins/PhysXUSDProperties.cpp"
+      ],
+      "notes": "Read only when present (an infinite value becomes plus or minus FLT_MAX). Read at creation only; not change-tracked."
+    },
+    {
+      "name": "physxCharacterController:maxJumpHeight",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0 (the PhysX default).",
+      "raw_fallback_diverges": false,
+      "units": "length",
+      "implemented_in": [
+        "source/omni.physx/plugins/PhysXUSDProperties.cpp"
+      ],
+      "notes": "Read only when present (an infinite value becomes plus or minus FLT_MAX). Read at creation only; not change-tracked."
+    },
+    {
+      "name": "physxCharacterController:scaleCoeff",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.8,
+      "parser_default": 0.8,
+      "absent": "0.8 (the PhysX default) for the underlying kinematic actor. A negative value makes PhysX reject the descriptor, so the controller is not created (a warning is logged).",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physx/plugins/PhysXUSDProperties.cpp"
+      ],
+      "notes": "Read at creation only; not change-tracked."
+    },
+    {
+      "name": "physxCharacterController:volumeGrowth",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 1.5,
+      "parser_default": 1.5,
+      "absent": "1.5 (the PhysX default). A value below 1 makes PhysX reject the descriptor, so the controller is not created (a warning is logged).",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physx/plugins/PhysXUSDProperties.cpp"
+      ],
+      "notes": "Read at creation only; not change-tracked."
+    },
+    {
+      "name": "physxCharacterController:upAxis",
+      "usd_type": "uniform token",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "TOKEN_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "Z",
+      "parser_default": "upAxis",
+      "absent": "The stage up axis: +Y on a Y-up stage, +Z otherwise. Only the tokens X, Y and Z are matched; any other token keeps the stage axis. USD resolves the unauthored attribute to Z and USD population publishes it, so on a populated Y-up stage the controller is Z-up unless the attribute is authored.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physx/plugins/PhysXUSDProperties.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXCctPropertiesUpdate.cpp"
+      ],
+      "notes": "Live changes set the PxController up direction for X, Y or Z and ignore any other token. The accepted values are compared by token id with X, Y and Z, names maintained outside the contract."
+    },
+    {
+      "name": "physxCharacterController:nonWalkableMode",
+      "usd_type": "uniform token",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "TOKEN_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "preventClimbing",
+      "parser_default": "preventClimbing",
+      "absent": "preventClimbing (the PhysX default). Accepted tokens: preventClimbing, preventClimbingForceSliding; any other token keeps the default.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physx/plugins/PhysXUSDProperties.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXCctPropertiesUpdate.cpp"
+      ],
+      "notes": "Live changes are applied for the two accepted tokens and ignore any other token."
+    },
+    {
+      "name": "physxCharacterController:climbingMode",
+      "usd_type": "uniform token",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "TOKEN_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "easy",
+      "parser_default": "easy",
+      "absent": "easy (the PhysX default). Accepted tokens: easy, constrained; any other token keeps the default.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physx/plugins/PhysXUSDProperties.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXCctPropertiesUpdate.cpp"
+      ],
+      "notes": "Live changes are applied for the two accepted tokens and ignore any other token."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "Capsule",
+      "rule": "The capsule's radius and height, scaled by the world scale (radius by its y component, height by its z component), size the controller, and the world translation places it. Live radius and height changes set the raw attribute values without that world scale."
+    },
+    {
+      "with": "stage_units",
+      "rule": "contactOffset defaults to 0.1 / metersPerUnit and the up direction defaults to the stage up axis."
+    }
+  ],
+  "notes": [
+    "physxCharacterController:simulationOwner is read by the walkers by name: with more than one target the parser logs an error and uses the first, and a target that is not a created scene logs an error and the controller is not created. physxCharacterController:moveTarget is declared by the schema but not read. They are not described yet.",
+    "Character controllers are created only when some prim lists this API (listing it turns on character controller parsing for the attach). Live changes of slopeLimit, contactOffset, stepOffset, upAxis, nonWalkableMode and climbingMode are applied without the default and collapse rules above."
+  ]
+}

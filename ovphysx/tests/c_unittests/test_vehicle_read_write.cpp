@@ -19,7 +19,7 @@
 
 namespace
 {
-ovx_string_or_token_t attribute(const char* name)
+ovx_token_or_string_t attribute(const char* name)
 {
     return { OVX_INVALID_TOKEN, { name, std::strlen(name) } };
 }
@@ -64,9 +64,10 @@ protected:
 
     const ovstage_read_group_t* readOne(ovphysx_query_handle_t selected, const char* name)
     {
-        const ovx_string_or_token_t attr = attribute(name);
+        const ovx_token_or_string_t attr = attribute(name);
         ovphysx_read_handle_t read = 0;
-        EXPECT_EQ(complete(ovphysx_read(m_handle, selected, &attr, 1, &read, nullptr)), OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(complete(ovphysx_read(m_handle, selected, &attr, 1,
+                                        ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr)), OVPHYSX_API_SUCCESS);
         if (!read)
             return nullptr;
         m_reads.push_back(read);
@@ -78,7 +79,7 @@ protected:
     const ovstage_map_group_t* writeOne(ovphysx_query_handle_t selected, const char* name,
                                        ovphysx_write_handle_t& write)
     {
-        const ovx_string_or_token_t attr = attribute(name);
+        const ovx_token_or_string_t attr = attribute(name);
         EXPECT_EQ(complete(ovphysx_write(m_handle, selected, &attr, 1, &write, nullptr)), OVPHYSX_API_SUCCESS);
         if (!write)
             return nullptr;
@@ -122,7 +123,7 @@ TEST_F(VehicleReadWriteTest, ColdFilteredWriteAndIndependentSelectors)
     ASSERT_EQ(ovphysx_step_sync(m_handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
     const ovstage_read_group_t* control = readOne(vehicle, OVPHYSX_ATTR_ACCELERATOR);
     ASSERT_NE(control, nullptr);
-    EXPECT_FLOAT_EQ(floatData(control->data.tensors[0])[0], 0.625f);
+    EXPECT_FLOAT_EQ(floatData(control->columns[0].data.tensors[0])[0], 0.625f);
 
     // The same car prim selects its chassis, while a separate descendant query selects its wheels.
     const ovphysx_query_handle_t chassis = query(OVPHYSX_QUERY_TARGET_RIGID_BODY, "/World/Standard", &metadata);
@@ -130,13 +131,13 @@ TEST_F(VehicleReadWriteTest, ColdFilteredWriteAndIndependentSelectors)
     EXPECT_EQ(metadata.total_prim_count, 1u);
     const ovstage_read_group_t* pose = readOne(chassis, OVPHYSX_ATTR_POSITION);
     ASSERT_NE(pose, nullptr);
-    EXPECT_EQ(pose->data.tensors[0].dtype.lanes, 3u);
+    EXPECT_EQ(pose->columns[0].data.tensors[0].dtype.lanes, 3u);
     ASSERT_NE(query(OVPHYSX_QUERY_TARGET_VEHICLE_WHEEL, "/World/Standard/**", &metadata), 0u);
     EXPECT_EQ(metadata.total_prim_count, 4u);
     const ovphysx_query_handle_t other = query(OVPHYSX_QUERY_TARGET_VEHICLE, "/World/Basic");
     const ovstage_read_group_t* unchanged = readOne(other, OVPHYSX_ATTR_ACCELERATOR);
     ASSERT_NE(unchanged, nullptr);
-    EXPECT_FLOAT_EQ(floatData(unchanged->data.tensors[0])[0], 0.0f);
+    EXPECT_FLOAT_EQ(floatData(unchanged->columns[0].data.tensors[0])[0], 0.0f);
 }
 
 TEST_F(VehicleReadWriteTest, TelemetryUsesFixedTypedColumns)
@@ -169,10 +170,10 @@ TEST_F(VehicleReadWriteTest, TelemetryUsesFixedTypedColumns)
         SCOPED_TRACE(column.name);
         const ovstage_read_group_t* group = readOne(column.wheel ? wheels : vehicle, column.name);
         ASSERT_NE(group, nullptr);
-        EXPECT_FALSE(group->is_array);
+        EXPECT_FALSE(group->columns[0].is_array);
         EXPECT_EQ(group->prims.count, column.wheel ? 4u : 1u);
-        ASSERT_EQ(group->data.tensor_count, 1u);
-        const DLTensor& tensor = group->data.tensors[0];
+        ASSERT_EQ(group->columns[0].data.tensor_count, 1u);
+        const DLTensor& tensor = group->columns[0].data.tensors[0];
         EXPECT_EQ(tensor.device.device_type, kDLCPU);
         EXPECT_EQ(tensor.ndim, 1);
         EXPECT_EQ(tensor.shape[0], column.wheel ? 4 : 1);
@@ -185,10 +186,11 @@ TEST_F(VehicleReadWriteTest, TelemetryUsesFixedTypedColumns)
 TEST_F(VehicleReadWriteTest, MixedReadReportsSubtypeOmission)
 {
     const ovphysx_query_handle_t all = query(OVPHYSX_QUERY_TARGET_VEHICLE, "/World/**");
-    const ovx_string_or_token_t attr = attribute(OVPHYSX_ATTR_ENGINE_ROTATION_SPEED);
+    const ovx_token_or_string_t attr = attribute(OVPHYSX_ATTR_ENGINE_ROTATION_SPEED);
     ovphysx_read_handle_t read = 0;
     ovphysx_read_result_t summary{};
-    ASSERT_EQ(complete(ovphysx_read(m_handle, all, &attr, 1, &read, &summary)), OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(complete(ovphysx_read(m_handle, all, &attr, 1,
+                                    ovstage_cuda_sync_t{ 0, 0 }, &read, &summary)), OVPHYSX_API_SUCCESS);
     m_reads.push_back(read);
     EXPECT_EQ(summary.total_prim_count, 4u);
     ASSERT_EQ(summary.attribute_count, 1u);
@@ -199,6 +201,6 @@ TEST_F(VehicleReadWriteTest, MixedReadReportsSubtypeOmission)
     EXPECT_EQ(group->prims.count, 2u);
     ovx_string_t name{};
     ASSERT_EQ(ovx_path_dictionary_token_to_string(test_utils::attached_ovstage_dictionary(m_handle),
-                                                 group->attribute, &name), OVX_OK);
+                                                 group->columns[0].attribute, &name), OVX_OK);
     EXPECT_EQ(std::string(name.ptr, name.length), OVPHYSX_ATTR_ENGINE_ROTATION_SPEED);
 }

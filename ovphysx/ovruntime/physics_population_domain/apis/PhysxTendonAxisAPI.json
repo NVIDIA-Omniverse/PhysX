@@ -1,0 +1,82 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxTendonAxisAPI",
+  "title": "PhysxTendonAxisAPI",
+  "summary": "One joint axis of a fixed tendon, applied as PhysxTendonAxisAPI:<tendon> on a revolute or prismatic articulation joint. The parser emits one tendon axis per instance (rotX for revolute, transX for prismatic).",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "PhysicsJoint"
+  ],
+  "multi_apply": true,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "producer_scope": "Every declared attribute of an applied instance is published at its resolved value.",
+  "columns": [
+    {
+      "name": "physxTendon:<inst>:gearing",
+      "usd_type": "float[]",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": true
+      },
+      "required": false,
+      "raw_fallback": [
+        1.0
+      ],
+      "parser_default": 1.0,
+      "absent": "1.0. On a revolute joint the gearing is converted from per-degree to per-radian (x 180/pi, saturating at +-FLT_MAX).",
+      "units": "rot: per degree; trans: none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseFixedTendon.cpp"
+      ],
+      "notes": "USD declares a float array (one entry per jointAxis); the parser reads the single value of a one-element row through the scalar path."
+    },
+    {
+      "name": "physxTendon:<inst>:forceCoefficient",
+      "usd_type": "float[]",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": true
+      },
+      "required": false,
+      "raw_fallback": [
+        1.0
+      ],
+      "parser_default": 1.0,
+      "absent": "The descriptor's default force coefficient (1.0).",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseFixedTendon.cpp"
+      ],
+      "notes": "USD declares a float array; read as a scalar like gearing."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysxTendonAxisRootAPI",
+      "rule": "The root API auto-applies this API with the same instance; the parser classifies such an instance as the root and reads gearing and forceCoefficient for it too."
+    },
+    {
+      "with": "PhysicsJoint",
+      "rule": "Only revolute and prismatic joints are supported; other joint types log a warning. physxTendon:<inst>:jointAxis is not read."
+    }
+  ],
+  "notes": [
+    "Instance names are arbitrary (one per tendon), so the compiled cache declares every physxTendon:* column.",
+    "A duplicate instance name on one joint logs an error and is skipped."
+  ]
+}

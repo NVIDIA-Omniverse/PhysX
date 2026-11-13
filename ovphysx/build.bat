@@ -18,8 +18,9 @@ REM   build.bat --target mylib            - Build specific target
 REM
 REM NOTE: This script uses packaged MSVC/WinSDK from packman when present, and
 REM falls back to a local Visual Studio installation otherwise (public source
-REM drop). The generator is selected via the GENERATOR environment variable
-REM (ninja or vs). See build.cmake for details.
+REM drop). OVPHYSX_VS_ROOT=<installation path> pins a specific Visual Studio,
+REM ahead of the packaged MSVC. The generator is selected via the GENERATOR
+REM environment variable (ninja or vs). See build.cmake for details.
 
 REM Clear VS environment variables that might pollute the omni/ build.
 set VCINSTALLDIR=

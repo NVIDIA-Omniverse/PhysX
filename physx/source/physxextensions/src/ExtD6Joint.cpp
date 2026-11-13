@@ -70,10 +70,8 @@ PX_FORCE_INLINE static const PxD6JointDrive* omniPvdCreateDriveObjectHandle(PxD6
 	OMNI_PVD_DESTROY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6JointDrive, *objectHandle)	\
 }
 
-D6Joint::~D6Joint()
+void D6Joint::omniPvdDestroyDrives(OmniPvdWriter* pvdWriter, const OmniPvdPxExtensionsRegistrationData* pvdRegData) const
 {
-	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
-
 	const D6JointData& jointData = data();
 
 	EXT_OMNI_PVD_DESTROY_DRIVE_DATA(PxD6Drive::eX, jointData)
@@ -84,6 +82,12 @@ D6Joint::~D6Joint()
 	EXT_OMNI_PVD_DESTROY_DRIVE_DATA(PxD6Drive::eSWING1, jointData)
 	EXT_OMNI_PVD_DESTROY_DRIVE_DATA(PxD6Drive::eSWING2, jointData)
 
+}
+
+D6Joint::~D6Joint()
+{
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+	omniPvdDestroyDrives(pvdWriter, pvdRegData);
 	OMNI_PVD_WRITE_SCOPE_END
 }
 
@@ -243,10 +247,11 @@ void D6Joint::setDrive(PxD6Drive::Enum driveType, const PxD6JointDrive& d)
 
 #if PX_SUPPORT_OMNI_PVD
 	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
-
-	const PxD6JointDrive* objectHandle = omniPvdCreateDriveObjectHandle(driveType, jData);
-	omniPvdSetDriveData(jData.drive[dataIndex], *objectHandle, pvdWriter, pvdRegData);
-
+	if (OmniPvdCaptureJoint(*this))
+	{
+		const PxD6JointDrive* objectHandle = omniPvdCreateDriveObjectHandle(driveType, jData);
+		omniPvdSetDriveData(jData.drive[dataIndex], *objectHandle, pvdWriter, pvdRegData);
+	}
 	OMNI_PVD_WRITE_SCOPE_END
 #endif
 }
@@ -528,9 +533,12 @@ void D6Joint::setAngularDriveConfig(PxD6AngularDriveConfig::Enum config)
 
 #if PX_SUPPORT_OMNI_PVD
 			OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
-			EXT_OMNI_PVD_SET_AND_LINK_DRIVE_DATA(pxD6Joint, driveSwing1, d.drive[gDriveSwing1DataIndex], PxD6Drive::eSWING1, d)
-			EXT_OMNI_PVD_SET_AND_LINK_DRIVE_DATA(pxD6Joint, driveSwing2, d.drive[gDriveSwing2DataIndex], PxD6Drive::eSWING2, d)
-			EXT_OMNI_PVD_SET_AND_LINK_DRIVE_DATA(pxD6Joint, driveTwist, d.drive[gDriveTwistDataIndex], PxD6Drive::eTWIST, d)
+			if (OmniPvdCaptureJoint(*this))
+			{
+				EXT_OMNI_PVD_SET_AND_LINK_DRIVE_DATA(pxD6Joint, driveSwing1, d.drive[gDriveSwing1DataIndex], PxD6Drive::eSWING1, d)
+				EXT_OMNI_PVD_SET_AND_LINK_DRIVE_DATA(pxD6Joint, driveSwing2, d.drive[gDriveSwing2DataIndex], PxD6Drive::eSWING2, d)
+				EXT_OMNI_PVD_SET_AND_LINK_DRIVE_DATA(pxD6Joint, driveTwist, d.drive[gDriveTwistDataIndex], PxD6Drive::eTWIST, d)
+			}
 			OMNI_PVD_WRITE_SCOPE_END
 #endif
 		}
@@ -542,7 +550,10 @@ void D6Joint::setAngularDriveConfig(PxD6AngularDriveConfig::Enum config)
 
 #if PX_SUPPORT_OMNI_PVD
 			OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
-			EXT_OMNI_PVD_SET_AND_LINK_DRIVE_DATA(pxD6Joint, driveSlerp, d.drive[gDriveSlerpDataIndex], PxD6Drive::eSLERP, d)
+			if (OmniPvdCaptureJoint(*this))
+			{
+				EXT_OMNI_PVD_SET_AND_LINK_DRIVE_DATA(pxD6Joint, driveSlerp, d.drive[gDriveSlerpDataIndex], PxD6Drive::eSLERP, d)
+			}
 			OMNI_PVD_WRITE_SCOPE_END
 #endif
 		}
@@ -1215,12 +1226,18 @@ void D6Joint::resolveReferences(PxDeserializationContext& context)
 
 void D6Joint::updateOmniPvdProperties() const
 {
+	updateOmniPvdProperties(omniPvdCpuJointState(*this));
+}
+
+void D6Joint::updateOmniPvdProperties(const PxConstraintOmniPvdState& state) const
+{
+	if (!omniPvdJointPoseValid(state)) return;
 	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
 
 	const PxD6Joint& j = static_cast<const PxD6Joint&>(*this);
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, twistAngle, j, getTwistAngle())
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, swingYAngle, j, getSwingYAngle())
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, swingZAngle, j, getSwingZAngle())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, twistAngle, j, omniPvdJointAngle(j, state, 0))
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, swingYAngle, j, omniPvdJointAngle(j, state, 1))
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, swingZAngle, j, omniPvdJointAngle(j, state, 2))
 
 	OMNI_PVD_WRITE_SCOPE_END
 }
@@ -1242,6 +1259,9 @@ void physx::Ext::omniPvdInitJoint<D6Joint>(D6Joint& joint)
 template<>
 void physx::Ext::omniPvdInitJoint<D6Joint>(OmniPvdWriter* pvdWriter, const OmniPvdPxExtensionsRegistrationData* pvdRegData, D6Joint& joint)
 {
+	// Drive objects use synthetic handles and inherit their owner's capture selection.
+	if (!OmniPvdCaptureJoint(joint))
+		return;
 	const D6JointData& jData = joint.data();
 
 	const PxD6Joint& j = static_cast<const PxD6Joint&>(joint);
@@ -1294,9 +1314,6 @@ void physx::Ext::omniPvdInitJoint<D6Joint>(OmniPvdWriter* pvdWriter, const OmniP
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveLinVelocity, j, jData.driveLinearVelocity)
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveAngVelocity, j, jData.driveAngularVelocity)
 
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, twistAngle, j, joint.getTwistAngle_Internal())
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, swingYAngle, j, joint.getSwingYAngle_Internal())
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, swingZAngle, j, joint.getSwingZAngle_Internal())
 
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, angularDriveConfig, j, static_cast<PxD6AngularDriveConfig::Enum>(jData.angularDriveConfig))
 

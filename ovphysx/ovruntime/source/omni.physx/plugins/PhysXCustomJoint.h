@@ -15,6 +15,9 @@
  * @covers AC-9 AC-11 AC-12 AC-27
  */
 
+// @implements REQ-LOAD-JOINTLIMIT-001
+// @covers AC-8
+
 #pragma once
 
 #include <string>
@@ -159,20 +162,26 @@ private:
 };
 
 
+// Clamps both bounds of a revolute limit into [-180, 180] degrees, so a pair beyond one end, such
+// as [200, 250] degrees, stays ordered and valid (REQ-LOAD-JOINTLIMIT-001 AC-8). Only a bound
+// clearly outside that range is reported.
 inline void checkRevoluteJointLimits(::physx::PxJointAngularLimitPair& limitPair, const char* primKey)
 {
     const float ANGLE_CLAMP_THRESHOLD = ::physx::PxPi * 1.0001f;
-    if (limitPair.lower < -ANGLE_CLAMP_THRESHOLD)
+    if (::physx::PxAbs(limitPair.lower) > ANGLE_CLAMP_THRESHOLD)
     {
-        limitPair.lower = -::physx::PxPi;
-        CARB_LOG_WARN("Lower angle limit on a revolute D6 joint was clamped to -180 degrees. %s", primKey);
+        CARB_LOG_WARN("Lower angle limit on a revolute D6 joint was clamped to %s180 degrees. %s",
+                      limitPair.lower < 0.0f ? "-" : "", primKey);
     }
 
-    if (limitPair.upper > ANGLE_CLAMP_THRESHOLD)
+    if (::physx::PxAbs(limitPair.upper) > ANGLE_CLAMP_THRESHOLD)
     {
-        limitPair.upper = ::physx::PxPi;
-        CARB_LOG_WARN("Upper angle limit on a revolute D6 joint was clamped to 180 degrees. %s", primKey);
+        CARB_LOG_WARN("Upper angle limit on a revolute D6 joint was clamped to %s180 degrees. %s",
+                      limitPair.upper < 0.0f ? "-" : "", primKey);
     }
+
+    limitPair.lower = ::physx::PxClamp(limitPair.lower, -::physx::PxPi, ::physx::PxPi);
+    limitPair.upper = ::physx::PxClamp(limitPair.upper, -::physx::PxPi, ::physx::PxPi);
 }
 
 } // namespace physx

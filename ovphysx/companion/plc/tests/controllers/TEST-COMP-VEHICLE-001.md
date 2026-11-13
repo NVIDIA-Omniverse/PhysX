@@ -46,3 +46,34 @@ are explicitly outside this table. Core typed wheel control remains available.
 `test_vehicle_forward_speed_uses_world_center_of_mass_frame` authors nonidentity
 principal axes and forward world velocity, independently reconstructs the COM
 forward vector from copied actor/COM state, and checks telemetry and auto-reverse.
+
+## Unsupported Tank regression
+
+- Given the shipped tests/data/vehicle_read_write.usda, preserving Tank's
+  inherited Standard controller, Standard drive and Tank schema overlays.
+- When the companion C table reads Tank and Raw, then Basic and Standard receive
+  throttle and step 120 times.
+- Then Tank and Raw return UNAVAILABLE without changing output bytes, while
+  Basic and Standard reach forward speed above 1 stage unit/s (REQ AC-2, AC-3).
+- Executable: test_vehicle_shipped_tank_is_unavailable_and_standard_drives in
+  [native vehicle tests](../../../tests_native/test_vehicle.py).
+
+## Installed-wheel stopped worker regression
+
+[wheel_worker_smoke.py](../../../tests_native/wheel_worker_smoke.py) launches
+the actual vehicle_authoring.py worker and vehicle_control.py --math-only
+entry point against separately installed Linux x86_64 core and OVStage wheels.
+Each child has inherited native search paths removed and OVPHYSX_LIB set to
+the installed core library.
+
+The authoring worker must return four 300 kg sprung masses for a 1200 kg
+vehicle and suspension frame (1, 0, 3, 0, 0, 0, 1); the standalone math
+sample must pass its own assertions without a live attach (REQ AC-1).
+The parent must remain free of core and OVStage native mappings.
+scripts/test_python_wheel.cmake runs this check for each supported Python
+version on the qualified Linux x86_64 platform.
+
+Executed on 2026-10-14 with ovphysx 0.7.0.73411310, ovstage
+0.3.0.1791455901 and Python 3.10.12: both entry points and parent isolation
+pass. This adds stopped-computation coverage, not new live vehicle or
+platform qualification.

@@ -25,6 +25,8 @@ Vehicle authoring calculations and live controls are optional services. Host inp
 
 ## Code References
 
+- [Worker-only library setup](../../../python/ovphysx_companion/_worker.py), [authoring sample](../../../samples/vehicle_authoring.py) and [installed-wheel smoke](../../../tests_native/wheel_worker_smoke.py).
+
 - [Separate C vehicle table](../../../include/ovphysx_companion/vehicle.h)
 - [C bridge](../../../src/Vehicle.cpp)
 - [Python controls and stopped math](../../../python/ovphysx_companion/vehicle.py)

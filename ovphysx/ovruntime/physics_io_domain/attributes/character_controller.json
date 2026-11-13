@@ -1,0 +1,42 @@
+{
+  "$schema": "../contract.schema.json",
+  "schema_version": 1,
+  "attributes": [
+    {
+      "id": "cct_move",
+      "name": "move",
+      "c_symbol": "OVPHYSX_ATTR_CCT_MOVE",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "CHARACTER_CONTROLLER",
+          "description": "world-space displacement applied once at commit",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "length",
+          "writability": "CONDITIONAL",
+          "read": false,
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "cct_move"
+            ],
+            "effect": "command",
+            "persistence": "once",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    }
+  ]
+}

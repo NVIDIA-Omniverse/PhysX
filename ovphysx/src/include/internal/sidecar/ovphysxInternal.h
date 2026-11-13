@@ -45,7 +45,8 @@ struct IPhysxVisualization;
 // 15 -> 16: session creation summaries and multi-attribute write ABI.
 // 16 -> 17: object-change subscribe takes a lifetime_keep so unsubscribe can
 //           wait out a dispatch snapshot.
-#define OVPHYSX_INTERNAL_INTERFACE_VERSION 17
+// 17 -> 18: read takes the caller's cuda_sync.
+#define OVPHYSX_INTERNAL_INTERFACE_VERSION 18
 
 // Filename of the sidecar shared object (no path). The SDK loader passes this
 // to dlopen/LoadLibrary. Secondary call sites that dlsym into the already-loaded
@@ -88,5 +89,8 @@ OVPHYSX_INTERNAL_API void ovphysx_internal_set_ovx_write_accessors(
 // The contact query entry point (omni::physx::ovxQueryContacts), injected by the same handshake. A setter of
 // its own, so the read setter's positional ABI is unchanged.
 OVPHYSX_INTERNAL_API void ovphysx_internal_set_ovx_contact_accessors(void* queryContacts);
+// The masked commit and the commit check (ADR-0052), injected by their own setter so the write setter's ABI is
+// unchanged.
+OVPHYSX_INTERNAL_API void ovphysx_internal_set_ovx_masked_commit_accessor(void* commitMasked, void* validateCommit);
 
 } // extern "C"

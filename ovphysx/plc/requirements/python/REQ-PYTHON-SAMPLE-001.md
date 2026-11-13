@@ -13,7 +13,8 @@ owner: ovphysx
 The shipped Python tensor-bindings sample makes successful control, simulation,
 and pose readback observable when it runs the fixed-base articulation-chain
 fixture. Its reported pose identifies a moving link, and the sample reports
-success only after that same displayed link has visibly moved.
+success only after that same displayed link has visibly moved and its printed
+Y angle has changed.
 
 ## Acceptance Criteria
 
@@ -22,6 +23,9 @@ success only after that same displayed link has visibly moved.
 - AC-2: Every displayed pose component is finite at each periodic readback and,
   before reporting success, the sample verifies that the displayed link's
   maximum absolute position delta exceeds `1.0e-3`.
+- AC-3: Every displayed `rotation_y` value is finite and, before reporting
+  success, the sample verifies that the span of those values across checkpoints
+  exceeds `1.0e-3` degrees.
 
 ## Test References
 

@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-ATTACH-SERVICES-001
+ * @covers AC-3
+ */
 
 #include <carb/profiler/Profile.h>
 
@@ -33,7 +37,8 @@ UjitsoProcessManager::~UjitsoProcessManager()
 
     std::lock_guard<carb::tasking::MutexWrapper> queueLock(m_queueMutex);
     // Drain without scheduling pending work. cancel(false) suppresses application
-    // callbacks; onComplete releases the request and its captured inputs.
+    // callbacks; onComplete releases the request and its captured inputs, first waiting
+    // for the callback of a build that is still running.
     for (auto& entry : m_ownerMap)
     {
         if (entry.second)
@@ -172,6 +177,13 @@ size_t UjitsoProcessManager::pump()
             ++runningProcessCount;
             break;
         case UjitsoProcessContext::Finishing:
+            // A process canceled while running is Finishing before its build is: leave it queued
+            // until the build's callback has returned instead of blocking this pump on it
+            if (process->callbackPending())
+            {
+                ++runningProcessCount;
+                break;
+            }
             process->onBuildFinished();
             m_queue.erase(std::prev(q));
             _remove(queueLock, process);
@@ -187,6 +199,17 @@ bool UjitsoProcessManager::waitForProcess(UjitsoProcessContext* process, uint32_
 {
     CARB_PROFILE_ZONE(0, "UjitsoProcessManager::waitForProcess");
 
+    // Every wait below takes what is left of the caller's timeOutMs
+    const auto start = std::chrono::steady_clock::now();
+    auto remainingMs = [&]() -> uint32_t
+    {
+        if (timeOutMs == kTimeOutInfinite)
+            return kTimeOutInfinite;
+        const int64_t elapsedMs =
+            std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count();
+        return (uint32_t)std::max((int64_t)0, (int64_t)timeOutMs - elapsedMs);
+    };
+
     std::lock_guard<carb::tasking::MutexWrapper> queueLock(m_queueMutex);
 
     ProcessMap::iterator p = m_processMap.find(process);
@@ -197,8 +220,17 @@ bool UjitsoProcessManager::waitForProcess(UjitsoProcessContext* process, uint32_
         return false;
     }
 
-    Queue::iterator q = p->second;
-    m_queue.erase(q);
+    m_queue.erase(p->second);
+
+    // Not finished within timeOutMs: put the process at the head of the queue, so that it will be
+    // removed in pump() when done
+    auto requeue = [&]()
+    {
+        CARB_LOG_WARN("UjitsoProcessManager::waitForProcess: Timeout occurred (%dms) while waiting "
+                      "for process %p from \"%s\" context", timeOutMs, process, m_name.c_str());
+        m_processMap[process] = m_queue.insert(m_queue.begin(), process);
+        return false;
+    };
 
     bool result = true;
 
@@ -211,45 +243,32 @@ bool UjitsoProcessManager::waitForProcess(UjitsoProcessContext* process, uint32_
         result = false;
         break;
     case UjitsoProcessContext::Pending:
+        switch (process->requestBuild(remainingMs()))
         {
-            using namespace std::chrono;
-            int64_t t_ns = (int64_t)duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count();
-
-            switch (process->requestBuild(timeOutMs))
-            {
-            case UjitsoProcessContext::BuildRequestResult::eSuccess:
-                // Subtract the time taken from timeOutMs, to be used in waitRequest below.
-                t_ns = (int64_t)duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count() - t_ns;
-                timeOutMs = (uint32_t)std::max((int64_t)0, (int64_t)1000000*timeOutMs - t_ns);
-                break;
-            case UjitsoProcessContext::BuildRequestResult::eTimedOut:
-                CARB_LOG_ERROR("UjitsoProcessManager::waitForProcess: process request timed out.");
-            case UjitsoProcessContext::BuildRequestResult::eResourcesUnavailable:
-            default:
-                // Request failed for some other reason; remove process from queue
-                CARB_LOG_ERROR("UjitsoProcessManager::waitForProcess: process request failed.  Terminating.");
-                result = false;
-                break;
-            }
-            if (!result)
-                break;
+        case UjitsoProcessContext::BuildRequestResult::eSuccess:
+            break;
+        case UjitsoProcessContext::BuildRequestResult::eTimedOut:
+            CARB_LOG_ERROR("UjitsoProcessManager::waitForProcess: process request timed out.");
+        case UjitsoProcessContext::BuildRequestResult::eResourcesUnavailable:
+        default:
+            // Request failed for some other reason; remove process from queue
+            CARB_LOG_ERROR("UjitsoProcessManager::waitForProcess: process request failed.  Terminating.");
+            result = false;
+            break;
         }
+        if (!result)
+            break;
         // Fall through
     case UjitsoProcessContext::Running:
-        process->waitRequest(timeOutMs);
+        process->waitRequest(remainingMs());
         if (process->getState() != UjitsoProcessContext::Finishing)
-        {
-            CARB_LOG_WARN("UjitsoProcessManager::waitForProcess: Timeout occurred (%dms) while waiting "
-                          "for process %p from \"%s\" context", timeOutMs, process, m_name.c_str());
-            // Put this process at the head of the queue, so that it will be removed in pump() when done
-            // (it was not finished here within timeOutMs)
-            q = m_queue.insert(m_queue.begin(), process);
-            m_requestMap[process->requestId()] = q;
-            m_processMap[process] = q;
-            return false;
-        }
+            return requeue();
         // Fall through
     case UjitsoProcessContext::Finishing:
+        // A process canceled while running is Finishing before its build is: its callback may still
+        // be running, so the process cannot be released before that returns
+        if (!process->waitForCallback(remainingMs()))
+            return requeue();
         process->onBuildFinished();
         ++s_finishedProcessCount;
         break;
@@ -298,7 +317,7 @@ void UjitsoProcessManager::_insert(lock_guard&, UjitsoProcessContext* process)
 
     Queue::iterator q = m_queue.insert(m_queue.end(), process);
 
-    m_requestMap[process->requestId()] = q;
+    m_requestMap[process->requestId()] = process;
     m_processMap[process] = q;
 
     process->onQueue();
@@ -308,7 +327,8 @@ void UjitsoProcessManager::_remove(lock_guard& queueLock, UjitsoProcessContext* 
 {
     CARB_PROFILE_ZONE(0, "UjitsoProcessManager::remove");
 
-    if (m_requestMap.erase(process->requestId()) != 1)
+    // A canceled process gave its request ID up in _cancel(), maybe to a newer process by now
+    if (!_releaseRequestId(queueLock, process) && !process->canceled())
     {
         CARB_LOG_ERROR("UjitsoProcessManager::remove: request ID for process was not found.");
     }
@@ -350,6 +370,10 @@ bool UjitsoProcessManager::_cancel(lock_guard& queueLock, Queue::iterator q, boo
 
     process->cancel(invokeCallbacks);
 
+    // A canceled process delivers no cooked data. It can stay queued until its build callback returns:
+    // a new request for the same build must start its own process instead of being added to this one.
+    _releaseRequestId(queueLock, process);
+
     bool result = true;
 
     switch (process->getState())
@@ -375,15 +399,22 @@ bool UjitsoProcessManager::_cancel(lock_guard& queueLock, Queue::iterator q, boo
     return result;
 }
 
+// Removes the process's entry from the request map, unless another process has taken that entry
+bool UjitsoProcessManager::_releaseRequestId(lock_guard&, UjitsoProcessContext* process)
+{
+    RequestMap::iterator r = m_requestMap.find(process->requestId());
+
+    if (r == m_requestMap.end() || r->second != process) return false;
+
+    m_requestMap.erase(r);
+    return true;
+}
+
 UjitsoProcessContext* UjitsoProcessManager::_find(lock_guard&, UjitsoProcessContext::RequestId requestId) const
 {
     RequestMap::const_iterator r = m_requestMap.find(requestId);
 
-    if (r == m_requestMap.end()) return nullptr;
-
-    if (r->second == m_queue.end()) return nullptr;
-
-    return *r->second;
+    return r != m_requestMap.end() ? r->second : nullptr;
 }
 
 } // namespace physx

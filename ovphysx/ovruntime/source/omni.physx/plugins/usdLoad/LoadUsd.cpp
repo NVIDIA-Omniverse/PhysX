@@ -1,6 +1,13 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-CACHE-ATTACH-001
+ * @covers AC-9
+ */
+
+// @implements REQ-CACHE-ATTACH-001
+// @covers AC-1 AC-3 AC-4
+
 // @implements REQ-OMNIPVD-LATE-001
 // @covers AC-2 AC-9
 
@@ -24,9 +31,6 @@
 // @covers AC-9
 
 /**
- * @implements REQ-SIM-DEFAULT-001
- * @covers AC-2
- *
  * @implements REQ-PARSE-BACKEND-001
  * @covers AC-6 AC-11
  *
@@ -45,7 +49,6 @@
 #include <omni/physx/PhysxTokens.h>
 #include <omni/physx/RuntimeError.h>
 #include <common/foundation/Allocator.h>
-#include <common/utilities/OmniPhysXUtilities.h>
 #include <carb/profiler/Profile.h>
 
 #include "LoadUsd.h"
@@ -75,11 +78,13 @@
 #include "SpatialTendon.h"
 #include "Particles.h"
 #include <CookingDataAsync.h>
+#include "../cache/AttachmentCache.h"
 #include <OmniPhysX.h>
 #include "RuntimeExecution.h"
 #include "OvxPhysicsShared.h"
 #include "PhysicsBody.h"
 
+#include <optional>
 #include <stdexcept>
 #include <unordered_set>
 
@@ -150,8 +155,10 @@ uint64_t UsdLoad::allocateAttachHandle()
     return kNoAttachHandle; // exhausted permanently; never wrap or mint a sentinel
 }
 
-uint64_t UsdLoad::loadAttachedStage(std::unique_ptr<AttachedStage> attachedStage, bool loadPhysics,
-                                    bool startConfiguredRecording)
+uint64_t UsdLoad::loadAttachedStage(std::unique_ptr<AttachedStage> attachedStage,
+                                    bool loadPhysics,
+                                    const PhysxCompiledStageCacheOptions* cacheOptions,
+                                    bool restore)
 {
     const uint64_t handle = allocateAttachHandle();
     if (handle == kNoAttachHandle)
@@ -160,6 +167,15 @@ uint64_t UsdLoad::loadAttachedStage(std::unique_ptr<AttachedStage> attachedStage
         return false;
     }
     attachedStage->setAttachHandle(handle);
+    // A whole-stage restore starts capturing the stage's inputs before the PhysX
+    // resources are acquired; the capture reads only the stage.
+    std::optional<cache::AttachmentCache> compiled;
+    if (loadPhysics && cacheOptions && cacheOptions->mode != PhysxCompiledStageCacheMode::eDisabled)
+    {
+        compiled.emplace(*attachedStage, cacheOptions);
+        if (restore)
+            compiled->beginRestore();
+    }
     if (!OmniPhysX::getInstance().getPhysXSetup().acquireAttachmentResources(*attachedStage))
         return kNoAttachHandle;
 
@@ -172,10 +188,29 @@ uint64_t UsdLoad::loadAttachedStage(std::unique_ptr<AttachedStage> attachedStage
             // gates even if loadFromStage() throws (transactional attach rollback).
             InitialStagePopulationScope populationScope(*attachedStage->getPhysXPhysicsInterface(), *attachedStage);
 
-            // load the scene by traversing from the root prim (USD) or the whole
-            // ovstage instance (ovstage scan backend reads from the pseudo-root)
-            if (!loadFromStage(*attachedStage))
-                return false;
+            if (!compiled)
+            {
+                if (!loadFromStage(*attachedStage))
+                    return kNoAttachHandle;
+            }
+            else
+            {
+                const cache::AttachmentCache::Restore restored =
+                    restore ? compiled->restore() : cache::AttachmentCache::Restore::eMiss;
+                // A bundle that does not fit was removed before the candidate changed
+                // and is a miss. Failing while applying a checked bundle discards this
+                // candidate; the caller attaches a fresh one without the lookup.
+                if (restored == cache::AttachmentCache::Restore::eFailed)
+                    return kNoAttachHandle;
+                if (restored == cache::AttachmentCache::Restore::eMiss)
+                {
+                    cache::initializeChangeFeedBaseline(*attachedStage);
+                    if (!loadFromStage(*attachedStage) || !compiled->preparedSceneTaken())
+                        return kNoAttachHandle;
+                    compiled->store();
+                }
+                compiled.reset();
+            }
         }
 
         attachedStage->getPhysXPhysicsInterface()->enableObjectChangeNotifications(*attachedStage, true);
@@ -186,15 +221,17 @@ uint64_t UsdLoad::loadAttachedStage(std::unique_ptr<AttachedStage> attachedStage
         }
     }
     else
+    {
         attachedStage->getPrimUpdateMap().setEmptyScene(true);
+        // Nothing loads now, but later insertions may still use the cache.
+        attachedStage->configureCompiledInsertion(cacheOptions);
+    }
 
     attachedStage->setSimulationRunning(true);
     {
         std::lock_guard<carb::tasking::MutexWrapper> lock(mRegistryMutex);
         mAttachedStages.emplace(handle, std::move(attachedStage));
     }
-    if (startConfiguredRecording)
-        OmniPhysX::getInstance().getPhysXSetup().startConfiguredOmniPvdRecording();
     return handle;
 }
 
@@ -208,9 +245,24 @@ uint64_t UsdLoad::attachOvstageCore(const void* ovstageAttachPayload,
                                 uint64_t effectiveBackingStageId,
                                 PhysXUsdPhysicsInterface* usdPhysicsInt,
                                 bool loadPhysics,
-                                const PhysxAttachOptions* options,
-                                bool startConfiguredRecording)
+                                const PhysxAttachOptions* options)
 {
+    PhysxCompiledStageCacheOptions cacheOptions =
+        options && options->compiledStageCache ? *options->compiledStageCache : PhysxCompiledStageCacheOptions{};
+    // The caller's result is written before every return, failed attaches included.
+    PhysxCompiledStageCacheResult cacheResult = cacheOptions.mode == PhysxCompiledStageCacheMode::eDisabled ?
+                                                    PhysxCompiledStageCacheResult::eDisabled :
+                                                    PhysxCompiledStageCacheResult::eBypassed;
+    struct ReportCacheResult
+    {
+        PhysxCompiledStageCacheResult* caller;
+        const PhysxCompiledStageCacheResult& value;
+        ~ReportCacheResult()
+        {
+            if (caller)
+                *caller = value;
+        }
+    } reportCacheResult{ cacheOptions.result, cacheResult };
     if (!ovstageAttachPayload)
     {
         OVX_RUNTIME_ERROR("PhysicsUsdLoad - attachOvstage called without an ovstage payload");
@@ -244,9 +296,6 @@ uint64_t UsdLoad::attachOvstageCore(const void* ovstageAttachPayload,
         return false;
     }
 
-    std::unique_ptr<AttachedStage> attachedStage;
-    uint64_t attachedStageId = effectiveBackingStageId;
-
     try
     {
         bool reserved;
@@ -267,20 +316,29 @@ uint64_t UsdLoad::attachOvstageCore(const void* ovstageAttachPayload,
             ~PendingRegistration() { std::lock_guard<carb::tasking::MutexWrapper> lock(mutex); instances.erase(instance); }
         } pendingRegistration{ mReservedOvstages, instance, mRegistryMutex };
 
-        // The candidate owns its backends and stable payload storage.
-        attachedStage = std::make_unique<AttachedStage>(AttachedStageUsdHandle{}, usdPhysicsInt);
-        attachedStage->setAttachOptions(options ? *options : PhysxAttachOptions{});
-        attachedStage->setOvstageSource(ovstageAttachPayload, backingStage, readOrdinal, effectiveBackingStageId);
-        attachedStageId = static_cast<uint64_t>(attachedStage->getStageId());
-        if (attachedStageId != effectiveBackingStageId)
-            throw std::runtime_error("classified ovstage backing stage changed before registration");
-
-        // Backing-stage metadata is validated before publication under the
-        // independent attachment handle.
-        const uint64_t handle = loadAttachedStage(std::move(attachedStage), loadPhysics, startConfiguredRecording);
-        if (handle == kNoAttachHandle)
-            throw std::runtime_error("physics source scan failed");
-        return handle;
+        const auto candidate = [&]() {
+            auto attachedStage = std::make_unique<AttachedStage>(AttachedStageUsdHandle{}, usdPhysicsInt);
+            attachedStage->setAttachOptions(options ? *options : PhysxAttachOptions{});
+            attachedStage->setOvstageSource(ovstageAttachPayload, backingStage, readOrdinal, effectiveBackingStageId,
+                                            loadPhysics && cacheOptions.mode != PhysxCompiledStageCacheMode::eDisabled);
+            if (static_cast<uint64_t>(attachedStage->getStageId()) != effectiveBackingStageId)
+                throw std::runtime_error("classified ovstage backing stage changed before registration");
+            return attachedStage;
+        };
+        cacheOptions.result = &cacheResult;
+        uint64_t handle = loadAttachedStage(candidate(), loadPhysics, &cacheOptions);
+        if (handle == kNoAttachHandle && cacheResult == PhysxCompiledStageCacheResult::eRestoreFailed)
+        {
+            // The failed candidate is gone with everything its restore changed, and
+            // a bundle at fault is out of the cache. Attach a fresh candidate without
+            // the lookup, as on a miss; the result still reports the failed restore.
+            CARB_LOG_WARN("PhysicsUsdLoad - compiled stage cache restore failed; loading the stage ordinarily");
+            handle = loadAttachedStage(candidate(), loadPhysics, &cacheOptions, false);
+            cacheResult = PhysxCompiledStageCacheResult::eRestoreFailed;
+        }
+        if (handle != kNoAttachHandle)
+            return handle;
+        throw std::runtime_error("physics source scan failed");
     }
     catch (const std::exception& error)
     {
@@ -302,11 +360,10 @@ uint64_t UsdLoad::attachOvstage(const void* ovstageAttachPayload,
                             PhysXUsdPhysicsInterface* usdPhysicsInt,
                             bool loadPhysics,
                             AttachedStageUsdHandle backingStage,
-                            const PhysxAttachOptions* options,
-                            bool startConfiguredRecording)
+                            const PhysxAttachOptions* options)
 {
     return attachOvstageCore(ovstageAttachPayload, readOrdinal, backingStage, effectiveBackingStageId, usdPhysicsInt,
-                             loadPhysics, options, startConfiguredRecording);
+                             loadPhysics, options);
 }
 
 void UsdLoad::sendPhysicsObjectsReleasedEvent(AttachHandle attach) noexcept

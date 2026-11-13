@@ -1,0 +1,21 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "NodeDefAPI",
+  "title": "NodeDefAPI",
+  "summary": "The UsdShade node definition built into Shader prims (the shader's implementation source). Render-only: the parser reads no column of it. It is a component only so the compiled stage cache does not bypass a Stage whose render prims carry it.",
+  "status": "draft",
+  "compiled_cache": true,
+  "authoring": false,
+  "applies_to": [
+    "Shader"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": false,
+    "row": false
+  },
+  "producer_scope": "Written by USD population when a RENDERING description is populated beside the physics description (as IsaacLab populates), which keeps render prims; the physics description alone leaves it out.",
+  "columns": [],
+  "notes": []
+}

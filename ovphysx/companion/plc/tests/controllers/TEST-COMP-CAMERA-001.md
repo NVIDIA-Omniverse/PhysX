@@ -9,7 +9,7 @@ type: integration
 
 ## Coverage status
 
-Eleven automated cases pass for [REQ-COMP-CAMERA-001](../../requirements/controllers/REQ-COMP-CAMERA-001.md) AC-1 through AC-4, including native completed reads and an isolated native-worker/customer-USD sample. GPU transport remains dependent on explicit host copies and hardware qualification.
+Twelve automated cases pass for [REQ-COMP-CAMERA-001](../../requirements/controllers/REQ-COMP-CAMERA-001.md) AC-1 through AC-4, including native completed reads and an isolated native-worker/customer-USD sample. GPU transport remains dependent on explicit host copies and hardware qualification.
 
 ## Scenario
 
@@ -17,15 +17,19 @@ Follow a moving target, then delete and recreate it while disabling the camera.
 
 ## Given
 
-- A known body trajectory, saved camera opinions, a selected follow mode and an explicit camera layer.
+- A known body trajectory, an attach completed by a later step but not collected,
+  saved camera opinions, a selected follow mode and an explicit camera layer.
 
 ## When
 
 - Update from completed frames, delete/recreate the target, then disable the camera and close the stage adapter.
+- Capture body output before collecting the already-completed attach receipt.
 
 ## Then
 
 - Camera poses match the fixture trajectory/frame transform using only supported reads (REQ AC-1).
+- Body capture resolves the native current Stage and its dictionary despite the
+  uncollected attach receipt (REQ AC-1).
 - Only the selected camera layer is authored by Python/host code (REQ AC-2).
 - The declared restore mode restores saved opinions and no updates arrive after disable (REQ AC-3).
 - A stale target causes the selected documented outcome, never following the recreated identity accidentally (REQ AC-4).
@@ -37,4 +41,6 @@ Follow a moving target, then delete and recreate it while disabling the camera.
 
 [test_output.py](../../../tests_native/test_output.py) rejects PointInstancer array
 groups in the scalar body-output helper with an explicit instance-aware selection
-message; selecting scalar rigid-body paths still returns completed poses (REQ AC-1).
+message; selecting scalar rigid-body paths still returns completed poses, and
+`test_body_output_resolves_an_uncollected_attach` captures completed poses through
+the pending Stage keepalive before collecting attach (REQ AC-1).

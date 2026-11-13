@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-SIM-LOCALVELOCITY-001
+// @covers AC-8
+
 /** @implements REQ-PARSE-BATCH-001
  * @covers AC-1 AC-3
  */
@@ -26,7 +29,9 @@
 
 #include <carb/logging/Log.h>
 
+#include <atomic>
 #include <memory>
+#include <stdexcept>
 
 namespace omni::physics::ovstage
 {
@@ -130,6 +135,17 @@ parse::ScannedStage finishOvstageScan(OvstageScanResult&& scan)
 
 namespace
 {
+// Test-only: the next N backend scans throw, as a failed read does. Zero in
+// production; set only by setOvstageScanFaultForTest().
+std::atomic_int scanFaults{ 0 };
+bool consumeScanFault()
+{
+    int remaining = scanFaults.load(std::memory_order_relaxed);
+    while (remaining > 0)
+        if (scanFaults.compare_exchange_weak(remaining, remaining - 1, std::memory_order_relaxed))
+            return true;
+    return false;
+}
 // IScanBackend over ovstage. nativeStage is the same const OvstageAttach* the
 // ovstage parse backend consumes, so a consumer sets one payload and registers
 // both backends.
@@ -167,8 +183,11 @@ public:
             return {};
         }
 
+        if (consumeScanFault())
+            throw std::runtime_error("injected ovstage scan failure");
         const OvstageAttach* attach = mAttachPayload;
         OvstageScanFilter filter;
+        filter.outputVelocitiesLocalSpaceDefault = options.outputVelocitiesLocalSpaceDefault;
         filter.descriptorPool = options.descriptorPool;
         filter.descriptorExecution = options.descriptorExecution;
         filter.scanRoots = scanRoots;
@@ -197,6 +216,11 @@ private:
 std::unique_ptr<omni::physics::parse::IScanBackend> makeOvstageScanBackend(const void* attachPayload)
 {
     return std::make_unique<OvstageScanBackend>(static_cast<const OvstageAttach*>(attachPayload));
+}
+
+void setOvstageScanFaultForTest(int count)
+{
+    scanFaults.store(count, std::memory_order_relaxed);
 }
 
 } // namespace omni::physics::ovstage

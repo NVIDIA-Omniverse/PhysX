@@ -13,6 +13,7 @@ import tempfile
 
 def worker(output):
     import ovstage
+    from ovphysx.population import physics_population_descs
     from ovphysx import PhysX, GlobalConfigKey, set_global_config, OmniPvdDestination
     from ovphysx_companion.preview import PreviewSession
     from ovphysx_companion.ovd import RecordingCoordinator, decode
@@ -27,8 +28,8 @@ def worker(output):
     try:
         for name in ('record-playback','record-inspector'):
             stage=ovstage.Stage(name);stages.append(stage)
-            ovstage.population.open_usd(stage,str(Path(__file__).with_name('scenes')/'two_boxes.usda'),
-                                        ordinal=1,domains=ovstage.PopulationDomain.ALL)
+            ovstage.population.open_usd_with_desc(stage,str(Path(__file__).with_name('scenes')/'two_boxes.usda'),
+                                        ordinal=1,time=ovstage.population.DEFAULT_TIME,descs=physics_population_descs(rendering=True))
             stage.advance_write_floor(ordinal=1).wait()
         physics.wait_task(physics.attach_ovstage(stages[0],read_ordinal=1))
         with PreviewSession(physics,stages[1],read_ordinal=1) as preview:

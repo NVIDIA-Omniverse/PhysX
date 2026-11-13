@@ -1,0 +1,97 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxSplinesSurfaceVelocityAPI",
+  "title": "PhysxSplinesSurfaceVelocityAPI",
+  "summary": "Surface velocity that follows a BasisCurves prim under the body instead of a constant vector. Read only on dynamic bodies and articulation links. Silently disables itself when its curve target does not validate.",
+  "status": "draft",
+  "compiled_cache": "reads",
+  "applies_to": [
+    "Xformable"
+  ],
+  "requires": [
+    "PhysicsRigidBodyAPI"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "producer_scope": "Every declared attribute is published at its resolved value; the curve relationship only when authored.",
+  "columns": [
+    {
+      "name": "physxSplinesSurfaceVelocity:surfaceVelocityEnabled",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": true,
+      "parser_default": true,
+      "absent": "On, but forced off when PhysxSurfaceVelocityAPI is enabled on the same body, when surfaceVelocityCurve is empty, or when its first target is not a BasisCurves prim that is a descendant of the body.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseBody.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterface.cpp"
+      ],
+      "notes": "No PhysX getter (contact-modify implementation, see PhysxSurfaceVelocityAPI): no verify blocks in this API."
+    },
+    {
+      "name": "physxSplinesSurfaceVelocity:surfaceVelocityMagnitude",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0: the surface does not move along the curve.",
+      "units": "length/s",
+      "conversion": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseBody.cpp"
+      ],
+      "notes": "Read only while surfaceVelocityEnabled is still true after the mutual-exclusion check."
+    },
+    {
+      "name": "physxSplinesSurfaceVelocity:surfaceVelocityCurve",
+      "usd_type": "rel",
+      "origin": "schema",
+      "kind": "relationship",
+      "semantic": "RELATIONSHIP_PATH_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": true
+      },
+      "required": false,
+      "absent": "Feature disabled. Only the first target is used; it must be a prim of concrete type BasisCurves (a prim-type check, not an applied-schema check) and a descendant of the body, otherwise the feature is disabled silently on the parse side (the runtime re-emits a warning on the USD path only).",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseBody.cpp"
+      ]
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysxSurfaceVelocityAPI",
+      "rule": "Mutually exclusive; the constant-vector API wins when both are enabled."
+    }
+  ],
+  "notes": [
+    "physxSplinesSurfaceVelocity:surfaceVelocityForceBased (bool, fallback true) is declared by the schema but not read by the consumer; it is not a column of this contract.",
+    "The compiled cache does not support this API (a body that lists it bypasses), but its scalar columns are in the read plan: the dynamic-body batch requests them for every dynamic body."
+  ]
+}

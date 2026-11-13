@@ -58,7 +58,7 @@ rb = UsdPhysics.RigidBodyAPI.Apply(prim)
 rb.CreateKinematicEnabledAttr(True)   # kinematic; omit or False for dynamic
 ```
 
-At runtime, drive a kinematic body through an ovstage world-transform control
+At runtime, drive a kinematic body through an ovstage local-transform or reset-stack control
 edit or, in C/C++, through the raw PhysX pointer
 (`PxRigidDynamic::setKinematicTarget()`). The runtime converts an ovstage
 transform change on a kinematic body into a PhysX target. Do not use a legacy

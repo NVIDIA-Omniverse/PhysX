@@ -15,10 +15,7 @@
  * @covers AC-6
  *
  * @implements REQ-PUBLICAPI-001
- * @covers AC-15 AC-16
- *
- * @implements REQ-PUBLICAPI-002
- * @covers AC-10
+ * @covers AC-15
  */
 
 #include "AttachmentObjectLookup.h"
@@ -40,7 +37,6 @@
 #include "ObjectDataQuery.h"
 #include <omni/physx/PhysXRuntime.h>
 #include <private/omni/physx/PhysXCompoundShape.h>
-#include <private/omni/physx/IPhysxCookingPrivate.h>
 
 #include <private/omni/physx/IPhysxCookingServicePrivate.h>
 
@@ -130,22 +126,6 @@ namespace physx
         {
             cookingDataAsync->resetLocalMeshCacheContents();
         }
-    }
-
-    /// Add Prim to cooking refresh set
-    void addPrimToCookingRefreshSetForAttach(omni::physics::parse::ObjectKey key, omni::physics::AttachHandle attachHandle)
-    {
-        CookingDataAsync* cookingDataAsync = OmniPhysX::getInstance().getPhysXSetup().getCookingDataAsync();
-
-        if (cookingDataAsync != nullptr)
-        {
-            cookingDataAsync->addPrimRefreshSet(key, attachHandle);
-        }
-    }
-
-    void releaseRuntimeMeshCache()
-    {
-        omni::physx::getMeshCache()->release();
     }
 
     uint32_t getNbConvexMeshData(AttachHandle attach, omni::physics::parse::ObjectKey key)
@@ -315,14 +295,14 @@ namespace physx
         const omni::physics::parse::IPhysicsSource* source = attachedStage->getSource();
         const omni::physics::parse::KnownTokens& tok = attachedStage->getKnownTokens();
         if (!source || !source->exists(deformableBodyKey) ||
-            !source->hasSchema(deformableBodyKey, tok.omniphysicsDeformableBodyAPI))
+            !source->hasSchema(deformableBodyKey, tok.omniPhysicsDeformableBodyAPI))
         {
             CARB_LOG_ERROR("cookAutoDeformableBody: prim requires UsdPhysicsDeformableBodyAPI, %s",
                            deformableBodyPathStr);
             return success;
         }
 
-        if (!source->hasSchema(deformableBodyKey, tok.PhysxAutoDeformableBodyAPI))
+        if (!source->hasSchema(deformableBodyKey, tok.physxAutoDeformableBodyAPI))
         {
             CARB_LOG_ERROR("cookAutoDeformableBody: prim requires PhysxSchemaPhysxAutoDeformableBodyAPI, %s",
                            deformableBodyPathStr);
@@ -377,16 +357,6 @@ namespace physx
             ICE_FREE(deformableDesc);
         }
         return success;
-    }
-
-    PhysxCookingStatistics getCookingStatistics()
-    {
-        CookingDataAsync* cookingDataAsync = OmniPhysX::getInstance().getPhysXSetup().getCookingDataAsync();
-        if (cookingDataAsync)
-        {
-            return cookingDataAsync->getCookingStatistics();
-        }
-        return {};
     }
 
     bool precookMesh(AttachHandle attachHandle, omni::physics::parse::ObjectKey meshKey, const CookingParams& cookingParams, IPhysxCookingCallback* cb)
@@ -525,11 +495,4 @@ void fillInterface(omni::physx::IPhysxCooking& iface)
 
     iface.requestConvexCollisionRepresentation = requestConvexCollisionRepresentation;
     iface.cancelCollisionRepresentationTask = cancelCollisionRepresentationTask;
-}
-
-void fillInterface(omni::physx::IPhysxCookingPrivate& iface)
-{
-    iface.getCookingStatistics = getCookingStatistics;
-    iface.addPrimToCookingRefreshSetForAttach = addPrimToCookingRefreshSetForAttach;
-    iface.releaseRuntimeMeshCache = releaseRuntimeMeshCache;
 }

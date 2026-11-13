@@ -90,11 +90,11 @@ static int run(void)
         return 1;
     }
 
-    const std::string file_path = (output_dir / "capture.ovd").string();
+    const std::string file_path = (output_dir / "capture.ovd").u8string();
     ovphysx_omnipvd_destination_t destination = {};
     destination.transport = OVPHYSX_OMNIPVD_TRANSPORT_FILE;
     destination.file_path = ovphysx_cstr(file_path.c_str());
-    r = ovphysx_ovd_start_recording(handle, &destination);
+    r = ovphysx_ovd_start_recording(handle, &destination, nullptr);
     if (r.status != OVPHYSX_API_SUCCESS) {
         const ovphysx_string_t err = ovphysx_get_last_error();
         fprintf(stderr, "Failed to start OVD recording: %.*s\n", static_cast<int>(err.length), err.ptr);

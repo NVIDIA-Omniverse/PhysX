@@ -2,8 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-SOURCE-IDENTITY-001
+ * @covers AC-3 AC-4
+ */
+/** @implements REQ-CACHE-ATTACH-001
+ * @covers AC-3 AC-9 AC-10
+ */
+
+/**
  * @implements REQ-PARSE-COL-005
- * @covers AC-1 AC-5
+ * @covers AC-1 AC-5 AC-6 AC-7
  *
  * @implements REQ-PARSE-SUBTREE-001
  * @covers AC-1 AC-2 AC-3 AC-4 AC-5
@@ -33,6 +41,7 @@
 
 #include <omni/physics/parse/IPhysicsSource.h>
 #include "FrozenScalarBatch.h"
+#include "ReadGroupUtils.h"
 
 // Flat ovstage C API (ovstage.h) + the ovx path dictionary. NOTE: ovstage.h and
 // ovstage_api/ovstage_api.h define the SAME types and must not both be included
@@ -42,6 +51,7 @@
 
 #include <array>
 #include <algorithm>
+#include <atomic>
 #include <deque>
 #include <functional>
 #include <map>
@@ -63,6 +73,12 @@ using namespace omni::physics::parse;
 // member's doc comment for why it is shared, refcounted (via shared_ptr), and
 // scoped to the underlying ovstage_instance_t rather than to the C++ object.
 struct OvstageInternTable;
+class PhysicsInputSnapshot;
+
+// The relationships that give joints their bodies and topology, as USD names. The
+// walker prefetches them per joint bucket and a load cache reads them stage-wide,
+// so the read plan (physicsInputColumns()) must declare each; a test checks it.
+const std::vector<std::string>& jointRelationshipColumns();
 
 // Attribute-name conventions shared between OvstageSource (reader), the
 // OvstageWalker (enumeration probe), and the test OvstagePopulator (writer).
@@ -156,7 +172,7 @@ inline std::string_view toUsdAttributeName(std::string_view column)
 // OvstageSource::applySchemaDelta().
 struct SchemaRowDelta
 {
-    ovx_primpath_t raw = 0;
+    ovx_primpath_t raw{};
     std::vector<uint64_t> schemaTokens;
 };
 
@@ -164,7 +180,7 @@ struct SchemaRowDelta
 // carries; 0 when the column was tombstoned. Input of OvstageSource::applyPrimTypeDelta().
 struct PrimTypeRowDelta
 {
-    ovx_primpath_t raw = 0;
+    ovx_primpath_t raw{};
     uint64_t typeToken = 0;
     bool authored = false;
 };
@@ -272,14 +288,15 @@ public:
     void forEachChild(ObjectKey parent, std::function<void(ObjectKey)> cb) const override;
     void withSubtreeHierarchy(ObjectKey root, const std::function<void()>& visit) const override;
     ObjectKey findByPath(std::string_view path) const override;
+    // Restore logical identities without interning dictionary paths. The table
+    // is shared with sibling sources; raw handles resolve on first source use.
+    bool restoreKeysForPaths(const std::vector<std::string_view>& paths, std::vector<ObjectKey>& keys) const;
+    size_t unresolvedPathCountForTest() const;
     ObjectKey getParent(ObjectKey key) const override;
     // enumerate/get_paths and intern_path can hand back distinct handles for the
     // same path; canonicalise to the interned handle so cross-ref / graph matching
     // is reliable (see canonicalPath).
-    ObjectKey canonicalKey(ObjectKey key) const override
-    {
-        return internKey(canonicalPath(key));
-    }
+    ObjectKey canonicalKey(ObjectKey key) const override;
 
     bool hasSchema(ObjectKey key, TokenId schemaToken) const override;
     // Exact authored type name, not schema-hierarchy membership. ovstage
@@ -316,8 +333,9 @@ public:
     // the ovstage data plane / load cache. There is no USD-stage fallback -- the data plane is
     // a single ordinal snapshot, so `time` and `usdAtEarliestTime` are unused; they remain in
     // the signature for parity with the sibling backends' time-aware read entry points.
+    // `complete`, when given, is false when a live transform or reset read failed.
     void getLocalTransformImpl(ObjectKey key, ReadTime time, bool usdAtEarliestTime,
-                               Matrix4d& outMatrix, bool& outResetsXformStack) const;
+                               Matrix4d& outMatrix, bool& outResetsXformStack, bool* complete = nullptr) const;
     // Compose a prim's world transform from its parent chain of locals, memoizing
     // each ancestor's composed world in mLoadCacheComposedWorld. Only used while
     // mLoadCacheActive (the initial load walk), where the data-plane snapshot is
@@ -359,6 +377,7 @@ public:
     // Vends the pull-based ovstage change feed (ADR-0003 M3). Null when the
     // source is unconfigured (no instance/dict → nothing to observe).
     std::unique_ptr<IChangeFeed> createChangeFeed() override;
+    std::unique_ptr<IChangeFeed> createChangeFeed(bool deferBaseline);
 
     // --- Columnar bulk read (ADR-0002 "speed-of-light" path) -------------------
     //
@@ -385,11 +404,10 @@ public:
     void prefetchBucket(const std::vector<ObjectKey>& keys,
                         const std::vector<std::string>& attrNames,
                         bool sealMissing = true) const;
-    // Load-window variant: include strict instance-ancestor backing rows in the same
-    // read, then alias missing logical scalar cells to the returned backing rows.
-    // Only instanceKeys x instanceAttrNames are resolved; other columns stay logical.
-    // Published values (including default/block sentinels) always win. Shared tensor
-    // storage and covered misses live until clearLoadCache(), across clearBucket().
+    // Load-window variant: one read of keys and instanceKeys over both attribute
+    // lists. As in prefetchBucket(), an instance proxy reads its prototype row.
+    // Shared tensor storage and covered misses live until clearLoadCache(), across
+    // clearBucket().
     void prefetchResolvedInstanceBucket(const std::vector<ObjectKey>& keys,
                                         const std::vector<std::string>& attrNames,
                                         const std::vector<ObjectKey>& instanceKeys,
@@ -409,6 +427,68 @@ public:
     // covered misses so later concepts do not re-query columns already read.
     // A prefetchBucket() that includes `usd-path` under an open window also seeds the
     // existence memo for every bucket key from the returned rows (a live prim always has one).
+    void usePhysicsInputSnapshot(std::shared_ptr<PhysicsInputSnapshot> snapshot) const;
+    // Single-prim reads of the live stage (an attribute, relationship or schema row) that
+    // did not complete since the source was created. A value such a read leaves unset is
+    // unknown: a caller comparing counts across its reads can tell it from an absent one.
+    size_t failedSinglePrimReads() const
+    {
+        return mFailedSinglePrimReads.load(std::memory_order_relaxed);
+    }
+    // While one is alive, hasSchema() answers an unqualified multi-apply base from the
+    // queried prim's own usd-schemas row, which an attached input snapshot serves from
+    // memory, instead of building the stage-wide schema vocabulary. For callers that
+    // parse a few prims, such as a compiled-cache hit creating its scene.
+    class SinglePrimSchemaScope
+    {
+    public:
+        explicit SinglePrimSchemaScope(const OvstageSource& source) : mSource(source)
+        {
+            mSource.mSinglePrimSchemaScopes.fetch_add(1, std::memory_order_relaxed);
+        }
+        ~SinglePrimSchemaScope()
+        {
+            mSource.mSinglePrimSchemaScopes.fetch_sub(1, std::memory_order_relaxed);
+        }
+        SinglePrimSchemaScope(const SinglePrimSchemaScope&) = delete;
+        SinglePrimSchemaScope& operator=(const SinglePrimSchemaScope&) = delete;
+
+    private:
+        const OvstageSource& mSource;
+    };
+    // Small owned copies of exact sealed type rows already decoded by the change
+    // feed. No ovstage read group survives a drain or blocks the next write.
+    struct SharedInputTypeRow
+    {
+        uint64_t path = 0, token = 0;
+        ovstage_attribute_semantic_t semantic{};
+    };
+    void enablePhysicsInputSharing(bool enabled)
+    {
+        mSharePhysicsInputs = enabled;
+        clearSharedPhysicsInputs();
+    }
+    bool physicsInputSharingEnabled() const
+    {
+        return mSharePhysicsInputs;
+    }
+    void sharePhysicsInputTypes(std::vector<SharedInputTypeRow> rows,
+                                const std::unordered_set<std::string>* unchangedPhysicsPaths = nullptr);
+    bool sharedPhysicsInputType(uint64_t path, SharedInputTypeRow& row) const;
+    void sharePhysicsInputVocabulary(const std::vector<std::string>& columns) const;
+    const std::unordered_map<uint64_t, SharedInputTypeRow>& sharedPhysicsInputTypes() const
+    {
+        return mSharedInputTypes;
+    }
+    void clearSharedPhysicsInputs() const
+    {
+        mSharedInputTypes.clear();
+        mSharedInputTypeAbsences = false;
+    }
+    // Immutable dictionary text already resolved during discovery. Borrowed
+    // strings stay valid for this source's lifetime; missing aliases are omitted.
+    void borrowCachedPathTexts(const std::vector<uint64_t>& paths,
+                               std::unordered_map<uint64_t, const std::string*>& texts) const;
     void beginLoadCache() const;
     void clearLoadCache() const;
     // Whether a beginLoadCache() window is open. A consumer that opens one around a whole
@@ -440,7 +520,7 @@ public:
     // `listPaths`/`listCount`, when given, are the entries of `group.prims.list` (caller-verified
     // by handle identity) and replace the per-call dictionary fetch of the whole list.
     void seedBucketFromReadGroup(TokenId attr,
-                                 const ovstage_read_group_t& group,
+                                 const ReadGroupColumn& group,
                                  const ObjectKey* keys,
                                  size_t keyCount,
                                  bool append = false,
@@ -527,6 +607,14 @@ public:
     // the whole-stage index once at the read ordinal; deltas keep it exact and
     // clearSchemaCache() drops it. False on query/index failure: enumerate live instead.
     bool collectPrimTypeKeys(std::string_view typeName, std::vector<ObjectKey>& out) const;
+    // Keys of the prims a usd-prim-type filter query matches, from that query and one read of
+    // their rows at the read ordinal; no stage-wide index. The query resolves against the
+    // latest committed state, so a caller confirms each prim at the read ordinal. False on
+    // query or read failure.
+    bool queryPrimTypeKeys(std::string_view typeName, std::vector<ObjectKey>& out) const;
+    // Prime the existing type/schema indices with two bulk reads before a
+    // consumer enumerates every prim's metadata. Normal feed invalidation applies.
+    bool prefetchPrimMetadata() const;
     // Drop the stage-wide attribute-column vocabulary behind stageHasAttributeWithPrefix() /
     // stageHasAttributeColumn(), and the instance-material cache whose empty answer it gated.
     // The change feed calls it as a drain begins: a column first authored in the range must be
@@ -550,7 +638,7 @@ public:
     // require a dictionary-interned handle (e.g. ovx_path_dictionary_create_path_list):
     // walker/enumerate handles can differ from the interned handle for the same path.
     // Returns OVX_INVALID_PRIMPATH (0) for an unresolvable key.
-    ovx_primpath_t canonicalPath(ObjectKey key) const { return canonicalHandleRaw(rawHandle(key)); }
+    ovx_primpath_t canonicalPath(ObjectKey key) const { return ovx_primpath_t{canonicalHandleRaw(rawHandle(key))}; }
 
     // Resolve the storage prim that owns geometry authored for a logical scene-
     // graph instance proxy. Non-instanced keys resolve to themselves. Callers
@@ -565,6 +653,18 @@ public:
     // True for the private prototype root or any descendant below it. Those
     // keys provide backing data and must never become physics descriptors.
     bool isPrototypeBackingKey(ObjectKey key) const;
+    // True for a prim below a scene-graph instance root of a prototype that holds
+    // colliders, rigid bodies or physics materials. ovstage leaves instance proxy
+    // resolution to its consumers, so this source resolves it through the ovstage
+    // instancing API, never through rows a population domain wrote at the proxy path
+    // (RENDERING writes flattened ones, the physics description writes none). Discovery, children, existence
+    // and reads of such a prim come from the prototype prim at the same path below
+    // the prototype root; its world transform is that prim's prototype-space world
+    // times the instance root's world. See instanceProxyRaw().
+    bool isResolvedInstanceProxy(ObjectKey key) const;
+    // True once instancing discovery ran and failed: row-less instance proxies are then
+    // unknown, so ordinary enumeration cannot stand in for collectSchemaKeys().
+    bool instancingDiscoveryFailed() const;
 
     // --- ObjectKey generation tagging (ADR-0021 Alternative A) -----------------
     //
@@ -616,6 +716,8 @@ public:
     uint64_t rawHandle(ObjectKey key) const;
 
 private:
+    friend class PhysicsInputSnapshot; // reuse immutable dictionary mappings under the capture lease
+    std::string_view logicalPath(ObjectKey key) const;
     struct CachedTensorRow
     {
         const DLTensor* tensor = nullptr;
@@ -679,6 +781,9 @@ private:
     uint64_t findByPathRaw(std::string_view path) const;
     uint64_t getParentRaw(uint64_t raw) const;
     bool existsRaw(uint64_t raw) const;
+    // existsRaw() without instance resolution: whether the prim has a row.
+    bool rowExistsRaw(uint64_t raw) const;
+    bool rowExistsBatchChecked(const std::vector<ObjectKey>& keys, std::vector<bool>& outExists) const;
     uint64_t geometryBackingKeyRaw(uint64_t raw) const;
     AttrValue getAttributeAtTimeRaw(uint64_t raw, TokenId attr, ReadTime time, bool* complete = nullptr) const;
     void collectDescendantKeysRaw(uint64_t root, std::vector<uint64_t>& out) const;
@@ -704,6 +809,78 @@ private:
 
     bool buildPrototypeRootCache() const;
     bool buildPhysicsInstancingCache() const;
+    // A scene-graph instance proxy: a prim strictly below an instance root. ovstage
+    // provides no proxy resolution, so this source resolves it from the instancing
+    // API (prototype root of each instance root). Population domains may write rows
+    // at proxy paths (RENDERING writes flattened ones) or none (the physics description); either way
+    // the proxy is the prototype prim at the same path below the prototype root.
+    // `backing` is that prototype prim (itself a proxy when instances nest); the two
+    // paths map relationship targets from prototype space to the instance.
+    struct InstanceProxy
+    {
+        uint64_t backing = 0;
+        uint64_t instanceRoot = 0;
+        std::string instanceRootPath;
+        std::string prototypeRootPath;
+    };
+    // Null outside every instance. It does not check that the prototype holds a prim at
+    // that path: existsRaw() does.
+    // Memoized per canonical handle. Calls that can mint a proxy key (discovery,
+    // existence, children) build the instancing cache; plain reads pass build=false
+    // and only rebuild once this source has seen a prototype root, so a stage without
+    // instancing never pays for the lookup.
+    const InstanceProxy* instanceProxyRaw(uint64_t raw, bool build = true) const;
+    // The nearest instance root strictly above `path`; empty when there is none.
+    // Requires the physics instancing cache.
+    std::string enclosingInstanceRoot(const std::string& path) const;
+    // The row a read of `raw` resolves to: the concrete prototype row for an instance
+    // proxy (through every nesting level), else `raw` itself.
+    uint64_t readHandleRaw(uint64_t raw) const;
+    // Every row an overlay read of instance proxy `raw` consults after its own, nearest
+    // first: one per nesting level, ending at readHandleRaw(raw). Empty for any other prim.
+    void backingChainRaw(uint64_t raw, std::vector<uint64_t>& out) const;
+    // getRelationshipTargets() for the row at `key` itself: false when that row
+    // publishes no `relName`, true for any published value, including an empty one.
+    // `complete`, when given, is false when the read failed, so false is not absence.
+    bool readRelationshipTargets(ObjectKey key, const std::string& relName, std::vector<ObjectKey>& out,
+                                 bool* complete = nullptr) const;
+    // How a read of column `attrName` on an instance proxy resolves. A transform,
+    // type or schema read comes from the prototype prim; the composed world matrix
+    // and row identity are the proxy's own; any other value is the one published at
+    // the proxy path when there is one, else the prototype prim's.
+    enum class ProxyRead
+    {
+        eOwn,
+        ePrototype,
+        eOverlay,
+    };
+    static ProxyRead proxyReadFor(std::string_view attrName);
+    // While non-zero, reads address the row at the given path only (see ProxyRead).
+    mutable int mOwnRowReads = 0;
+    struct OwnRowScope
+    {
+        explicit OwnRowScope(const OvstageSource& source) : source(source) { ++source.mOwnRowReads; }
+        ~OwnRowScope() { --source.mOwnRowReads; }
+        const OvstageSource& source;
+    };
+    // Append the proxies of prototype row `backing` at every instance of its
+    // prototype, recursing through enclosing prototypes for nested instances.
+    void appendInstanceProxiesRaw(uint64_t backing, std::vector<uint64_t>& out) const;
+    // The private prototype root at or above `path`; empty when outside every prototype.
+    std::string prototypeRootOf(const std::string& path) const;
+    // prefetchBucket() row acquisition; the public entry adds instance proxies' backing rows.
+    void prefetchBucketRows(const std::vector<ObjectKey>& keys,
+                            const std::vector<std::string>& attrNames,
+                            bool sealMissing) const;
+    // Point an instance proxy's bucket and load-cache rows at its backing's rows, except
+    // the world matrix, which getLocalToWorldTransform() composes.
+    struct AliasCell
+    {
+        uint32_t cell;
+        ProxyRead policy;
+    };
+    void aliasBucketRows(uint64_t logical, uint64_t backing, bool deepest,
+                         const std::vector<AliasCell>& requestedCells) const;
     bool buildInstanceMaterialCache() const;
     void buildChildCache(const std::string& rootPath = "/") const;
     // Insert `child` under `parent` keeping the (pathOfRaw, handle) order buildChildCache
@@ -721,6 +898,8 @@ private:
     // or a structural delta filled it, else one single-prim read (no whole-stage parse).
     // Backs forEachAppliedSchema()/forEachMultiApplyInstance().
     void readPrimSchemaNames(uint64_t raw, const std::function<void(std::string_view)>& fn) const;
+    // One single-prim read of the prim's usd-schemas row, without the memo.
+    void readPrimSchemaRow(uint64_t raw, const std::function<void(std::string_view)>& fn) const;
     // The prim's own usd-prim-type as a source TokenId: memo first, else a read (memoised).
     // False when the prim has no type column.
     bool primTypeTokenRaw(uint64_t raw, TokenId& out, bool* complete = nullptr) const;
@@ -735,7 +914,7 @@ public:
     // Whether any prim authors the attribute column `name` exactly (same vocabulary).
     std::optional<bool> stageHasAttributeColumn(std::string_view name) const;
 
-    // PHYSICS population preserves the authored type separately from renderer types.
+    // Physics population preserves the authored type separately from renderer types.
     // Directly authored stages and older producers use the built-in type column.
     std::optional<bool> hasAuthoredTypeColumn() const;
     std::string_view attributeColumn(std::string_view name) const;
@@ -774,6 +953,8 @@ private:
     mutable bool mSchemaVocabularyBuilt = false;
     mutable bool mSchemaVocabularyComplete = false;
     mutable std::unordered_map<uint32_t, std::unordered_set<uint64_t>> mBaseInstanceMembership;
+    mutable std::atomic<uint32_t> mSinglePrimSchemaScopes{ 0 }; // see SinglePrimSchemaScope
+    mutable std::atomic<size_t> mFailedSinglePrimReads{ 0 }; // see failedSinglePrimReads()
 
 
     // Read attribute `attrName` for the single prim `raw` at the read ordinal and
@@ -895,6 +1076,10 @@ private:
     // calls during scanOvstage(), but is explicitly cleared once the load scan is
     // done. Coverage is tracked per (prim, attr) so misses are only trusted when
     // a columnar read proved the attr absent for that prim.
+    mutable std::shared_ptr<PhysicsInputSnapshot> mPhysicsInputs;
+    bool mSharePhysicsInputs = false;
+    mutable std::unordered_map<uint64_t, SharedInputTypeRow> mSharedInputTypes;
+    mutable bool mSharedInputTypeAbsences = false;
     mutable bool mLoadCacheActive = false;
     // Enables forEachChildRaw()'s complete-child-cache leaf fast path outside a load-cache
     // window. Hierarchy-only: unlike mLoadCacheActive it never seals an attribute miss.
@@ -928,6 +1113,15 @@ private:
     // composed world (UsdGeomXformCache-style) turns whole-scan world resolution
     // from O(prims * depth) into O(prims).
     mutable std::unordered_map<uint64_t, Matrix4d> mLoadCacheComposedWorld;
+    // For a prototype row, during the load walk: its locals composed up to the
+    // prototype root, and whether a prim on the way resets the transform stack.
+    // Every instance of the prototype shares it (see getLocalToWorldTransform).
+    struct PrototypeLocalChain
+    {
+        Matrix4d composed;
+        bool resets = false;
+    };
+    mutable std::unordered_map<uint64_t, PrototypeLocalChain> mLoadCachePrototypeChains;
 
     // Existence-only cache populated by initial attach from the scan result.
     // It avoids per-prim usd-path queries without affecting bucketed reads.
@@ -1006,16 +1200,22 @@ private:
     // Keep the cheap complete prototype-root list for suppressing private backing
     // prims. Normally expand only roots that back physics collision shapes; an
     // ambiguous non-leaf collider outside a prototype conservatively retains the
-    // old complete expansion. Each expansion currently rebuilds the complete
-    // instancing graph. Attempted/valid latches prevent a failed authoritative
+    // complete expansion, still using the batched instancing query.
+    // Attempted/valid latches prevent a failed authoritative
     // read from being retried once per scanned prim; clearSchemaCache() resets
     // both latches for the next structural state.
     mutable bool mPrototypeRootCacheInitialized = false;
     mutable bool mPrototypeRootCacheValid = false;
+    // Sticky across resetInstancingCaches(): some build of this source (or of the scan
+    // source it took discovery from) found a prototype root. Gates read-path rebuilds.
+    mutable bool mPrototypeRootsSeen = false;
     mutable bool mPhysicsInstancingCacheInitialized = false;
     mutable bool mPhysicsInstancingCacheValid = false;
     mutable std::unordered_set<std::string> mPrototypeRootPaths;
     mutable std::unordered_map<std::string, std::string> mPrototypeRootByInstanceRoot;
+    mutable std::unordered_map<std::string, std::vector<std::string>> mInstanceRootsByPrototypeRoot;
+    // Keyed by canonical handle; a zero `backing` records "not an instance proxy".
+    mutable std::unordered_map<uint64_t, InstanceProxy> mInstanceProxyCache;
     mutable std::unordered_map<uint64_t, uint64_t> mGeometryBackingCache;
 
     // Scene-graph proxy material bindings are resolved by ovpopulation into a

@@ -1,0 +1,80 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxTriangleMeshSimplificationCollisionAPI",
+  "title": "PhysxTriangleMeshSimplificationCollisionAPI",
+  "summary": "Quadric mesh simplification cooking parameters for a Mesh collider with physics:approximation meshSimplification. Cooking inputs only; nothing here is verified.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "Gprim"
+  ],
+  "requires": [
+    "PhysicsCollisionAPI"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "producer_scope": "Every declared attribute of an applied collision API is published at its resolved value; both columns land as their raw fallbacks when unauthored. No derivation.",
+  "columns": [
+    {
+      "name": "physxTriangleMeshSimplificationCollision:metric",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.55,
+      "parser_default": 0.55,
+      "absent": "0.55, the triangle mesh cooking default. Unauthored preserves the existing value; no clamping.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseCollision.cpp"
+      ]
+    },
+    {
+      "name": "physxTriangleMeshSimplificationCollision:weldTolerance",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "-inf",
+      "parser_default": "-FLT_MAX",
+      "absent": "-FLT_MAX: no vertex welding. A published -inf (the raw fallback) is also negative and has the same effect. A NaN is rewritten to -FLT_MAX unconditionally.",
+      "raw_fallback_diverges": false,
+      "units": "length",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseCollision.cpp"
+      ]
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysicsMeshCollisionAPI",
+      "rule": "Read only for descriptor kind meshSimplification, which also selects quadric simplification for cooking. No usd-schemas gate: the columns are read whenever they exist on the collider."
+    },
+    {
+      "with": "PhysicsRigidBodyAPI",
+      "rule": "On a dynamic body meshSimplification is silently promoted to convexHull (see PhysicsMeshCollisionAPI) and these columns are then never read."
+    }
+  ],
+  "notes": [
+    "Cooking APIs on a Mesh cannot be verified by the generated tests: the parameters only change the cooked PxTriangleMesh, which exposes no getter for them, and the builder writes no mesh arrays."
+  ]
+}

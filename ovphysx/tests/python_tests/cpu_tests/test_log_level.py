@@ -9,7 +9,7 @@ routes native messages into Python's logging system.
 """
 
 # @implements REQ-CAPI-LOG-001
-# @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7
+# @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7 AC-8
 # @implements REQ-PYTHON-LIFECYCLE-001
 # @covers AC-4 AC-7
 
@@ -218,6 +218,21 @@ def test_set_get_log_level_roundtrip():
         set_log_level(original)
 
 
+@pytest.mark.parametrize("level", [-1, 6, 2**32 + 4, -(2**32) + 4, 2**64 + 4])
+def test_invalid_log_level_preserves_threshold(level):
+    """Reject the original Python integer before narrowing it to the native enum."""
+    from ovphysx import LogLevel, get_log_level, set_log_level
+
+    original = get_log_level()
+    try:
+        set_log_level(LogLevel.VERBOSE)
+        with pytest.raises(ValueError, match="[Ll]og level.*range"):
+            set_log_level(level)
+        assert get_log_level() == LogLevel.VERBOSE
+    finally:
+        set_log_level(original)
+
+
 def test_error_level_does_not_emit_expected_missing_plugin_warnings():
     """Fresh startup must not report expected-absent static plugins as warnings.
 
@@ -289,6 +304,7 @@ def test_none_suppresses_owned_runtime_warnings():
             import sys
 
             import ovstage
+            from ovphysx.population import physics_population_descs
 
             gpu_warning = "GPU broadphase requires a CUDA context manager; falling back to ePABP."
             deformable_cuda_warning = (
@@ -321,11 +337,12 @@ def test_none_suppresses_owned_runtime_warnings():
             ovphysx.enable_python_logging(logger.name)
             physx = ovphysx.PhysX(ignore_version_mismatch=True)
             try:
-                ovstage.population.open_usd(
+                ovstage.population.open_usd_with_desc(
                     stage,
                     sys.argv[1],
                     ordinal=1,
-                    domains=ovstage.PopulationDomain.PHYSICS,
+                    time=ovstage.population.DEFAULT_TIME,
+                    descs=physics_population_descs(),
                 )
                 stage.advance_write_floor(ordinal=1).wait()
                 physx.wait_task(physx.attach_ovstage(stage, read_ordinal=1))
@@ -379,6 +396,7 @@ def test_none_does_not_consume_gpu_fallback_once_latch():
         import ovphysx
         from schema_support import physx_schema_paths
         import ovstage
+        from ovphysx.population import physics_population_descs
 
         gpu_warning = "GPU broadphase requires a CUDA context manager; falling back to ePABP."
         records = []
@@ -415,11 +433,12 @@ def test_none_does_not_consume_gpu_fallback_once_latch():
         ovphysx.enable_python_logging(logger.name)
         physx = ovphysx.PhysX(ignore_version_mismatch=True)
         try:
-            ovstage.population.open_usd(
+            ovstage.population.open_usd_with_desc(
                 stage,
                 sys.argv[1],
                 ordinal=1,
-                domains=ovstage.PopulationDomain.PHYSICS,
+                time=ovstage.population.DEFAULT_TIME,
+                descs=physics_population_descs(),
             )
             stage.advance_write_floor(ordinal=1).wait()
             run_attach(physx, stage)
@@ -462,6 +481,7 @@ def test_warning_does_not_override_host_global_disable():
         import sys
 
         import ovstage
+        from ovphysx.population import physics_population_descs
 
         gpu_warning = "GPU broadphase requires a CUDA context manager; falling back to ePABP."
         records = []
@@ -494,11 +514,12 @@ def test_warning_does_not_override_host_global_disable():
             if _lib.ovphysx_log_get_global_enabled_for_test():
                 raise RuntimeError("set_log_level(WARNING) re-enabled process-global logging")
 
-            ovstage.population.open_usd(
+            ovstage.population.open_usd_with_desc(
                 stage,
                 sys.argv[1],
                 ordinal=1,
-                domains=ovstage.PopulationDomain.PHYSICS,
+                time=ovstage.population.DEFAULT_TIME,
+                descs=physics_population_descs(),
             )
             stage.advance_write_floor(ordinal=1).wait()
             physx.wait_task(physx.attach_ovstage(stage, read_ordinal=1))
@@ -1264,7 +1285,7 @@ def test_callback_dependency_construction_does_not_deadlock_final_shutdown(monke
     assert dependency_started.is_set()
     assert not release_errors
     assert len(callback_errors) == 1
-    assert "PhysX() cannot be called from within a native log callback" in str(callback_errors[0])
+    assert "PhysX() cannot be called from within a native callback" in str(callback_errors[0])
     assert len(dependency_errors) == 1
     assert "ovphysx process shutdown is in progress" in str(dependency_errors[0])
     assert not callback_instances
@@ -1397,7 +1418,7 @@ def test_callback_dependency_construction_does_not_deadlock_initialization(monke
         assert dependency_started.is_set()
         assert not construction_errors
         assert len(callback_errors) == 1
-        assert "PhysX() cannot be called from within a native log callback" in str(callback_errors[0])
+        assert "PhysX() cannot be called from within a native callback" in str(callback_errors[0])
         assert not dependency_errors
         assert not callback_instances
         assert len(dependency_instances) == 1
@@ -2503,3 +2524,45 @@ def test_python_logging_invalid_filter_preserves_bridge_state(physx_sdk_cpu, cap
         ), "The previously active native bridge must remain installed"
     finally:
         disable_python_logging()
+
+
+@pytest.mark.parametrize("enabled", [False, True])
+def test_default_output_preference_replayed_after_retained_framework_shutdown(enabled):
+    """A stopped-to-ready transition replays both preferences without duplicates."""
+    script = textwrap.dedent("""
+        import ctypes
+        import sys
+        from ovphysx._bindings import OVPHYSX_CONFIG_VALUE_BOOL, _lib, ovphysx_config_value_t
+        from ovphysx.types import GlobalConfigKey, LogLevel
+
+        def ok(result):
+            assert result.status == 0, result.status
+
+        handle = ctypes.c_uint64()
+        cpu_only = ovphysx_config_value_t()
+        cpu_only.type = OVPHYSX_CONFIG_VALUE_BOOL
+        cpu_only.value.bool_value = True
+        ok(_lib.ovphysx_set_global_config(int(GlobalConfigKey.CPU_ONLY), cpu_only))
+        ok(_lib.ovphysx_set_log_level(LogLevel.WARNING))
+        ok(_lib.ovphysx_enable_default_log_output(False))
+        ok(_lib.ovphysx_initialize())
+        ok(_lib.ovphysx_create_instance(ctypes.byref(handle)))
+        ok(_lib.ovphysx_shutdown())  # live handle retains the framework
+        ok(_lib.ovphysx_enable_default_log_output(sys.argv[1] == "True"))
+        ok(_lib.ovphysx_destroy_instance(handle))
+        ok(_lib.ovphysx_initialize())
+        ok(_lib.ovphysx_create_instance(ctypes.byref(handle)))
+        peer = ctypes.c_uint64()
+        ok(_lib.ovphysx_create_instance(ctypes.byref(peer)))
+        _lib.ovphysx_log_emit_test_messages()
+        ok(_lib.ovphysx_flush_log(2**64 - 1))
+        ok(_lib.ovphysx_destroy_instance(peer))
+        ok(_lib.ovphysx_destroy_instance(handle))
+        ok(_lib.ovphysx_shutdown())
+    """)
+    result = subprocess.run([sys.executable, "-c", script, str(enabled)],
+                            capture_output=True, text=True, timeout=120)
+    assert result.returncode == 0, result.stdout + result.stderr
+    output = result.stdout + result.stderr
+    assert output.count("[LogTest] WARNING test message") == int(enabled), output
+    assert output.count("[LogTest] ERROR test message") == int(enabled), output

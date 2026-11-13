@@ -1,0 +1,103 @@
+{
+  "skill_name": "ovd-compare",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Compare a baseline six-step ovd-record capture with its --change-step 3 capture. Tell me the first velocity divergence here in our conversation and keep both OVDs.",
+      "expected_output": "Discover both scene contexts, establish identity and explicit application-step alignment, run ovd-inspect compare with tolerance, and explain Different at the first post-step divergence, recorded frame 6, from stdout evidence without exporting a sidecar.",
+      "files": [],
+      "expectations": ["Uses ovd-inspect compare, not a nonexistent ovd-compare executable", "Specifies both selectors, contexts, segments, inclusive frame range, offset and tolerance", "Explains stdout evidence without --annotations and preserves both OVDs", "Reports exit1 as Different at recorded frame 6 with numeric distance and provenance"]
+    },
+    {
+      "id": 2,
+      "prompt": "The runs started recording at different application steps and their pointer handles differ. Just compare frame 2 in each and declare which motion is right.",
+      "expected_output": "Require a known step mapping and intended object identity before a motion verdict; pointer values and equal frame numbers do not establish either.",
+      "files": [],
+      "expectations": ["Does not match independent runs on pointer handles", "Obtains application-step alignment or reports it unknown", "Does not infer which run is physically correct from a comparison alone"]
+    },
+    {
+      "id": 3,
+      "prompt": "One run has no exact velocity write at an aligned frame. Can you carry the previous value and call the runs identical?",
+      "expected_output": "Every Incomparable result, including a valid query lacking exact samples, emits physx.ovd.inspection-evidence JSON with an explanatory message plus stderr and exits 2. Explicit --allow-carried can compare carried prior known state with that assumption reported; missing values remain Incomparable, never identical continuous motion.",
+      "files": [],
+      "expectations": ["Keeps exact-write default", "Requires evidence JSON, explanatory message, stderr and exit2 for every Incomparable, including valid queries lacking exact samples", "Distinguishes Incomparable exit2 from Equal exit0", "Uses --allow-carried only with an explicit stated assumption; missing values stay Incomparable", "Does not turn missing evidence into zero or claim continuous-motion equivalence"]
+    },
+    {
+      "id": 4,
+      "prompt": "Show me the globalPose for one actor in a single finalized OVD file.",
+      "expected_output": "Route to ovd-inspect for scoped discovery and a typed pose query.",
+      "files": [],
+      "expectations": ["Selects ovd-inspect", "Does not self-compare a file to answer a pose query"]
+    },
+    {
+      "id": 5,
+      "prompt": "My right OVD opens in a compatible viewer, but ovd-inspect compare exits 2 with physx.ovd.error: code Invalid, message Attribute payload does not match schema, commandIndex 774, role right, limitOption null. Should I call it corrupt, increase --max-retained-bytes, or report Incomparable?",
+      "expected_output": "Report a loader rejection by this inspector, preserve both captures, and use a compatible reader or viewer. Do not label it corrupt, Incomparable JSON, or a budget failure.",
+      "files": [],
+      "expectations": ["Distinguishes physx.ovd.error from physx.ovd.inspection-evidence with status Incomparable", "Does not infer capture corruption", "Stops budget retries for code Invalid and null limitOption", "Suggests a compatible reader or viewer while preserving source files"]
+    },
+    {
+      "id": 6,
+      "prompt": "A trusted right capture first reports physx.ovd.error with code Limit and limitOption --max-stream-bytes, then after a justified bounded increase reports code Limit and limitOption --max-commands. Which options should change?",
+      "expected_output": "Raise --max-stream-bytes for the first diagnosed limit and then --max-commands for the second, each separately and by justified bounded amounts.",
+      "files": [],
+      "expectations": ["Uses code Limit and known limitOption instead of English messages", "Does not raise unrelated limits", "Keeps validation enabled"]
+    },
+    {
+      "id": 7,
+      "prompt": "A right capture has an optional missing object reference, while another ends with a truncated command. Can I report both comparisons Equal?",
+      "expected_output": "Optional missing references may load, but each comparison still needs aligned exact values; truncation rejects the file and cannot produce Equal.",
+      "files": [],
+      "expectations": ["Allows optional missing references", "Keeps strict truncated-command rejection", "Does not report Equal without actual comparable values"]
+    },
+    {
+      "id": 8,
+      "prompt": "The right capture fails with physx.ovd.error, code Limit, limitOption null, message Attribute path depth exceeds 32. Should I raise --max-commands, --max-handler-steps and --max-retained-bytes together?",
+      "expected_output": "The fixed path-depth limit has no adjustable option; preserve both files, diagnose the rejected command, and do not guess budgets or report comparison equality.",
+      "files": [],
+      "expectations": ["Recognizes the fixed path-depth limit and null limitOption as having no adjustable option", "Does not raise multiple limits", "Does not report Equal from a rejected file"]
+    },
+    {
+      "id": 9,
+      "prompt": "The right file's successful summary reports unresolvedOptionalEdges=2 from repeated optional references to one missing handle. Is the file corrupt, or is the comparison automatically Incomparable?",
+      "expected_output": "Neither follows from that counter. It counts unresolved optional edge commands, not distinct objects or corruption; compare actual aligned samples before assigning Equal, Different, or Incomparable.",
+      "files": [],
+      "expectations": ["Interprets the field per optional edge command", "Does not infer corruption from a successful load", "Bases comparison status on actual aligned samples"]
+    },
+    {
+      "id": 10,
+      "prompt": "Thanks for the comparison. Please also export that frame-linked evidence to a new annotation JSON file for sharing. Keep both OVDs.",
+      "expected_output": "Repeat the established comparison with --annotations at a fresh path, retain the same result in the conversation, preserve both OVDs, and explain that the sidecar is not a supported viewer-import format.",
+      "files": [],
+      "expectations": ["Uses --annotations only after the explicit export request", "Uses a fresh output path and preserves both source captures", "Reports the comparison in the conversation alongside the saved evidence", "Does not claim the sidecar imports into a viewer"]
+    },
+    {
+      "id": 11,
+      "prompt": "Compare arm globalPose between two finalized runs over aligned frames 2, 4 and 6. Find the first orientation gap above 0.01 radians, then the first position gap above 0.001 scene length units. Keep the results in our conversation.",
+      "expected_output": "Use two explicit ovd-inspect compare invocations with --attribute globalPose paired with --distance orientation and --distance position. Declare length units for position, preserve alignment/selectors, and interpret version 2 leftValue/rightValue and distance evidence without claiming one run is physically right.",
+      "files": [],
+      "expectations": ["Uses paired --attribute and --distance flags for each metric", "Omits --units for orientation or spells it exactly --units radians, never --units rad; uses explicit length units for position", "Keeps frame alignment and selected identities explicit", "Treats version 2 values as pose components, not velocity labels", "Does not export annotations without a request"]
+    },
+    {
+      "id": 12,
+      "prompt": "The right capture is an interrupted file that summary can inspect with --recover-tail. Can you pass --recover-tail to compare and call the runs Equal if the first frame matches?",
+      "expected_output": "Comparison remains strict and cannot use --recover-tail. A recovered prefix is incomplete, and one matching frame cannot establish equality over the requested range.",
+      "files": [],
+      "expectations": ["Does not use --recover-tail with compare", "Keeps incomplete-data caveat", "Does not declare Equal from one matching frame"]
+    },
+    {
+      "id": 13,
+      "prompt": "A trusted right capture reports physx.ovd.error, code Limit, limitOption --max-attribute-bytes, message Attribute payload exceeds the payload limit. A bounded retry then names --max-retained-bytes. Can I keep retrying if the next identity is null or --unknown-limit?",
+      "expected_output": "Each known identity permits only its own separately justified bounded increase for a trusted capture. Both caps stay active. Null or unknown identities stop budget retries; never choose flags from the message.",
+      "files": [],
+      "expectations": ["Branches on Limit and known limitOption", "Keeps both caps finite and active", "Stops budget retries for null or unknown identity"]
+    },
+    {
+      "id": 14,
+      "prompt": "Version 2 orientation evidence has status Incomparable, message Invalid right transform quaternion, hasEvidence false, distance null, componentCount 4, raw leftValue/rightValue arrays, measure {attributeName: globalPose, distanceKind: TransformOrientationRadians, units: radians}, leftFrameCompleted false and rightFrameCompleted true. Were the arrays measured distances, did both frames finish, and is componentCount a decimal-string counter? What if a separate result were Equal?",
+      "expected_output": "Report the tool's Invalid right transform quaternion message naming the invalid right side. Decoded raw values can survive an invalid measurement; they are not a valid distance. componentCount is a JSON number, not a decimal-string counter. Completion flags distinguish an open left interval from a completed right frame; null would mean absent frame. Report the open frame even for a separate Equal result, which does not imply completed simulations; do not reuse the invalid-result message for it.",
+      "files": [],
+      "expectations": ["Reports the supplied tool-generated message naming the invalid right side, without reusing it for hypothetical Equal", "Uses nested measure and separates decoded arrays from hasEvidence/distance", "Preserves false versus null completion meanings", "Reports open compared frames alongside Equal", "Keeps componentCount as a JSON number, unlike decimal-string counters"]
+    }
+  ]
+}

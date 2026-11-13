@@ -1,0 +1,33 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxParticleSamplingAPI",
+  "title": "PhysxParticleSamplingAPI",
+  "summary": "Poisson-samples a Mesh into the particle set that its physxParticleSampling:particles relationship names. The runtime dispatches the sampling to the cooking service at load, and only before the first simulation step; a sampler added later is ignored with a warning.",
+  "status": "draft",
+  "authoring": false,
+  "enumeration": {
+    "by": "schema",
+    "probe": "physxParticleSampling:samplingDistance"
+  },
+  "applies_to": [
+    "Mesh"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true,
+    "geometry_role": true
+  },
+  "columns": [],
+  "interactions": [
+    {
+      "with": "Points",
+      "rule": "The target must be a Points or PointInstancer prim that lists PhysxParticleSetAPI; otherwise the runtime warns that the sampler does not point to a valid particle prim and does not sample."
+    }
+  ],
+  "notes": [
+    "Only a Mesh is sampled: the ovstage dispatch and the parser check the Mesh type as well as the API.",
+    "The runtime reads physxParticleSampling:samplingDistance, physxParticleSampling:maxSamples, physxParticleSampling:volume and the physxParticleSampling:particles relationship, plus the target set's physxParticle:fluid and its system's rest offsets for the point width, and uses them for the sampling at load. These columns are not described yet."
+  ]
+}

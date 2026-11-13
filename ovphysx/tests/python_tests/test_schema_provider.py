@@ -132,9 +132,10 @@ paths = physx_schema_paths()
 assert all(p.is_relative_to(Path(sys.argv[1])) for p in paths), paths
 assert "pxr" not in sys.modules and "physx_usd_schemas" not in sys.modules
 import ovstage
+from ovphysx.population import physics_population_descs
 ovstage.population.register_usd_schemas([str(p) for p in paths])
 with ovstage.Stage("external-schema-fallback") as stage:
-    ovstage.population.open_usd(stage, sys.argv[2], ordinal=1, domains=ovstage.PopulationDomain.PHYSICS)
+    ovstage.population.open_usd_with_desc(stage, sys.argv[2], ordinal=1, time=ovstage.population.DEFAULT_TIME, descs=physics_population_descs())
     stage.advance_write_floor(ordinal=1).wait()
     with ovstage.PathDictionary(stage) as dictionary:
         token = dictionary.intern_token("physxRigidBody:linearDamping")
@@ -145,8 +146,9 @@ with ovstage.Stage("external-schema-fallback") as stage:
                     read.wait()
                     for group in read.groups():
                         with group:
-                            for index in range(group.tensor_count):
-                                values.extend(group.array(index).reshape(-1).tolist())
+                            for column in group.columns:
+                                for index in range(column.tensor_count):
+                                    values.extend(column.array(index).reshape(-1).tolist())
                 assert values == [0.0], values
 '''
     env = dict(os.environ)

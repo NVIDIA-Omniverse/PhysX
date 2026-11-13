@@ -19,10 +19,12 @@ Drag a body under collision constraints and cancel while its object is deleted.
 
 - A rigid body with saved axis locks, CCD flags and velocities, plus a fixture-defined impulse-at-point expected response.
 - A scoped native lease and a forbidden reentrant wait probe.
+- A core instance with a worker, a native-access lease and a queued step.
 
 ## When
 
 - Apply the impulse, begin drag, update its target, cancel/delete, and try old native access and reentrant waiting.
+- Submit the core step during the native-access lease, inspect its status, then release the lease and wait for completion.
 
 ## Then
 
@@ -30,14 +32,17 @@ Drag a body under collision constraints and cancel while its object is deleted.
 - The impulse produces the expected linear/angular change; unsupported backend modes fail explicitly (REQ AC-2).
 - Temporary constraints are gone, settings restore and velocities follow the documented end policy (REQ AC-3).
 - Mutation order matches core tasks and the reentrant wait reports an error without blocking (REQ AC-4).
+- The core step remains pending throughout the native-access lease and succeeds after release (REQ AC-4).
 
 ## Executable coverage
 
 - [C++ access](../../../../tests/c_unittests/test_companion_access.cpp): `CompanionNativeAccess.BuildNegotiationPreservesRejectedOutput`, `CompanionAccess.TypedBorrowRejectsRecursiveWaitAndStaleRecord`; incompatible SDK/type, stale records, callback admission, wait rejection and the compiled native consumer sample (AC-1/4).
+- [Core step during native access](../../../../tests/c_unittests/test_companion_access.cpp): `CompanionAccess.NativeAccessLeaseDelaysQueuedStep` verifies pending status throughout the lease and successful execution after release (AC-4).
 - [Python integration](../../../tests_native/test_interaction.py): `test_impulse_at_point_and_exact_instance`, `test_drag_collision_end_velocity_and_abi`, `test_drag_pending_peer_and_owner_retirement`, `test_interaction_extension_sample` (AC-2/3/4).
 
-The native shard and all four Python cases pass. CPU-only support is explicit;
-GPU/DirectGPU interaction is not advertised. No allocation-failure injector is
+The native shard and all four Python cases pass. The Python cases run CPU scenes;
+GPU-dynamics support and DirectGPU unavailability are verified by the native GPU
+case listed in TEST-COMP-INTERACTION-002. No allocation-failure injector is
 used: rollback is exercised through invalid/duplicate/stale admission and the
 native implementation also guards later construction with RAII.
 

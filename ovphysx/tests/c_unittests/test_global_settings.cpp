@@ -10,6 +10,9 @@
  *
  * @implements REQ-CAPI-CONFIG-001
  * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7
+ *
+ * @implements REQ-CAPI-COMPILED-CACHE-001
+ * @covers AC-1 AC-2 AC-3
  */
 
 #include <gtest/gtest.h>
@@ -64,7 +67,7 @@ static bool wait_gs_op(ovphysx_instance_handle_t handle, ovphysx_enqueue_result_
 TEST(ScopedConfig, KeyRangesDoNotOverlap)
 {
     EXPECT_LE(
-        static_cast<uint32_t>(OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLE),
+        static_cast<uint32_t>(OVPHYSX_GLOBAL_CONFIG_COMPILED_STAGE_CACHE),
         0x0000ffffu);
     EXPECT_GE(static_cast<uint32_t>(OVPHYSX_CONFIG_ACTIVE_CUDA_GPUS), 0x00010000u);
 }
@@ -487,6 +490,110 @@ TEST(ScopedConfig, NumThreadsRejectedWhileStageAttached)
     ASSERT_EQ(ovphysx_destroy_instance(handle).status, OVPHYSX_API_SUCCESS);
 }
 
+// ============================================================================
+// Compiled ovstage cache mode
+// ============================================================================
+
+namespace
+{
+int64_t compiledStageCacheMode()
+{
+    ovphysx_config_value_t out = {};
+    EXPECT_EQ(
+        ovphysx_get_global_config(OVPHYSX_GLOBAL_CONFIG_COMPILED_STAGE_CACHE, &out).status,
+        OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(out.type, OVPHYSX_CONFIG_VALUE_INT64);
+    return out.value.int64_value;
+}
+
+ovphysx_api_status_t setCompiledStageCacheMode(int64_t mode)
+{
+    return ovphysx_set_global_config(
+        OVPHYSX_GLOBAL_CONFIG_COMPILED_STAGE_CACHE, ovphysx_config_value_int64(mode)).status;
+}
+
+// Every test that sets the key restores the default, so the default check
+// below holds in any test order.
+class ScopedCompiledStageCacheReset
+{
+public:
+    ScopedCompiledStageCacheReset() = default;
+    ScopedCompiledStageCacheReset(const ScopedCompiledStageCacheReset&) = delete;
+    ScopedCompiledStageCacheReset& operator=(const ScopedCompiledStageCacheReset&) = delete;
+    ~ScopedCompiledStageCacheReset()
+    {
+        EXPECT_EQ(setCompiledStageCacheMode(OVPHYSX_COMPILED_STAGE_CACHE_AUTOMATIC), OVPHYSX_API_SUCCESS);
+    }
+};
+
+const int64_t kCompiledStageCacheModes[] = {
+    OVPHYSX_COMPILED_STAGE_CACHE_DISABLED,
+    OVPHYSX_COMPILED_STAGE_CACHE_READ_ONLY,
+    OVPHYSX_COMPILED_STAGE_CACHE_READ_WRITE,
+    OVPHYSX_COMPILED_STAGE_CACHE_AUTOMATIC,
+};
+} // namespace
+
+TEST(ScopedConfig, CompiledStageCacheDefaultsToAutomaticAndRoundTrips)
+{
+    EXPECT_EQ(static_cast<uint32_t>(OVPHYSX_GLOBAL_CONFIG_COMPILED_STAGE_CACHE), 0x0000000eu);
+    EXPECT_EQ(compiledStageCacheMode(), OVPHYSX_COMPILED_STAGE_CACHE_AUTOMATIC);
+
+    ScopedCompiledStageCacheReset reset;
+    for (const int64_t mode : kCompiledStageCacheModes)
+    {
+        ASSERT_EQ(setCompiledStageCacheMode(mode), OVPHYSX_API_SUCCESS) << "mode " << mode;
+        EXPECT_EQ(compiledStageCacheMode(), mode);
+    }
+}
+
+TEST(ScopedConfig, CompiledStageCacheRejectsInvalidValuesWithoutChange)
+{
+    ScopedCompiledStageCacheReset reset;
+    ASSERT_EQ(setCompiledStageCacheMode(OVPHYSX_COMPILED_STAGE_CACHE_READ_ONLY), OVPHYSX_API_SUCCESS);
+
+    EXPECT_EQ(setCompiledStageCacheMode(-1), OVPHYSX_API_INVALID_ARGUMENT);
+    EXPECT_EQ(setCompiledStageCacheMode(4), OVPHYSX_API_INVALID_ARGUMENT);
+    EXPECT_EQ(
+        setCompiledStageCacheMode(static_cast<int64_t>(INT32_MAX) + 1),
+        OVPHYSX_API_INVALID_ARGUMENT);
+    EXPECT_EQ(
+        ovphysx_set_global_config(
+            OVPHYSX_GLOBAL_CONFIG_COMPILED_STAGE_CACHE, ovphysx_config_value_bool(true)).status,
+        OVPHYSX_API_INVALID_ARGUMENT);
+
+    EXPECT_EQ(compiledStageCacheMode(), OVPHYSX_COMPILED_STAGE_CACHE_READ_ONLY);
+}
+
+// Each attach reads the key, and every mode attaches a stage with nothing stored
+// to restore. The key is never frozen: it stays writable while a stage is attached.
+TEST(ScopedConfig, CompiledStageCacheModesAttachAndStayWritableWhileAttached)
+{
+    ScopedCompiledStageCacheReset reset;
+    destroySharedCpuInstance();
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_instance(&handle).status, OVPHYSX_API_SUCCESS);
+
+    for (const int64_t mode : kCompiledStageCacheModes)
+    {
+        ASSERT_EQ(setCompiledStageCacheMode(mode), OVPHYSX_API_SUCCESS) << "mode " << mode;
+        ASSERT_TRUE(attach_usd_with_ovstage(
+            handle,
+            OVPHYSX_SOURCE_DIR "/tests/data/minimal_scene.usda"))
+            << "mode " << mode;
+
+        const int64_t next = mode == OVPHYSX_COMPILED_STAGE_CACHE_DISABLED
+                                 ? OVPHYSX_COMPILED_STAGE_CACHE_READ_WRITE
+                                 : OVPHYSX_COMPILED_STAGE_CACHE_DISABLED;
+        EXPECT_EQ(setCompiledStageCacheMode(next), OVPHYSX_API_SUCCESS) << "mode " << mode;
+        EXPECT_EQ(compiledStageCacheMode(), next);
+
+        ASSERT_TRUE(destroy_ovstage_test_attachments(handle)) << "mode " << mode;
+    }
+
+    ASSERT_EQ(ovphysx_destroy_instance(handle).status, OVPHYSX_API_SUCCESS);
+}
+
 // set_global_config with a typed bool entry must succeed.
 TEST(TypedConfig, SetBoolSucceeds)
 {
@@ -499,10 +606,10 @@ TEST(TypedConfig, SetBoolSucceeds)
 // Bool roundtrip: set then get.
 TEST(TypedConfig, BoolRoundTrip)
 {
+    ASSERT_TRUE(ensureSharedCpuInstance());
     ovphysx_result_t r = ovphysx_set_global_config_entry(
         ovphysx_config_entry_disable_contact_processing(true));
-    if (r.status != OVPHYSX_API_SUCCESS)
-        GTEST_SKIP() << "Setting not writable; skipping round-trip test";
+    ASSERT_EQ(r.status, OVPHYSX_API_SUCCESS);
 
     bool out = false;
     r = ovphysx_get_global_config_bool(OVPHYSX_CONFIG_DISABLE_CONTACT_PROCESSING, &out);
@@ -522,6 +629,7 @@ TEST(TypedConfig, BoolRoundTrip)
 // Int32 roundtrip: set num_threads then get.
 TEST(TypedConfig, Int32RoundTrip)
 {
+    ASSERT_TRUE(ensureSharedCpuInstance());
     ovphysx_result_t r = ovphysx_set_global_config_entry(
         ovphysx_config_entry_num_threads(8));
     ASSERT_EQ(r.status, OVPHYSX_API_SUCCESS);
@@ -538,6 +646,7 @@ TEST(TypedConfig, Int32RoundTrip)
 // 0 is a valid value (disables the pool), so it round-trips like any other.
 TEST(TypedConfig, OvstageReadPoolMaxMbRoundTrip)
 {
+    ASSERT_TRUE(ensureSharedCpuInstance());
     int32_t original = 0;
     ASSERT_EQ(ovphysx_get_global_config_int32(OVPHYSX_CONFIG_OVSTAGE_READ_POOL_MAX_MB, &original).status,
               OVPHYSX_API_SUCCESS);
@@ -562,6 +671,7 @@ TEST(TypedConfig, OvstageReadPoolMaxMbRoundTrip)
 // Raw Carbonite setting override roundtrip.
 TEST(TypedConfig, CarboniteDirectOverride)
 {
+    ASSERT_TRUE(ensureSharedCpuInstance());
     ovphysx_result_t r = ovphysx_set_global_config_entry(
         ovphysx_config_entry_carbonite(
             OVPHYSX_LITERAL("/physics/disableContactProcessing"),

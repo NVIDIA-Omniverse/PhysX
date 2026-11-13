@@ -1,0 +1,311 @@
+{
+  "$schema": "../contract.schema.json",
+  "schema_version": 1,
+  "attributes": [
+    {
+      "id": "deformable_dynamic_friction",
+      "name": "deformableDynamicFriction",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEFORMABLE_MATERIAL",
+          "description": "dynamic friction",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "deformable_youngs_modulus",
+      "name": "deformableYoungsModulus",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEFORMABLE_MATERIAL",
+          "description": "Young's modulus",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "pressure",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "deformable_poissons_ratio",
+      "name": "deformablePoissonsRatio",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEFORMABLE_MATERIAL",
+          "description": "Poisson's ratio",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "deformable_elasticity_damping",
+      "name": "deformableElasticityDamping",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEFORMABLE_MATERIAL",
+          "description": "elasticity damping",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "elasticity_damping",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "This native coefficient has material-dependent dimensions: the volume solver multiplies it by inverse dt, while the surface velocity-damping solver multiplies it by dt. Inspect the concrete material before interpreting or assigning a value."
+        }
+      ]
+    },
+    {
+      "id": "deformable_bending_stiffness",
+      "name": "deformableBendingStiffness",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEFORMABLE_MATERIAL",
+          "description": "bending stiffness",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "pressure",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "surface_material"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "surface_material"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "deformable_thickness",
+      "name": "deformableThickness",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEFORMABLE_MATERIAL",
+          "description": "shell thickness",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "length",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "surface_material"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "surface_material"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "deformable_bending_damping",
+      "name": "deformableBendingDamping",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEFORMABLE_MATERIAL",
+          "description": "bending damping",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "bending_damping",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "surface_material"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "surface_material"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    }
+  ]
+}

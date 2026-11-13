@@ -1,0 +1,25 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "GeomInstanceRootAPI",
+  "title": "GeomInstanceRootAPI",
+  "summary": "Native-instancing tag on an instance root outside a prototype, written by ovstage population next to GeomInstanceAPI.",
+  "status": "draft",
+  "compiled_cache": true,
+  "authoring": false,
+  "applies_to": [
+    "Xformable",
+    "Imageable",
+    "Typed"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": false,
+    "row": false
+  },
+  "producer_scope": "Written by ovstage population on instance roots that are not inside a prototype.",
+  "columns": [],
+  "notes": [
+    "No USD schema applies this name and it declares no column; the parser keys native instancing on the ovstage instancing queries (instance and prototype roots), not on attributes."
+  ]
+}

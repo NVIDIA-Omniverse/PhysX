@@ -1,0 +1,255 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxVehicleControllerAPI",
+  "title": "PhysxVehicleControllerAPI",
+  "summary": "Driver inputs (throttle, brakes, steer, target gear) of a vehicle that has a drive. The runtime checks that the vehicle prim lists it and reads its columns once, when the vehicle is created; PhysxVehicleTankControllerAPI adds thrust inputs on top.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "Xformable"
+  ],
+  "requires": [
+    "PhysxVehicleAPI"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "columns": [
+    {
+      "name": "physxVehicleController:accelerator",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0: no throttle. A present value outside [0, 1] logs an error and the vehicle is not created.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physx/plugins/usdLoad/Vehicle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXVehiclePropertiesUpdate.cpp"
+      ]
+    },
+    {
+      "name": "physxVehicleController:brake0",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0: braking system brakes0 released. A present value outside [0, 1] logs an error and the vehicle is not created.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physx/plugins/usdLoad/Vehicle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXVehiclePropertiesUpdate.cpp"
+      ],
+      "notes": "Applied only when the vehicle has PhysxVehicleBrakesAPI braking systems; brake0 commands the brakes0 instance. Without them it is still read and range-checked but not applied."
+    },
+    {
+      "name": "physxVehicleController:brake1",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0: braking system brakes1 released. A present value outside [0, 1] logs an error and the vehicle is not created.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physx/plugins/usdLoad/Vehicle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXVehiclePropertiesUpdate.cpp"
+      ],
+      "notes": "Applied only when the vehicle has PhysxVehicleBrakesAPI braking systems; brake1 commands the brakes1 instance. Without them it is still read and range-checked but not applied."
+    },
+    {
+      "name": "physxVehicleController:brake",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0. Deprecated and read only when authored (every present ovstage column counts as authored): a nonzero value logs a deprecation warning, and a value outside [0, 1] logs an error and the vehicle is not created.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physx/plugins/usdLoad/Vehicle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXVehiclePropertiesUpdate.cpp"
+      ],
+      "notes": "Applied only with the deprecated brakes setup (no PhysxVehicleBrakesAPI on the vehicle), as the command of braking system 0."
+    },
+    {
+      "name": "physxVehicleController:handbrake",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0. Deprecated and read only when authored (every present ovstage column counts as authored): a nonzero value logs a deprecation warning, and a value outside [0, 1] logs an error and the vehicle is not created.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physx/plugins/usdLoad/Vehicle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXVehiclePropertiesUpdate.cpp"
+      ],
+      "notes": "Applied only with the deprecated brakes setup (no PhysxVehicleBrakesAPI on the vehicle), as the command of braking system 1."
+    },
+    {
+      "name": "physxVehicleController:steer",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0: no steer. A present value outside [-1, 1] logs an error and the vehicle is not created.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physx/plugins/usdLoad/Vehicle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXVehiclePropertiesUpdate.cpp"
+      ],
+      "notes": "Applied only when the vehicle has PhysxVehicleSteeringAPI or PhysxVehicleAckermannSteeringAPI; without either the deprecated steerLeft and steerRight are applied instead."
+    },
+    {
+      "name": "physxVehicleController:steerLeft",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0. Deprecated and read only when authored (every present ovstage column counts as authored): a nonzero value logs a deprecation warning, and a value outside [0, 1] logs an error and the vehicle is not created.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physx/plugins/usdLoad/Vehicle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXVehiclePropertiesUpdate.cpp"
+      ],
+      "notes": "Applied only without a steering API (deprecated steer setup); the steer command is then steerLeft - steerRight."
+    },
+    {
+      "name": "physxVehicleController:steerRight",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0. Deprecated and read only when authored (every present ovstage column counts as authored): a nonzero value logs a deprecation warning, and a value outside [0, 1] logs an error and the vehicle is not created.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physx/plugins/usdLoad/Vehicle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXVehiclePropertiesUpdate.cpp"
+      ],
+      "notes": "Applied only without a steering API (deprecated steer setup); the steer command is then steerLeft - steerRight."
+    },
+    {
+      "name": "physxVehicleController:targetGear",
+      "usd_type": "int",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "int",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 255,
+      "parser_default": 255,
+      "absent": "255: automatic forward gear shifting. A present value other than 255 must lie in [-1, 30] (reverse, neutral, forward gears), otherwise an error is logged and the vehicle is not created.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physx/plugins/usdLoad/Vehicle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXVehiclePropertiesUpdate.cpp"
+      ],
+      "notes": "The upper bound is 30, the vehicle gearbox's maximum gear count minus 2. The schema expects PhysxVehicleAutoGearBoxAPI on the drive for automatic shifting."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysxVehicleAPI",
+      "rule": "Read only on a prim that lists PhysxVehicleAPI, after the vehicle passed its other validation. The vehicle must have a drive (physxVehicle:drive, or a drive API on the vehicle prim); otherwise an error is logged and the vehicle is not created."
+    },
+    {
+      "with": "PhysxVehicleWheelControllerAPI",
+      "rule": "Mutually exclusive: when a wheel attachment of the vehicle lists PhysxVehicleWheelControllerAPI, an error is logged and the vehicle is not created."
+    },
+    {
+      "with": "PhysxVehicleTankControllerAPI",
+      "rule": "When that API is listed too, these columns are read on the tank controller path, which adds physxVehicleTankController:thrust0 and thrust1."
+    }
+  ],
+  "notes": [
+    "Every column is change-tracked: the runtime applies a new value while simulating; an out-of-range value then logs an error and is ignored instead of invalidating the vehicle.",
+    "On reset the runtime writes the initial controller values back through the data-write sink; an attach without a sink skips that."
+  ]
+}

@@ -3,7 +3,7 @@
 
 /**
  * @implements REQ-CAPI-WRITE-001
- * @covers AC-1 AC-3 AC-4 AC-5a AC-6 AC-7 AC-8
+ * @covers AC-1 AC-3 AC-4 AC-5a AC-6 AC-7 AC-8 AC-16
  *
  * TEST-CAPI-WRITE-001: the public app -> physics C write surface of ADR-0012, that is
  * ovphysx_write / ovphysx_fetch_write_next / ovphysx_commit_group / ovphysx_release_write.
@@ -39,10 +39,10 @@ namespace
 
 // A syntactically valid attribute. Whether the queried type accepts it is a separate
 // check the session makes. These cases only need a non-null pointer.
-ovx_string_or_token_t makeAttr(const char* name)
+ovx_token_or_string_t makeAttr(const char* name)
 {
-    ovx_string_or_token_t a{};
-    a.token = 0;
+    ovx_token_or_string_t a{};
+    a.token = ovx_token_t{0};
     a.string.ptr = name;
     a.string.length = std::strlen(name);
     return a;
@@ -100,7 +100,7 @@ protected:
 
 TEST_F(WriteApiTest, WriteRejectsNullOutParam)
 {
-    const ovx_string_or_token_t attr = makeAttr(OVPHYSX_ATTR_POSITION);
+    const ovx_token_or_string_t attr = makeAttr(OVPHYSX_ATTR_POSITION);
     const ovphysx_result_t r = test_utils::complete_task(m_handle, ovphysx_write(m_handle, /*query*/ 1, &attr, 1, nullptr, nullptr));
     EXPECT_EQ(r.status, OVPHYSX_API_INVALID_ARGUMENT);
 }
@@ -114,7 +114,7 @@ TEST_F(WriteApiTest, WriteRejectsNullAttribute)
     EXPECT_EQ(r.status, OVPHYSX_API_INVALID_ARGUMENT);
     EXPECT_EQ(w, 0u) << "out_write must be cleared before any early return";
 
-    const ovx_string_or_token_t attr = makeAttr(OVPHYSX_ATTR_POSITION);
+    const ovx_token_or_string_t attr = makeAttr(OVPHYSX_ATTR_POSITION);
     w = 12345;
     const ovphysx_result_t empty = test_utils::complete_task(m_handle, ovphysx_write(m_handle, /*query*/ 1, &attr, 0, &w, nullptr));
     EXPECT_EQ(empty.status, OVPHYSX_API_INVALID_ARGUMENT);
@@ -123,7 +123,7 @@ TEST_F(WriteApiTest, WriteRejectsNullAttribute)
 
 TEST_F(WriteApiTest, WriteRejectsUnknownInstanceHandle)
 {
-    const ovx_string_or_token_t attr = makeAttr(OVPHYSX_ATTR_POSITION);
+    const ovx_token_or_string_t attr = makeAttr(OVPHYSX_ATTR_POSITION);
     ovphysx_write_handle_t w = 12345;
     const ovphysx_result_t r = test_utils::complete_task(/*handle*/ 0, ovphysx_write(/*handle*/ 0, /*query*/ 1, &attr, 1, &w, nullptr));
     EXPECT_EQ(r.status, OVPHYSX_API_INVALID_ARGUMENT);
@@ -180,7 +180,7 @@ TEST_F(WriteApiTest, OpenSessionOverAQuery)
     ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_query(m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &q, nullptr)).status,
               OVPHYSX_API_SUCCESS);
 
-    const ovx_string_or_token_t attr = makeAttr(OVPHYSX_ATTR_POSITION);
+    const ovx_token_or_string_t attr = makeAttr(OVPHYSX_ATTR_POSITION);
     ovphysx_write_handle_t w = 0;
     const ovphysx_result_t r = test_utils::complete_task(m_handle, ovphysx_write(m_handle, q, &attr, 1, &w, nullptr));
 
@@ -200,23 +200,28 @@ TEST_F(WriteApiTest, RejectedAttributePreservesRuntimeDiagnostic)
 
     for (const char* name : { "notAnAttribute", "points", "inverseMass", "linearAcceleration" })
     {
-        const ovx_string_or_token_t attr = makeAttr(name);
+        const ovx_token_or_string_t attr = makeAttr(name);
         ovphysx_write_handle_t w = 12345;
         EXPECT_NE(test_utils::complete_task(m_handle, ovphysx_write(m_handle, q, &attr, 1, &w, nullptr)).status, OVPHYSX_API_SUCCESS);
-        EXPECT_EQ(w, 0u);
         const std::string message = test_utils::last_task_error();
         EXPECT_NE(message.find(name), std::string::npos) << message;
         EXPECT_NE(message.find("rigid"), std::string::npos) << message;
         EXPECT_NE(message.find("do not accept"), std::string::npos) << message;
+        // The failed session keeps the handle the call returned; releasing it is a no-op.
+        EXPECT_NE(w, 12345u);
+        EXPECT_NE(w, 0u);
+        EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_release_write(m_handle, w)).status, OVPHYSX_API_SUCCESS);
     }
 
-    const ovx_string_or_token_t position = makeAttr(OVPHYSX_ATTR_POSITION);
+    const ovx_token_or_string_t position = makeAttr(OVPHYSX_ATTR_POSITION);
     ovphysx_write_handle_t w = 0;
     EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_write(m_handle, q, &position, 1, &w, nullptr)).status, OVPHYSX_API_SUCCESS);
     test_utils::complete_task(m_handle, ovphysx_release_write(m_handle, w));
     test_utils::complete_task(m_handle, ovphysx_release_query(m_handle, q));
 }
 
+// @implements REQ-CAPI-TASK-001
+// @covers AC-1 AC-4 AC-6
 TEST_F(WriteApiTest, RejectedAttributeSurvivesLogCallbackError)
 {
     attachAndStep();
@@ -228,7 +233,12 @@ TEST_F(WriteApiTest, RejectedAttributeSurvivesLogCallbackError)
     {
         std::promise<int32_t> result;
         bool completed = false;
+        ovphysx_instance_handle_t owner = 0;
+        ovphysx_enqueue_result_t outputReceipt{};
+        ovphysx_api_status_t tensorStatus = OVPHYSX_API_SUCCESS;
+        ovphysx_api_status_t warmupStatus = OVPHYSX_API_SUCCESS;
     } callbackState;
+    callbackState.owner = m_handle;
     std::future<int32_t> callbackResult = callbackState.result.get_future();
     const uint32_t previousLevel = ovphysx_get_log_level();
     struct RestoreLogging
@@ -247,6 +257,12 @@ TEST_F(WriteApiTest, RejectedAttributeSurvivesLogCallbackError)
         if (!state->completed && message.ptr &&
             std::string(message.ptr, message.length).find("notAnAttribute") != std::string::npos)
         {
+            // Log dispatch has its own callback marker, independently of
+            // task-aware native callback depth or a peer's execution count.
+            state->outputReceipt = ovphysx_release_query(state->owner, 0);
+            ovphysx_object_type_t type = OVPHYSX_OBJECT_TYPE_INVALID;
+            state->tensorStatus = ovphysx_get_object_type(state->owner, OVPHYSX_LITERAL("/World"), &type).status;
+            state->warmupStatus = ovphysx_warmup(state->owner).status;
             // This configuration call rejects callback reentry without acquiring a scene lock.
             state->result.set_value(ovphysx_set_log_level(OVPHYSX_LOG_ERROR).status);
             state->completed = true;
@@ -255,18 +271,26 @@ TEST_F(WriteApiTest, RejectedAttributeSurvivesLogCallbackError)
     ASSERT_EQ(ovphysx_set_log_callback(OVPHYSX_LOG_ERROR, nullptr, callback, &callbackState).status,
               OVPHYSX_API_SUCCESS);
 
-    const ovx_string_or_token_t attr = makeAttr("notAnAttribute");
+    const ovx_token_or_string_t attr = makeAttr("notAnAttribute");
     ovphysx_write_handle_t w = 12345;
     EXPECT_NE(test_utils::complete_task(m_handle, ovphysx_write(m_handle, q, &attr, 1, &w, nullptr)).status, OVPHYSX_API_SUCCESS);
-    EXPECT_EQ(w, 0u);
+    // The failed session keeps the handle the call returned.
+    EXPECT_NE(w, 12345u);
+    EXPECT_NE(w, 0u);
     const std::string message = test_utils::last_task_error();
     // The public flush only covers accepted callbacks, not Carbonite's upstream async buffer.
     ASSERT_EQ(callbackResult.wait_for(std::chrono::seconds(5)), std::future_status::ready);
     ASSERT_EQ(ovphysx_flush_log(UINT64_MAX).status, OVPHYSX_API_SUCCESS);
     EXPECT_EQ(callbackResult.get(), OVPHYSX_API_ERROR);
+    EXPECT_EQ(callbackState.outputReceipt.status, OVPHYSX_API_INVALID_STATE);
+    EXPECT_EQ(callbackState.outputReceipt.op_index, 0u);
+    EXPECT_EQ(callbackState.outputReceipt.instance, 0u);
+    EXPECT_EQ(callbackState.tensorStatus, OVPHYSX_API_INVALID_STATE);
+    EXPECT_EQ(callbackState.warmupStatus, OVPHYSX_API_INVALID_STATE);
     EXPECT_NE(message.find("notAnAttribute"), std::string::npos) << message;
     EXPECT_NE(message.find("rigid"), std::string::npos) << message;
     EXPECT_EQ(message.find("within a log callback"), std::string::npos) << message;
+    test_utils::complete_task(m_handle, ovphysx_release_write(m_handle, w));
     test_utils::complete_task(m_handle, ovphysx_release_query(m_handle, q));
 }
 
@@ -282,7 +306,7 @@ TEST_F(WriteApiTest, SingleAttributeSessionsShareAQuery)
 
     for (const char* name : { OVPHYSX_ATTR_POSITION, OVPHYSX_ATTR_ORIENTATION })
     {
-        const ovx_string_or_token_t attr = makeAttr(name);
+        const ovx_token_or_string_t attr = makeAttr(name);
         ovphysx_write_handle_t w = 0;
         EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_write(m_handle, q, &attr, 1, &w, nullptr)).status, OVPHYSX_API_SUCCESS) << name;
         test_utils::complete_task(m_handle, ovphysx_release_write(m_handle, w));
@@ -298,7 +322,7 @@ TEST_F(WriteApiTest, IterationEndsWithSuccessfulNullGroup)
     ovphysx_query_handle_t q = 0;
     ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_query(m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &q, nullptr)).status,
               OVPHYSX_API_SUCCESS);
-    const ovx_string_or_token_t attr = makeAttr(OVPHYSX_ATTR_POSITION);
+    const ovx_token_or_string_t attr = makeAttr(OVPHYSX_ATTR_POSITION);
     ovphysx_write_handle_t w = 0;
     ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_write(m_handle, q, &attr, 1, &w, nullptr)).status, OVPHYSX_API_SUCCESS);
 
@@ -331,7 +355,7 @@ TEST_F(WriteApiTest, GroupAddressesAreNeverRecycled)
     ovphysx_query_handle_t q = 0;
     ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_query(m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &q, nullptr)).status,
               OVPHYSX_API_SUCCESS);
-    const ovx_string_or_token_t attr = makeAttr(OVPHYSX_ATTR_POSITION);
+    const ovx_token_or_string_t attr = makeAttr(OVPHYSX_ATTR_POSITION);
     ovphysx_write_handle_t w = 0;
     ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_write(m_handle, q, &attr, 1, &w, nullptr)).status, OVPHYSX_API_SUCCESS);
 
@@ -358,7 +382,7 @@ TEST_F(WriteApiTest, DoubleCommitIsRejected)
     ovphysx_query_handle_t q = 0;
     ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_query(m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &q, nullptr)).status,
               OVPHYSX_API_SUCCESS);
-    const ovx_string_or_token_t attr = makeAttr(OVPHYSX_ATTR_POSITION);
+    const ovx_token_or_string_t attr = makeAttr(OVPHYSX_ATTR_POSITION);
     ovphysx_write_handle_t w = 0;
     ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_write(m_handle, q, &attr, 1, &w, nullptr)).status, OVPHYSX_API_SUCCESS);
 
@@ -379,7 +403,7 @@ TEST_F(WriteApiTest, FetchDoesNotInvalidateAnUncommittedGroup)
     ovphysx_query_handle_t q = 0;
     ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_query(m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &q, nullptr)).status,
               OVPHYSX_API_SUCCESS);
-    const ovx_string_or_token_t attr = makeAttr(OVPHYSX_ATTR_POSITION);
+    const ovx_token_or_string_t attr = makeAttr(OVPHYSX_ATTR_POSITION);
     ovphysx_write_handle_t w = 0;
     ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_write(m_handle, q, &attr, 1, &w, nullptr)).status, OVPHYSX_API_SUCCESS);
 
@@ -415,16 +439,16 @@ TEST_F(WriteApiTest, ReleaseDiscardsUncommittedGroups)
         ovphysx_query_handle_t rq = 0;
         EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_query(m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &rq, nullptr)).status,
                   OVPHYSX_API_SUCCESS);
-        const ovx_string_or_token_t a = makeAttr(OVPHYSX_ATTR_POSITION);
+        const ovx_token_or_string_t a = makeAttr(OVPHYSX_ATTR_POSITION);
         ovphysx_read_handle_t rh = 0;
-        EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_read(m_handle, rq, &a, 1, &rh, nullptr)).status, OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_read(m_handle, rq, &a, 1, ovstage_cuda_sync_t{ 0, 0 }, &rh, nullptr)).status, OVPHYSX_API_SUCCESS);
         const ovstage_read_group_t* g = nullptr;
         while (test_utils::complete_task(m_handle, ovphysx_fetch_read_next(m_handle, rh, &g)).status == OVPHYSX_API_SUCCESS && g)
         {
-            if (g->data.tensors && g->data.tensor_count > 0 &&
-                g->data.tensors[0].device.device_type == kDLCPU)
+            if (g->columns[0].data.tensors && g->columns[0].data.tensor_count > 0 &&
+                g->columns[0].data.tensors[0].device.device_type == kDLCPU)
             {
-                const DLTensor& t = g->data.tensors[0];
+                const DLTensor& t = g->columns[0].data.tensors[0];
                 const size_t n = size_t(g->prims.count) * (t.dtype.lanes ? t.dtype.lanes : 1);
                 const float* p = static_cast<const float*>(t.data);
                 out.insert(out.end(), p, p + n);
@@ -442,7 +466,7 @@ TEST_F(WriteApiTest, ReleaseDiscardsUncommittedGroups)
     ovphysx_query_handle_t q = 0;
     ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_query(m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &q, nullptr)).status,
               OVPHYSX_API_SUCCESS);
-    const ovx_string_or_token_t attr = makeAttr(OVPHYSX_ATTR_POSITION);
+    const ovx_token_or_string_t attr = makeAttr(OVPHYSX_ATTR_POSITION);
     ovphysx_write_handle_t w = 0;
     ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_write(m_handle, q, &attr, 1, &w, nullptr)).status, OVPHYSX_API_SUCCESS);
 
@@ -478,7 +502,7 @@ TEST_F(WriteApiTest, PreStepWriteAppliesOnCpu)
     ovphysx_query_handle_t q = 0;
     ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_query(m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &q, nullptr)).status,
               OVPHYSX_API_SUCCESS);
-    const ovx_string_or_token_t attr = makeAttr(OVPHYSX_ATTR_POSITION);
+    const ovx_token_or_string_t attr = makeAttr(OVPHYSX_ATTR_POSITION);
     ovphysx_write_handle_t w = 0;
     ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_write(m_handle, q, &attr, 1, &w, nullptr)).status, OVPHYSX_API_SUCCESS);
 
@@ -510,14 +534,14 @@ TEST_F(WriteApiTest, PreStepWriteAppliesOnCpu)
     ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_query(m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &rq, nullptr)).status,
               OVPHYSX_API_SUCCESS);
     ovphysx_read_handle_t rh = 0;
-    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_read(m_handle, rq, &attr, 1, &rh, nullptr)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_read(m_handle, rq, &attr, 1, ovstage_cuda_sync_t{ 0, 0 }, &rh, nullptr)).status, OVPHYSX_API_SUCCESS);
     const ovstage_read_group_t* rg = nullptr;
     while (test_utils::complete_task(m_handle, ovphysx_fetch_read_next(m_handle, rh, &rg)).status == OVPHYSX_API_SUCCESS && rg)
     {
-        if (rg->data.tensors && rg->data.tensor_count > 0 &&
-            rg->data.tensors[0].device.device_type == kDLCPU)
+        if (rg->columns[0].data.tensors && rg->columns[0].data.tensor_count > 0 &&
+            rg->columns[0].data.tensors[0].device.device_type == kDLCPU)
         {
-            const DLTensor& t = rg->data.tensors[0];
+            const DLTensor& t = rg->columns[0].data.tensors[0];
             const size_t n = tensorFloatCount(t);
             const float* p = static_cast<const float*>(t.data);
             after.insert(after.end(), p, p + n);
@@ -530,4 +554,136 @@ TEST_F(WriteApiTest, PreStepWriteAppliesOnCpu)
     ASSERT_EQ(after.size(), written.size());
     for (size_t i = 0; i < after.size(); ++i)
         EXPECT_FLOAT_EQ(after[i], written[i]) << "CPU pre-step write did not land at " << i;
+}
+
+// --- Masked commit (REQ AC-16) -----------------------------------------------
+
+namespace
+{
+// A host row mask: one byte per row, nonzero selecting it.
+struct HostRowMask
+{
+    explicit HostRowMask(std::vector<uint8_t> rows) : bytes(std::move(rows)), shape(static_cast<int64_t>(bytes.size()))
+    {
+        tensor.data = bytes.data();
+        tensor.device = DLDevice{ kDLCPU, 0 };
+        tensor.ndim = 1;
+        tensor.dtype = DLDataType{ kDLUInt, 8, 1 };
+        tensor.shape = &shape;
+    }
+    std::vector<uint8_t> bytes;
+    int64_t shape;
+    DLTensor tensor{};
+};
+
+// Every host rigid-body position, in read order.
+std::vector<float> readHostPositions(ovphysx_instance_handle_t handle)
+{
+    std::vector<float> out;
+    ovphysx_query_handle_t q = 0;
+    EXPECT_EQ(test_utils::complete_task(handle, ovphysx_query(handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &q, nullptr)).status,
+              OVPHYSX_API_SUCCESS);
+    const ovx_token_or_string_t a = makeAttr(OVPHYSX_ATTR_POSITION);
+    ovphysx_read_handle_t r = 0;
+    EXPECT_EQ(test_utils::complete_task(handle, ovphysx_read(handle, q, &a, 1, ovstage_cuda_sync_t{ 0, 0 }, &r, nullptr)).status, OVPHYSX_API_SUCCESS);
+    const ovstage_read_group_t* g = nullptr;
+    while (test_utils::complete_task(handle, ovphysx_fetch_read_next(handle, r, &g)).status == OVPHYSX_API_SUCCESS && g)
+    {
+        const DLTensor& t = g->columns[0].data.tensors[0];
+        if (t.device.device_type == kDLCPU)
+        {
+            const float* p = static_cast<const float*>(t.data);
+            out.insert(out.end(), p, p + tensorFloatCount(t));
+        }
+        test_utils::complete_task(handle, ovphysx_release_group(handle, r, g->read_group_id));
+    }
+    test_utils::complete_task(handle, ovphysx_release_read(handle, r));
+    test_utils::complete_task(handle, ovphysx_release_query(handle, q));
+    return out;
+}
+} // namespace
+
+// Only the selected rows take the written value; every other row keeps its own. Checked independently of row order:
+// each position afterwards is either its previous value or the written one, and exactly the selected count changed.
+TEST_F(WriteApiTest, MaskedCommitWritesOnlySelectedRows)
+{
+    attachAndStep();
+    const std::vector<float> before = readHostPositions(m_handle);
+    ASSERT_FALSE(before.empty());
+
+    ovphysx_query_handle_t q = 0;
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_query(m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &q, nullptr)).status,
+              OVPHYSX_API_SUCCESS);
+    const ovx_token_or_string_t attr = makeAttr(OVPHYSX_ATTR_POSITION);
+    ovphysx_write_handle_t w = 0;
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_write(m_handle, q, &attr, 1, &w, nullptr)).status, OVPHYSX_API_SUCCESS);
+    size_t selected = 0;
+    ovphysx_fetched_write_group_t fetched{};
+    while (test_utils::complete_task(m_handle, ovphysx_fetch_write_next(m_handle, w, &fetched)).status == OVPHYSX_API_SUCCESS &&
+           fetched.group)
+    {
+        const DLTensor& t = fetched.group->data.tensors[0];
+        ASSERT_EQ(t.device.device_type, kDLCPU);
+        std::fill_n(static_cast<float*>(t.data), tensorFloatCount(t), 777.0f);
+        std::vector<uint8_t> rows(static_cast<size_t>(t.shape[0]), 0);
+        for (size_t i = 0; i < rows.size(); i += 2)
+            rows[i] = 1;
+        selected += (rows.size() + 1) / 2;
+        HostRowMask mask(rows);
+        ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_commit_group_masked(m_handle, w, fetched.group, &mask.tensor, noSync())).status,
+                  OVPHYSX_API_SUCCESS);
+    }
+    test_utils::complete_task(m_handle, ovphysx_release_write(m_handle, w));
+    test_utils::complete_task(m_handle, ovphysx_release_query(m_handle, q));
+
+    const std::vector<float> after = readHostPositions(m_handle);
+    ASSERT_EQ(after.size(), before.size());
+    size_t changedRows = 0;
+    for (size_t row = 0; row < after.size() / 3; ++row)
+    {
+        bool changed = false;
+        for (size_t c = 0; c < 3; ++c)
+        {
+            const size_t i = row * 3 + c;
+            EXPECT_TRUE(after[i] == before[i] || after[i] == 777.0f) << "row " << row << " took a value nobody wrote";
+            changed = changed || after[i] == 777.0f;
+        }
+        changedRows += changed ? 1 : 0;
+    }
+    EXPECT_EQ(changedRows, selected);
+}
+
+// A null mask, one that is not 1-D bool or uint8, or one of the wrong length is rejected at admission, and the group
+// stays live: the unmasked commit that follows succeeds.
+TEST_F(WriteApiTest, MaskedCommitRejectsMalformedMasks)
+{
+    attachAndStep();
+    ovphysx_query_handle_t q = 0;
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_query(m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &q, nullptr)).status,
+              OVPHYSX_API_SUCCESS);
+    const ovx_token_or_string_t attr = makeAttr(OVPHYSX_ATTR_POSITION);
+    ovphysx_write_handle_t w = 0;
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_write(m_handle, q, &attr, 1, &w, nullptr)).status, OVPHYSX_API_SUCCESS);
+    ovphysx_fetched_write_group_t fetched{};
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_fetch_write_next(m_handle, w, &fetched)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_NE(fetched.group, nullptr);
+    const DLTensor& t = fetched.group->data.tensors[0];
+    std::fill_n(static_cast<float*>(t.data), tensorFloatCount(t), 5.0f);
+
+    const ovphysx_enqueue_result_t nullMask = ovphysx_commit_group_masked(m_handle, w, fetched.group, nullptr, noSync());
+    EXPECT_EQ(nullMask.status, OVPHYSX_API_INVALID_ARGUMENT);
+    HostRowMask floatMask(std::vector<uint8_t>(static_cast<size_t>(t.shape[0]) * 4, 0));
+    floatMask.tensor.dtype = DLDataType{ kDLFloat, 32, 1 };
+    floatMask.shape = t.shape[0];
+    const ovphysx_enqueue_result_t wrongType = ovphysx_commit_group_masked(m_handle, w, fetched.group, &floatMask.tensor, noSync());
+    EXPECT_EQ(wrongType.status, OVPHYSX_API_INVALID_ARGUMENT);
+
+    // A mask that does not match the group is refused at admission too: no task is created for it.
+    HostRowMask tooLong(std::vector<uint8_t>(static_cast<size_t>(t.shape[0]) + 1, 1));
+    EXPECT_EQ(ovphysx_commit_group_masked(m_handle, w, fetched.group, &tooLong.tensor, noSync()).status,
+              OVPHYSX_API_INVALID_ARGUMENT);
+    EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_commit_group(m_handle, w, fetched.group, noSync())).status, OVPHYSX_API_SUCCESS)
+        << "a rejected mask must leave the group live";
+    test_utils::complete_task(m_handle, ovphysx_release_write(m_handle, w));
+    test_utils::complete_task(m_handle, ovphysx_release_query(m_handle, q));
 }

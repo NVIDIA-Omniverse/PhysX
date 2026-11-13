@@ -54,6 +54,11 @@ drain behavior.
   by its own minimum severity and channel filter. `OVPHYSX_LOG_NONE` mutes only
   the three named sources; it is not a whole-runtime or process mute.
 
+- AC-8: Default console-output preferences set before bootstrap or while SDK
+  logging is stopped are replayed on the next stopped-to-ready transition,
+  including when the framework is retained. Creating sibling instances must
+  not duplicate default logger registrations.
+
 ## Test References
 
 - TEST-CAPI-LOG-001

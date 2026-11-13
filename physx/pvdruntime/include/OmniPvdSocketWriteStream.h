@@ -14,10 +14,15 @@
  * This stream is the TCP client. openStream() connects to a listening reader and sends the
  * live-stream handshake before any OmniPVD bytes; the first writeBytes then goes out on the
  * already-open connection. The endpoint is fixed at creation and cannot be changed afterwards.
- * Opening an already connected stream is a no-op. closeStream() is idempotent, and opening the
+ * Opening a healthy connected stream is a no-op. Opening a connection marked dead returns false
+ * until closeStream() is called. closeStream() is idempotent, and opening the
  * same object after close reconnects to that fixed endpoint. A failed connect or handshake leaves
  * the stream closed so openStream() can be retried. Before a successful open and after close,
  * writeBytes() returns zero and flush() returns false.
+ *
+ * pollCaptureRequest() returns eNONE after the receiver half-closes its sending direction, and
+ * forward writes continue. A malformed request, or a request truncated by that half-close, closes
+ * the connection. Later polls then return eERROR until closeStream() or openStream().
  *
  * The host, port and sendTimeout are arguments of the factory function
  * createOmniPvdSocketWriteStream(address, port, sendTimeout), not of this abstract class
@@ -41,8 +46,10 @@ public:
 	 * sendTimeout uses the default 3000 millisecond connect window while leaving the blocked-send
 	 * timeout at the OS default. DNS resolution and the handshake are outside this retry window.
 	 * openStream() blocks the calling thread through connection and handshake; it spawns no threads
-	 * of its own. Idempotent: a second call while already open is a no-op that returns true. A failed
-	 * open may be retried, and re-opening after closeStream() clears the dead-peer flag and reconnects.
+	 * of its own. A second call on a healthy open connection returns true. On an established connection
+	 * marked dead, it returns false and keeps the socket open; closeStream() must precede a retry.
+	 * A failed new connect or handshake can be retried directly. Reopening after closeStream()
+	 * clears the dead-peer flag and reconnects.
 	 *
 	 * \return True if the connect and handshake succeeded.
 	 */

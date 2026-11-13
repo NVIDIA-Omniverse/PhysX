@@ -36,7 +36,15 @@ Preview and bake two deformable frames with a visual mesh denser than the simula
 
 [test_deformable_authoring.py](../../../tests/test_deformable_authoring.py):
 
-Native mapping, transformed visual output, triangle normal-derivative velocities and TetMesh publication are exercised. tests/test_usd_helpers.py covers preview/bake time mapping, atomic batches, unchanged rest/topology and stale/notice rejection; test_exchange.py verifies no input feedback. tests_native/test_output.py verifies ragged readiness/explicit device transfer with a device transport fixture, not a real GPU simulation.
+Native mapping, transformed visual output, triangle normal-derivative velocities
+and TetMesh publication are exercised. tests/test_usd_helpers.py covers
+preview/bake time mapping, atomic batches, unchanged rest/topology and
+stale/notice rejection; test_exchange.py verifies no input feedback.
+tests_native/test_output.py verifies ragged readiness/explicit device transfer
+with a device transport fixture, not a real GPU simulation.
+`test_body_output_resolves_an_uncollected_attach` also opens an empty deformable
+capture through the pending Stage keepalive after a later step completes attach
+but before its receipt is collected (AC-2).
 
 Qualification: Linux x86_64 CPU and customer USD 26.8. No GPU/device execution
 or same-process legacy-provider coexistence is claimed.

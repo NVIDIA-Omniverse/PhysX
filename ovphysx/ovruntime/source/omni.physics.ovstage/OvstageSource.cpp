@@ -2,6 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-SOURCE-IDENTITY-001
+ * @covers AC-3 AC-4 AC-5
+ */
+/** @implements REQ-CACHE-ATTACH-001
+ * @covers AC-3 AC-9 AC-10
+ */
+
+/**
  * @implements REQ-PARSE-MASS-004
  * @covers AC-1 AC-2 AC-3 AC-4
  */
@@ -33,7 +41,7 @@
  * @covers AC-1 AC-2
  *
  * @implements REQ-PARSE-COL-005
- * @covers AC-1 AC-2 AC-3 AC-4 AC-5
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7
  *
  * @implements REQ-PARSE-SHAPE-005
  * @covers AC-1 AC-2
@@ -61,6 +69,7 @@
  */
 
 #include "OvstageSource.h"
+#include <omni/physics/ovstage/StageFingerprint.h>
 #include "ReadColumn.h"
 #include <omni/physics/parse/DescriptorPipelineStats.h>
 #include <cstdio>
@@ -84,6 +93,7 @@
 #include <cstdint>
 #include <cstring>
 #include <iterator>
+#include <stdexcept>
 #include <string_view>
 #include <unordered_set>
 
@@ -117,6 +127,12 @@ struct OvstageInternTable
     // 1-based local index (0 reserved invalid, matching ObjectKey{}'s default).
     std::unordered_map<uint64_t, uint32_t> rawToIndex;
     std::deque<uint64_t> indexToRaw;
+    // Populated only when a compiled owner restores logical path identities.
+    // Deque strings never change after assignment, keeping map and caller views stable.
+    std::deque<std::string> indexToPath;
+    std::unordered_map<std::string_view, uint32_t> pathToIndex;
+    size_t reconciledRawCount = 1;
+    bool logicalPaths = false;
 };
 
 namespace
@@ -234,6 +250,29 @@ private:
     ovx_primpath_list_t mList = OVX_INVALID_PRIMPATH_LIST;
 };
 
+// Releases every valid list a batched query returned into a caller-owned array.
+class ScopedPathLists
+{
+public:
+    ScopedPathLists(ovx_path_dictionary_t* dict, const std::vector<ovx_primpath_list_t>& lists)
+        : mDict(dict), mLists(lists)
+    {
+    }
+    ~ScopedPathLists()
+    {
+        for (const ovx_primpath_list_t list : mLists)
+            if (mDict && list != OVX_INVALID_PRIMPATH_LIST)
+                ovx_path_dictionary_destroy_path_list(mDict, list);
+    }
+
+    ScopedPathLists(const ScopedPathLists&) = delete;
+    ScopedPathLists& operator=(const ScopedPathLists&) = delete;
+
+private:
+    ovx_path_dictionary_t* mDict = nullptr;
+    const std::vector<ovx_primpath_list_t>& mLists;
+};
+
 // Test fault is thread-local and checked only once per coordinator schema stream.
 int& schemaReadFaultCounter()
 {
@@ -266,6 +305,37 @@ bool consumeAuthoritativeReadFaultForTest()
         return false;
     --authoritativeReadFaultCounter();
     return true;
+}
+
+// Test-only fault for the calling thread: its next single-prim reads of one column that
+// would reach ovstage fail before they are issued, as a transient enqueue failure does.
+// Zero in production; set only by setOvstageColumnReadFaultForTest().
+struct ColumnReadFault
+{
+    std::string column;
+    int count = 0;
+};
+ColumnReadFault& columnReadFault()
+{
+    static thread_local ColumnReadFault fault;
+    return fault;
+}
+
+bool consumeColumnReadFaultForTest(std::string_view column)
+{
+    ColumnReadFault& fault = columnReadFault();
+    if (fault.count <= 0 || fault.column != column)
+        return false;
+    --fault.count;
+    return true;
+}
+
+// Test-only fault: the next `count` batched instance-root queries fail as a transient
+// read failure does. Zero in production; set by setOvstageInstanceRootQueryFaultForTest().
+int& instanceRootQueryFaultCounter()
+{
+    static int counter = 0;
+    return counter;
 }
 
 // Test-only call counter for the expensive complete-graph instance-root query.
@@ -333,6 +403,13 @@ std::atomic_size_t& bucketReadCounter()
 }
 
 std::atomic_size_t& schemaPresenceQueryCounter()
+{
+    static std::atomic_size_t counter{ 0 };
+    return counter;
+}
+
+// Test-only count of whole-stage token-stream reads (forEachStageTokenValue).
+std::atomic_size_t& stageMetadataReadCounter()
 {
     static std::atomic_size_t counter{ 0 };
     return counter;
@@ -709,6 +786,25 @@ void setOvstageAuthoritativeReadFaultForTest(int count)
     authoritativeReadFaultCounter() = count;
 }
 
+// Internal test hook: the calling thread's next `count` single-prim reads of `column`
+// that reach ovstage fail; zero disarms.
+void setOvstageColumnReadFaultForTest(std::string_view column, int count)
+{
+    columnReadFault() = { std::string(column), count };
+}
+
+// Internal test hook; pass zero to disarm.
+void setOvstageInstanceRootQueryFaultForTest(int count)
+{
+    instanceRootQueryFaultCounter() = count;
+}
+
+// The calling thread's column read failures still armed.
+int getOvstageColumnReadFaultForTest()
+{
+    return columnReadFault().count;
+}
+
 // Not declared in the public header; test translation units forward-declare
 // these accessors. The process-global count assumes sequential test execution,
 // matching the existing authoritative-read fault seam above.
@@ -805,6 +901,15 @@ void resetOvstageSchemaPresenceQueryCountForTest()
 size_t getOvstageSchemaPresenceQueryCountForTest()
 {
     return schemaPresenceQueryCounter().load(std::memory_order_relaxed);
+}
+
+void resetOvstageStageMetadataReadCountForTest()
+{
+    stageMetadataReadCounter().store(0, std::memory_order_relaxed);
+}
+size_t getOvstageStageMetadataReadCountForTest()
+{
+    return stageMetadataReadCounter().load(std::memory_order_relaxed);
 }
 
 void resetOvstageStructuralSinglePrimReadCountForTest()
@@ -1001,7 +1106,7 @@ const KnownTokens* OvstageSource::knownTokens() const
     if (!mKnownTokens)
     {
         auto k = std::make_unique<KnownTokens>();
-        k->intern(*this); // re-enters doInternToken under the same recursive mutex
+        k->internVocabulary(*this); // re-enters doInternToken under the same recursive mutex
         mKnownTokens = std::move(k);
     }
     // Never reset: TokenIds are permanent for this source, so the batch stays valid.
@@ -1023,31 +1128,86 @@ ovx_token_t OvstageSource::ovxToken(std::string_view s) const
 
 ObjectKey OvstageSource::internKey(uint64_t raw) const
 {
-    if (raw == 0)
-        return ObjectKey{};
-    // mInternTable is shared by every OvstageSource wrapping the same live
-    // ovstage_instance_t (see OvstageInternTable's doc comment), so this locks
-    // the table's own mutex, not mMutex -- a sibling wrapper on another thread
-    // may be interning concurrently.
+    if (!raw)
+        return {};
     std::lock_guard<std::mutex> lock(mInternTable->mutex);
-    auto [it, inserted] = mInternTable->rawToIndex.try_emplace(raw, 0u);
-    if (inserted)
+    auto& table = *mInternTable;
+    auto found = table.rawToIndex.find(raw);
+    if (found != table.rawToIndex.end())
+        return ObjectKey{ (uint64_t(table.generation) << 32) | found->second };
+    // A live query/update may be the first encounter with a deferred path's
+    // backend handle. Join it to the logical key already used by the owner.
+    ovx_string_t text{};
+    if (table.logicalPaths && ovx_path_dictionary_path_to_string(mDict, ovx_primpath_t{raw}, &text) == OVX_OK && text.ptr)
     {
-        mInternTable->indexToRaw.push_back(raw);
-        it->second = static_cast<uint32_t>(mInternTable->indexToRaw.size() - 1);
+        const auto path = table.pathToIndex.find(std::string_view(text.ptr, text.length));
+        if (path != table.pathToIndex.end())
+        {
+            table.rawToIndex.emplace(raw, path->second);
+            return ObjectKey{ (uint64_t(table.generation) << 32) | path->second };
+        }
     }
-    return ObjectKey{ (static_cast<uint64_t>(mInternTable->generation) << 32) | it->second };
+    if (table.indexToRaw.size() > UINT32_MAX)
+        return {};
+    const uint32_t index = uint32_t(table.indexToRaw.size());
+    table.indexToRaw.push_back(raw);
+    try
+    {
+        table.rawToIndex.emplace(raw, index);
+    }
+    catch (...)
+    {
+        table.indexToRaw.pop_back();
+        throw;
+    }
+    return ObjectKey{ (uint64_t(table.generation) << 32) | index };
 }
 
 uint64_t OvstageSource::rawHandle(ObjectKey key) const
 {
-    if (key.handle == 0 || static_cast<uint32_t>(key.handle >> 32) != mInternTable->generation)
+    if (!key.handle || uint32_t(key.handle >> 32) != mInternTable->generation)
         return 0;
-    const uint32_t localIndex = static_cast<uint32_t>(key.handle & 0xFFFFFFFFu);
+    const uint32_t index = uint32_t(key.handle);
     std::lock_guard<std::mutex> lock(mInternTable->mutex);
-    if (localIndex == 0 || localIndex >= mInternTable->indexToRaw.size())
+    auto& table = *mInternTable;
+    if (!index || index >= table.indexToRaw.size())
         return 0;
-    return mInternTable->indexToRaw[localIndex];
+    uint64_t& raw = table.indexToRaw[index];
+    if (!raw && index < table.indexToPath.size() && !table.indexToPath[index].empty())
+    {
+        const auto& path = table.indexToPath[index];
+        ovx_primpath_t handle = OVX_INVALID_PRIMPATH;
+        // Never acquire a source's mMutex while holding the shared table lock.
+        if (ovx_path_dictionary_intern_path(mDict, { path.data(), path.size() }, &handle) != OVX_OK || handle == OVX_INVALID_PRIMPATH)
+            return 0;
+        table.rawToIndex.emplace(handle.raw_id, index);
+        raw = handle.raw_id;
+    }
+    return raw;
+}
+
+std::string_view OvstageSource::logicalPath(ObjectKey key) const
+{
+    if (!key.handle || uint32_t(key.handle >> 32) != mInternTable->generation)
+        return {};
+    const uint32_t index = uint32_t(key.handle);
+    std::lock_guard<std::mutex> lock(mInternTable->mutex);
+    if (index >= mInternTable->indexToPath.size())
+        return {};
+    return mInternTable->indexToPath[index];
+}
+
+ObjectKey OvstageSource::canonicalKey(ObjectKey key) const
+{
+    if (!logicalPath(key).empty())
+        return key;
+    return internKey(canonicalPath(key).raw_id);
+}
+
+size_t OvstageSource::unresolvedPathCountForTest() const
+{
+    std::lock_guard<std::mutex> lock(mInternTable->mutex);
+    return std::count(mInternTable->indexToRaw.begin() + 1, mInternTable->indexToRaw.end(), uint64_t(0));
 }
 
 uint64_t OvstageSource::canonicalHandleRaw(uint64_t raw) const
@@ -1096,7 +1256,7 @@ bool OvstageSource::buildPrototypeRootCache() const
     // while this source-scoped cache is built; historical topology is not
     // recoverable through this API. This prototype-root query is a single
     // filtered read. Do not eagerly call get_instance_roots() for every root:
-    // each call currently rebuilds the complete instancing graph.
+    // the batched query below expands all relevant roots together.
     ScopedPathList prototypeList(instancingDict);
     DescriptorPhaseTimer apiTimer(reportStats ? &apiSeconds : nullptr);
     const auto prototypeStatus = ovstage_instancing_get_prototype_roots(mInstance, prototypeList.receive());
@@ -1112,7 +1272,7 @@ bool OvstageSource::buildPrototypeRootCache() const
     std::unordered_set<std::string> prototypeRootPaths;
     for (size_t i = 0; i < prototypeCount; ++i)
     {
-        const std::string prototypePath = pathOfRaw(prototypeData[i]);
+        const std::string prototypePath = pathOfRaw(prototypeData[i].raw_id);
         if (prototypePath.empty())
             return false;
         prototypeRootPaths.insert(prototypePath);
@@ -1120,6 +1280,7 @@ bool OvstageSource::buildPrototypeRootCache() const
 
     mPrototypeRootPaths = std::move(prototypeRootPaths);
     mPrototypeRootCacheValid = true;
+    mPrototypeRootsSeen = mPrototypeRootsSeen || !mPrototypeRootPaths.empty();
     totalTimer.finish();
     if (reportStats)
         std::fprintf(stderr, "Descriptor prototype roots: roots=%zu total=%.6f api=%.6f\n",
@@ -1141,6 +1302,8 @@ bool OvstageSource::buildPhysicsInstancingCache() const
     mPhysicsInstancingCacheInitialized = true;
     mPhysicsInstancingCacheValid = false;
     mPrototypeRootByInstanceRoot.clear();
+    mInstanceRootsByPrototypeRoot.clear();
+    mInstanceProxyCache.clear();
     mGeometryBackingCache.clear();
     if (!buildPrototypeRootCache())
         return false;
@@ -1150,11 +1313,9 @@ bool OvstageSource::buildPhysicsInstancingCache() const
         return true;
     }
 
-    // Temporary consumer-side containment until OVStage provides the batched
-    // resolver tracked by OMPE-100947. One get_instance_roots() call currently
-    // rebuilds the full P-prototype/I-instance graph. Raw collision membership
-    // reduces attach from P such rebuilds to R, where R is the number of unique
-    // prototype roots that actually back physics collision shapes or rigid bodies.
+    // Map only the R prototype roots that back physics collision shapes, rigid
+    // bodies or physics materials, not all P: render-only instances stay out of
+    // the maps. All R are expanded by one batched query below.
     bool needsCompleteExpansion = false;
     std::vector<uint64_t> collisionKeys;
     if (!collectSchemaKeysRaw(internToken("PhysicsCollisionAPI"), collisionKeys))
@@ -1210,6 +1371,18 @@ bool OvstageSource::buildPhysicsInstancingCache() const
         }
     }
 
+    // A physics material inside a prototype is bound per instance (see
+    // getRelationshipTargets()), so its prototype is mapped as well.
+    std::vector<uint64_t> materialKeys;
+    if (!collectSchemaKeysRaw(internToken("PhysicsMaterialAPI"), materialKeys))
+        needsCompleteExpansion = true;
+    for (const uint64_t key : materialKeys)
+    {
+        const std::string prototypePath = prototypeRootOf(pathOfRaw(key));
+        if (!prototypePath.empty())
+            relevantPrototypePathSet.insert(prototypePath);
+    }
+
     // Many external colliders (e.g. all instance proxies) would mean one live child
     // query per key below; past this point the whole-stage child cache is cheaper.
     if (externalCollisionKeys.size() > 64)
@@ -1249,12 +1422,10 @@ bool OvstageSource::buildPhysicsInstancingCache() const
     }
 
     // The walker also supports CollisionAPI on a non-geometry prim whose child
-    // geometry may come from an instance prototype. The public OVStage API has
-    // only a per-instance-root reverse resolver, not a batched reverse query.
-    // Preserve the old complete expansion for this ambiguous shape, or when an
-    // authoritative read was incomplete, instead of reading private topology
-    // columns or issuing reverse queries once per collider ancestor. Leaf
-    // colliders, including the QA workload, stay on the physics-scoped path.
+    // geometry may come from an instance prototype. Map every prototype for
+    // this ambiguous shape, or when an authoritative read was incomplete; that
+    // is still one batched query. Leaf colliders, including the QA workload,
+    // stay on the physics-scoped path.
     if (needsCompleteExpansion)
         relevantPrototypePathSet = mPrototypeRootPaths;
 
@@ -1269,37 +1440,104 @@ bool OvstageSource::buildPhysicsInstancingCache() const
     selectionTimer.finish();
     DescriptorPhaseTimer mapTimer(reportStats ? &mapSeconds : nullptr);
     std::unordered_map<std::string, std::string> prototypeRootByInstanceRoot;
-    for (const std::string& prototypePath : relevantPrototypePaths)
+    std::unordered_map<std::string, std::vector<std::string>> instanceRootsByPrototypeRoot;
+    // An instance root inside another prototype reaches the stage only through that
+    // prototype's own instances, so the enclosing prototype is mapped as well. Each
+    // wave of newly found prototypes is one batched query of the shared instancing graph.
+    std::unordered_set<std::string> queuedPrototypePaths(relevantPrototypePaths.begin(), relevantPrototypePaths.end());
+    std::vector<ovx_primpath_t> waveRoots;
+    std::vector<ovx_primpath_list_t> waveLists;
+    std::vector<ovx_primpath_t> parents;
+    std::unordered_set<uint64_t> resolvedParents;
+    std::vector<ovstage_instancing_path_resolution_t> resolutions;
+    for (size_t waveBegin = 0; waveBegin < relevantPrototypePaths.size();)
     {
-        const uint64_t prototypeRoot = findByPathRaw(prototypePath);
-        if (!prototypeRoot)
-            return false;
+        const size_t waveEnd = relevantPrototypePaths.size();
+        waveRoots.clear();
+        for (size_t next = waveBegin; next < waveEnd; ++next)
+        {
+            const uint64_t prototypeRoot = findByPathRaw(relevantPrototypePaths[next]);
+            if (!prototypeRoot)
+                return false;
+            waveRoots.push_back(ovx_primpath_t{prototypeRoot});
+        }
 
-        ScopedPathList instanceList(instancingDict);
+        waveLists.assign(waveRoots.size(), OVX_INVALID_PRIMPATH_LIST);
         instanceRootQueryCounter().fetch_add(1, std::memory_order_relaxed);
         mapTimer.transition(reportStats ? &querySeconds : nullptr);
         ++queryCount;
-        const auto instanceStatus = ovstage_instancing_get_instance_roots(mInstance, prototypeRoot, instanceList.receive());
+        const auto instanceStatus = instanceRootQueryFaultCounter() > 0
+            ? (--instanceRootQueryFaultCounter(), OVSTAGE_ERROR_OP_FAILED)
+            : ovstage_instancing_get_instance_roots_batch(mInstance, waveRoots.data(), waveRoots.size(), waveLists.data());
         mapTimer.transition(reportStats ? &mapSeconds : nullptr);
+        // The caller owns one reference per list, success or not.
+        ScopedPathLists owned(instancingDict, waveLists);
         if (instanceStatus != OVSTAGE_OK)
             return false;
 
-        const ovx_primpath_t* instanceData = nullptr;
-        size_t instanceCount = 0;
-        if (ovx_path_dictionary_get_paths(instancingDict, instanceList.get(), &instanceData, &instanceCount) != OVX_OK)
-            return false;
-
-        instanceCountTotal += instanceCount;
-        for (size_t i = 0; i < instanceCount; ++i)
+        for (size_t w = 0; w < waveLists.size(); ++w)
         {
-            const std::string instancePath = pathOfRaw(instanceData[i]);
-            if (instancePath.empty())
+            // A copy: discovering an enclosing prototype grows relevantPrototypePaths.
+            const std::string prototypePath = relevantPrototypePaths[waveBegin + w];
+            const ovx_primpath_t* instanceData = nullptr;
+            size_t instanceCount = 0;
+            if (ovx_path_dictionary_get_paths(instancingDict, waveLists[w], &instanceData, &instanceCount) != OVX_OK)
                 return false;
-            prototypeRootByInstanceRoot[instancePath] = prototypePath;
+
+            instanceCountTotal += instanceCount;
+            for (size_t i = 0; i < instanceCount; ++i)
+            {
+                const std::string instancePath = pathOfRaw(instanceData[i].raw_id);
+                if (instancePath.empty())
+                    return false;
+                prototypeRootByInstanceRoot[instancePath] = prototypePath;
+                instanceRootsByPrototypeRoot[prototypePath].push_back(instancePath);
+                const std::string enclosing = prototypeRootOf(instancePath);
+                if (!enclosing.empty())
+                {
+                    if (queuedPrototypePaths.insert(enclosing).second)
+                        relevantPrototypePaths.push_back(enclosing);
+                    continue;
+                }
+                // A nested root reported at its stage path, e.g. /World/Outer/Inner, names
+                // no enclosing prototype; resolving its parent below finds it.
+                const size_t slash = instancePath.rfind('/');
+                if (slash != std::string::npos && slash != 0)
+                    if (const uint64_t parent = findByPathRaw(instancePath.substr(0, slash)))
+                        if (resolvedParents.insert(parent).second)
+                            parents.push_back(ovx_primpath_t{ parent });
+            }
         }
+        // The enclosing instance of every nested root, in one batched resolution. Its
+        // prototype places the nested root, so it is mapped in the next wave.
+        if (!parents.empty())
+        {
+            resolutions.assign(parents.size(), ovstage_instancing_path_resolution_t{});
+            mapTimer.transition(reportStats ? &querySeconds : nullptr);
+            const auto resolveStatus =
+                ovstage_instancing_resolve_paths(mInstance, parents.data(), parents.size(), resolutions.data());
+            mapTimer.transition(reportStats ? &mapSeconds : nullptr);
+            if (resolveStatus != OVSTAGE_OK)
+                return false;
+            for (const ovstage_instancing_path_resolution_t& resolution : resolutions)
+            {
+                if (resolution.kind != OVSTAGE_INSTANCING_PATH_INSTANCE)
+                    continue;
+                const std::string enclosing = pathOfRaw(resolution.prototype_root.raw_id);
+                if (enclosing.empty())
+                    return false;
+                if (queuedPrototypePaths.insert(enclosing).second)
+                    relevantPrototypePaths.push_back(enclosing);
+            }
+            parents.clear();
+        }
+        waveBegin = waveEnd;
     }
+    for (auto& roots : instanceRootsByPrototypeRoot)
+        std::sort(roots.second.begin(), roots.second.end());
 
     mPrototypeRootByInstanceRoot = std::move(prototypeRootByInstanceRoot);
+    mInstanceRootsByPrototypeRoot = std::move(instanceRootsByPrototypeRoot);
     mPhysicsInstancingCacheValid = true;
     mapTimer.finish();
     totalTimer.finish();
@@ -1363,7 +1601,7 @@ bool OvstageSource::buildInstanceMaterialCache() const
     // Rendering-populated instance columns are latest-only, like the public
     // instancing topology queries used by buildPrototypeRootCache().
     ovstage_ordinal_range_t range{};
-    range.end_ordinal = ~ovstage_ordinal_t(0);
+    range.end_ordinal = OVSTAGE_ORDINAL_MAX;
     range.has_start_ordinal = false;
 
     ovstage_read_handle_t read = OVSTAGE_INVALID_READ_HANDLE;
@@ -1378,16 +1616,16 @@ bool OvstageSource::buildInstanceMaterialCache() const
 
     bool malformed = false;
     ReadListMemo listMemo(mDict);
-    ovstage_read_group_t group{};
+    ReadColumnCursor cursor(mInstance, read);
+    ReadGroupColumn group{};
     ovstage_api_status_t fetchStatus = OVSTAGE_OK;
-    while ((fetchStatus = ovstage_fetch_read_next(mInstance, read, OVSTAGE_TIMEOUT_INFINITE, &group)) == OVSTAGE_OK)
+    while ((fetchStatus = cursor.next(group)) == OVSTAGE_OK)
     {
         const bool usable = !group.is_delete && !group.is_array && group.data.mask == nullptr &&
                             group.data.tensor_count == 1 && group.data.tensors && group.data.tensors[0].data;
         if (!usable)
         {
             malformed = true;
-            ovstage_release_group(mInstance, &group);
             continue;
         }
 
@@ -1395,7 +1633,6 @@ bool OvstageSource::buildInstanceMaterialCache() const
         if (tensor.ndim > 0 && !tensor.shape)
         {
             malformed = true;
-            ovstage_release_group(mInstance, &group);
             continue;
         }
         const int64_t storedRows = (tensor.ndim > 0 && tensor.shape && tensor.shape[0] > 0) ? tensor.shape[0] : 1;
@@ -1404,7 +1641,6 @@ bool OvstageSource::buildInstanceMaterialCache() const
             storedRows <= 0 || elements != storedRows)
         {
             malformed = true;
-            ovstage_release_group(mInstance, &group);
             continue;
         }
 
@@ -1413,7 +1649,6 @@ bool OvstageSource::buildInstanceMaterialCache() const
         if (!listMemo.paths(group.prims.list, &primPaths, &primPathCount))
         {
             malformed = true;
-            ovstage_release_group(mInstance, &group);
             continue;
         }
 
@@ -1430,7 +1665,7 @@ bool OvstageSource::buildInstanceMaterialCache() const
                 continue;
             }
 
-            const uint64_t prim = primPaths[primIndex];
+            const uint64_t prim = primPaths[primIndex].raw_id;
             const uint64_t material = values[dataRow];
             if (!prim || !material)
                 continue;
@@ -1439,7 +1674,6 @@ bool OvstageSource::buildInstanceMaterialCache() const
             if (canonical && canonical != prim)
                 mInstanceMaterialByPrim[canonical] = material;
         }
-        ovstage_release_group(mInstance, &group);
     }
 
     waitAndRelease(mInstance, ovstage_release_read(mInstance, read));
@@ -1463,27 +1697,9 @@ ObjectKey OvstageSource::collisionAttributeBackingKey(ObjectKey key) const
 {
     std::lock_guard<std::recursive_mutex> lock(mMutex);
     const uint64_t raw = rawHandle(key);
-    if (!raw || !buildPhysicsInstancingCache())
+    if (!instanceProxyRaw(raw))
         return {};
-    if (mPrototypeRootByInstanceRoot.empty())
-        return {};
-
-    const std::string logicalPath = pathOfRaw(raw);
-    if (logicalPath.empty())
-        return {};
-
-    std::string ancestor = logicalPath;
-    while (true)
-    {
-        const size_t slash = ancestor.rfind('/');
-        if (slash == std::string::npos || slash == 0)
-            return {};
-        ancestor.resize(slash);
-        const std::unordered_map<std::string, std::string>::const_iterator root =
-            mPrototypeRootByInstanceRoot.find(ancestor);
-        if (root != mPrototypeRootByInstanceRoot.end())
-            return internKey(findByPathRaw(root->second + logicalPath.substr(ancestor.size())));
-    }
+    return internKey(readHandleRaw(raw));
 }
 
 uint64_t OvstageSource::geometryBackingKeyRaw(uint64_t key) const
@@ -1502,8 +1718,7 @@ uint64_t OvstageSource::geometryBackingKeyRaw(uint64_t key) const
     if (logicalPath.empty())
         return key;
 
-    auto hasPrimType = [this](uint64_t candidate) -> bool
-    {
+    auto hasConcretePrimType = [this](uint64_t candidate) -> bool {
         TokenId primType{};
         // OVStage population omits usd-prim-type on typeless prims.
         return primTypeTokenRaw(candidate, primType);
@@ -1519,45 +1734,46 @@ uint64_t OvstageSource::geometryBackingKeyRaw(uint64_t key) const
 
         // The attach walk only expands prototypes that can back collision
         // shapes. Public type/geometry helpers must still resolve a render-only
-        // instance proxy, so after the load lazily use OVStage's reverse
-        // lookup for map misses. The current provider rebuilds the complete
-        // instancing graph per call, so this must stay out of the attach
-        // entirely: not just the scan walk (mLoadCacheActive) but also the
-        // consumer's processScannedDescs / cooking pass, which runs on the
-        // AttachedStage's own source inside a hierarchy bulk-read window and
-        // only asks about physics-scoped keys the map above already covers
-        // (NVBug 6532970). A successful post-load result is cached so each
-        // queried proxy pays its ancestor probes only once. OMPE-100947 tracks
-        // the batched API.
+        // instance proxy, so after the load a map miss asks OVStage for the
+        // nearest instance root at or above `ancestor`. Keep these per-proxy
+        // queries out of the attach entirely: not
+        // just the scan walk (mLoadCacheActive) but also the consumer's
+        // processScannedDescs / cooking pass, which runs on the AttachedStage's
+        // own source inside a hierarchy bulk-read window and only asks about
+        // physics-scoped keys the map above already covers (NVBug 6532970). A
+        // successful post-load result is cached so each queried proxy pays its
+        // lookup only once.
         if (root == mPrototypeRootByInstanceRoot.end() && !mLoadCacheActive && !mHierarchyBulkRead &&
             !mPrototypeRootPaths.empty())
         {
-            const uint64_t instanceRoot = findByPathRaw(ancestor);
-            if (!instanceRoot)
+            const uint64_t ancestorRaw = findByPathRaw(ancestor);
+            if (!ancestorRaw)
             {
                 lookupComplete = false;
                 break;
             }
 
-            ovx_primpath_t prototypeRoot = OVX_INVALID_PRIMPATH;
+            const ovx_primpath_t query{ ancestorRaw };
+            ovstage_instancing_path_resolution_t resolution{};
             prototypeRootQueryCounter().fetch_add(1, std::memory_order_relaxed);
-            const ovstage_api_status_t status =
-                ovstage_instancing_get_prototype_root(mInstance, instanceRoot, &prototypeRoot);
-            if (status == OVSTAGE_OK)
-            {
-                const std::string prototypePath = pathOfRaw(prototypeRoot);
-                if (prototypePath.empty())
-                {
-                    lookupComplete = false;
-                    break;
-                }
-                root = mPrototypeRootByInstanceRoot.emplace(ancestor, prototypePath).first;
-            }
-            else if (status != OVSTAGE_ERROR_NOT_FOUND)
+            if (ovstage_instancing_resolve_paths(mInstance, &query, 1, &resolution) != OVSTAGE_OK ||
+                resolution.kind == OVSTAGE_INSTANCING_PATH_NOT_FOUND)
             {
                 lookupComplete = false;
                 break;
             }
+            if (resolution.kind == OVSTAGE_INSTANCING_PATH_NON_INSTANCE)
+                break; // No instance root at or above `ancestor`.
+            const std::string instanceRootPath = pathOfRaw(resolution.instance_root.raw_id);
+            const std::string prototypePath = pathOfRaw(resolution.prototype_root.raw_id);
+            if (instanceRootPath.empty() || prototypePath.empty() || instanceRootPath.size() > ancestor.size())
+            {
+                lookupComplete = false;
+                break;
+            }
+            // The prims in between are not instance roots; continue at the nearest one.
+            ancestor = instanceRootPath;
+            root = mPrototypeRootByInstanceRoot.emplace(ancestor, prototypePath).first;
         }
 
         if (root != mPrototypeRootByInstanceRoot.end())
@@ -1574,7 +1790,7 @@ uint64_t OvstageSource::geometryBackingKeyRaw(uint64_t key) const
             // that is genuinely its own instance root keeps its type, so it still
             // resolves here.
             const bool selfTagged = ancestor.size() == logicalPath.size();
-            if (resolved && (!selfTagged || hasPrimType(resolved)))
+            if (resolved && (!selfTagged || hasConcretePrimType(resolved)))
             {
                 backingKey = resolved;
                 break;
@@ -1631,6 +1847,145 @@ bool OvstageSource::isPrototypeBackingKey(ObjectKey key) const
     return false;
 }
 
+std::string OvstageSource::prototypeRootOf(const std::string& path) const
+{
+    std::string ancestor = path;
+    while (!ancestor.empty())
+    {
+        if (mPrototypeRootPaths.count(ancestor) != 0)
+            return ancestor;
+        const size_t slash = ancestor.rfind('/');
+        if (slash == std::string::npos || slash == 0)
+            break;
+        ancestor.resize(slash);
+    }
+    return {};
+}
+
+std::string OvstageSource::enclosingInstanceRoot(const std::string& path) const
+{
+    std::lock_guard<std::recursive_mutex> lock(mMutex);
+    std::string ancestor = path;
+    while (true)
+    {
+        const size_t slash = ancestor.rfind('/');
+        if (slash == std::string::npos || slash == 0)
+            return {};
+        ancestor.resize(slash);
+        if (mPrototypeRootByInstanceRoot.count(ancestor) != 0)
+            return ancestor;
+    }
+}
+
+const OvstageSource::InstanceProxy* OvstageSource::instanceProxyRaw(uint64_t raw, bool build) const
+{
+    std::lock_guard<std::recursive_mutex> lock(mMutex);
+    if (!raw || (!build && !mPhysicsInstancingCacheInitialized && !mPrototypeRootsSeen))
+        return nullptr;
+    // While the instancing cache builds, nothing resolves yet.
+    if (!buildPhysicsInstancingCache() || mPrototypeRootByInstanceRoot.empty())
+        return nullptr;
+
+    const uint64_t canonical = canonicalHandleRaw(raw);
+    const uint64_t cacheKey = canonical ? canonical : raw;
+    const auto cached = mInstanceProxyCache.find(cacheKey);
+    if (cached != mInstanceProxyCache.end())
+        return cached->second.backing ? &cached->second : nullptr;
+
+    // The nearest instance root decides: its prototype holds this prim. Whether a
+    // population domain wrote a row at this path does not matter.
+    InstanceProxy proxy;
+    const std::string logicalPath = pathOfRaw(raw);
+    const std::string instanceRoot = logicalPath.empty() ? std::string() : enclosingInstanceRoot(logicalPath);
+    if (!instanceRoot.empty())
+    {
+        const std::string& prototypeRoot = mPrototypeRootByInstanceRoot.find(instanceRoot)->second;
+        // Whether the prototype holds that prim is existsRaw()'s question; a read
+        // only needs the mapping.
+        const uint64_t backing = findByPathRaw(prototypeRoot + logicalPath.substr(instanceRoot.size()));
+        if (backing)
+            proxy = { backing, findByPathRaw(instanceRoot), instanceRoot, prototypeRoot };
+    }
+    // unordered_map nodes are stable, so the pointer survives later insertions.
+    const InstanceProxy& stored = mInstanceProxyCache[cacheKey] = std::move(proxy);
+    return stored.backing ? &stored : nullptr;
+}
+
+uint64_t OvstageSource::readHandleRaw(uint64_t raw) const
+{
+    std::lock_guard<std::recursive_mutex> lock(mMutex);
+    for (int depth = 0; depth < 64 && mOwnRowReads == 0; ++depth)
+    {
+        const InstanceProxy* proxy = instanceProxyRaw(raw, /*build=*/false);
+        if (!proxy)
+            break;
+        raw = proxy->backing;
+    }
+    return raw;
+}
+
+void OvstageSource::backingChainRaw(uint64_t raw, std::vector<uint64_t>& out) const
+{
+    std::lock_guard<std::recursive_mutex> lock(mMutex);
+    out.clear();
+    for (int depth = 0; depth < 64 && mOwnRowReads == 0; ++depth)
+    {
+        const InstanceProxy* proxy = instanceProxyRaw(raw, /*build=*/false);
+        if (!proxy)
+            break;
+        raw = proxy->backing;
+        out.push_back(raw);
+    }
+}
+
+OvstageSource::ProxyRead OvstageSource::proxyReadFor(std::string_view attrName)
+{
+    if (attrName == conv::kFabricWorldMatrix || attrName == conv::kUsdPath || attrName == conv::kUsdParent ||
+        attrName == conv::kUsdChildren)
+        return ProxyRead::eOwn;
+    if (attrName == conv::kFabricLocalMatrix || attrName == conv::kLocalTransform ||
+        attrName == conv::kResetXformStack || attrName == conv::kUsdSchemas || attrName == conv::kUsdPrimType ||
+        attrName == conv::kUsdTypeName || attrName.rfind("xformOp", 0) == 0)
+        return ProxyRead::ePrototype;
+    return ProxyRead::eOverlay;
+}
+
+bool OvstageSource::instancingDiscoveryFailed() const
+{
+    std::lock_guard<std::recursive_mutex> lock(mMutex);
+    return mPhysicsInstancingCacheInitialized && !mPhysicsInstancingCacheValid;
+}
+
+bool OvstageSource::isResolvedInstanceProxy(ObjectKey key) const
+{
+    return instanceProxyRaw(rawHandle(key)) != nullptr;
+}
+
+void OvstageSource::appendInstanceProxiesRaw(uint64_t backing, std::vector<uint64_t>& out) const
+{
+    std::lock_guard<std::recursive_mutex> lock(mMutex);
+    const std::string backingPath = pathOfRaw(backing);
+    const std::string prototypePath = prototypeRootOf(backingPath);
+    if (prototypePath.empty())
+        return;
+    const auto roots = mInstanceRootsByPrototypeRoot.find(prototypePath);
+    if (roots == mInstanceRootsByPrototypeRoot.end())
+        return;
+    // The recursion below reads the instancing maps; hold no reference into them across it.
+    const std::vector<std::string> instanceRoots = roots->second;
+    for (const std::string& instanceRoot : instanceRoots)
+    {
+        // `backing` is a prototype member, so each mapped path below an instance exists.
+        const uint64_t logical = findByPathRaw(instanceRoot + backingPath.substr(prototypePath.size()));
+        if (!logical || !instanceProxyRaw(logical))
+            continue;
+        out.push_back(logical);
+        // An instance root inside an enclosing prototype puts this proxy in prototype
+        // space too; its instances are the ones that reach the stage.
+        appendInstanceProxiesRaw(logical, out);
+    }
+}
+
 std::string OvstageSource::pathOfRaw(uint64_t key) const
 {
     std::lock_guard<std::recursive_mutex> lock(mMutex);
@@ -1641,7 +1996,7 @@ std::string OvstageSource::pathOfRaw(uint64_t key) const
         return cached->second;
 
     ovx_string_t s{};
-    if (ovx_path_dictionary_path_to_string(mDict, key, &s) != OVX_OK || !s.ptr)
+    if (ovx_path_dictionary_path_to_string(mDict, ovx_primpath_t{key}, &s) != OVX_OK || !s.ptr)
         return {};
     std::string path(s.ptr, s.length);
     mPathStringCache[key] = path;
@@ -1651,20 +2006,110 @@ std::string OvstageSource::pathOfRaw(uint64_t key) const
 std::string_view OvstageSource::sourceKeyToString(ObjectKey key) const
 {
     std::lock_guard<std::recursive_mutex> lock(mMutex);
-    // Intern the resolved path string in our own table so the returned view has
-    // stable lifetime (the dictionary's string view is also stable, but routing
-    // through internToken keeps one ownership story).
-    const std::string p = pathOfRaw(rawHandle(key));
-    if (p.empty())
-        return {};
-    return tokenToString(doInternToken(p));
+    if (const auto path = logicalPath(key); !path.empty())
+        return path;
+    // Path strings are immutable dictionary identities. This node-based cache
+    // is never cleared or transferred to a scan receiver, so its views remain
+    // valid for the source lifetime without interning a second token copy.
+    const uint64_t raw = rawHandle(key);
+    auto found = mPathStringCache.find(raw);
+    if (found == mPathStringCache.end())
+    {
+        pathOfRaw(raw);
+        found = mPathStringCache.find(raw);
+    }
+    return found == mPathStringCache.end() ? std::string_view{} : std::string_view(found->second);
 }
 
 // --- traversal -------------------------------------------------------------
 
 ObjectKey OvstageSource::findByPath(std::string_view path) const
 {
+    {
+        std::lock_guard<std::mutex> lock(mInternTable->mutex);
+        const auto found = mInternTable->pathToIndex.find(path);
+        if (found != mInternTable->pathToIndex.end())
+            return ObjectKey{ (uint64_t(mInternTable->generation) << 32) | found->second };
+    }
     return internKey(findByPathRaw(path));
+}
+
+bool OvstageSource::restoreKeysForPaths(const std::vector<std::string_view>& paths, std::vector<ObjectKey>& keys) const
+{
+    if (!mDict)
+        return false;
+    for (const auto path : paths)
+        if (path.empty() || path.front() != '/')
+            return false;
+    std::lock_guard<std::mutex> lock(mInternTable->mutex);
+    auto& table = *mInternTable;
+    if (paths.size() > UINT32_MAX - table.indexToRaw.size())
+        return false;
+    table.indexToPath.resize(table.indexToRaw.size());
+    table.pathToIndex.reserve(table.pathToIndex.size() + paths.size());
+    // Preserve keys minted before restoration, including keys held by siblings.
+    // Enumerated aliases keep their old keys; only canonical raw handles become
+    // the logical representative. Fresh cache sources normally have just a root.
+    for (size_t i = table.reconciledRawCount; i < table.indexToRaw.size(); ++i)
+    {
+        const auto raw = table.indexToRaw[i];
+        if (!table.indexToPath[i].empty())
+        {
+            // Retry a prior reconciliation whose map allocation failed after
+            // assigning the stable path string. Never replace that string.
+            table.pathToIndex.emplace(table.indexToPath[i], uint32_t(i));
+            continue;
+        }
+        if (!raw)
+            continue;
+        ovx_string_t text{};
+        ovx_primpath_t canonical = OVX_INVALID_PRIMPATH;
+        if (ovx_path_dictionary_path_to_string(mDict, ovx_primpath_t{raw}, &text) != OVX_OK || !text.ptr ||
+            ovx_path_dictionary_intern_path(mDict, text, &canonical) != OVX_OK)
+            return false;
+        if (canonical.raw_id != raw)
+            continue;
+        table.indexToPath[i].assign(text.ptr, text.length);
+        table.pathToIndex.emplace(table.indexToPath[i], uint32_t(i));
+    }
+    table.logicalPaths = true;
+    std::vector<ObjectKey> result;
+    result.reserve(paths.size());
+    for (const auto path : paths)
+    {
+        auto found = table.pathToIndex.find(path);
+        uint32_t index;
+        if (found != table.pathToIndex.end())
+            index = found->second;
+        else
+        {
+            index = uint32_t(table.indexToRaw.size());
+            table.indexToPath.emplace_back(path);
+            try
+            {
+                table.indexToRaw.push_back(0);
+            }
+            catch (...)
+            {
+                table.indexToPath.pop_back();
+                throw;
+            }
+            try
+            {
+                table.pathToIndex.emplace(table.indexToPath.back(), index);
+            }
+            catch (...)
+            {
+                table.indexToRaw.pop_back();
+                table.indexToPath.pop_back();
+                throw;
+            }
+        }
+        result.push_back(ObjectKey{ (uint64_t(table.generation) << 32) | index });
+    }
+    table.reconciledRawCount = table.indexToRaw.size();
+    keys = std::move(result);
+    return true;
 }
 
 uint64_t OvstageSource::findByPathRaw(std::string_view path) const
@@ -1681,10 +2126,10 @@ uint64_t OvstageSource::findByPathRaw(std::string_view path) const
     const ovx_string_t str{ key.data(), key.size() };
     if (ovx_path_dictionary_intern_path(mDict, str, &p) != OVX_OK)
         return 0;
-    mPathToHandleCache.emplace(key, p);
+    mPathToHandleCache.emplace(key, p.raw_id);
     if (p != OVX_INVALID_PRIMPATH)
-        mPathStringCache.emplace(p, key);
-    return p;
+        mPathStringCache.emplace(p.raw_id, key);
+    return p.raw_id;
 }
 
 ObjectKey OvstageSource::getRootKey() const
@@ -1694,6 +2139,13 @@ ObjectKey OvstageSource::getRootKey() const
 
 ObjectKey OvstageSource::getParent(ObjectKey key) const
 {
+    if (const auto path = logicalPath(key); !path.empty())
+    {
+        if (path == "/")
+            return {};
+        const auto slash = path.rfind('/');
+        return findByPath(slash == 0 ? std::string_view("/") : path.substr(0, slash));
+    }
     return internKey(getParentRaw(rawHandle(key)));
 }
 
@@ -1752,7 +2204,7 @@ void OvstageSource::buildChildCache(const std::string& rootPath) const
     // that scan, hierarchy invalidation means a structural edit occurred, so a
     // rebuild must observe the latest topology rather than replaying the attach
     // ordinal. This matches forEachChild()'s post-load live-query semantics.
-    range.end_ordinal = mLoadCacheActive ? mReadOrdinal : ~ovstage_ordinal_t(0);
+    range.end_ordinal = mLoadCacheActive ? mReadOrdinal : OVSTAGE_ORDINAL_MAX;
     range.has_start_ordinal = false;
 
     // Dedup edges: the usd-children/usd-parent column builders and the usd-path
@@ -1870,22 +2322,17 @@ void OvstageSource::buildChildCache(const std::string& rootPath) const
             waitAndRelease(mInstance, re);
             bool foundAny = false;
             ReadListMemo listMemo(mDict);
-            ovstage_read_group_t g{};
-            while (ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g) == OVSTAGE_OK)
+            ReadColumnCursor cursor(mInstance, rh);
+            ReadGroupColumn g{};
+            while (cursor.next(g) == OVSTAGE_OK)
             {
                 if (g.is_delete || !g.is_array || g.data.tensor_count == 0 || !g.data.tensors || g.data.mask)
-                {
-                    ovstage_release_group(mInstance, &g);
                     continue;
-                }
 
                 const ovx_primpath_t* parentPaths = nullptr;
                 size_t parentCount = 0;
                 if (!listMemo.paths(g.prims.list, &parentPaths, &parentCount))
-                {
-                    ovstage_release_group(mInstance, &g);
                     continue;
-                }
 
                 for (uint32_t row = 0; row < g.prims.count; ++row)
                 {
@@ -1903,17 +2350,16 @@ void OvstageSource::buildChildCache(const std::string& rootPath) const
                         continue;
                     const uint8_t* base = static_cast<const uint8_t*>(t.data) + t.byte_offset;
                     const uint64_t* children = reinterpret_cast<const uint64_t*>(base);
-                    const uint64_t parent = parentPaths[parentIdx];
+                    const uint64_t parent = parentPaths[parentIdx].raw_id;
                     for (int64_t i = 0; i < n; ++i)
                     {
                         const uint64_t child = children[i];
-                        if (child == OVX_INVALID_PRIMPATH)
+                        if (child == OVX_INVALID_PRIMPATH.raw_id)
                             continue;
                         insertChild(parent, child);
                         foundAny = true;
                     }
                 }
-                ovstage_release_group(mInstance, &g);
             }
             waitAndRelease(mInstance, ovstage_release_read(mInstance, rh));
             return foundAny;
@@ -1935,29 +2381,21 @@ void OvstageSource::buildChildCache(const std::string& rootPath) const
             waitAndRelease(mInstance, re);
             bool foundAny = false;
             ReadListMemo listMemo(mDict);
-            ovstage_read_group_t g{};
-            while (ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g) == OVSTAGE_OK)
+            ReadColumnCursor cursor(mInstance, rh);
+            ReadGroupColumn g{};
+            while (cursor.next(g) == OVSTAGE_OK)
             {
                 if (g.is_delete || g.is_array || g.data.tensor_count == 0 || !g.data.tensors || g.data.mask)
-                {
-                    ovstage_release_group(mInstance, &g);
                     continue;
-                }
 
                 const DLTensor& t = g.data.tensors[0];
                 if (!canDecodeRelationshipTargets(t))
-                {
-                    ovstage_release_group(mInstance, &g);
                     continue;
-                }
 
                 const ovx_primpath_t* childPaths = nullptr;
                 size_t childCount = 0;
                 if (!listMemo.paths(g.prims.list, &childPaths, &childCount))
-                {
-                    ovstage_release_group(mInstance, &g);
                     continue;
-                }
 
                 const int64_t total = totalElements(t);
                 int64_t storedRows = g.prims.count;
@@ -1968,16 +2406,10 @@ void OvstageSource::buildChildCache(const std::string& rootPath) const
                         storedRows = std::max<int64_t>(storedRows, static_cast<int64_t>(g.data.index_map[i]) + 1);
                 }
                 if (total < 0 || storedRows <= 0 || (total % storedRows) != 0)
-                {
-                    ovstage_release_group(mInstance, &g);
                     continue;
-                }
                 const int64_t comps = total / storedRows;
                 if (comps <= 0)
-                {
-                    ovstage_release_group(mInstance, &g);
                     continue;
-                }
 
                 const uint8_t* base = static_cast<const uint8_t*>(t.data) + t.byte_offset;
                 for (uint32_t row = 0; row < g.prims.count; ++row)
@@ -1989,11 +2421,10 @@ void OvstageSource::buildChildCache(const std::string& rootPath) const
                     if (dataRow >= static_cast<uint32_t>(storedRows))
                         continue;
                     const uint64_t parent = reinterpret_cast<const uint64_t*>(base + dataRow * comps * sizeof(uint64_t))[0];
-                    const uint64_t child = childPaths[childIdx];
+                    const uint64_t child = childPaths[childIdx].raw_id;
                     insertChild(parent, child);
                     foundAny = true;
                 }
-                ovstage_release_group(mInstance, &g);
             }
             waitAndRelease(mInstance, ovstage_release_read(mInstance, rh));
             return foundAny;
@@ -2029,9 +2460,10 @@ void OvstageSource::buildChildCache(const std::string& rootPath) const
 
                 waitAndRelease(mInstance, re);
                 ReadListMemo listMemo(mDict);
-                ovstage_read_group_t g{};
+                ReadColumnCursor cursor(mInstance, rh);
+                ReadGroupColumn g{};
                 ovstage_api_status_t fetchStatus = OVSTAGE_OK;
-                while ((fetchStatus = ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g)) == OVSTAGE_OK)
+                while ((fetchStatus = cursor.next(g)) == OVSTAGE_OK)
                 {
                     const ovx_primpath_t* paths = nullptr;
                     size_t count = 0;
@@ -2044,7 +2476,6 @@ void OvstageSource::buildChildCache(const std::string& rootPath) const
                                 allPaths.insert(paths[idx]);
                         }
                     }
-                    ovstage_release_group(mInstance, &g);
                 }
                 // A clean pass ends exactly at END_OF_ITERATION; any other terminal
                 // status means the enumeration was cut short (transient/partial read).
@@ -2075,7 +2506,7 @@ void OvstageSource::buildChildCache(const std::string& rootPath) const
     leafPaths.reserve(allPaths.size());
     for (const ovx_primpath_t pathHandle : allPaths)
     {
-        std::string leafPath = pathOfRaw(pathHandle);
+        std::string leafPath = pathOfRaw(pathHandle.raw_id);
         if (leafPath.empty() || leafPath == "/")
             continue;
         leafPaths.push_back(std::move(leafPath));
@@ -2179,9 +2610,36 @@ void OvstageSource::buildChildCache(const std::string& rootPath) const
 
 void OvstageSource::collectDescendantKeys(ObjectKey root, std::vector<ObjectKey>& out) const
 {
-    std::vector<uint64_t> raw;
-    collectDescendantKeysRaw(rawHandle(root), raw);
+    std::lock_guard<std::recursive_mutex> lock(mMutex);
     out.clear();
+    const uint64_t rootRaw = rawHandle(root);
+    if (rootRaw && buildPhysicsInstancingCache() && !mPrototypeRootByInstanceRoot.empty())
+    {
+        // Instance subtrees come from their prototypes (see forEachChild()), never
+        // from rows a population domain wrote below an instance root.
+        const std::string rootPath = pathOfRaw(rootRaw);
+        if (!enclosingInstanceRoot(rootPath).empty())
+        {
+            if (existsRaw(rootRaw))
+                forEachDescendant(root, [&out](ObjectKey key) { out.push_back(key); });
+            return;
+        }
+        std::vector<uint64_t> raw;
+        collectDescendantKeysRaw(rootRaw, raw);
+        for (const uint64_t handle : raw)
+        {
+            const std::string path = pathOfRaw(handle);
+            if (!enclosingInstanceRoot(path).empty())
+                continue;
+            out.push_back(internKey(handle));
+            if (mPrototypeRootByInstanceRoot.count(path) != 0)
+                forEachChild(internKey(handle),
+                             [&](ObjectKey child) { forEachDescendant(child, [&out](ObjectKey key) { out.push_back(key); }); });
+        }
+        return;
+    }
+    std::vector<uint64_t> raw;
+    collectDescendantKeysRaw(rootRaw, raw);
     out.reserve(raw.size());
     for (const uint64_t handle : raw)
         out.push_back(internKey(handle));
@@ -2311,7 +2769,45 @@ void OvstageSource::forEachChild(ObjectKey parent, std::function<void(ObjectKey)
 {
     if (!cb)
         return;
-    forEachChildRaw(rawHandle(parent), [this, &cb](uint64_t child) { cb(internKey(child)); });
+    std::lock_guard<std::recursive_mutex> lock(mMutex);
+    const uint64_t raw = rawHandle(parent);
+    const auto emitRows = [this, &cb](uint64_t child) { cb(internKey(child)); };
+    if (!raw || !buildPhysicsInstancingCache() || mPrototypeRootByInstanceRoot.empty())
+    {
+        forEachChildRaw(raw, emitRows);
+        return;
+    }
+
+    // The children of an instance root or of an instance proxy are the prototype's,
+    // presented at their instance paths. Rows a population domain wrote there are
+    // not consulted. A nested instance root is also a proxy of the enclosing
+    // prototype, but its children are those of its own prototype.
+    const std::string parentPath = pathOfRaw(raw);
+    ObjectKey source;
+    if (const auto root = mPrototypeRootByInstanceRoot.find(parentPath); root != mPrototypeRootByInstanceRoot.end())
+        source = findByPath(root->second);
+    else if (const InstanceProxy* proxy = instanceProxyRaw(raw))
+        source = internKey(proxy->backing);
+    else if (enclosingInstanceRoot(parentPath).empty())
+    {
+        forEachChildRaw(raw, emitRows);
+        return;
+    }
+    // Otherwise a row below an instance root that its prototype does not hold.
+    const std::string sourcePath = pathOfRaw(rawHandle(source));
+    if (sourcePath.empty())
+        return;
+    std::vector<uint64_t> proxies;
+    forEachChild(source,
+                 [&](ObjectKey child)
+                 {
+                     const std::string childPath = pathOfRaw(rawHandle(child));
+                     const uint64_t logical = findByPathRaw(parentPath + childPath.substr(sourcePath.size()));
+                     if (logical && instanceProxyRaw(logical))
+                         proxies.push_back(logical);
+                 });
+    for (const uint64_t logical : proxies)
+        cb(internKey(logical));
 }
 
 void OvstageSource::forEachChildRaw(uint64_t parent, const std::function<void(uint64_t)>& cb) const
@@ -2439,7 +2935,7 @@ bool OvstageSource::liveQueryDirectChildrenRaw(uint64_t parent, const std::strin
     const std::string prefix = (parentPath == "/") ? std::string("/") : (parentPath + "/");
     const ovx_string_t prefixVal{ prefix.data(), prefix.size() };
     ovstage_predicate_t pred{};
-    pred.attribute.token = 0;
+    pred.attribute.token = ovx_token_t{0};
     pred.attribute.string = ovx_string_t{ conv::kUsdPath, std::string_view(conv::kUsdPath).size() };
     pred.op = OVSTAGE_FILTER_OP_PREFIX;
     pred.values = &prefixVal;
@@ -2500,7 +2996,7 @@ bool OvstageSource::liveQueryDirectChildrenRaw(uint64_t parent, const std::strin
     }
 
     ovstage_ordinal_range_t range{};
-    range.end_ordinal = ~ovstage_ordinal_t(0); // latest
+    range.end_ordinal = OVSTAGE_ORDINAL_MAX; // latest
     range.has_start_ordinal = false;
 
     // Collect first, emit in path order. The read groups arrive in ovstage's
@@ -2520,9 +3016,10 @@ bool OvstageSource::liveQueryDirectChildrenRaw(uint64_t parent, const std::strin
 
         waitAndRelease(mInstance, re);
         ReadListMemo listMemo(mDict);
-        ovstage_read_group_t g{};
+        ReadColumnCursor cursor(mInstance, rh);
+        ReadGroupColumn g{};
         ovstage_api_status_t fetchStatus = OVSTAGE_OK;
-        while ((fetchStatus = ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g)) == OVSTAGE_OK)
+        while ((fetchStatus = cursor.next(g)) == OVSTAGE_OK)
         {
             const ovx_primpath_t* paths = nullptr;
             size_t count = 0;
@@ -2533,7 +3030,7 @@ bool OvstageSource::liveQueryDirectChildrenRaw(uint64_t parent, const std::strin
                     const uint32_t idx = g.prims.index_map ? g.prims.index_map[i] : (g.prims.offset + i);
                     if (idx >= count)
                         continue;
-                    const uint64_t childKey = paths[idx];
+                    const uint64_t childKey = paths[idx].raw_id;
                     if (!matchedSeen.insert(childKey).second)
                         continue;
                     std::string childPath = pathOfRaw(childKey);
@@ -2545,7 +3042,6 @@ bool OvstageSource::liveQueryDirectChildrenRaw(uint64_t parent, const std::strin
                     }
                 }
             }
-            ovstage_release_group(mInstance, &g);
         }
         // A clean pass over the authoritative usd-path column ends exactly at
         // END_OF_ITERATION; any other terminal status means the enumeration was
@@ -2573,6 +3069,16 @@ bool OvstageSource::exists(ObjectKey key) const
 }
 
 bool OvstageSource::existsRaw(uint64_t key) const
+{
+    std::lock_guard<std::recursive_mutex> lock(mMutex);
+    // Below an instance root the prim exists when its prototype holds it, whatever
+    // row a population domain wrote at its own path.
+    if (instanceProxyRaw(key))
+        return rowExistsRaw(readHandleRaw(key));
+    return rowExistsRaw(key);
+}
+
+bool OvstageSource::rowExistsRaw(uint64_t key) const
 {
     std::lock_guard<std::recursive_mutex> lock(mMutex);
     if (!key)
@@ -2614,25 +3120,25 @@ bool OvstageSource::existsRaw(uint64_t key) const
         return false;
 
 
-    // A key resolves to a live prim iff a scoped `usd-path IN [path]` query
-    // matches it. (findByPath/pathOf only intern/round-trip the path string —
-    // they succeed for any well-formed path, present or not — so they can't gate
-    // existence.) Used by the consumer to skip absent prims (replaces the USD
-    // `prim != null` guard); the default IPhysicsSource::exists returns false.
+    // A live usd-path row establishes existence. findByPath/pathOf only
+    // intern/round-trip the path string, including paths with no live prim.
     if (!mInstance || !mDict)
         return false;
 
-    // A live usd-path row on the single-path latest read proves the prim without the
-    // whole-stage filter query; no row falls through to the query for the negative answer.
-    if (withAttributeTensor(key, conv::kUsdPath, [](const DLTensor&, uint32_t) {}))
+    // A completed latest usd-path read proves both presence and absence, just as
+    // existsBatchChecked does. Re-querying a clean miss scans unrelated stage content
+    // once per missing visual PointInstancer prototype. Failed reads still fall back.
+    bool complete = false;
+    const bool found = withAttributeTensor(key, conv::kUsdPath, [](const DLTensor&, uint32_t) {}, &complete);
+    if (found || complete)
     {
-        mExistsMemo[key] = true;
-        return true;
+        mExistsMemo[key] = found;
+        return found;
     }
 
     const ovx_string_t pathVal{ path.data(), path.size() };
     ovstage_predicate_t pred{};
-    pred.attribute.token = 0;
+    pred.attribute.token = ovx_token_t{0};
     pred.attribute.string = ovx_string_t{ conv::kUsdPath, std::string_view(conv::kUsdPath).size() };
     pred.op = OVSTAGE_FILTER_OP_IN;
     pred.values = &pathVal;
@@ -2672,14 +3178,31 @@ void OvstageSource::existsBatch(const std::vector<ObjectKey>& keys, std::vector<
 bool OvstageSource::existsBatchChecked(const std::vector<ObjectKey>& keys, std::vector<bool>& outExists) const
 {
     std::lock_guard<std::recursive_mutex> lock(mMutex);
+    const bool resolved = rowExistsBatchChecked(keys, outExists);
+    if (!buildPhysicsInstancingCache() || mPrototypeRootByInstanceRoot.empty())
+        return resolved;
+    // As existsRaw(): instance resolution decides below an instance root.
+    for (size_t i = 0; i < keys.size(); ++i)
+    {
+        const uint64_t raw = rawHandle(keys[i]);
+        if (instanceProxyRaw(raw))
+            outExists[i] = rowExistsRaw(readHandleRaw(raw));
+    }
+    return resolved;
+}
+
+bool OvstageSource::rowExistsBatchChecked(const std::vector<ObjectKey>& keys, std::vector<bool>& outExists) const
+{
+    std::lock_guard<std::recursive_mutex> lock(mMutex);
     outExists.assign(keys.size(), false);
 
     // Same local cache gates as exists(), applied per key first: only keys that
     // miss every cache -- the cold candidates that would otherwise each cost a
     // live round trip -- go into the batched query below. coldPathIndices maps
-    // each distinct cold path string back to every `keys` index that carries it,
+    // each distinct canonical path handle back to every `keys` index that carries it,
     // so a caller-side duplicate path is resolved once but marked everywhere.
-    std::unordered_map<std::string, std::vector<size_t>> coldPathIndices;
+    std::unordered_map<uint64_t, std::vector<size_t>> coldPathIndices;
+    coldPathIndices.reserve(keys.size());
     std::vector<size_t> coldIndices;
     for (size_t i = 0; i < keys.size(); ++i)
     {
@@ -2706,8 +3229,8 @@ bool OvstageSource::existsBatchChecked(const std::vector<ObjectKey>& keys, std::
             outExists[i] = memoized->second;
             continue;
         }
-        const std::string path = pathOfRaw(key);
-        if (path.empty())
+        const uint64_t path = canonicalHandleRaw(key);
+        if (!path)
             continue;
         coldPathIndices[path].push_back(i);
         coldIndices.push_back(i);
@@ -2728,16 +3251,12 @@ bool OvstageSource::existsBatchChecked(const std::vector<ObjectKey>& keys, std::
 
     // A path-list query selects only the requested handles, without a stage-wide
     // string predicate. Its count includes absent paths; only live usd-path read
-    // rows establish existence. Keep string back-mapping so canonical/raw aliases
+    // rows establish existence. Keep canonical-handle back-mapping so canonical/raw aliases
     // and duplicate input keys receive the same answer.
     std::vector<ovx_primpath_t> paths;
     paths.reserve(coldPathIndices.size());
-    for (const std::pair<const std::string, std::vector<size_t>>& kv : coldPathIndices)
-    {
-        const uint64_t raw = rawHandle(keys[kv.second.front()]);
-        const uint64_t canonical = canonicalHandleRaw(raw);
-        paths.push_back(canonical ? canonical : raw);
-    }
+    for (const auto& kv : coldPathIndices)
+        paths.push_back(ovx_primpath_t{kv.first});
 
     ovx_primpath_list_t list = OVX_INVALID_PRIMPATH_LIST;
     if (ovx_path_dictionary_create_path_list(mDict, paths.data(), paths.size(), &list) != OVX_OK)
@@ -2760,7 +3279,7 @@ bool OvstageSource::existsBatchChecked(const std::vector<ObjectKey>& keys, std::
     if (tokenStatus == OVX_OK && usdPathProbe != OVX_INVALID_TOKEN)
     {
         ovstage_ordinal_range_t range{};
-        range.end_ordinal = ~ovstage_ordinal_t(0); // latest, including current liveness
+        range.end_ordinal = OVSTAGE_ORDINAL_MAX; // latest, including current liveness
         range.has_start_ordinal = false;
 
         ovstage_read_handle_t rh = OVSTAGE_INVALID_READ_HANDLE;
@@ -2772,9 +3291,10 @@ bool OvstageSource::existsBatchChecked(const std::vector<ObjectKey>& keys, std::
             {
                 ReadListMemo listMemo(mDict);
                 bool validGroups = true;
-                ovstage_read_group_t g{};
+                ReadColumnCursor cursor(mInstance, rh);
+                ReadGroupColumn g{};
                 ovstage_api_status_t fetchErr;
-                while ((fetchErr = ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g)) == OVSTAGE_OK)
+                while ((fetchErr = cursor.next(g)) == OVSTAGE_OK)
                 {
                     if (g.attribute == usdPathProbe && !g.is_delete && g.data.tensor_count > 0 && g.prims.count != 0)
                     {
@@ -2792,12 +3312,12 @@ bool OvstageSource::existsBatchChecked(const std::vector<ObjectKey>& keys, std::
                                     continue;
                                 const size_t idx = g.prims.index_map ? g.prims.index_map[i] :
                                                                       (static_cast<size_t>(g.prims.offset) + i);
-                                if (idx >= count || !paths[idx])
+                                if (idx >= count || paths[idx] == OVX_INVALID_PRIMPATH)
                                 {
                                     validGroups = false;
                                     continue;
                                 }
-                                const std::string matchedPath = pathOfRaw(paths[idx]);
+                                const uint64_t matchedPath = canonicalHandleRaw(paths[idx].raw_id);
                                 const auto it = coldPathIndices.find(matchedPath);
                                 if (it != coldPathIndices.end())
                                     liveIndices.insert(liveIndices.end(), it->second.begin(), it->second.end());
@@ -2806,7 +3326,6 @@ bool OvstageSource::existsBatchChecked(const std::vector<ObjectKey>& keys, std::
                             }
                         }
                     }
-                    ovstage_release_group(mInstance, &g);
                 }
                 resolved = validGroups && fetchErr == OVSTAGE_ERROR_END_OF_ITERATION;
             }
@@ -2839,13 +3358,65 @@ bool OvstageSource::withAttributeTensor(uint64_t key,
         *complete = false;
     if (!mInstance || !mDict || !key)
         return false;
+    // See ProxyRead.
+    if (mOwnRowReads == 0)
+    {
+        switch (proxyReadFor(attrName))
+        {
+        case ProxyRead::eOwn:
+            break;
+        case ProxyRead::ePrototype:
+            key = readHandleRaw(key);
+            break;
+        case ProxyRead::eOverlay:
+            while (const InstanceProxy* proxy = instanceProxyRaw(key, /*build=*/false))
+            {
+                const uint64_t backing = proxy->backing;
+                bool ownComplete = false;
+                bool found = false;
+                {
+                    OwnRowScope own(*this);
+                    found = withAttributeTensor(key, attrName, fn, &ownComplete);
+                }
+                if (found || !ownComplete)
+                {
+                    if (complete)
+                        *complete = ownComplete;
+                    return found;
+                }
+                key = backing;
+            }
+            break;
+        }
+    }
     // Population preserves USD prototype targets per prim. A different prim may
     // still use the ordinary relationship, even on the same stage. An empty
     // preserved row is authoritative and must not fall through.
     if (attrName == "prototypes" &&
-        stageHasAttributeColumn(conv::kUsdPrototypes) != std::optional<bool>(false) &&
-        withAttributeTensor(key, conv::kUsdPrototypes, fn))
-        return true;
+        stageHasAttributeColumn(conv::kUsdPrototypes) != std::optional<bool>(false))
+    {
+        bool preservedComplete = false;
+        const bool found = withAttributeTensor(key, conv::kUsdPrototypes, fn, &preservedComplete);
+        if (complete)
+            *complete = preservedComplete;
+        // Only a completed read can establish absence. A transport failure must
+        // remain retryable without substituting renderer-facing targets.
+        if (found || !preservedComplete)
+            return found;
+        if (complete)
+            *complete = false;
+    }
+    if (mPhysicsInputs)
+    {
+        const std::string_view column = conv::toOvstageColumn(attrName);
+        // An instance proxy's prototype row was resolved above (see ProxyRead).
+        if (const auto captured = mPhysicsInputs->withTensor(key, column, fn))
+        {
+            if (complete)
+                *complete = true;
+            return *captured;
+        }
+    }
     if (attrName == conv::kUsdSchemas || attrName == conv::kUsdPrimType)
         structuralSinglePrimReadCounter().fetch_add(1, std::memory_order_relaxed);
     liveAttributeReadCounter().fetch_add(1, std::memory_order_relaxed);
@@ -2857,14 +3428,18 @@ bool OvstageSource::withAttributeTensor(uint64_t key,
     // scan would never be seen (the bucket fast path already canonicalizes for the
     // same reason). Round-tripping through canonicalHandleRaw keeps both in one space.
     const uint64_t canon = canonicalHandleRaw(key);
-    ovx_primpath_t p = canon ? canon : key;
+    ovx_primpath_t p{canon ? canon : key};
     ovx_primpath_list_t list = OVX_INVALID_PRIMPATH_LIST;
     if (ovx_path_dictionary_create_path_list(mDict, &p, 1, &list) != OVX_OK)
+    {
+        mFailedSinglePrimReads.fetch_add(1, std::memory_order_relaxed);
         return false;
+    }
 
-    bool got = false;
+    bool got = false, done = false;
     ovstage_query_handle_t q = OVSTAGE_INVALID_QUERY_HANDLE;
-    if (ovstage_query_from_path_list(mInstance, list, &q) == OVSTAGE_OK && q != OVSTAGE_INVALID_QUERY_HANDLE)
+    if (!consumeColumnReadFaultForTest(attrName) && ovstage_query_from_path_list(mInstance, list, &q) == OVSTAGE_OK &&
+        q != OVSTAGE_INVALID_QUERY_HANDLE)
     {
         ovx_token_t attrTok = ovxToken(attributeColumn(attrName));
         // Read the LATEST value: has_start_ordinal=false means "most recent value
@@ -2874,7 +3449,7 @@ bool OvstageSource::withAttributeTensor(uint64_t key,
         // read finds them; ovstage-API-written physics attributes work the same
         // way either way. (Mirrors the ovstage population_domains "latest" reads.)
         ovstage_ordinal_range_t range{};
-        range.end_ordinal = ~ovstage_ordinal_t(0);
+        range.end_ordinal = OVSTAGE_ORDINAL_MAX;
         range.has_start_ordinal = false;
 
         ovstage_read_handle_t rh = OVSTAGE_INVALID_READ_HANDLE;
@@ -2882,9 +3457,10 @@ bool OvstageSource::withAttributeTensor(uint64_t key,
         if (re.status == OVSTAGE_OK)
         {
             const bool waited = waitAndRelease(mInstance, re);
-            ovstage_read_group_t g{};
+            ReadColumnCursor cursor(mInstance, rh);
+            ReadGroupColumn g{};
             ovstage_api_status_t status = OVSTAGE_ERROR_OP_FAILED;
-            while (waited && (status = ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g)) == OVSTAGE_OK)
+            while (waited && (status = cursor.next(g)) == OVSTAGE_OK)
             {
                 // Single-path read: logical row 0 is the requested prim. Guard the row
                 // count before indexing the per-logical-element metadata (an empty match
@@ -2901,9 +3477,12 @@ bool OvstageSource::withAttributeTensor(uint64_t key,
                     {
                         // Array columns transport one tensor per logical row; select the
                         // MAPPED tensor (a gathered/deduplicated single-path array can map
-                        // row 0 to a tensor other than tensors[0]) and pass it through.
+                        // row 0 to a tensor other than tensors[0]) and pass it through. A
+                        // bufferless zero-element array of any type is a published empty
+                        // value, which overrides an instance's prototype (see ProxyRead).
                         if (logical0 < g.data.tensor_count &&
-                            (g.data.tensors[logical0].data || canDecodeRelationshipTargets(g.data.tensors[logical0])))
+                            (g.data.tensors[logical0].data || canDecodeRelationshipTargets(g.data.tensors[logical0]) ||
+                             totalElements(g.data.tensors[logical0]) == 0))
                         {
                             fn(g.data.tensors[logical0], g.prims.count);
                             got = true;
@@ -2950,16 +3529,18 @@ bool OvstageSource::withAttributeTensor(uint64_t key,
                         }
                     }
                 }
-                ovstage_release_group(mInstance, &g);
             }
+            done = status == OVSTAGE_ERROR_END_OF_ITERATION;
             if (complete)
-                *complete = status == OVSTAGE_ERROR_END_OF_ITERATION;
+                *complete = done;
             waitAndRelease(mInstance, ovstage_release_read(mInstance, rh));
         }
         waitAndRelease(mInstance, ovstage_release_query(mInstance, q));
     }
 
     ovx_path_dictionary_destroy_path_list(mDict, list);
+    if (!done)
+        mFailedSinglePrimReads.fetch_add(1, std::memory_order_relaxed);
     return got;
 }
 
@@ -2973,17 +3554,9 @@ AttrValue OvstageSource::getAttribute(ObjectKey key, TokenId attr) const
 AttrValue OvstageSource::getAttributeAtTime(ObjectKey key, TokenId attr, ReadTime time) const
 {
     std::lock_guard<std::recursive_mutex> lock(mMutex);
-    AttrValue value = getAttributeAtTimeRaw(rawHandle(key), attr, time);
-    // Density is a collider value even when its authored row is shared. The load
-    // cache resolves it in bulk; later mass recomputes must resolve it again.
-    // A published value (including zero/default) always wins over the backing.
-    if (!value.valid() && !mLoadCacheActive && tokenToString(attr) == "physics:density")
-    {
-        const ObjectKey backing = collisionAttributeBackingKey(key);
-        if (backing.valid() && backing != key)
-            value = getAttributeAtTimeRaw(rawHandle(backing), attr, time);
-    }
-    return value;
+    // An instance proxy's value comes from its prototype unless one is published at
+    // the proxy path (see ProxyRead), in and out of a load window alike.
+    return getAttributeAtTimeRaw(rawHandle(key), attr, time);
 }
 
 AttrValue OvstageSource::getAttributeAtTimeRaw(uint64_t key, TokenId attr, ReadTime time, bool* complete) const
@@ -2994,6 +3567,37 @@ AttrValue OvstageSource::getAttributeAtTimeRaw(uint64_t key, TokenId attr, ReadT
     const std::string_view name = tokenToString(attr);
     if (name.empty())
         return {};
+    // See ProxyRead.
+    if (mOwnRowReads == 0)
+    {
+        switch (proxyReadFor(attributeColumn(name)))
+        {
+        case ProxyRead::eOwn:
+            break;
+        case ProxyRead::ePrototype:
+            key = readHandleRaw(key);
+            break;
+        case ProxyRead::eOverlay:
+            while (const InstanceProxy* proxy = instanceProxyRaw(key, /*build=*/false))
+            {
+                const uint64_t backing = proxy->backing;
+                bool ownComplete = true;
+                AttrValue own;
+                {
+                    OwnRowScope ownRow(*this);
+                    own = getAttributeAtTimeRaw(key, attr, time, &ownComplete);
+                }
+                if (own.valid() || !ownComplete)
+                {
+                    if (complete)
+                        *complete = ownComplete;
+                    return own;
+                }
+                key = backing;
+            }
+            break;
+        }
+    }
 
     // ADR-0017: `time` is deliberately unused. The ovstage data plane holds one value per
     // attribute per ordinal, so there is nothing to interpolate between -- the producer has
@@ -3121,7 +3725,7 @@ bool OvstageSource::getAttribute(ObjectKey key, TokenId attr, TokenId& out) cons
     if (v.kind == AttrValue::Kind::eInt && mDict)
     {
         ovx_string_t s{};
-        if (ovx_path_dictionary_token_to_string(mDict, static_cast<ovx_token_t>(v.i), &s) == OVX_OK && s.ptr && s.length)
+        if (ovx_path_dictionary_token_to_string(mDict, ovx_token_t{static_cast<uint64_t>(v.i)}, &s) == OVX_OK && s.ptr && s.length)
         {
             out = doInternToken(std::string_view(s.ptr, s.length));
             return true;
@@ -3229,8 +3833,8 @@ void OvstageSource::resumeBucket(BucketSnapshotPtr snapshot) const
 
 OvstageSource::RetainedReadGroups::~RetainedReadGroups()
 {
-    for (ovstage_read_group_t& group : groups)
-        ovstage_release_group(instance, &group);
+    for (const ovstage_read_group_t& group : groups)
+        ovstage_release_groups(instance, &group, 1);
 }
 
 AttrValue FrozenScalarBatch::read(size_t index, ObjectKey key, TokenId attr, bool& complete) const noexcept
@@ -3317,8 +3921,101 @@ FrozenScalarBatch OvstageSource::readScalarBatch(const std::vector<ObjectKey>& k
     std::lock_guard<std::recursive_mutex> lock(mMutex);
     SourceReadProfile profile("direct", keys.size(), attributeCount);
     bool usedCoveredCache = false;
-    auto acquire = [&]() -> FrozenScalarBatch
-    {
+    auto acquire = [&]() -> FrozenScalarBatch {
+        if (mPhysicsInputs)
+        {
+            usedCoveredCache = true;
+            FrozenScalarBatch result;
+            if (keys.empty())
+                return result;
+            if (attributeCount >= UINT32_MAX || (attributeCount && keys.size() > SIZE_MAX / attributeCount))
+                throw std::bad_alloc();
+            result.mOwner = mPhysicsInputs;
+            result.mKeys = keys;
+            result.mRows = keys.size();
+            result.mStride = attributeCount;
+            result.mValues.resize(keys.size() * attributeCount);
+            std::vector<uint64_t> paths;
+            paths.reserve(keys.size());
+            for (size_t i = 0; i < keys.size(); ++i)
+            {
+                paths.push_back(rawHandle(keys[i]));
+                if (!paths.back())
+                    result.mKeys[i] = {};
+            }
+            uint32_t largest = 0;
+            std::vector<std::string> names;
+            names.reserve(attributeCount);
+            for (size_t a = 0; a < attributeCount; ++a)
+            {
+                if (!attributes[a].valid() || attributes[a].id >= mTokenToString.size())
+                    throw std::invalid_argument("frozen scalar attribute is outside the source token namespace");
+                largest = std::max(largest, attributes[a].id);
+                names.emplace_back(conv::toOvstageColumn(mTokenToString[attributes[a].id]));
+            }
+            result.mColumns.resize(size_t(largest) + 1, UINT32_MAX);
+            std::vector<ProxyRead> policies(attributeCount);
+            for (size_t a = 0; a < attributeCount; ++a)
+            {
+                result.mColumns[attributes[a].id] = uint32_t(a);
+                policies[a] = proxyReadFor(attributeColumn(mTokenToString[attributes[a].id]));
+            }
+            // An instance proxy's absent cells come from its backing rows, nearest
+            // nesting level first; a value published at the proxy path wins. Columns
+            // read from the prototype or the own row alone follow ProxyRead instead.
+            std::vector<std::vector<uint64_t>> levels;
+            std::vector<uint8_t> depth(keys.size(), 0);
+            std::vector<uint64_t> chain;
+            for (size_t i = 0; i < keys.size(); ++i)
+            {
+                if (paths[i])
+                    backingChainRaw(paths[i], chain);
+                else
+                    chain.clear();
+                depth[i] = uint8_t(chain.size());
+                for (size_t level = 0; level < chain.size(); ++level)
+                {
+                    if (levels.size() <= level)
+                        levels.emplace_back(keys.size(), 0);
+                    levels[level][i] = chain[level];
+                }
+            }
+            const bool captured = mPhysicsInputs->withScalars(
+                paths, names, [&](size_t row, size_t a, const DLTensor* tensor, int64_t comps, uint32_t dataRow) {
+                    if (depth[row] && policies[a] == ProxyRead::ePrototype)
+                        return;
+                    auto& ref = result.mValues[row * attributeCount + a];
+                    if (tensor && canDecodeAttrValue(*tensor) && comps >= 1 && comps <= 4)
+                        ref = { tensor, comps, dataRow };
+                    else
+                    {
+                        const auto value = getAttribute(keys[row], attributes[a]);
+                        if (isFrozenScalarValue(value))
+                        {
+                            if (result.mFallbacks.size() >= UINT32_MAX)
+                                throw std::bad_alloc();
+                            ref = { nullptr, -1, uint32_t(result.mFallbacks.size()) };
+                            result.mFallbacks.push_back(value);
+                        }
+                    }
+                });
+            if (!captured)
+                return freezeScalarBatch(keys, attributes, attributeCount);
+            for (size_t level = 0; level < levels.size(); ++level)
+                if (!mPhysicsInputs->withScalars(
+                        levels[level], names, [&](size_t row, size_t a, const DLTensor* tensor, int64_t comps, uint32_t dataRow) {
+                            if (policies[a] == ProxyRead::eOwn ||
+                                (policies[a] == ProxyRead::ePrototype && level + 1 != depth[row]))
+                                return;
+                            auto& ref = result.mValues[row * attributeCount + a];
+                            if (!ref.tensor && !ref.comps && tensor && canDecodeAttrValue(*tensor) && comps >= 1 &&
+                                comps <= 4)
+                                ref = { tensor, comps, dataRow };
+                        }))
+                    return freezeScalarBatch(keys, attributes, attributeCount);
+            return result;
+        }
+
         // The merged body/shape read may already cover every requested cell,
         // including resolved instance-proxy values and authoritative absence.
         bool covered = mLoadCacheActive;
@@ -3327,7 +4024,8 @@ FrozenScalarBatch OvstageSource::readScalarBatch(const std::vector<ObjectKey>& k
             const uint64_t raw = rawHandle(key);
             for (size_t a = 0; covered && a < attributeCount; ++a)
                 covered = !raw || loadCacheCovers(raw, attributes[a].id);
-            if (!covered) break;
+            if (!covered)
+                break;
         }
         if (covered)
         {
@@ -3335,7 +4033,8 @@ FrozenScalarBatch OvstageSource::readScalarBatch(const std::vector<ObjectKey>& k
             return freezeScalarBatch(keys, attributes, attributeCount);
         }
         FrozenScalarBatch result;
-        if (keys.empty()) return result;
+        if (keys.empty())
+            return result;
         if (attributeCount >= UINT32_MAX || (attributeCount && keys.size() > SIZE_MAX / attributeCount))
             throw std::bad_alloc();
         result.mKeys = keys;
@@ -3352,40 +4051,78 @@ FrozenScalarBatch OvstageSource::readScalarBatch(const std::vector<ObjectKey>& k
         result.mColumns.resize(size_t(largest) + 1, UINT32_MAX);
         std::unordered_map<ovx_token_t, std::vector<size_t>> columns;
         std::vector<ovx_token_t> tokens;
+        std::vector<ProxyRead> policies(attributeCount);
         for (size_t a = 0; a < attributeCount; ++a)
         {
             result.mColumns[attributes[a].id] = uint32_t(a);
+            policies[a] = proxyReadFor(attributeColumn(mTokenToString[attributes[a].id]));
             const ovx_token_t token = ovxToken(attributeColumn(mTokenToString[attributes[a].id]));
-            if (token == OVX_INVALID_TOKEN) continue;
+            if (token == OVX_INVALID_TOKEN)
+                continue;
             auto& aliases = columns[token];
-            if (aliases.empty()) tokens.push_back(token);
+            if (aliases.empty())
+                tokens.push_back(token);
             aliases.push_back(a);
         }
         // Resolve handles once for the entire row, including duplicate keys and
         // canonical aliases. There are no per-attribute cache nodes or coverage rows.
-        struct Binding { size_t row, next; };
+        // An instance proxy also binds each backing row, one per nesting level: a
+        // value published at a nearer level wins (see ProxyRead). Instances of one
+        // prototype share those rows, so each row is requested once.
+        struct Binding
+        {
+            size_t row, next;
+            uint8_t level; // 0 for the key's own row
+        };
         std::unordered_map<uint64_t, size_t> heads;
         std::vector<Binding> bindings;
         std::vector<ovx_primpath_t> paths;
+        std::unordered_set<uint64_t> requested;
+        // Per cell, the nearest level that supplied its value, and per row the number
+        // of backing levels; both empty without proxies.
+        std::vector<uint8_t> published;
+        std::vector<uint8_t> depth;
+        std::vector<uint64_t> chain;
         heads.reserve(keys.size() * 2);
         bindings.reserve(keys.size() * 2);
         paths.reserve(keys.size());
-        auto bind = [&](uint64_t handle, size_t row)
+        auto bind = [&](uint64_t handle, size_t row, uint8_t level)
         {
+            if (requested.insert(handle).second)
+                paths.push_back(ovx_primpath_t{handle});
             auto inserted = heads.emplace(handle, SIZE_MAX);
-            bindings.push_back({row, inserted.first->second});
+            bindings.push_back({row, inserted.first->second, level});
             inserted.first->second = bindings.size() - 1;
+            const uint64_t canonical = canonicalHandleRaw(handle);
+            if (canonical && canonical != handle)
+            {
+                auto alias = heads.emplace(canonical, SIZE_MAX);
+                bindings.push_back({row, alias.first->second, level});
+                alias.first->second = bindings.size() - 1;
+            }
         };
         for (size_t i = 0; i < keys.size(); ++i)
         {
             const uint64_t raw = rawHandle(keys[i]);
-            if (!raw) { result.mKeys[i] = {}; continue; }
-            paths.push_back(raw);
-            bind(raw, i);
-            const uint64_t canonical = canonicalHandleRaw(raw);
-            if (canonical && canonical != raw) bind(canonical, i);
+            if (!raw)
+            {
+                result.mKeys[i] = {};
+                continue;
+            }
+            bind(raw, i, 0);
+            backingChainRaw(raw, chain);
+            if (!chain.empty() && published.empty())
+            {
+                published.resize(keys.size() * attributeCount, UINT8_MAX);
+                depth.resize(keys.size(), 0);
+            }
+            if (!chain.empty())
+                depth[i] = uint8_t(chain.size());
+            for (size_t level = 0; level < chain.size(); ++level)
+                bind(chain[level], i, uint8_t(level + 1));
         }
-        if (paths.empty() || tokens.empty()) return result;
+        if (paths.empty() || tokens.empty())
+            return result;
         auto owner = std::make_shared<RetainedReadGroups>(mInstance);
         result.mOwner = owner;
         // Every acquired API resource is released on both success and allocation
@@ -3399,9 +4136,12 @@ FrozenScalarBatch OvstageSource::readScalarBatch(const std::vector<ObjectKey>& k
             ovstage_read_handle_t read = OVSTAGE_INVALID_READ_HANDLE;
             ~ReadScope()
             {
-                if (read != OVSTAGE_INVALID_READ_HANDLE) waitAndRelease(instance, ovstage_release_read(instance, read));
-                if (query != OVSTAGE_INVALID_QUERY_HANDLE) waitAndRelease(instance, ovstage_release_query(instance, query));
-                if (list != OVX_INVALID_PRIMPATH_LIST) ovx_path_dictionary_destroy_path_list(dict, list);
+                if (read != OVSTAGE_INVALID_READ_HANDLE)
+                    waitAndRelease(instance, ovstage_release_read(instance, read));
+                if (query != OVSTAGE_INVALID_QUERY_HANDLE)
+                    waitAndRelease(instance, ovstage_release_query(instance, query));
+                if (list != OVX_INVALID_PRIMPATH_LIST)
+                    ovx_path_dictionary_destroy_path_list(dict, list);
             }
         } scope{mInstance, mDict};
         ReadListMemo listMemo(mDict);
@@ -3413,41 +4153,54 @@ FrozenScalarBatch OvstageSource::readScalarBatch(const std::vector<ObjectKey>& k
             scope.query != OVSTAGE_INVALID_QUERY_HANDLE)
         {
             ovstage_ordinal_range_t range{};
-            range.end_ordinal = ~ovstage_ordinal_t(0);
+            range.end_ordinal = OVSTAGE_ORDINAL_MAX;
             const auto enqueue = ovstage_read_attributes(mInstance, scope.query, tokens.data(), tokens.size(), range, &scope.read);
             if (enqueue.status == OVSTAGE_OK)
             {
                 const bool readOk = waitAndRelease(mInstance, enqueue);
-                ovstage_read_group_t group{};
+                ReadColumnCursor cursor(mInstance, scope.read);
+                ReadGroupColumn group{};
                 ovstage_api_status_t status;
                 auto fetch = [&]()
                 {
                     profile.stage(1);
-                    const auto result = ovstage_fetch_read_next(mInstance, scope.read, OVSTAGE_TIMEOUT_INFINITE, &group);
+                    const auto result = cursor.next(group);
                     profile.stage(2);
                     return result;
                 };
                 while ((status = fetch()) == OVSTAGE_OK)
                 {
                     profile.group(group.prims.count);
-                    try { owner->groups.push_back(group); }
-                    catch (...) { ovstage_release_group(mInstance, &group); throw; }
+                    cursor.keep(owner->groups);
                     const auto column = columns.find(group.attribute);
-                    if (column == columns.end()) continue;
+                    if (column == columns.end())
+                        continue;
                     auto markSlow = [&]() { for (size_t a : column->second) slow[a] = 1; };
-                    if (group.is_delete) continue;
+                    if (group.is_delete)
+                        continue;
                     if (group.is_array || group.data.mask || !group.data.tensor_count || !group.data.tensors)
-                    { markSlow(); continue; }
-                    const DLTensor& tensor = owner->groups.back().data.tensors[0];
-                    if (!tensor.data || !canDecodeAttrValue(tensor)) { markSlow(); continue; }
+                    {
+                        markSlow();
+                        continue;
+                    }
+                    const DLTensor& tensor = group.data.tensors[0];
+                    if (!tensor.data || !canDecodeAttrValue(tensor))
+                    {
+                        markSlow();
+                        continue;
+                    }
                     const ovx_primpath_t* groupPaths = nullptr;
                     size_t groupCount = 0;
                     if (!listMemo.paths(group.prims.list, &groupPaths, &groupCount))
-                    { markSlow(); continue; }
+                    {
+                        markSlow();
+                        continue;
+                    }
                     int64_t storedRows = group.prims.count;
                     if (group.data.index_map)
                     {
-                        if (tensor.ndim >= 1 && tensor.shape && tensor.shape[0] > 0) storedRows = tensor.shape[0];
+                        if (tensor.ndim >= 1 && tensor.shape && tensor.shape[0] > 0)
+                            storedRows = tensor.shape[0];
                         else
                         {
                             storedRows = 0;
@@ -3457,41 +4210,72 @@ FrozenScalarBatch OvstageSource::readScalarBatch(const std::vector<ObjectKey>& k
                     }
                     const int64_t total = totalElements(tensor);
                     if (storedRows <= 0 || total < 0 || total % storedRows || total / storedRows < 1 || total / storedRows > 4)
-                    { markSlow(); continue; }
+                    {
+                        markSlow();
+                        continue;
+                    }
                     const int64_t comps = total / storedRows;
                     for (uint32_t i = 0; i < group.prims.count; ++i)
                     {
                         const size_t primRow = group.prims.index_map ? group.prims.index_map[i] : size_t(group.prims.offset) + i;
                         const uint32_t dataRow = group.data.index_map ? group.data.index_map[i] : i;
-                        if (primRow >= groupCount || dataRow >= uint64_t(storedRows)) { markSlow(); continue; }
-                        auto head = heads.find(groupPaths[primRow]);
-                        if (head == heads.end()) head = heads.find(canonicalHandleRaw(groupPaths[primRow]));
-                        if (head == heads.end()) continue;
+                        if (primRow >= groupCount || dataRow >= uint64_t(storedRows))
+                        {
+                            markSlow();
+                            continue;
+                        }
+                        auto head = heads.find(groupPaths[primRow].raw_id);
+                        if (head == heads.end())
+                            head = heads.find(canonicalHandleRaw(groupPaths[primRow].raw_id));
+                        if (head == heads.end())
+                            continue;
                         for (size_t b = head->second; b != SIZE_MAX; b = bindings[b].next)
                             for (size_t a : column->second)
-                                result.mValues[bindings[b].row * attributeCount + a] = {&tensor, comps, dataRow};
+                            {
+                                const size_t cell = bindings[b].row * attributeCount + a;
+                                if (!published.empty())
+                                {
+                                    const uint8_t rowDepth = depth[bindings[b].row];
+                                    // See ProxyRead: one row serves an own-row or prototype column.
+                                    if (rowDepth && policies[a] != ProxyRead::eOverlay &&
+                                        bindings[b].level != (policies[a] == ProxyRead::eOwn ? 0 : rowDepth))
+                                        continue;
+                                    if (published[cell] < bindings[b].level)
+                                        continue;
+                                    published[cell] = bindings[b].level;
+                                }
+                                result.mValues[cell] = {&tensor, comps, dataRow};
+                            }
                     }
                 }
                 cleanRead = readOk && status == OVSTAGE_ERROR_END_OF_ITERATION;
             }
         }
         profile.stage(3);
-        if (scalarReadFaultCounter() > 0) { --scalarReadFaultCounter(); cleanRead = false; }
+        if (scalarReadFaultCounter() > 0)
+        {
+            --scalarReadFaultCounter();
+            cleanRead = false;
+        }
         // A failed read or unsupported column must retain ordinary source semantics.
         // Resolve it here; workers can never call the source or grow fallback storage.
         for (size_t a = 0; a < attributeCount; ++a)
         {
-            if (cleanRead && !slow[a]) continue;
-            if (profile.enabled) ++profile.fallbackColumns;
+            if (cleanRead && !slow[a])
+                continue;
+            if (profile.enabled)
+                ++profile.fallbackColumns;
             for (size_t i = 0; i < keys.size(); ++i)
             {
-                if (!result.mKeys[i].valid()) continue;
+                if (!result.mKeys[i].valid())
+                    continue;
                 auto& ref = result.mValues[i * attributeCount + a];
                 ref = {};
                 const AttrValue value = getAttribute(keys[i], attributes[a]);
                 if (isFrozenScalarValue(value))
                 {
-                    if (result.mFallbacks.size() >= UINT32_MAX) throw std::bad_alloc();
+                    if (result.mFallbacks.size() >= UINT32_MAX)
+                        throw std::bad_alloc();
                     ref = {nullptr, -1, uint32_t(result.mFallbacks.size())};
                     result.mFallbacks.push_back(value);
                 }
@@ -3539,7 +4323,7 @@ FrozenScalarBatch OvstageSource::readScalarBatch(const std::vector<ObjectKey>& k
             {
                 AttrValue decoded;
                 ovx_string_t name{};
-                if (ovx_path_dictionary_token_to_string(mDict, token, &name) == OVX_OK && name.ptr && name.length)
+                if (ovx_path_dictionary_token_to_string(mDict, ovx_token_t{token}, &name) == OVX_OK && name.ptr && name.length)
                     decoded = AttrValue::makeToken(doInternToken(std::string_view(name.ptr, name.length)));
                 if (result.mFallbacks.size() >= UINT32_MAX) throw std::bad_alloc();
                 const uint32_t index = uint32_t(result.mFallbacks.size());
@@ -3553,6 +4337,14 @@ FrozenScalarBatch OvstageSource::readScalarBatch(const std::vector<ObjectKey>& k
     return result;
 }
 
+void OvstageSource::usePhysicsInputSnapshot(std::shared_ptr<PhysicsInputSnapshot> snapshot) const
+{
+    std::lock_guard<std::recursive_mutex> lock(mMutex);
+    clearBucket();
+    clearLoadCache();
+    mPhysicsInputs = std::move(snapshot);
+}
+
 void OvstageSource::beginLoadCache() const
 {
     std::lock_guard<std::recursive_mutex> lock(mMutex);
@@ -3560,6 +4352,7 @@ void OvstageSource::beginLoadCache() const
     mLoadCacheGroups = std::move(groups);
     resetLoadCacheTable();
     mLoadCacheComposedWorld.clear();
+    mLoadCachePrototypeChains.clear();
     mLoadCacheActive = true;
 }
 
@@ -3582,6 +4375,7 @@ void OvstageSource::clearLoadCache() const
     mLoadCacheGroups.reset();
     resetLoadCacheTable();
     mLoadCacheComposedWorld.clear();
+    mLoadCachePrototypeChains.clear();
 }
 
 void OvstageSource::resetLoadCacheTable() const
@@ -3723,6 +4517,8 @@ bool OvstageSource::takeDiscoveryFrom(const OvstageSource& scan)
         mLoadCacheActive || scan.mLoadCacheActive || mHierarchyBulkRead || scan.mHierarchyBulkRead)
         return false;
 
+    // Descriptors may name instance proxies; let reads resolve them here too.
+    mPrototypeRootsSeen = mPrototypeRootsSeen || scan.mPrototypeRootsSeen;
     bool adopted = false;
     if (scan.mSchemaVocabularyComplete)
     {
@@ -3777,6 +4573,7 @@ bool OvstageSource::takeDiscoveryFrom(const OvstageSource& scan)
 
 void OvstageSource::clearSchemaCache() const
 {
+    clearSharedPhysicsInputs();
     std::lock_guard<std::recursive_mutex> lock(mMutex);
     mExistsMemo.clear();
     resetInstancingCaches();
@@ -3828,6 +4625,15 @@ bool OvstageSource::loadCacheCovers(const std::vector<ObjectKey>& keys,
     std::lock_guard<std::recursive_mutex> lock(mMutex);
     if (!mLoadCacheActive || mLoadCacheMayBeStale != 0)
         return false;
+    if (mPhysicsInputs)
+    {
+        std::vector<uint64_t> paths;
+        paths.reserve(keys.size());
+        for (const auto key : keys)
+            paths.push_back(rawHandle(key));
+        if (mPhysicsInputs->covers(paths, attrs))
+            return true;
+    }
     // Resolve each handle once. The immutable plan supplies source-local token IDs;
     // cells and layout indices are always read from the current load window.
     std::vector<const LoadCachePrim*> prims;
@@ -3868,6 +4674,8 @@ void OvstageSource::resetInstancingCaches() const
     mPhysicsInstancingCacheValid = false;
     mPrototypeRootPaths.clear();
     mPrototypeRootByInstanceRoot.clear();
+    mInstanceRootsByPrototypeRoot.clear();
+    mInstanceProxyCache.clear();
     mGeometryBackingCache.clear();
     mInstanceMaterialCacheBuilt = false;
     mInstanceMaterialCacheValid = false;
@@ -3886,16 +4694,16 @@ bool OvstageSource::applySchemaDelta(const std::vector<SchemaRowDelta>& rows) co
     const bool complete = (mSchemaCacheBuilt && mSchemaCacheComplete) || mSchemaVocabularyComplete;
     for (const SchemaRowDelta& row : rows)
     {
-        if (!row.raw)
+        if (row.raw == OVX_INVALID_PRIMPATH)
             return false;
-        const uint64_t canonical = canonicalHandleRaw(row.raw);
+        const uint64_t canonical = canonicalHandleRaw(row.raw.raw_id);
         std::unordered_set<uint32_t> schemas;
         std::unordered_set<uint32_t> bases;
         std::vector<uint32_t> ordered; // authored order, for the per-prim list
         for (const uint64_t value : row.schemaTokens)
         {
             ovx_string_t s{};
-            if (ovx_path_dictionary_token_to_string(mDict, static_cast<ovx_token_t>(value), &s) != OVX_OK ||
+            if (ovx_path_dictionary_token_to_string(mDict, ovx_token_t{value}, &s) != OVX_OK ||
                 !s.ptr || s.length == 0)
                 return false;
             const std::string_view name(s.ptr, s.length);
@@ -3914,7 +4722,7 @@ bool OvstageSource::applySchemaDelta(const std::vector<SchemaRowDelta>& rows) co
         }
         // The row is the prim's complete post-write list: replace its per-prim entry (the
         // instance-name map has no incremental reader and is simply forgotten for the prim).
-        for (const uint64_t handle : { row.raw, canonical })
+        for (const uint64_t handle : { row.raw.raw_id, canonical })
         {
             if (!handle)
                 continue;
@@ -3935,13 +4743,13 @@ bool OvstageSource::applySchemaDelta(const std::vector<SchemaRowDelta>& rows) co
                 std::unordered_set<uint64_t>& members = entry.second;
                 if (present.count(entry.first) != 0)
                 {
-                    members.insert(row.raw);
+                    members.insert(row.raw.raw_id);
                     if (canonical)
                         members.insert(canonical);
                 }
                 else
                 {
-                    members.erase(row.raw);
+                    members.erase(row.raw.raw_id);
                     if (canonical)
                         members.erase(canonical);
                 }
@@ -3951,7 +4759,7 @@ bool OvstageSource::applySchemaDelta(const std::vector<SchemaRowDelta>& rows) co
             for (const uint32_t id : present)
             {
                 std::unordered_set<uint64_t>& members = cache[id];
-                members.insert(row.raw);
+                members.insert(row.raw.raw_id);
                 if (canonical)
                     members.insert(canonical);
             }
@@ -3966,7 +4774,7 @@ bool OvstageSource::applySchemaDelta(const std::vector<SchemaRowDelta>& rows) co
             {
                 if (bases.count(it->first) == 0)
                 {
-                    it->second.erase(row.raw);
+                    it->second.erase(row.raw.raw_id);
                     if (canonical)
                         it->second.erase(canonical);
                 }
@@ -3978,7 +4786,7 @@ bool OvstageSource::applySchemaDelta(const std::vector<SchemaRowDelta>& rows) co
             for (const uint32_t id : bases)
             {
                 std::unordered_set<uint64_t>& members = mBaseInstanceMembership[id];
-                members.insert(row.raw);
+                members.insert(row.raw.raw_id);
                 if (canonical)
                     members.insert(canonical);
             }
@@ -3992,10 +4800,10 @@ void OvstageSource::noteLivePrims(const std::vector<ovx_primpath_t>& raws) const
     std::lock_guard<std::recursive_mutex> lock(mMutex);
     for (const ovx_primpath_t raw : raws)
     {
-        if (!raw)
+        if (raw == OVX_INVALID_PRIMPATH)
             continue;
-        mExistsMemo[raw] = true;
-        if (const uint64_t canonical = canonicalHandleRaw(raw))
+        mExistsMemo[raw.raw_id] = true;
+        if (const uint64_t canonical = canonicalHandleRaw(raw.raw_id))
             mExistsMemo[canonical] = true;
     }
 }
@@ -4058,10 +4866,10 @@ bool OvstageSource::applyHierarchyDelta(const std::vector<ovx_primpath_t>& added
     std::unordered_set<uint64_t> seen;
     for (const ovx_primpath_t raw : addedRaw)
     {
-        const uint64_t canonical = canonicalHandleRaw(raw);
+        const uint64_t canonical = canonicalHandleRaw(raw.raw_id);
         // Only the rows' own existence answers can be stale (a same-drain tombstone record on a
         // re-created path); the other records this drain made stay.
-        mExistsMemo.erase(raw);
+        mExistsMemo.erase(raw.raw_id);
         if (canonical)
             mExistsMemo.erase(canonical);
         if (!canonical || !seen.insert(canonical).second)
@@ -4145,13 +4953,13 @@ bool OvstageSource::applyPrimRemoval(const std::vector<ovx_primpath_t>& removedR
     std::vector<uint64_t> stack;
     for (const ovx_primpath_t raw : removedRaw)
     {
-        const uint64_t canonical = canonicalHandleRaw(raw);
-        if (!raw || !canonical)
+        const uint64_t canonical = canonicalHandleRaw(raw.raw_id);
+        if (raw == OVX_INVALID_PRIMPATH || !canonical)
             return false;
-        unlinkFromParent(raw);
-        if (canonical != raw)
+        unlinkFromParent(raw.raw_id);
+        if (canonical != raw.raw_id)
             unlinkFromParent(canonical);
-        stack.push_back(raw);
+        stack.push_back(raw.raw_id);
         stack.push_back(canonical);
     }
 
@@ -4193,7 +5001,7 @@ bool OvstageSource::applyPrimTypeDelta(const std::vector<PrimTypeRowDelta>& rows
     {
         changed->clear();
         for (const PrimTypeRowDelta& row : rows)
-            for (const uint64_t handle : { row.raw, canonicalHandleRaw(row.raw) })
+            for (const uint64_t handle : { row.raw.raw_id, canonicalHandleRaw(row.raw.raw_id) })
             {
                 const auto previous = mPrimTypeByRaw.find(handle);
                 previousTypes.emplace(handle, previous == mPrimTypeByRaw.end() ? 0 : previous->second);
@@ -4201,12 +5009,12 @@ bool OvstageSource::applyPrimTypeDelta(const std::vector<PrimTypeRowDelta>& rows
     }
     for (const PrimTypeRowDelta& row : rows)
     {
-        const uint64_t canonical = canonicalHandleRaw(row.raw);
-        if (!row.raw || !canonical)
+        const uint64_t canonical = canonicalHandleRaw(row.raw.raw_id);
+        if (row.raw == OVX_INVALID_PRIMPATH || !canonical)
             return false;
         // Both columns arrive in the structural batch. Preserve authored precedence
         // without re-reading each prim, regardless of the groups' delivery order.
-        if (!row.authored && (mAuthoredTypeHandles.count(row.raw) || mAuthoredTypeHandles.count(canonical)))
+        if (!row.authored && (mAuthoredTypeHandles.count(row.raw.raw_id) || mAuthoredTypeHandles.count(canonical)))
             continue;
         // Resolve only this prim's fallback. A removed override must not discard
         // unrelated cached types or turn their unchanged population refreshes into resyncs.
@@ -4215,15 +5023,15 @@ bool OvstageSource::applyPrimTypeDelta(const std::vector<PrimTypeRowDelta>& rows
         {
             bool complete = false;
             const AttrValue fallback = getAttributeAtTimeRaw(
-                row.raw, doInternToken(conv::kUsdPrimType), ReadTime::defaultTime(), &complete);
+                row.raw.raw_id, doInternToken(conv::kUsdPrimType), ReadTime::defaultTime(), &complete);
             if (!complete)
                 return false;
             if (fallback.kind == AttrValue::Kind::eInt)
                 typeToken = static_cast<uint64_t>(fallback.i);
             else if (fallback.kind == AttrValue::Kind::eToken)
-                typeToken = ovxToken(tokenToString(fallback.tok));
+                typeToken = ovxToken(tokenToString(fallback.tok)).raw_id;
         }
-        for (const uint64_t handle : { row.raw, canonical })
+        for (const uint64_t handle : { row.raw.raw_id, canonical })
         {
             if (row.authored && row.typeToken != 0)
                 mAuthoredTypeHandles.insert(handle);
@@ -4395,7 +5203,7 @@ bool OvstageSource::collectPrimTypeKeys(std::string_view typeName, std::vector<O
     const ovx_token_t tok = ovxToken(typeName);
     if (tok == OVX_INVALID_TOKEN)
         return true;
-    const auto it = mPrimTypeIndex.find(static_cast<uint64_t>(tok));
+    const auto it = mPrimTypeIndex.find(tok.raw_id);
     if (it == mPrimTypeIndex.end())
         return true;
     // Both aliases of a prim are indexed; emit each prim once, by its canonical handle.
@@ -4410,10 +5218,164 @@ bool OvstageSource::collectPrimTypeKeys(std::string_view typeName, std::vector<O
     return true;
 }
 
+bool OvstageSource::queryPrimTypeKeys(std::string_view typeName, std::vector<ObjectKey>& out) const
+{
+    std::lock_guard<std::recursive_mutex> lock(mMutex);
+    out.clear();
+    if (!mInstance || !mDict || typeName.empty())
+        return false;
+    const ovx_string_t value{ typeName.data(), typeName.size() };
+    ovstage_predicate_t predicate{};
+    predicate.attribute.string = { conv::kUsdPrimType, std::string_view(conv::kUsdPrimType).size() };
+    predicate.op = OVSTAGE_FILTER_OP_IN;
+    predicate.values = &value;
+    predicate.value_count = 1;
+    const ovstage_filter_t filter{ &predicate, 1 };
+    ovstage_query_handle_t query = OVSTAGE_INVALID_QUERY_HANDLE;
+    const bool queried = waitAndRelease(mInstance, ovstage_query(mInstance, &filter, nullptr, 0, &query));
+    CARB_SCOPE_EXIT
+    {
+        if (query != OVSTAGE_INVALID_QUERY_HANDLE)
+            waitAndRelease(mInstance, ovstage_release_query(mInstance, query));
+    };
+    if (!queried || query == OVSTAGE_INVALID_QUERY_HANDLE)
+        return false;
+    ovstage_query_result_t result{};
+    if (ovstage_fetch_query_result(mInstance, query, OVSTAGE_TIMEOUT_INFINITE, &result) != OVSTAGE_OK)
+        return false;
+    const ovstage_query_handle_t matched = result.all_handle != OVSTAGE_INVALID_QUERY_HANDLE ? result.all_handle : query;
+    const bool empty = result.total_prim_count == 0;
+    ovstage_release_query_result(mInstance, &result);
+    if (empty)
+        return true;
+    const ovx_token_t column = ovxToken(conv::kUsdPrimType);
+    if (column == OVX_INVALID_TOKEN)
+        return false;
+    ovstage_ordinal_range_t range{};
+    range.end_ordinal = mReadOrdinal;
+    range.has_start_ordinal = false;
+    ovstage_read_handle_t read = OVSTAGE_INVALID_READ_HANDLE;
+    CARB_SCOPE_EXIT
+    {
+        if (read != OVSTAGE_INVALID_READ_HANDLE)
+            waitAndRelease(mInstance, ovstage_release_read(mInstance, read));
+    };
+    if (!waitAndRelease(mInstance, ovstage_read_attributes(mInstance, matched, &column, 1, range, &read)) ||
+        read == OVSTAGE_INVALID_READ_HANDLE)
+        return false;
+    // Emit each prim once, by its canonical handle, as collectPrimTypeKeys does.
+    ReadListMemo lists(mDict);
+    std::unordered_set<uint64_t> seen;
+    ReadColumnCursor cursor(mInstance, read);
+    ReadGroupColumn group{};
+    ovstage_api_status_t status = OVSTAGE_OK;
+    while ((status = cursor.next(group)) == OVSTAGE_OK)
+    {
+        const ovx_primpath_t* paths = nullptr;
+        size_t count = 0;
+        if (!group.is_delete && lists.paths(group.prims.list, &paths, &count))
+            for (uint32_t i = 0; i < group.prims.count; ++i)
+            {
+                if (group.data.mask && !(group.data.mask[i / 64] & (uint64_t(1) << (i % 64))))
+                    continue;
+                const uint64_t index =
+                    group.prims.index_map ? group.prims.index_map[i] : uint64_t(group.prims.offset) + i;
+                if (index >= count)
+                    continue;
+                const uint64_t canonical = canonicalHandleRaw(paths[index].raw_id);
+                const uint64_t stable = canonical ? canonical : paths[index].raw_id;
+                if (seen.insert(stable).second)
+                    out.push_back(internKey(stable));
+            }
+    }
+    return status == OVSTAGE_ERROR_END_OF_ITERATION;
+}
+
+void OvstageSource::borrowCachedPathTexts(const std::vector<uint64_t>& paths,
+                                          std::unordered_map<uint64_t, const std::string*>& texts) const
+{
+    std::lock_guard<std::recursive_mutex> lock(mMutex);
+    for (const auto path : paths)
+    {
+        const auto found = mPathStringCache.find(path);
+        if (found != mPathStringCache.end())
+            texts.emplace(path, &found->second);
+    }
+}
+
+void OvstageSource::sharePhysicsInputTypes(std::vector<SharedInputTypeRow> rows,
+                                           const std::unordered_set<std::string>* unchangedPhysicsPaths)
+{
+    clearSharedPhysicsInputs();
+    if (!mSharePhysicsInputs)
+        return;
+    mSharedInputTypes.reserve(rows.size());
+    for (const auto& row : rows)
+    {
+        const auto canonical = canonicalHandleRaw(row.path);
+        // Duplicate logical rows mean ambiguous history; keep the fresh-read path.
+        if (!canonical || !mSharedInputTypes.emplace(canonical, row).second)
+        {
+            clearSharedPhysicsInputs();
+            return;
+        }
+    }
+    if (mSharedInputTypes.empty() || !unchangedPhysicsPaths || !mPrimTypeIndexBuilt || !mPrimTypeIndexComplete)
+        return;
+    mSharedInputTypeAbsences = true;
+    // Reuse only scene contexts the known-physics range actually checked before
+    // adding new membership. Other ancestors keep their fresh transport. This
+    // visits the scene family, never all existing physics records or type rows.
+    const auto semantic = mSharedInputTypes.begin()->second.semantic;
+    const auto scenes = mPrimTypeIndex.find(ovxToken("PhysicsScene").raw_id);
+    if (scenes == mPrimTypeIndex.end())
+        return;
+    for (const auto raw : scenes->second)
+    {
+        const auto path = canonicalHandleRaw(raw);
+        if (!path || mAuthoredTypeHandles.count(path))
+            continue;
+        const auto text = mPathStringCache.find(path);
+        const auto type = mPrimTypeByRaw.find(path);
+        if (text != mPathStringCache.end() && type != mPrimTypeByRaw.end() && unchangedPhysicsPaths->count(text->second))
+            mSharedInputTypes.emplace(path, SharedInputTypeRow{ path, type->second, semantic });
+    }
+}
+
+bool OvstageSource::sharedPhysicsInputType(uint64_t path, SharedInputTypeRow& row) const
+{
+    std::lock_guard<std::recursive_mutex> lock(mMutex);
+    const auto fresh = mSharedInputTypes.find(path);
+    if (fresh != mSharedInputTypes.end())
+    {
+        row = fresh->second;
+        return true;
+    }
+    if (mSharedInputTypes.empty() || !mSharedInputTypeAbsences || !mPrimTypeIndexBuilt || !mPrimTypeIndexComplete ||
+        mAuthoredTypeHandles.count(path))
+        return false;
+    // A complete type index still proves an absent type: live structural growth
+    // was patched above, and removal cannot turn an absence into a value.
+    if (mPrimTypeByRaw.count(path))
+        return false;
+    row = { path, 0, mSharedInputTypes.begin()->second.semantic };
+    return true;
+}
+
 void OvstageSource::setReadOrdinal(ovstage_ordinal_t ord)
 {
     std::lock_guard<std::recursive_mutex> lock(mMutex);
+    mPhysicsInputs.reset();
+    clearSharedPhysicsInputs();
     mReadOrdinal = ord;
+}
+
+void OvstageSource::sharePhysicsInputVocabulary(const std::vector<std::string>& columns) const
+{
+    std::lock_guard<std::recursive_mutex> lock(mMutex);
+    mAttributeVocabulary.clear();
+    mAttributeVocabulary.insert(columns.begin(), columns.end());
+    mAttributeVocabularyBuilt = true;
 }
 
 ovstage_ordinal_t OvstageSource::readOrdinal() const
@@ -4427,12 +5389,13 @@ bool OvstageSource::primTypeTokenRaw(uint64_t raw, TokenId& out, bool* readCompl
     std::lock_guard<std::recursive_mutex> lock(mMutex);
     if (readComplete)
         *readComplete = true;
+    raw = readHandleRaw(raw);
     if (!raw || !mDict)
         return false;
     auto resolve = [&](uint64_t value) -> bool
     {
         ovx_string_t s{};
-        if (ovx_path_dictionary_token_to_string(mDict, static_cast<ovx_token_t>(value), &s) != OVX_OK || !s.ptr ||
+        if (ovx_path_dictionary_token_to_string(mDict, ovx_token_t{value}, &s) != OVX_OK || !s.ptr ||
             s.length == 0)
             return false;
         const std::string_view name(s.ptr, s.length);
@@ -4492,7 +5455,7 @@ bool OvstageSource::primTypeTokenRaw(uint64_t raw, TokenId& out, bool* readCompl
     }
     if (v.kind == AttrValue::Kind::eToken && v.tok.valid())
     {
-        return resolve(ovxToken(tokenToString(v.tok)));
+        return resolve(ovxToken(tokenToString(v.tok)).raw_id);
     }
     return false;
 }
@@ -4503,17 +5466,10 @@ bool OvstageSource::ensureAttributeVocabulary() const
     if (!mAttributeVocabularyBuilt && mInstance && mDict)
     {
         attributeVocabularyBuildCounter().fetch_add(1, std::memory_order_relaxed);
-        // Whole-stage query; only the discovered attribute-column vocabulary is read, no rows.
-        const ovx_string_t pathVal{ "/", 1 };
-        ovstage_predicate_t pred{};
-        pred.attribute.token = 0;
-        pred.attribute.string = ovx_string_t{ conv::kUsdPath, std::string_view(conv::kUsdPath).size() };
-        pred.op = OVSTAGE_FILTER_OP_PREFIX;
-        pred.values = &pathVal;
-        pred.value_count = 1;
+        // Unfiltered discovery is the stage-global authored vocabulary, shared
+        // with input fingerprinting. A PREFIX predicate on usd-path adds that
+        // computed column to discovery and changes the canonical presence bits.
         ovstage_filter_t filter{};
-        filter.predicates = &pred;
-        filter.count = 1;
 
         ovstage_query_handle_t q = OVSTAGE_INVALID_QUERY_HANDLE;
         const ovstage_enqueue_result_t qe = ovstage_query(mInstance, &filter, nullptr, 0, &q);
@@ -4547,6 +5503,12 @@ bool OvstageSource::ensureAttributeVocabulary() const
 std::optional<bool> OvstageSource::stageHasAttributeWithPrefix(std::string_view prefix) const
 {
     std::lock_guard<std::recursive_mutex> lock(mMutex);
+    if (mPhysicsInputs)
+    {
+        mPhysicsInputs->observeColumn(prefix, true);
+        if (const auto present = mPhysicsInputs->hasStageColumn(prefix, true))
+            return *present;
+    }
     if (!ensureAttributeVocabulary())
         return std::nullopt;
     for (const std::string& name : mAttributeVocabulary)
@@ -4558,6 +5520,12 @@ std::optional<bool> OvstageSource::stageHasAttributeWithPrefix(std::string_view 
 std::optional<bool> OvstageSource::stageHasAttributeColumn(std::string_view name) const
 {
     std::lock_guard<std::recursive_mutex> lock(mMutex);
+    if (mPhysicsInputs)
+    {
+        mPhysicsInputs->observeColumn(name, false);
+        if (const auto present = mPhysicsInputs->hasStageColumn(name))
+            return *present;
+    }
     if (!ensureAttributeVocabulary())
         return std::nullopt;
     return mAttributeVocabulary.count(std::string(name)) != 0;
@@ -4649,7 +5617,7 @@ std::optional<bool> OvstageSource::stageHasAnySchema(const char* const* schemaNa
     {
         // One usd-schemas CONTAINS query OR'd over the names, count only; exact per element.
         ovstage_predicate_t pred{};
-        pred.attribute.token = 0;
+        pred.attribute.token = ovx_token_t{0};
         pred.attribute.string = ovx_string_t{ conv::kUsdSchemas, std::string_view(conv::kUsdSchemas).size() };
         pred.op = OVSTAGE_FILTER_OP_CONTAINS;
         pred.values = vals.data();
@@ -4737,7 +5705,7 @@ bool OvstageSource::ensureSchemaVocabulary() const
             {
                 SchemaNames tokens;
                 ovx_string_t s{};
-                if (ovx_path_dictionary_token_to_string(mDict, static_cast<ovx_token_t>(value), &s) == OVX_OK &&
+                if (ovx_path_dictionary_token_to_string(mDict, ovx_token_t{value}, &s) == OVX_OK &&
                     s.ptr && s.length > 0)
                 {
                     const std::string_view name(s.ptr, s.length);
@@ -4780,6 +5748,14 @@ bool OvstageSource::forEachStageSchemaValue(const std::function<void(uint64_t, u
     return forEachStageTokenValue(conv::kUsdSchemas, fn, prefetchJointRelationships);
 }
 
+const std::vector<std::string>& jointRelationshipColumns()
+{
+    static const std::vector<std::string> names = { "physics:body0",    "physics:body1", "physics:hinge0",
+                                                    "physics:hinge1",   "physics:hinge", "physics:prismatic",
+                                                    "newton:mimicJoint" };
+    return names;
+}
+
 bool OvstageSource::forEachStageTokenValue(std::string_view column,
                                            const std::function<void(uint64_t, uint64_t, uint64_t)>& fn,
                                            bool prefetchJointRelationships) const
@@ -4787,10 +5763,11 @@ bool OvstageSource::forEachStageTokenValue(std::string_view column,
     if (!mInstance || !mDict || !fn || column.empty())
         return false;
 
+    stageMetadataReadCounter().fetch_add(1, std::memory_order_relaxed);
     SourceReadProfile profile("token_stream", 1, 1, column.data());
     const ovx_string_t pathVal{ "/", 1 };
     ovstage_predicate_t pred{};
-    pred.attribute.token = 0;
+    pred.attribute.token = ovx_token_t{0};
     pred.attribute.string = ovx_string_t{ conv::kUsdPath, std::string_view(conv::kUsdPath).size() };
     pred.op = OVSTAGE_FILTER_OP_PREFIX;
     pred.values = &pathVal;
@@ -4842,10 +5819,11 @@ bool OvstageSource::forEachStageTokenValue(std::string_view column,
     std::vector<RelationshipColumn> relationships;
     std::vector<ovx_token_t> attributes{schemasAttr};
     std::shared_ptr<RetainedReadGroups> relationshipGroups;
-    if (prefetchJointRelationships && mLoadCacheActive)
+    // A physics-input snapshot serves and audits relationship reads itself; a
+    // load-cache column read here would answer them unaudited.
+    if (prefetchJointRelationships && mLoadCacheActive && !mPhysicsInputs)
     {
-        for (const char* name : {"physics:body0", "physics:body1", "physics:hinge0", "physics:hinge1",
-                                 "physics:hinge", "physics:prismatic", "newton:mimicJoint"})
+        for (const std::string& name : jointRelationshipColumns())
         {
             const auto attribute = ovxToken(attributeColumn(name));
             if (attribute == OVX_INVALID_TOKEN) continue;
@@ -4911,12 +5889,13 @@ bool OvstageSource::forEachStageTokenValue(std::string_view column,
 
     bool unsupported = false;
     ReadListMemo listMemo(mDict);
-    ovstage_read_group_t g{};
+    ReadColumnCursor cursor(mInstance, rh);
+    ReadGroupColumn g{};
     ovstage_api_status_t fetchErr;
     auto fetch = [&]()
     {
         profile.stage(1);
-        const auto result = ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g);
+        const auto result = cursor.next(g);
         profile.stage(2);
         return result;
     };
@@ -4928,39 +5907,31 @@ bool OvstageSource::forEachStageTokenValue(std::string_view column,
             auto column = std::find_if(relationships.begin(), relationships.end(),
                 [&](const RelationshipColumn& c) { return c.attribute == g.attribute; });
             if (column == relationships.end())
-            {
-                ovstage_release_group(mInstance, &g);
                 continue;
-            }
             // A missing/deleted relationship is empty. Unsupported or partial data
             // never seals absence: the ordinary bucket read remains the fallback.
             if (g.is_delete)
-            {
-                ovstage_release_group(mInstance, &g);
                 continue;
-            }
             const ovx_primpath_t* paths = nullptr;
             size_t pathCount = 0;
             if (!g.is_array || g.data.mask || !g.data.tensors ||
                 !listMemo.paths(g.prims.list, &paths, &pathCount))
             {
                 column->complete = false;
-                ovstage_release_group(mInstance, &g);
                 continue;
             }
-            try { relationshipGroups->groups.push_back(g); }
-            catch (...) { ovstage_release_group(mInstance, &g); throw; }
+            cursor.keep(relationshipGroups->groups);
             for (uint32_t row = 0; row < g.prims.count; ++row)
             {
                 const uint32_t pathIndex = g.prims.index_map ? g.prims.index_map[row] : g.prims.offset + row;
                 const uint32_t dataIndex = g.data.index_map ? g.data.index_map[row] : row;
-                if (pathIndex >= pathCount || dataIndex >= g.data.tensor_count || !paths[pathIndex] ||
+                if (pathIndex >= pathCount || dataIndex >= g.data.tensor_count || paths[pathIndex] == OVX_INVALID_PRIMPATH ||
                     !canDecodeRelationshipTargets(g.data.tensors[dataIndex]))
                 {
                     column->complete = false;
                     continue;
                 }
-                column->rows.push_back({paths[pathIndex], {&g.data.tensors[dataIndex]}});
+                column->rows.push_back({paths[pathIndex].raw_id, {&g.data.tensors[dataIndex]}});
             }
             continue; // Retained group owns the tensors until the load cache clears.
         }
@@ -4968,14 +5939,12 @@ bool OvstageSource::forEachStageTokenValue(std::string_view column,
         if (!usable)
         {
             if (!g.is_delete) unsupported = true;
-            ovstage_release_group(mInstance, &g);
             continue;
         }
 
         if (g.prims.count == 0)
         {
             unsupported = true;
-            ovstage_release_group(mInstance, &g);
             continue;
         }
 
@@ -4984,7 +5953,6 @@ bool OvstageSource::forEachStageTokenValue(std::string_view column,
         if (!listMemo.paths(g.prims.list, &paths, &pathCount))
         {
             unsupported = true;
-            ovstage_release_group(mInstance, &g);
             continue;
         }
 
@@ -5006,7 +5974,7 @@ bool OvstageSource::forEachStageTokenValue(std::string_view column,
                     continue;
                 }
 
-                const uint64_t raw = paths[idx];
+                const uint64_t raw = paths[idx].raw_id;
                 if (!raw)
                     continue;
                 const uint64_t canonical = canonicalHandleRaw(raw);
@@ -5021,7 +5989,6 @@ bool OvstageSource::forEachStageTokenValue(std::string_view column,
             if (!t.data || !(t.dtype.code == kDLUInt && (t.dtype.bits == 64 || t.dtype.bits == 32)))
             {
                 unsupported = true;
-                ovstage_release_group(mInstance, &g);
                 continue;
             }
 
@@ -5030,7 +5997,6 @@ bool OvstageSource::forEachStageTokenValue(std::string_view column,
             if (total < 0 || storedRows <= 0 || (total % storedRows) != 0)
             {
                 unsupported = true;
-                ovstage_release_group(mInstance, &g);
                 continue;
             }
             const int64_t comps = total / storedRows;
@@ -5051,7 +6017,7 @@ bool OvstageSource::forEachStageTokenValue(std::string_view column,
                     continue;
                 }
 
-                const uint64_t raw = paths[idx];
+                const uint64_t raw = paths[idx].raw_id;
                 if (!raw)
                     continue;
                 const uint64_t canonical = canonicalHandleRaw(raw);
@@ -5066,8 +6032,6 @@ bool OvstageSource::forEachStageTokenValue(std::string_view column,
                 }
             }
         }
-
-        ovstage_release_group(mInstance, &g);
     }
 
     profile.stage(5);
@@ -5104,6 +6068,12 @@ bool OvstageSource::forEachStageTokenValue(std::string_view column,
     return complete;
 }
 
+bool OvstageSource::prefetchPrimMetadata() const
+{
+    std::lock_guard<std::recursive_mutex> lock(mMutex);
+    return buildPrimTypeIndex() && buildSchemaCache();
+}
+
 bool OvstageSource::buildSchemaCache() const
 {
     std::lock_guard<std::recursive_mutex> lock(mMutex);
@@ -5137,7 +6107,7 @@ bool OvstageSource::buildSchemaCache() const
             return &found->second;
 
         ovx_string_t schemaString{};
-        if (ovx_path_dictionary_token_to_string(mDict, static_cast<ovx_token_t>(schemaValue), &schemaString) != OVX_OK ||
+        if (ovx_path_dictionary_token_to_string(mDict, ovx_token_t{schemaValue}, &schemaString) != OVX_OK ||
             !schemaString.ptr || schemaString.length == 0)
             return nullptr;
 
@@ -5213,7 +6183,46 @@ bool OvstageSource::collectSchemaKeys(TokenId schemaToken, std::vector<ObjectKey
     raw.reserve(out.size());
     for (const ObjectKey key : out)
         raw.push_back(rawHandle(key));
-    const bool ok = collectSchemaKeysRaw(schemaToken, raw);
+    const size_t callerCount = raw.size();
+    // Members below an instance root are instance proxies: they come from the
+    // prototype members, at every instance of the prototype (see instanceProxyRaw()),
+    // and rows a population domain wrote at proxy paths are dropped. Failed instancing
+    // discovery fails the collection: proxies may have no rows to enumerate instead.
+    std::lock_guard<std::recursive_mutex> lock(mMutex);
+    const bool ok = collectSchemaKeysRaw(schemaToken, raw) && buildPhysicsInstancingCache();
+    if (ok && !mPrototypeRootByInstanceRoot.empty())
+    {
+        // One whole-stage hierarchy read instead of a child query per instance root.
+        if (!mChildCacheBuilt && mPrototypeRootByInstanceRoot.size() > 64)
+            buildChildCache();
+        std::unordered_set<uint64_t> seen;
+        std::vector<uint64_t> prototypeMembers;
+        size_t kept = callerCount;
+        for (size_t i = callerCount; i < raw.size(); ++i)
+        {
+            const uint64_t handle = raw[i];
+            const std::string path = pathOfRaw(handle);
+            if (!enclosingInstanceRoot(path).empty())
+                continue;
+            const uint64_t canonical = canonicalHandleRaw(handle);
+            seen.insert(canonical ? canonical : handle);
+            if (!prototypeRootOf(path).empty())
+                prototypeMembers.push_back(handle);
+            raw[kept++] = handle;
+        }
+        raw.resize(kept);
+        for (const uint64_t member : prototypeMembers)
+        {
+            std::vector<uint64_t> proxies;
+            appendInstanceProxiesRaw(member, proxies);
+            for (const uint64_t proxy : proxies)
+            {
+                const uint64_t canonical = canonicalHandleRaw(proxy);
+                if (seen.insert(canonical ? canonical : proxy).second)
+                    raw.push_back(proxy);
+            }
+        }
+    }
     out.clear();
     out.reserve(raw.size());
     for (const uint64_t handle : raw)
@@ -5290,7 +6299,7 @@ const std::unordered_set<uint64_t>* OvstageSource::schemaMembershipFromQuery(Tok
     schemaQueryCounter().fetch_add(1, std::memory_order_relaxed);
     const ovx_string_t schemaVal{ schemaName.data(), schemaName.size() };
     ovstage_predicate_t pred{};
-    pred.attribute.token = 0;
+    pred.attribute.token = ovx_token_t{0};
     pred.attribute.string = ovx_string_t{ conv::kUsdSchemas, std::string_view(conv::kUsdSchemas).size() };
     pred.op = OVSTAGE_FILTER_OP_CONTAINS;
     pred.values = &schemaVal;
@@ -5365,12 +6374,13 @@ const std::unordered_set<uint64_t>* OvstageSource::schemaMembershipFromQuery(Tok
     std::unordered_set<uint64_t> members;
     members.reserve(count * 2);
     ReadListMemo listMemo(mDict);
-    ovstage_read_group_t g{};
+    ReadColumnCursor cursor(mInstance, rh);
+    ReadGroupColumn g{};
     ovstage_api_status_t fetchErr;
     auto fetch = [&]()
     {
         profile.stage(1);
-        const auto result = ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g);
+        const auto result = cursor.next(g);
         profile.stage(2);
         return result;
     };
@@ -5386,7 +6396,7 @@ const std::unordered_set<uint64_t>* OvstageSource::schemaMembershipFromQuery(Tok
                 const uint32_t idx = g.prims.index_map ? g.prims.index_map[i] : (g.prims.offset + i);
                 if (idx >= pathCount)
                     continue;
-                const uint64_t raw = paths[idx];
+                const uint64_t raw = paths[idx].raw_id;
                 if (raw == 0)
                     continue;
                 members.insert(raw);
@@ -5394,7 +6404,6 @@ const std::unordered_set<uint64_t>* OvstageSource::schemaMembershipFromQuery(Tok
                     members.insert(canonical);
             }
         }
-        ovstage_release_group(mInstance, &g);
     }
     profile.stage(5);
     waitAndRelease(mInstance, ovstage_release_read(mInstance, rh));
@@ -5507,7 +6516,7 @@ std::vector<ObjectKey> OvstageSource::collectAncestors(const std::vector<ObjectK
             continue;
         // Dedup by canonical raw handle: two ObjectKeys for one prim need not share a packed
         // handle (ADR-0021), and the ancestor walk below inserts canonical handles.
-        const uint64_t canonical = canonicalPath(key);
+        const uint64_t canonical = canonicalPath(key).raw_id;
         seen.insert(canonical ? canonical : key.handle);
     }
 
@@ -5517,7 +6526,7 @@ std::vector<ObjectKey> OvstageSource::collectAncestors(const std::vector<ObjectK
         ObjectKey cur = getParent(key);
         for (int guard = 0; cur.valid() && guard < 64; ++guard)
         {
-            const uint64_t canonical = canonicalPath(cur);
+            const uint64_t canonical = canonicalPath(cur).raw_id;
             const uint64_t dedupe = canonical ? canonical : cur.handle;
             if (dedupe && seen.insert(dedupe).second)
                 out.push_back(cur);
@@ -5547,12 +6556,16 @@ const std::vector<std::string>& OvstageSource::relationshipPrefetchAttrs()
 {
     static const std::vector<std::string> kRelationshipAttrs = {
         "material:binding:physics",
+        "material:binding:physics:winning-binding-purpose",
+        "material:binding:physics:winning-binding-strength",
         "material:binding",
         "physics:simulationOwner",
     };
     return kRelationshipAttrs;
 }
 
+// @implements REQ-CACHE-INITIAL-001
+// @covers AC-4
 void OvstageSource::prefetchResolvedInstanceBucket(
     const std::vector<ObjectKey>& keys,
     const std::vector<std::string>& attrNames,
@@ -5564,92 +6577,28 @@ void OvstageSource::prefetchResolvedInstanceBucket(
     if (!mLoadCacheActive)
         return;
 
-    struct InstanceRows
-    {
-        uint64_t logical;
-        uint64_t backing;
-    };
-    std::vector<InstanceRows> instanceRows;
     std::vector<ObjectKey> readKeys = keys;
     std::unordered_set<uint64_t> readIdentity;
     for (const ObjectKey key : readKeys)
-        readIdentity.insert(canonicalPath(key));
-    auto addKey = [&](ObjectKey key)
-    {
-        if (key.valid() && readIdentity.insert(canonicalPath(key)).second)
-            readKeys.push_back(key);
-    };
-
-    const bool haveInstancing = !instanceKeys.empty() && !instanceAttrNames.empty() &&
-                               buildPhysicsInstancingCache() && !mPrototypeRootByInstanceRoot.empty();
+        readIdentity.insert(canonicalPath(key).raw_id);
     for (const ObjectKey key : instanceKeys)
-    {
-        addKey(key);
-        if (!haveInstancing)
-            continue;
-        const uint64_t logical = rawHandle(key);
-        const std::string logicalPath = pathOfRaw(logical);
-        std::string ancestor = logicalPath;
-        // Start at the parent: an instance root owns its composed opinions. For a
-        // nested root that is itself a proxy, the enclosing prototype stores those
-        // opinions; its own prototype root is only a container for its children.
-        while (true)
-        {
-            const size_t slash = ancestor.rfind('/');
-            if (slash == std::string::npos || slash == 0)
-                break;
-            ancestor.resize(slash);
-            const auto root = mPrototypeRootByInstanceRoot.find(ancestor);
-            if (root == mPrototypeRootByInstanceRoot.end())
-                continue;
-            const uint64_t backing = findByPathRaw(root->second + logicalPath.substr(ancestor.size()));
-            if (backing && backing != logical)
-            {
-                addKey(internKey(backing));
-                instanceRows.push_back({ logical, backing });
-            }
-            break;
-        }
-    }
+        if (key.valid() && readIdentity.insert(canonicalPath(key).raw_id).second)
+            readKeys.push_back(key);
 
-    std::vector<std::string> extendedAttrs;
-    const std::vector<std::string>* readAttrs = &attrNames;
+    std::vector<std::string> readAttrs = attrNames;
     for (const std::string& attr : instanceAttrNames)
-    {
-        if (std::find(readAttrs->begin(), readAttrs->end(), attr) == readAttrs->end())
-        {
-            if (readAttrs != &extendedAttrs)
-            {
-                extendedAttrs = attrNames;
-                readAttrs = &extendedAttrs;
-            }
-            extendedAttrs.push_back(attr);
-        }
-    }
-    // The only attribute acquisition: logical and deduplicated backing rows x all
-    // requested columns. Every operation below is a load-cache lookup or row alias.
-    prefetchBucket(readKeys, *readAttrs);
-
-    std::vector<TokenId> resolvedAttrs;
-    for (const std::string& attr : instanceAttrNames)
-        resolvedAttrs.push_back(doInternToken(attr));
-    for (const InstanceRows& rows : instanceRows)
-    {
-        const uint32_t logicalIndex = loadCachePrimIndexFor(rows.logical);
-        for (const TokenId attr : resolvedAttrs)
-        {
-            const LoadCacheCell* logical = loadCacheCell(rows.logical, attr.id);
-            const LoadCacheCell* backing = loadCacheCell(rows.backing, attr.id);
-            // Only an authoritative empty logical cell can inherit. A returned
-            // default or blocked-value sentinel is a value, not a fallback request.
-            // Never replace incomplete/unsupported reads with guessed prototype data.
-            if (!logical || !logical->covered || logical->scalar.tensor || logical->relationship ||
-                !backing || !backing->covered || !backing->scalar.tensor)
-                continue;
-            const CachedTensorRow row = backing->scalar;
-            loadCacheCellFor(logicalIndex, loadCacheAttrIndexFor(attr.id)).scalar = row;
-        }
-    }
+        if (std::find(readAttrs.begin(), readAttrs.end(), attr) == readAttrs.end())
+            readAttrs.push_back(attr);
+    // Plain reads never start instancing discovery, so the instance proxies'
+    // resolution needs the cache built here.
+    if (!instanceKeys.empty())
+        buildPhysicsInstancingCache();
+    // Captured rows serve the reads, and proxies resolve against them (see ProxyRead).
+    if (mPhysicsInputs)
+        return;
+    // The only attribute acquisition. prefetchBucket() reads each instance proxy's
+    // prototype row once and points the proxy's cells at it.
+    prefetchBucket(readKeys, readAttrs);
 }
 
 const OvstageSource::PrefetchPlan& OvstageSource::prefetchPlan(const std::vector<std::string>& names,
@@ -5705,6 +6654,151 @@ void OvstageSource::prefetchBucket(const std::vector<ObjectKey>& keys,
                                    bool sealMissing) const
 {
     std::lock_guard<std::recursive_mutex> lock(mMutex);
+    if (mPhysicsInputs)
+    {
+        clearBucket();
+        return;
+    } // captured rows serve scalar/array reads directly
+    // An instance proxy may have no row of its own: read its backing rows (one per
+    // nesting level) in the same request, then let the proxy's cells refer to them.
+    // Aliasing keeps cells already filled, so a value at a nearer level wins.
+    struct ProxyLevel
+    {
+        uint64_t logical, backing;
+        bool deepest;
+    };
+    std::vector<ProxyLevel> proxies;
+    std::vector<ObjectKey> readKeys;
+    // Every instance of a prototype shares its row, and a caller may already request it.
+    std::unordered_set<uint64_t> backings;
+    std::vector<uint64_t> chain;
+    for (const ObjectKey key : keys)
+    {
+        const uint64_t raw = rawHandle(key);
+        backingChainRaw(raw, chain);
+        if (chain.empty())
+            continue;
+        if (readKeys.empty())
+        {
+            readKeys = keys;
+            for (const ObjectKey requested : keys)
+                backings.insert(rawHandle(requested));
+        }
+        for (size_t level = 0; level < chain.size(); ++level)
+        {
+            const uint64_t backing = chain[level];
+            if (backings.insert(backing).second)
+                readKeys.push_back(internKey(backing));
+            proxies.push_back({ raw, backing, level + 1 == chain.size() });
+        }
+    }
+    prefetchBucketRows(proxies.empty() ? keys : readKeys, attrNames, sealMissing);
+    if (proxies.empty())
+        return;
+    // Only the attributes this request read at the proxy path: an empty cell of an
+    // attribute an earlier request read for other keys says nothing about this proxy.
+    std::vector<AliasCell> requestedCells;
+    if (mLoadCacheActive)
+    {
+        PrefetchPlan temporary;
+        for (const PrefetchAttribute& attribute : prefetchPlan(attrNames, temporary).attributes)
+            if (attribute.id.valid() && attribute.id.id < mLoadCacheAttrIndex.size() &&
+                mLoadCacheAttrIndex[attribute.id.id] != kNoLoadCacheIndex)
+                requestedCells.push_back({ mLoadCacheAttrIndex[attribute.id.id], proxyReadFor(attribute.column) });
+    }
+    for (const ProxyLevel& proxy : proxies)
+        aliasBucketRows(proxy.logical, proxy.backing, proxy.deepest, requestedCells);
+}
+
+void OvstageSource::aliasBucketRows(uint64_t logical, uint64_t backing, bool deepest,
+                                    const std::vector<AliasCell>& requestedCells) const
+{
+    std::lock_guard<std::recursive_mutex> lock(mMutex);
+    if (mLoadCacheActive)
+    {
+        if (!loadCachePrim(backing))
+            return;
+        const uint32_t target = loadCachePrimIndexFor(logical);
+        // Copy: indexing the target may have grown the record table.
+        const LoadCachePrim source = *loadCachePrim(backing);
+        LoadCachePrim& record = mLoadCachePrims[target];
+        if (record.cells.size() < source.cells.size())
+            record.cells.resize(source.cells.size());
+        // A value published at the proxy path wins (see ProxyRead); relationship
+        // cells stay the proxy's own, since getRelationshipTargets() remaps the
+        // prototype's targets itself. A prototype-only column is the deepest
+        // backing row's, and an own-row column is never inherited.
+        for (const AliasCell& requested : requestedCells)
+        {
+            const uint32_t i = requested.cell;
+            if (i >= source.cells.size() || requested.policy == ProxyRead::eOwn)
+                continue;
+            LoadCacheCell& cell = record.cells[i];
+            if (requested.policy == ProxyRead::ePrototype)
+            {
+                if (deepest)
+                    cell = source.cells[i];
+                continue;
+            }
+            if (cell.scalar.tensor || cell.relationship)
+                continue;
+            if (source.cells[i].scalar.tensor && !source.cells[i].relationship)
+                cell.scalar = source.cells[i].scalar;
+            cell.covered = cell.covered || source.cells[i].covered;
+        }
+        if (source.local.tensor)
+            record.local = source.local;
+        if (source.reset.tensor)
+            record.reset = source.reset;
+        record.usdPathSerial = std::max(record.usdPathSerial, source.usdPathSerial);
+        return;
+    }
+
+    const auto policyOf = [this](uint32_t id)
+    {
+        return id < mTokenToString.size() ? proxyReadFor(attributeColumn(mTokenToString[id])) : ProxyRead::eOverlay;
+    };
+    auto aliasRows = [&](uint64_t handle)
+    {
+        auto& own = mBucketScalars[handle];
+        // As above: prototype-only columns come from the deepest backing row alone.
+        if (deepest)
+            for (auto it = own.begin(); it != own.end();)
+                it = policyOf(it->first) == ProxyRead::ePrototype ? own.erase(it) : std::next(it);
+        const uint64_t canonicalBacking = canonicalHandleRaw(backing);
+        for (const uint64_t from : { backing, canonicalBacking })
+        {
+            if (!from)
+                continue;
+            const auto scalars = mBucketScalars.find(from);
+            if (scalars != mBucketScalars.end())
+                for (const auto& value : scalars->second)
+                {
+                    const ProxyRead policy = policyOf(value.first);
+                    if (policy == ProxyRead::eOverlay)
+                        own.emplace(value.first, value.second);
+                    else if (policy == ProxyRead::ePrototype && deepest)
+                        own[value.first] = value.second;
+                }
+            const auto local = mBucketLocalTransforms.find(from);
+            if (local != mBucketLocalTransforms.end())
+                mBucketLocalTransforms[handle] = local->second;
+            const auto reset = mBucketResetXformStack.find(from);
+            if (reset != mBucketResetXformStack.end())
+                mBucketResetXformStack[handle] = reset->second;
+        }
+    };
+    aliasRows(logical);
+    const uint64_t canonical = canonicalHandleRaw(logical);
+    if (canonical && canonical != logical)
+        aliasRows(canonical);
+}
+
+void OvstageSource::prefetchBucketRows(const std::vector<ObjectKey>& keys,
+                                       const std::vector<std::string>& attrNames,
+                                       bool sealMissing) const
+{
+    std::lock_guard<std::recursive_mutex> lock(mMutex);
     SourceReadProfile profile("prefetch", keys.size(), attrNames.size(), attrNames.empty() ? "-" : attrNames.front().c_str());
     clearBucket();
     if (!mInstance || !mDict || keys.empty() || attrNames.empty())
@@ -5731,7 +6825,7 @@ void OvstageSource::prefetchBucket(const std::vector<ObjectKey>& keys,
         const uint64_t raw = rawHandle(k);
         if (!raw)
             continue;
-        paths.push_back(raw);
+        paths.push_back(ovx_primpath_t{raw});
         mBucketKeys.insert(raw);
         const uint64_t ch = canonicalHandleRaw(raw);
         if (ch)
@@ -5947,7 +7041,7 @@ void OvstageSource::prefetchBucket(const std::vector<ObjectKey>& keys,
         }
         // One multi-attribute read over the whole prim set (the columnar bulk read).
         ovstage_ordinal_range_t range{};
-        range.end_ordinal = ~ovstage_ordinal_t(0); // latest (see withAttributeTensor)
+        range.end_ordinal = OVSTAGE_ORDINAL_MAX; // latest (see withAttributeTensor)
         range.has_start_ordinal = false;
 
         ovstage_read_handle_t rh = OVSTAGE_INVALID_READ_HANDLE;
@@ -5960,12 +7054,13 @@ void OvstageSource::prefetchBucket(const std::vector<ObjectKey>& keys,
             const bool readOk = waitAndRelease(mInstance, re);
 
             ReadListMemo listMemo(mDict);
-            ovstage_read_group_t g{};
+            ReadColumnCursor cursor(mInstance, rh);
+            ReadGroupColumn g{};
             ovstage_api_status_t fetchStatus;
             auto fetch = [&]()
             {
                 profile.stage(1);
-                const auto result = ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g);
+                const auto result = cursor.next(g);
                 profile.stage(2);
                 return result;
             };
@@ -5981,24 +7076,19 @@ void OvstageSource::prefetchBucket(const std::vector<ObjectKey>& keys,
                         for (uint32_t i = 0; i < g.prims.count; ++i)
                         {
                             const uint32_t idx = g.prims.index_map ? g.prims.index_map[i] : (g.prims.offset + i);
-                            if (idx >= rowCount || !rows[idx])
+                            if (idx >= rowCount || rows[idx] == OVX_INVALID_PRIMPATH)
                                 continue;
-                            mLoadCachePrims[loadCachePrimIndexFor(rows[idx])].usdPathSerial = mPrefetchSerial;
+                            mLoadCachePrims[loadCachePrimIndexFor(rows[idx].raw_id)].usdPathSerial = mPrefetchSerial;
                         }
                 }
                 AttrMeta* meta = findMeta(g.attribute);
                 if (!meta)
-                {
-                    ovstage_release_group(mInstance, &g);
                     continue;
-                }
                 meta->returned = true;
 
-                bool groupOwnedByLoadCache = false;
                 if (g.is_delete)
                 {
                     meta->cacheable = true;
-                    ovstage_release_group(mInstance, &g);
                     continue;
                 }
 
@@ -6024,7 +7114,6 @@ void OvstageSource::prefetchBucket(const std::vector<ObjectKey>& keys,
                             mBucketTransformsComplete = false;
                         else
                             mBucketScalarsComplete = false;
-                        ovstage_release_group(mInstance, &g);
                         continue;
                     }
 
@@ -6066,7 +7155,6 @@ void OvstageSource::prefetchBucket(const std::vector<ObjectKey>& keys,
                                 mBucketTransformsComplete = false;
                             else
                                 mBucketScalarsComplete = false;
-                            ovstage_release_group(mInstance, &g);
                             continue;
                         }
                         const int64_t comps = total / storedRows;
@@ -6075,16 +7163,11 @@ void OvstageSource::prefetchBucket(const std::vector<ObjectKey>& keys,
                         {
                             meta->unsupported = true;
                             mBucketTransformsComplete = false;
-                            ovstage_release_group(mInstance, &g);
                             continue;
                         }
                         const DLTensor* cacheTensor = &t;
                         if (mLoadCacheActive)
-                        {
-                            mLoadCacheGroups->groups.push_back(g);
-                            groupOwnedByLoadCache = true;
-                            cacheTensor = &mLoadCacheGroups->groups.back().data.tensors[0];
-                        }
+                            cursor.keep(mLoadCacheGroups->groups);
                         for (uint32_t i = 0; i < rows; ++i)
                         {
                             const uint32_t idx = g.prims.index_map ? g.prims.index_map[i] : (g.prims.offset + i);
@@ -6100,7 +7183,7 @@ void OvstageSource::prefetchBucket(const std::vector<ObjectKey>& keys,
                                     mBucketScalarsComplete = false;
                                 continue;
                             }
-                            const uint64_t raw = gpaths[idx];
+                            const uint64_t raw = gpaths[idx].raw_id;
                             if (!raw)
                                 continue;
                             // Under a window the record resolves the alias once per prim; the
@@ -6206,7 +7289,6 @@ void OvstageSource::prefetchBucket(const std::vector<ObjectKey>& keys,
                     {
                         meta->unsupported = true;
                         mBucketScalarsComplete = false;
-                        ovstage_release_group(mInstance, &g);
                         continue;
                     }
 
@@ -6224,29 +7306,25 @@ void OvstageSource::prefetchBucket(const std::vector<ObjectKey>& keys,
                     {
                         meta->unsupported = true;
                         mBucketScalarsComplete = false;
-                        ovstage_release_group(mInstance, &g);
                         continue;
                     }
 
                     meta->cacheable = true;
                     if (mLoadCacheActive)
-                    {
-                        mLoadCacheGroups->groups.push_back(g);
-                        groupOwnedByLoadCache = true;
-                    }
+                        cursor.keep(mLoadCacheGroups->groups);
                     for (uint32_t row = 0; mLoadCacheActive && row < g.prims.count; ++row)
                     {
                         const uint32_t idx = g.prims.index_map ? g.prims.index_map[row] : (g.prims.offset + row);
                         if (idx >= gcount)
                             continue;
                         uint32_t tensorIndex = g.data.index_map ? g.data.index_map[row] : row;
-                        if (tensorIndex >= mLoadCacheGroups->groups.back().data.tensor_count)
+                        if (tensorIndex >= g.data.tensor_count)
                             continue;
-                        const uint64_t raw = gpaths[idx];
+                        const uint64_t raw = gpaths[idx].raw_id;
                         if (!raw)
                             continue;
                         storeLoadRelationshipRef(loadCachePrimIndexFor(raw), meta->attrIndex,
-                                                 &mLoadCacheGroups->groups.back().data.tensors[tensorIndex]);
+                                                 &g.data.tensors[tensorIndex]);
                     }
                     if (!mLoadCacheActive)
                         mBucketScalarsComplete = false;
@@ -6268,8 +7346,6 @@ void OvstageSource::prefetchBucket(const std::vector<ObjectKey>& keys,
                     // per-prim read for every prim in the bucket.
                     meta->cacheable = true;
                 }
-                if (!groupOwnedByLoadCache)
-                    ovstage_release_group(mInstance, &g);
             }
             profile.stage(3);
             profile.fallbackColumns = std::count_if(metas.begin(), metas.end(),
@@ -6319,7 +7395,7 @@ void OvstageSource::prefetchBucket(const std::vector<ObjectKey>& keys,
 }
 
 void OvstageSource::seedBucketFromReadGroup(TokenId attr,
-                                            const ovstage_read_group_t& group,
+                                            const ReadGroupColumn& group,
                                             const ObjectKey* keys,
                                             size_t keyCount,
                                             bool append,
@@ -6364,7 +7440,7 @@ void OvstageSource::seedBucketFromReadGroup(TokenId attr,
         const uint32_t idx = group.prims.index_map ? group.prims.index_map[i] : (group.prims.offset + i);
         if (idx >= gcount)
             continue;
-        const uint64_t raw = gpaths[idx];
+        const uint64_t raw = gpaths[idx].raw_id;
         if (!raw)
             continue;
         mBucketKeys.insert(raw);
@@ -6509,7 +7585,7 @@ bool OvstageSource::isAttributeTimeSampled(ObjectKey /*key*/, TokenId /*attr*/) 
 bool OvstageSource::hasSchema(ObjectKey keyIn, TokenId schemaToken) const
 {
     std::lock_guard<std::recursive_mutex> lock(mMutex);
-    const uint64_t key = rawHandle(keyIn);
+    const uint64_t key = readHandleRaw(rawHandle(keyIn));
     if (!key || !schemaToken.valid())
         return false;
 
@@ -6524,6 +7600,27 @@ bool OvstageSource::hasSchema(ObjectKey keyIn, TokenId schemaToken) const
         const uint64_t canonical = canonicalHandleRaw(key);
         return canonical && members.count(canonical) != 0;
     };
+
+    // A single-prim scope answers from this prim's own row unless the stage-wide answer
+    // is already at hand: the query below scans every prim's schemas. A name matches
+    // exactly; an unqualified one also matches its multi-apply instances ("Base:instance"),
+    // as the two base-name paths below do.
+    if (mSinglePrimSchemaScopes.load(std::memory_order_relaxed) && !mSchemaVocabularyComplete &&
+        !mSchemaMembershipCache.count(schemaToken.id))
+    {
+        const bool qualified = schemaName.find(':') != std::string_view::npos;
+        bool found = false;
+        const auto match = [&](std::string_view name) {
+            if (name == schemaName || (!qualified && name.size() > schemaName.size() && name[schemaName.size()] == ':' &&
+                                       name.compare(0, schemaName.size(), schemaName) == 0))
+                found = true;
+        };
+        readPrimSchemaRow(key, match);
+        const uint64_t canonical = found ? 0 : canonicalHandleRaw(key);
+        if (canonical && canonical != key)
+            readPrimSchemaRow(canonical, match);
+        return found;
+    }
 
     // Primary path: one targeted, memoized `usd-schemas CONTAINS <name>` query per schema;
     // exact for concrete schemas and fully-qualified "Base:instance" names.
@@ -6544,20 +7641,25 @@ bool OvstageSource::hasSchema(ObjectKey keyIn, TokenId schemaToken) const
         const auto mayExist = mSchemaMayExistCache.find(schemaToken.id);
         if (mayExist == mSchemaMayExistCache.end() || !mayExist->second)
         {
+            const std::string prefix = std::string(schemaName) + ":";
+            bool found = false;
+            const auto match = [&](std::string_view name) {
+                if (name.size() > prefix.size() && name.compare(0, prefix.size(), prefix) == 0)
+                    found = true;
+            };
+            // A single-prim scope reads this prim's own row instead of the whole stage.
+            if (mSinglePrimSchemaScopes.load(std::memory_order_relaxed))
+            {
+                readPrimSchemaRow(key, match);
+                return found;
+            }
             if (ensureSchemaVocabulary())
             {
                 const auto it = mBaseInstanceMembership.find(schemaToken.id);
                 return it != mBaseInstanceMembership.end() && memberContains(it->second);
             }
             // Vocabulary unreadable: one single-prim schema read.
-            const std::string prefix = std::string(schemaName) + ":";
-            bool found = false;
-            readPrimSchemaNames(key,
-                                [&](std::string_view name)
-                                {
-                                    if (name.size() > prefix.size() && name.compare(0, prefix.size(), prefix) == 0)
-                                        found = true;
-                                });
+            readPrimSchemaNames(key, match);
             return found;
         }
     }
@@ -6591,11 +7693,12 @@ TokenId OvstageSource::getTypeName(ObjectKey key) const
     return primType;
 }
 
-bool OvstageSource::isA(ObjectKey key, TokenId typeToken) const
+bool OvstageSource::isA(ObjectKey keyIn, TokenId typeToken) const
 {
     std::lock_guard<std::recursive_mutex> lock(mMutex);
-    if (!key.valid() || !typeToken.valid())
+    if (!keyIn.valid() || !typeToken.valid())
         return false;
+    const ObjectKey key = internKey(readHandleRaw(rawHandle(keyIn)));
     const std::string path = pathOfRaw(rawHandle(key));
     const std::string_view typeName = tokenToString(typeToken);
     if (path.empty() || typeName.empty() || !mInstance)
@@ -6621,12 +7724,12 @@ bool OvstageSource::isA(ObjectKey key, TokenId typeToken) const
         const ovx_string_t typeVal{ primType.data(), primType.size() };
 
         ovstage_predicate_t preds[2]{};
-        preds[0].attribute.token = 0;
+        preds[0].attribute.token = ovx_token_t{0};
         preds[0].attribute.string = ovx_string_t{ conv::kUsdPath, std::string_view(conv::kUsdPath).size() };
         preds[0].op = OVSTAGE_FILTER_OP_IN;
         preds[0].values = &pathVal;
         preds[0].value_count = 1;
-        preds[1].attribute.token = 0;
+        preds[1].attribute.token = ovx_token_t{0};
         preds[1].attribute.string = ovx_string_t{ conv::kUsdPrimType, std::string_view(conv::kUsdPrimType).size() };
         preds[1].op = OVSTAGE_FILTER_OP_IN;
         preds[1].values = &typeVal;
@@ -6729,6 +7832,7 @@ bool OvstageSource::isA(ObjectKey key, TokenId typeToken) const
 // read. Only the cold callers (forEachAppliedSchema / forEachMultiApplyInstance) need this.
 void OvstageSource::readPrimSchemaNames(uint64_t raw, const std::function<void(std::string_view)>& fn) const
 {
+    raw = readHandleRaw(raw);
     if (!raw || !mDict || !fn)
         return;
     const uint64_t canonical = canonicalHandleRaw(raw);
@@ -6745,6 +7849,17 @@ void OvstageSource::readPrimSchemaNames(uint64_t raw, const std::function<void(s
         }
         return;
     }
+    // A complete whole-stage schema read also proves the empty lists. It is
+    // invalidated/patched by the same structural feed as the populated entries.
+    if (mSchemaCacheComplete)
+        return;
+    readPrimSchemaRow(raw, fn);
+}
+
+void OvstageSource::readPrimSchemaRow(uint64_t raw, const std::function<void(std::string_view)>& fn) const
+{
+    if (!raw || !mDict || !fn)
+        return;
     withAttributeTensor(raw, conv::kUsdSchemas,
                         [&](const DLTensor& t, uint32_t /*primCount*/)
                         {
@@ -6760,7 +7875,7 @@ void OvstageSource::readPrimSchemaNames(uint64_t raw, const std::function<void(s
                                 if (value == 0)
                                     continue;
                                 ovx_string_t s{};
-                                if (ovx_path_dictionary_token_to_string(mDict, static_cast<ovx_token_t>(value), &s) ==
+                                if (ovx_path_dictionary_token_to_string(mDict, ovx_token_t{value}, &s) ==
                                         OVX_OK &&
                                     s.ptr && s.length > 0)
                                     fn(std::string_view(s.ptr, s.length));
@@ -6844,9 +7959,46 @@ void OvstageSource::getRelationshipTargets(ObjectKey key, TokenId rel, std::vect
     if (!key.valid() || !rel.valid())
         return;
 
-    const std::string relName(tokenToString(rel));
-    if (relName.empty())
+    // An instance proxy carries its prototype's relationships unless targets are
+    // published at the proxy path (see ProxyRead). As for a USD instance proxy, a
+    // target inside the prototype names the same prim in this instance.
+    const InstanceProxy* proxy = mOwnRowReads == 0 ? instanceProxyRaw(rawHandle(key), /*build=*/false) : nullptr;
+    if (proxy)
+    {
+        const std::string instanceRootPath = proxy->instanceRootPath;
+        const std::string prototypeRootPath = proxy->prototypeRootPath;
+        const ObjectKey backing = internKey(proxy->backing);
+        bool published = false;
+        bool complete = true;
+        {
+            OwnRowScope own(*this);
+            // An empty relationship published at the proxy path clears the prototype's.
+            published = readRelationshipTargets(key, std::string(tokenToString(rel)), out, &complete);
+        }
+        // Only an established absence falls back; a failed read is not one.
+        if (!published && complete)
+            getRelationshipTargets(backing, rel, out);
+        for (ObjectKey& target : out)
+        {
+            const std::string path = pathOfRaw(rawHandle(target));
+            if (path.compare(0, prototypeRootPath.size(), prototypeRootPath) == 0 &&
+                (path.size() == prototypeRootPath.size() || path[prototypeRootPath.size()] == '/'))
+                target = findByPath(instanceRootPath + path.substr(prototypeRootPath.size()));
+        }
         return;
+    }
+
+    readRelationshipTargets(key, std::string(tokenToString(rel)), out);
+}
+
+bool OvstageSource::readRelationshipTargets(ObjectKey key, const std::string& relName, std::vector<ObjectKey>& out,
+                                           bool* complete) const
+{
+    if (complete)
+        *complete = true;
+    if (relName.empty())
+        return false;
+    const TokenId rel = doInternToken(relName);
 
     if (mLoadCacheActive)
     {
@@ -6861,7 +8013,7 @@ void OvstageSource::getRelationshipTargets(ObjectKey key, TokenId rel, std::vect
             out.reserve(out.size() + static_cast<size_t>(count));
             for (int64_t i = 0; i < count; ++i)
             {
-                if (ids[i] != OVX_INVALID_PRIMPATH)
+                if (ids[i] != OVX_INVALID_PRIMPATH.raw_id)
                     out.push_back(internKey(ids[i]));
             }
         };
@@ -6915,34 +8067,40 @@ void OvstageSource::getRelationshipTargets(ObjectKey key, TokenId rel, std::vect
             if (result == LoadRelationshipLookup::eUnknown && canonical && canonical != raw)
                 result = tryHandle(canonical, preserved);
             if (result == LoadRelationshipLookup::eValue)
-                return;
+                return true;
             // Unknown/stale coverage must consult the live row before taking an
             // ordinary cached value. The callback also recognizes an empty row.
             if ((result == LoadRelationshipLookup::eUnknown || mLoadCacheMayBeStale != 0) &&
-                stageHasAttributeColumn(conv::kUsdPrototypes) != std::optional<bool>(false) &&
-                withAttributeTensor(raw, conv::kUsdPrototypes, [&](const DLTensor& t, uint32_t)
+                stageHasAttributeColumn(conv::kUsdPrototypes) != std::optional<bool>(false))
+            {
+                bool preservedComplete = false;
+                const bool found = withAttributeTensor(raw, conv::kUsdPrototypes, [&](const DLTensor& t, uint32_t)
                 {
                     const int64_t count = totalElements(t);
                     if (count > 0)
                         appendIds(reinterpret_cast<const uint64_t*>(static_cast<const uint8_t*>(t.data) + t.byte_offset), count);
-                }))
-                return;
+                }, &preservedComplete);
+                if (complete)
+                    *complete = preservedComplete;
+                if (found || !preservedComplete)
+                    return found;
+            }
         }
         if (raw)
         {
             const LoadRelationshipLookup result = tryHandle(raw, rel);
             if (result == LoadRelationshipLookup::eValue)
-                return;
+                return true;
             if (result == LoadRelationshipLookup::eCoveredMiss && mLoadCacheMayBeStale == 0)
-                return;
+                return false;
         }
         if (out.empty() && canonical && canonical != raw)
         {
             const LoadRelationshipLookup result = tryHandle(canonical, rel);
             if (result == LoadRelationshipLookup::eValue)
-                return;
+                return true;
             if (result == LoadRelationshipLookup::eCoveredMiss && mLoadCacheMayBeStale == 0)
-                return;
+                return false;
         }
     }
 
@@ -6950,13 +8108,14 @@ void OvstageSource::getRelationshipTargets(ObjectKey key, TokenId rel, std::vect
     // live read below could only come back empty, so spare the round trip.
     if (stageHasAttributeColumn(attributeColumn(relName)) == std::optional<bool>(false) &&
         (relName != "prototypes" || stageHasAttributeColumn(conv::kUsdPrototypes) == std::optional<bool>(false)))
-        return;
+        return false;
 
     // ovpopulation writes each relationship as a ragged uint64 column of
     // ovx_primpath_t target ids (one row per authoring prim), named by the
     // relationship (ovpopulation_physics.inl pass 3). Read this prim's row.
     relationshipReadCounter().fetch_add(1, std::memory_order_relaxed);
-    withAttributeTensor(rawHandle(key), relName,
+    bool readComplete = false;
+    const bool found = withAttributeTensor(rawHandle(key), relName,
                         [&](const DLTensor& t, uint32_t /*primCount*/)
                         {
                             if (!t.data || t.dtype.code != kDLUInt || t.dtype.bits != 64)
@@ -6966,12 +8125,21 @@ void OvstageSource::getRelationshipTargets(ObjectKey key, TokenId rel, std::vect
                             const uint64_t* ids = reinterpret_cast<const uint64_t*>(base);
                             out.reserve(static_cast<size_t>(n));
                             for (int64_t i = 0; i < n; ++i)
-                                if (ids[i] != OVX_INVALID_PRIMPATH)
+                                if (ids[i] != OVX_INVALID_PRIMPATH.raw_id)
                                     out.push_back(internKey(ids[i]));
-                        });
+                        }, &readComplete);
+    if (complete)
+        *complete = readComplete;
+    // A failed read is not an absent endpoint. During scanning, propagate it to
+    // the backend's failure guard so attach rolls back instead of dropping joints.
+    if (mLoadCacheActive && !readComplete)
+        throw std::runtime_error("OVStage relationship read failed for '" + relName + "' on '" +
+                                 std::string(sourceKeyToString(key)) + "' at read ordinal " +
+                                 std::to_string(mReadOrdinal) + "; seal the selected data before scanning");
     // No backing-USD fallback -- paired with the same removal in hasRelationship above
     // (ADR-0017/ADR-0020 campaign). A relationship ovpopulation does not publish yields no
     // targets, rather than being answered from a stage a USD-free consumer does not have.
+    return found;
 }
 
 void OvstageSource::getInactiveInstanceIds(ObjectKey key, std::vector<int64_t>& out) const
@@ -7066,6 +8234,54 @@ void OvstageSource::getLocalToWorldTransform(ObjectKey key, Matrix4d& outMatrix)
     outMatrix = Matrix4d{}; // identity default
     if (!key.valid())
         return;
+
+    // An instance proxy's prototype row holds its world relative to the prototype
+    // root, which the instance root stands in for.
+    if (const InstanceProxy* proxy = instanceProxyRaw(rawHandle(key), /*build=*/false))
+    {
+        const ObjectKey backing = internKey(proxy->backing);
+        const ObjectKey instanceRoot = internKey(proxy->instanceRoot);
+        // A prim between this one and the instance root that resets the transform
+        // stack places it independently of the instance, as in USD. Those prims are
+        // the prototype's, from the backing row up to the prototype root.
+        PrototypeLocalChain chain;
+        const uint64_t backingRaw = proxy->backing;
+        const auto memo = mLoadCacheActive ? mLoadCachePrototypeChains.find(backingRaw)
+                                           : mLoadCachePrototypeChains.end();
+        if (memo != mLoadCachePrototypeChains.end())
+            chain = memo->second;
+        else
+        {
+            const std::string prototypeRootPath = proxy->prototypeRootPath;
+            // A failed read gives this call its best answer but is never memoized.
+            bool chainComplete = true;
+            for (ObjectKey cur = backing; cur.valid() && pathOfRaw(rawHandle(cur)) != prototypeRootPath;
+                 cur = getParent(cur))
+            {
+                Matrix4d local;
+                bool complete = true;
+                getLocalTransformImpl(cur, ReadTime::defaultTime(), /*usdAtEarliestTime=*/true, local, chain.resets,
+                                      &complete);
+                chainComplete = chainComplete && complete;
+                chain.composed = multiplyMatrix(chain.composed, local);
+                if (chain.resets)
+                    break;
+            }
+            if (mLoadCacheActive && chainComplete)
+                mLoadCachePrototypeChains.emplace(backingRaw, chain);
+        }
+        if (chain.resets)
+        {
+            outMatrix = chain.composed;
+            return;
+        }
+        Matrix4d prototypeWorld;
+        Matrix4d instanceWorld;
+        getLocalToWorldTransform(backing, prototypeWorld);
+        getLocalToWorldTransform(instanceRoot, instanceWorld);
+        outMatrix = multiplyMatrix(prototypeWorld, instanceWorld);
+        return;
+    }
 
     const TokenId worldTransformAttr = doInternToken(conv::kFabricWorldMatrix);
     bool worldTransformMissCoveredByLoadCache = false;
@@ -7236,12 +8452,15 @@ void OvstageSource::getLocalTransform(ObjectKey key, ReadTime time, Matrix4d& ou
 }
 
 void OvstageSource::getLocalTransformImpl(ObjectKey keyIn, ReadTime /*time*/, bool /*usdAtEarliestTime*/,
-                                          Matrix4d& outMatrix, bool& outResetsXformStack) const
+                                          Matrix4d& outMatrix, bool& outResetsXformStack, bool* complete) const
 {
     std::lock_guard<std::recursive_mutex> lock(mMutex);
     outMatrix = Matrix4d{};
     outResetsXformStack = false;
-    const uint64_t key = rawHandle(keyIn);
+    if (complete)
+        *complete = true;
+    // A prototype prim's local transform is the proxy's, relative to the same parent.
+    const uint64_t key = readHandleRaw(rawHandle(keyIn));
     if (!key)
         return;
 
@@ -7402,18 +8621,19 @@ void OvstageSource::getLocalTransformImpl(ObjectKey keyIn, ReadTime /*time*/, bo
     }
 
     bool gotLocal = false;
+    bool readComplete = true;
     withAttributeTensor(key, conv::kFabricLocalMatrix,
                         [&](const DLTensor& t, uint32_t primCount)
                         {
                             gotLocal = decodeMatrixAt(t, componentsPerPrim(t, primCount), 0, outMatrix.data);
-                        });
-    if (!gotLocal)
+                        }, &readComplete);
+    if (!gotLocal && readComplete)
     {
         withAttributeTensor(key, conv::kLocalTransform,
                         [&](const DLTensor& t, uint32_t primCount)
                         {
                             gotLocal = decodeMatrixAt(t, componentsPerPrim(t, primCount), 0, outMatrix.data);
-                        });
+                        }, &readComplete);
     }
     if (!gotLocal)
     {
@@ -7509,8 +8729,12 @@ void OvstageSource::getLocalTransformImpl(ObjectKey keyIn, ReadTime /*time*/, bo
     }
 
     AttrValue reset;
+    bool resetComplete = true;
     withAttributeTensor(key, conv::kResetXformStack,
-                        [&](const DLTensor& t, uint32_t primCount) { reset = decodeScalar(t, primCount); });
+                        [&](const DLTensor& t, uint32_t primCount) { reset = decodeScalar(t, primCount); },
+                        &resetComplete);
+    if (complete)
+        *complete = readComplete && resetComplete;
     if (reset.kind == AttrValue::Kind::eBool)
         outResetsXformStack = reset.b;
     else if (reset.kind == AttrValue::Kind::eInt)
@@ -7648,6 +8872,12 @@ BufferHandle OvstageSource::getArrayAttribute(ObjectKey key, TokenId attr, ReadT
         return readArrayBuffer(key, name, BufferElemType::eVec3, 3, time);
     if (name == "physics:localRot0s" || name == "physics:localRot1s")
         return readArrayBuffer(key, name, BufferElemType::eQuath, 4, time);
+
+    // Fixed-tendon axis coefficients (PhysxTendonAxisAPI, multi-apply): float[], one entry per joint DOF. The runtime
+    // tendon updaters read a changed one here; unmapped, every runtime gearing or force coefficient change on an
+    // ovstage attach is silently dropped (the attach itself parses them elsewhere).
+    if (name.substr(0, 12) == "physxTendon:" && (endsWith(name, ":gearing") || endsWith(name, ":forceCoefficient")))
+        return readArrayBuffer(key, name, BufferElemType::eFloat, 1, time);
 
     return {};
 }
@@ -7887,7 +9117,7 @@ void OvstageSource::loadUnits()
                                 if (v.kind != AttrValue::Kind::eInt)
                                     return;
                                 ovx_string_t s{};
-                                if (ovx_path_dictionary_token_to_string(mDict, static_cast<ovx_token_t>(v.i), &s) ==
+                                if (ovx_path_dictionary_token_to_string(mDict, ovx_token_t{static_cast<uint64_t>(v.i)}, &s) ==
                                         OVX_OK &&
                                     s.ptr)
                                 {
@@ -7975,42 +9205,52 @@ ObjectKey OvstageSource::getMaterialBinding(ObjectKey primKey) const
         return !out.empty();
     };
 
-    // Inherited binding. USD resolves a material binding up the ancestor chain
-    // (UsdShadeMaterialBindingAPI::ComputeBoundMaterial, which UsdSource calls),
-    // so a binding authored on a parent Xform applies to its descendants — the
-    // usual shape for an instanced subtree, where the binding sits on the
-    // instance root and the collider is a descendant.
-    //
-    // Testing the prim first and ancestors afterwards yields
-    // weakerThanDescendants precedence, which is the USD default; the
-    // strongerThanDescendants inversion is not modelled (nor are collection-based
-    // bindings — direct binding is the physics norm).
-    auto chainBindingFor = [&](const char* relName, std::vector<ObjectKey>& out) -> ObjectKey
+    // Outside a native instance, population has already resolved purpose and
+    // ancestor strength for this prim. Its winner is authoritative even when it
+    // came from an all-purpose binding; instance-root strength metadata is not
+    // published for ordinary colliders.
+    std::vector<ObjectKey> resolvedTargets;
+    if (bindingFor(primKey, "material:binding:physics", resolvedTargets) &&
+        !isResolvedInstanceProxy(primKey))
+        return resolvedTargets.front();
+
+    // Population resolves physics bindings in prototype space. The winning purpose
+    // distinguishes a real physics binding from its all-purpose fallback; instance
+    // root provenance lets us combine that result with the logical ancestor chain.
+    const TokenId purposeAttr = internToken("material:binding:physics:winning-binding-purpose");
+    const TokenId strengthAttr = internToken("material:binding:physics:winning-binding-strength");
+    const TokenId allPurpose = internToken("allPurpose");
+    const TokenId stronger = internToken("strongerThanDescendants");
+    auto chainBindingFor = [&](bool physicsPurpose, std::vector<ObjectKey>& out) -> ObjectKey
     {
-        if (bindingFor(primKey, relName, out))
-            return out.front();
-        if (!primKey.valid())
-            return {};
-        // Walk ancestor paths via plain string slicing on the last '/' -- prim
-        // names cannot contain '/', so this is exact, not an approximation.
-        // Mirrors SdfPath::GetParentPath's walk exactly, including that it stops
-        // one level short of the absolute root ("/") -- the pseudo-root prim is
-        // never itself tested for a binding.
-        std::string path = pathOfRaw(rawHandle(primKey));
-        while (!path.empty())
+        ObjectKey winner{};
+        ObjectKey key = primKey;
+        std::string path = pathOfRaw(rawHandle(key));
+        while (key.valid() && path != "/")
         {
+            ObjectKey candidate{};
+            if (bindingFor(key, "material:binding:physics", out))
+            {
+                TokenId purpose{};
+                const bool fallback = getAttribute(key, purposeAttr, purpose) && purpose == allPurpose;
+                if (physicsPurpose != fallback)
+                    candidate = out.front();
+            }
+            if (!physicsPurpose && !candidate.valid() && bindingFor(key, "material:binding", out))
+                candidate = out.front();
+            if (candidate.valid())
+            {
+                TokenId strength{};
+                if (!winner.valid() || (getAttribute(key, strengthAttr, strength) && strength == stronger))
+                    winner = candidate;
+            }
             const size_t slash = path.rfind('/');
-            if (slash == std::string::npos)
+            if (slash == std::string::npos || slash == 0)
                 break;
-            const std::string parent = (slash == 0) ? "/" : path.substr(0, slash);
-            if (parent == "/")
-                break;
-            const ObjectKey parentKey = findByPath(parent);
-            if (bindingFor(parentKey, relName, out))
-                return out.front();
-            path = parent;
+            path.resize(slash);
+            key = findByPath(path);
         }
-        return {};
+        return winner;
     };
 
     std::vector<ObjectKey> targets;
@@ -8030,21 +9270,32 @@ ObjectKey OvstageSource::getMaterialBinding(ObjectKey primKey) const
     // instead inverted that and handed the collider the all-purpose material.
     if (anyBindingColumn)
     {
-        const ObjectKey physicsBinding = chainBindingFor("material:binding:physics", targets);
+        const ObjectKey physicsBinding = chainBindingFor(true, targets);
         if (physicsBinding.valid())
             return physicsBinding;
+    }
 
-        // The prim's own all-purpose binding, then the instance-proxy material
-        // (which stands in for the instanced prim's own binding and carries no
-        // purpose), then the all-purpose binding inherited from an ancestor.
-        if (bindingFor(primKey, "material:binding", targets))
-            return targets.front();
+    // RENDERING's resolved instance-proxy material column is not consulted for a
+    // proxy this source resolves: its prototype's binding and the ancestor chain
+    // above combine the published purpose and strength without rendering rows.
+    const bool resolvedProxy = primKey.valid() && instanceProxyRaw(rawHandle(primKey), /*build=*/false);
+
+    // A producer-resolved all-purpose value precedes its raw authored binding.
+    // Keep the legacy instance column between own and inherited all-purpose
+    // bindings on ordinary, manually published rows.
+    if (!resolvedProxy && anyBindingColumn)
+    {
+        TokenId purpose{};
+        const bool resolvedFallback = getAttribute(primKey, purposeAttr, purpose) && purpose == allPurpose &&
+                                      bindingFor(primKey, "material:binding:physics", targets);
+        if (resolvedFallback || bindingFor(primKey, "material:binding", targets))
+            return chainBindingFor(false, targets);
     }
 
     // The merged read also covers the instance-proxy material. Accept only the
     // scalar path representation understood by the full instance-material cache;
     // incomplete or unsupported cells retain that cache's live fallback.
-    if (localBindingRead && primKey.valid())
+    if (localBindingRead && primKey.valid() && !resolvedProxy)
     {
         const TokenId instanceAttr = doInternToken("_instanceMaterialBinding");
         const LoadCacheCell* cell = loadCacheCell(rawHandle(primKey), instanceAttr.id);
@@ -8055,11 +9306,11 @@ ObjectKey OvstageSource::getMaterialBinding(ObjectKey primKey) const
             getRelationshipTargets(primKey, instanceAttr, targets);
             if (!targets.empty())
                 return targets.front();
-            return anyBindingColumn ? chainBindingFor("material:binding", targets) : ObjectKey{};
+            return anyBindingColumn ? chainBindingFor(false, targets) : ObjectKey{};
         }
     }
 
-    if (primKey.valid() && buildInstanceMaterialCache())
+    if (primKey.valid() && !resolvedProxy && buildInstanceMaterialCache())
     {
         const uint64_t primKeyRaw = rawHandle(primKey);
         std::unordered_map<uint64_t, uint64_t>::const_iterator binding =
@@ -8070,17 +9321,27 @@ ObjectKey OvstageSource::getMaterialBinding(ObjectKey primKey) const
             binding = mInstanceMaterialByPrim.find(canonical);
         }
         if (binding != mInstanceMaterialByPrim.end())
+        {
+            // The instance-material cache reads the live stage. Under a snapshot that
+            // binding is not among the captured inputs, so the result cannot be stored.
+            if (mPhysicsInputs)
+                mPhysicsInputs->observeLiveRead("_instanceMaterialBinding");
             return internKey(binding->second);
+        }
     }
 
-    return anyBindingColumn ? chainBindingFor("material:binding", targets) : ObjectKey{};
+    return anyBindingColumn ? chainBindingFor(false, targets) : ObjectKey{};
 }
 
 std::unique_ptr<IChangeFeed> OvstageSource::createChangeFeed()
 {
+    return createChangeFeed(false);
+}
+std::unique_ptr<IChangeFeed> OvstageSource::createChangeFeed(bool deferBaseline)
+{
     if (!mInstance || !mDict)
         return nullptr;
-    return std::make_unique<OvstageChangeFeed>(*this, mInstance, mDict);
+    return std::make_unique<OvstageChangeFeed>(*this, mInstance, mDict, deferBaseline);
 }
 
 } // namespace omni::physics::ovstage

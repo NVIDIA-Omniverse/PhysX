@@ -72,7 +72,7 @@ def capture_body_output(physics, *, source_revision, step, simulation_time, mete
             not math.isfinite(simulation_time) or simulation_time < 0 or
             not math.isfinite(meters_per_unit) or meters_per_unit <= 0):
         raise ValueError('Declare a completed step, time and positive length scale')
-    stage = getattr(physics, '_attached_ovstage', None)
+    stage = physics._resolve_attached_stage()
     if stage is None:
         raise ValueError('A live ovstage attachment is required')
     attributes = {'position': 3, 'orientation': 4, 'linearVelocity': 3}
@@ -132,7 +132,7 @@ def capture_deformable_output(physics, *, kind, step, simulation_time, pattern=N
         raise ValueError('kind must be volume or surface')
     if isinstance(step, bool) or not isinstance(step, int) or step < 0 or not math.isfinite(simulation_time) or simulation_time < 0:
         raise ValueError('Supply a nonnegative completed step and finite simulation time')
-    stage = getattr(physics, '_attached_ovstage', None)
+    stage = physics._resolve_attached_stage()
     if stage is None:
         raise ValueError('A live ovstage attachment is required')
     data = {}

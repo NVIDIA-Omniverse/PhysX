@@ -23,7 +23,12 @@
 #include <omni/physics/parse/PreparedShape.h>
 #include <omni/physics/parse/KnownTokens.h>
 
+#include <common/foundation/MatrixTools.h>
+
+#include <carb/logging/Log.h>
+
 #include <algorithm>
+#include <string>
 
 namespace omni::physics::parse
 {
@@ -214,7 +219,7 @@ MeshApproximation parseMeshApproximation(ParseContext& ctx, ObjectKey key)
     //   - When PhysicsMeshCollisionAPI is not applied, default to "none".
     //   - When applied, read `physics:approximation` (schema fallback is
     //     also "none"), then map to the enum.
-    if (!src.hasSchema(key, tok.usdPhysicsMeshCollisionAPI))
+    if (!src.hasSchema(key, tok.physicsMeshCollisionAPI))
         return MeshApproximation::eNone;
 
     TokenId approx;
@@ -238,6 +243,149 @@ MeshApproximation parseMeshApproximation(ParseContext& ctx, ObjectKey key)
 MeshGeometry parseMeshGeometry(ParseContext& ctx, ObjectKey key)
 {
     return ctx.source().getMeshAttributes(key);
+}
+
+namespace
+{
+
+// A member's topology has to be self-consistent before its faces are reversed and
+// its indices offset: every face has at least three vertices, the face counts sum to
+// the index count, every index addresses one of its points and every hole one of its
+// faces. USD does not enforce any of this on authoring, and the triangulator only
+// advances its cursor for faces of three or more vertices.
+bool mergedMemberTopologyIsConsistent(BufferSpan<carb::Float3> points, BufferSpan<int32_t> indices,
+                                      BufferSpan<int32_t> faceCounts, BufferSpan<int32_t> holes)
+{
+    size_t indexTotal = 0;
+    for (size_t face = 0; face < faceCounts.count; ++face)
+    {
+        if (faceCounts[face] < 3)
+            return false;
+        indexTotal += size_t(faceCounts[face]);
+    }
+    if (indexTotal != indices.count)
+        return false;
+    for (size_t i = 0; i < indices.count; ++i)
+        if (indices[i] < 0 || size_t(indices[i]) >= points.count)
+            return false;
+    for (size_t i = 0; i < holes.count; ++i)
+        if (holes[i] < 0 || size_t(holes[i]) >= faceCounts.count)
+            return false;
+    return true;
+}
+
+// Releases the buffers a getMeshAttributes read registered on the source once the
+// member has been copied or rejected, so a rescan on a long-lived source does not
+// accumulate them.
+struct MeshGeometryRelease
+{
+    const IPhysicsSource& src;
+    const MeshGeometry& geometry;
+    ~MeshGeometryRelease()
+    {
+        for (const BufferHandle handle : { geometry.points, geometry.indices, geometry.faceCounts, geometry.holes, geometry.faceMaterials })
+            if (handle.valid())
+                src.releaseBuffer(handle);
+    }
+};
+
+} // namespace
+
+size_t buildMergedMesh(ParseContext& ctx, ObjectKey colliderKey, MergeMeshDesc& out)
+{
+    out.points.clear();
+    out.indices.clear();
+    out.faces.clear();
+    out.holes.clear();
+    const IPhysicsSource& src = ctx.source();
+
+    std::vector<ObjectKey> members;
+    src.resolveCollection(colliderKey, src.internToken("collisionmeshes"), members);
+    // IPhysicsSource::resolveCollection promises no order: the USD source returns the
+    // sorted path set, the ovstage source the include targets in authored order expanded
+    // depth first. The merged layout must not depend on which source built it.
+    std::sort(members.begin(), members.end(), [&src](ObjectKey a, ObjectKey b)
+    { return src.sourceKeyToString(a) < src.sourceKeyToString(b); });
+
+    const TokenId orientationToken = src.internToken("orientation");
+    const TokenId leftHandedToken = src.internToken("leftHanded");
+    Matrix4d colliderWorld;
+    src.getLocalToWorldTransform(colliderKey, colliderWorld);
+    // Gf's `member * inverse(collider)` reads `inverse(collider) * member` in PhysX operand order.
+    const ::physx::PxMat44d colliderInverse = omni::physx::affineInverse(::physx::PxMat44d(colliderWorld.data));
+
+    size_t merged = 0;
+    for (const ObjectKey member : members)
+    {
+        // Face materials are not merged; do not have the source derive them.
+        const MeshGeometry geometry = src.getMeshAttributes(member, /*includeFaceMaterials=*/false);
+        const MeshGeometryRelease release{ src, geometry };
+        const BufferSpan<carb::Float3> points = ctx.getBuffer<carb::Float3>(geometry.points);
+        const BufferSpan<int32_t> indices = ctx.getBuffer<int32_t>(geometry.indices);
+        const BufferSpan<int32_t> faceCounts = ctx.getBuffer<int32_t>(geometry.faceCounts);
+        const BufferSpan<int32_t> holes = ctx.getBuffer<int32_t>(geometry.holes);
+        if (points.empty() || indices.empty() || faceCounts.empty())
+            continue; // not a mesh, or a mesh whose geometry the source did not populate
+        if (!mergedMemberTopologyIsConsistent(points, indices, faceCounts, holes))
+        {
+            const std::string memberPath(src.sourceKeyToString(member));
+            CARB_LOG_WARN("PhysxMeshMergeCollisionAPI: skipping collisionmeshes member %s, its face counts, "
+                          "indices, points and holes are inconsistent", memberPath.c_str());
+            continue;
+        }
+        TokenId orientation;
+        const bool leftHanded = src.getAttribute(member, orientationToken, orientation) && orientation == leftHandedToken;
+
+        Matrix4d memberWorld;
+        src.getLocalToWorldTransform(member, memberWorld);
+        const ::physx::PxMat44d relative = colliderInverse * ::physx::PxMat44d(memberWorld.data);
+        // A reflecting member transform is baked into the points, where PhysX's negative
+        // meshScale handling cannot see it, so it reverses the winding like a left-handed
+        // authoring does.
+        const ::physx::PxVec3d basis0 = relative.column0.getXYZ();
+        const ::physx::PxVec3d basis1 = relative.column1.getXYZ();
+        const ::physx::PxVec3d basis2 = relative.column2.getXYZ();
+        const bool reflects = basis0.dot(basis1.cross(basis2)) < 0.0;
+        const bool reverse = leftHanded != reflects;
+
+        // No per-member reserve: an exact-size reserve would reallocate on every member
+        // and copy everything merged so far, so the vectors grow geometrically instead.
+        const size_t pointsOffset = out.points.size();
+        const size_t indicesOffset = out.indices.size();
+        const size_t facesOffset = out.faces.size();
+        for (size_t i = 0; i < points.count; ++i)
+        {
+            const ::physx::PxVec3d p = relative.transform(::physx::PxVec3d(points[i].x, points[i].y, points[i].z));
+            out.points.push_back({ float(p.x), float(p.y), float(p.z) });
+        }
+        out.faces.insert(out.faces.end(), faceCounts.data, faceCounts.data + faceCounts.count);
+        const int32_t base = int32_t(pointsOffset);
+        for (size_t i = 0; i < indices.count; ++i)
+            out.indices.push_back(indices[i] + base);
+        if (reverse)
+        {
+            // Keep each face's first vertex and reverse the rest: the triangulator fans
+            // from the first vertex, so this flips the winding without moving the fan
+            // anchor, which is exactly what cooking a left-handed mesh on its own does.
+            auto faceBegin = out.indices.begin() + ptrdiff_t(indicesOffset);
+            for (size_t face = 0; face < faceCounts.count; ++face)
+            {
+                const ptrdiff_t count = ptrdiff_t(faceCounts[face]);
+                std::reverse(faceBegin + 1, faceBegin + count);
+                faceBegin += count;
+            }
+        }
+        for (size_t i = 0; i < holes.count; ++i)
+            out.holes.push_back(holes[i] + int32_t(facesOffset));
+        ++merged;
+    }
+    if (merged == 0)
+    {
+        const std::string colliderPath(src.sourceKeyToString(colliderKey));
+        CARB_LOG_WARN("PhysxMeshMergeCollisionAPI on %s: no collisionmeshes member supplied mesh geometry, "
+                      "the collider emits no shape", colliderPath.c_str());
+    }
+    return merged;
 }
 
 void scaleShapeDescByInstance(PhysxShapeDesc& desc, carb::Float3 instanceScale)

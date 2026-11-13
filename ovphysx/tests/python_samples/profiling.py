@@ -34,12 +34,13 @@ import tempfile
 from pathlib import Path
 
 import ovphysx
-from ovphysx import GlobalConfigKey, PhysX, ProfilerBackend, get_global_config, newton_schema_root, set_global_config
 from ovphysx.samples.python_samples.schema_support import physx_schema_paths
+from ovphysx import GlobalConfigKey, PhysX, ProfilerBackend, get_global_config, newton_schema_root, set_global_config
 
 
 def attach_scene(physx, usd_path, stage_name):
     import ovstage
+    from ovphysx.population import physics_population_descs
 
     if not ovstage.population.available():
         raise RuntimeError("ovstage population bridge is unavailable")
@@ -51,7 +52,7 @@ def attach_scene(physx, usd_path, stage_name):
     stage = ovstage.Stage(stage_name)
     ordinal = 1
     try:
-        ovstage.population.open_usd(stage, str(usd_path), ordinal=ordinal, domains=ovstage.PopulationDomain.ALL)
+        ovstage.population.open_usd_with_desc(stage, str(usd_path), ordinal=ordinal, time=ovstage.population.DEFAULT_TIME, descs=physics_population_descs(rendering=True))
         stage.advance_write_floor(ordinal=ordinal).wait()
         physx.wait_task(physx.attach_ovstage(stage, read_ordinal=ordinal))
         return stage
@@ -118,8 +119,8 @@ finally:
     if stage is not None:
         physx.wait_task(physx.detach_ovstage())
         stage.destroy()
-    # The trace is written here, not earlier: the profiler shuts down when the last
-    # instance goes away, and that is what flushes the file.
+    # The profiler finalizes the trace when the last instance goes away.
+    # A file visible before then may still contain incomplete JSON.
     physx.destroy()
     print("Cleanup complete")
 

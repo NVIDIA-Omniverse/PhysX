@@ -19,14 +19,16 @@ else()
     message(STATUS "GPU tests DISABLED (compile-time)")
 endif()
 
-# Fetch GoogleTest automatically if not available
+# Fetch the pinned source archive: CI runners may reject GitHub git-clone requests.
+# Verify its contents before extracting and use fresh timestamps for rebuilds.
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
 include(FetchContent)
 FetchContent_Declare(
     googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG v1.14.0
-    GIT_SHALLOW TRUE
-    GIT_SUBMODULES ""
+    URL https://codeload.github.com/google/googletest/tar.gz/refs/tags/v1.14.0
+    URL_HASH SHA256=8ad598c73ad796e0d8280b082cebd82a630d73e73cd3c70057938a6501bba5d7
 )
 # Configure GoogleTest options before making it available
 set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)  # Don't install GoogleTest
@@ -303,6 +305,33 @@ if(NOT WIN32)
     )
 endif()
 
+# Isolated per-instance executor tests. They compile the executor source on its
+# own, with Carbonite headers but no Carbonite library (a test thread pool stands in
+# for carb::tasking::IThreadPool), PhysX or stage, so lane and queue bugs surface
+# directly.
+add_executable(instance_executor_unittests
+    ${PROJECT_SOURCE_DIR}/tests/internal_unittests/test_instance_executor.cpp
+    ${PROJECT_SOURCE_DIR}/src/ovphysx/InstanceExecutor.cpp
+)
+target_link_libraries(instance_executor_unittests
+    PRIVATE
+        gtest_main
+)
+target_include_directories(instance_executor_unittests
+    PRIVATE
+        ${PROJECT_SOURCE_DIR}/src/include
+        ${CARB_SDK_INCLUDE_DIR}
+)
+ovphysx_apply_compiler_defaults(instance_executor_unittests)
+set_target_properties(instance_executor_unittests PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+)
+if(NOT WIN32)
+    find_package(Threads REQUIRED)
+    target_link_libraries(instance_executor_unittests PRIVATE Threads::Threads)
+endif()
+
 # ============================================================================
 # C API Compatibility Test
 # ============================================================================
@@ -322,6 +351,10 @@ if(NOT WIN32)
         test_legacy_header_include_primary_then_legacy.c
         test_geometry_query_header_include_only.c
         test_geometry_query_after_primary.c
+        test_physics_population_desc_header_only.c
+        test_physics_population_desc_after_primary.c
+        test_utils_header_include_only.c
+        test_utils_after_primary.c
     )
 
     # The C standard (not C++) is what makes this test meaningful.

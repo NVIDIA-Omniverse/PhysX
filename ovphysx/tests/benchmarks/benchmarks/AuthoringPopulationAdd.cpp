@@ -306,7 +306,7 @@ protected:
             }
 
             // Author the new prim(s) as one population reference.
-            ovstage_population_usd_reference_handle_t reference = 0;
+            ovstage_population_usd_reference_handle_t reference = OVSTAGE_POPULATION_INVALID_USD_REFERENCE_HANDLE;
             const ovstage_population_enqueue_result_t add = ovstage_population_add_usd_reference_from_string(
                 stage, authoringbm::stringView(usda), authoringbm::stringView(target), &reference);
             if (add.status != OVSTAGE_OK)

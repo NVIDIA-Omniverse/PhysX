@@ -10,6 +10,7 @@
 
 #include <ovphysx/ovphysx.h>
 #include <ovphysx/ovphysx_attributes.h>
+#include <ovphysx/ovphysx_config.h>
 #include <ovphysx/ovphysx_types.h>
 #include <ovx/path_dictionary/path_dictionary.h>
 #include "ovstage_sample.h"
@@ -124,7 +125,7 @@ static int wait_ovstage(ovstage_instance_t* stage, ovstage_enqueue_result_t op)
         fprintf(stderr, "ovstage enqueue failed: %s\n", ovstage_get_error_string(stage, op.status));
         return 0;
     }
-    if (op.op_index == OVSTAGE_INVALID_OP_ID)
+    if (op.op_index.raw_id == 0)
         return 1;
 
     ovstage_op_wait_result_t wait_result;
@@ -145,9 +146,9 @@ static int wait_ovstage(ovstage_instance_t* stage, ovstage_enqueue_result_t op)
     return ovstage_release_op(stage, op.op_index) == OVSTAGE_OK && ok;
 }
 
-static ovx_string_or_token_t attribute_name(const char* name)
+static ovx_token_or_string_t attribute_name(const char* name)
 {
-    ovx_string_or_token_t result;
+    ovx_token_or_string_t result;
     memset(&result, 0, sizeof(result));
     result.string.ptr = name;
     result.string.length = strnlen(name, 256);
@@ -213,7 +214,7 @@ static int create_path_query(
         dictionary->vtable->create_path_list_from_strings(
             dictionary->context, &path_string, 1, &path_query->path_list);
     if (created.status != OVX_API_SUCCESS ||
-        path_query->path_list == OVX_INVALID_PRIMPATH_LIST)
+        !ovx_primpath_list_is_valid(path_query->path_list))
     {
         if (created.error.ptr)
             dictionary->vtable->release_error(dictionary->context, created.error);
@@ -222,7 +223,7 @@ static int create_path_query(
 
     const ovstage_api_status_t queried =
         ovstage_query_from_path_list(stage, path_query->path_list, &path_query->query);
-    return queried == OVSTAGE_OK && path_query->query != OVSTAGE_INVALID_QUERY_HANDLE;
+    return queried == OVSTAGE_OK && path_query->query.raw_id != 0;
 }
 
 static int destroy_path_query(
@@ -230,12 +231,12 @@ static int destroy_path_query(
     path_query_t* path_query)
 {
     int ok = 1;
-    if (path_query->query != OVSTAGE_INVALID_QUERY_HANDLE)
+    if (path_query->query.raw_id != 0)
     {
         ok = wait_ovstage(stage, ovstage_release_query(stage, path_query->query));
         path_query->query = OVSTAGE_INVALID_QUERY_HANDLE;
     }
-    if (path_query->path_list != OVX_INVALID_PRIMPATH_LIST)
+    if (ovx_primpath_list_is_valid(path_query->path_list))
     {
         path_dictionary_instance_t* dictionary = ovstage_get_path_dictionary(stage);
         if (!dictionary)
@@ -284,20 +285,26 @@ static int read_x(
             ovphysx_sample_complete_task(
                 handle, ovphysx_query_selection(handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, &selection, &query, NULL)),
             "open rider query"))
+    {
+        if (query)
+            ovphysx_sample_complete_task(handle, ovphysx_release_query(handle, query));
         return 0;
+    }
 
-    ovx_string_or_token_t position;
+    ovx_token_or_string_t position;
     memset(&position, 0, sizeof(position));
     position.string.ptr = OVPHYSX_ATTR_POSITION;
     position.string.length = strlen(OVPHYSX_ATTR_POSITION);
     ovphysx_read_handle_t read = 0;
     const ovstage_read_group_t* group = NULL;
     int ok = check_result(
-        ovphysx_sample_complete_task(handle, ovphysx_read(handle, query, &position, 1, &read, NULL)), "read rider pose");
+        ovphysx_sample_complete_task(handle, ovphysx_read(handle, query, &position, 1, (ovstage_cuda_sync_t){0, 0}, &read, NULL)), "read rider pose");
     if (ok)
         ok = check_result(
             ovphysx_sample_complete_task(handle, ovphysx_fetch_read_next(handle, read, &group)), "fetch rider pose");
-    if (ok && (!group || group->prims.count != 1 || group->data.tensor_count != 1 || !group->data.tensors[0].data))
+    // A physics output group carries one attribute column, columns[0].
+    if (ok && (!group || group->prims.count != 1 || group->columns[0].data.tensor_count != 1 ||
+               !group->columns[0].data.tensors[0].data))
     {
         fprintf(stderr, "Expected one rigid body at %s\n", path);
         ok = 0;
@@ -305,7 +312,7 @@ static int read_x(
     if (ok)
     {
         // The sample runs in CPU mode, so the position column is host memory.
-        const DLTensor* tensor = &group->data.tensors[0];
+        const DLTensor* tensor = &group->columns[0].data.tensors[0];
         *x = ((const float*)((const char*)tensor->data + tensor->byte_offset))[0];
     }
 
@@ -338,9 +345,13 @@ int main(void)
     object_change_counter_init(&object_changes.created);
     object_change_counter_init(&object_changes.destroyed);
 
-    ovphysx_set_cpu_mode(true);
     if (!check_result(ovphysx_initialize(), "initialize"))
         return exit_code;
+    if (!check_result(
+            ovphysx_set_global_config(
+                OVPHYSX_GLOBAL_CONFIG_CPU_ONLY, ovphysx_config_value_bool(true)),
+            "set CPU-only mode"))
+        goto cleanup;
 
     if (!check_result(ovphysx_create_instance(&handle), "create instance"))
         goto cleanup;

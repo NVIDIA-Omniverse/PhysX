@@ -5,8 +5,12 @@
  * @implements REQ-READ-COVERAGE-001
  * @covers AC-4c, AC-4d
  *
- * The read's own device view over a scene's point sets -- a deformable body's simulation mesh
- * or a particle set. Serves both AC-4c (deformables) and AC-4d (particles).
+ * @implements REQ-READ-SKIN-001
+ * @covers AC-2
+ *
+ * The read's own device view over a scene's point sets: a deformable body's simulation mesh,
+ * a particle set, or a deformable's skinned render mesh. Serves AC-4c (deformables), AC-4d
+ * (particles) and REQ-READ-SKIN-001 AC-2 (skin meshes, a PxVec3 source).
  *
  * The LAYOUT contract lives here: columnFloats() and setOffsetFloats() define the compact addressing
  * a caller allocates and indexes against. Device residency and the single fused pass are behaviour,
@@ -15,6 +19,7 @@
 #pragma once
 
 #include "tensors/PointSetReframe.h"
+#include "tensors/gpu/OvStageDeviceArgs.h"
 
 #include <foundation/PxVec4.h>
 #include <cstdint>
@@ -32,26 +37,36 @@ namespace physx
 namespace tensors
 {
 
-// What one POINT SET contributes to a read -- a deformable body's simulation mesh, or a particle set.
-// The caller resolves the two device buffers because every kind names them differently
-// (getSimPositionInvMassBufferD on a volume deformable, getPositionInvMassBufferD on a surface one,
-// PxParticleBuffer::getPositionInvMasses on a particle set); that indifference is what lets one view
-// serve both object types.
+// How a view's source buffers are laid out. One layout covers the whole view, since every set a view
+// covers comes from the same kind of buffer.
+enum class PointSetSourceLayout : uint32_t
+{
+    eVec4, // PhysX sim-mesh and particle buffers: xyz plus inverse mass, which the gather drops
+    eVec3, // the runtime's skinned-vertex buffer of a deformable skin mesh: packed xyz, positions only
+};
+
+// What one POINT SET contributes to a read: a deformable body's simulation mesh, a particle set, or one
+// skin mesh of a deformable. The caller resolves the device buffers because every kind names them
+// differently, from getSimPositionInvMassBufferD to a slice of InternalDeformableBody::mAllSkinnedVerticesD,
+// and that indifference lets one view serve all of them. The view's PointSetSourceLayout types the
+// pointers. `velocities` may be null where the source has none, as for a skin mesh, and that column then
+// gathers nothing for the set.
 //
 // Kept out of CommonTypes.h beside the other *Entry structs: every entry there carries a
 // PXR_NS::SdfPath, and this header's whole value is not needing pxr.
 struct PointSetReadEntry
 {
-    const ::physx::PxVec4* positions = nullptr;
-    const ::physx::PxVec4* velocities = nullptr;
+    const void* positions = nullptr;
+    const void* velocities = nullptr;
     ::physx::PxU32 numPoints = 0;
 };
 
 // The ovstage output read's own device view over a scene's point sets.
 //
-// Named for the SHAPE rather than the object type, because two types have it: a deformable body's
-// simulation mesh and a particle set are both "N prims, each a ragged run of PxVec4, one column
-// reframed per prim and one not".
+// Named for the SHAPE rather than the object type, because three types have it: a deformable body's
+// simulation mesh, a particle set and a deformable's skin mesh are all "N prims, each a ragged run of
+// points, one column reframed per prim and one not". The first two read PxVec4 buffers, and the skin
+// mesh reads the PxVec3 buffer the runtime's skinning writes.
 //
 // NOT GpuVolumeDeformableBodyView: that view is the tensor binding's, and constructing one sets
 // PxDeformableVolumeFlag::ePARTIALLY_KINEMATIC on every body it covers -- a solver behaviour change a
@@ -59,10 +74,10 @@ struct PointSetReadEntry
 // positions that a read never looks at.
 //
 // So this holds only what is read-shaped: per point set a pair of device source pointers, a point
-// count, and where that set's values start in the destination column. It owns no engine data --
-// `src` points straight into PhysX's own buffers.
+// count, and where that set's values start in the destination column. It owns no engine data, and
+// `src` points straight into PhysX's buffers or the runtime's skinned-vertex buffer.
 //
-// Unlike the instancer view it is NOT a child of GpuSimulationView: the sources are PhysX buffers that
+// Unlike the instancer view it is NOT a child of GpuSimulationView: the sources are engine buffers that
 // outlive any view and the device scratch is its own, so a rebuilt simulation view cannot dangle it
 // and the read's cache has one invalidation condition (the object-lifetime epoch) rather than two.
 class GpuPointSetReadView
@@ -70,15 +85,18 @@ class GpuPointSetReadView
 public:
     enum class Column
     {
-        ePoints,     // reframed on the device: sim-mesh-local for a deformable, prim-local for particles
+        ePoints,     // reframed on the device: sim-mesh-local for a deformable, prim-local for particles,
+                     // skin-mesh-local for a skin mesh
         eVelocities, // world frame, no reframe -- matching what the host path published
     };
 
-    GpuPointSetReadView(::physx::PxCudaContextManager* ctxMgr, const std::vector<PointSetReadEntry>& entries);
+    GpuPointSetReadView(::physx::PxCudaContextManager* ctxMgr,
+                        const std::vector<PointSetReadEntry>& entries,
+                        PointSetSourceLayout layout);
     ~GpuPointSetReadView();
 
-    // This view owns three cudaMalloc'd pointers and frees them in its destructor, so a copy would
-    // double-free.
+    // This view owns two cudaMalloc'd pointers and its reads' events, and frees them in its destructor, so a copy
+    // would double-free.
     GpuPointSetReadView(const GpuPointSetReadView&) = delete;
     GpuPointSetReadView& operator=(const GpuPointSetReadView&) = delete;
 
@@ -123,31 +141,19 @@ public:
         return mPointCounts[i];
     }
 
-    // The per-prim reframe matrices for the next points read: world-to-sim-mesh for a deformable,
-    // world-to-prim-local for a particle set. Resolved by the caller every read and never cached here:
-    // moving the prim changes this while creating and retiring nothing, so the object-lifetime epoch
-    // that guards everything else cannot see it.
-    //
-    // Synchronous, and now only the FALLBACK: the read normally uploads these through
-    // setReframeMatricesAsync from pinned staging, and reaches this form only when a pinned buffer
-    // cannot be acquired -- trading the host block for an upload that is still guaranteed to land.
-    bool setReframeMatrices(const PointSetTransform* transforms, ::physx::PxU32 count);
-
-    // Same upload, issued ASYNCHRONOUSLY on the null stream from a PINNED source -- the read's normal
-    // path. The sync form above blocks the host for the ~32 KB copy; this one enqueues it and lets the
-    // read's release-time completion wait order it, like every other device copy on the read path. Two
-    // caller obligations make it safe: `pinnedTransforms` must be pinned host memory (a pageable source
-    // makes cudaMemcpyAsync synchronous again, buying nothing), and it must stay alive until the copy
-    // executes -- the read session owns it and frees it only past the same completion event. Device-side
-    // ordering is unchanged from the sync form: the copy and the gather that reads mTransformsDev are
-    // both on the null stream, so the copy still precedes the gather. Returns the ENQUEUE result.
-    bool setReframeMatricesAsync(const PointSetTransform* pinnedTransforms, ::physx::PxU32 count);
-
-    // Fill `dstDev` -- one device column, columnFloats() long -- in a single launch.
-    bool getColumnOvStage(Column column, void* dstDev) const;
+    // Fill `dstDev` -- one device column, columnFloats() long -- in a single launch on `args.stream` (ADR-0055),
+    // reframing points through the getCount() transforms at `transformsDev`: world-to-sim-mesh for a deformable,
+    // world-to-prim-local for a particle set. The read resolves them every time and holds them in its own
+    // buffer, since moving the prim changes them while creating and retiring nothing. Outside a capture the view
+    // then records that the stream reads its records, which its destruction waits for.
+    bool readColumnOvStage(Column column,
+                           void* dstDev,
+                           const PointSetTransform* transformsDev,
+                           const OvStageDeviceReadArgs& args) const;
 
 private:
     ::physx::PxCudaContextManager* mCtxMgr = nullptr;
+    PointSetSourceLayout mLayout = PointSetSourceLayout::eVec4;
     bool mUsable = false;
 
     ::physx::PxU32 mNumSets = 0;
@@ -162,10 +168,12 @@ private:
     void* mPointRecordsDev = nullptr;
     void* mVelocityRecordsDev = nullptr;
 
-    // Rewritten by every points read, so NOT safe for two concurrent reads of the same scene. It holds
-    // only because the read API serialises on g_mutex and both the upload and the gather run on the
-    // null stream; moving either to a non-default stream makes this per-read scratch, not view state.
-    PointSetTransform* mTransformsDev = nullptr;
+
+    // One event per stream-ordered read still possibly running, recorded after its launch on a stream nothing
+    // else orders before this view frees its records; reads on several streams can overlap. Completed ones are
+    // kept for reuse.
+    mutable std::vector<uintptr_t> mStreamReads;
+    mutable std::vector<uintptr_t> mIdleStreamReads;
 };
 
 } // namespace tensors

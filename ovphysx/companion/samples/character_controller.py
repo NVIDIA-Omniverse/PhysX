@@ -15,6 +15,7 @@ from pathlib import Path
 def run():
     import ovphysx
     import ovstage
+    from ovphysx.population import physics_population_descs
     from ovphysx_companion.preview import PreviewSession
     from ovphysx_companion.cct import CharacterController, Collision
     from ovphysx_companion.schemas import physx_schema_paths
@@ -24,9 +25,8 @@ def run():
     stage = ovstage.Stage('character-controller-sample')
     collisions = 0
     try:
-        ovstage.population.open_usd(stage, str(Path(__file__).with_name('scenes')/'character.usda'),
-                                    ordinal=1, domains=ovstage.PopulationDomain.PHYSICS |
-                                    ovstage.PopulationDomain.RENDERING)
+        ovstage.population.open_usd_with_desc(stage, str(Path(__file__).with_name('scenes')/'character.usda'),
+                                    ordinal=1, time=ovstage.population.DEFAULT_TIME, descs=physics_population_descs(rendering=True))
         stage.advance_write_floor(ordinal=1).wait()
         with PreviewSession(physics, stage, read_ordinal=1) as preview:
             with CharacterController(preview, '/World/Character') as controller:

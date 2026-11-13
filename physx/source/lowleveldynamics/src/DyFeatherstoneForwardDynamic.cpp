@@ -1346,8 +1346,8 @@ namespace Dy
 	void FeatherstoneArticulation::updateArticulation(ArticulationData& data, const PxVec3& gravity, const PxReal invLengthScale, const bool externalForcesEveryTgsIterationEnabled)
 	{
 		data.mIsExternalForcesEveryTgsIterationEnabled = externalForcesEveryTgsIterationEnabled;
-		if(externalForcesEveryTgsIterationEnabled && !data.mTgsExternalForces)
-			data.mTgsExternalForces = PX_ALLOCATE(Cm::SpatialVectorF, data.getLinkCount(), "mTgsExternalForces");
+
+		PX_ASSERT((!externalForcesEveryTgsIterationEnabled) || data.mTgsExternalForces);
 
 		//Copy the link poses into a handy array.
 		//Update the link separation vectors with the latest link poses.
@@ -1366,7 +1366,7 @@ namespace Dy
 			Cm::UnAlignedSpatialVector* jointDofMotionMatricesW = data.getWorldMotionMatrix();
 
 			computeRelativeTransformC2P(
-				links, linkCount, jointCoreDatas, jointDofMotionMatrices,jointPositions,
+				links, linkCount, jointCoreDatas, jointDofMotionMatrices, jointPositions,
 				linkAccumulatedPosesW, linkRsW, jointDofMotionMatricesW);
 		}
 

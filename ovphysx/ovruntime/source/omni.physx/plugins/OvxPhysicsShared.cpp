@@ -14,6 +14,9 @@
  * @implements REQ-READ-SLEEP-001
  * @covers AC-3
  *
+ * @implements REQ-READ-CORE-001
+ * @covers AC-11
+ *
  * Moved out of OvxPhysicsRead.cpp unchanged when the write API needed the same enumeration; see the
  * header for why the two directions share one walk rather than each keeping its own.
  */
@@ -109,6 +112,8 @@ bool ensureJointRecords(ArticulationReadCacheEntry& jc,
         jc.slices.clear();
         jc.sliceKeys.clear();
         jc.sliceHandles.clear();
+        jc.dofKeys.clear();
+        jc.dofHandles.clear();
         for (const JointRec& jr : joints)
         {
             const uint32_t artiRow = localToRow[jr.viewArtiIdx];
@@ -145,6 +150,10 @@ bool ensureJointRecords(ArticulationReadCacheEntry& jc,
                 r.angScale = toDegrees ? degFactor : 1.0f;
                 r.invAngScale = toDegrees ? radFactor : 1.0f;
                 r.sign = sign;
+                // Cached once here (per topology change), not per drain: a wrapped revolute joint's drive
+                // position target must be wrapped into [-360, 360] before the tensor scatter reaches PhysX.
+                r.isWrappedRevolute =
+                    jr.pxJoint && jr.pxJoint->getJointType() == ::physx::PxArticulationJointType::eREVOLUTE;
                 jc.recs.push_back(r);
             }
             const uint32_t count = static_cast<uint32_t>(jc.recs.size()) - start;
@@ -170,6 +179,8 @@ bool ensureJointRecords(ArticulationReadCacheEntry& jc,
             jc.sliceKeys.push_back(sl.key);
         omni::physics::ovstage::canonicalisePathHandles(source, jc.sliceKeys.data(), jc.sliceKeys.size(),
                                                         jc.sliceHandles, nullptr);
+        jc.dofKeys = jointRowsPerDof(slices, jc.sliceKeys);
+        jc.dofHandles = jointRowsPerDof(slices, jc.sliceHandles);
         // Last, deliberately: generation is what claims the entry, so a build that bailed part-way
         // -- including the empty-record early-out above -- leaves it retired rather than partial.
         jc.generation = viewGeneration;
@@ -559,7 +570,6 @@ const RigidSceneBucket* bucketForScene(const RigidRecordScan& scan, const PxScen
             return &b;
     return nullptr;
 }
-
 
 std::vector<ScenePair> allPhysicsScenesWithInternal(AttachedStage& owner)
 {

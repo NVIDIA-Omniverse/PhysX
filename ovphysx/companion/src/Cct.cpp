@@ -4,7 +4,7 @@
 // @implements REQ-COMP-CCT-001
 // @covers AC-1 AC-2 AC-3 AC-4
 // @implements REQ-CAPI-COMPANION-001
-// @covers AC-1
+// @covers AC-1 AC-3
 #include "ovphysx_companion/cct.h"
 #include "internal/sdk/CompanionRuntime.hpp"
 #include <omni/physx/NativeCct.h>
@@ -19,6 +19,8 @@ ovphysx_companion_status_t execute(uint64_t attachment, const char* path,
         return OVPHYSX_COMPANION_INVALID_ARGUMENT;
     CompanionOperationGuard guard(companionRuntime());
     if (!guard) return OVPHYSX_COMPANION_BUSY;
+    CompanionOwnerLane owner;
+    if (!owner.tryAcquireForAttachment(attachment)) return OVPHYSX_COMPANION_BUSY;
     using namespace omni::physx::native;
     CctCommand command;
     command.action = CctAction(input->action);

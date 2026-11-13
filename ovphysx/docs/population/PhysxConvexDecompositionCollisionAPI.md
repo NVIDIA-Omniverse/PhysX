@@ -5,11 +5,11 @@
 
 # PhysxConvexDecompositionCollisionAPI
 
-Convex decomposition cooking parameters for a Mesh collider with physics:approximation convexDecomposition. Cooking inputs only; nothing here is verified. Two schema fallbacks differ from the consumer's absent-column seeds.
+Convex decomposition cooking parameters for a [Mesh](glossary.md#mesh) collider with physics:approximation convexDecomposition. Cooking inputs only; nothing here is verified. Two schema fallbacks differ from the consumer's absent-column seeds.
 
-- **Applies to:** `Gprim`
+- **Applies to:** [`Gprim`](glossary.md#gprim)
 - **Requires on the same prim:** [`PhysicsCollisionAPI`](PhysicsCollisionAPI.md)
-- **No `usd-schemas` gate:** the consumer reads these columns whenever they exist on the prim, applied or not. Listing the API is still what the producer does and what the builders write.
+- **No [`usd-schemas`](prim.md#columns) gate:** the consumer reads these columns whenever they exist on the [prim](glossary.md#prim), applied or not. Listing the API is still what the producer does and what the builders write.
 
 ## What USD population writes
 
@@ -17,25 +17,25 @@ Every declared attribute of an applied collision API is published at its resolve
 
 ## Columns
 
-*Raw fallback* is the USD schema value. *Producer writes* is what ovstage population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
+*Raw fallback* is the [USD](glossary.md#usd) schema value. *Producer writes* is what [ovstage](glossary.md#ovstage) population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
 
 | Column | Type | Units | Raw fallback | Producer writes | Parser default | If absent |
 |---|---|---|---|---|---|---|
-| `physxConvexDecompositionCollision:minThickness` | float32 | length | 0.001 | resolved USD value (authored, else raw fallback) | 0.001 | 0.001 (defaultCookedMinThickness) from the ConvexDecompositionCookingParams constructor. |
-| `physxConvexDecompositionCollision:maxConvexHulls` | int32 | none | 32 | resolved USD value (authored, else raw fallback) | 16 **diverges** | 16 (defaultCookedMaxHullCount). The USD schema fallback is 32 and the producer publishes it, so a hand-populated stage that omits the column decomposes into at most half as many hulls as USD population. |
-| `physxConvexDecompositionCollision:hullVertexLimit` | int32 | none | 64 | resolved USD value (authored, else raw fallback) | 64 | 64 (defaultCookedMaxHullVertices), unless the free attribute newton:maxHullVertices is present with a value > 0, which then supplies the limit. |
-| `physxConvexDecompositionCollision:voxelResolution` | int32 | none | 500000 | resolved USD value (authored, else raw fallback) | 100000 **diverges** | 100000 (defaultCookedVoxelResolution). The USD schema fallback is 500000 and the producer publishes it, so a hand-populated stage that omits the column voxelises five times coarser than USD population. |
-| `physxConvexDecompositionCollision:errorPercentage` | float32 | none | 10.0 | resolved USD value (authored, else raw fallback) | 10.0 | 10.0 (defaultCookedErrorPercentage). |
+| `physxConvexDecompositionCollision:minThickness` | float32 | length | 0.001 | resolved USD value (authored, else raw fallback) | 0.001 | 0.001, the convex decomposition cooking default. |
+| `physxConvexDecompositionCollision:maxConvexHulls` | int32 | none | 32 | resolved USD value (authored, else raw fallback) | 16 **diverges** | 16, the cooking default. The USD schema fallback is 32 and the producer publishes it, so a hand-populated stage that omits the column decomposes into at most half as many hulls as USD population. |
+| `physxConvexDecompositionCollision:hullVertexLimit` | int32 | none | 64 | resolved USD value (authored, else raw fallback) | 64 | 64, the cooking default, unless the free attribute newton:maxHullVertices is present with a value > 0, which then supplies the limit. |
+| `physxConvexDecompositionCollision:voxelResolution` | int32 | none | 500000 | resolved USD value (authored, else raw fallback) | 100000 **diverges** | 100000, the cooking default. The USD schema fallback is 500000 and the producer publishes it, so a hand-populated stage that omits the column voxelises five times coarser than USD population. |
+| `physxConvexDecompositionCollision:errorPercentage` | float32 | none | 10.0 | resolved USD value (authored, else raw fallback) | 10.0 | 10.0, the cooking default. |
 | `physxConvexDecompositionCollision:shrinkWrap` | bool8 | none | false | resolved USD value (authored, else raw fallback) | false | false: hull points are not projected back onto the source surface. |
 
 ## Interactions
 
-- **[`PhysicsMeshCollisionAPI`](PhysicsMeshCollisionAPI.md):** Read by parseConvexDecompositionCookingExt only when the descriptor kind is convexDecomposition. Unlike PhysxConvexHullCollisionAPI there is no usd-schemas gate: the six columns are read whenever they exist on the collider, so free attributes authored without applying the API are honoured.
+- **[`PhysicsMeshCollisionAPI`](PhysicsMeshCollisionAPI.md):** Read only when the descriptor kind is convexDecomposition. Unlike PhysxConvexHullCollisionAPI there is no usd-schemas gate: the six columns are read whenever they exist on the collider, so free attributes authored without applying the API are honoured.
 
 ## Known divergences
 
-- **note** (consumer) `physxConvexDecompositionCollision:maxConvexHulls`: Absent column seeds 16 (PhysxCookingParams.h defaultCookedMaxHullCount) while the USD schema fallback published by the producer is 32. Only a hand-populated stage that omits the column is affected; it is a cooking input, not a PhysX default, so the divergence changes the cooked hull count rather than a PhysX object field.
-- **note** (consumer) `physxConvexDecompositionCollision:voxelResolution`: Absent column seeds 100000 (defaultCookedVoxelResolution) while the USD schema fallback published by the producer is 500000. Same class as maxConvexHulls.
+- **note** (consumer) `physxConvexDecompositionCollision:maxConvexHulls`: Absent column seeds 16, the runtime's default cooked hull count, while the USD schema fallback published by the producer is 32. Only a hand-populated stage that omits the column is affected; it is a cooking input, not a [PhysX](glossary.md#physx) default, so the divergence changes the cooked hull count rather than a PhysX object field.
+- **note** (consumer) `physxConvexDecompositionCollision:voxelResolution`: Absent column seeds the cooking default 100000 while the USD schema fallback published by the producer is 500000. Same class as maxConvexHulls.
 
 ## Notes
 

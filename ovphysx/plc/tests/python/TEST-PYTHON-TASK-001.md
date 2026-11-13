@@ -47,8 +47,16 @@ storage until collection.
   session; fail the accepted implicit release, then collect through `wait_all`.
 - Run articulation updates with default and explicit flags/scopes, and with a
   `prim_paths=` or `pattern=` selection naming one of two articulations.
+- Compare runtime `ovphysx.__all__` names with explicit re-exports, definitions
+  and annotations in the installed root stub, and compare the root and
+  `ovphysx.types` imports of `ArticulationKinematicFlag`. These metadata checks
+  need no native bootstrap.
 
 ## Then
+
+- A synthetic `TIMEOUT` result without a pending receipt exposes
+  `pending_task=None`, fabricates no receipt, and reports a neutral missing-receipt
+  diagnostic (REQ AC-3).
 
 - Task is immutable and owns no simulation resource (REQ AC-1).
 - Successful waits return None; non-Task values raise TypeError and native
@@ -78,11 +86,16 @@ storage until collection.
   (REQ AC-10).
 - The articulation convenience waits query, update, and release tasks and exposes
   POSITION/VELOCITY flags with ALL as the default scope; a selection updates only the
-  articulations it names (REQ AC-8).
+  articulations it names. The root and `ovphysx.types` flag imports identify the
+  same enum class, and every runtime `__all__` name has an explicit root-stub
+  declaration rather than relying on the `__getattr__` fallback (REQ AC-8).
 
 - Stage lifecycle producers return without collecting. Dropped attach/detach
   receipts retain the Stage through pending waits and release it only after
   collection confirms native detachment; a failed query retains it (REQ AC-5, AC-7).
+- `task_status` reports a finished task's status repeatedly without collecting it,
+  reports `NOT_FOUND` after collection, and rejects non-Task arguments and invalid
+  receipts; `TaskStatus` matches the C enum name for name (REQ AC-11).
 
 ## Automated coverage
 
@@ -93,23 +106,29 @@ storage until collection.
   `test_wait_rejects_out_of_range_timeout_before_calling_native`,
   `test_wait_preserves_timeout_boundaries`,
   `test_partial_timeout_copies_errors_and_pending_before_cleanup`,
+  `test_wait_all_defensively_handles_timeout_without_pending_receipt`,
   `test_wait_validation_and_internal_failures_are_runtime_errors`,
   `test_error_copy_failure_still_destroys_native_result`,
   `test_task_error_entries_are_immutable` and
   `test_detach_retains_stage_until_collected_and_native_detach_is_confirmed`. The timeout case
   verifies both wait entrypoints, precedence, copied values and pending-task
-  retry without depending on native scheduling (REQ AC-1 through AC-5).
+  retry without depending on native scheduling (REQ AC-1 through AC-5). The
+  missing-receipt case is deliberately synthetic; it does not establish a native
+  timeout before cutoff capture or runtime admission.
 - [cpu_tests/test_task_completion.py](../../../tests/python_tests/cpu_tests/test_task_completion.py)
   exercises the real runtime with
-  `test_failed_inline_clone_returns_task_and_survives_waiting_for_step`,
+  `test_failed_clone_returns_task_and_survives_waiting_for_step`,
   `test_discarded_receipts_and_multiple_errors_remain_in_submission_order`,
   `test_direct_wait_collects_only_its_failure`,
-  `test_successful_inline_clone_returns_immutable_task`,
+  `test_successful_clone_returns_immutable_task`,
   `test_wrong_instance_does_not_collect_task`,
   `test_invalid_receipts_are_runtime_errors`,
   `test_rejected_step_does_not_create_a_deferred_failure`,
   `test_sync_step_retires_execution_without_collecting_async_receipts` and
-  `test_inline_failure_cause_survives_disabled_logging` (REQ AC-1 through AC-5).
+  `test_execution_failure_cause_survives_disabled_logging` (REQ AC-1 through AC-5),
+  and `test_task_status_reports_without_collecting` (REQ AC-11).
+- [test_types_sync.py](../../../tests/python_tests/test_types_sync.py)::`test_task_status_values_match_c_header`
+  compares `TaskStatus` with `ovphysx_task_status_t` (REQ AC-11).
 - [lifecycle_tests/test_task_completion_lifetime.py](../../../tests/python_tests/lifecycle_tests/test_task_completion_lifetime.py)::`test_task_error_survives_instance_destruction`
   runs in an isolated process, collects a real missing-source clone failure,
   destroys its instance and checks the retained exception's receipts and cause
@@ -131,12 +150,19 @@ storage until collection.
   articulation sequence (REQ AC-6 through AC-8); runtime stream ordering and buffer
   lifetime remain covered by TEST-PYTHON-READ-001.
 
+- [test_type_stubs.py](../../../tests/python_tests/test_type_stubs.py) runs
+  `test_root_stub_declares_all_public_exports` to compare runtime `__all__` with
+  explicit root-stub declarations and
+  `test_root_articulation_kinematic_flag_is_types_enum` to check enum identity
+  without native bootstrap (REQ AC-8).
+
 - [test_articulation_kinematic_selection_gpu.py](../../../tests/python_tests/test_articulation_kinematic_selection_gpu.py)
   runs the update with `prim_paths=` and `pattern=` selections on DirectGPU and checks that
   only the selected articulations' links move (REQ AC-8).
   [cpu_tests/test_articulation_kinematic_selection.py](../../../tests/python_tests/cpu_tests/test_articulation_kinematic_selection.py)
-  checks that a selection with `scope=ACTIVE`, or an empty pattern, raises `ValueError`
-  (REQ AC-8).
+  checks that a selection with `scope=ACTIVE`, or an empty pattern, raises `ValueError`, and that a held
+  `query=` is updated in place and stays open, while combining it with a selection or passing a query of
+  another type raises `ValueError` (REQ AC-8).
 
 - [cpu_tests/test_task_completion.py](../../../tests/python_tests/cpu_tests/test_task_completion.py)::`test_waiting_session_calls_collect_only_their_own_tasks`
   checks that the explicit waiting adapters and the articulation call collect their own
@@ -164,10 +190,10 @@ storage until collection.
   `test_dropped_creator_releases_orphan_without_materialization` (REQ AC-10).
   The same file also checks that a cached conversion failure holds no traceback to its
   unexposed array (`test_conversion_error_does_not_keep_unexposed_array_in_cached_traceback`,
-  REQ AC-9) and that earlier failures stay primary when cleanup admission or a
-  materialization cleanup also fails
-  (`test_partial_release_admission_preserves_prior_execution_failure`,
-  `test_materialization_error_requeues_rejected_cleanup`, REQ AC-7).
+  REQ AC-9). `test_partial_release_admission_preserves_prior_execution_failure`
+  keeps the earlier execution failure primary, while
+  `test_rejected_orphan_cleanup_does_not_skip_read_and_write_holders` retains
+  every distinct cleanup failure and still attempts each holder (REQ AC-7).
   `test_deferred_write_release_failure_survives_dropped_receipt` and
   `test_fetch_cleanup_failure_survives_dropped_group_receipt` verify that implicit
   release failures remain reportable through `wait_all` without retained Python

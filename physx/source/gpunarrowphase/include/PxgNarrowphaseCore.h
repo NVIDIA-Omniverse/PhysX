@@ -523,6 +523,10 @@ namespace physx
 		void releaseContext();
 
 		CUstream getStream();
+#if PX_SUPPORT_OMNI_PVD
+		CUdeviceptr getOmniPvdContactStream() const { return mContactStream; }
+		CUdeviceptr getOmniPvdPatchStream() const { return mPatchStream; }
+#endif
 
 		void registerContactManager(PxsContactManager* cm, const Sc::ShapeInteraction* shapeInteraction, PxsContactManagerOutput& output, const PxU32 bucketId);
 		void unregisterContactManager(PxsContactManager* manager, const PxU32 bucketId);

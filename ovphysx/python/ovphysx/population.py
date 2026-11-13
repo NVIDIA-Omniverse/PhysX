@@ -48,10 +48,13 @@ def _deps():
 # vetoes it; write the producer value, or omit the column for the parser default.
 RAW_FALLBACK_DIVERGES = {
     'physics:gravityMagnitude': -math.inf,
+    'newton:timeStepsPerSecond': 1000,
     'physics:staticFriction': 0.0,
     'physics:dynamicFriction': 0.0,
     'physxConvexDecompositionCollision:maxConvexHulls': 32,
     'physxConvexDecompositionCollision:voxelResolution': 500000,
+    'physxMimicJoint:<inst>:gearing': 1.0,
+    'physxPBDMaterial:density': 0.0,
     'physxRigidBody:sleepThreshold': 5e-05,
     'physxRigidBody:stabilizationThreshold': 1e-05,
     'physxRigidBody:maxDepenetrationVelocity': 3.0,
@@ -63,10 +66,18 @@ RAW_FALLBACK_DIVERGES = {
     'physxScene:frictionCorrelationDistance': 0.025,
     'physxScene:minPositionIterationCount': 1,
     'physxSphereFillCollision:voxelResolution': 50000,
+    'physxTendon:<inst>:restLength': 0.0,
 }
 
 API_APPLIES_TO = {
-    'MaterialBindingAPI': ('Gprim', 'Xformable'),
+    'CollectionAPI': ('Xformable', 'Imageable', 'Typed'),
+    'MaterialBindingAPI': ('Gprim', 'Xformable', 'GeomSubset'),
+    'NewtonArticulationRootAPI': ('Xformable', 'PhysicsJoint'),
+    'NewtonCollisionAPI': ('Gprim',),
+    'NewtonJointAPI': ('PhysicsJoint',),
+    'NewtonMeshCollisionAPI': ('Gprim',),
+    'NewtonMimicAPI': ('PhysicsJoint',),
+    'NewtonSceneAPI': ('PhysicsScene',),
     'PhysicsArticulationRootAPI': ('Xformable', 'PhysicsJoint'),
     'PhysicsCollisionAPI': ('Gprim',),
     'PhysicsDriveAPI': ('PhysicsJoint',),
@@ -83,9 +94,12 @@ API_APPLIES_TO = {
     'PhysxConvexDecompositionCollisionAPI': ('Gprim',),
     'PhysxConvexHullCollisionAPI': ('Gprim',),
     'PhysxDrivePerformanceEnvelopeAPI': ('PhysicsJoint',),
+    'PhysxForceAPI': ('Xformable',),
     'PhysxJointAxisAPI': ('PhysicsJoint',),
     'PhysxLimitAPI': ('PhysicsJoint',),
     'PhysxMaterialAPI': ('Typed',),
+    'PhysxMimicJointAPI': ('PhysicsJoint',),
+    'PhysxPBDMaterialAPI': ('Material',),
     'PhysxPhysicsDistanceJointAPI': ('PhysicsJoint',),
     'PhysxRigidBodyAPI': ('Xformable',),
     'PhysxSDFMeshCollisionAPI': ('Gprim',),
@@ -93,12 +107,24 @@ API_APPLIES_TO = {
     'PhysxSphereFillCollisionAPI': ('Gprim',),
     'PhysxSplinesSurfaceVelocityAPI': ('Xformable',),
     'PhysxSurfaceVelocityAPI': ('Xformable',),
+    'PhysxTendonAttachmentAPI': ('Xformable',),
+    'PhysxTendonAttachmentLeafAPI': ('Xformable',),
+    'PhysxTendonAttachmentRootAPI': ('Xformable',),
+    'PhysxTendonAxisAPI': ('PhysicsJoint',),
+    'PhysxTendonAxisRootAPI': ('PhysicsJoint',),
     'PhysxTriangleMeshCollisionAPI': ('Gprim',),
     'PhysxTriangleMeshSimplificationCollisionAPI': ('Gprim',),
     'PhysxTriggerAPI': ('Gprim',),
 }
 API_REQUIRES = {
+    'CollectionAPI': (),
     'MaterialBindingAPI': (),
+    'NewtonArticulationRootAPI': ('PhysicsArticulationRootAPI',),
+    'NewtonCollisionAPI': ('PhysicsCollisionAPI',),
+    'NewtonJointAPI': (),
+    'NewtonMeshCollisionAPI': ('NewtonCollisionAPI', 'PhysicsMeshCollisionAPI'),
+    'NewtonMimicAPI': (),
+    'NewtonSceneAPI': (),
     'PhysicsArticulationRootAPI': (),
     'PhysicsCollisionAPI': (),
     'PhysicsDriveAPI': (),
@@ -115,9 +141,12 @@ API_REQUIRES = {
     'PhysxConvexDecompositionCollisionAPI': ('PhysicsCollisionAPI',),
     'PhysxConvexHullCollisionAPI': ('PhysicsCollisionAPI',),
     'PhysxDrivePerformanceEnvelopeAPI': ('PhysicsDriveAPI',),
+    'PhysxForceAPI': (),
     'PhysxJointAxisAPI': (),
     'PhysxLimitAPI': (),
     'PhysxMaterialAPI': ('PhysicsMaterialAPI',),
+    'PhysxMimicJointAPI': (),
+    'PhysxPBDMaterialAPI': (),
     'PhysxPhysicsDistanceJointAPI': (),
     'PhysxRigidBodyAPI': ('PhysicsRigidBodyAPI',),
     'PhysxSDFMeshCollisionAPI': ('PhysicsCollisionAPI',),
@@ -125,26 +154,39 @@ API_REQUIRES = {
     'PhysxSphereFillCollisionAPI': ('PhysicsCollisionAPI',),
     'PhysxSplinesSurfaceVelocityAPI': ('PhysicsRigidBodyAPI',),
     'PhysxSurfaceVelocityAPI': ('PhysicsRigidBodyAPI',),
+    'PhysxTendonAttachmentAPI': (),
+    'PhysxTendonAttachmentLeafAPI': (),
+    'PhysxTendonAttachmentRootAPI': (),
+    'PhysxTendonAxisAPI': (),
+    'PhysxTendonAxisRootAPI': (),
     'PhysxTriangleMeshCollisionAPI': ('PhysicsCollisionAPI',),
     'PhysxTriangleMeshSimplificationCollisionAPI': ('PhysicsCollisionAPI',),
     'PhysxTriggerAPI': ('PhysicsCollisionAPI',),
 }
 # Multi-apply APIs: applied as Name:instance. An empty tuple accepts any instance name.
 API_MULTI_APPLY = {
+    'CollectionAPI': (),
     'PhysicsDriveAPI': ('transX', 'transY', 'transZ', 'rotX', 'rotY', 'rotZ', 'distance', 'angular', 'linear'),
     'PhysicsJointStateAPI': ('transX', 'transY', 'transZ', 'rotX', 'rotY', 'rotZ', 'angular', 'linear'),
     'PhysicsLimitAPI': ('transX', 'transY', 'transZ', 'rotX', 'rotY', 'rotZ', 'distance'),
     'PhysxDrivePerformanceEnvelopeAPI': ('angular', 'linear', 'rotX', 'rotY', 'rotZ'),
     'PhysxJointAxisAPI': ('angular', 'linear', 'rotX', 'rotY', 'rotZ'),
     'PhysxLimitAPI': ('angular', 'linear', 'cone', 'distance', 'transX', 'transY', 'transZ', 'rotX', 'rotY', 'rotZ'),
+    'PhysxMimicJointAPI': ('rotX', 'rotY', 'rotZ'),
+    'PhysxTendonAttachmentAPI': (),
+    'PhysxTendonAttachmentLeafAPI': (),
+    'PhysxTendonAttachmentRootAPI': (),
+    'PhysxTendonAxisAPI': (),
+    'PhysxTendonAxisRootAPI': (),
 }
 TYPE_INHERITS = {
     'Capsule': ('Capsule', 'Gprim', 'Boundable', 'Xformable'),
     'Cone': ('Cone', 'Gprim', 'Boundable', 'Xformable'),
     'Cube': ('Cube', 'Gprim', 'Boundable', 'Xformable'),
     'Cylinder': ('Cylinder', 'Gprim', 'Boundable', 'Xformable'),
+    'GeomSubset': ('GeomSubset', 'Typed'),
     'Material': ('Material', 'Typed'),
-    'Mesh': ('Mesh', 'Gprim', 'Boundable', 'Xformable'),
+    'Mesh': ('Mesh', 'PointBased', 'Gprim', 'Boundable', 'Xformable'),
     'PhysicsCollisionGroup': ('PhysicsCollisionGroup', 'Typed'),
     'PhysicsDistanceJoint': ('PhysicsDistanceJoint', 'Imageable', 'Typed', 'PhysicsJoint'),
     'PhysicsFixedJoint': ('PhysicsFixedJoint', 'Imageable', 'Typed', 'PhysicsJoint'),
@@ -154,8 +196,11 @@ TYPE_INHERITS = {
     'PhysicsScene': ('PhysicsScene', 'Typed'),
     'PhysicsSphericalJoint': ('PhysicsSphericalJoint', 'Imageable', 'Typed', 'PhysicsJoint'),
     'PhysxPhysicsGearJoint': ('PhysxPhysicsGearJoint', 'Imageable', 'Typed', 'PhysicsJoint'),
+    'PhysxPhysicsJointInstancer': ('PhysxPhysicsJointInstancer', 'PhysxPhysicsInstancer', 'Imageable', 'Typed'),
     'PhysxPhysicsRackAndPinionJoint': ('PhysxPhysicsRackAndPinionJoint', 'Imageable', 'Typed', 'PhysicsJoint'),
     'Plane': ('Plane', 'Gprim', 'Boundable', 'Xformable'),
+    'PointInstancer': ('PointInstancer', 'Boundable', 'Xformable'),
+    'Scope': ('Scope', 'Imageable', 'Typed'),
     'Sphere': ('Sphere', 'Gprim', 'Boundable', 'Xformable'),
     'Xform': ('Xform', 'Xformable'),
 }
@@ -197,6 +242,9 @@ def resolved_defaults(component: str, meters_per_unit: float = 1.0, kilograms_pe
             'radius': 1.0,
             'height': 2.0,
             'physxConvexGeometry:margin': 0.0,
+        },
+        'GeomSubset': {
+            'indices': (),
         },
         'Material': {
         },
@@ -296,6 +344,8 @@ def resolved_defaults(component: str, meters_per_unit: float = 1.0, kilograms_pe
             'physics:excludeFromArticulation': False,
             'physics:gearRatio': 1.0,
         },
+        'PhysxPhysicsJointInstancer': {
+        },
         'PhysxPhysicsRackAndPinionJoint': {
             'physics:localPos0': (0, 0, 0),
             'physics:localRot0': (0, 0, 0, 1),
@@ -310,12 +360,43 @@ def resolved_defaults(component: str, meters_per_unit: float = 1.0, kilograms_pe
         },
         'Plane': {
         },
+        'PointInstancer': {
+        },
+        'Scope': {
+        },
         'Sphere': {
             'radius': 1.0,
         },
         'Xform': {
         },
+        'CollectionAPI': {
+        },
         'MaterialBindingAPI': {
+        },
+        'NewtonArticulationRootAPI': {
+            'newton:selfCollisionEnabled': True,
+        },
+        'NewtonCollisionAPI': {
+            'newton:contactMargin': 0.0,
+            'newton:contactGap': -math.inf,
+        },
+        'NewtonJointAPI': {
+            'newton:velocityLimit': math.inf,
+            'newton:armature': 0.0,
+            'newton:friction': 0.0,
+            'newton:damping': 0.0,
+        },
+        'NewtonMeshCollisionAPI': {
+            'newton:maxHullVertices': -1,
+        },
+        'NewtonMimicAPI': {
+            'newton:mimicEnabled': True,
+            'newton:mimicCoef0': 0.0,
+            'newton:mimicCoef1': 1.0,
+        },
+        'NewtonSceneAPI': {
+            'newton:timeStepsPerSecond': 1000,
+            'newton:gravityEnabled': True,
         },
         'PhysicsArticulationRootAPI': {
         },
@@ -394,6 +475,12 @@ def resolved_defaults(component: str, meters_per_unit: float = 1.0, kilograms_pe
             'physxDrivePerformanceEnvelope:<inst>:velocityDependentResistance': 0.0,
             'physxDrivePerformanceEnvelope:<inst>:speedEffortGradient': 0.0,
         },
+        'PhysxForceAPI': {
+            'physxForce:forceEnabled': True,
+            'physxForce:worldFrameEnabled': False,
+            'physxForce:force': (0, 0, 0),
+            'physxForce:torque': (0, 0, 0),
+        },
         'PhysxJointAxisAPI': {
             'physxJointAxis:<inst>:armature': 0.0,
             'physxJointAxis:<inst>:maxJointVelocity': FLT_MAX,
@@ -411,6 +498,27 @@ def resolved_defaults(component: str, meters_per_unit: float = 1.0, kilograms_pe
             'physxMaterial:compliantContactAccelerationSpring': False,
             'physxMaterial:compliantContactStiffness': 0.0,
             'physxMaterial:compliantContactDamping': 0.0,
+        },
+        'PhysxMimicJointAPI': {
+            'physxMimicJoint:<inst>:gearing': 1.0,
+            'physxMimicJoint:<inst>:offset': 0.0,
+            'physxMimicJoint:<inst>:naturalFrequency': 0.0,
+            'physxMimicJoint:<inst>:dampingRatio': 0.0,
+        },
+        'PhysxPBDMaterialAPI': {
+            'physxPBDMaterial:friction': 0.2,
+            'physxPBDMaterial:particleFrictionScale': 1.0,
+            'physxPBDMaterial:damping': 0.0,
+            'physxPBDMaterial:viscosity': 0.0,
+            'physxPBDMaterial:vorticityConfinement': 0.0,
+            'physxPBDMaterial:surfaceTension': 0.0,
+            'physxPBDMaterial:cohesion': 0.0,
+            'physxPBDMaterial:adhesion': 0.0,
+            'physxPBDMaterial:particleAdhesionScale': 1.0,
+            'physxPBDMaterial:adhesionOffsetScale': 0.0,
+            'physxPBDMaterial:gravityScale': 1.0,
+            'physxPBDMaterial:cflCoefficient': 1.0,
+            'physxPBDMaterial:density': 0.0,
         },
         'PhysxPhysicsDistanceJointAPI': {
             'physxPhysicsDistanceJoint:springEnabled': False,
@@ -496,6 +604,36 @@ def resolved_defaults(component: str, meters_per_unit: float = 1.0, kilograms_pe
             'physxSurfaceVelocity:surfaceVelocity': (0, 0, 0),
             'physxSurfaceVelocity:surfaceAngularVelocity': (0, 0, 0),
         },
+        'PhysxTendonAttachmentAPI': {
+            'physxTendon:<inst>:gearing': 1.0,
+            'physxTendon:<inst>:localPos': (0, 0, 0),
+        },
+        'PhysxTendonAttachmentLeafAPI': {
+            'physxTendon:<inst>:restLength': -math.inf,
+            'physxTendon:<inst>:lowerLimit': -math.inf,
+            'physxTendon:<inst>:upperLimit': math.inf,
+        },
+        'PhysxTendonAttachmentRootAPI': {
+            'physxTendon:<inst>:tendonEnabled': True,
+            'physxTendon:<inst>:stiffness': 0.0,
+            'physxTendon:<inst>:limitStiffness': 0.0,
+            'physxTendon:<inst>:damping': 0.0,
+            'physxTendon:<inst>:offset': 0.0,
+        },
+        'PhysxTendonAxisAPI': {
+            'physxTendon:<inst>:gearing': (1.0),
+            'physxTendon:<inst>:forceCoefficient': (1.0),
+        },
+        'PhysxTendonAxisRootAPI': {
+            'physxTendon:<inst>:stiffness': 0.0,
+            'physxTendon:<inst>:limitStiffness': 0.0,
+            'physxTendon:<inst>:damping': 0.0,
+            'physxTendon:<inst>:offset': 0.0,
+            'physxTendon:<inst>:restLength': 0.0,
+            'physxTendon:<inst>:lowerLimit': -math.inf,
+            'physxTendon:<inst>:upperLimit': math.inf,
+            'physxTendon:<inst>:tendonEnabled': True,
+        },
         'PhysxTriangleMeshCollisionAPI': {
             'physxTriangleMeshCollision:weldTolerance': -math.inf,
         },
@@ -518,6 +656,8 @@ def _as_cpu_array(wp, column, values, dtype):
         raise TypeError(f'{column}: expected a {dtype} array, got {values.dtype.__name__}')
     if not values.device.is_cpu:
         raise TypeError(f'{column}: ovstage reads host memory; got a {values.device} array')
+    if not values.is_contiguous:
+        raise TypeError(f'{column}: ovstage reads compact rows; got a strided array, pass .contiguous()')
     return values
 
 
@@ -540,7 +680,7 @@ def write_stage_units(stage, paths, ordinal: int, *, meters_per_unit: float = 1.
     for name, values, dtype, semantic in (
         ('usd-metadata:metersPerUnit', [meters_per_unit], 'float64', None),
         ('usd-metadata:kilogramsPerUnit', [kilograms_per_unit], 'float64', None),
-        ('usd-metadata:upAxis', [paths.intern_token(up_axis)], 'uint64', 'TOKEN_ID'),
+        ('usd-metadata:upAxis', [paths.intern_token(up_axis).raw_id], 'uint64', 'TOKEN_ID'),
     ):
         tensor, arr = _tensor(wp, ovstage, name, values, dtype, 1, 1)
         keep.append(arr)
@@ -598,14 +738,20 @@ class PrimBatch:
             if lanes > 1 and (arr.ndim != 2 or arr.shape[1] != lanes) or lanes == 1 and arr.ndim != 1:
                 raise ValueError(f'{column}: each row needs shape (n,) or (n, {lanes}), got {tuple(arr.shape)}')
             self._keep.append(arr)
-            tensors.append(ovstage.DLTensor.from_dlpack(arr))
+            tensor = ovstage.DLTensor.from_dlpack(arr)
+            if lanes > 1:
+                # An array element's tuple width travels in dtype.lanes: ovstage stores an (n, lanes)
+                # scalar tensor as n * lanes one-lane elements, not as n tuples.
+                tuple_dtype = ovstage.DLDataType(tensor.dtype.code, tensor.dtype.bits, lanes)
+                tensor = ovstage.make_dltensor(arr, dtype=tuple_dtype, shape=[arr.shape[0]], ndim=1)
+            tensors.append(tensor)
         self._writes.append(ovstage.WriteDesc(column, tensors, is_array=True, semantic=self._semantic(semantic)))
 
     def _add_tokens(self, column, tokens, semantic=None):
         """Token-valued column: one token string per prim, interned to token-dictionary ids."""
         if len(tokens) != self._n:
             raise ValueError(f'{column}: expected {self._n} tokens')
-        self._add(column, [self._paths.intern_token(t) for t in tokens], 'uint64', 1, semantic)
+        self._add(column, [self._paths.intern_token(t).raw_id for t in tokens], 'uint64', 1, semantic)
 
     def _define(self, prim_type: str, local_matrix, reset_xform_stack, world_matrix):
         if self._type is not None:
@@ -702,6 +848,16 @@ class PrimBatch:
             self._add_tokens('axis', axis, 'TOKEN_ID')
         return self
 
+    def define_geom_subset(self, *, indices=None, element_type=None):
+        """A face subset of a Mesh collider. The parser reads it only to build per-face physics materials: a face GeomSubset child of a Mesh collider whose resolved material binding is a physics material takes the next material slot, and its indices stamp that slot onto the faces the cooking service sees.
+        """
+        self._define('GeomSubset', None, None, None)
+        if indices is not None:
+            self._add_array('indices', indices, 'int32', 1, None)
+        if element_type is not None:
+            self._add_tokens('elementType', element_type, 'TOKEN_ID')
+        return self
+
     def define_material(self):
         """UsdShade Material prim. Owns no physics columns: the physics surface comes entirely from PhysicsMaterialAPI and PhysxMaterialAPI applied to it. The prim type itself is never queried by the consumer.
         """
@@ -734,11 +890,11 @@ class PrimBatch:
         """
         self._define('PhysicsCollisionGroup', None, None, None)
         if filtered_groups is not None:
-            self._add_ids('physics:filteredGroups', [[self._paths.intern_path(t) for t in targets] for targets in filtered_groups], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('physics:filteredGroups', [[self._paths.intern_path(t).raw_id for t in targets] for targets in filtered_groups], 'RELATIONSHIP_PATH_ID')
         if includes is not None:
-            self._add_ids('collection:colliders:includes', [[self._paths.intern_path(t) for t in targets] for targets in includes], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('collection:colliders:includes', [[self._paths.intern_path(t).raw_id for t in targets] for targets in includes], 'RELATIONSHIP_PATH_ID')
         if excludes is not None:
-            self._add_ids('collection:colliders:excludes', [[self._paths.intern_path(t) for t in targets] for targets in excludes], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('collection:colliders:excludes', [[self._paths.intern_path(t).raw_id for t in targets] for targets in excludes], 'RELATIONSHIP_PATH_ID')
         return self
 
     def define_physics_distance_joint(self, *, local_pos0=None, local_rot0=None, local_pos1=None, local_rot1=None, joint_enabled=None, collision_enabled=None, break_force=None, break_torque=None, exclude_from_articulation=None, min_distance=None, max_distance=None, body0=None, body1=None):
@@ -768,9 +924,9 @@ class PrimBatch:
         if max_distance is not None:
             self._add('physics:maxDistance', max_distance, 'float32', 1, None)
         if body0 is not None:
-            self._add_ids('physics:body0', [[self._paths.intern_path(t) for t in targets] for targets in body0], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('physics:body0', [[self._paths.intern_path(t).raw_id for t in targets] for targets in body0], 'RELATIONSHIP_PATH_ID')
         if body1 is not None:
-            self._add_ids('physics:body1', [[self._paths.intern_path(t) for t in targets] for targets in body1], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('physics:body1', [[self._paths.intern_path(t).raw_id for t in targets] for targets in body1], 'RELATIONSHIP_PATH_ID')
         return self
 
     def define_physics_fixed_joint(self, *, local_pos0=None, local_rot0=None, local_pos1=None, local_rot1=None, joint_enabled=None, collision_enabled=None, break_force=None, break_torque=None, exclude_from_articulation=None, body0=None, body1=None):
@@ -796,9 +952,9 @@ class PrimBatch:
         if exclude_from_articulation is not None:
             self._add('physics:excludeFromArticulation', exclude_from_articulation, 'bool', 1, None)
         if body0 is not None:
-            self._add_ids('physics:body0', [[self._paths.intern_path(t) for t in targets] for targets in body0], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('physics:body0', [[self._paths.intern_path(t).raw_id for t in targets] for targets in body0], 'RELATIONSHIP_PATH_ID')
         if body1 is not None:
-            self._add_ids('physics:body1', [[self._paths.intern_path(t) for t in targets] for targets in body1], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('physics:body1', [[self._paths.intern_path(t).raw_id for t in targets] for targets in body1], 'RELATIONSHIP_PATH_ID')
         return self
 
     def define_physics_joint(self, *, local_pos0=None, local_rot0=None, local_pos1=None, local_rot1=None, joint_enabled=None, collision_enabled=None, break_force=None, break_torque=None, exclude_from_articulation=None, body0=None, body1=None):
@@ -824,9 +980,9 @@ class PrimBatch:
         if exclude_from_articulation is not None:
             self._add('physics:excludeFromArticulation', exclude_from_articulation, 'bool', 1, None)
         if body0 is not None:
-            self._add_ids('physics:body0', [[self._paths.intern_path(t) for t in targets] for targets in body0], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('physics:body0', [[self._paths.intern_path(t).raw_id for t in targets] for targets in body0], 'RELATIONSHIP_PATH_ID')
         if body1 is not None:
-            self._add_ids('physics:body1', [[self._paths.intern_path(t) for t in targets] for targets in body1], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('physics:body1', [[self._paths.intern_path(t).raw_id for t in targets] for targets in body1], 'RELATIONSHIP_PATH_ID')
         return self
 
     def define_physics_prismatic_joint(self, *, local_pos0=None, local_rot0=None, local_pos1=None, local_rot1=None, joint_enabled=None, collision_enabled=None, break_force=None, break_torque=None, exclude_from_articulation=None, lower_limit=None, upper_limit=None, axis=None, body0=None, body1=None):
@@ -858,9 +1014,9 @@ class PrimBatch:
         if axis is not None:
             self._add_tokens('physics:axis', axis, 'TOKEN_ID')
         if body0 is not None:
-            self._add_ids('physics:body0', [[self._paths.intern_path(t) for t in targets] for targets in body0], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('physics:body0', [[self._paths.intern_path(t).raw_id for t in targets] for targets in body0], 'RELATIONSHIP_PATH_ID')
         if body1 is not None:
-            self._add_ids('physics:body1', [[self._paths.intern_path(t) for t in targets] for targets in body1], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('physics:body1', [[self._paths.intern_path(t).raw_id for t in targets] for targets in body1], 'RELATIONSHIP_PATH_ID')
         return self
 
     def define_physics_revolute_joint(self, *, local_pos0=None, local_rot0=None, local_pos1=None, local_rot1=None, joint_enabled=None, collision_enabled=None, break_force=None, break_torque=None, exclude_from_articulation=None, lower_limit=None, upper_limit=None, axis=None, body0=None, body1=None):
@@ -892,9 +1048,9 @@ class PrimBatch:
         if axis is not None:
             self._add_tokens('physics:axis', axis, 'TOKEN_ID')
         if body0 is not None:
-            self._add_ids('physics:body0', [[self._paths.intern_path(t) for t in targets] for targets in body0], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('physics:body0', [[self._paths.intern_path(t).raw_id for t in targets] for targets in body0], 'RELATIONSHIP_PATH_ID')
         if body1 is not None:
-            self._add_ids('physics:body1', [[self._paths.intern_path(t) for t in targets] for targets in body1], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('physics:body1', [[self._paths.intern_path(t).raw_id for t in targets] for targets in body1], 'RELATIONSHIP_PATH_ID')
         return self
 
     def define_physics_scene(self, *, gravity_direction=None, gravity_magnitude=None):
@@ -936,9 +1092,9 @@ class PrimBatch:
         if axis is not None:
             self._add_tokens('physics:axis', axis, 'TOKEN_ID')
         if body0 is not None:
-            self._add_ids('physics:body0', [[self._paths.intern_path(t) for t in targets] for targets in body0], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('physics:body0', [[self._paths.intern_path(t).raw_id for t in targets] for targets in body0], 'RELATIONSHIP_PATH_ID')
         if body1 is not None:
-            self._add_ids('physics:body1', [[self._paths.intern_path(t) for t in targets] for targets in body1], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('physics:body1', [[self._paths.intern_path(t).raw_id for t in targets] for targets in body1], 'RELATIONSHIP_PATH_ID')
         return self
 
     def define_physx_physics_gear_joint(self, *, local_pos0=None, local_rot0=None, local_pos1=None, local_rot1=None, joint_enabled=None, collision_enabled=None, break_force=None, break_torque=None, exclude_from_articulation=None, gear_ratio=None, body0=None, body1=None, hinge0=None, hinge1=None):
@@ -966,13 +1122,39 @@ class PrimBatch:
         if gear_ratio is not None:
             self._add('physics:gearRatio', gear_ratio, 'float32', 1, None)
         if body0 is not None:
-            self._add_ids('physics:body0', [[self._paths.intern_path(t) for t in targets] for targets in body0], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('physics:body0', [[self._paths.intern_path(t).raw_id for t in targets] for targets in body0], 'RELATIONSHIP_PATH_ID')
         if body1 is not None:
-            self._add_ids('physics:body1', [[self._paths.intern_path(t) for t in targets] for targets in body1], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('physics:body1', [[self._paths.intern_path(t).raw_id for t in targets] for targets in body1], 'RELATIONSHIP_PATH_ID')
         if hinge0 is not None:
-            self._add_ids('physics:hinge0', [[self._paths.intern_path(t) for t in targets] for targets in hinge0], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('physics:hinge0', [[self._paths.intern_path(t).raw_id for t in targets] for targets in hinge0], 'RELATIONSHIP_PATH_ID')
         if hinge1 is not None:
-            self._add_ids('physics:hinge1', [[self._paths.intern_path(t) for t in targets] for targets in hinge1], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('physics:hinge1', [[self._paths.intern_path(t).raw_id for t in targets] for targets in hinge1], 'RELATIONSHIP_PATH_ID')
+        return self
+
+    def define_physx_physics_joint_instancer(self, *, proto_indices=None, body0_indices=None, body1_indices=None, local_pos0s=None, local_rot0s=None, local_pos1s=None, local_rot1s=None, prototypes=None, body0s=None, body1s=None):
+        """Instances joints from prototype joints. The runtime's joint-instancer loader parses each prototype joint once, then creates one joint per protoIndices entry, composing the per-instance local frames with the prototype's and binding the per-instance bodies.
+        """
+        self._define('PhysxPhysicsJointInstancer', None, None, None)
+        if proto_indices is not None:
+            self._add_array('physics:protoIndices', proto_indices, 'int32', 1, None)
+        if body0_indices is not None:
+            self._add_array('physics:body0Indices', body0_indices, 'int32', 1, None)
+        if body1_indices is not None:
+            self._add_array('physics:body1Indices', body1_indices, 'int32', 1, None)
+        if local_pos0s is not None:
+            self._add_array('physics:localPos0s', local_pos0s, 'float32', 3, 'POINT')
+        if local_rot0s is not None:
+            self._add_array('physics:localRot0s', local_rot0s, 'float16', 4, 'QUATERNION')
+        if local_pos1s is not None:
+            self._add_array('physics:localPos1s', local_pos1s, 'float32', 3, 'POINT')
+        if local_rot1s is not None:
+            self._add_array('physics:localRot1s', local_rot1s, 'float16', 4, 'QUATERNION')
+        if prototypes is not None:
+            self._add_ids('physics:prototypes', [[self._paths.intern_path(t).raw_id for t in targets] for targets in prototypes], 'RELATIONSHIP_PATH_ID')
+        if body0s is not None:
+            self._add_ids('physics:body0s', [[self._paths.intern_path(t).raw_id for t in targets] for targets in body0s], 'RELATIONSHIP_PATH_ID')
+        if body1s is not None:
+            self._add_ids('physics:body1s', [[self._paths.intern_path(t).raw_id for t in targets] for targets in body1s], 'RELATIONSHIP_PATH_ID')
         return self
 
     def define_physx_physics_rack_and_pinion_joint(self, *, local_pos0=None, local_rot0=None, local_pos1=None, local_rot1=None, joint_enabled=None, collision_enabled=None, break_force=None, break_torque=None, exclude_from_articulation=None, ratio=None, body0=None, body1=None, hinge=None, prismatic=None):
@@ -1000,13 +1182,13 @@ class PrimBatch:
         if ratio is not None:
             self._add('physics:ratio', ratio, 'float32', 1, None)
         if body0 is not None:
-            self._add_ids('physics:body0', [[self._paths.intern_path(t) for t in targets] for targets in body0], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('physics:body0', [[self._paths.intern_path(t).raw_id for t in targets] for targets in body0], 'RELATIONSHIP_PATH_ID')
         if body1 is not None:
-            self._add_ids('physics:body1', [[self._paths.intern_path(t) for t in targets] for targets in body1], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('physics:body1', [[self._paths.intern_path(t).raw_id for t in targets] for targets in body1], 'RELATIONSHIP_PATH_ID')
         if hinge is not None:
-            self._add_ids('physics:hinge', [[self._paths.intern_path(t) for t in targets] for targets in hinge], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('physics:hinge', [[self._paths.intern_path(t).raw_id for t in targets] for targets in hinge], 'RELATIONSHIP_PATH_ID')
         if prismatic is not None:
-            self._add_ids('physics:prismatic', [[self._paths.intern_path(t) for t in targets] for targets in prismatic], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('physics:prismatic', [[self._paths.intern_path(t).raw_id for t in targets] for targets in prismatic], 'RELATIONSHIP_PATH_ID')
         return self
 
     def define_plane(self, *, local_matrix=None, reset_xform_stack=None, world_matrix=None, axis=None):
@@ -1018,6 +1200,41 @@ class PrimBatch:
         self._define('Plane', local_matrix, reset_xform_stack, world_matrix)
         if axis is not None:
             self._add_tokens('axis', axis, 'TOKEN_ID')
+        return self
+
+    def define_point_instancer(self, *, local_matrix=None, reset_xform_stack=None, world_matrix=None, proto_indices=None, positions=None, orientations=None, velocities=None, angular_velocities=None, scales=None, ids=None, inactive_ids=None, prototypes=None, prototypes_usd_targets=None):
+        """Instances rigid-body prototypes. The runtime's rigid point-instancer loader reads the prototype targets and the per-instance arrays, parses each used prototype subtree once and stamps one body per active instance. It runs only when some prim on the Stage applies PhysicsRigidBodyAPI or PhysicsCollisionAPI.
+
+        ``local_matrix`` is (N, 16) row-major, identity when omitted. ``world_matrix`` is
+        optional and must be the composed world transform if given.
+        """
+        self._define('PointInstancer', local_matrix, reset_xform_stack, world_matrix)
+        if proto_indices is not None:
+            self._add_array('protoIndices', proto_indices, 'int32', 1, None)
+        if positions is not None:
+            self._add_array('positions', positions, 'float32', 3, 'POINT')
+        if orientations is not None:
+            self._add_array('orientations', orientations, 'float16', 4, 'QUATERNION')
+        if velocities is not None:
+            self._add_array('velocities', velocities, 'float32', 3, 'VECTOR')
+        if angular_velocities is not None:
+            self._add_array('angularVelocities', angular_velocities, 'float32', 3, 'VECTOR')
+        if scales is not None:
+            self._add_array('scales', scales, 'float32', 3, None)
+        if ids is not None:
+            self._add_array('ids', ids, 'int64', 1, None)
+        if inactive_ids is not None:
+            self._add_array('usd-metadata:inactiveIds', inactive_ids, 'int64', 1, None)
+        if prototypes is not None:
+            self._add_ids('prototypes', [[self._paths.intern_path(t).raw_id for t in targets] for targets in prototypes], 'RELATIONSHIP_PATH_ID')
+        if prototypes_usd_targets is not None:
+            self._add_ids('prototypes:usd-targets', [[self._paths.intern_path(t).raw_id for t in targets] for targets in prototypes_usd_targets], 'RELATIONSHIP_PATH_ID')
+        return self
+
+    def define_scope(self):
+        """A grouping prim without a transform. The parser reads no column of its own: a Scope matters only as an ancestor whose (absent) local transform composes as identity, and as a native-instancing root.
+        """
+        self._define('Scope', None, None, None)
         return self
 
     def define_sphere(self, *, local_matrix=None, reset_xform_stack=None, world_matrix=None, radius=None):
@@ -1042,13 +1259,84 @@ class PrimBatch:
 
     # -- applied API schemas -------------------------------------------------
 
+    def apply_collection_api(self, instance: str, *, includes=None, excludes=None):
+        """USD collections, applied as CollectionAPI:<name>. The parser resolves a collection to the includes targets expanded through their descendants, minus the excludes subtrees. It does so for the colliders collection of a PhysicsCollisionGroup and the quasistaticactors collection of PhysxSceneQuasistaticAPI.
+
+        Multi-apply: ``instance`` names the applied instance (``CollectionAPI:instance`` in ``usd-schemas``)
+        and replaces ``<inst>`` in every column name. Apply once per instance.
+        """
+        self._apply('CollectionAPI', instance)
+        if includes is not None:
+            self._add_ids('collection:<inst>:includes'.replace('<inst>', instance), [[self._paths.intern_path(t).raw_id for t in targets] for targets in includes], 'RELATIONSHIP_PATH_ID')
+        if excludes is not None:
+            self._add_ids('collection:<inst>:excludes'.replace('<inst>', instance), [[self._paths.intern_path(t).raw_id for t in targets] for targets in excludes], 'RELATIONSHIP_PATH_ID')
+        return self
+
     def apply_material_binding_api(self, *, material_binding_physics=None, material_binding=None):
         """Binds a physics material to a collision shape. The producer resolves the binding onto every material consumer; the consumer additionally walks purposes and ancestors for stages that were not produced that way."""
         self._apply('MaterialBindingAPI')
         if material_binding_physics is not None:
-            self._add_ids('material:binding:physics', [[self._paths.intern_path(t) for t in targets] for targets in material_binding_physics], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('material:binding:physics', [[self._paths.intern_path(t).raw_id for t in targets] for targets in material_binding_physics], 'RELATIONSHIP_PATH_ID')
         if material_binding is not None:
-            self._add_ids('material:binding', [[self._paths.intern_path(t) for t in targets] for targets in material_binding], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('material:binding', [[self._paths.intern_path(t).raw_id for t in targets] for targets in material_binding], 'RELATIONSHIP_PATH_ID')
+        return self
+
+    def apply_newton_articulation_root_api(self, *, self_collision_enabled=None):
+        """Newton self-collision switch, read on every articulation root when PhysxArticulationAPI carries no enabledSelfCollisions."""
+        self._apply('NewtonArticulationRootAPI')
+        if self_collision_enabled is not None:
+            self._add('newton:selfCollisionEnabled', self_collision_enabled, 'bool', 1, None)
+        return self
+
+    def apply_newton_collision_api(self, *, contact_margin=None, contact_gap=None):
+        """Newton contact margin and gap, read for every collider as fallbacks for the PhysX rest and contact offsets when those are absent."""
+        self._apply('NewtonCollisionAPI')
+        if contact_margin is not None:
+            self._add('newton:contactMargin', contact_margin, 'float32', 1, None)
+        if contact_gap is not None:
+            self._add('newton:contactGap', contact_gap, 'float32', 1, None)
+        return self
+
+    def apply_newton_joint_api(self, *, velocity_limit=None, armature=None, friction=None, damping=None):
+        """Newton joint-level values the PhysX parser reads as seeds for every axis of a revolute, prismatic, spherical or D6 joint: velocity limit, armature, friction and damping. A PhysxJointAxisAPI value on an axis overrides them."""
+        self._apply('NewtonJointAPI')
+        if velocity_limit is not None:
+            self._add('newton:velocityLimit', velocity_limit, 'float32', 1, None)
+        if armature is not None:
+            self._add('newton:armature', armature, 'float32', 1, None)
+        if friction is not None:
+            self._add('newton:friction', friction, 'float32', 1, None)
+        if damping is not None:
+            self._add('newton:damping', damping, 'float32', 1, None)
+        return self
+
+    def apply_newton_mesh_collision_api(self, *, max_hull_vertices=None):
+        """Newton hull vertex limit, read for convexHull and convexDecomposition approximations when the matching PhysX hullVertexLimit is absent."""
+        self._apply('NewtonMeshCollisionAPI')
+        if max_hull_vertices is not None:
+            self._add('newton:maxHullVertices', max_hull_vertices, 'int32', 1, None)
+        return self
+
+    def apply_newton_mimic_api(self, *, mimic_enabled=None, mimic_coef0=None, mimic_coef1=None, mimic_joint=None):
+        """Newton schema mimic constraint: joint = coef0 + coef1 * leader, with the leader given by newton:mimicJoint. The parser maps it onto the PhysX mimic joint as gearing = -coef1 and offset = -coef0, for single-DOF articulation joints only."""
+        self._apply('NewtonMimicAPI')
+        if mimic_enabled is not None:
+            self._add('newton:mimicEnabled', mimic_enabled, 'bool', 1, None)
+        if mimic_coef0 is not None:
+            self._add('newton:mimicCoef0', mimic_coef0, 'float32', 1, None)
+        if mimic_coef1 is not None:
+            self._add('newton:mimicCoef1', mimic_coef1, 'float32', 1, None)
+        if mimic_joint is not None:
+            self._add_ids('newton:mimicJoint', [[self._paths.intern_path(t).raw_id for t in targets] for targets in mimic_joint], 'RELATIONSHIP_PATH_ID')
+        return self
+
+    def apply_newton_scene_api(self, *, time_steps_per_second=None, gravity_enabled=None):
+        """Newton scene settings the PhysX parser reads as fallbacks on every PhysicsScene: the step rate when physxScene:timeStepsPerSecond is absent, and a switch that turns gravity off."""
+        self._apply('NewtonSceneAPI')
+        if time_steps_per_second is not None:
+            self._add('newton:timeStepsPerSecond', time_steps_per_second, 'int32', 1, None)
+        if gravity_enabled is not None:
+            self._add('newton:gravityEnabled', gravity_enabled, 'bool', 1, None)
         return self
 
     def apply_physics_articulation_root_api(self):
@@ -1062,7 +1350,7 @@ class PrimBatch:
         if collision_enabled is not None:
             self._add('physics:collisionEnabled', collision_enabled, 'bool', 1, None)
         if simulation_owner is not None:
-            self._add_ids('physics:simulationOwner', [[self._paths.intern_path(t) for t in targets] for targets in simulation_owner], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('physics:simulationOwner', [[self._paths.intern_path(t).raw_id for t in targets] for targets in simulation_owner], 'RELATIONSHIP_PATH_ID')
         return self
 
     def apply_physics_drive_api(self, instance: str, *, target_position=None, target_velocity=None, stiffness=None, damping=None, max_force=None, type=None):
@@ -1090,7 +1378,7 @@ class PrimBatch:
         """Suppresses collision between this prim and the listed prims."""
         self._apply('PhysicsFilteredPairsAPI')
         if filtered_pairs is not None:
-            self._add_ids('physics:filteredPairs', [[self._paths.intern_path(t) for t in targets] for targets in filtered_pairs], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('physics:filteredPairs', [[self._paths.intern_path(t).raw_id for t in targets] for targets in filtered_pairs], 'RELATIONSHIP_PATH_ID')
         return self
 
     def apply_physics_joint_state_api(self, instance: str, *, position=None, velocity=None):
@@ -1170,7 +1458,7 @@ class PrimBatch:
         if local_space_velocities is not None:
             self._add('usd-metadata:customData:physics:localSpaceVelocities', local_space_velocities, 'bool', 1, None)
         if simulation_owner is not None:
-            self._add_ids('physics:simulationOwner', [[self._paths.intern_path(t) for t in targets] for targets in simulation_owner], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('physics:simulationOwner', [[self._paths.intern_path(t).raw_id for t in targets] for targets in simulation_owner], 'RELATIONSHIP_PATH_ID')
         return self
 
     def apply_physx_articulation_api(self, *, articulation_enabled=None, sleep_threshold=None, stabilization_threshold=None, solver_position_iteration_count=None, solver_velocity_iteration_count=None, enabled_self_collisions=None):
@@ -1209,7 +1497,7 @@ class PrimBatch:
         if threshold is not None:
             self._add('physxContactReport:threshold', threshold, 'float32', 1, None)
         if report_pairs is not None:
-            self._add_ids('physxContactReport:reportPairs', [[self._paths.intern_path(t) for t in targets] for targets in report_pairs], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('physxContactReport:reportPairs', [[self._paths.intern_path(t).raw_id for t in targets] for targets in report_pairs], 'RELATIONSHIP_PATH_ID')
         return self
 
     def apply_physx_convex_decomposition_collision_api(self, *, min_thickness=None, max_convex_hulls=None, hull_vertex_limit=None, voxel_resolution=None, error_percentage=None, shrink_wrap=None):
@@ -1251,6 +1539,21 @@ class PrimBatch:
             self._add('physxDrivePerformanceEnvelope:<inst>:velocityDependentResistance'.replace('<inst>', instance), velocity_dependent_resistance, 'float32', 1, None, 'physxDrivePerformanceEnvelope:<inst>:velocityDependentResistance')
         if speed_effort_gradient is not None:
             self._add('physxDrivePerformanceEnvelope:<inst>:speedEffortGradient'.replace('<inst>', instance), speed_effort_gradient, 'float32', 1, None, 'physxDrivePerformanceEnvelope:<inst>:speedEffortGradient')
+        return self
+
+    def apply_physx_force_api(self, *, force_enabled=None, world_frame_enabled=None, force=None, torque=None, mode=None):
+        """Applies a constant force and torque to the rigid body that owns the prim, at the body's centre of mass or at this Xformable's position. Read by the runtime's force loader when the API is listed."""
+        self._apply('PhysxForceAPI')
+        if force_enabled is not None:
+            self._add('physxForce:forceEnabled', force_enabled, 'bool', 1, None)
+        if world_frame_enabled is not None:
+            self._add('physxForce:worldFrameEnabled', world_frame_enabled, 'bool', 1, None)
+        if force is not None:
+            self._add('physxForce:force', force, 'float32', 3, 'VECTOR')
+        if torque is not None:
+            self._add('physxForce:torque', torque, 'float32', 3, 'VECTOR')
+        if mode is not None:
+            self._add_tokens('physxForce:mode', mode, 'TOKEN_ID')
         return self
 
     def apply_physx_joint_axis_api(self, instance: str, *, armature=None, max_joint_velocity=None, static_friction_effort=None, dynamic_friction_effort=None, viscous_friction_coefficient=None):
@@ -1304,6 +1607,58 @@ class PrimBatch:
             self._add_tokens('physxMaterial:restitutionCombineMode', restitution_combine_mode, 'TOKEN_ID')
         if damping_combine_mode is not None:
             self._add_tokens('physxMaterial:dampingCombineMode', damping_combine_mode, 'TOKEN_ID')
+        return self
+
+    def apply_physx_mimic_joint_api(self, instance: str, *, gearing=None, offset=None, natural_frequency=None, damping_ratio=None, reference_joint_axis=None, reference_joint=None):
+        """Couples one degree of freedom of an articulation joint to one of a reference joint: position + gearing * referencePosition + offset = 0. Deprecated in favour of NewtonMimicAPI. Applied as PhysxMimicJointAPI:rotX, rotY or rotZ; the parser probes exactly those three instances on revolute, prismatic and D6 joints.
+
+        Multi-apply: ``instance`` names the applied instance (``PhysxMimicJointAPI:instance`` in ``usd-schemas``)
+        and replaces ``<inst>`` in every column name. Apply once per instance.
+        """
+        self._apply('PhysxMimicJointAPI', instance)
+        if gearing is not None:
+            self._add('physxMimicJoint:<inst>:gearing'.replace('<inst>', instance), gearing, 'float32', 1, None, 'physxMimicJoint:<inst>:gearing')
+        if offset is not None:
+            self._add('physxMimicJoint:<inst>:offset'.replace('<inst>', instance), offset, 'float32', 1, None, 'physxMimicJoint:<inst>:offset')
+        if natural_frequency is not None:
+            self._add('physxMimicJoint:<inst>:naturalFrequency'.replace('<inst>', instance), natural_frequency, 'float32', 1, None, 'physxMimicJoint:<inst>:naturalFrequency')
+        if damping_ratio is not None:
+            self._add('physxMimicJoint:<inst>:dampingRatio'.replace('<inst>', instance), damping_ratio, 'float32', 1, None, 'physxMimicJoint:<inst>:dampingRatio')
+        if reference_joint_axis is not None:
+            self._add_tokens('physxMimicJoint:<inst>:referenceJointAxis'.replace('<inst>', instance), reference_joint_axis, 'TOKEN_ID')
+        if reference_joint is not None:
+            self._add_ids('physxMimicJoint:<inst>:referenceJoint'.replace('<inst>', instance), [[self._paths.intern_path(t).raw_id for t in targets] for targets in reference_joint], 'RELATIONSHIP_PATH_ID')
+        return self
+
+    def apply_physx_pbdmaterial_api(self, *, friction=None, particle_friction_scale=None, damping=None, viscosity=None, vorticity_confinement=None, surface_tension=None, cohesion=None, adhesion=None, particle_adhesion_scale=None, adhesion_offset_scale=None, gravity_scale=None, cfl_coefficient=None, density=None):
+        """Position-based-dynamics particle material. This contract covers only the read the rigid-body consumer makes: the material bound to a PhysicsScene is parsed as the scene's default PBD material, and every physxPBDMaterial:* column it carries applies whether or not the API is listed."""
+        self._apply('PhysxPBDMaterialAPI')
+        if friction is not None:
+            self._add('physxPBDMaterial:friction', friction, 'float32', 1, None)
+        if particle_friction_scale is not None:
+            self._add('physxPBDMaterial:particleFrictionScale', particle_friction_scale, 'float32', 1, None)
+        if damping is not None:
+            self._add('physxPBDMaterial:damping', damping, 'float32', 1, None)
+        if viscosity is not None:
+            self._add('physxPBDMaterial:viscosity', viscosity, 'float32', 1, None)
+        if vorticity_confinement is not None:
+            self._add('physxPBDMaterial:vorticityConfinement', vorticity_confinement, 'float32', 1, None)
+        if surface_tension is not None:
+            self._add('physxPBDMaterial:surfaceTension', surface_tension, 'float32', 1, None)
+        if cohesion is not None:
+            self._add('physxPBDMaterial:cohesion', cohesion, 'float32', 1, None)
+        if adhesion is not None:
+            self._add('physxPBDMaterial:adhesion', adhesion, 'float32', 1, None)
+        if particle_adhesion_scale is not None:
+            self._add('physxPBDMaterial:particleAdhesionScale', particle_adhesion_scale, 'float32', 1, None)
+        if adhesion_offset_scale is not None:
+            self._add('physxPBDMaterial:adhesionOffsetScale', adhesion_offset_scale, 'float32', 1, None)
+        if gravity_scale is not None:
+            self._add('physxPBDMaterial:gravityScale', gravity_scale, 'float32', 1, None)
+        if cfl_coefficient is not None:
+            self._add('physxPBDMaterial:cflCoefficient', cfl_coefficient, 'float32', 1, None)
+        if density is not None:
+            self._add('physxPBDMaterial:density', density, 'float32', 1, None)
         return self
 
     def apply_physx_physics_distance_joint_api(self, *, spring_enabled=None, spring_stiffness=None, spring_damping=None):
@@ -1481,11 +1836,11 @@ class PrimBatch:
         if surface_velocity_magnitude is not None:
             self._add('physxSplinesSurfaceVelocity:surfaceVelocityMagnitude', surface_velocity_magnitude, 'float32', 1, None)
         if surface_velocity_curve is not None:
-            self._add_ids('physxSplinesSurfaceVelocity:surfaceVelocityCurve', [[self._paths.intern_path(t) for t in targets] for targets in surface_velocity_curve], 'RELATIONSHIP_PATH_ID')
+            self._add_ids('physxSplinesSurfaceVelocity:surfaceVelocityCurve', [[self._paths.intern_path(t).raw_id for t in targets] for targets in surface_velocity_curve], 'RELATIONSHIP_PATH_ID')
         return self
 
     def apply_physx_surface_velocity_api(self, *, surface_velocity_enabled=None, surface_velocity_local_space=None, surface_velocity=None, surface_angular_velocity=None):
-        """Conveyor-belt surface velocity on a rigid body: contacts against the body behave as if its surface moved with the given linear and angular velocity while the body itself stays put. Read only on dynamic bodies and articulation links (parseDynamicBody); a static body ignores it."""
+        """Conveyor-belt surface velocity on a rigid body: contacts against the body behave as if its surface moved with the given linear and angular velocity while the body itself stays put. Read only on dynamic bodies and articulation links; a static body ignores it."""
         self._apply('PhysxSurfaceVelocityAPI')
         if surface_velocity_enabled is not None:
             self._add('physxSurfaceVelocity:surfaceVelocityEnabled', surface_velocity_enabled, 'bool', 1, None)
@@ -1495,6 +1850,95 @@ class PrimBatch:
             self._add('physxSurfaceVelocity:surfaceVelocity', surface_velocity, 'float32', 3, 'VECTOR')
         if surface_angular_velocity is not None:
             self._add('physxSurfaceVelocity:surfaceAngularVelocity', surface_angular_velocity, 'float32', 3, 'VECTOR')
+        return self
+
+    def apply_physx_tendon_attachment_api(self, instance: str, *, gearing=None, local_pos=None, parent_attachment=None, parent_link=None):
+        """One attachment of a spatial tendon on an articulation link, applied as PhysxTendonAttachmentAPI:<name>. The parser reads the local attachment point (scaled by the link's world scale), the parent link and the parent attachment's instance name for every attachment, root and leaf included.
+
+        Multi-apply: ``instance`` names the applied instance (``PhysxTendonAttachmentAPI:instance`` in ``usd-schemas``)
+        and replaces ``<inst>`` in every column name. Apply once per instance.
+        """
+        self._apply('PhysxTendonAttachmentAPI', instance)
+        if gearing is not None:
+            self._add('physxTendon:<inst>:gearing'.replace('<inst>', instance), gearing, 'float32', 1, None, 'physxTendon:<inst>:gearing')
+        if local_pos is not None:
+            self._add('physxTendon:<inst>:localPos'.replace('<inst>', instance), local_pos, 'float32', 3, 'POINT', 'physxTendon:<inst>:localPos')
+        if parent_attachment is not None:
+            self._add_tokens('physxTendon:<inst>:parentAttachment'.replace('<inst>', instance), parent_attachment, 'TOKEN_ID')
+        if parent_link is not None:
+            self._add_ids('physxTendon:<inst>:parentLink'.replace('<inst>', instance), [[self._paths.intern_path(t).raw_id for t in targets] for targets in parent_link], 'RELATIONSHIP_PATH_ID')
+        return self
+
+    def apply_physx_tendon_attachment_leaf_api(self, instance: str, *, rest_length=None, lower_limit=None, upper_limit=None):
+        """Leaf attachment of a spatial tendon, applied as PhysxTendonAttachmentLeafAPI:<name>; it closes one sub-tendon and carries its rest length and limits.
+
+        Multi-apply: ``instance`` names the applied instance (``PhysxTendonAttachmentLeafAPI:instance`` in ``usd-schemas``)
+        and replaces ``<inst>`` in every column name. Apply once per instance.
+        """
+        self._apply('PhysxTendonAttachmentLeafAPI', instance)
+        if rest_length is not None:
+            self._add('physxTendon:<inst>:restLength'.replace('<inst>', instance), rest_length, 'float32', 1, None, 'physxTendon:<inst>:restLength')
+        if lower_limit is not None:
+            self._add('physxTendon:<inst>:lowerLimit'.replace('<inst>', instance), lower_limit, 'float32', 1, None, 'physxTendon:<inst>:lowerLimit')
+        if upper_limit is not None:
+            self._add('physxTendon:<inst>:upperLimit'.replace('<inst>', instance), upper_limit, 'float32', 1, None, 'physxTendon:<inst>:upperLimit')
+        return self
+
+    def apply_physx_tendon_attachment_root_api(self, instance: str, *, tendon_enabled=None, stiffness=None, limit_stiffness=None, damping=None, offset=None):
+        """Root attachment of a spatial tendon, applied as PhysxTendonAttachmentRootAPI:<name>. The parser emits the spatial tendon with these settings; clamped like the fixed tendon root.
+
+        Multi-apply: ``instance`` names the applied instance (``PhysxTendonAttachmentRootAPI:instance`` in ``usd-schemas``)
+        and replaces ``<inst>`` in every column name. Apply once per instance.
+        """
+        self._apply('PhysxTendonAttachmentRootAPI', instance)
+        if tendon_enabled is not None:
+            self._add('physxTendon:<inst>:tendonEnabled'.replace('<inst>', instance), tendon_enabled, 'bool', 1, None, 'physxTendon:<inst>:tendonEnabled')
+        if stiffness is not None:
+            self._add('physxTendon:<inst>:stiffness'.replace('<inst>', instance), stiffness, 'float32', 1, None, 'physxTendon:<inst>:stiffness')
+        if limit_stiffness is not None:
+            self._add('physxTendon:<inst>:limitStiffness'.replace('<inst>', instance), limit_stiffness, 'float32', 1, None, 'physxTendon:<inst>:limitStiffness')
+        if damping is not None:
+            self._add('physxTendon:<inst>:damping'.replace('<inst>', instance), damping, 'float32', 1, None, 'physxTendon:<inst>:damping')
+        if offset is not None:
+            self._add('physxTendon:<inst>:offset'.replace('<inst>', instance), offset, 'float32', 1, None, 'physxTendon:<inst>:offset')
+        return self
+
+    def apply_physx_tendon_axis_api(self, instance: str, *, gearing=None, force_coefficient=None):
+        """One joint axis of a fixed tendon, applied as PhysxTendonAxisAPI:<tendon> on a revolute or prismatic articulation joint. The parser emits one tendon axis per instance (rotX for revolute, transX for prismatic).
+
+        Multi-apply: ``instance`` names the applied instance (``PhysxTendonAxisAPI:instance`` in ``usd-schemas``)
+        and replaces ``<inst>`` in every column name. Apply once per instance.
+        """
+        self._apply('PhysxTendonAxisAPI', instance)
+        if gearing is not None:
+            self._add_array('physxTendon:<inst>:gearing'.replace('<inst>', instance), gearing, 'float32', 1, None)
+        if force_coefficient is not None:
+            self._add_array('physxTendon:<inst>:forceCoefficient'.replace('<inst>', instance), force_coefficient, 'float32', 1, None)
+        return self
+
+    def apply_physx_tendon_axis_root_api(self, instance: str, *, stiffness=None, limit_stiffness=None, damping=None, offset=None, rest_length=None, lower_limit=None, upper_limit=None, tendon_enabled=None):
+        """Root axis of a fixed tendon, applied as PhysxTendonAxisRootAPI:<tendon>. Besides its axis the parser emits the tendon itself with these spring, limit and enable settings. Values are clamped and an infinite value saturates.
+
+        Multi-apply: ``instance`` names the applied instance (``PhysxTendonAxisRootAPI:instance`` in ``usd-schemas``)
+        and replaces ``<inst>`` in every column name. Apply once per instance.
+        """
+        self._apply('PhysxTendonAxisRootAPI', instance)
+        if stiffness is not None:
+            self._add('physxTendon:<inst>:stiffness'.replace('<inst>', instance), stiffness, 'float32', 1, None, 'physxTendon:<inst>:stiffness')
+        if limit_stiffness is not None:
+            self._add('physxTendon:<inst>:limitStiffness'.replace('<inst>', instance), limit_stiffness, 'float32', 1, None, 'physxTendon:<inst>:limitStiffness')
+        if damping is not None:
+            self._add('physxTendon:<inst>:damping'.replace('<inst>', instance), damping, 'float32', 1, None, 'physxTendon:<inst>:damping')
+        if offset is not None:
+            self._add('physxTendon:<inst>:offset'.replace('<inst>', instance), offset, 'float32', 1, None, 'physxTendon:<inst>:offset')
+        if rest_length is not None:
+            self._add('physxTendon:<inst>:restLength'.replace('<inst>', instance), rest_length, 'float32', 1, None, 'physxTendon:<inst>:restLength')
+        if lower_limit is not None:
+            self._add('physxTendon:<inst>:lowerLimit'.replace('<inst>', instance), lower_limit, 'float32', 1, None, 'physxTendon:<inst>:lowerLimit')
+        if upper_limit is not None:
+            self._add('physxTendon:<inst>:upperLimit'.replace('<inst>', instance), upper_limit, 'float32', 1, None, 'physxTendon:<inst>:upperLimit')
+        if tendon_enabled is not None:
+            self._add('physxTendon:<inst>:tendonEnabled'.replace('<inst>', instance), tendon_enabled, 'bool', 1, None, 'physxTendon:<inst>:tendonEnabled')
         return self
 
     def apply_physx_triangle_mesh_collision_api(self, *, weld_tolerance=None):
@@ -1539,10 +1983,10 @@ class PrimBatch:
         # prim again (as the C++ builder does) instead of only the structural columns.
         payload_writes, payload_keep = list(self._writes), list(self._keep)
         try:
-            type_id = self._paths.intern_token(self._type)
+            type_id = self._paths.intern_token(self._type).raw_id
             self._add('usd-prim-type', [type_id] * self._n, 'uint64', 1, None)
             if self._schemas:  # USD population omits the column on a prim with no applied schemas
-                ids = [self._paths.intern_token(s) for s in self._schemas]
+                ids = [self._paths.intern_token(s).raw_id for s in self._schemas]
                 self._add_ids('usd-schemas', [ids] * self._n, None)
             # The path list is caller-owned: releasing the query does not release it.
             path_list = self._paths.create_path_list_from_strings(self._prim_paths)
@@ -1777,3 +2221,369 @@ def create_static_plane_colliders(stage, paths, prim_paths: Sequence[str], ordin
     if physx_collision_api is not None:
         batch.apply_physx_collision_api(**physx_collision_api)
     batch.write(stage, ordinal)
+
+
+# ---------------------------------------------------------------------------------------------
+# The physics population description (ADR-0061, ADR-0062)
+# ---------------------------------------------------------------------------------------------
+
+# @implements REQ-CAPI-POPULATION-DESC-001
+# @covers AC-2 AC-3
+
+def physics_population_desc():
+    """What the ovruntime parser reads from a USD stage, as an ``ovstage.population.Desc``.
+
+    Pass it to ``ovstage.population.open_usd_with_desc`` and the other ``*_with_desc`` entry points:
+    alone for physics, including native USD instances, or beside a ``Desc(domains=PopulationDomain.RENDERING)``
+    for render prims and point-instancer prototype geometry.
+    It holds the same description the C function
+    ``ovphysx_get_physics_population_desc`` returns, generated from the same contract. Built on each
+    call (importing this module loads nothing native). Each call returns an isolated description,
+    including its nested dtype objects, so customization cannot change another caller's data.
+    """
+    return _build_physics_population_desc()
+
+
+def physics_population_descs(*, rendering: bool = False) -> list:
+    """The descriptions to populate with: ``[physics_population_desc()]`` for physics alone, and with
+    ``rendering`` a ``Desc(domains=PopulationDomain.RENDERING)`` after it for render prims as well::
+
+        ovstage.population.open_usd_with_desc(
+            stage, path, ordinal=1, time=ovstage.population.DEFAULT_TIME,
+            descs=physics_population_descs(rendering=True))
+
+    Add a description of your own to the list for other data; two descriptions in one call may not
+    derive the same column.
+    """
+    from ovstage import PopulationDomain
+    from ovstage.population import Desc
+
+    descs = [physics_population_desc()]
+    if rendering:
+        descs.append(Desc(domains=PopulationDomain.RENDERING))
+    return descs
+
+
+def _build_physics_population_desc():
+    from ovstage import AttributeSemantic, DLDataType, DLDataTypeCode
+    from ovstage.population import (DerivedProperty, DeriveWhen, Desc, Expression, PrimPredicate,
+                                    PropertyPredicate, Selector)
+
+    P, Q, E = PrimPredicate, PropertyPredicate, Expression
+    p0 = P.has_schema(
+        'OmniPhysicsAttachment', 'OmniPhysicsElementCollisionFilter', 'OmniPhysicsTetXformAttachment',
+        'OmniPhysicsTriTriAttachment', 'OmniPhysicsVtxCrvAttachment', 'OmniPhysicsVtxTetAttachment',
+        'OmniPhysicsVtxTriAttachment', 'OmniPhysicsVtxVtxAttachment', 'OmniPhysicsVtxXformAttachment',
+        'PhysicsCollisionGroup', 'PhysicsDistanceJoint', 'PhysicsFixedJoint', 'PhysicsJoint',
+        'PhysicsPrismaticJoint', 'PhysicsRevoluteJoint', 'PhysicsScene', 'PhysicsSphericalJoint',
+        'PhysxParticleSystem', 'PhysxPhysicsGearJoint', 'PhysxPhysicsJointInstancer',
+        'PhysxPhysicsRackAndPinionJoint', 'PhysxVehicleTireFrictionTable', 'NewtonArticulationRootAPI',
+        'NewtonCollisionAPI', 'NewtonJointAPI', 'NewtonMeshCollisionAPI', 'NewtonMimicAPI', 'NewtonSceneAPI',
+        'OmniPhysicsBaseMaterialAPI', 'OmniPhysicsBodyAPI', 'OmniPhysicsDeformableBodyAPI',
+        'OmniPhysicsDeformableMaterialAPI', 'OmniPhysicsSurfaceDeformableMaterialAPI',
+        'OmniPhysicsSurfaceDeformableSimAPI', 'OmniPhysicsVolumeDeformableSimAPI',
+        'PhysicsArticulationRootAPI', 'PhysicsCollisionAPI', 'PhysicsMaterialAPI', 'PhysicsRigidBodyAPI',
+        'PhysxAutoDeformableAttachmentAPI', 'PhysxCharacterControllerAPI', 'PhysxDeformableMaterialAPI',
+        'PhysxDiffuseParticlesAPI', 'PhysxForceAPI', 'PhysxPBDMaterialAPI', 'PhysxParticleAPI',
+        'PhysxParticleAnisotropyAPI', 'PhysxParticleIsosurfaceAPI', 'PhysxParticleSamplingAPI',
+        'PhysxParticleSetAPI', 'PhysxParticleSmoothingAPI', 'PhysxSurfaceDeformableMaterialAPI',
+        'PhysxVehicleAPI', 'PhysxVehicleAckermannSteeringAPI', 'PhysxVehicleAutoGearBoxAPI',
+        'PhysxVehicleClutchAPI', 'PhysxVehicleContextAPI', 'PhysxVehicleControllerAPI',
+        'PhysxVehicleDriveBasicAPI', 'PhysxVehicleDriveStandardAPI', 'PhysxVehicleEngineAPI',
+        'PhysxVehicleGearsAPI', 'PhysxVehicleMultiWheelDifferentialAPI', 'PhysxVehicleSteeringAPI',
+        'PhysxVehicleSuspensionAPI', 'PhysxVehicleSuspensionComplianceAPI', 'PhysxVehicleTankControllerAPI',
+        'PhysxVehicleTankDifferentialAPI', 'PhysxVehicleTireAPI', 'PhysxVehicleWheelAPI',
+        'PhysxVehicleWheelAttachmentAPI', 'PhysxVehicleWheelControllerAPI',
+    )
+    p1 = P.has_applied_schema_in_namespace(
+        'PhysxDrivePerformanceEnvelopeAPI', 'PhysxJointAxisAPI', 'PhysxTendonAttachmentAPI',
+        'PhysxTendonAttachmentLeafAPI', 'PhysxTendonAttachmentRootAPI', 'PhysxTendonAxisAPI',
+        'PhysxTendonAxisRootAPI', 'PhysxVehicleBrakesAPI', 'PhysxVehicleNonlinearCommandResponseAPI',
+    )
+    physics_prim = P.or_(p0, p1)
+    declared_by_components_with_physics = Q.declared_by_schema(
+        'OmniPhysicsAttachment', 'OmniPhysicsElementCollisionFilter', 'OmniPhysicsTetXformAttachment',
+        'OmniPhysicsTriTriAttachment', 'OmniPhysicsVtxCrvAttachment', 'OmniPhysicsVtxTetAttachment',
+        'OmniPhysicsVtxTriAttachment', 'OmniPhysicsVtxVtxAttachment', 'OmniPhysicsVtxXformAttachment',
+        'PhysicsCollisionGroup', 'PhysicsDistanceJoint', 'PhysicsFixedJoint', 'PhysicsJoint',
+        'PhysicsPrismaticJoint', 'PhysicsRevoluteJoint', 'PhysicsScene', 'PhysicsSphericalJoint',
+        'PhysxParticleSystem', 'PhysxPhysicsGearJoint', 'PhysxPhysicsJointInstancer',
+        'PhysxPhysicsRackAndPinionJoint', 'PhysxVehicleTireFrictionTable', 'NewtonArticulationRootAPI',
+        'NewtonCollisionAPI', 'NewtonJointAPI', 'NewtonMeshCollisionAPI', 'NewtonMimicAPI', 'NewtonSceneAPI',
+        'OmniPhysicsBaseMaterialAPI', 'OmniPhysicsBodyAPI', 'OmniPhysicsDeformableBodyAPI',
+        'OmniPhysicsDeformableMaterialAPI', 'OmniPhysicsDeformablePoseAPI',
+        'OmniPhysicsSurfaceDeformableMaterialAPI', 'OmniPhysicsSurfaceDeformableSimAPI',
+        'OmniPhysicsVolumeDeformableSimAPI', 'PhysicsArticulationRootAPI', 'PhysicsCollisionAPI',
+        'PhysicsDriveAPI', 'PhysicsFilteredPairsAPI', 'PhysicsJointStateAPI', 'PhysicsLimitAPI',
+        'PhysicsMassAPI', 'PhysicsMaterialAPI', 'PhysicsMeshCollisionAPI', 'PhysicsRigidBodyAPI',
+        'PhysxArticulationAPI', 'PhysxAutoDeformableAttachmentAPI', 'PhysxAutoDeformableBodyAPI',
+        'PhysxAutoDeformableHexahedralMeshAPI', 'PhysxAutoDeformableMeshSimplificationAPI',
+        'PhysxBaseDeformableBodyAPI', 'PhysxCharacterControllerAPI', 'PhysxCollisionAPI',
+        'PhysxContactReportAPI', 'PhysxConvexDecompositionCollisionAPI', 'PhysxConvexHullCollisionAPI',
+        'PhysxCookedDataAPI', 'PhysxDeformableMaterialAPI', 'PhysxDiffuseParticlesAPI',
+        'PhysxDrivePerformanceEnvelopeAPI', 'PhysxForceAPI', 'PhysxJointAPI', 'PhysxJointAxisAPI',
+        'PhysxLimitAPI', 'PhysxMaterialAPI', 'PhysxMeshMergeCollisionAPI', 'PhysxMimicJointAPI',
+        'PhysxPBDMaterialAPI', 'PhysxParticleAPI', 'PhysxParticleAnisotropyAPI', 'PhysxParticleIsosurfaceAPI',
+        'PhysxParticleSamplingAPI', 'PhysxParticleSetAPI', 'PhysxParticleSmoothingAPI',
+        'PhysxPhysicsDistanceJointAPI', 'PhysxRigidBodyAPI', 'PhysxSDFMeshCollisionAPI', 'PhysxSceneAPI',
+        'PhysxSceneQuasistaticAPI', 'PhysxSphereFillCollisionAPI', 'PhysxSplinesSurfaceVelocityAPI',
+        'PhysxSurfaceDeformableBodyAPI', 'PhysxSurfaceDeformableMaterialAPI', 'PhysxSurfaceVelocityAPI',
+        'PhysxTendonAttachmentAPI', 'PhysxTendonAttachmentLeafAPI', 'PhysxTendonAttachmentRootAPI',
+        'PhysxTendonAxisAPI', 'PhysxTendonAxisRootAPI', 'PhysxTriangleMeshCollisionAPI',
+        'PhysxTriangleMeshSimplificationCollisionAPI', 'PhysxTriggerAPI', 'PhysxTriggerStateAPI',
+        'PhysxVehicleAPI', 'PhysxVehicleAckermannSteeringAPI', 'PhysxVehicleAutoGearBoxAPI',
+        'PhysxVehicleBrakesAPI', 'PhysxVehicleClutchAPI', 'PhysxVehicleContextAPI',
+        'PhysxVehicleControllerAPI', 'PhysxVehicleDriveBasicAPI', 'PhysxVehicleDriveStandardAPI',
+        'PhysxVehicleEngineAPI', 'PhysxVehicleGearsAPI', 'PhysxVehicleMultiWheelDifferentialAPI',
+        'PhysxVehicleNonlinearCommandResponseAPI', 'PhysxVehicleSteeringAPI', 'PhysxVehicleSuspensionAPI',
+        'PhysxVehicleSuspensionComplianceAPI', 'PhysxVehicleTankControllerAPI',
+        'PhysxVehicleTankDifferentialAPI', 'PhysxVehicleTireAPI', 'PhysxVehicleWheelAPI',
+        'PhysxVehicleWheelAttachmentAPI', 'PhysxVehicleWheelControllerAPI',
+    )
+    inherited_non_physics = Q.has_name(
+        'visibility', 'purpose', 'proxyPrim', 'xformOpOrder', 'extent', 'doubleSided', 'orientation',
+        'primvars:displayColor', 'primvars:displayOpacity', 'points', 'normals', 'velocities',
+        'accelerations',
+    )
+    q5 = Q.not_(inherited_non_physics)
+    q6 = Q.and_(declared_by_components_with_physics, q5)
+    cross_cutting = Q.has_name(
+        'material:binding', 'primvars:omni:scenePartition', 'physxParticle:maxParticles',
+        'physxParticle:fluidBoundaryDensityScale', 'physxScene:envIdInBoundsBitCount',
+        'physxJoint:maxJointVelocity',
+    )
+    q8 = Q.in_namespace('material:binding')
+    physics_property = Q.or_(q6, cross_cutting, q8)
+    e10 = E.number(0.0)
+    p11 = P.has_type('Cone')
+    collider = P.has_applied_schema('PhysicsCollisionAPI')
+    p13 = P.and_(p11, collider)
+    p14 = P.has_type('Cylinder')
+    p15 = P.and_(p14, collider)
+    q16 = Q.none()
+    e17 = E.resolved_collection_members('colliders', collider, q16)
+    p18 = P.is_a_type('PhysicsCollisionGroup')
+    e19 = E.number(-1.0)
+    e20 = E.up_axis()
+    e21 = E.multiply(e19, e20)
+    p22 = P.is_a_type('PhysicsScene')
+    e23 = E.number(9.81)
+    e24 = E.stage_metadata('metersPerUnit')
+    e25 = E.divide(e23, e24)
+    e26 = E.resolved_bound_material('physics', physics_prim)
+    components_with_material_consumer = P.has_applied_schema(
+        'OmniPhysicsBodyAPI', 'OmniPhysicsDeformableBodyAPI', 'PhysicsCollisionAPI', 'PhysicsRigidBodyAPI',
+    )
+    e28 = E.resolved_material_binding_purpose('physics', physics_prim)
+    e29 = E.number(0.02)
+    e30 = E.divide(e29, e24)
+    p31 = P.has_type('Plane')
+    p32 = P.and_(p31, collider)
+    e33 = E.number(FLT_MAX)
+    e34 = E.number(1e+16)
+    p35 = P.has_applied_schema('PhysicsRigidBodyAPI')
+    e36 = E.number(5e-05)
+    e37 = E.number(10.0)
+    e38 = E.divide(e37, e24)
+    e39 = E.multiply(e38, e38)
+    e40 = E.multiply(e36, e39)
+    e41 = E.number(1e-05)
+    e42 = E.multiply(e41, e39)
+    e43 = E.number(3.0)
+    e44 = E.divide(e43, e24)
+    e45 = E.number(0.04)
+    e46 = E.divide(e45, e24)
+    e47 = E.number(0.025)
+    e48 = E.divide(e47, e24)
+    p49 = P.has_applied_schema('PhysicsRigidBodyAPI', 'PhysicsCollisionAPI')
+    e50 = E.resolved_collection_members('quasistaticactors', p49, q16)
+    p51 = P.has_applied_schema('PhysxSceneQuasistaticAPI')
+    components_with_geometry_role = P.has_applied_schema(
+        'OmniPhysicsSurfaceDeformableSimAPI', 'OmniPhysicsVolumeDeformableSimAPI', 'PhysicsCollisionAPI',
+        'PhysxCharacterControllerAPI', 'PhysxParticleSamplingAPI', 'PhysxParticleSetAPI',
+    )
+    geometry = Q.has_name(
+        'points', 'faceVertexIndices', 'faceVertexCounts', 'size', 'radius', 'height', 'axis', 'orientation',
+        'physxConvexGeometry:margin', 'tetVertexIndices', 'surfaceFaceVertexIndices', 'holeIndices',
+        'doubleSided', 'positions', 'velocities', 'accelerations',
+    )
+    p54 = P.is_a_type('Gprim')
+    p55 = P.not_(p54)
+    p56 = P.and_(collider, p55)
+    p57 = P.has_parent(p56)
+    p58 = P.and_(p54, p57)
+    p59 = P.has_type('GeomSubset')
+    p60 = P.has_parent(collider)
+    collider_subset = P.and_(p59, p60)
+    subset_faces = Q.has_name('indices', 'elementType')
+    q63 = Q.or_(subset_faces, physics_property)
+    q64 = Q.has_name('material:binding:physics')
+    q65 = Q.targets(physics_prim)
+    binds_physics_material = Q.and_(q64, q65)
+    material_binder = P.has_property(binds_physics_material)
+    p68 = P.has_type('PointInstancer')
+    q69 = Q.has_name('prototypes')
+    p70 = P.has_descendant(physics_prim)
+    reaches_physics = P.or_(physics_prim, p70)
+    q72 = Q.targets(reaches_physics)
+    q73 = Q.and_(q69, q72)
+    p74 = P.has_property(q73)
+    physics_point_instancer = P.and_(p68, p74)
+    q76 = Q.declared_by_schema('PointInstancer')
+    q77 = Q.has_name('extent')
+    q78 = Q.not_(q77)
+    q79 = Q.and_(q76, q78)
+    p80 = P.is_a_type('Boundable')
+    p81 = P.is_targeted_by(physics_prim, physics_property)
+    in_physics_scope = P.or_(physics_prim, collider_subset, physics_point_instancer)
+    p83 = P.not_(in_physics_scope)
+    physics_target = P.and_(p80, p81, p83)
+    target_geometry = Q.has_name(
+        'curveVertexCounts', 'type', 'basis', 'wrap', 'widths', 'points', 'faceVertexIndices',
+        'faceVertexCounts', 'size', 'radius', 'height', 'axis', 'orientation', 'holeIndices',
+    )
+    q86 = Q.or_(target_geometry, physics_property)
+    p87 = P.is_instance()
+    physics_instance_root = P.and_(p87, p70)
+    e89 = E.resolved_material_binding_strength('physics', physics_prim)
+    return Desc(
+        domains=0,
+        selectors=[
+            # physics_prims
+            Selector(
+                prim_predicate=physics_prim,
+                property_predicate=physics_property,
+                prim_metadata_paths=['customData:physics:localSpaceVelocities', 'customData:physxVehicle:referenceFrameIsCenterOfMass'],
+                derived_properties=[
+                    DerivedProperty(
+                        'physxConvexGeometry:margin', e10, prim_predicate=p13, when=DeriveWhen.WHEN_UNAUTHORED,
+                        dtype=DLDataType(DLDataTypeCode.kDLFloat, 32, 1),
+                    ),
+                    DerivedProperty(
+                        'physxConvexGeometry:margin', e10, prim_predicate=p15, when=DeriveWhen.WHEN_UNAUTHORED,
+                        dtype=DLDataType(DLDataTypeCode.kDLFloat, 32, 1),
+                    ),
+                    DerivedProperty(
+                        'collection:colliders', e17, prim_predicate=p18,
+                    ),
+                    DerivedProperty(
+                        'physics:gravityDirection', e21, prim_predicate=p22, when=DeriveWhen.WHEN_UNAUTHORED,
+                        dtype=DLDataType(DLDataTypeCode.kDLFloat, 32, 3), semantic=AttributeSemantic.VECTOR,
+                    ),
+                    DerivedProperty(
+                        'physics:gravityMagnitude', e25, prim_predicate=p22, when=DeriveWhen.WHEN_UNAUTHORED,
+                        dtype=DLDataType(DLDataTypeCode.kDLFloat, 32, 1),
+                    ),
+                    DerivedProperty(
+                        'material:binding:physics', e26, prim_predicate=components_with_material_consumer,
+                    ),
+                    DerivedProperty(
+                        'material:binding:physics:winning-binding-purpose', e28,
+                        prim_predicate=components_with_material_consumer,
+                    ),
+                    DerivedProperty(
+                        'physxCollision:contactOffset', e30, prim_predicate=p32, when=DeriveWhen.WHEN_UNAUTHORED,
+                        dtype=DLDataType(DLDataTypeCode.kDLFloat, 32, 1),
+                    ),
+                    DerivedProperty(
+                        'physxDrivePerformanceEnvelope:__INSTANCE_NAME__:maxActuatorVelocity', e33,
+                        when=DeriveWhen.WHEN_UNAUTHORED, dtype=DLDataType(DLDataTypeCode.kDLFloat, 32, 1),
+                        multi_apply_schema_family='PhysxDrivePerformanceEnvelopeAPI',
+                    ),
+                    DerivedProperty(
+                        'physxJointAxis:__INSTANCE_NAME__:maxJointVelocity', e33, when=DeriveWhen.WHEN_UNAUTHORED,
+                        dtype=DLDataType(DLDataTypeCode.kDLFloat, 32, 1),
+                        multi_apply_schema_family='PhysxJointAxisAPI',
+                    ),
+                    DerivedProperty(
+                        'physxRigidBody:maxLinearVelocity', e34, prim_predicate=p35,
+                        when=DeriveWhen.WHEN_UNAUTHORED, dtype=DLDataType(DLDataTypeCode.kDLFloat, 32, 1),
+                    ),
+                    DerivedProperty(
+                        'physxRigidBody:sleepThreshold', e40, prim_predicate=p35, when=DeriveWhen.WHEN_UNAUTHORED,
+                        dtype=DLDataType(DLDataTypeCode.kDLFloat, 32, 1),
+                    ),
+                    DerivedProperty(
+                        'physxRigidBody:stabilizationThreshold', e42, prim_predicate=p35,
+                        when=DeriveWhen.WHEN_UNAUTHORED, dtype=DLDataType(DLDataTypeCode.kDLFloat, 32, 1),
+                    ),
+                    DerivedProperty(
+                        'physxRigidBody:maxDepenetrationVelocity', e44, prim_predicate=p35,
+                        when=DeriveWhen.WHEN_UNAUTHORED, dtype=DLDataType(DLDataTypeCode.kDLFloat, 32, 1),
+                    ),
+                    DerivedProperty(
+                        'physxRigidBody:maxContactImpulse', e33, prim_predicate=p35,
+                        when=DeriveWhen.WHEN_UNAUTHORED, dtype=DLDataType(DLDataTypeCode.kDLFloat, 32, 1),
+                    ),
+                    DerivedProperty(
+                        'physxScene:frictionOffsetThreshold', e46, prim_predicate=p22,
+                        when=DeriveWhen.WHEN_UNAUTHORED, dtype=DLDataType(DLDataTypeCode.kDLFloat, 32, 1),
+                    ),
+                    DerivedProperty(
+                        'physxScene:frictionCorrelationDistance', e48, prim_predicate=p22,
+                        when=DeriveWhen.WHEN_UNAUTHORED, dtype=DLDataType(DLDataTypeCode.kDLFloat, 32, 1),
+                    ),
+                    DerivedProperty(
+                        'collection:quasistaticactors', e50, prim_predicate=p51,
+                    ),
+                ],
+            ),
+            # shape_geometry
+            Selector(
+                prim_predicate=components_with_geometry_role,
+                property_predicate=geometry,
+            ),
+            # collider_child_geometry
+            Selector(
+                prim_predicate=p58,
+                property_predicate=geometry,
+            ),
+            # collider_subsets
+            Selector(
+                prim_predicate=collider_subset,
+                property_predicate=q63,
+                derived_properties=[
+                    DerivedProperty(
+                        'material:binding:physics', e26,
+                    ),
+                    DerivedProperty(
+                        'material:binding:physics:winning-binding-purpose', e28,
+                    ),
+                ],
+            ),
+            # material_binders
+            Selector(
+                prim_predicate=material_binder,
+                property_predicate=q64,
+            ),
+            # physics_point_instancers
+            Selector(
+                prim_predicate=physics_point_instancer,
+                property_predicate=q79,
+                prim_metadata_paths=['inactiveIds'],
+            ),
+            # relationship_targets
+            Selector(
+                prim_predicate=physics_target,
+                property_predicate=q86,
+                prim_metadata_paths=['customData:physics:localSpaceVelocities'],
+            ),
+            # physics_instance_roots
+            Selector(
+                prim_predicate=physics_instance_root,
+                property_predicate=q16,
+                derived_properties=[
+                    DerivedProperty(
+                        'material:binding:physics', e26,
+                    ),
+                    DerivedProperty(
+                        'material:binding:physics:winning-binding-purpose', e28,
+                    ),
+                    DerivedProperty(
+                        'material:binding:physics:winning-binding-strength', e89,
+                    ),
+                ],
+            ),
+        ],
+        stage_metadata_paths=['metersPerUnit', 'kilogramsPerUnit', 'upAxis'],
+    )

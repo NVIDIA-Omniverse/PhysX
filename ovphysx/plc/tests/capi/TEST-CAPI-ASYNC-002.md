@@ -32,8 +32,13 @@ iteration, simulation ordering or error reporting.
 - Leave an accepted write failure uncollected while waiting on later success.
 - Step between opening a session and reading or committing it.
 - Release a read and then its query while an owning-instance step is pending.
-- Hold a peer runtime callback on another thread while driving the idle owner's
-  query, cached-query validation, write and read sessions to completion.
+- Hold a peer's incremental-update destruction callback under shared runtime
+  admission on another thread while polling an idle owner's already-completed
+  receipt and wait-all, then driving its query, cached-query validation, write
+  and read sessions to completion.
+- Hold a peer's detach callback under exclusive admission, collect an idle
+  owner's completed receipts and absent-query release, then start native
+  cached-query validation before releasing the detach callback.
 - From an application log callback, attempt cached-query validation and a read
   on an idle instance. Before returning from that callback, repeat both calls
   on a separate client thread with the tensor backend already initialized.
@@ -49,9 +54,12 @@ iteration, simulation ordering or error reporting.
   operations respect prior simulation and spent commits fail (REQ AC-3, AC-6).
 - Read and query releases succeed after pending owner simulation; both step
   receipts remain collectable (REQ AC-3, AC-5, AC-6).
-- Every output operation completes before the peer's held callback returns;
-  committed values read back on the selected owner, while output reentry from
-  the callback thread is refused (REQ AC-6).
+- Completed-receipt polls and every output operation complete before the peer's
+  shared-execution callback returns; committed values read back on the selected
+  owner, while output reentry from the callback thread is refused (REQ AC-6).
+- During peer detach, completed-receipt polls, absent-query release and native
+  cached-query validation finish before the callback returns. Callback-thread
+  output reentry remains refused (REQ AC-6).
 - Log-callback output reentry returns `INVALID_STATE`, clears the query-valid
   flag and read handle, and creates no task. Both calls succeed on the separate
   client thread before the callback returns (REQ AC-2, AC-6).
@@ -69,7 +77,8 @@ iteration, simulation ordering or error reporting.
 - `ovphysx/tests/c_unittests/test_physx_async.cpp`: gated real simulation,
   partial timeout, retry and unrelated task collection.
 - `ovphysx/tests/c_unittests/test_multi_instance.cpp`:
-  `MultiInstance.OutputCompletesWhilePeerRuntimeCallbackIsBlocked` and
+  `MultiInstance.OutputCompletesWhilePeerSharedExecutionCallbackIsBlocked`,
+  `MultiInstance.CompletedReceiptsAndQueryValidityProgressWhilePeerDetachIsBlocked` and
   `PhysXTestFixture.OutputReentryFromLogCallbackIsRejected`. The log-callback case
   uses the real log dispatcher without injecting a CUDA failure or reproducing
   the backend mutex deadlock.

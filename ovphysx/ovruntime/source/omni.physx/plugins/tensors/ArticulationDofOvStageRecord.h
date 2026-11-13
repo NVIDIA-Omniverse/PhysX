@@ -50,6 +50,12 @@ struct ArticulationDofOvStageRecord
     // +1 when the joint's body0 is the parent link, -1 otherwise. The DirectGPU buffer and the
     // articulation cache are unsigned-raw, so a signed quantity folds this in; a magnitude does not.
     float sign = 1.0f;
+    // True when this DOF belongs to a WRAPPED revolute joint (PxArticulationJointType::eREVOLUTE, i.e. no
+    // authored limits). Its drive position target must be wrapped into [-360, 360] before it reaches
+    // PhysX -- the parse path does this in InternalJoint::setArticulationDrivePositionTarget, but the
+    // drain scatters through the tensor setter which does not, so the drain wraps it itself using this
+    // cached flag. eREVOLUTE_UNWRAPPED (limited) joints take targets past 360 and are left alone.
+    bool isWrappedRevolute = false;
 };
 
 // How an attribute folds the record's axis facts into its gather. Named per attribute in the reader's

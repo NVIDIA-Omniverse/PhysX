@@ -38,6 +38,8 @@
 #include <omni/physics/parse/PreparedJoint.h>
 #include <omni/physics/parse/KnownTokens.h>
 
+#include <carb/logging/Log.h>
+
 #include <cfloat>
 #include <cmath>
 
@@ -154,7 +156,7 @@ void initAxisPropertiesDefaults(PhysxJointAxisProperties& p)
 // Read PhysxJointAxisAPI:<instance> overrides on top of `properties`.
 // `instance` is the multi-apply schema instance ("linear", "angular",
 // "rotX", "rotY", "rotZ"). An axis without the API keeps the NewtonJointAPI
-// joint-level values or the defaults.
+// values, with legacy velocity as a fallback when Newton has no finite limit.
 //
 // The caller is responsible for the deg→rad / rad→deg conversions on
 // rotational axes — different joint types apply them slightly differently
@@ -166,7 +168,10 @@ void fillAxis(const PreparedJoint& joint, const PreparedJointInstance& input,
 {
     initAxisPropertiesDefaults(properties);
     // Preserve the Newton seeds where the per-axis PhysX values have no opinion.
-    properties.maxJointVelocity = clamped(joint.newtonVelocity, properties.maxJointVelocity);
+    const float legacyVelocity = clamped(joint.legacyMaxVelocity, FLT_MAX);
+    if (hasAxisVelocityLimitOpinion(legacyVelocity)) properties.maxJointVelocity = legacyVelocity;
+    const float newtonVelocity = clamped(joint.newtonVelocity, FLT_MAX);
+    if (hasAxisVelocityLimitOpinion(newtonVelocity)) properties.maxJointVelocity = newtonVelocity;
     properties.armature = clamped(joint.newtonArmature, properties.armature);
     properties.staticFrictionEffort = clamped(joint.newtonFriction, properties.staticFrictionEffort);
     properties.dynamicFrictionEffort = properties.staticFrictionEffort;
@@ -340,6 +345,12 @@ JointReadTokens::JointReadTokens(const IPhysicsSource& source)
     rackRatio = source.internToken("physics:ratio");
 }
 
+static void warnDeprecatedJointVelocity()
+{
+    CARB_LOG_WARN_ONCE("physxJoint:maxJointVelocity is deprecated. Replace it with "
+                       "newton:velocityLimit from NewtonJointAPI.");
+}
+
 PreparedJoint prepareJointStructure(ParseContext& ctx, ObjectKey key, const JointInfo& info)
 {
     IPhysicsSource& src = ctx.source();
@@ -347,6 +358,12 @@ PreparedJoint prepareJointStructure(ParseContext& ctx, ObjectKey key, const Join
     PreparedJoint input;
     input.key = key;
     input.info = info;
+    // Diagnose on the coordinator: frozen attribute reads also run on worker threads,
+    // where logging and its one-time initialization would violate the fill contract.
+    const bool hasAxis = info.type == eJointRevolute || info.type == eJointPrismatic ||
+                         info.type == eJointSpherical || info.type == eJointD6;
+    if (hasAxis && src.hasAuthoredAttribute(key, tok.physxJointMaxJointVelocity))
+        warnDeprecatedJointVelocity();
     if (info.type == eJointRevolute || info.type == eJointPrismatic)
     {
         const bool rotational = info.type == eJointRevolute;

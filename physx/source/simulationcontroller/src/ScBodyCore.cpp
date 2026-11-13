@@ -463,6 +463,24 @@ void Sc::BodyCore::setOffsetSlop(PxReal slop)
 	gpu_updateBodySim(*this);
 }
 
+void Sc::BodyCore::setMaxPenetrationBias(PxReal p)
+{
+	mCore.maxPenBias = p;
+	gpu_updateBodySim(*this);
+}
+
+void Sc::BodyCore::setRigidDynamicLockFlags(PxRigidDynamicLockFlags flags)
+{
+	mCore.lockFlags = flags;
+	gpu_updateBodySim(*this);
+}
+
+void Sc::BodyCore::setContactReportThreshold(PxReal t)
+{
+	mCore.contactReportThreshold = t;
+	gpu_updateBodySim(*this);
+}
+
 PxNodeIndex Sc::BodyCore::getInternalIslandNodeIndex() const
 {
 	BodySim* sim = getSim();

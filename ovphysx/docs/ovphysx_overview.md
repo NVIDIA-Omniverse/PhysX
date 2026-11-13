@@ -68,9 +68,9 @@ Typical usage of ovphysx:
 
 - Create and destroy instances with `PhysX()` and `physx.destroy()`.
 - After population, seal the ordinal with `stage.advance_write_floor(ordinal).wait()`, then attach with `physx.attach_ovstage(stage, read_ordinal=ordinal)`. Apply later committed edits with `physx.update_from_ovstage(from_ordinal, to_ordinal)`.
-- Attach, update and detach return `Task` receipts. Use `physx.wait_task(task)`
-  to check completion before relying on success; keep the Stage alive until
-  successful detach or instance destruction. They currently execute inline.
+- Attach, update and detach return `Task` receipts and may finish later. Calls
+  on one instance stay ordered. Wait before outside code uses the result, and
+  keep the Stage alive until detach succeeds or the instance is destroyed.
 - Write and read simulation state with the session API — select objects with `physx.query()`,
   then open `physx.write()` / `physx.read()` sessions for one or more attributes; each group
   exposes the mapped buffers as `warp.array` on CPU or CUDA. These methods return an `Operation`
@@ -95,12 +95,13 @@ The C API mirrors the Python flow:
 - Attach ovstage with `ovphysx_attach_ovstage()` and apply committed edits with
   `ovphysx_update_from_ovstage(handle, range)`, where `range` is an
   `ovstage_ordinal_range_t`. Attach, update and detach return
-  `ovphysx_enqueue_result_t`; check admission and collect each task outcome.
+  `ovphysx_enqueue_result_t`; check the call status, then wait for each task.
 - Write and read simulation state with the session API — `ovphysx_write()` / `ovphysx_read()` —
   selecting objects through `ovphysx_query()` and one or more attributes, then filling or reading the
-  mapped groups. Query, open, fetch, commit and release return task receipts;
-  wait before using outputs and collect release outcomes too. They currently execute
-  inline. Successful fetch completion with a null group means EOF. (The deprecated `ovphysx_create_tensor_binding()` path still works.)
+  mapped groups. Query, open, fetch, commit and release return task receipts.
+  Their handles are available on acceptance; wait before using other outputs.
+  A successful fetch with a null group means EOF. (The deprecated
+  `ovphysx_create_tensor_binding()` path still works.)
 - Step the simulation with `ovphysx_step()` — it is **asynchronous** (returns an `ovphysx_enqueue_result_t` task receipt); use `ovphysx_step_sync()` to step and wait in one call, or `ovphysx_wait_task()` / `ovphysx_wait_all()` when consuming results outside the stream.
 
 
@@ -143,7 +144,7 @@ SDK nor wheel delivers schema resources or exposes their location. By default,
 attach refuses if ovstage
 reports that its USD schema registry was built without either required PhysX
 schema family. Registration after that point cannot repair the registry or recover
-dropped settings: restart and register before populating or exporting. The legacy
+dropped settings: restart and register before populating or exporting. The raw
 Carbonite setting `/ovphysx/schemas/requireRegistration = false` permits attach with a
 warning; it does not restore missing data. See
 [Physics Schemas](physics_schemas.md#attach-time-registration-guard) for the
@@ -177,6 +178,9 @@ For v1.0 and later releases, backward compatibility is expected across patch and
 When a breaking change is required at the C API level, consider adding a versioned entrypoint (for example, `ovphysx_create_instance_v2`) to preserve compatibility, similar to CUDA-style `*_v2` APIs. Deprecated APIs should remain for at least one minor release with clear deprecation notes.
 
 Python bindings validate that the package version and native library version match at runtime (base semver), and will raise a clear error if they diverge. This check can be bypassed for advanced cases with `ignore_version_mismatch=True` on `PhysX`.
+If the selected native library lacks a required API, native loading raises a
+`RuntimeError` naming the library, missing symbol, and both versions (when available).
+The constructor option cannot bypass missing APIs; select a matching library.
 
 
 ## System Requirements

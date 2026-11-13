@@ -272,6 +272,9 @@ public:
 		PX_UNUSED(updateType);
 		return true;
 	}
+#if !PX_DOXYGEN
+	using PxConstraintConnector::updateOmniPvdProperties;
+#endif
 	virtual void updateOmniPvdProperties() const { }
 	virtual void onComShift(PxU32 actor) { PX_UNUSED(actor); }
 	virtual void onOriginShift(const PxVec3& shift) { PX_UNUSED(shift); }

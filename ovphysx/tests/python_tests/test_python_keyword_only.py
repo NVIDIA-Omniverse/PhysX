@@ -25,7 +25,7 @@ _EXPECTED_SIGNATURES = {
     "PhysX.wait_all": (("self",), ("timeout_ns",)),
     "PhysX.attach_ovstage": (("self", "stage"), ("read_ordinal",)),
     "PhysX.query": (("self", "object_type"), ("scope", "prim_paths", "pattern", "contacts", "metadata")),
-    "PhysX.read": (("self", "query", "attributes"), ("metadata",)),
+    "PhysX.read": (("self", "query", "attributes"), ("metadata", "cuda_stream", "cuda_wait_event", "event_owner")),
     "PhysX.write": (("self", "query", "attributes"), ("metadata",)),
     "PhysX.read_sync": (("self", "object_type", "attribute_names"), ("scope", "prim_paths", "pattern", "contacts", "metadata")),
     "PhysX.read_tokens_sync": (("self", "object_type", "attribute_tokens"), ("scope", "prim_paths", "pattern", "contacts", "metadata")),

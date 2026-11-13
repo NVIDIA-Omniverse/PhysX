@@ -9,53 +9,40 @@ type: unit
 
 ## Scenario
 
-A wait-all readiness timeout returns partial failures and preserves unfinished
-and later tasks for retry.
+Wait-all timeout returns completed-prefix failures without consuming pending work.
 
 ## Given
 
-- A real failed clone A, a callback-gated PhysX simulation B, and a later
-  completed idempotent release C.
-- Finite, polling and infinite wait modes.
+- A failed task followed by a deterministically held job and later submitted work.
+- Poll, finite and infinite wait modes.
 
 ## When
 
-- Collect C directly, poll wait-all and retain its partial output; unblock B and retry.
-- Advance an injected clock against one shared readiness budget in the helper;
-  exercise public finite waits against the gated simulation.
-- Change the caller thread between externally serialized waits.
+- Poll or finitely wait for all, retain the partial result, release the hold and retry.
+- Wait on a later completed task without collecting an earlier failure.
+- Change threads between externally serialized waits.
 
 ## Then
 
-- C completes independently while B is pending. Timeout returns A in
-  `error_tasks` and B in `pending_task` (REQ AC-2, AC-3).
-- Earlier collected A is not reported again (REQ AC-2).
-- One deadline applies across tasks; readiness observed at the boundary wins,
-  while finalization may exceed the readiness timeout (REQ AC-8).
-- Polling never consumes unfinished tasks, and infinite retry reaches a terminal
-  result (REQ AC-8).
+- Timeout reports completed-prefix failures and the earliest pending task;
+  unfinished and later outcomes remain collectible (REQ AC-2, AC-3, AC-8).
+- Collected failures are not reported twice, and a target-only wait leaves
+  earlier failures uncollected (REQ AC-2).
+- One deadline bounds readiness; outcome allocation/collection may take additional
+  time. Infinite retry can execute unstarted jobs and reaches a terminal result
+  (REQ AC-8, AC-9).
 
-## Automated cases
+## Automated coverage
 
-- [test_physx_async.cpp](../../../tests/c_unittests/test_physx_async.cpp):
-  - `PhysXAsync.TaskWaitAllUsesOneReadinessDeadline` advances a fake clock against
-    the shared budget helper (AC-3, AC-8).
-  - `PhysXAsync.ReadinessObservedAtDeadlineWins` checks the readiness boundary
-    with an injected clock and sleep function (AC-8).
-  - `PhysXTestFixture.PhysXAsync_PendingSimulationTimeoutsDoNotBlockOrConsume`
-    gates real PhysX execution, polls, waits finitely, releases the gate and
-    retries indefinitely. Earlier failures appear once in partial wait-all output;
-    earlier and later ready tasks remain individually collectable (AC-2, AC-3, AC-8).
-- [test_task_completion.cpp](../../../tests/c_unittests/test_task_completion.cpp),
-  `PhysXTestFixture.TaskWaitAndErrorLookupMayMoveAcrossSerializedThreads`:
-  collection on a joined worker thread followed by lookup on the caller thread
-  (AC-8).
+- `WorkerStep.WaitAllTimeoutPrefix` in `tests/c_unittests/test_worker_step.cpp`.
+- `ExecutorTasks.WaitAllStopsAtTheEarliestUnfinishedJob` and
+  `WorkerWaits.FiniteWaitsAndPollsNeverRunJobs` in `tests/c_unittests/test_executor_tasks.cpp`.
+- `PhysXTestFixture.PhysXAsync_PendingSimulationTimeoutsDoNotBlockOrConsume`
+  in `tests/c_unittests/test_physx_async.cpp`.
+- `PhysXTestFixture.TaskWaitAndErrorLookupMayMoveAcrossSerializedThreads`
+  in `tests/c_unittests/test_task_completion.cpp`.
 
 ## Coverage limits
 
-- Shared finite-budget arithmetic and ready-at-deadline behavior use helper
-  tests. The public wait-all regression uses polling; it does not time a finite
-  wait across several pending simulations: the implementation permits only one
-  pending simulation per instance.
-- Real simulation coverage verifies readiness timeout and retry. It does not
-  impose or measure a bound on result finalization.
+The final ready-at-deadline predicate check is source-inspected in
+`InstanceExecutor::waitLocked`; there is no injected-clock boundary test.

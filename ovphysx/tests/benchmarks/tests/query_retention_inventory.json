@@ -1,0 +1,13 @@
+{
+    "_comment": "Two hidden CPU caller query-retention diagnostics. Original fresh-query families remain unchanged. See REQ-CAPI-BENCHMARK-008.",
+    "rows": [
+        {
+            "name": "QueryRetention.runtime_write_spawn_cpu",
+            "device": "cpu"
+        },
+        {
+            "name": "QueryRetention.velocity_ovstage_4096_cpu",
+            "device": "cpu"
+        }
+    ]
+}

@@ -25,13 +25,13 @@ TEST_F(PhysXTestFixture, ArticulationChainDataMovement_CompleteSimulation) {
     // This USD's joint drives are pure dampers (drive:angular:physics:damping, no stiffness), so a
     // jointPositionTarget has no solver effect and only a velocity target drives them. The test
     // commands a constant angular velocity and reads jointVelocity back as the drive-applied control.
-    const ovx_string_or_token_t velTargetAttr = {
+    const ovx_token_or_string_t velTargetAttr = {
         0, { OVPHYSX_ATTR_JOINT_VELOCITY_TARGET, sizeof(OVPHYSX_ATTR_JOINT_VELOCITY_TARGET) - 1 }
     };
-    const ovx_string_or_token_t jointVelAttr = {
+    const ovx_token_or_string_t jointVelAttr = {
         0, { OVPHYSX_ATTR_JOINT_VELOCITY, sizeof(OVPHYSX_ATTR_JOINT_VELOCITY) - 1 }
     };
-    const ovx_string_or_token_t posAttr = { 0, { OVPHYSX_ATTR_POSITION, sizeof(OVPHYSX_ATTR_POSITION) - 1 } };
+    const ovx_token_or_string_t posAttr = { 0, { OVPHYSX_ATTR_POSITION, sizeof(OVPHYSX_ATTR_POSITION) - 1 } };
 
     const int TOTAL_STEPS = 200;
     const float dt = 1.0f / 60.0f;
@@ -44,7 +44,7 @@ TEST_F(PhysXTestFixture, ArticulationChainDataMovement_CompleteSimulation) {
         EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_query(m_handle, OVPHYSX_QUERY_TARGET_ARTICULATION_LINK, OVPHYSX_SCOPE_ALL, &rq, nullptr)).status,
                   OVPHYSX_API_SUCCESS);
         ovphysx_read_handle_t rs = 0;
-        EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_read(m_handle, rq, &posAttr, 1, &rs, nullptr)).status, OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_read(m_handle, rq, &posAttr, 1, ovstage_cuda_sync_t{ 0, 0 }, &rs, nullptr)).status, OVPHYSX_API_SUCCESS);
         const ovstage_read_group_t* g = nullptr;
         for (;;)
         {
@@ -56,9 +56,10 @@ TEST_F(PhysXTestFixture, ArticulationChainDataMovement_CompleteSimulation) {
                 ADD_FAILURE() << "ovphysx_fetch_read_next(LINK) failed (status " << static_cast<int>(fr.status) << ")";
                 break;  // g is NULL on a non-success status and must not be dereferenced
             }
-            for (uint32_t ti = 0; !g->is_delete && g->data.tensors && ti < g->data.tensor_count; ++ti)
+            for (uint32_t ti = 0; !g->columns[0].is_delete && g->columns[0].data.tensors
+                 && ti < g->columns[0].data.tensor_count; ++ti)
             {
-                const DLTensor& t = g->data.tensors[ti];
+                const DLTensor& t = g->columns[0].data.tensors[ti];
                 if (!t.data || t.device.device_type != kDLCPU || t.dtype.lanes != 3)
                     continue;
                 const int64_t rows = t.shape[0];
@@ -91,7 +92,7 @@ TEST_F(PhysXTestFixture, ArticulationChainDataMovement_CompleteSimulation) {
         EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_query(m_handle, OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT, OVPHYSX_SCOPE_ALL, &rq, nullptr)).status,
                   OVPHYSX_API_SUCCESS);
         ovphysx_read_handle_t rs = 0;
-        EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_read(m_handle, rq, &jointVelAttr, 1, &rs, nullptr)).status, OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_read(m_handle, rq, &jointVelAttr, 1, ovstage_cuda_sync_t{ 0, 0 }, &rs, nullptr)).status, OVPHYSX_API_SUCCESS);
         const ovstage_read_group_t* g = nullptr;
         for (;;)
         {
@@ -103,9 +104,10 @@ TEST_F(PhysXTestFixture, ArticulationChainDataMovement_CompleteSimulation) {
                 ADD_FAILURE() << "ovphysx_fetch_read_next(JOINT) failed (status " << static_cast<int>(fr.status) << ")";
                 break;  // g is NULL on a non-success status and must not be dereferenced
             }
-            for (uint32_t ti = 0; !g->is_delete && g->data.tensors && ti < g->data.tensor_count; ++ti)
+            for (uint32_t ti = 0; !g->columns[0].is_delete && g->columns[0].data.tensors
+                 && ti < g->columns[0].data.tensor_count; ++ti)
             {
-                const DLTensor& t = g->data.tensors[ti];
+                const DLTensor& t = g->columns[0].data.tensors[ti];
                 if (!t.data || t.device.device_type != kDLCPU)
                     continue;
                 const size_t lanes = t.dtype.lanes ? t.dtype.lanes : 1;

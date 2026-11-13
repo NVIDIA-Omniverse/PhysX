@@ -28,13 +28,83 @@ These modules use the installed companion C++ SDK and the exact matching PhysX
 headers. They link no PhysX static libraries. The host imports provide non-inline
 query utilities from the existing runtime owner. Native code uses no USD or Python.
 
+### Select the matching toolchain first
+
+Use the C SDK and companion source matching the **exact build** of the loaded
+ovphysx library. A matching SDK alone is insufficient: the plugin's compiler/runtime
+fingerprint must also match the owner. CMake otherwise selects the host's default
+compiler and can successfully build a plugin that the owner rejects.
+
+For the released **Linux x86_64 ovphysx 0.7.0.73411310** SDK and wheel, use
+**GCC 11.4.0**, the GCC C++ ABI value **1016**, the libstdc++ C++11 ABI
+(`_GLIBCXX_USE_CXX11_ABI=1`), and **Release** configuration. The required compiler
+fingerprint is `gcc:11.4.0:abi:1016:stdlib:1`. This value is specific to that
+build; do not assume it applies to every 0.7 SDK or another platform.
+
+Select a compiler installation with those values before configuring. For example,
+if GCC 11.4.0 is installed as `/usr/bin/g++-11`, check its macros with:
+
 ```sh
+CXX=/usr/bin/g++-11
+"$CXX" -std=c++17 -dM -E -x c++ -include string /dev/null \
+  | grep -E '^#define (__VERSION__|__GXX_ABI_VERSION|_GLIBCXX_USE_CXX11_ABI) '
+```
+
+For that release, the values must be `"11.4.0"`, `1016`, and `1`, respectively.
+The executable name `g++-11` alone does not establish the patch version. The
+fingerprint is constructed in
+[`native_compatibility.h`](../../include/ovphysx_companion/native_compatibility.h)
+from these macros. The installed `native_build.h` records the SDK digest and debug
+mode, but does **not** record the owner's compiler fingerprint. For a locally built
+owner, use its recorded CMake compiler, matching compiler/runtime flags and build
+configuration. For other released builds, obtain the compiler/runtime configuration
+from that build's producer before building plugins.
+
+Set `OVPHYSX_SDK` below to the extracted matching C SDK, or to `ovphysx/_install`
+when using the owner built in this checkout. Run from the repository root, using a
+fresh build directory when changing compilers or SDKs:
+
+```sh
+OVPHYSX_SDK="$PWD/ovphysx/_install"
 cmake -S ovphysx/companion/samples/native -B /tmp/companion-plugins \
-  -DOVPHYSX_SDK="$PWD/ovphysx/_install" -DCMAKE_BUILD_TYPE=Release
+  -DOVPHYSX_SDK="$OVPHYSX_SDK" -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_CXX_COMPILER="$CXX"
 cmake --build /tmp/companion-plugins --config Release
+```
+
+Before running the scene sample, a minimal Linux CPU loader check can verify the
+compiled spring plugin against the matching installed wheel. Run it in a fresh
+Python process; it needs no populated scene:
+
+```sh
+PYTHONPATH="$PWD/ovphysx/companion/python" python - <<'PY'
+from ovphysx import PhysX
+from ovphysx_companion.plugins import NativePlugin
+
+PhysX.set_cpu_mode(True)
+physics = PhysX()
+try:
+    with NativePlugin(physics, "/tmp/companion-plugins/libcompanion_spring.so"):
+        print("Plugin loaded with the selected toolchain")
+finally:
+    physics.destroy()
+PY
+```
+
+Then run the scene sample:
+
+```sh
 PYTHONPATH="$PWD/ovphysx/companion/python" python \
   ovphysx/companion/samples/native_extensions.py /tmp/companion-plugins
 ```
+
+For example, a default GCC 13.3.0 build produces
+`gcc:13.3.0:abi:1018:stdlib:1` and is rejected by the 0.7.0.73411310 owner with
+`ABI_MISMATCH`. Rebuild with the matching toolchain. Do not redefine compiler
+identity macros or edit the descriptor to pass admission: that does not establish
+binary compatibility. Other descriptor mismatches can produce the same status.
+
+### Plugin contracts
 
 Use the same compiler/runtime ABI and SDK as the owner. The SDK build digest
 covers the headers and packaged archives; a different descriptor/build/compiler
@@ -53,7 +123,7 @@ block waiting for owner operations.
 - `schema/resources` defines both external codeless schemas. Register those in
   customer USD and in population independently, before their first schema lookup.
   `population_description` retains custom fields and inherited joint body/frame
-  properties. The PHYSICS domain alone is insufficient for an external joint.
+  properties. The physics population description alone is insufficient for an external joint.
 
 v1 loading requires hard process CPU mode (`PhysX.set_cpu_mode(True)`); other
 modes fail before plugin startup. Load modules before attaching their scenes. Keep them alive through object

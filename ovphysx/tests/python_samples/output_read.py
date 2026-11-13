@@ -20,9 +20,10 @@ This sample demonstrates the full ovstage round trip (ADR-0007):
    the default dynamic physics output back into ovstage.
 4. Verify the expected sideways displacement and the emitted world transforms.
 
-This sample opts into an application-owned output cache: the first helper call
-reads current OVStage transform and point-instancer state, releases those views,
-and retains owned Warp copies for later frames. Fixed rigid-body poses become
+This sample opts into an application-owned output cache, which retains reusable
+Warp buffers (and owned copies of any point-instancer or vehicle-wheel state it
+reads from OVStage) for later frames. Fixed rigid-body poses are combined with
+the world scale physics stored for each body (``worldScale``) and become
 ``omni:fabric:worldMatrix`` without changing local transform or reset-stack state.
 Other output groups still use shadow ``sim:<name>`` attributes and preserve their
 array shape and semantic.
@@ -44,6 +45,7 @@ from pathlib import Path
 
 import numpy as np
 import ovstage
+from ovphysx.population import physics_population_descs
 import warp as wp
 from ovphysx.types import ObjectScope, SimObjectType
 from ovphysx.utils import OvStageOutputCache, step_and_write_to_ovstage
@@ -72,9 +74,8 @@ def attach_scene(physx, usd_path, read_ordinal):
         _physx_schemas_registered = True
     stage = ovstage.Stage("ovphysx-output-read-sample")
     try:
-        ovstage.population.open_usd(
-            stage, str(usd_path), ordinal=read_ordinal, domains=ovstage.PopulationDomain.ALL
-        )
+        ovstage.population.open_usd_with_desc(
+            stage, str(usd_path), ordinal=read_ordinal, time=ovstage.population.DEFAULT_TIME, descs=physics_population_descs(rendering=True))
         stage.advance_write_floor(ordinal=read_ordinal).wait()
         physx.wait_task(physx.attach_ovstage(stage, read_ordinal=read_ordinal))
         return stage
@@ -134,7 +135,8 @@ def read_rigid_body_vectors(physx, attribute):
     with physx.read_sync(SimObjectType.RIGID_BODY, [attribute], scope=ObjectScope.ALL) as result:
         for group in result.groups:
             if not group.is_delete and not group.is_array and group.tensors:
-                columns.append(np.asarray(group.tensors[0].numpy(), dtype=np.float32))
+                # Copied: the read's arrays are invalid once it is closed.
+                columns.append(np.array(group.tensors[0].numpy(), dtype=np.float32))
     if not columns:
         raise RuntimeError(f"No rigid-body {attribute} values were read")
     return np.concatenate(columns, axis=0)
@@ -147,16 +149,18 @@ def _read_stage_rows(stage, paths, query, attribute, ordinal):
         read.wait()
         for group in read.groups():
             try:
-                if group.is_delete:
+                # One attribute was requested, so each group has that one column.
+                column = group.columns[0]
+                if column.is_delete:
                     continue
-                values = np.asarray(group.array(0))
+                values = np.asarray(column.array(0))
                 # Typed reads expose matrix/vector components as trailing axes.
                 # Keep the leading data-row axis intact when flattening them.
                 values = values.reshape(values.shape[0], -1)
                 group_paths = paths.get_path_strings(group.prim_list)
                 for local in range(group.prim_count):
                     prim_index = group.prim_index(local)
-                    data_index = group.data_row_index(local) if group.has_data_index_map else local
+                    data_index = column.data_row_index(local) if column.has_data_index_map else local
                     rows[group_paths[prim_index]] = np.array(values[data_index], copy=True)
             finally:
                 stage.release_group(group)
@@ -250,6 +254,9 @@ def main():
 
             # Step once and write the default dynamic output set at an
             # ordinal that physics never drains.
+            # The default also requests CUDA-only deformable and particle outputs.
+            # This CPU scene has neither, but those reads may still warn about a
+            # missing CUDA context; the warnings do not indicate failed rigid-body output.
             dumped = step_and_write_to_ovstage(
                 physx,
                 dt=dt,
@@ -281,7 +288,7 @@ def main():
 
         print("Closed-loop ovstage output read completed successfully")
     finally:
-        # The closed result and final loop group still retain their read arrays.
+        # Drop the closed result and final loop group: their read arrays are invalid.
         result = group = None
         if output_cache is not None:
             output_cache.close()

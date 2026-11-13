@@ -28,6 +28,7 @@ A bare instance, with no stage attached, uses the debug-render query to store se
 - It writes `scope` tokens 11 and 22, then a zero token, then an empty scope, then a count of 4097.
 - It reads `cullingBox`, stores a box, reads it back, then commits element 0 as 0.
 - It opens a debug-render query with an optional summary and checks that summary is empty when no stage is attached. With a stage attached, it resolves attribute tokens through that stage's path dictionary.
+- It opens a `scale` write with the optional write summary and fetches its group.
 - `ovphysx_writability` is queried for `bodyAxes` and `pointPosition`.
 - A write of `notAnAttribute` is opened on the debug-render query.
 
@@ -38,10 +39,11 @@ A bare instance, with no stage attached, uses the debug-render query to store se
 - The negative and NaN writes fail as task errors and leave the stored value unchanged (AC-2). The repeated commit of the rejected group is refused, and the stored value stays 2.5 (AC-2).
 - Both geometry columns have leading shape 0 (AC-3).
 - `bodyAxes` is writable and `pointPosition` is read-only (AC-4).
-- The unknown read fails. The following `scale` and `enabled` read still returns those two columns, in that order, with attribute token 0 (AC-9). The token-only read fails (AC-9).
+- The unknown read fails. The following `scale` and `enabled` read still returns those two columns, in that order, with attribute token `OVX_INVALID_TOKEN` (AC-9). The token-only read fails (AC-9).
 - The zero token and the count above 4096 fail as task errors. The empty scope write succeeds (AC-6).
 - The first `cullingBox` read has leading shape 0. After a box is stored, a read returns a non-zero leading shape. After element 0 is committed as 0, the next read has leading shape 0 again (AC-7). The PhysX scene box is checked by the runtime test for REQ-PUBLICAPI-004.
 - The shared dictionary is null (AC-8). Attached-stage coverage includes `tests/c_unittests/test_debug_render_e2e.cpp` `SharedDictionaryMatchesAttachedStage` and the Python scenario below.
+- The write summary has one row with one group, attribute token `OVX_INVALID_TOKEN` and total prim count 0, and the fetched group has attribute index 0 (AC-8).
 - The unknown write fails (AC-4).
 
 ## Python attached-stage regression (AC-3, AC-8, AC-9)
@@ -49,16 +51,27 @@ A bare instance, with no stage attached, uses the debug-render query to store se
 Given a Python instance with `boxes_falling_on_groundplane.usda` attached:
 
 - Open a debug-render query and resolve `linePosition` through its dictionary.
-- Write `enabled`, `scale`, and `collisionShapes`, then step once.
+- Write `enabled`, `scale`, and `collisionShapes`, then open a `scale` write with `metadata=True`, then step once.
 - Read line positions and colors by name, then read positions by token.
 
-The query summary is empty. Every write and read group's attribute token resolves
+The query summary is empty. The write summary has one row with one group, total
+prim count 0, and a token that resolves to `scale`. Every write and read group's attribute token resolves
 through the attached stage to the requested name. Geometry is nonempty, position
 and color row counts match, and token reads return the same positions. After
 detach, the Python query and read session reject further use as invalidated.
-The no-stage Python control still returns empty geometry and attribute tokens 0.
-Attribute tokens are also 0 when native detach has completed but its Python task
+The no-stage Python control still returns empty geometry and attribute tokens `OVX_INVALID_TOKEN`.
+Attribute tokens are also `OVX_INVALID_TOKEN` when native detach has completed but its Python task
 has not yet been collected; the retained old Stage must not supply a dictionary.
+
+## Python one-attribute write (AC-10)
+
+Given a Python instance with no stage attached:
+
+- Write `scale` = 2.0, then open `scale` again and read the opened tensor.
+- Open one write of `enabled` and `scale` together.
+- Read `scale`.
+
+The reopened tensor holds 2.0. The two-name write raises `TaskError` before a group is published, and the following read still returns 2.0. The test restores `scale` to 1.0.
 
 ## Coverage
 

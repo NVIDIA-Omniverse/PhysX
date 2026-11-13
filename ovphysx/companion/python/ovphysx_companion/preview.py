@@ -74,8 +74,8 @@ def _path(value):
 
 
 def _ordinal(value):
-    if isinstance(value, bool) or not isinstance(value, int) or not 0 < value < 2**64:
-        raise ValueError("Expected a nonzero uint64 sealed ordinal")
+    if isinstance(value, bool) or not isinstance(value, int) or not 0 < value < 2**63:
+        raise ValueError("Expected a positive int64 sealed ordinal")
     return value
 
 

@@ -14,6 +14,7 @@ from pathlib import Path
 
 def run():
     import ovphysx,ovstage
+    from ovphysx.population import physics_population_descs
     from ovphysx_companion.configuration import (
         CATALOG,HostPreferences,AttachmentOptions,AttachmentConfiguration,Pipeline,Solver)
     from ovphysx_companion.schemas import physx_schema_paths
@@ -21,8 +22,8 @@ def run():
     ovphysx.PhysX.set_cpu_mode(True)
     physics=ovphysx.PhysX();stage=ovstage.Stage('settings-preview')
     try:
-        ovstage.population.open_usd(stage,str(Path(__file__).with_name('scenes')/'two_boxes.usda'),
-            ordinal=1,domains=ovstage.PopulationDomain.ALL)
+        ovstage.population.open_usd_with_desc(stage,str(Path(__file__).with_name('scenes')/'two_boxes.usda'),
+            ordinal=1,time=ovstage.population.DEFAULT_TIME,descs=physics_population_descs(rendering=True))
         stage.advance_write_floor(ordinal=1).wait()
         store={};preferences=HostPreferences(store);preferences.set('show_debug_geometry',True)
         options=AttachmentOptions(threads=2,gpu_pipeline=Pipeline.CPU,solver=Solver.TGS)

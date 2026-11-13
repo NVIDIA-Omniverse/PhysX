@@ -21,12 +21,14 @@ Preview an articulation, edit selection and transition to Play while a preview r
 - Playback A with a live core attachment, saved authored opinions and an Inspector preview service capable of owning native B through the same runtime bridge.
 - A separate preview ovstage with an articulation, equal source paths to A, a revision mapping, isolated output layer and per-attachment step/output recorder.
 - A fallback-capability variant where in-process preview is unavailable.
+- A native preview of a stage with a dynamic body, a joint, a static collider and an articulation.
 
 ## When
 
 - Create B, preview/pause/resume, change selection or topology and attempt to commit an older result; attempt a duplicate attach of A's ovstage.
 - Cancel B, create a fresh preview, transition to Play and commit/undo/redo fresh selected output. Close preview while A has pending work, then fetch A normally.
 - Repeat opening with the in-process capability absent.
+- Step the native preview, then read the rigid pose of the static collider and an articulation link; read a relative path, a missing path and the joint, and read a body while a step is pending, each into a filled output.
 
 ## Then
 
@@ -34,12 +36,17 @@ Preview an articulation, edit selection and transition to Play while a preview r
 - Equal paths resolve against their own stage/attachment; stale results and duplicate live ovstage attachment are rejected without changing A. (REQ AC-2)
 - Cancel removes preview-owned output without overwriting playback; fresh commit changes only selected dynamic opinions and undo restores them, preserving rest data. (REQ AC-3)
 - There is one coordinator per attachment and writer per destination; Play/close never resets A or consumes its pending result, and no preview callback follows close. (REQ AC-4)
+- The static collider and the link report the position and xyzw rotation of their native body inspection. The relative path reports an invalid argument, the missing path and the joint report not found, and the pending step reports Busy; each leaves the output byte-for-byte unchanged. (REQ AC-8)
 
 ## Executable coverage
 
 [test_preview_usd.py](../../../tests/test_preview_usd.py):
 
 Seven USD cases cover rigid/articulation worker snapshots, selected commit/undo, Play invalidation, and transient output cancellation without overwriting newer input. Native preview/host/event/inspection tests exercise independent owners, duplicate source refusal, pause/resume and closing B with A pending. Only dedicated native and worker modes are advertised.
+
+`test_preview_rigid_pose_matches_inspection_and_failures_preserve_output` in
+[test_inspection.py](../../../tests_native/test_inspection.py) covers AC-8 through
+the native preview table.
 
 Qualification: Linux x86_64 CPU and customer USD 26.8. No GPU/device execution
 or same-process legacy-provider coexistence is claimed.

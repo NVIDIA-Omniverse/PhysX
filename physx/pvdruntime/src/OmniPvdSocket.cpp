@@ -440,6 +440,27 @@ int64_t OmniPvdSocket::recv(uint8_t* bytes, uint64_t nbrBytes)
 	}
 }
 
+int64_t OmniPvdSocket::recvAvailable(uint8_t* bytes, uint32_t nbrBytes)
+{
+	if (!isOpen()) return -1;
+	const OmniPvdNativeSocket socket = static_cast<OmniPvdNativeSocket>(mDataSocket);
+#if defined(OMNI_PVD_WIN)
+	fd_set readable;
+	FD_ZERO(&readable);
+	FD_SET(socket, &readable);
+	timeval timeout = {};
+	const int ready = ::select(0, &readable, NULL, NULL, &timeout);
+#else
+	pollfd descriptor;
+	descriptor.fd = socket; descriptor.events = POLLIN; descriptor.revents = 0;
+	const int ready = ::poll(&descriptor, 1, 0);
+#endif
+	if (ready == 0 || (ready < 0 && omniPvdWaitWasInterrupted())) return 0;
+	if (ready < 0) return -1;
+	const int64_t received = recv(bytes, nbrBytes);
+	return received == 0 ? int64_t(eRECEIVE_CLOSED) : received;
+}
+
 void OmniPvdSocket::close()
 {
 #if defined(OMNI_PVD_WIN)

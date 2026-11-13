@@ -5,9 +5,9 @@
 
 # PhysicsMaterialAPI
 
-Makes a prim a physics material and creates a PxMaterial for it. Enumerated by usd-schemas CONTAINS PhysicsMaterialAPI with physics:dynamicFriction as the probe column. Nothing here is units-scaled; the two friction defaults diverge from the raw schema fallback.
+Makes a [prim](glossary.md#prim) a physics material and creates a PxMaterial for it. Enumerated by [usd-schemas](prim.md#columns) CONTAINS PhysicsMaterialAPI with physics:dynamicFriction as the probe column. Nothing here is units-scaled; the two friction defaults diverge from the raw schema fallback.
 
-- **Applies to:** `Typed`
+- **Applies to:** [`Typed`](glossary.md#typed)
 - **Read only when listed in `usd-schemas`.**
 
 ## What USD population writes
@@ -16,11 +16,11 @@ Every declared attribute is published at its resolved value, so an unauthored fr
 
 ## Columns
 
-*Raw fallback* is the USD schema value. *Producer writes* is what ovstage population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
+*Raw fallback* is the [USD](glossary.md#usd) schema value. *Producer writes* is what [ovstage](glossary.md#ovstage) population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
 
 | Column | Type | Units | Raw fallback | Producer writes | Parser default | If absent |
 |---|---|---|---|---|---|---|
-| `physics:staticFriction` | float32 | none | 0.0 | resolved USD value (authored, else raw fallback) | 0.5 **diverges** | 0.5 (PhysX convention), not the schema fallback 0.0. Writing the raw fallback literally gives a frictionless material where an omitted column gives coefficient 0.5; USD population always publishes the resolved value, so an unauthored attribute yields 0.0 there. |
+| `physics:staticFriction` | float32 | none | 0.0 | resolved USD value (authored, else raw fallback) | 0.5 **diverges** | 0.5 ([PhysX](glossary.md#physx) convention), not the schema fallback 0.0. Writing the raw fallback literally gives a frictionless material where an omitted column gives coefficient 0.5; USD population always publishes the resolved value, so an unauthored attribute yields 0.0 there. |
 | `physics:dynamicFriction` | float32 | none | 0.0 | resolved USD value (authored, else raw fallback) | 0.5 **diverges** | 0.5, same divergence as physics:staticFriction: the raw fallback 0.0 is frictionless, the omitted column is 0.5. |
 | `physics:restitution` | float32 | none | 0.0 | resolved USD value (authored, else raw fallback) | 0.0 | 0.0, no bounce. |
 | `physics:density` | float32 | mass/length^3 | 0.0 | resolved USD value (authored, else raw fallback) | -1.0 | -1.0, the unset sentinel: mass computation ignores the material and falls back to PhysicsMassAPI density, then the consumer default density. The raw fallback 0.0 reads as unset too, so writing it literally is harmless. |
@@ -33,4 +33,4 @@ Every declared attribute is published at its resolved value, so an unauthored fr
 
 ## Known divergences
 
-- **defect** (consumer) `physics:staticFriction`: The consumer default 0.5 for both frictions disagrees with the schema fallback 0.0 that the producer publishes: a producer-populated Material simulates with friction 0, a hand-populated stage that omits the columns with 0.5. Observed in the material_bound_cube parity test (PxMaterial::getStaticFriction 0.5 vs 0). Same for physics:dynamicFriction.
+- **defect** (consumer) `physics:staticFriction`: The consumer default 0.5 for both frictions disagrees with the schema fallback 0.0 that the producer publishes: a producer-populated Material simulates with friction 0, a hand-populated stage that omits the columns with 0.5. Observed in the material_bound_cube parity test (PxMaterial static friction 0.5 vs 0). Same for physics:dynamicFriction.

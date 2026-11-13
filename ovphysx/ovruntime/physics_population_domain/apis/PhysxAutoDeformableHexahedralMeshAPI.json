@@ -1,0 +1,56 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxAutoDeformableHexahedralMeshAPI",
+  "title": "PhysxAutoDeformableHexahedralMeshAPI",
+  "summary": "Makes the automatic cook of a volume deformable build a hexahedral (voxel) simulation mesh that embeds the collision tetrahedral mesh. Listing the API is what enables it; it is read only for a volume body that also lists PhysxAutoDeformableBodyAPI.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "Xformable"
+  ],
+  "requires": [
+    "PhysxAutoDeformableBodyAPI",
+    "OmniPhysicsDeformableBodyAPI"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "producer_scope": "Published like any applied physics API: every declared attribute at its resolved value. No column is rewritten or created by the producer.",
+  "columns": [
+    {
+      "name": "physxDeformableBody:resolution",
+      "usd_type": "uint",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "uint",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0,
+      "parser_default": 0,
+      "absent": "0: the cooker uses 10 hexahedral elements along the longest edge. Authored values from 1 to 3 are raised to 4.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physics.ovstage/OvstageDeformableBatch.h",
+        "source/omni.physx/plugins/CookingDataAsync.cpp",
+        "source/omni.physx.cooking/plugins/tasks/VolumeDeformableBodyCookingTask.cpp"
+      ],
+      "notes": "A cooking input only: a change resyncs the deformable body and is one of the cooker's recook triggers. Ignored for a surface body. With mesh simplification on, the resolved resolution also sets the simplification target edge length."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysxAutoDeformableBodyAPI",
+      "rule": "Read only inside the PhysxAutoDeformableBodyAPI read and only for a volume body (simulation mesh with OmniPhysicsVolumeDeformableSimAPI); a surface body ignores the API."
+    }
+  ]
+}

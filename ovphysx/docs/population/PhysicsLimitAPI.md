@@ -5,11 +5,11 @@
 
 # PhysicsLimitAPI
 
-Per-axis limit of a D6 joint (a prim typed exactly PhysicsJoint), applied as PhysicsLimitAPI:<inst>. Read only on the D6: the typed joints carry their limits in their own columns. Presence of an instance makes the axis limited (or locked when low > high); absence of the instance leaves the axis free.
+Per-axis limit of a D6 joint (a [prim](glossary.md#prim) typed exactly [PhysicsJoint](glossary.md#physicsjoint)), applied as PhysicsLimitAPI:<inst>. Read only on the D6: the typed joints carry their limits in their own columns. Presence of an instance makes the axis limited (or locked when low > high); absence of the instance leaves the axis free.
 
 - **Applies to:** `PhysicsJoint`
 - **Multi-apply:** applied as `PhysicsLimitAPI:<instance>`; `<inst>` in a column name is the instance. Instances: `transX`, `transY`, `transZ`, `rotX`, `rotY`, `rotZ`, `distance`.
-- **Read only when listed in `usd-schemas`.**
+- **Read only when listed in [`usd-schemas`](prim.md#columns).**
 
 ## What USD population writes
 
@@ -17,24 +17,20 @@ Both declared attributes of every applied instance are published at their resolv
 
 ## Columns
 
-*Raw fallback* is the USD schema value. *Producer writes* is what ovstage population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
+*Raw fallback* is the [USD](glossary.md#usd) schema value. *Producer writes* is what [ovstage](glossary.md#ovstage) population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
 
 | Column | Type | Units | Raw fallback | Producer writes | Parser default | If absent |
 |---|---|---|---|---|---|---|
-| `limit:<inst>:physics:low` | float32 | rot axes: deg; trans axes and distance: length (deg_to_rad) | `-inf` | resolved USD value (authored, else raw fallback) | 0.0 | CAUTION: with the instance applied and the column absent the bound stays 0 and the OR-form enable rule (a bound is finite and inside +-0.5e38) makes the limit ACTIVE at [0, 0], locking the axis. USD population publishes the resolved -inf, which leaves the axis free. Always write the resolved value; -inf is safe to write literally. |
-| `limit:<inst>:physics:high` | float32 | rot axes: deg; trans axes and distance: length (deg_to_rad) | `inf` | resolved USD value (authored, else raw fallback) | 0.0 | Same trap as low: an absent column reads as 0 and the limit is active. inf is safe to write literally. |
+| `limit:<inst>:physics:low` | float32 | rot axes: deg; trans axes and distance: length (deg_to_rad) | `-inf` | resolved USD value (authored, else raw fallback) | `-inf` | No lower bound. With the instance applied and both bounds absent the consumer seeds the schema fallbacks -inf/inf and leaves the axis free, as on a USD-populated stage. |
+| `limit:<inst>:physics:high` | float32 | rot axes: deg; trans axes and distance: length (deg_to_rad) | `inf` | resolved USD value (authored, else raw fallback) | `inf` | No upper bound. The consumer seeds the schema fallback inf; see low. |
 
 ## Interactions
 
 - **[`PhysicsJoint`](PhysicsJoint.md):** Only a prim typed exactly PhysicsJoint reads these instances; the gate is usd-schemas CONTAINS PhysicsLimitAPI:<inst> per instance. Instance order in the descriptor follows the fixed list transX, transY, transZ, rotX, rotY, rotZ, distance.
 - **[`PhysxLimitAPI`](PhysxLimitAPI.md):** PhysxLimitAPI:<same inst> supplies restitution, bounceThreshold, stiffness and damping for the limit created here.
 
-## Known divergences
-
-- **defect** (consumer) `limit:<inst>:physics:low`: With an instance applied but its low/high columns absent, both bounds stay 0 and the OR-form enable rule activates a [0, 0] limit that locks the axis, whereas USD population publishes -inf/inf and leaves the axis free. Only a hand-populated stage that omits the columns is affected. The active limit also overwrites the PhysX default bounceThreshold of the untouched limit (0.5 for angular and cone limits, 2 * tolerances length for linear limits) with the PhysxLimitAPI value or 0, so physxLimit:<inst>:bounceThreshold diverges too (observed: 0 vs 0.5 / 200).
-
 ## Notes
 
 - Per-joint-type instance matrix: Fixed none; Revolute none (uses physics:lowerLimit/upperLimit); Prismatic none (same); Spherical none (uses physics:coneAngle0Limit/coneAngle1Limit); Distance none (uses physics:minDistance/maxDistance); D6 (PhysicsJoint) transX transY transZ rotX rotY rotZ distance; Gear, Rack, Custom none.
-- Standalone D6 mapping: transX/Y/Z -> PxD6Axis::eX/eY/eZ linear limit; rotX -> eTWIST twist limit; rotY/rotZ -> eSWING1/eSWING2 through one shared PxJointLimitPyramid (yAngleMin/Max from rotY, zAngleMin/Max from rotZ; the pyramid's restitution, bounceThreshold, stiffness and damping come from whichever of the two instances was processed last); distance -> setDistanceLimit(high) and every still-free linear axis becomes eLIMITED. A minimum distance on a D6 is not supported (warning).
-- Articulation D6 joints ignore the translational and distance entries; only rotX/rotY/rotZ exist as eTWIST/eSWING1/eSWING2 and are always eFREE (limits are not applied to articulation D6 axes).
+- Standalone D6 mapping: transX/Y/Z -> PxD6Axis::eX/eY/eZ linear limit (an open -inf/inf bound of a one-sided limit is clamped to the [PhysX](glossary.md#physx) unlimited default +-PX_MAX_F32/3, so the authored bound still applies); rotX -> eTWIST twist limit; rotY/rotZ -> eSWING1/eSWING2 through one shared PxJointLimitPyramid (its y-angle bounds from rotY, its z-angle bounds from rotZ; the pyramid's restitution, bounceThreshold, stiffness and damping come from whichever of the two instances was processed last; every pyramid angle is clamped just inside +-pi, so a one-sided swing limit keeps its authored bound and its open -inf/inf bound becomes ~+-pi); distance -> the D6 distance limit at the high bound, and every still-free linear axis becomes eLIMITED. A minimum distance on a D6 is not supported (warning).
+- Articulation D6 joints ignore the translational and distance entries; only rotX/rotY/rotZ exist, as eTWIST/eSWING1/eSWING2 of an eSPHERICAL joint: an enabled limit makes the axis eLIMITED with both bounds clamped to +-pi, so a one-sided limit keeps its authored bound.

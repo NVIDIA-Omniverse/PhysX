@@ -90,6 +90,29 @@ TEST_F(DebugRenderTest, RejectedCommitSpendsTheGroup)
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_query(h, query)).status, OVPHYSX_API_SUCCESS);
 }
 
+TEST_F(DebugRenderTest, WriteSummaryReportsOneRowWithoutStage)
+{
+    ovphysx_query_handle_t query = 0;
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_query(h, OVPHYSX_QUERY_TARGET_DEBUG_RENDER, OVPHYSX_SCOPE_ALL, &query, nullptr)).status,
+              OVPHYSX_API_SUCCESS);
+    ovphysx_write_handle_t write = 0;
+    ovphysx_write_result_t summary{ 999, 999, nullptr };
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_write(h, query, &OVPHYSX_NAME_DEBUG_SCALE, 1, &write, &summary)).status,
+              OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(summary.total_prim_count, 0u);
+    ASSERT_EQ(summary.attribute_count, 1u);
+    ASSERT_NE(summary.attributes, nullptr);
+    EXPECT_EQ(summary.attributes[0].attribute, OVX_INVALID_TOKEN);
+    EXPECT_EQ(summary.attributes[0].group_count, 1u);
+
+    ovphysx_fetched_write_group_t written{};
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_fetch_write_next(h, write, &written)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_NE(written.group, nullptr);
+    EXPECT_EQ(written.attribute_index, 0u);
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_write(h, write)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_query(h, query)).status, OVPHYSX_API_SUCCESS);
+}
+
 TEST_F(DebugRenderTest, ParameterAndScaleRoundTripWithoutStage)
 {
     ASSERT_EQ(debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, 2.5f).status,
@@ -110,19 +133,19 @@ TEST_F(DebugRenderTest, GeometryReadIsEmptyWithoutScenes)
     ovphysx_query_handle_t query = 0;
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_query(h, OVPHYSX_QUERY_TARGET_DEBUG_RENDER, OVPHYSX_SCOPE_ALL, &query, nullptr)).status,
               OVPHYSX_API_SUCCESS);
-    const ovx_string_or_token_t attributes[] = { OVPHYSX_NAME_DEBUG_LINE_POSITION, OVPHYSX_NAME_DEBUG_LINE_COLOR };
+    const ovx_token_or_string_t attributes[] = { OVPHYSX_NAME_DEBUG_LINE_POSITION, OVPHYSX_NAME_DEBUG_LINE_COLOR };
     ovphysx_read_handle_t read = 0;
-    ASSERT_EQ(test_utils::complete_task(h, ovphysx_read(h, query, attributes, 2, &read, nullptr)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_read(h, query, attributes, 2, ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr)).status, OVPHYSX_API_SUCCESS);
     const ovstage_read_group_t* position = nullptr;
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_fetch_read_next(h, read, &position)).status, OVPHYSX_API_SUCCESS);
     ASSERT_NE(position, nullptr);
-    ASSERT_NE(position->data.tensors, nullptr);
-    EXPECT_EQ(position->data.tensors[0].shape[0], 0);
+    ASSERT_NE(position->columns[0].data.tensors, nullptr);
+    EXPECT_EQ(position->columns[0].data.tensors[0].shape[0], 0);
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_group(h, read, position->read_group_id)).status, OVPHYSX_API_SUCCESS);
     const ovstage_read_group_t* color = nullptr;
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_fetch_read_next(h, read, &color)).status, OVPHYSX_API_SUCCESS);
     ASSERT_NE(color, nullptr);
-    EXPECT_EQ(color->data.tensors[0].shape[0], 0);
+    EXPECT_EQ(color->columns[0].data.tensors[0].shape[0], 0);
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_group(h, read, color->read_group_id)).status, OVPHYSX_API_SUCCESS);
     const ovstage_read_group_t* done = nullptr;
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_fetch_read_next(h, read, &done)).status, OVPHYSX_API_SUCCESS);
@@ -136,7 +159,7 @@ TEST_F(DebugRenderTest, UnknownWriteAttributeFails)
     ovphysx_query_handle_t query = 0;
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_query(h, OVPHYSX_QUERY_TARGET_DEBUG_RENDER, OVPHYSX_SCOPE_ALL, &query, nullptr)).status,
               OVPHYSX_API_SUCCESS);
-    const ovx_string_or_token_t attribute{ 0, { "notAnAttribute", sizeof("notAnAttribute") - 1 } };
+    const ovx_token_or_string_t attribute{ 0, { "notAnAttribute", sizeof("notAnAttribute") - 1 } };
     ovphysx_write_handle_t write = 0;
     EXPECT_NE(test_utils::complete_task(h, ovphysx_write(h, query, &attribute, 1, &write, nullptr)).status, OVPHYSX_API_SUCCESS);
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_query(h, query)).status, OVPHYSX_API_SUCCESS);
@@ -147,30 +170,52 @@ TEST_F(DebugRenderTest, UnknownReadAttributeFailsWithoutShiftingColumns)
     ovphysx_query_handle_t query = 0;
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_query(h, OVPHYSX_QUERY_TARGET_DEBUG_RENDER, OVPHYSX_SCOPE_ALL, &query, nullptr)).status,
               OVPHYSX_API_SUCCESS);
-    const ovx_string_or_token_t unknown{ 0, { "notAnAttribute", sizeof("notAnAttribute") - 1 } };
-    const ovx_string_or_token_t bad[] = { OVPHYSX_NAME_DEBUG_LINE_POSITION, unknown, OVPHYSX_NAME_DEBUG_LINE_COLOR };
+    const ovx_token_or_string_t unknown{ 0, { "notAnAttribute", sizeof("notAnAttribute") - 1 } };
+    const ovx_token_or_string_t bad[] = { OVPHYSX_NAME_DEBUG_LINE_POSITION, unknown, OVPHYSX_NAME_DEBUG_LINE_COLOR };
     ovphysx_read_handle_t read = 0;
-    EXPECT_EQ(test_utils::complete_task(h, ovphysx_read(h, query, bad, 3, &read, nullptr)).status, OVPHYSX_API_ERROR);
+    EXPECT_EQ(test_utils::complete_task(
+                  h, ovphysx_read(h, query, bad, 3, ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr))
+                  .status,
+              OVPHYSX_API_ERROR);
+    ASSERT_NE(read, 0u);
+    EXPECT_EQ(test_utils::complete_task(h, ovphysx_release_read(h, read)).status, OVPHYSX_API_SUCCESS);
+    read = 0;
 
-    const ovx_string_or_token_t attributes[] = { OVPHYSX_NAME_DEBUG_SCALE, OVPHYSX_NAME_DEBUG_ENABLED };
-    ASSERT_EQ(test_utils::complete_task(h, ovphysx_read(h, query, attributes, 2, &read, nullptr)).status, OVPHYSX_API_SUCCESS);
+    const ovx_token_or_string_t attributes[] = { OVPHYSX_NAME_DEBUG_SCALE, OVPHYSX_NAME_DEBUG_ENABLED };
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_read(h, query, attributes, 2, ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr)).status, OVPHYSX_API_SUCCESS);
     const ovstage_read_group_t* scale = nullptr;
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_fetch_read_next(h, read, &scale)).status, OVPHYSX_API_SUCCESS);
     ASSERT_NE(scale, nullptr);
-    EXPECT_EQ(scale->data.tensors[0].dtype.code, kDLFloat);
+    EXPECT_EQ(scale->columns[0].data.tensors[0].dtype.code, kDLFloat);
     const ovstage_read_group_t* enabled = nullptr;
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_fetch_read_next(h, read, &enabled)).status, OVPHYSX_API_SUCCESS);
     ASSERT_NE(enabled, nullptr);
-    EXPECT_EQ(enabled->data.tensors[0].dtype.code, kDLUInt);
-    EXPECT_EQ(scale->attribute, 0u);
-    EXPECT_EQ(enabled->attribute, 0u);
+    EXPECT_EQ(enabled->columns[0].data.tensors[0].dtype.code, kDLUInt);
+    EXPECT_EQ(scale->columns[0].attribute, OVX_INVALID_TOKEN);
+    EXPECT_EQ(enabled->columns[0].attribute, OVX_INVALID_TOKEN);
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_group(h, read, scale->read_group_id)).status, OVPHYSX_API_SUCCESS);
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_group(h, read, enabled->read_group_id)).status, OVPHYSX_API_SUCCESS);
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_read(h, read)).status, OVPHYSX_API_SUCCESS);
 
-    ovx_string_or_token_t tokenOnly{};
-    tokenOnly.token = 11u;
-    EXPECT_EQ(test_utils::complete_task(h, ovphysx_read(h, query, &tokenOnly, 1, &read, nullptr)).status, OVPHYSX_API_ERROR);
+    ovx_token_or_string_t tokenOnly{};
+    tokenOnly.token = ovx_token_t{11u};
+    EXPECT_EQ(test_utils::complete_task(
+                  h, ovphysx_read(h, query, &tokenOnly, 1, ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr))
+                  .status,
+              OVPHYSX_API_ERROR);
+    ASSERT_NE(read, 0u);
+    EXPECT_EQ(test_utils::complete_task(h, ovphysx_release_read(h, read)).status, OVPHYSX_API_SUCCESS);
+    read = 0;
+
+    // A non-NULL string wins, so the token beside it is ignored and needs no attached stage.
+    ovx_token_or_string_t tokenAndString = OVPHYSX_NAME_DEBUG_SCALE;
+    tokenAndString.token = ovx_token_t{11u};
+    EXPECT_EQ(test_utils::complete_task(
+                  h, ovphysx_read(h, query, &tokenAndString, 1, ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr))
+                  .status,
+              OVPHYSX_API_SUCCESS);
+    ASSERT_NE(read, 0u);
+    EXPECT_EQ(test_utils::complete_task(h, ovphysx_release_read(h, read)).status, OVPHYSX_API_SUCCESS);
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_query(h, query)).status, OVPHYSX_API_SUCCESS);
 }
 
@@ -190,14 +235,14 @@ TEST_F(DebugRenderTest, UnsetCullingBoxReadsEmptyAndEmptyCommitClears)
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_query(h, OVPHYSX_QUERY_TARGET_DEBUG_RENDER, OVPHYSX_SCOPE_ALL, &query, nullptr)).status,
               OVPHYSX_API_SUCCESS);
 
-    const ovx_string_or_token_t attribute = OVPHYSX_NAME_DEBUG_CULLING_BOX;
+    const ovx_token_or_string_t attribute = OVPHYSX_NAME_DEBUG_CULLING_BOX;
     ovphysx_read_handle_t read = 0;
-    ASSERT_EQ(test_utils::complete_task(h, ovphysx_read(h, query, &attribute, 1, &read, nullptr)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_read(h, query, &attribute, 1, ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr)).status, OVPHYSX_API_SUCCESS);
     const ovstage_read_group_t* group = nullptr;
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_fetch_read_next(h, read, &group)).status, OVPHYSX_API_SUCCESS);
     ASSERT_NE(group, nullptr);
-    ASSERT_NE(group->data.tensors, nullptr);
-    EXPECT_EQ(group->data.tensors[0].shape[0], 0);
+    ASSERT_NE(group->columns[0].data.tensors, nullptr);
+    EXPECT_EQ(group->columns[0].data.tensors[0].shape[0], 0);
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_group(h, read, group->read_group_id)).status, OVPHYSX_API_SUCCESS);
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_read(h, read)).status, OVPHYSX_API_SUCCESS);
 
@@ -218,10 +263,10 @@ TEST_F(DebugRenderTest, UnsetCullingBoxReadsEmptyAndEmptyCommitClears)
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_commit_group(h, write, written.group, sync)).status, OVPHYSX_API_SUCCESS);
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_write(h, write)).status, OVPHYSX_API_SUCCESS);
 
-    ASSERT_EQ(test_utils::complete_task(h, ovphysx_read(h, query, &attribute, 1, &read, nullptr)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_read(h, query, &attribute, 1, ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr)).status, OVPHYSX_API_SUCCESS);
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_fetch_read_next(h, read, &group)).status, OVPHYSX_API_SUCCESS);
     ASSERT_NE(group, nullptr);
-    EXPECT_EQ(group->data.tensors[0].shape[0], 0);
+    EXPECT_EQ(group->columns[0].data.tensors[0].shape[0], 0);
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_group(h, read, group->read_group_id)).status, OVPHYSX_API_SUCCESS);
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_read(h, read)).status, OVPHYSX_API_SUCCESS);
     ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_query(h, query)).status, OVPHYSX_API_SUCCESS);

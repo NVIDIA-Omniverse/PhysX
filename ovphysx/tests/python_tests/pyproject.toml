@@ -10,8 +10,9 @@ name = "ovphysx-python-tests"
 version = "0.0.1"
 requires-python = ">=3.10"
 dependencies = [
+  "Pillow==12.3.0",  # Decode both portable and rendered documentation images.
   "physx-usd-schemas>=25.11.2",
-  "pytest>=7",
+  "pytest>=9",  # faulthandler_exit_on_timeout (the hung-test watchdog below) exists from 9.0
   "numpy>=1.20",  # Required for tensor binding tests
   "warp-lang>=1.16,<1.17",  # public read frontend plus DLPack interop smoke tests
   # Stock OpenUSD from PyPI is the only python-USD source for the test run
@@ -45,6 +46,24 @@ py-modules = []
 [tool.pytest.ini_options]
 addopts = "--ignore=cpu_tests -v -s"
 testpaths = ["."]
+# @implements REQ-PACKAGING-TESTHANG-001
+# @covers AC-1 AC-2 AC-3
+# Hung-test watchdog. A single test that runs longer than this many seconds makes
+# pytest's built-in faulthandler plugin write every thread's Python stack to the
+# process's stderr and exit the process, so the driver sees a failure within
+# minutes instead of a silent job that holds its runner until the job timeout.
+# The budget is per test, not per pass: the slowest test measured on any CI
+# runner is about 40 s (test_public_build_flags on the Windows VS runner) and the
+# slowest CPU-mode test about 11 s (linux-debug). The whole-pass TIMEOUTs in
+# scripts/test_python_runtime.cmake are not a substitute: CMake 3.28 to 4.1.2
+# (issue #27378; the Windows runners use 4.1.0) stop waiting without terminating
+# the child, and the orphaned pytest then keeps the step's pipes open. The timer
+# is armed per test and re-armed after a failure by _watchdog_rearm.py; hangs in
+# collection, session start/finish or interpreter exit are outside it, and the
+# lifecycle files are bounded by their runner's per-job budget instead. pdb entry
+# cancels the timer; for an IDE debugger pass -o faulthandler_timeout=0.
+faulthandler_timeout = 300
+faulthandler_exit_on_timeout = true
 filterwarnings = [
     # The tensor-binding API is intentionally deprecated (REQ-CAPI-WRITE-001 AC-11) but stays
     # supported for the deprecation period. Turn its DeprecationWarning into an ERROR so a NEW test

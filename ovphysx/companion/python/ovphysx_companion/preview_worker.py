@@ -19,6 +19,7 @@ def main():
     parser.add_argument('--steps', type=int, default=1)
     args = parser.parse_args()
     import ovstage
+    from ovphysx.population import physics_population_descs
     import ovphysx
     from .preview import PreviewSession
     from ovphysx_companion.schemas import physx_schema_paths
@@ -30,7 +31,7 @@ def main():
     physics = ovphysx.PhysX()
     stage = ovstage.Stage('inspector-worker')
     try:
-        ovstage.population.open_usd(stage, args.scene, ordinal=1, domains=ovstage.PopulationDomain.ALL)
+        ovstage.population.open_usd_with_desc(stage, args.scene, ordinal=1, time=ovstage.population.DEFAULT_TIME, descs=physics_population_descs(rendering=True))
         stage.advance_write_floor(ordinal=1).wait()
         with PreviewSession(physics, stage, read_ordinal=1, gpu_pipeline=0) as preview:
             for _ in range(args.steps):

@@ -46,6 +46,9 @@
  *
  * @implements REQ-PUBLICAPI-002
  * @covers AC-10
+ *
+ * @implements REQ-LOAD-DEFORMABLE-001
+ * @covers AC-1
  */
 
 #include "RuntimeExecution.h"
@@ -651,9 +654,9 @@ public:
                 const omni::physics::parse::TokenId collToken =
                     changeSrc ? changeTok.physicsCollisionAPI : omni::physics::parse::TokenId{};
                 const omni::physics::parse::TokenId dbToken =
-                    changeSrc ? changeTok.omniphysicsDeformableBodyAPI : omni::physics::parse::TokenId{};
+                    changeSrc ? changeTok.omniPhysicsDeformableBodyAPI : omni::physics::parse::TokenId{};
                 const omni::physics::parse::TokenId dpToken =
-                    changeSrc ? changeTok.OmniPhysicsDeformablePoseAPI : omni::physics::parse::TokenId{};
+                    changeSrc ? changeTok.omniPhysicsDeformablePoseAPI : omni::physics::parse::TokenId{};
                 const omni::physics::parse::TokenId rigidBodyToken =
                     changeSrc ? changeTok.physicsRigidBodyAPI : omni::physics::parse::TokenId{};
 
@@ -1599,7 +1602,7 @@ public:
             dataWrite->writeArray(primKey, attrTok, v);
         };
 
-        if (!cookingHasSchema(&attachedStage, bodyKey, tok.omniphysicsDeformableBodyAPI))
+        if (!cookingHasSchema(&attachedStage, bodyKey, tok.omniPhysicsDeformableBodyAPI))
         {
             CARB_LOG_ERROR("storeVolumeDeformableBodyDataToUsd: No UsdPhysicsDeformableBodyAPI applied to %s", attachedStage.textFor(bodyKey));
             return false;
@@ -1622,7 +1625,7 @@ public:
 
         //write rest shape UsdPhysicsVolumeDeformableSimAPI
         //for now we always just write the sim mesh 1:1
-        if (!cookingHasSchema(&attachedStage, desc.simMeshKey, tok.OmniPhysicsVolumeDeformableSimAPI))
+        if (!cookingHasSchema(&attachedStage, desc.simMeshKey, tok.omniPhysicsVolumeDeformableSimAPI))
         {
             CARB_LOG_ERROR("storeVolumeDeformableBodyDataToUsd: No UsdPhysicsVolumeDeformableSimAPI applied to %s", attachedStage.textFor(desc.simMeshKey));
             return false;
@@ -1848,7 +1851,7 @@ public:
             dataWrite->writeArray(primKey, attrTok, v);
         };
 
-        if (!cookingHasSchema(&attachedStage, bodyKey, tok.omniphysicsDeformableBodyAPI))
+        if (!cookingHasSchema(&attachedStage, bodyKey, tok.omniPhysicsDeformableBodyAPI))
         {
             CARB_LOG_ERROR("storeSurfaceDeformableBodyDataToUsd: No UsdPhysicsDeformableBodyAPI applied to %s", attachedStage.textFor(bodyKey));
             return false;
@@ -1876,7 +1879,7 @@ public:
 
         //write rest shape UsdPhysicsSurfaceDeformableSimAPI
         //for now we always just write the sim mesh 1:1
-        if (!cookingHasSchema(&attachedStage, desc.simMeshKey, tok.OmniPhysicsSurfaceDeformableSimAPI))
+        if (!cookingHasSchema(&attachedStage, desc.simMeshKey, tok.omniPhysicsSurfaceDeformableSimAPI))
         {
             CARB_LOG_ERROR("storeSurfaceDeformableBodyDataToUsd: No UsdPhysicsSurfaceDeformableSimAPI applied to %s", attachedStage.textFor(desc.simMeshKey));
             return false;
@@ -2022,7 +2025,7 @@ public:
         if (tokSrc)
             tok.intern(*tokSrc);
 
-        if (!bodyKey.valid() || !cookingHasSchema(attachedStage, bodyKey, tok.omniphysicsDeformableBodyAPI))
+        if (!bodyKey.valid() || !cookingHasSchema(attachedStage, bodyKey, tok.omniPhysicsDeformableBodyAPI))
         {
             CARB_LOG_ERROR("PhysX could not find source prim or prim has no UsdPhysicsDeformableBodyAPI!");
             return false;
@@ -2294,7 +2297,7 @@ public:
                 const omni::physics::parse::IPhysicsSource* asSrc = as->getSource();
                 if (asSrc)
                     tok.intern(*asSrc);
-                if (cookingHasSchema(as, bodyKey, tok.omniphysicsDeformableBodyAPI))
+                if (cookingHasSchema(as, bodyKey, tok.omniPhysicsDeformableBodyAPI))
                 {
                     if (result.result == omni::physx::PhysxCookingResult::eVALID)
                     {
@@ -2363,7 +2366,7 @@ public:
         if (const omni::physics::parse::IPhysicsSource* tokSrc = attachedStage ? attachedStage->getSource() : nullptr)
             tok.intern(*tokSrc);
 
-        if (!bodyKey.valid() || !cookingHasSchema(attachedStage, bodyKey, tok.omniphysicsDeformableBodyAPI))
+        if (!bodyKey.valid() || !cookingHasSchema(attachedStage, bodyKey, tok.omniPhysicsDeformableBodyAPI))
         {
             CARB_LOG_ERROR("PhysX could not find source prim or prim has no UsdPhysicsDeformableBodyAPI!");
             return false;
@@ -2573,7 +2576,7 @@ public:
                 const omni::physics::parse::IPhysicsSource* asSrc = as->getSource();
                 if (asSrc)
                     tok.intern(*asSrc);
-                if (cookingHasSchema(as, bodyKey, tok.omniphysicsDeformableBodyAPI))
+                if (cookingHasSchema(as, bodyKey, tok.omniPhysicsDeformableBodyAPI))
                 {
                     if (result.result == omni::physx::PhysxCookingResult::eVALID)
                     {
@@ -2673,7 +2676,7 @@ public:
         omni::physics::parse::KnownTokens tok;
         if (const omni::physics::parse::IPhysicsSource* tokSrc = attachedStage->getSource())
             tok.intern(*tokSrc);
-        if (!cookingHasSchema(attachedStage, bodyKey, tok.omniphysicsDeformableBodyAPI))
+        if (!cookingHasSchema(attachedStage, bodyKey, tok.omniPhysicsDeformableBodyAPI))
         {
             CARB_LOG_WARN("Cooking failed, deformable body prim is invalid.");
             return false;
@@ -2683,7 +2686,7 @@ public:
         // plain "Mesh" (its populator has no TetMesh mapping), so the concrete-type gate rejected
         // every volume deformable loaded from a non-USD source. See PhysXTools.h::isTetMeshLike.
         if (!omni::physx::internal::isTetMeshLike(*attachedStage, desc.simMeshKey) ||
-            !cookingHasSchema(attachedStage, desc.simMeshKey, tok.OmniPhysicsVolumeDeformableSimAPI))
+            !cookingHasSchema(attachedStage, desc.simMeshKey, tok.omniPhysicsVolumeDeformableSimAPI))
         {
             CARB_LOG_WARN("Cooking failed, simulation mesh prim %s is invalid.", attachedStage->textFor(desc.simMeshKey));
             return false;
@@ -2973,6 +2976,10 @@ public:
         ::physx::PxDefaultMemoryInputData& inData)
     {
         ::physx::PxDeformableVolumeMesh* deformableVolumeMesh = mPhysics.createDeformableVolumeMesh(inData);
+        if (!deformableVolumeMesh)
+        {
+            return nullptr;
+        }
 
         // read the appended surface triangle to tetrahedron map from the cooked data
         if (inData.tell()+sizeof(uint32_t) <= inData.getLength())
@@ -3297,7 +3304,7 @@ public:
                     // enumerated; replaces prim.GetAppliedSchemas()).
                     state.schemas.insert(key);
                     src.forEachMultiApplyInstance(
-                        key, src.tokenToString(tok.OmniPhysicsDeformablePoseAPI),
+                        key, src.tokenToString(tok.omniPhysicsDeformablePoseAPI),
                         [&](std::string_view instance)
                         {
                             const omni::physics::parse::TokenId instTok = src.internToken(instance);

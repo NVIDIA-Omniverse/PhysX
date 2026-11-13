@@ -7,9 +7,9 @@
 
 Force- or acceleration-mode PD drive on one joint axis, applied as PhysicsDriveAPI:<inst>. The D6 reads transX..rotZ and distance, a revolute reads angular, a prismatic reads linear; presence of the instance enables the drive. Rotational instances are stored in degrees and the parser converts them: targets degrees to radians, stiffness and damping multiplied by 57.29577951308232.
 
-- **Applies to:** `PhysicsJoint`
+- **Applies to:** [`PhysicsJoint`](glossary.md#physicsjoint)
 - **Multi-apply:** applied as `PhysicsDriveAPI:<instance>`; `<inst>` in a column name is the instance. Instances: `transX`, `transY`, `transZ`, `rotX`, `rotY`, `rotZ`, `distance`, `angular`, `linear`.
-- **Read only when listed in `usd-schemas`.**
+- **Read only when listed in [`usd-schemas`](prim.md#columns).**
 
 ## What USD population writes
 
@@ -17,7 +17,7 @@ All six declared attributes of every applied instance are published at their res
 
 ## Columns
 
-*Raw fallback* is the USD schema value. *Producer writes* is what ovstage population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
+*Raw fallback* is the [USD](glossary.md#usd) schema value. *Producer writes* is what [ovstage](glossary.md#ovstage) population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
 
 | Column | Type | Units | Raw fallback | Producer writes | Parser default | If absent |
 |---|---|---|---|---|---|---|

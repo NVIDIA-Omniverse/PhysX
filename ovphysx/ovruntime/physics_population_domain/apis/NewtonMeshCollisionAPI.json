@@ -1,0 +1,52 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "NewtonMeshCollisionAPI",
+  "title": "NewtonMeshCollisionAPI (hull vertex limit fallback)",
+  "summary": "Newton hull vertex limit, read for convexHull and convexDecomposition approximations when the matching PhysX hullVertexLimit is absent.",
+  "status": "draft",
+  "compiled_cache": "reads",
+  "usd_schemas_gate": false,
+  "applies_to": [
+    "Gprim"
+  ],
+  "requires": [
+    "NewtonCollisionAPI",
+    "PhysicsMeshCollisionAPI"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "producer_scope": "Published like any applied API when the Newton schema is registered for population; without the registration its attributes are lost (see the ovphysx Newton schema notes).",
+  "columns": [
+    {
+      "name": "newton:maxHullVertices",
+      "usd_type": "uniform int",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "int",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": -1,
+      "parser_default": "no override",
+      "absent": "No override: the PhysX hull vertex limit, else the cooking default, stands.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseCollision.cpp",
+        "include/omni/physics/parse/PreparedCollision.h"
+      ],
+      "notes": "Newton schema attribute (newton-usd-schemas, not shipped with ovphysx). Read for convexHull and convexDecomposition approximations when the matching PhysX hullVertexLimit is absent; a value > 0 becomes the hull vertex limit."
+    }
+  ],
+  "notes": [
+    "The parser reads these columns without checking that NewtonMeshCollisionAPI is listed in usd-schemas. The compiled cache reads them but does not support the API: a prim that lists NewtonMeshCollisionAPI makes the cache bypass.",
+    "Newton's schema makes NewtonCollisionAPI and PhysicsMeshCollisionAPI built-ins of this API, and USD population lists built-ins among a prim's applied schemas. The builder writes only what the caller applies, so it requires them on the same prim instead of writing a prim the walker would not recognize."
+  ]
+}

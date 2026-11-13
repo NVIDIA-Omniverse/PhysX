@@ -58,6 +58,9 @@ namespace physx
 		\note A valid tetrahedron mesh has a positive scale value in each direction (scale.scale.x > 0, scale.scale.y > 0, scale.scale.z > 0).
 		It is illegal to call PxPhysics::createShape with a tetrahedron mesh that has zero extents in any direction.
 
+		\note If the PhysX SDK was built without GPU support, PxPhysics::createShape() rejects this geometry even though
+		this function returns true. PxGeometryQuery::isValid() returns false in that case.
+
 		\see PxPhysics::createShape
 		*/
 		PX_INLINE bool isValid() const;

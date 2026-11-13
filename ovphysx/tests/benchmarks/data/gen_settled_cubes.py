@@ -38,7 +38,7 @@ ground rather than on a kinematic.
 So SCOPE_ALL reads NUM_CUBES per env and SCOPE_ACTIVE reads NUM_FALLING,
 a fixed fraction, on ONE scene: the readonly_settled_rb / readonly_active_rb
 pair reads the same bodies through two scopes and their ratio is the
-fetch-reduction win of "fetch only the requested rows" (TASK-16).
+fetch-reduction win of "fetch only the requested rows".
 
 Initial state uses a fixed random seed so the fixture is reproducible.
 

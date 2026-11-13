@@ -1,0 +1,112 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "NewtonMimicAPI",
+  "title": "NewtonMimicAPI",
+  "summary": "Newton schema mimic constraint: joint = coef0 + coef1 * leader, with the leader given by newton:mimicJoint. The parser maps it onto the PhysX mimic joint as gearing = -coef1 and offset = -coef0, for single-DOF articulation joints only.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "PhysicsJoint"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "producer_scope": "Published like any applied API when the Newton schema is registered for population; without the registration its attributes are lost (see the ovphysx Newton schema notes).",
+  "columns": [
+    {
+      "name": "newton:mimicEnabled",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": true,
+      "parser_default": true,
+      "absent": "true: the constraint is active.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMimicJoint.cpp"
+      ]
+    },
+    {
+      "name": "newton:mimicJoint",
+      "usd_type": "rel",
+      "origin": "schema",
+      "kind": "relationship",
+      "semantic": "RELATIONSHIP_PATH_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": true
+      },
+      "required": false,
+      "absent": "Error; no mimic joint is created. Exactly one target, a joint other than this one, is required.",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMimicJoint.cpp",
+        "source/omni.physics.ovstage/OvstageWalker.cpp"
+      ],
+      "notes": "Also prefetched with the joint topology relationships."
+    },
+    {
+      "name": "newton:mimicCoef0",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0 offset.",
+      "raw_fallback_diverges": false,
+      "units": "rot: deg; trans: length",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMimicJoint.cpp"
+      ]
+    },
+    {
+      "name": "newton:mimicCoef1",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 1.0,
+      "parser_default": 1.0,
+      "absent": "1.0: the follower tracks the leader.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMimicJoint.cpp"
+      ]
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysicsJoint",
+      "rule": "Read on enabled fixed, revolute, prismatic, spherical, distance and D6 joints that are not excluded from the articulation; only a revolute joint with finite limits or a prismatic joint, as follower and as leader, yields a descriptor, the rest log an error."
+    }
+  ]
+}

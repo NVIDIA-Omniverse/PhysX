@@ -353,6 +353,36 @@ struct PxPvdUpdateType
 };
 
 /**
+\brief Recorded endpoint state supplied to a constraint's OmniPVD update.
+
+Indices match the actor order returned by PxConstraint::getActors(). Poses and velocities
+are in world space. A NULL actor denotes the world and has a valid identity pose and zero
+velocities. Static actors have valid zero velocities. Device state that has not been read
+back is invalid and must not be replaced with a Direct GPU actor's CPU getters.
+
+The SDK owns this state. It is valid only for the duration of updateOmniPvdProperties().
+*/
+struct PxConstraintOmniPvdState
+{
+	PxTransform actorGlobalPose[2]; //!< Actor poses, valid when actorPoseValid is true.
+	PxVec3 actorLinearVelocity[2]; //!< Center-of-mass velocities, valid when actorVelocityValid is true.
+	PxVec3 actorAngularVelocity[2]; //!< Angular velocities, valid when actorVelocityValid is true.
+	bool actorPoseValid[2]; //!< Whether each endpoint pose is available.
+	bool actorVelocityValid[2]; //!< Whether both velocity vectors for each endpoint are available.
+
+	/** \brief Initializes both endpoints with invalid state. */
+	PX_INLINE PxConstraintOmniPvdState()
+	{
+		for (PxU32 i = 0; i < 2; ++i)
+		{
+			actorGlobalPose[i] = PxTransform(PxIdentity);
+			actorLinearVelocity[i] = actorAngularVelocity[i] = PxVec3(0.0f);
+			actorPoseValid[i] = actorVelocityValid[i] = false;
+		}
+	}
+};
+
+/**
 \brief This class connects a custom constraint to the SDK
 
 This class connects a custom constraint to the SDK, and functions are called by the SDK
@@ -380,6 +410,23 @@ public:
 	\brief this function is called by the SDK to update OmniPVD's view of it
 	*/
 	virtual void	updateOmniPvdProperties() const		= 0;
+
+	/**
+	\brief Updates OmniPVD using the endpoint state recorded by the SDK.
+
+	Called after the initial snapshot and for recorded constraint updates.
+	It is not called while PxPhysics::createConstraint() runs for this connector, so the owner can
+	finish initializing the connector after that call returns. This overload
+	uses the same endpoint readback as core recording and does not initiate another readback.
+	The default implementation calls the no-argument overload for existing connectors.
+
+	\param[in] state Borrowed endpoint state, valid only during this call.
+	*/
+	virtual void updateOmniPvdProperties(const PxConstraintOmniPvdState& state) const
+	{
+		PX_UNUSED(state);
+		updateOmniPvdProperties();
+	}
 
 	/**
 	\brief Constraint release callback

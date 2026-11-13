@@ -2,9 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
- * @implements REQ-OMNIPVD-TRANSPORT-001
- * @covers AC-1
- *
  * @implements REQ-OMNIPVD-LATE-001
  * @covers AC-1 AC-2
  *
@@ -54,9 +51,7 @@ static PhysXSettings gPhysXSettings = PhysXSettings(
         { kSettingSuppressReadback, false },
         { kSettingExposeProfilerData, true },
         { kSettingExposePrimPathNames, true },
-        { kOmniPvdOutputEnabled, false },
         { kOmniPvdRecordingCapable, false },
-        { kOmniPvdIsOVDStage, false },
         { kOmniPvdIsRecording, false },
         { kSettingPhysxDispatcher, false },
         { kSettingDisplayColliderNormals, false },
@@ -100,8 +95,6 @@ static PhysXSettings gPhysXSettings = PhysXSettings(
         { kSettingUjitsoCookingMaxProcessCount, 16 },
         { kSettingSceneMultiGPUMode, int(SceneMultiGPUMode::eDisabled)},
         { kSettingOvstageReadPoolMaxMB, 256 }, // per-context pool budget in MiB; <= 0 disables the pool; see IPhysxSettings.h
-        { kOmniPvdTcpPort, 0 },
-        { kOmniPvdTcpTimeoutMs, 0 },
     },
     // int64
     {
@@ -120,12 +113,8 @@ static PhysXSettings gPhysXSettings = PhysXSettings(
         { kSettingPVDIPAddress, "127.0.0.1" },
         { kSettingPVDOutputDirectory, "" },
         { kSettingTestRunnerFilter, "" },
-        { kOmniPvdOvdRecordingDirectory, "" },
-        { kOmniPvdTransport, "file" },
-        { kOmniPvdTcpAddress, "" },
         { kSettingDemoAssetsPath, "" },
-        { kSettingTestsAssetsPath, "" },
-        { kSettingDefaultSimulator, "PhysX" }
+        { kSettingTestsAssetsPath, "" }
     },
     // string array
     {
@@ -241,7 +230,6 @@ void PhysXSettings::resetSettingsInPreferences()
     resetSettingAtPath(kSettingUjitsoCookingMaxProcessCount);
 
     resetSettingAtPath(kSettingPhysxDispatcher);
-    resetSettingAtPath(kSettingDefaultSimulator);
 
     resetSettingAtPath(kSettingDebugVisSimplifyAtDistance);
     resetSettingAtPath(kSettingDebugVisQueryUsdrtForTraversal);

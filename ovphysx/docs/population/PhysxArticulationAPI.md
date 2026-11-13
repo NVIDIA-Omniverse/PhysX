@@ -5,11 +5,11 @@
 
 # PhysxArticulationAPI
 
-PhysX tuning of a reduced-coordinate articulation, applied on the same prim as PhysicsArticulationRootAPI. Two thresholds have units-scaled parser defaults that the raw schema fallbacks do not reproduce, and the producer performs NO articulation derivation: on a producer-populated stage the consumer receives the raw fallbacks and uses them verbatim.
+[PhysX](glossary.md#physx) tuning of a reduced-coordinate articulation, applied on the same [prim](glossary.md#prim) as PhysicsArticulationRootAPI. Two thresholds have units-scaled parser defaults that the raw schema fallbacks do not reproduce, and the producer performs NO articulation derivation: on a producer-populated stage the consumer receives the raw fallbacks and uses them verbatim.
 
-- **Applies to:** `Xformable`, `PhysicsJoint`
+- **Applies to:** [`Xformable`](glossary.md#xformable), [`PhysicsJoint`](glossary.md#physicsjoint)
 - **Requires on the same prim:** [`PhysicsArticulationRootAPI`](PhysicsArticulationRootAPI.md)
-- **Read only when listed in `usd-schemas`.**
+- **Read only when listed in [`usd-schemas`](prim.md#columns).**
 - **Uses blocks:** [`stage_units`](stage_units.md)
 
 ## What USD population writes
@@ -18,11 +18,11 @@ Every declared attribute is published at its resolved value. Unlike PhysxRigidBo
 
 ## Columns
 
-*Raw fallback* is the USD schema value. *Producer writes* is what ovstage population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
+*Raw fallback* is the [USD](glossary.md#usd) schema value. *Producer writes* is what [ovstage](glossary.md#ovstage) population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
 
 | Column | Type | Units | Raw fallback | Producer writes | Parser default | If absent |
 |---|---|---|---|---|---|---|
-| `physxArticulation:articulationEnabled` | bool8 | none | true | resolved USD value (authored, else raw fallback) | true | The articulation is built. false skips the root entirely in buildArticulations: no descriptor is emitted and the bodies and joints under it become plain rigid bodies and standalone joints. |
+| `physxArticulation:articulationEnabled` | bool8 | none | true | resolved USD value (authored, else raw fallback) | true | The articulation is built. false skips the root entirely when the articulations are built: no descriptor is emitted and the bodies and joints under it become plain rigid bodies and standalone joints. |
 | `physxArticulation:sleepThreshold` | float32 | length^2/s^2 | 5e-05 | resolved USD value (authored, else raw fallback) | `5e-5 * (10 / metersPerUnit) ** 2` | Units-scaled default: 5e-3 on a meter stage, 50 on a centimeter stage. The producer does not rewrite this column, so USD population publishes the raw 5e-5 and the consumer, which has no authored gate, uses 5e-5: on a centimeter stage a producer-populated articulation sleeps 10^6 times more eagerly than one that omits the column. |
 | `physxArticulation:stabilizationThreshold` | float32 | length^2/s^2 | 1e-05 | resolved USD value (authored, else raw fallback) | `1e-2 * (10 / metersPerUnit) ** 2` | Units-scaled default with coefficient 1e-2: 1.0 on a meter stage, 10000 on a centimeter stage. The schema documents 0.00001 * tolerancesSpeed^2 and falls back to 1e-5; the parser's coefficient is 1000 times larger (see findings). As with sleepThreshold the producer publishes the raw 1e-5 and the consumer uses it verbatim. |
 | `physxArticulation:solverPositionIterationCount` | int32 | none | 32 | resolved USD value (authored, else raw fallback) | 32 | 32 position iterations. Read through int64 and narrowed, then clamped to [1, 255]; the scene's own iteration bounds may clamp further at creation. |
@@ -31,17 +31,17 @@ Every declared attribute is published at its resolved value. Unlike PhysxRigidBo
 
 ## Derived values
 
-- **tolerances_speed** = `10 / metersPerUnit`. The speed scale both thresholds are squared against in setToDefault(ArticulationFields, units).
+- **tolerances_speed** = `10 / metersPerUnit`. The speed scale both thresholds are squared against in the consumer's units-aware articulation defaults.
 
 ## Interactions
 
-- **[`PhysicsArticulationRootAPI`](PhysicsArticulationRootAPI.md):** Read once per elected root, after setToDefault seeds the units-scaled thresholds and before the graph pass. Gate is usd-schemas CONTAINS PhysxArticulationAPI; without it every field keeps its default and only newton:selfCollisionEnabled is consulted.
+- **[`PhysicsArticulationRootAPI`](PhysicsArticulationRootAPI.md):** Read once per elected root, after the units-scaled default thresholds are seeded and before the graph pass. Gate is usd-schemas CONTAINS PhysxArticulationAPI; without it every field keeps its default and only newton:selfCollisionEnabled is consulted.
 - **[`stage_units`](stage_units.md):** Both thresholds scale with (10 / metersPerUnit)^2 when the column is absent; an authored or producer-published value is taken as-is in stage units.
 - **[`PhysxRigidBodyAPI`](PhysxRigidBodyAPI.md):** Same sleepThreshold coefficient as the rigid-body default (5e-5), but the stabilization coefficient is 1e-2 here against 1e-5 there.
 
 ## Known divergences
 
-- **defect** (consumer) `physxArticulation:stabilizationThreshold`: The parser's units-scaled default uses coefficient 1e-2 while the schema documents and falls back to 1e-5 (and PhysxRigidBodyAPI uses 1e-5): a 1000x divergence beyond the units factor, frozen in by TestParseArticulation. sleepThreshold's 5e-5 matches the schema.
+- **defect** (consumer) `physxArticulation:stabilizationThreshold`: The parser's units-scaled default uses coefficient 1e-2 while the schema documents and falls back to 1e-5 (and PhysxRigidBodyAPI uses 1e-5): a 1000x divergence beyond the units factor, pinned by a parser unit test. sleepThreshold's 5e-5 matches the schema.
 - **defect** (both) `physxArticulation:sleepThreshold`: The producer performs no units-scaled rewrite for articulations (it does for rigid bodies) and the consumer has no authored gate, so a producer-populated stage with PhysxArticulationAPI applied and unauthored thresholds simulates with the raw 5e-5 / 1e-5 while a stage that omits the columns gets 5e-3 / 1.0 on a meter stage. The two population paths disagree on every stage; the gap grows with 1/metersPerUnit^2.
 
 ## Notes

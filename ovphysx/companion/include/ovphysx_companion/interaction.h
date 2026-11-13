@@ -22,11 +22,11 @@ typedef struct ovphysx_companion_drag_state {
     float target[3];
     uint32_t active;
 } ovphysx_companion_drag_state_t;
-/** CPU movable dynamic bodies, exact live record identity, idle admission.
+/** Movable dynamic bodies in CPU or GPU-dynamics scenes, exact live record identity, idle admission.
  * Force: mode 0 force, 1 impulse; frame 0 world, 1 actor-local; atPoint and wake
  * are bool. Point transforms from actor-local if requested; absent point means
  * COM. Units: scene mass*length/seconds^2 or mass*length/seconds. No implicit step.
- * Static, kinematic, articulation links, disabled and GPU actors are unavailable.
+ * Static, kinematic, articulation links, disabled and DirectGPU actors are unavailable.
  * Drag: target is the initial picked world point, later updated in world units.
  * D6 spring drives that local body point, with force stiffness/damping/limit.
  * flags bit0 temporarily clears axis locks; bit1 enables speculative CCD. End
@@ -58,8 +58,8 @@ OVPHYSX_API ovphysx_companion_status_t ovphysx_companion_interaction_acquire(
  * original ray distance. pickingForce >= 0 scales the legacy coefficient k=50*f;
  * pickDistance is in [0,1000000] scene length units. Default end velocity preserves
  * motion; policies 1 zero / 2 restore are supported on dynamic rigid bodies only.
- * CPU articulation links support policy 0. Static/kinematic/disabled/GPU bodies
- * return UNAVAILABLE. No joint, axis-lock or CCD edits are made.
+ * Articulation links support policy 0. CPU and GPU-dynamics scenes are supported;
+ * static/kinematic/disabled bodies and DirectGPU scenes return UNAVAILABLE. No joint, axis-lock or CCD edits are made.
  * Each actual native scene substep applies J=k*m*(target-p-0.02*vPoint)*h at p,
  * plus legacy COM gravity assistance. Native code restores angular damping and
  * wakes movable dynamic bodies on close. No forces are applied by move/read or

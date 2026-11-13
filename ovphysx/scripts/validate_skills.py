@@ -34,7 +34,7 @@ opt-in:
 
 Usage:
     python3 scripts/validate_skills.py                  # all skills, phases A+B
-    python3 scripts/validate_skills.py --skill basic-workflow
+    python3 scripts/validate_skills.py --skill ovphysx-basic-workflow
     python3 scripts/validate_skills.py --skills-root path/to/skills
     python3 scripts/validate_skills.py --live-only      # phase C alone
 

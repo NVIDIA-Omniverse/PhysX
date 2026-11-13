@@ -80,6 +80,9 @@ void Sc::ActorSim::registerInteractionInActor(Interaction* interaction)
 	const PxU32 id = mInteractions.size();
 	mInteractions.pushBack(interaction, *this);
 	interaction->setActorId(this, id);
+
+	if(!isIslandGenControlled(interaction->getType()))
+		raiseInternalFlag(BF_HAS_NON_IG_INTERACTIONS);
 }
 
 void Sc::ActorSim::unregisterInteractionFromActor(Interaction* interaction)
@@ -93,6 +96,17 @@ void Sc::ActorSim::unregisterInteractionFromActor(Interaction* interaction)
 			mInteractions[i]->setActorId(this, i);
 		else
 			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Sc::ActorSim::unregisterInteractionFromActor: found null interaction!");
+	}
+
+	// These interactions are rare, so a rescan when one goes away is cheaper than a counter in every actor.
+	if(!isIslandGenControlled(interaction->getType()))
+	{
+		const PxU32 nb = mInteractions.size();
+		PxU32 j = 0;
+		while(j < nb && (!mInteractions[j] || isIslandGenControlled(mInteractions[j]->getType())))
+			j++;
+		if(j == nb)
+			clearInternalFlag(BF_HAS_NON_IG_INTERACTIONS);
 	}
 }
 

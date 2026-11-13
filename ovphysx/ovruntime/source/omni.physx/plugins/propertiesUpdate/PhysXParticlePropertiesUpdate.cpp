@@ -4,6 +4,9 @@
 /**
  * @implements REQ-PARSE-BACKEND-001
  * @covers AC-9
+ *
+ * @implements REQ-SIM-PARTICLESET-001
+ * @covers AC-4
  */
 
 #include "PhysXPropertiesUpdate.h"
@@ -626,6 +629,49 @@ bool omni::physx::updateParticleSetParticleGroup(AttachedStage& attachedStage, o
     return true;
 }
 
+// After a count-changing resize, re-populate the set's authored columns. A single OVStage write that
+// grows a set may carry both `points` and `velocities`, but each arrives as its own per-attribute batch
+// and resize() reseeds positions from the origin; so a resize driven by one column must re-apply the
+// authored data of BOTH columns, or the other column's authored values are lost -- independent of the
+// drain's column order. A column whose authored array does not match the new count
+// (e.g. a points-less velocities write) is left untouched: it is not part of this growth.
+static void reapplyParticleColumnsAfterResize(AttachedStage& attachedStage, InternalParticleSet* set)
+{
+    const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
+    if (!src)
+        return;
+    omni::physics::parse::KnownTokens tok;
+    tok.intern(*src);
+    const bool pointBased = src->isA(set->mKey, tok.pointBasedType);
+    const bool instancer = src->isA(set->mKey, tok.pointInstancerType);
+
+    std::vector<carb::Float3> points;
+    if (pointBased)
+        getArrayValue(attachedStage, set->mKey, tok.points, omni::physics::parse::ReadTime::defaultTime(), points);
+    else if (instancer)
+        getArrayValue(attachedStage, set->mKey, tok.positions, omni::physics::parse::ReadTime::defaultTime(), points);
+    if (points.size() == set->mNumParticles && set->mPositions)
+    {
+        const PxMat44d localToWorld = getWorldTransform(attachedStage, set->mKey, omni::physics::parse::ReadTime::defaultTime());
+        for (uint32_t i = 0; i < set->mNumParticles; ++i)
+        {
+            const PxVec3d pos = localToWorld.transform(toPhysXd(points[i]));
+            set->mPositions[i] = PxVec4(float(pos.x), float(pos.y), float(pos.z), set->mParticleInvMass);
+        }
+        set->mUploadDirtyFlags |= ParticleBufferFlags::ePOSITIONS;
+    }
+
+    std::vector<carb::Float3> velocities;
+    if (pointBased || instancer)
+        getArrayValue(attachedStage, set->mKey, tok.velocities, omni::physics::parse::ReadTime::defaultTime(), velocities);
+    if (velocities.size() == set->mNumParticles && set->mVelocities)
+    {
+        for (uint32_t i = 0; i < set->mNumParticles; ++i)
+            set->mVelocities[i] = PxVec4(toPhysX(velocities[i]), 0.0f);
+        set->mUploadDirtyFlags |= ParticleBufferFlags::eVELOCITIES;
+    }
+}
+
 // Takes the stage from the caller: `positions` were just read off `attachedStage`,
 // so the local-to-world transform must come from the same stage. Re-fetching the
 // process-global active stage here was also an unguarded null dereference.
@@ -690,7 +736,12 @@ bool omni::physx::updateParticlePositions(AttachedStage& attachedStage, omni::ph
                            attachedStage.textFor(internalParticleSet->mKey));
             return true;
         }
+        const uint32_t oldNumParticles = internalParticleSet->mNumParticles;
         updateParticlePositions(attachedStage, internalParticleSet, positions);
+        // A count-changing points write re-seeds the other columns from the origin; re-apply the
+        // set's authored velocities so a combined grow write does not lose them.
+        if (internalParticleSet->mNumParticles != oldNumParticles)
+            reapplyParticleColumnsAfterResize(attachedStage, internalParticleSet);
     }
 
     return true;
@@ -743,6 +794,7 @@ bool omni::physx::updateParticleVelocities(AttachedStage& attachedStage, omni::p
         }
         uint32_t newNumParticles = (uint32_t)velocities.size();
 
+        const uint32_t oldNumParticles = internalParticleSet->mNumParticles;
         if (newNumParticles != internalParticleSet->mNumParticles)
         {
             internalParticleSet->resize(newNumParticles);
@@ -762,6 +814,11 @@ bool omni::physx::updateParticleVelocities(AttachedStage& attachedStage, omni::p
 
         // we don't change positions/widths here because we assume that the user updates all data before sim runs.
         internalParticleSet->mUploadDirtyFlags |= ParticleBufferFlags::eVELOCITIES;
+
+        // A count-changing velocities write re-seeds the other columns from the origin; re-apply the
+        // set's authored points so a combined grow write does not lose them.
+        if (internalParticleSet->mNumParticles != oldNumParticles)
+            reapplyParticleColumnsAfterResize(attachedStage, internalParticleSet);
     }
 
     return true;

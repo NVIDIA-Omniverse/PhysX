@@ -1,0 +1,25 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "GeomPrototypeAPI",
+  "title": "GeomPrototypeAPI",
+  "summary": "Native-instancing tag that ovstage population writes on native-instancing prototype prims. The parser reads no column for it; prototype prims provide the geometry and attributes that instance proxies resolve to.",
+  "status": "draft",
+  "compiled_cache": true,
+  "authoring": false,
+  "applies_to": [
+    "Xformable",
+    "Imageable",
+    "Typed"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": false,
+    "row": false
+  },
+  "producer_scope": "Written by ovstage population; no USD schema applies it.",
+  "columns": [],
+  "notes": [
+    "No USD schema applies this name and it declares no column; the parser keys native instancing on the ovstage instancing queries (instance and prototype roots), not on attributes."
+  ]
+}

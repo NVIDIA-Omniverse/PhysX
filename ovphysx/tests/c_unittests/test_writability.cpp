@@ -54,19 +54,19 @@ namespace
 // A string literal carries its length in its type, so a literal attribute name needs no std::strlen.
 // A runtime name (the header-scan case) already knows its own length and passes it explicitly.
 template <size_t N>
-ovx_string_or_token_t makeAttr(const char (&name)[N])
+ovx_token_or_string_t makeAttr(const char (&name)[N])
 {
-    ovx_string_or_token_t a{};
-    a.token = 0;
+    ovx_token_or_string_t a{};
+    a.token = ovx_token_t{0};
     a.string.ptr = name;
     a.string.length = N - 1;
     return a;
 }
 
-ovx_string_or_token_t makeAttr(const char* name, size_t len)
+ovx_token_or_string_t makeAttr(const char* name, size_t len)
 {
-    ovx_string_or_token_t a{};
-    a.token = 0;
+    ovx_token_or_string_t a{};
+    a.token = ovx_token_t{0};
     a.string.ptr = name;
     a.string.length = len;
     return a;
@@ -75,7 +75,7 @@ ovx_string_or_token_t makeAttr(const char* name, size_t len)
 template <size_t N>
 ovphysx_writability_t classify(ovphysx_query_target_t type, const char (&name)[N])
 {
-    ovx_string_or_token_t a = makeAttr(name);
+    ovx_token_or_string_t a = makeAttr(name);
     ovphysx_writability_t w = OVPHYSX_WRITABILITY_UNCLASSIFIED;
     EXPECT_EQ(ovphysx_writability(type, &a, &w).status, OVPHYSX_API_SUCCESS) << type << " / " << name;
     return w;
@@ -91,6 +91,8 @@ TEST(Writability, RigidBody)
     EXPECT_EQ(classify(OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_ATTR_LINEAR_ACCELERATION), OVPHYSX_WRITABILITY_READ_ONLY);
     EXPECT_EQ(classify(OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_ATTR_INVERSE_MASS), OVPHYSX_WRITABILITY_READ_ONLY);
     EXPECT_EQ(classify(OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_ATTR_IS_SLEEPING), OVPHYSX_WRITABILITY_READ_ONLY);
+    // Creation-time scale: physics never changes it in place, so it is never a session write.
+    EXPECT_EQ(classify(OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_ATTR_WORLD_SCALE), OVPHYSX_WRITABILITY_READ_ONLY);
     // Conditional: driven on a CPU scene, refused on a DirectGPU scene (no device counterpart).
     EXPECT_EQ(classify(OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_ATTR_KINEMATIC_TARGET_POSITION), OVPHYSX_WRITABILITY_CONDITIONAL);
     EXPECT_EQ(classify(OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_ATTR_KINEMATIC_TARGET_ORIENTATION), OVPHYSX_WRITABILITY_CONDITIONAL);
@@ -105,6 +107,8 @@ TEST(Writability, ArticulationLink)
               OVPHYSX_WRITABILITY_READ_ONLY);
     // A link's pose follows from the root pose and DOFs, so it is readable but not writable.
     EXPECT_EQ(classify(OVPHYSX_QUERY_TARGET_ARTICULATION_LINK, OVPHYSX_ATTR_POSITION), OVPHYSX_WRITABILITY_READ_ONLY);
+    EXPECT_EQ(classify(OVPHYSX_QUERY_TARGET_ARTICULATION_LINK, OVPHYSX_ATTR_WORLD_SCALE),
+              OVPHYSX_WRITABILITY_READ_ONLY);
     EXPECT_EQ(classify(OVPHYSX_QUERY_TARGET_ARTICULATION_LINK, OVPHYSX_ATTR_MASS), OVPHYSX_WRITABILITY_WRITABLE);
     EXPECT_EQ(classify(OVPHYSX_QUERY_TARGET_ARTICULATION_LINK, OVPHYSX_ATTR_FORCE), OVPHYSX_WRITABILITY_WRITE_ONLY);
     EXPECT_EQ(classify(OVPHYSX_QUERY_TARGET_ARTICULATION_LINK, OVPHYSX_ATTR_DISABLE_SIMULATION),
@@ -139,7 +143,8 @@ TEST(Writability, Vehicle)
 {
     EXPECT_EQ(OVPHYSX_QUERY_TARGET_VEHICLE, 13);
     EXPECT_EQ(OVPHYSX_QUERY_TARGET_DEBUG_RENDER, 23);
-    EXPECT_EQ(OVPHYSX_QUERY_TARGET_COUNT, 25);
+    EXPECT_EQ(OVPHYSX_QUERY_TARGET_DEFORMABLE_SKIN_MESH, 25);
+    EXPECT_EQ(OVPHYSX_QUERY_TARGET_COUNT, 26);
     EXPECT_EQ(classify(OVPHYSX_QUERY_TARGET_VEHICLE, OVPHYSX_ATTR_ACCELERATOR), OVPHYSX_WRITABILITY_CONDITIONAL);
     EXPECT_EQ(classify(OVPHYSX_QUERY_TARGET_VEHICLE, OVPHYSX_ATTR_BRAKE0), OVPHYSX_WRITABILITY_CONDITIONAL);
     EXPECT_EQ(classify(OVPHYSX_QUERY_TARGET_VEHICLE, OVPHYSX_ATTR_BRAKE1), OVPHYSX_WRITABILITY_CONDITIONAL);
@@ -193,9 +198,8 @@ TEST(Writability, DeformablesAndParticles)
     EXPECT_EQ(classify(OVPHYSX_QUERY_TARGET_DEFORMABLE_VOLUME, OVPHYSX_ATTR_POINTS), OVPHYSX_WRITABILITY_WRITABLE);
     EXPECT_EQ(classify(OVPHYSX_QUERY_TARGET_DEFORMABLE_VOLUME, OVPHYSX_ATTR_REST_POINTS), OVPHYSX_WRITABILITY_READ_ONLY);
     // kinematicTarget is CONDITIONAL: no device-mode restriction (it drives through a device buffer that
-    // survives DirectGPU, unlike the rigid one), but object-state preconditions the write reports as unmet --
-    // refused on a volume already kinematic via another path (eKINEMATIC or a view's ePARTIALLY_KINEMATIC),
-    // and on a write that would move an already-driven node back to free (monotonic, no un-pinning).
+    // survives DirectGPU, unlike the rigid one), but an object-state precondition the write reports as unmet --
+    // refused on a volume already kinematic via another path (eKINEMATIC or a view's ePARTIALLY_KINEMATIC).
     EXPECT_EQ(classify(OVPHYSX_QUERY_TARGET_DEFORMABLE_VOLUME, OVPHYSX_ATTR_KINEMATIC_TARGET),
               OVPHYSX_WRITABILITY_CONDITIONAL);
     // A surface deformable has no setKinematicTargetBufferD, so the name is not one of its attributes.
@@ -205,6 +209,8 @@ TEST(Writability, DeformablesAndParticles)
     EXPECT_EQ(classify(OVPHYSX_QUERY_TARGET_PARTICLE_SET, OVPHYSX_ATTR_POINTS), OVPHYSX_WRITABILITY_WRITABLE);
     EXPECT_EQ(classify(OVPHYSX_QUERY_TARGET_DEFORMABLE_MATERIAL, OVPHYSX_ATTR_DEFORMABLE_YOUNGS_MODULUS),
               OVPHYSX_WRITABILITY_WRITABLE);
+    // Skinning output, rewritten every step: read-only.
+    EXPECT_EQ(classify(OVPHYSX_QUERY_TARGET_DEFORMABLE_SKIN_MESH, OVPHYSX_ATTR_POINTS), OVPHYSX_WRITABILITY_READ_ONLY);
 }
 
 TEST(Writability, Tendons)
@@ -320,7 +326,7 @@ TEST(Writability, UnknownAndCrossTypeAreUnclassified)
 
 TEST(Writability, RejectsNullArguments)
 {
-    ovx_string_or_token_t a = makeAttr(OVPHYSX_ATTR_POSITION);
+    ovx_token_or_string_t a = makeAttr(OVPHYSX_ATTR_POSITION);
     EXPECT_EQ(ovphysx_writability(OVPHYSX_QUERY_TARGET_RIGID_BODY, &a, nullptr).status, OVPHYSX_API_INVALID_ARGUMENT);
 
     ovphysx_writability_t w = OVPHYSX_WRITABILITY_WRITABLE;
@@ -332,8 +338,8 @@ TEST(Writability, RejectsTokenOnlyAttribute)
 {
     // A token-only key (no string) is rejected outright, not silently classified as UNCLASSIFIED.
     // Resolving a token would need a path dictionary this scene-free query lacks.
-    ovx_string_or_token_t tok{};
-    tok.token = 12345; // a non-zero interned token with the string field left empty
+    ovx_token_or_string_t tok{};
+    tok.token = ovx_token_t{12345}; // a non-zero interned token with the string field left empty
     tok.string.ptr = nullptr;
     tok.string.length = 0;
 
@@ -347,7 +353,7 @@ TEST(Writability, RejectsUnknownObjectType)
     // An object_type outside ovphysx_query_target_t (OVPHYSX_QUERY_TARGET_COUNT, one past the last enum
     // value) is rejected, not returned as SUCCESS/UNCLASSIFIED. Otherwise a caller cannot
     // tell an attribute the type does not accept from a type that does not exist.
-    ovx_string_or_token_t a = makeAttr(OVPHYSX_ATTR_POSITION);
+    ovx_token_or_string_t a = makeAttr(OVPHYSX_ATTR_POSITION);
     const ovphysx_query_target_t bad = static_cast<ovphysx_query_target_t>(OVPHYSX_QUERY_TARGET_COUNT);
     ovphysx_writability_t w = OVPHYSX_WRITABILITY_WRITABLE;
     EXPECT_EQ(ovphysx_writability(bad, &a, &w).status, OVPHYSX_API_INVALID_ARGUMENT);
@@ -377,7 +383,7 @@ TEST(Writability, EveryDeclaredAttributeIsClassifiedSomewhere)
         bool classifiedSomewhere = false;
         for (int t = 0; t < OVPHYSX_QUERY_TARGET_COUNT && !classifiedSomewhere; ++t)
         {
-            ovx_string_or_token_t a = makeAttr(name.c_str(), name.size());
+            ovx_token_or_string_t a = makeAttr(name.c_str(), name.size());
             ovphysx_writability_t w = OVPHYSX_WRITABILITY_UNCLASSIFIED;
             if (ovphysx_writability(static_cast<ovphysx_query_target_t>(t), &a, &w).status == OVPHYSX_API_SUCCESS &&
                 w != OVPHYSX_WRITABILITY_UNCLASSIFIED)

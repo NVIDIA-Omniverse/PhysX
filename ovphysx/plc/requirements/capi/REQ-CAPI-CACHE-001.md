@@ -14,9 +14,9 @@ Without a configured cooked-collider cache directory, ovphysx uses a private
 temporary directory. Its lifetime follows the datastore, including asynchronous
 write-back after cooking completes. Linux SDK shutdown stops that datastore before
 removing the directory. Windows retains its framework and datastore until process
-exit to protect dependency DLL teardown; a framework release callback attempts
-cache removal after datastore shutdown, but another dependency's terminating exit
-hook may prevent it. Windows directory removal remains best-effort.
+exit to protect dependency DLL teardown. The packaged Windows exit path bypasses
+framework-release callbacks, so private directories can remain for host temporary-
+directory cleanup. Windows directory removal remains best-effort.
 Python destroys remaining instances and shuts down the
 SDK before interpreter finalization.
 These teardown guarantees apply to the SDK-owned framework. When reusing a

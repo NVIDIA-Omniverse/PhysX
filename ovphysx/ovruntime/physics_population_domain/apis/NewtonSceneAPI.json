@@ -1,0 +1,72 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "NewtonSceneAPI",
+  "title": "NewtonSceneAPI (fallbacks read by the PhysX parser)",
+  "summary": "Newton scene settings the PhysX parser reads as fallbacks on every PhysicsScene: the step rate when physxScene:timeStepsPerSecond is absent, and a switch that turns gravity off.",
+  "status": "draft",
+  "compiled_cache": "reads",
+  "usd_schemas_gate": false,
+  "applies_to": [
+    "PhysicsScene"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "producer_scope": "Published like any applied API when the Newton schema is registered for population; without the registration its attributes are lost (see the ovphysx Newton schema notes).",
+  "columns": [
+    {
+      "name": "newton:timeStepsPerSecond",
+      "usd_type": "uniform int",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "int",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 1000,
+      "parser_default": 60,
+      "absent": "The scene keeps physxScene:timeStepsPerSecond, else 60. Consulted only when physxScene:timeStepsPerSecond is absent; values are clamped to [1, UINT_MAX].",
+      "raw_fallback_diverges": true,
+      "units": "1/s",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp"
+      ],
+      "notes": "Newton schema attribute (newton-usd-schemas, not shipped with ovphysx). NewtonSceneAPI declares it; the parser reads it on every PhysicsScene without checking usd-schemas."
+    },
+    {
+      "name": "newton:gravityEnabled",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": true,
+      "parser_default": true,
+      "absent": "Gravity as configured. A present false zeroes the gravity magnitude, whatever physics:gravityMagnitude says.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp"
+      ],
+      "notes": "Newton schema attribute (newton-usd-schemas, not shipped with ovphysx). NewtonSceneAPI declares it; read on every PhysicsScene without checking usd-schemas."
+    }
+  ],
+  "notes": [
+    "newton:gravityEnabled (NewtonSceneAPI family, read on this prim by attribute name, no schema gate): when the column is present and false, physics:gravityMagnitude is forced to 0. Unconditional: an authored physics:gravityMagnitude does not suppress it, and on ovstage presence of the column is the whole gate because every column reads as authored. Absent: gravity applies.",
+    "newton:timeStepsPerSecond: fallback for physxScene:timeStepsPerSecond, applied only when the PhysX column is absent or out of range (an in-range PhysX value wins). Clamped to [1, UINT_MAX]. On a producer-populated stage with PhysxSceneAPI applied the published 60 counts as authored, so the fallback is unreachable there.",
+    "The parser reads these columns without checking that NewtonSceneAPI is listed in usd-schemas. The compiled cache reads them but does not support the API: a prim that lists NewtonSceneAPI makes the cache bypass."
+  ]
+}

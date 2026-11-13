@@ -22,11 +22,12 @@ in `tests/c_unittests/test_session_physics.cpp` and `test_tensor_binding.cpp`.
 
 ## When
 
-- Populate with ALL at ordinal 1, wait for population, seal it, and attach via `attach_usd_with_ovstage`.
+- Populate the physics population description with RENDERING beside it at ordinal 1, wait for population,
+  seal it, and attach via `attach_usd_with_ovstage`.
 - Warm up, write prismatic actuation 10 for each environment and step 0.001 s.
 - Read projected joint forces through each test's session or tensor binding.
 
 ## Then
 
-- The helper uses ALL population before sealing and attach (REQ AC-1).
+- The helper populates the physics description with RENDERING beside it and seals before attach (REQ AC-1).
 - Every cart-prismatic joint reports projected force within 0.9 of 10 (REQ AC-2).

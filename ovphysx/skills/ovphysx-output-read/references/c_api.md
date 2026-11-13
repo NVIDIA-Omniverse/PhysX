@@ -6,7 +6,7 @@ Read this file for the native C output-read branch.
 
 ```text
 ovphysx_query(type, scope, &query, &query_result or NULL) -> wait_task
-  -> ovphysx_read(query, attributes, count, &read, &read_result or NULL) -> wait_task
+  -> ovphysx_read(query, attributes, count, cuda_sync, &read, &read_result or NULL) -> wait_task
   -> ovphysx_fetch_read_next -> wait_task; stop on a null group
        -> consume group
        -> ovphysx_release_group -> wait_task
@@ -14,9 +14,14 @@ ovphysx_query(type, scope, &query, &query_result or NULL) -> wait_task
   -> ovphysx_release_query -> wait_task
 ```
 
+`cuda_sync` is the caller's producer handoff. `{0, 0}` keeps the read on the legacy default
+stream, as before; a stream of the scene's CUDA context orders the read's device gathers on it
+(see `ovphysx_read`).
+
 Query, read, fetch-next and release return `ovphysx_enqueue_result_t`.
-The receipt status reports admission, including accepted work that fails while
-executing inline. Wait on the receipt before using output handles, results or
+The receipt status reports admission, whether the work runs inline or is queued.
+Query and read handles are available on admission and may be passed to later
+calls immediately. Wait successfully before inspecting summaries or fetched
 groups. A successful fetch with a null output group means normal exhaustion; a
 failed wait is an error. An empty query has a nonzero query handle and produces no
 groups. `ovphysx_query_selection` takes the same final optional result.
@@ -25,8 +30,9 @@ Release every fetched group, then the read and query handles, after external
 consumers have completed, including on error paths. Releases also return tasks that must be collected. Accepted release
 ends caller use even if cleanup fails; do not resubmit it. Rejected release
 retains caller ownership. Task error strings belong to the wait result: copy or
-report them before `ovphysx_destroy_wait_task_result`. Keep input arrays and
-output slots alive through their task's completion.
+report them before `ovphysx_destroy_wait_task_result`. Strings, attribute arrays
+and selection descriptors are copied before submission returns. Keep borrowed
+tensor data and output slots alive through their task's completion.
 
 ## Discovery and Selector Semantics
 
@@ -45,7 +51,7 @@ unsupported or not-yet-ready data. Its rows stay valid until the read release is
 accepted. NULL skips either summary. A duplicate request, or a token that does not
 resolve in the attached Stage's dictionary, fails the read task.
 
-A group's `prim_list` and `attribute` are interned integers, not paths or names.
+A group's `prim_list` and `attribute` are interned handles (`ovx_primpath_list_t`, `ovx_token_t`), not paths or names.
 They belong to the path dictionary of the ovstage Stage you attached; get it with
 `ovstage_get_path_dictionary(stage)` and do not free it. Resolve an emitted
 attribute through the public dictionary API:
@@ -63,7 +69,7 @@ static int print_group_attribute(ovstage_instance_t* stage, const ovstage_read_g
         return 0;
     ovx_string_t name = { 0 };
     const ovx_api_result_t result =
-        path_dictionary_get_strings_from_tokens(dict, &group->attribute, 1, &name);
+        path_dictionary_get_strings_from_tokens(dict, &group->columns[0].attribute, 1, &name);
     if (result.status != OVX_API_SUCCESS) {
         if (result.error.ptr)
             path_dictionary_release_error(dict, result.error);
@@ -94,16 +100,17 @@ object type.
 ## Borrowed Groups
 
 `ovphysx_fetch_read_next()` returns a producer-owned
-`ovstage_read_group_t const*`. The group struct and stage-derived prim list remain
+`ovstage_read_group_t const*` carrying one attribute column, `columns[0]`
+(`column_count == 1`). The group struct and stage-derived prim list remain
 valid until the group or read session is released, or the attachment is retired,
-whichever happens first. Numeric tensor, prim-index-map,
-data-index-map, mask, and CUDA-event storage remains valid until the read session is released.
+whichever happens first. The column and its numeric tensor, prim-index-map,
+data-index-map, mask, and CUDA-event storage remain valid until the read session is released.
 
 Preserve these fields when forwarding a group:
 
 - `prims.list`, `prims.offset`, `prims.count`, and `prims.index_map`
-- emitted `attribute`, `semantic`, `is_array`, and `is_delete`
-- `data.tensors`, `data.tensor_count`, `data.index_map`, and `data.cuda_sync`
+- the column's emitted `attribute`, `semantic`, `is_array`, and `is_delete`
+- the column's `data.tensors`, `data.tensor_count`, `data.index_map`, and `data.cuda_sync`
 
 Forwarding `cuda_sync` is not the same as honouring it. On a DirectGPU scene the
 covered types emit **device-resident** (`kDLCUDA`) tensors, handed over before their
@@ -165,15 +172,17 @@ static int consume_read(ovphysx_instance_handle_t handle,
         }
 
         /* Ordered ONCE per group, not per tensor: cuda_sync describes the whole group, and a
-         * group is device-uniform. Only the legacy default/null stream of the producing
-         * context is already ordered after the producer work; any other stream needs this
+         * group is device-uniform. Only the stream the read was given, when it is in the
+         * scene's CUDA context (for {0, 0}, the legacy default/null stream of the producing
+         * context), is already ordered after the producer work; any other stream needs this
          * wait. Wait, do not destroy: the event belongs to the read session. Skip a
          * zero wait_event because CUDA does not accept a null event. */
         int groupOk = 1;
-        if (g->data.tensor_count > 0 && g->data.tensors[0].device.device_type == kDLCUDA &&
-            g->data.cuda_sync.wait_event != 0) {
+        const ovstage_data_t* data = &g->columns[0].data; /* a physics output group has one column */
+        if (data->tensor_count > 0 && data->tensors[0].device.device_type == kDLCUDA &&
+            data->cuda_sync.wait_event != 0) {
             const cudaError_t w = cudaStreamWaitEvent(
-                myStream, (cudaEvent_t)g->data.cuda_sync.wait_event, 0);
+                myStream, (cudaEvent_t)data->cuda_sync.wait_event, 0);
             if (w != cudaSuccess)
                 groupOk = 0;
         }
@@ -181,8 +190,8 @@ static int consume_read(ovphysx_instance_handle_t handle,
         /* A fixed group carries ONE stacked tensor; an array group carries one per prim.
          * Iterating tensor_count is the only form correct for both -- tensors[0] silently
          * consumes the first prim's row and drops the rest of an array group. */
-        for (uint32_t ti = 0; groupOk && ti < g->data.tensor_count; ++ti) {
-            const DLTensor* t = &g->data.tensors[ti];
+        for (uint32_t ti = 0; groupOk && ti < data->tensor_count; ++ti) {
+            const DLTensor* t = &data->tensors[ti];
 
             /* Dispatch on BOTH dtype and device. Columns are not all float32 -- shapeCount is
              * int32 and the actor flags are uint8 -- and a host column must not be handed to a
@@ -197,7 +206,8 @@ static int consume_read(ovphysx_instance_handle_t handle,
                 continue;
             }
 
-            /* Dense (strides == NULL, byte_offset == 0): rows are contiguous, dtype.lanes wide. */
+            /* Dense (strides == NULL, byte_offset == 0): rows are contiguous; a row is dtype.lanes values
+             * times the product of shape[1..ndim). */
             const float* rows = (const float*)((const char*)t->data + t->byte_offset);
             launch_my_kernel(rows, t->shape[0], myStream);
         }
@@ -214,9 +224,10 @@ static int consume_read(ovphysx_instance_handle_t handle,
     }
 
     /* THE CONSUMER MUST FINISH BEFORE THE SESSION GOES AWAY. A device column points into
-     * session-owned memory, and ovphysx_release_read frees it. The wait above orders the
-     * producer BEFORE your kernel; nothing orders your kernel before this free, so without
-     * this synchronize the kernel reads memory the next line releases.
+     * session-owned memory, and ovphysx_release_read frees it, or hands it to the query's next
+     * read, which writes it again. The wait above orders the producer BEFORE your kernel;
+     * nothing orders your kernel before this release, so without this synchronize the kernel
+     * reads memory the next line releases.
      *
      * Unconditional: a failed loop may still have launched kernels over columns that are about
      * to be freed. */
@@ -257,7 +268,14 @@ ordinal advancement, and known structural edits require an explicit rebuild of
 cached prim order and shapes.
 
 Fixed groups contain one stacked tensor. Array groups contain one tensor per
-prim. DLPack `dtype.lanes` carries tuple width.
+prim. DLPack `dtype.lanes` carries tuple width, except for the five whole-articulation
+inverse-dynamics columns: they have one lane and keep each row's dimensions as tensor axes
+(`jacobian` `[N, R, C]`, `massMatrix` `[N, M, M]`, `coriolisForce` and `gravityForce` `[N, M]`,
+`centroidalMomentum` `[N, 6, numDofs + 7]`). An `ARTICULATION_JOINT` group is
+fixed with one row per DOF: a joint's rows are consecutive and its path repeats once
+per axis in `prims.list`. `ovphysx_create_joint_arrays_from_read_group`
+(`<ovphysx/ovphysx_utils.h>`) gives one view per joint and a path list naming each
+joint once.
 
 That difference decides how many tensors to read, and taking `tensors[0]` is wrong
 for half of them:
@@ -269,7 +287,7 @@ extern void consume(const DLTensor* tensor);
 
 static void consume_group(const ovstage_read_group_t* group)
 {
-    for (uint32_t i = 0; i < group->data.tensor_count; ++i)
-        consume(&group->data.tensors[i]);
+    for (uint32_t i = 0; i < group->columns[0].data.tensor_count; ++i)
+        consume(&group->columns[0].data.tensors[i]);
 }
 ```

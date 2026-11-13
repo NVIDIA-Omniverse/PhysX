@@ -51,9 +51,10 @@ def test_host_reentrant_or_output_failure_cannot_replay_step(attached):
 
 def test_host_preview_never_consumes_uncollected_playback(physics,attached):
     import ovstage
+    from ovphysx.population import physics_population_descs
     stage=ovstage.Stage('host-inspector')
-    ovstage.population.open_usd(stage,str(Path(__file__).resolve().parents[1]/'samples/scenes/two_boxes.usda'),
-                                ordinal=1,domains=ovstage.PopulationDomain.ALL)
+    ovstage.population.open_usd_with_desc(stage,str(Path(__file__).resolve().parents[1]/'samples/scenes/two_boxes.usda'),
+                                ordinal=1,time=ovstage.population.DEFAULT_TIME,descs=physics_population_descs(rendering=True))
     stage.advance_write_floor(ordinal=1).wait()
     try:
         with PreviewSession(physics,stage,read_ordinal=1) as preview, FrameCoordinator(preview) as inspector:
@@ -63,6 +64,16 @@ def test_host_preview_never_consumes_uncollected_playback(physics,attached):
             assert inspector.tick(1,1/60) is frame
             attached.wait_task(playback_task) # succeeds: preview did not consume the core receipt
     finally:stage.destroy()
+
+
+def test_invalid_ordinal_does_not_latch_or_enter_the_host_loop(attached):
+    with ToolsSession(attached) as session, FrameCoordinator(session) as host:
+        with pytest.raises(ValueError, match='positive ordered source ordinals'):
+            host.tick(1, 1/60, update=(2**63, 2**63))
+        assert not host.paused and host._failure is None and not host._entered
+        assert host._steps == 0
+        host.resume()
+        assert host.tick(1, 1/60).step == 1
 
 
 def test_host_extension_sample_in_native_worker():

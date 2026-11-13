@@ -15,6 +15,9 @@
  * @implements REQ-PARSE-COL-004
  * @covers AC-3
  *
+ * @implements REQ-LOAD-TOKENS-001
+ * @covers AC-5
+ *
  * USD-backed `IPhysicsSource` implementation: mints `ObjectKey` /
  * `TokenId` / `BufferHandle` for stage paths, tokens, mesh arrays;
  * resolves attribute reads / schema checks / collection membership
@@ -26,6 +29,7 @@
 #include "UsdSource.h"
 
 #include "NativeWalker.h"
+#include <omni/physics/parse/KnownTokens.h>
 #include "UsdChangeFeed.h"
 
 #include <pxr/usd/usd/schemaRegistry.h>
@@ -219,6 +223,16 @@ PXR_NS::TfToken UsdSource::tfTokenFor(TokenId id) const
 TokenId UsdSource::internToken(std::string_view token) const
 {
     return const_cast<UsdSource*>(this)->tokenFor(PXR_NS::TfToken(std::string(token)));
+}
+
+const KnownTokens* UsdSource::knownTokens() const
+{
+    std::call_once(mKnownTokensOnce, [this]() {
+        std::unique_ptr<KnownTokens> tokens = std::make_unique<KnownTokens>();
+        tokens->internVocabulary(*this);
+        mKnownTokens = std::move(tokens);
+    });
+    return mKnownTokens.get();
 }
 
 std::string_view UsdSource::tokenToString(TokenId id) const

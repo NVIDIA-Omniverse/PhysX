@@ -14,6 +14,9 @@
  * @covers AC-1 AC-3
  */
 
+// @implements REQ-LOAD-JOINTLIMIT-001
+// @covers AC-9
+
 #pragma once
 
 #ifdef __linux__
@@ -229,6 +232,16 @@ public:
     };
     InternalJointState mJointStates[6];
 
+    // The authored low and high bound of each limit pair as last delivered by a live update, NaN
+    // until one is: entry 0 for a revolute or prismatic limit, and for a D6 limit the entry of its
+    // axis in the order transX, transY, transZ, rotX, rotY, rotZ. A live change to one bound is set
+    // together with the other one from here. Reading the other bound back from the source instead
+    // would resolve at the source's latest state, which is not necessarily the state the change
+    // being processed belongs to (REQ-LOAD-JOINTLIMIT-001 AC-9). A clone copies them, and an
+    // articulation joint passes them on through InternalLink::mInboundJointLiveLimits when its
+    // InternalJoint is rebuilt around the same PhysX joint.
+    JointLiveLimitBounds mLiveLimits[6];
+
     void copy(const InternalJoint& cpJoint)
     {
         mJointType = cpJoint.mJointType;
@@ -242,6 +255,7 @@ public:
         {
             mJointStates[i] = cpJoint.mJointStates[i];
             mJointDrives[i] = cpJoint.mJointDrives[i];
+            mLiveLimits[i] = cpJoint.mLiveLimits[i];
         }
     }
 

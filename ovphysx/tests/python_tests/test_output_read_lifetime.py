@@ -3,10 +3,11 @@
 
 """Lifetime tests for zero-copy CPU and CUDA Warp output-read arrays.
 
-Every non-empty array borrows session-owned storage. Closing ReadResult releases
-Stage-bound identity immediately but native numeric storage remains alive until
-all Warp arrays and downstream views are gone. Deleters may run on arbitrary
-threads, so they only enqueue teardown. An owning-thread API call drains it.
+Every non-empty array borrows session-owned storage. Closing ReadResult invalidates
+its arrays; a read over the caller's query with no host array alive is released at
+once, otherwise when the last array drops. A ReadResult dropped without a close keeps
+native numeric storage alive until all Warp arrays and downstream views are gone. Deleters may run on arbitrary threads, so they only
+enqueue teardown. An owning-thread API call drains it.
 """
 
 # @implements REQ-PYTHON-READ-001
@@ -100,7 +101,7 @@ def _borrow_cpu_array(holder):
 
 
 def test_read_release_defers_native_teardown_to_owner_drain(monkeypatch):
-    """Close plus the final array deleter queues one native teardown."""
+    """A result dropped without a close, plus the final array deleter, queues one native teardown."""
     from ovphysx.api import _ReadRelease
 
     acquired, released = _lifecycle_spies(monkeypatch)
@@ -133,6 +134,57 @@ def test_read_release_defers_native_teardown_to_owner_drain(monkeypatch):
     sdk._drain_pending_read_releases()
     assert sdk._lib.calls == ["group", "group", "read", "query"]
     assert released == [owner_thread, owner_thread]
+
+
+def test_close_releases_a_read_over_the_callers_query_while_device_arrays_are_borrowed(monkeypatch):
+    """An explicit close of a read over the caller's query with only device arrays alive queues the
+    native teardown, once no fetch is pending. Their later deleters only hand back their
+    process-lifecycle references."""
+    from ovphysx.api import _ReadRelease
+
+    acquired, released = _lifecycle_spies(monkeypatch)
+    owner_thread = threading.get_ident()
+    sdk = _FakeSdk()
+    holder = _ReadRelease(sdk, query=0, read=9)
+    holder.retain()
+    holder.retain()
+    holder.retain_pending()
+
+    holder.close()
+    assert not holder.has_live_borrows, "a closed result's arrays no longer borrow its session"
+    assert sdk._pending_read_releases == [], "a pending fetch holds the session"
+    holder.release()  # the fetch completes
+    assert sdk._pending_read_releases == [holder]
+
+    holder.release_borrow()
+    holder.release_borrow()
+    assert sdk._pending_read_releases == [holder], "a deleter after close must not queue the session again"
+    assert acquired == released == [owner_thread, owner_thread], "every borrow returns its reference"
+
+    sdk._drain_pending_read_releases()
+    assert sdk._lib.calls == ["read"]
+
+
+@pytest.mark.parametrize("query, host", [(0, True), (7, False)], ids=["host array", "read_sync result"])
+def test_close_never_frees_memory_a_kept_array_points_at(monkeypatch, query, host):
+    """Arrays are invalid after close, but where releasing gains nothing -- a host array alive, or a
+    read_sync result's own query -- the teardown waits for the last array instead of freeing memory it
+    points at, and destroy() refuses until then, as for a result not closed."""
+    from ovphysx.api import _ReadRelease
+
+    _lifecycle_spies(monkeypatch)
+    sdk = _FakeSdk()
+    holder = _ReadRelease(sdk, query=query, read=9)
+    holder.retain(host)
+    holder.retain()
+
+    holder.close()
+    assert holder.has_live_borrows, "destroy() must refuse while a kept array would point at freed memory"
+    holder.release_borrow(host=host)
+    assert sdk._pending_read_releases == [], "the native release must wait for the last array"
+    holder.release_borrow()
+    assert sdk._pending_read_releases == [holder]
+    assert not holder.has_live_borrows
 
 
 def test_pending_zero_ref_release_retires_groups_before_native_session(monkeypatch):
@@ -284,7 +336,7 @@ class _StubWarp:
 
 
 def _cuda_group(wait_event):
-    """A minimal stand-in for a CUDA ovstage_read_group_t carrying a producer event."""
+    """A minimal stand-in for a CUDA ovstage_read_column_t carrying a producer event."""
     from ovphysx.dlpack import DLDeviceType, DLTensor
 
     tensor = DLTensor()
@@ -314,7 +366,8 @@ def test_failed_stream_wait_raises_before_any_array_is_returned(monkeypatch):
     sdk._released = True
 
     with pytest.raises(RuntimeError, match="could not order Warp stream.*forced wait failure"):
-        sdk._materialize_read_group(_cuda_group(0xBEEF), SimObjectType.RIGID_BODY, None)
+        group = SimpleNamespace(column_count=1, columns=[_cuda_group(0xBEEF)])
+        sdk._materialize_read_group(group, SimObjectType.RIGID_BODY, None)
 
 
 @pytest.mark.parametrize("has_event,is_cuda", [(False, True), (True, False)])
@@ -423,9 +476,12 @@ def test_a_later_group_failure_drops_earlier_arrays_before_native_teardown(monke
     # One real zeroed native group, reused for both fetches: every field the loop reads is either
     # zero (index maps empty, no CUDA event to wait on) or set below.
     tensor = DLTensor()
+    column = _bindings.ovstage_read_column_t()
+    column.data.tensor_count = 1
+    column.data.tensors = ctypes.pointer(tensor)
     group = _bindings.ovstage_read_group_t()
-    group.data.tensor_count = 1
-    group.data.tensors = ctypes.pointer(tensor)
+    group.columns = ctypes.pointer(column)
+    group.column_count = 1
 
     from test_session_operations import make_sdk
     sdk = make_sdk()
@@ -494,8 +550,8 @@ def test_null_warp_stream_orders_against_the_default_stream(monkeypatch):
 
 
 def test_device_column_release_is_deferred_to_the_owning_thread(physx_sdk, monkeypatch):
-    """End-to-end on a real GPU scene: a borrowed CUDA column keeps the native read session
-    alive past the ``with`` block, and dropping the borrow defers the teardown
+    """End-to-end on a real GPU scene: a borrowed CUDA column keeps a native read session
+    dropped without a close alive, and dropping the borrow defers the teardown
     (ovphysx_release_read, and with it the cuMemFree) to the owning thread's next drain."""
     wp.init()
     if wp.get_cuda_device_count() == 0:
@@ -515,11 +571,11 @@ def test_device_column_release_is_deferred_to_the_owning_thread(physx_sdk, monke
 
     monkeypatch.setattr(physx_sdk._lib, "ovphysx_release_read", _spy_release_read)
 
-    with physx_sdk.read_sync(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
-        assert result.groups and result.groups[0].tensors, "expected a device read column"
-        held = [t for g in result.groups for t in g.tensors]
-        assert held[0].device.is_cuda, "precondition: GPU-resident column"
-    del result  # drop the ReadResult, so only the held Warp arrays still borrow the session
+    result = physx_sdk.read_sync(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL)
+    assert result.groups and result.groups[0].tensors, "expected a device read column"
+    held = [t for g in result.groups for t in g.tensors]
+    assert held[0].device.is_cuda, "precondition: GPU-resident column"
+    del result  # drop the ReadResult without a close, so only the held Warp arrays still borrow the session
 
     # A device column is still borrowed, so the native read must NOT be released.
     assert calls == [], "ovphysx_release_read must be deferred while a device column is borrowed"
@@ -532,6 +588,43 @@ def test_device_column_release_is_deferred_to_the_owning_thread(physx_sdk, monke
     # The owning thread's next ovphysx call drains the queued teardown exactly once.
     physx_sdk.step(1.0 / 60.0)
     assert len(calls) == 1, f"expected one deferred ovphysx_release_read on the owning drain, got {len(calls)}"
+
+
+def test_closing_a_read_releases_it_while_its_arrays_are_held(physx_sdk, monkeypatch):
+    """End-to-end on a real GPU scene: closing a read releases it on the spot, even while the caller
+    still holds its arrays, so a held query's next read gathers into the same columns. A loop whose
+    variables still hold the last read's arrays when the next read opens sees one pointer throughout."""
+    wp.init()
+    if wp.get_cuda_device_count() == 0:
+        pytest.skip("no CUDA device available")
+
+    load_usd_with_ovstage(physx_sdk, data_path("boxes_falling_on_groundplane.usda"))
+    for _ in range(5):
+        physx_sdk.step(1.0 / 60.0)
+    physx_sdk.wait_all()
+
+    calls = []
+    orig_release_read = physx_sdk._lib.ovphysx_release_read
+
+    def _spy_release_read(*args):
+        calls.append(1)
+        return orig_release_read(*args)
+
+    monkeypatch.setattr(physx_sdk._lib, "ovphysx_release_read", _spy_release_read)
+
+    bodies = physx_sdk.query(SimObjectType.RIGID_BODY).wait()
+    pointers = []
+    for _ in range(3):
+        result = physx_sdk.read(bodies, ["position"]).wait()
+        column = result.fetch_next().wait().tensors[0]
+        assert column.device.is_cuda, "precondition: GPU-resident column"
+        pointers.append(column.ptr)
+        result.close().wait()
+        assert len(calls) == len(pointers), "close must release the read while its array is held"
+        physx_sdk.step(1.0 / 60.0)
+        physx_sdk.wait_all()
+    assert pointers == [pointers[0]] * len(pointers), f"the held query's reads moved between columns: {pointers}"
+    bodies.close().wait()
 
 
 def test_a_borrow_deleted_on_a_worker_thread_never_runs_native_shutdown_there(monkeypatch):
@@ -573,7 +666,7 @@ def test_a_borrow_deleted_on_a_worker_thread_never_runs_native_shutdown_there(mo
     sdk._pending_read_releases = []
 
     holder = _ReadRelease(sdk, 0, 0)
-    holder.release()  # the owning ReadResult closes; the borrow is now the only reference
+    holder.release()  # the owning ReadResult is dropped; the borrow is now the only reference
 
     worker = threading.Thread(target=holder.release_borrow)
     worker.start()

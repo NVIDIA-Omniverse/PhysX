@@ -1,3 +1,209 @@
+# v5.13.0
+
+## Supported Platforms
+
+### Runtime
+
+* Linux (tested on Ubuntu LTS versions 22.04, and 24.04 using their respective default GCC and Clang compilers).
+* Microsoft Windows 10 or later (64 bit)
+* GPU acceleration: display driver supporting CUDA toolkit 12.8 and Volta GPU or above
+
+### Development
+
+* [Linux Platform Readme](documentation/platformreadme/linux/README_LINUX.md)
+* [Windows Platform Readme](documentation/platformreadme/windows/README_WINDOWS.md)
+
+## General
+
+### Added
+
+### Fixed
+
+* `PxSerialization::createCollectionFromXml()` could hang and consume memory without bound while reading a RepX file in which a numeric buffer, such as a triangle mesh's `points` or `triangles` or a height field's `samples`, contains a non-numeric token. The reader stopped making progress through such a buffer and never reached its end. A buffer with a malformed token is now reported through the error callback as `PxErrorCode::eINVALID_PARAMETER` and ignored.
+* `PxSerialization::createCollectionFromXml()` now checks that a height field in a RepX file carries at least `nbRows * nbColumns` samples before creating it. A file declaring more samples than it contains produced a height field built from a short or absent sample buffer, reading past its end. Such a height field is now reported through the error callback as `PxErrorCode::eINVALID_PARAMETER` and skipped.
+* `PxSerialization::createCollectionFromXml()` now rejects invalid triangle and convex mesh descriptors before cooking and skips mesh creation when cooking fails. Malformed mesh data without usable cooked data could previously trigger an assertion in debug builds.
+* Rigid dynamic actors and materials deserialized with `PxSerialization::createCollectionFromBinary()` now keep their `PxRigidDynamicLockFlags` and `PxMaterialFlags`. Previously, both were cleared, so that, for example, a locked axis was free again and `PxMaterialFlag::eCOMPLIANT_ACCELERATION_SPRING` was lost.
+* `PHYSX_PRESET` cpu-only presets (`linux-gcc-cpu-only`, `vc17win64-cpu-only`, ...) were ignored when configuring with CMake directly (top level, `add_subdirectory()` or FetchContent): `PX_GENERATE_GPU_PROJECTS` stayed ON, CUDA was enabled and configuring failed with "Failed to find nvcc" on machines without the CUDA toolkit. The cpu-only presets now disable CUDA as documented; an explicit `-DPX_GENERATE_GPU_PROJECTS=...` on the command line still takes precedence over the preset.
+* The GPU entry points in `gpu/PxGpu.h`, such as `PxCreateCudaContextManager()`, kept calling into a PhysXGpu library after reporting it as incompatible with this version of PhysX, for example an older `PhysXGpu_64.dll` installed by another application. Such a library received this SDK's objects and returned objects that do not match this SDK's interfaces. An incompatible library is now handled like a missing one: the error is still reported, and the entry points behave as if no PhysXGpu library had been found. On Linux, a library that lacks `PxSetPhysXGpuProfilerCallback` or `PxSetPhysXGpuFoundationInstance` is now rejected, as on Windows.
+* In a scene with `PxSceneFlag::eENABLE_DIRECT_GPU_API`, `PxScene::shiftOrigin()` reports an error and no longer shifts the origin. Previously it shifted the actor poses and the scene query structures on the CPU anyway, while the simulation on the GPU kept the old origin.
+* A `PxBroadPhase` created with `PxBroadPhaseType::eGPU`, and a `PxAABBManager` using one, could report the same pair twice in the created or deleted pairs of `PxBroadPhaseResults`, for example when both objects of the pair moved a long distance in the same update. Each pair is now reported once.
+
+### Changed
+
+* Internal issue-tracker references have been removed from contact-management and material error messages.
+* In builds without GPU support (`PX_SUPPORT_GPU_PHYSX` is 0), `PxPhysics::createShape()` now reports an error and returns NULL for `PxTetrahedronMeshGeometry` and `PxParticleSystemGeometry` in all build configurations, and `PxGeometryQuery::isValid()` returns false for them. `PxSerialization::createCollectionFromBinary()` likewise reports an error and returns NULL for a collection that contains such a shape. Previously, these builds created shapes of both types and `PxGeometryQuery::isValid()` returned true for them, although such shapes generated no contacts and no scene-query hits.
+
+### Removed
+
+## Rigid Body
+
+### Fixed
+
+* Under `PxSceneFlag::eENABLE_GPU_DYNAMICS`, the following changes to a rigid dynamic actor that has already been simulated now take effect in the next simulation step. Previously, the GPU solver could keep using the old value until another change to the same actor, for example a new mass, was made.
+  * `PxRigidBody::setMaxDepenetrationVelocity()`.
+  * `PxRigidDynamic::setRigidDynamicLockFlag()` and `PxRigidDynamic::setRigidDynamicLockFlags()`.
+  * `PxRigidDynamic::setContactReportThreshold()`.
+  * Setting or clearing `PxActorFlag::eDISABLE_GRAVITY`.
+* Fixed an out-of-bounds GPU memory write in scenes that use `PxBroadPhaseType::eGPU` and contain aggregates, in the first simulation step after an aggregate was added together with many other objects.
+* `PxDirectGPUAPI::copyContactData()` left the pair count in the user buffer unchanged after a simulation step in which no shape pair reached contact generation, so the pairs of an earlier call were reported again. In that case, it also did not wait for `startEvent` and did not record `finishEvent`. The count is now set to 0. (https://github.com/NVIDIA-Omniverse/PhysX/issues/555)
+* `PxDirectGPUAPI::getD6JointData()` may have failed a device assertion in debug builds when it read a joint that had not been simulated yet. The failed assertion left the CUDA context unusable. Note that, unlike the CPU API `PxConstraint::getForce()`, `PxDirectGPUAPI::getD6JointData()` does not initialize the force and torque of such a joint and may return invalid data for it.
+* Fixed an out-of-bounds GPU memory write in scenes with `PxSceneFlag::eENABLE_DIRECT_GPU_API`. It could occur after switching a rigid dynamic actor between kinematic and dynamic, switching a shape between simulation and trigger shape, removing an actor from an aggregate, or calling `PxScene::resetFiltering()`.
+* Setting the global pose of a rigid dynamic actor through `PxDirectGPUAPI::setRigidDynamicData()` could corrupt the GPU broadphase state, or make the next simulation step fail with a CUDA error, if the actor had a shape that was neither a simulation nor a trigger shape, for example a shape used only for scene queries.
+* Fixed a GPU memory write through a freed address in scenes with `PxSceneFlag::eENABLE_DIRECT_GPU_API`. It could occur in a simulation step after many actors had been added since the previous step. Poses set through `PxDirectGPUAPI::setRigidDynamicData()` before that step could be missed by the broadphase.
+* Under `PxSceneFlag::eENABLE_DIRECT_GPU_API`, `PxRigidDynamic::setAngularVelocity()` reports an error after the first simulation step, because the velocity is then written through `PxDirectGPUAPI::setRigidDynamicData()`. It no longer changes the angular velocity in that case. Previously it applied the value on the CPU anyway, and `PxRigidBody::getAngularVelocity()` returned it.
+* Under `PxSceneFlag::eENABLE_DIRECT_GPU_API`, `PxShape::setGeometry()` reports an error after the first simulation step. It no longer changes the geometry in that case. Previously it changed it anyway, and `PxShape::getGeometry()` returned it.
+* In scenes and in a `PxBroadPhase` that use `PxBroadPhaseType::eGPU`, the broadphase could miss created and deleted pairs in an update in which many objects moved a long distance, for example when thousands of environments were reset by teleporting their objects. In such an update, the number of comparisons of the incremental sweep-and-prune on one axis could exceed 2^32 and overflowed. Missed created pairs let objects pass through each other, and missed deleted pairs kept stale interactions, which increased the contact generation work and the GPU memory use. (https://github.com/NVIDIA-Omniverse/PhysX/issues/581)
+* Under `PxSceneFlag::eENABLE_DIRECT_GPU_API`, collision detection now uses the current poses of the following shapes. Previously it could use outdated ones.
+  * Shapes of a kinematic actor moved with `PxRigidDynamic::setKinematicTarget()`. The pose of the actor on the GPU, as read through `PxDirectGPUAPI::getRigidDynamicData()`, is now set to the kinematic target at the end of the simulation step, matching the behavior in scenes without `PxSceneFlag::eENABLE_DIRECT_GPU_API`.
+  * Shapes moved with `PxShape::setLocalPose()`, and shapes of a static actor moved with `PxRigidActor::setGlobalPose()`, after the first simulation step.
+  * Unrelated shapes of other rigid dynamic actors and articulation links in the same scene could be affected as well.
+* Collision detection now waits for poses set through `PxDirectGPUAPI::setRigidDynamicData()` with a `startEvent`. Previously, if the event completed only after the next simulation step had started, collision detection in that step could use the poses from before the write.
+* Under `PxSceneFlag::eENABLE_GPU_DYNAMICS`, a box or a convex mesh on a height field, or near the border of a triangle mesh, could get a contact far deeper than its own size, typically while it slid or turned, and was then thrown away. The contacts came from a separating axis almost parallel to a triangle, taken from an edge on the far side of that triangle. With `PxSceneFlag::eENABLE_PCM` on the CPU, such an axis could give a box or a convex mesh near the border of a triangle mesh contacts whose normal was parallel to the mesh.
+* With `PxSceneFlag::eENABLE_PCM` on the CPU, a box or a convex mesh on a triangle mesh or a height field could get contacts with a positive separation and a normal far from the mesh normal, for example parallel to a flat mesh, which could push it sideways or stop it while it slid. They came from triangles next to the shape that share only a vertex with the triangles it touches, including at the border of a mesh.
+
+### Changed
+
+* Reduced the cost of the simulation step in which a large island of bodies falls asleep. Island deactivation now visits each contact and joint of the island once instead of once per connected body, and, in scenes that do not use GPU dynamics, the island's contact pairs are removed from the narrowphase in one batch instead of one at a time. In scenes that use neither GPU dynamics nor the GPU broadphase, the bodies and contact pairs of a large island are now also put to sleep in parallel tasks.
+* Reduced the CPU cost of sorting the pairs that the GPU broadphase reports in each simulation step, in scenes that use `PxBroadPhaseType::eGPU`.
+* Reduced the GPU time of the incremental sweep-and-prune of the GPU broadphase, in scenes and in a `PxBroadPhase` that use `PxBroadPhaseType::eGPU`. Its kernel now runs with a number of blocks sized to the GPU, all resident at the same time.
+
+## Scene Queries
+
+### Fixed
+
+* Fixed insufficient depenetration distances from `PxGeometryQuery::sweep()` and `PxScene::sweep()` with `PxHitFlag::eMTD` for some initially overlapping shapes, including a box contained in another box. (https://github.com/NVIDIA-Omniverse/PhysX/issues/578)
+* Initial-overlap sweeps with `PxHitFlag::eMTD` between boxes, capsules, spheres and convex meshes now include the requested inflation in the GJK-based paths. This includes overlaps caused only by the inflation shell.
+* Box sweeps against boxes with `PxHitFlag::eMTD` now return the initial-overlap hit position on the swept box, as documented.
+
+### Changed
+
+* Box sweeps against boxes requesting `PxHitFlag::eMTD` use a 100-times smaller convergence shell for more accurate positive impact distances. Nearly touching boxes may report a positive impact distance instead of an initial overlap.
+
+## Articulations
+
+### Added
+
+* Added SnippetMetronomes, in which metronomes standing on a sliding platform synchronize through the motion of the platform, while the same metronomes on a fixed platform do not. Each row of metronomes is an articulation, and the escapement of each metronome is applied as a joint torque through `PxArticulationCache::jointForce`.
+
+### Fixed
+
+* Fixed `PxArticulationReducedCoordinate::computeMassMatrix()` losing accuracy at large world coordinates and changing its result after `PxScene::shiftOrigin()`, for both fixed-base and floating-base articulations.
+* Fixed illegal GPU memory accesses with `PxSceneFlag::eENABLE_GPU_DYNAMICS` when two or more `PxJoint` constraints or contacts act on links that are, or descend from, the same link at index 64 or higher. (https://github.com/NVIDIA-Omniverse/PhysX/issues/535)
+* Fixed an uninitialized GPU memory read in spatial tendon response calculation when a leaf attachment is on the articulation root.
+* Under `PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS`, GPU articulations could be moved by another articulation's gravity, link forces and torques, and joint forces instead of their own, after an articulation fell asleep or was removed. Removing an articulation before it was ever simulated could cause CUDA error 716. (https://github.com/NVIDIA-Omniverse/PhysX/issues/553)
+* Fixed GPU articulations with 256 or more degrees of freedom:
+  * When such an articulation was added to a scene, some of its joint forces were not cleared, so it could move under stale forces.
+  * With the TGS solver, joint position updates of spherical and revolute joints whose degrees of freedom start at index 256 or above were applied to another joint.
+* The maximum joint velocity of prismatic joints, revolute joints about `PxArticulationAxis::eSWING1` or `eSWING2`, and spherical joints with `eTWIST` locked or with only `eSWING1` locked was read from another axis, often a locked axis left at the default of 100. This affected CPU simulation, which scales down all joint velocities of an articulation when one of them exceeds its maximum joint velocity. GPU simulation was not affected. (https://github.com/NVIDIA-Omniverse/PhysX/issues/533)
+* For the joint configurations described in the previous entry, the inverse-dynamics functions `PxArticulationReducedCoordinate::computeCoriolisCompensation()`, `computeJointAcceleration()` and the deprecated `computeLambda()`, and `PxDirectGPUAPI::computeArticulationData()` with `PxArticulationGPUAPIComputeType::eCORIOLIS_AND_CENTRIFUGAL_COMPENSATION`, used the maximum joint velocity of another axis to limit the joint velocities they compute with. (https://github.com/NVIDIA-Omniverse/PhysX/issues/573)
+* Fixed a CUDA illegal-address error (error code 700) with articulations of different sizes under `PxSceneFlag::eENABLE_GPU_DYNAMICS`. It occurred after link properties or drive targets of an articulation were changed through the CPU API and some other articulation then fell asleep, or was removed from or added to the same scene. (https://github.com/NVIDIA-Omniverse/PhysX/issues/551)
+* Under `PxSceneFlag::eENABLE_GPU_DYNAMICS`, a contact slop coefficient set on an articulation link with `PxRigidBody::setContactSlopCoefficient()` did not take effect, and other changes to link properties through the CPU API could give links the contact slop coefficient of another link.
+* Under `PxSceneFlag::eENABLE_GPU_DYNAMICS`, `PxArticulationLink::setCfmScale()` had no effect once the articulation had been simulated.
+* Fixed `PxArticulationReducedCoordinate::applyCache()` with `PxArticulationCacheFlag::eROOT_VELOCITIES` under `PxSceneFlag::eENABLE_GPU_DYNAMICS`. When the call did not wake the articulation, only the root link took the new velocity, and the other links could take the settings of another articulation's links, such as its maximum linear velocity.
+* Under `PxSceneFlag::eENABLE_GPU_DYNAMICS`, `PxRigidBody::setMaxDepenetrationVelocity()` on an articulation link that has already been simulated now takes effect in the next simulation step. Previously, the GPU solver could keep using the old value until another change to a link of the same articulation, for example a new link mass, was made.
+* Under `PxSceneFlag::eENABLE_GPU_DYNAMICS` with `PxSceneFlag::eSOLVE_ARTICULATION_CONTACT_LAST`, a floating-base articulation might not have reached the specified joint drive velocities.
+* With `PxSceneFlag::eENABLE_DIRECT_GPU_API`, setting a property of an articulation link through the CPU API, for example with `PxRigidBody::setMass()`, could reset the root linear and angular velocity of the articulation to stale values, usually the velocities it was added to the scene with. This happened when, in the same simulation step, an articulation was added to the scene, the flags of the articulation were set, or another articulation was removed.
+* Under `PxSceneFlag::eENABLE_GPU_DYNAMICS`, the links other than the root of a fixed-base articulation could take on a root velocity for one simulation step, although a fixed base does not move. This happened in the first step after a moving articulation was switched to a fixed base with `PxArticulationFlag::eFIX_BASE`.
+* Under `PxSceneFlag::eENABLE_GPU_DYNAMICS`, changes to a sleeping articulation could be ignored by the solver:
+  * A change to a `PxArticulationFixedTendon`, `PxArticulationTendonJoint`, `PxArticulationSpatialTendon`, `PxArticulationAttachment` or `PxArticulationMimicJoint`, if the scene was simulated before the articulation woke up.
+  * A change to the joint position, joint velocity, drive target, drive velocity or drive parameters of a `PxArticulationJointReducedCoordinate` that did not wake the articulation, if joint forces were then applied without waking it and another body woke the articulation through a contact or joint.
+* With `PxSceneFlag::eENABLE_DIRECT_GPU_API`, removing an articulation from the scene could break the update that applies the root poses, root velocities, joint positions and joint velocities set with `PxDirectGPUAPI::setArticulationData()` to the links of the articulations. This update runs at the start of the next simulation step, and in `PxDirectGPUAPI::computeArticulationData()` with `PxArticulationGPUAPIComputeType::eUPDATE_KINEMATIC` and no index list.
+  * It skipped the articulations whose `PxArticulationReducedCoordinate::getGPUIndex()` was not lower than the number of articulations in the scene in the previous simulation step. Their links kept their previous poses and velocities. This lasted until new articulations had taken over the GPU indices of the removed ones.
+  * It could move the shapes of an articulation added after the removal to the link poses of the removed articulation, for one simulation step, so that they could get contacts at those poses and miss contacts at their own poses. This could happen when the state of the removed articulation had been set and the articulation had then been removed before the next simulation step.
+* Under `PxSceneFlag::eENABLE_GPU_DYNAMICS`, `PxArticulationReducedCoordinate::updateKinematic()`, `applyCache()` and the inverse-dynamics functions, such as `computeMassMatrix()`, may have used outdated joint frames. This happened after a joint frame was changed with `PxArticulationJointReducedCoordinate::setParentPose()` or `setChildPose()`, or a link center of mass with `PxRigidBody::setCMassLocalPose()`, while the articulation was in a scene, and the scene was then simulated.
+* Under `PxSceneFlag::eENABLE_DIRECT_GPU_API`, the following functions report an error after the first simulation step, because the articulation data is then written through `PxDirectGPUAPI::setArticulationData()` and `PxDirectGPUAPI::computeArticulationData()`. They no longer change the CPU state in that case. Previously they changed it anyway, so that the getters returned the refused values and `updateKinematic()` recomputed the link poses and velocities on the CPU.
+  * `PxArticulationReducedCoordinate::setRootGlobalPose()`, `setRootLinearVelocity()`, `setRootAngularVelocity()` and `updateKinematic()`.
+  * `PxArticulationJointReducedCoordinate::setDriveTarget()`, `setDriveVelocity()`, `setJointPosition()` and `setJointVelocity()`.
+  * The setters of `PxArticulationFixedTendon`, `PxArticulationTendonJoint`, `PxArticulationSpatialTendon` and `PxArticulationAttachment`.
+  * `PxArticulationLink::addForce()`, `addTorque()`, `setForceAndTorque()`, `clearForce()` and `clearTorque()`. The refused forces were stored on the CPU but never applied.
+
+### Changed
+
+* In a scene with `PxSceneFlag::eENABLE_DIRECT_GPU_API`, `PxArticulationReducedCoordinate::applyCache()`, which has no effect in such a scene, now reports an error in all builds. Previously only checked and debug builds reported it.
+
+## Deformables
+
+### Fixed
+
+* Various `PxDeformableVolumeExt` fixes:
+  * `PxDeformableVolumeExt::allocateAndInitializeHostMirror()` wrote through a NULL pointer when a pinned host allocation failed. It now frees the buffers it allocated, sets all four pointers to NULL and returns without writing, so the caller can check them. `PxDeformableVolumeExt::createDeformableVolumeFromMesh()` and `PxDeformableVolumeExt::createDeformableVolumeBox()` return NULL in that case.
+  * `PxDeformableVolumeExt::createDeformableVolumeFromMesh()` leaked a reference to the shape it attaches to the deformable volume. It also dereferenced a NULL mesh, and now returns NULL for it.
+  * `PxDeformableVolumeExt::createDeformableVolumeBox()` leaked the deformable volume mesh it creates, and dereferenced it when the mesh could not be created. It now releases its own reference; the collision mesh, simulation mesh and auxiliary data stay referenced by the shape and the deformable volume. It returns NULL when the mesh cannot be created.
+
+### Changed
+
+* Raised the maximum number of deformable volumes and of deformable surfaces in a scene, `PX_MAX_NB_DEFORMABLE_VOLUME` and `PX_MAX_NB_DEFORMABLE_SURFACE`, from 4095 to 65535 each. A removed deformable now counts toward the limit until the next simulation step completes, so in a full scene `PxScene::addActor()` refuses a replacement added before then.
+
+## Particles
+
+### Fixed
+
+* A `PxPBDParticleSystem` that was simulated, removed with `PxScene::removeActor()` and added back to the same or another scene now simulates the particles in its attached particle buffers and uses its own particle contact and fluid rest offsets. Previously, the next simulation step could fail with a CUDA illegal-address error, leave the particles in place, or move the particles of a particle system removed from that scene earlier, and the system could use the offsets of another particle system or uninitialized values.
+
+## PVD / OVD
+
+### Added
+
+* `PvdDomInspect::Document` loads OVD files with configurable resource limits, validated commands, recorded-frame metadata and document-local messages. Errors identify adjustable limits and distinguish unreadable files from invalid commands. An explicit recovery mode retains validated commands before a truncated final command at verified physical EOF, even when its declared payload exceeds a cap; a read failure before the end of the file is still an I/O error. Failed loads expose no partial DOM. Samples whose optional reference targets are missing are kept and counted in `LoadStats::unresolvedOptionalEdges`. Configure PvdDom with `PVDDOM_BUILD_INSPECTION=ON` (default OFF) to build this API with C++ exceptions; the default core build remains exception-free.
+* `createOmniPvdReaderWithLimits()` enforces the caller's `maxAttributeBytes` limit before allocating attribute payloads. Attribute-path depth remains limited to 32 handles; the existing reader interface is unchanged.
+* `setOmniPvdReaderDiagnostics()` installs a per-reader error callback and optional command tracing, described by `OmniPvdReaderDiagnostics`. `buildPvdDomStateFromFile()` and `PvdDomInspect::Document::load()` accept per-load diagnostics.
+* `PvdDomInspect` provides scene- and lifetime-aware object discovery, typed sample reads, quaternion distance, aligned linear-velocity comparison and versioned JSON evidence with capture provenance. It preserves superseded scene membership end frames. Destroyed joints are not re-attached, and joints are not attached to destroyed or superseded scene incarnations or to scenes from another recording segment, whether the constraint SET or the scene ADD comes last.
+* `PvdDomInspect` also compares named vector and transform attributes with caller-declared units and exports typed version 2 evidence; the linear-velocity API and version 1 evidence remain compatible.
+* `ovd-inspect` provides installable, headless OVD summary, pose/velocity inspection and aligned comparison with exclusive-create JSON evidence. The SDK includes a finite `ovd-record` sample, CMake package exports, and record/inspect/compare skills. Installed tools find shared SDK libraries in the configured Linux install library directory, report output failures, and identify comparison load-error sources; refused Windows annotation paths report an invalid argument.
+* OVD summary JSON reports unresolved optional references per edge command alongside loader work counts.
+* `ovd-inspect` reports structured load errors with adjustable limit identities and independent frame, object and schema-attribute pages. Summary and inspect support `--recover-tail`; comparison supports typed attributes with `--attribute` and `--distance` and version 2 evidence.
+* The OVD skills describe an optional Python wheel built and distributed separately from SDK source distributions and installs.
+* `ovd-inspect inspect` and Python `Document.inspect()` read finite scalar floats, signed/unsigned integer attributes and recorded flag masks, preserving sample provenance and full-width integer values.
+* Added `PxOmniPvdFilterDesc` to `PxOmniPvd::startSampling()` to record selected scenes, rigid statics and dynamics, whole articulations, deformable surfaces and volumes, PBD particle systems or particle buffers. Primary state always includes poses, velocities, geometry and materials. The default `recordSecondaryData = true` adds forces, contacts, articulation solver reactions and configuration. `PxOmniPvd::validateFilterDesc()` checks a selection before starting, and `PxOmniPvd::isObjectRecorded()` queries the active selection. GPU readback filters objects before host transfer, including particles, deformables and DirectGPU. Rigid actors connected to selected actors by a recorded contact or joint retain current pose and velocity state while that connection exists. Calling `startSampling()` without a filter resets to full recording. See Selective Recording in the Omni Visual Debugger guide.
+* Added `PxOmniPvdEventCallback::onObjectCapture()`, which lets a registered module record its own data for a shape or constraint. During a recording, the SDK calls it when the recorded state of a shape or constraint changes, for example when the object enters the recording or `PxShape::setGeometry()` changes a recorded shape. It is not called while `PxOmniPvd::startSampling()` records the current state, or when the object is released. The default implementation does nothing.
+* Added `PxConstraintOmniPvdState` and the overload `PxConstraintConnector::updateOmniPvdProperties(const PxConstraintOmniPvdState&)`, which receives the world-space poses and velocities of the constraint's two actors, with validity flags. The SDK calls this overload for each recorded constraint at the end of `PxOmniPvd::startSampling()` and whenever it updates a recorded constraint. Its default implementation calls the existing `updateOmniPvdProperties()`, which is therefore now also called from `startSampling()`; see the migration guide.
+* Advanced the OmniPVD integration schema to 3.4: added `captureRequestId`, `captureRequestStatus`, `captureEpoch` and `captureCatalogGeneration` metadata and the `PxOmniPvdCaptureEntry` class for receiver-driven capture control and discovery.
+* Advanced the OmniPVD integration schema to 3.5: the particle buffer attributes `velocities` and `phases` and the diffuse particle attributes `diffusePositionLifeTime` and `diffuseVelocities` are recorded.
+* Added receiver-driven TCP capture selection over the established streaming connection, including general object handles with negotiated backward-compatible control frames. `PxOmniPvd::hasPendingCaptureRequest()` retains a bounded poll until `processCaptureRequests()` can validate it at a simulation safe point, with an optional application `PxOmniPvdCaptureFilter`. Module reset callbacks retire the previous snapshot before its replacement. Acknowledgements in `PxOmniPvdMetaData` report applied, invalid, busy or denied. Receiver half-close preserves telemetry; malformed control and failed transports stop the session. Reconnect to select objects allocated at quarantined addresses.
+* Added `PxOmniPvd::startCaptureDiscovery()` and `PxOmniPvd::isCaptureDiscoveryActive()` for opt-in OmniPVD discovery before recording. Discovery writes `PxOmniPvdCaptureEntry` rows with the handle, type, name, owner and scene of eligible scenes and objects, and no geometry, motion or GPU readback, so a receiver can choose scenes or objects before any selected snapshot is recorded. The discovery scope also limits later local and remote selections. A receiver refreshes the catalog with `OmniPvdSocketReadStream::requestCaptureCatalog()` when the producer advertises capability mask 0x8 (bit 3).
+* Added the public `OmniPvdCaptureRequest.h` header, `OmniPvdSocketReadStream::requestCapture()`, `OmniPvdWriteStream::pollCaptureRequest()` and `OmniPvdWriteStream::getCaptureSessionId()`, plus `PxOmniPvdCaptureFilter` and `PxOmniPvdEventCallback::onCaptureReset()`. Custom write streams inherit no-control defaults. The socket handshake advertises capability mask 0x4 (bit 2) for the primary/secondary filter contract; older streams remain readable without sending them control requests.
+* Advanced the OmniPVD integration schema to 3.3: added `recordSecondaryData` and `captureAllObjects` metadata, rigid-body `linearAcceleration`/`angularAcceleration`, articulation-joint `jointAcceleration` (one value per `PxArticulationAxis`) and `incomingJointForce`, `PxDeformableSurface::collisionMesh`, and actor-local deformable arrays for selective recordings. Full recordings retain the existing mesh motion attributes.
+* OmniPVD records normalized inputs from `PxRigidDynamic::setKinematicTarget()` while sampling and pending targets at `PxOmniPvd::startSampling()`, retaining the last captured value after consumption. The OVD integration version is now 3.2.
+
+### Fixed
+
+* Vehicle OmniPVD recordings now declare the correct sizes for wheel attachment quaternions, suspension normal forces, tire aligning moments and wheel torques, allowing schema-valid inspection of new captures.
+
+* Rejected `PxOmniPvd::startSampling()` calls during an active recording now respect the Foundation error level and notify registered error callbacks without changing the recording.
+* Adding a rigid body during an OmniPVD recording in a regular GPU scene with `PxSceneFlag::eENABLE_BODY_ACCELERATIONS` no longer overwrites acceleration storage when an earlier GPU acceleration copy is pending.
+* `PxOmniPvd::startSampling()` now includes current body accelerations in CPU and regular GPU scenes with `PxSceneFlag::eENABLE_BODY_ACCELERATIONS`, without requiring another simulation step.
+* Selective OmniPVD recordings retain a joint's counterpart actor while the other endpoint is selected but belongs to no scene. Previously, fetching results for the counterpart's scene could remove it while the recorded joint still referred to it.
+* `PxPhysicsAPI.h` now includes `omnipvd/PxOmniPvd.h`, making `PxOmniPvd`, `PxOmniPvdEventCallback` and `PxCreateOmniPvd()` available without a separate include. Previously, code that included only `PxPhysicsAPI.h` saw `PxOmniPvd` as an incomplete type.
+* The Windows OVD workflow builds with Ninja in `checked` and `profile` configurations and deploys the GPU library alongside the recorder when the CPU SDK is static. CMake GPU builds use the DLL name expected by the SDK loader.
+* PVD and OmniPVD recordings could miss contacts in a simulation step in which a contact pair had both discrete and CCD contacts, or CCD contacts from more than one CCD pass. Contact pairs processed after that pair in the same step lost their discrete contacts and could lose CCD contacts, so pairs with only discrete contacts were missing from the recording. This affected scenes with `PxSceneFlag::eENABLE_CCD` in which CCD kept that pair's contacts, for example because the pair requested `PxPairFlag::eNOTIFY_CONTACT_POINTS`, or because the scene had `PxSceneFlag::eENABLE_GPU_DYNAMICS` and was recorded with OmniPVD.
+* OmniPVD now preserves recorded DirectGPU articulation joint forces across simulation steps until they are changed, matching their lifetime in the simulation.
+* OmniPVD discovery catalogs now use retained allocated object identities, preserving application objects recorded through `OmniPvdWriter` with numeric handles.
+* Restarting OmniPVD discovery after stopping a recording on the same stream now retires the previous core and extension objects. A subsequent narrower selection no longer leaves excluded objects alive in the receiver.
+* PvdDom parsing no longer reads beyond short OmniPVD attribute payloads or dereferences empty payloads. Malformed values remain recorded as raw samples but no longer affect DOM hierarchy, actor types, or integration-version checks.
+* Starting an OmniPVD recording with `PxOmniPvd::startSampling()` in a scene with `PxSceneFlag::eENABLE_DIRECT_GPU_API` could record, for a rigid body or articulation added since the last simulation step, the retained force and torque of a removed actor whose GPU index it reused. If such an articulation had more links than any articulation simulated before, its extra links could be recorded with invalid forces and torques.
+* Particle buffers of particle systems added to a scene before `PxOmniPvd::startSampling()` are now recorded every frame. Previously only systems added while recording had their positions recorded.
+* OmniPVD recordings now remove a constraint from its scene's `constraints` list when it leaves the scene because an actor is removed, released or gets `PxActorFlag::eDISABLE_SIMULATION`, or because `PxConstraint::setActors()` moves it. Previously the constraint stayed listed and PvdDom kept showing its joint under the old scene. PvdDom now closes the joint and reopens it when the constraint is added back to the same scene.
+* OmniPVD recordings of `PxDirectGPUAPI::setRigidDynamicData()` and `PxDirectGPUAPI::setArticulationData()` could record stale index and value buffers when the caller filled them on another CUDA stream and passed `startEvent`. While recording, these calls now wait for `startEvent` and earlier work on the SDK stream before copying, so a call with a `finishEvent` can block until then.
+* `PxVehiclePvdObjectRelease()` now also destroys the top-level OmniPVD `Vehicle` object. Previously it remained alive in the recording after release.
+* Releasing a D6 joint created with `PxD6JointCreate()`, including a RepX-loaded joint, now records destruction of all seven OmniPVD drive objects.
+* The OVD reader stops at the first command whose fixed-size fields or strings are truncated, instead of returning partially read data. A failed attribute payload allocation stops the reader instead of throwing `std::bad_alloc`. Destroying a PvdDom object now releases its attribute lists and samples, which were previously leaked.
+* Moving an attached shape into the shared-shape branch preserves its former parent's child links.
+* PvdDom `readTransform` decodes the SDK quaternion-before-position layout. Previously, position and quaternion components were interchanged.
+* Vehicle suspension-limit direction metadata now labels `eNONE` as `none`, instead of reusing the `geomNormalDir` label for two different enum values.
+
+### Changed
+
+* `OmniPvdWriter::registerAttribute()`, `registerFlagsAttribute()`, `registerEnumValue()`, `registerClassAttribute()`, and `registerUniqueListAttribute()` now reject duplicate names on the same class or within its inheritance chain, across all attribute kinds and regardless of registration order. A rejected registration returns `OMNI_PVD_INVALID_HANDLE`, reports through the installed log callback, emits no command, and consumes no handle. Sibling and unrelated classes may still reuse names. `OmniPvdWriter::setWriteStream()` resets name registrations; `OmniPvdWriter::clearStatus()` preserves them. Use unique names within each class hierarchy and check registration results before using the returned handles.
+
+* In `PxSceneFlag::eENABLE_DIRECT_GPU_API` scenes, OmniPVD now records the articulation joint attributes `jointPosition`, `jointVelocity`, `jointForce`, `driveTarget` and `driveVelocity` with one value per `PxArticulationAxis`, as CPU scenes record joint positions, velocities and drive targets. Locked axes are recorded as zero. Previously, values set through `PxDirectGPUAPI::setArticulationData()` were recorded with one value per degree of freedom.
+* `PxOmniPvd::startSampling()` now reports an error and returns false while any scene of the associated `PxPhysics` is between `simulate()` or `collide()` and completion of the matching `fetchResults()` or `fetchResultsFinish()`. The caller must still synchronize starting a recording with scene simulation, result fetching and object changes.
+* OmniPVD now records particle velocities and phases, and diffuse particle positions, lifetimes and velocities. Particle velocities and phases are primary data. All diffuse particle data, including the diffuse particle parameters, is secondary data and is recorded while `PxOmniPvdFilterDesc::recordSecondaryData` is true (the default). Recordings started without a filter contain all of this data. For each recorded frame, 32 bytes per active particle are read back from the GPU, or 36 bytes in snapshots and after phase updates. With secondary data, another 32 bytes per active diffuse particle are read back. Previously, only particle positions and inverse masses were recorded, at 16 bytes per active particle. With a `PxOmniPvdFilterDesc`, only the selected particle buffers are read back.
+* Factory-created OmniPVD readers configured only with `OmniPvdReader::setLogFunction()` now report errors only. Accepted-header and command traces require `OmniPvdReaderDiagnostics::verbose`. Writer logging is unchanged. See the migration guide.
+
+### Deprecated
+
+* Deprecated `PxOmniPvdEventCallback::onStartSampling(PxOmniPvd&)`. Override `PxOmniPvdEventCallback::onStartSampling(PxOmniPvd&, const PxOmniPvdFilterDesc*)` instead, which also receives the recording filter. Its default implementation still calls the deprecated overload, so existing callbacks keep working. See the migration guide.
+
 # v5.12.0
 
 ## Supported Platforms
@@ -19,6 +225,7 @@
 
 ### Fixed
 
+* Windows 64-bit DLL version resources now identify the correct architecture and filenames when built with CMake.
 * On Windows, releasing a PxThread object triggered an ERROR_INVALID_HANDLE error if the thread was not started.
 * The `PX_EXT_DEVICE_MEMORY_*` and `PX_EXT_PINNED_MEMORY_*` macros in `PxCudaHelpersExt.h` failed to compile from a namespace holding a nested `physx`. They now name `::physx::Ext` explicitly.
 * Fixed a rare crash during simulation when the broadphase reported an overlap referencing an invalid object index. Such overlaps are now discarded and reported through the error callback as `PxErrorCode::eINTERNAL_ERROR`.
@@ -60,6 +267,7 @@
 
 ### Fixed
 
+* `PxMassProperties` and `PxRigidBodyExt::computeMassPropertiesFromShapes()` now return inertia about the center of mass for `PxConvexCoreGeometry` cones and `PxCustomGeometryExt` cones. Previously, the perpendicular moments included an extra offset to the geometry origin.
 * In a GPU scene with `PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS` or `PxSceneFlag::eENABLE_BODY_ACCELERATIONS` set, a `PxRigidDynamic` with `PxRigidBodyFlag::eRETAIN_ACCELERATIONS` now retains only its forces and torques between steps, as documented. Previously, impulses and velocity changes (`PxForceMode::eIMPULSE`, `PxForceMode::eVELOCITY_CHANGE`) were applied again in every following step.
 * Fixed continuous collision detection (`PxRigidBodyFlag::eENABLE_CCD`) against a `PxTriangleMeshGeometry` letting a fast-moving shape pass through a triangle when an earlier hit on another triangle of the same mesh, such as a grazed edge, was discarded for too little motion along its normal. (https://github.com/NVIDIA-Omniverse/PhysX/issues/505)
 * Fixed illegal memory accesses and invalid contact data when GPU rigid-body contact buffers overflow. Contacts that do not fit are now discarded without exposing invalid data through `PxDirectGPUAPI::copyContactData()`.

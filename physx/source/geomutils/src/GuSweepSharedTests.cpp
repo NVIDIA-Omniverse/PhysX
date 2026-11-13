@@ -31,9 +31,9 @@ static const PxReal gEpsilon = .01f;
 //#define USE_VIRTUAL_GJK
 #ifdef USE_VIRTUAL_GJK
 static bool virtualGjkRaycastPenetration(const GjkConvex& a, const GjkConvex& b, const Vec3VArg initialDir, const FloatVArg initialLambda, const Vec3VArg s, const Vec3VArg r, FloatV& lambda, 
-		Vec3V& normal, Vec3V& closestA, const PxReal _inflation, const bool initialOverlap)
+		Vec3V& normal, Vec3V& closestA, const PxReal _inflation, const bool initialOverlap, const bool useClosestB = false, const PxReal toleranceScale = 0.1f, const PxReal mtdInflation = 0.0f)
 {
-	return gjkRaycastPenetration<GjkConvex, GjkConvex >(a, b, initialDir, initialLambda, s, r, lambda, normal, closestA, _inflation, initialOverlap);
+	return gjkRaycastPenetration<GjkConvex, GjkConvex >(a, b, initialDir, initialLambda, s, r, lambda, normal, closestA, _inflation, initialOverlap, useClosestB, toleranceScale, mtdInflation);
 }
 #endif
 
@@ -323,10 +323,10 @@ bool sweepCapsule_ConvexGeom(GU_CAPSULE_SWEEP_FUNC_PARAMS)
 	const LocalConvex<ConvexHullV> convexB(convexHull);
 	const Vec3V initialSearchDir = V3Sub(capsule.getCenter(), convexHull.getCenter());
 #ifdef USE_VIRTUAL_GJK
-	if(!virtualGjkRaycastPenetration(convexA, convexB, initialSearchDir, zero, zeroV, dir, toi, normal, closestA, lss.radius + inflation, isMtd))
+	if(!virtualGjkRaycastPenetration(convexA, convexB, initialSearchDir, zero, zeroV, dir, toi, normal, closestA, lss.radius + inflation, isMtd, false, 0.1f, inflation))
 		return false;
 #else
-	if(!gjkRaycastPenetration<LocalConvex<CapsuleV>, LocalConvex<ConvexHullV> >(convexA, convexB, initialSearchDir, zero, zeroV, dir, toi, normal, closestA, lss.radius + inflation, isMtd))
+	if(!gjkRaycastPenetration<LocalConvex<CapsuleV>, LocalConvex<ConvexHullV> >(convexA, convexB, initialSearchDir, zero, zeroV, dir, toi, normal, closestA, lss.radius + inflation, isMtd, false, 0.1f, inflation))
 		return false;
 #endif
 	if(hasInitialOverlap(sweepHit, unitDir, toi, normal, closestA, convexPose, isMtd, true))
@@ -454,10 +454,10 @@ bool sweepBox_ConvexGeom(GU_BOX_SWEEP_FUNC_PARAMS)
 	const RelativeConvex<BoxV> convexA(boxV, aToB);
 	const LocalConvex<ConvexHullV> convexB(convexHull);
 #ifdef USE_VIRTUAL_GJK
-	if(!virtualGjkRaycastPenetration(convexA, convexB, aToB.p, zero, zeroV, dir, toi, normal, closestA, inflation, isMtd))
+	if(!virtualGjkRaycastPenetration(convexA, convexB, aToB.p, zero, zeroV, dir, toi, normal, closestA, inflation, isMtd, false, 0.1f, inflation))
 		return false;
 #else
-	if(!gjkRaycastPenetration<RelativeConvex<BoxV>,LocalConvex<ConvexHullV> >(convexA, convexB, aToB.p, zero, zeroV, dir, toi, normal, closestA, inflation, isMtd))
+	if(!gjkRaycastPenetration<RelativeConvex<BoxV>,LocalConvex<ConvexHullV> >(convexA, convexB, aToB.p, zero, zeroV, dir, toi, normal, closestA, inflation, isMtd, false, 0.1f, inflation))
 		return false;
 #endif
 	if(hasInitialOverlap(sweepHit, unitDir, toi, normal, closestA, convexPose, isMtd, true))
@@ -534,10 +534,10 @@ bool sweepConvex_SphereGeom(GU_CONVEX_SWEEP_FUNC_PARAMS)
 	const LocalConvex<ConvexHullV> convexB(convexHull);
 	const Vec3V initialSearchDir = V3Sub(capsule.getCenter(), convexHull.getCenter());
 #ifdef USE_VIRTUAL_GJK
-	if(!virtualGjkRaycastPenetration(convexA, convexB, initialSearchDir, zero, zeroV, dir, toi, normal, closestA, sphereGeom.radius+inflation, isMtd))
+	if(!virtualGjkRaycastPenetration(convexA, convexB, initialSearchDir, zero, zeroV, dir, toi, normal, closestA, sphereGeom.radius+inflation, isMtd, false, 0.1f, inflation))
 		return false;
 #else
-	if(!gjkRaycastPenetration<LocalConvex<CapsuleV>, LocalConvex<ConvexHullV> >(convexA, convexB, initialSearchDir, zero, zeroV, dir, toi, normal, closestA, sphereGeom.radius+inflation, isMtd))
+	if(!gjkRaycastPenetration<LocalConvex<CapsuleV>, LocalConvex<ConvexHullV> >(convexA, convexB, initialSearchDir, zero, zeroV, dir, toi, normal, closestA, sphereGeom.radius+inflation, isMtd, false, 0.1f, inflation))
 		return false;
 #endif
 	if(hasInitialOverlap(sweepHit, unitDir, toi, normal, closestA, convexPose, isMtd, false))
@@ -714,10 +714,10 @@ bool sweepConvex_ConvexGeom(GU_CONVEX_SWEEP_FUNC_PARAMS)
 	const RelativeConvex<ConvexHullV> convexA(otherConvexHull, aToB);
 	const LocalConvex<ConvexHullV> convexB(convexHull);
 #ifdef USE_VIRTUAL_GJK
-	if(!virtualGjkRaycastPenetration(convexA, convexB, aToB.p, zero, zeroV, dir, toi, normal, closestA, inflation, isMtd))
+	if(!virtualGjkRaycastPenetration(convexA, convexB, aToB.p, zero, zeroV, dir, toi, normal, closestA, inflation, isMtd, false, 0.1f, inflation))
 		return false;
 #else
-	if(!gjkRaycastPenetration<RelativeConvex<ConvexHullV>, LocalConvex<ConvexHullV> >(convexA, convexB, aToB.p, zero, zeroV, dir, toi, normal, closestA, inflation, isMtd))
+	if(!gjkRaycastPenetration<RelativeConvex<ConvexHullV>, LocalConvex<ConvexHullV> >(convexA, convexB, aToB.p, zero, zeroV, dir, toi, normal, closestA, inflation, isMtd, false, 0.1f, inflation))
 		return false;
 #endif
 	if(hasInitialOverlap(sweepHit, unitDir, toi, normal, closestA, convexPose, isMtd, false))

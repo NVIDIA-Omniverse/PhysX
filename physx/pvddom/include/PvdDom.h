@@ -267,6 +267,9 @@ class OmniPvdObject
 {
 public:
     OmniPvdObject();
+    ~OmniPvdObject();
+    OmniPvdObject(const OmniPvdObject&) = delete;
+    OmniPvdObject& operator=(const OmniPvdObject&) = delete;
     void appendChild(OmniPvdObject* child);
     void insertChildFirst(OmniPvdObject* child);
     void removeChild(OmniPvdObject* child);
@@ -296,6 +299,8 @@ public:
     uint32_t mActortype;
     // True when an ancestor removal closed this object.
     bool mReopenable;
+    // True after explicit destruction or supersession, not membership removal.
+    bool mWasDestroyed;
     // True after the actor type attribute is set.
     bool mActortypeSet;
     OmniPvdObject* mReferenceObject;
@@ -311,6 +316,15 @@ public:
     OmniPvdObject* mLastChild;
     OmniPvdObject* mPrevSibling;
     OmniPvdObject* mNextSibling;
+    // Owned synthetic joint branch, scoped to this scene incarnation.
+    OmniPvdObject* mSceneJoints = nullptr;
+
+    // Structural children exclude synthetic generic attribute branches.
+    bool mSkipMembershipTraversal;
+    OmniPvdObject* mFirstMembershipChild;
+    OmniPvdObject* mLastMembershipChild;
+    OmniPvdObject* mPrevMembershipSibling;
+    OmniPvdObject* mNextMembershipSibling;
 
     bool mIsReferenced;
     std::string mObjectName;
@@ -382,6 +396,7 @@ public:
     std::unordered_map<OmniPvdClassHandle, OmniPvdClass*> mClassHandleToClassMap;
 
     std::unordered_map<OmniPvdObjectHandle, OmniPvdObject*> mConstraintToSceneMap;
+    uint64_t mJointLookupSteps = 0;
     std::unordered_map<OmniPvdObjectHandle, OmniPvdObject*> mConstraintToJointMap;
 
     std::unordered_map<OmniPvdClass*, OmniPvdObject*> mClassToOriginsNodeMap; // class pointer -> class node under
@@ -434,40 +449,40 @@ public:
     std::vector<OmniPvdObject*> mSupersedeSnapshotObjects;
 
     // Instantiated by OmniPvdObjects in scenes
-    OmniPvdClass* mSceneRootClass;
+    OmniPvdClass* mSceneRootClass = nullptr;
 
-    OmniPvdClass* mRigidDynamicBranchClass;
-    OmniPvdClass* mRigidStaticBranchClass;
-    OmniPvdClass* mArticulationBranchClass;
-    OmniPvdClass* mParticleSystemBranchClass;
-    OmniPvdClass* mDeformableVolumeBranchClass;
-    OmniPvdClass* mDeformableSurfaceBranchClass;
+    OmniPvdClass* mRigidDynamicBranchClass = nullptr;
+    OmniPvdClass* mRigidStaticBranchClass = nullptr;
+    OmniPvdClass* mArticulationBranchClass = nullptr;
+    OmniPvdClass* mParticleSystemBranchClass = nullptr;
+    OmniPvdClass* mDeformableVolumeBranchClass = nullptr;
+    OmniPvdClass* mDeformableSurfaceBranchClass = nullptr;
 
     // Instantiated by OmniPvdObjects in shared
-    OmniPvdClass* mSharedRootClass;
+    OmniPvdClass* mSharedRootClass = nullptr;
 
-    OmniPvdClass* mSharedMaterialsClass;
+    OmniPvdClass* mSharedMaterialsClass = nullptr;
 
-    OmniPvdClass* mSharedMeshesClass;
-    OmniPvdClass* mSharedConvexMeshesClass;
-    OmniPvdClass* mSharedHeightfieldsClass;
-    OmniPvdClass* mSharedTriangleMeshesClass;
-    OmniPvdClass* mSharedTetrahedronMeshesClass;
-    OmniPvdClass* mSharedDeformableVolumeMeshesClass;
+    OmniPvdClass* mSharedMeshesClass = nullptr;
+    OmniPvdClass* mSharedConvexMeshesClass = nullptr;
+    OmniPvdClass* mSharedHeightfieldsClass = nullptr;
+    OmniPvdClass* mSharedTriangleMeshesClass = nullptr;
+    OmniPvdClass* mSharedTetrahedronMeshesClass = nullptr;
+    OmniPvdClass* mSharedDeformableVolumeMeshesClass = nullptr;
 
-    OmniPvdClass* mSharedShapesClass;
+    OmniPvdClass* mSharedShapesClass = nullptr;
 
-    OmniPvdClass* mAttributeNameClass; // object/attributeName
-    OmniPvdClass* mAttributeRefClass; // object/attributeName/attribute_ref
+    OmniPvdClass* mAttributeNameClass = nullptr; // object/attributeName
+    OmniPvdClass* mAttributeRefClass = nullptr; // object/attributeName/attribute_ref
 
     // Instantiated by OmniPvdObjects in both scenes and shared
-    OmniPvdClass* mSharedShapeRefClass;
-    OmniPvdClass* mConvexMeshRefClass;
-    OmniPvdClass* mHeightfieldRefClass;
-    OmniPvdClass* mTriangleMeshRefClass;
-    OmniPvdClass* mTetrahedronMeshRefClass;
+    OmniPvdClass* mSharedShapeRefClass = nullptr;
+    OmniPvdClass* mConvexMeshRefClass = nullptr;
+    OmniPvdClass* mHeightfieldRefClass = nullptr;
+    OmniPvdClass* mTriangleMeshRefClass = nullptr;
+    OmniPvdClass* mTetrahedronMeshRefClass = nullptr;
 
-    OmniPvdClass* mSimulationMeshClass;         // synthetic container for simulation mesh
+    OmniPvdClass* mSimulationMeshClass = nullptr;         // synthetic container for simulation mesh
 
     // These OmniPvdObjects live in the scenes layer
     OmniPvdObject* mSceneRoot; // path = /scenes
@@ -512,4 +527,7 @@ public:
     // PhysX specific
     OmniPvdClass* mPxArticulationReducedCoordinateClass;
     OmniPvdClass* mPxArticulationLinkClass;
+
+private:
+    void releaseOwnedStorage();
 };

@@ -1,0 +1,82 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxVehicleTankControllerAPI",
+  "title": "PhysxVehicleTankControllerAPI",
+  "summary": "Thrust inputs that divert engine torque to the tracks of a wheeled tank vehicle. When the vehicle prim lists PhysxVehicleControllerAPI, the runtime checks whether it also lists this API and then reads the controller columns plus thrust0 and thrust1 once, when the vehicle is created.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "Xformable"
+  ],
+  "requires": [
+    "PhysxVehicleAPI",
+    "PhysxVehicleControllerAPI"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "columns": [
+    {
+      "name": "physxVehicleTankController:thrust0",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0: no thrust on the tracks assigned to thrust control 0. A present value outside [-1, 1] logs an error and the vehicle is not created.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physx/plugins/usdLoad/Vehicle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXVehiclePropertiesUpdate.cpp"
+      ]
+    },
+    {
+      "name": "physxVehicleTankController:thrust1",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0: no thrust on the tracks assigned to thrust control 1. A present value outside [-1, 1] logs an error and the vehicle is not created.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physx/plugins/usdLoad/Vehicle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXVehiclePropertiesUpdate.cpp"
+      ]
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysxVehicleControllerAPI",
+      "rule": "Read only when PhysxVehicleControllerAPI is in usd-schemas as well (the schema makes it a built-in of this API, so a hand-populated row has to list both). Without this API the vehicle uses the standard controller and the thrust columns are not read."
+    },
+    {
+      "with": "PhysxVehicleTankDifferentialAPI",
+      "rule": "The vehicle needs a standard drive (PhysxVehicleDriveStandardAPI) and a tank differential; otherwise the runtime logs an error and the vehicle is not created."
+    }
+  ],
+  "notes": [
+    "Both columns are change-tracked: the runtime applies a new value while simulating; a value outside [-1, 1] then logs an error and is ignored."
+  ]
+}

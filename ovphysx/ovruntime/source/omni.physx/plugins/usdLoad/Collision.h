@@ -99,7 +99,9 @@ bool fillCookingMeshViewFromSource(omni::physx::PhysxCookingComputeRequest& requ
                                    omni::physics::parse::ObjectKey meshKey,
                                    bool includeFaceMaterials = true);
 
-PhysxShapeDesc* scaleShapeDesc(const PhysxShapeDesc& inDesc, const carb::Float3& scale);
+// Copy of inDesc scaled by scale, for the point instances of a parsed desc. A copy whose
+// sign scale differs from inDesc's gets the cooked data CRC for its own cooking params.
+PhysxShapeDesc* scaleShapeDesc(const AttachedStage& attachedStage, const PhysxShapeDesc& inDesc, const carb::Float3& scale);
 
 // Bounding-shape compute helpers — fit a sphere / OBB around `points`.
 // scanStage emits eBoundingSphereShape / eBoundingBoxShape descs with

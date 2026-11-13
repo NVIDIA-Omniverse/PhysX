@@ -23,7 +23,7 @@
 #include <omni/physx/IPhysxCooking.h>
 #include <omni/physics/AttachHandle.h>
 #include <omni/physics/parse/Handles.h>
-#include <private/omni/physx/IPhysxCookingPrivate.h>
+#include <private/omni/physx/PhysxCookingStatistics.h>
 // ParticleSamplingDesc / PhysxDeformableBodyDesc / PhysxVolumeDeformableBodyDesc /
 // PhysxSurfaceDeformableBodyDesc are `using` aliases of the parse-lib types
 // (PhysxUsd.h, ADR-0019 increment 7) -- a forward struct-declaration would

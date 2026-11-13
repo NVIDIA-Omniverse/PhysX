@@ -19,8 +19,8 @@ zero-dt step neither produces nor clears contacts and leaves
 untouched.
 
 The deprecated contact binding converts impulse to force with its own cached
-divisor, `InstanceData::last_step_dt`. That cache must follow the same rule as
-the scene's timestep, or the two public reads of the same contact disagree.
+divisor, `InstanceData::last_step_dt`. Across a zero-dt step, that cache must
+remain unchanged like the scene's timestep, or the two public reads disagree.
 Bootstrapped from NVBugs 6904332, where both step calls wrote
 `last_step_dt = (step_dt > 0) ? step_dt : 1.0f`: after a zero-dt step the
 binding divided the preceding step's unchanged impulse by `1.0` instead of that
@@ -31,7 +31,7 @@ step's dt, reporting a force `1/dt` too small (0.8175 N against the
 
 - **AC-1: The divisor survives a zero-dt step.** Neither `ovphysx_step` nor
   `ovphysx_step_sync` writes `InstanceData::last_step_dt` when `step_dt == 0`.
-  The cache holds the dt of the most recent step that actually simulated, and is
+  The cache holds the dt of the most recent successful step that simulated, and is
   `1.0f` only until the first such step.
 - **AC-2: Reads are identical across a zero-dt step.** On both step paths, and
   on CPU and GPU scenes, every contact-binding force read
@@ -43,7 +43,8 @@ step's dt, reporting a force `1/dt` too small (0.8175 N against the
   magnitudes) returns the value it returned immediately before that step.
 - **AC-3: The two public reads agree.** After a zero-dt step the binding's
   force reads stay within 5% of the `CONTACT_SENSOR` `netNormalContactForce`
-  read of the same body, which the zero-dt step also leaves unchanged.
+  read of the same body, which the zero-dt step also leaves unchanged, provided
+  no step has failed since the last successful positive-dt step.
 - **AC-4: No division by zero.** `last_step_dt` is never `0`, so the
   impulse-to-force conversion cannot produce a non-finite force, whatever
   sequence of zero-dt and positive-dt steps precedes a read.
@@ -51,8 +52,8 @@ step's dt, reporting a force `1/dt` too small (0.8175 N against the
   contact-binding block and per-function comments in `ovphysx_legacy.h`, the
   `ContactBinding` read docstrings and `PhysX.step` / `PhysX.step_sync` in
   `api.py`, the contact-binding tutorial and the developer guide — states that
-  the dt comes from the last step that simulated and says what a read returns
-  after a zero-dt step. No comment claims a zero-dt step produces zero impulses.
+  the dt comes from the last successful step that simulated and says what a read
+  returns after a zero-dt step. No comment claims a zero-dt step produces zero impulses.
 
 ## Test References
 

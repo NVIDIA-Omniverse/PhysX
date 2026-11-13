@@ -51,23 +51,23 @@
     {
       "id": 5,
       "prompt": "Write a loop that steps an ovphysx simulation and reads rigid-body poses with the tensor API.",
-      "expected_output": "Routes lifecycle and stepping to basic-workflow and simulation-output reads to ovphysx-output-read, not ovphysx-usd-authoring or the deprecated tensor-binding skills.",
+      "expected_output": "Routes lifecycle and stepping to ovphysx-basic-workflow and simulation-output reads to ovphysx-output-read, not ovphysx-usd-authoring or removed tensor-binding guidance.",
       "files": [],
       "expectations": [
         "Does not select ovphysx-usd-authoring (this is runtime stepping / tensor I/O, not USD authoring)",
-        "Selects basic-workflow for the simulation lifecycle and stepping",
+        "Selects ovphysx-basic-workflow for the simulation lifecycle and stepping",
         "Selects ovphysx-output-read for the rigid-body pose reads",
-        "Does not select the deprecated tensor-bindings-cpu or tensor-bindings-gpu skills"
+        "Does not select removed tensor-binding guidance and keeps reads on ovphysx-output-read"
       ]
     },
     {
       "id": 6,
       "prompt": "Clone one ovphysx environment into 1000 parallel copies for reinforcement learning.",
-      "expected_output": "Routes to clone-environments, not ovphysx-usd-authoring.",
+      "expected_output": "Routes to ovphysx-clone-environments, not ovphysx-usd-authoring.",
       "files": [],
       "expectations": [
         "Does not select ovphysx-usd-authoring (this is the runtime clone API)",
-        "Selects clone-environments"
+        "Selects ovphysx-clone-environments"
       ]
     },
     {

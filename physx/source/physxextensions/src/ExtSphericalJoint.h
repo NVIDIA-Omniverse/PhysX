@@ -50,6 +50,7 @@ namespace Ext
 		virtual PxConstraintSolverPrep	getPrep()	const	PX_OVERRIDE;
 #if PX_SUPPORT_OMNI_PVD
 		virtual void updateOmniPvdProperties() const PX_OVERRIDE;
+		virtual void updateOmniPvdProperties(const PxConstraintOmniPvdState& state) const PX_OVERRIDE;
 #endif
 		//~PxConstraintConnector
 	};

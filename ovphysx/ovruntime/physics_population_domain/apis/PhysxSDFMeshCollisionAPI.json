@@ -1,0 +1,228 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxSDFMeshCollisionAPI",
+  "title": "PhysxSDFMeshCollisionAPI",
+  "summary": "Signed-distance-field cooking parameters for a Mesh collider with physics:approximation sdf. Two-stage gate: the API must be in usd-schemas and sdfResolution must be positive, otherwise the mesh cooks as a plain triangle mesh. Cooking inputs only; nothing here is verified. Several absent-column seeds differ from the USD schema fallbacks.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "Gprim"
+  ],
+  "requires": [
+    "PhysicsCollisionAPI"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "producer_scope": "Every declared attribute of an applied collision API is published at its resolved value; all seven columns land as their raw fallbacks when unauthored. No derivation.",
+  "columns": [
+    {
+      "name": "physxSDFMeshCollision:sdfResolution",
+      "usd_type": "int",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "int",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 256,
+      "parser_default": 0,
+      "absent": "0, which fails the validity gate: the SDF parse gives up, no SDF field is read, and the collider cooks as a plain triangle mesh (which PhysX then rejects on a dynamic body). The USD schema fallback 256 is what the producer publishes, so a hand-populated stage must write this column to get an SDF at all. The cooking default 256 is never used as the seed.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseCollision.cpp"
+      ]
+    },
+    {
+      "name": "physxSDFMeshCollision:sdfSubgridResolution",
+      "usd_type": "int",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "int",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 6,
+      "parser_default": 6,
+      "absent": "6, the SDF cooking default. 0 selects a dense SDF.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseCollision.cpp"
+      ]
+    },
+    {
+      "name": "physxSDFMeshCollision:sdfBitsPerSubgridPixel",
+      "usd_type": "token",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "TOKEN_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "BitsPerPixel16",
+      "parser_default": "BitsPerPixel16",
+      "absent": "16 bits per subgrid pixel. Accepted tokens BitsPerPixel8, BitsPerPixel16, BitsPerPixel32 map to 8, 16, 32; an absent column or any other token keeps 16.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseCollision.cpp"
+      ]
+    },
+    {
+      "name": "physxSDFMeshCollision:sdfNarrowBandThickness",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.01,
+      "parser_default": 0.0,
+      "absent": "0.0: the parser seeds a local 0.0, reads into it, and assigns it back unconditionally, so an absent column yields 0.0 rather than the cooking default 0.01. The producer publishes the USD fallback 0.01.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseCollision.cpp"
+      ],
+      "notes": "Fraction of the mesh bounding-box diagonal, not a length."
+    },
+    {
+      "name": "physxSDFMeshCollision:sdfMargin",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.01,
+      "parser_default": 0.0,
+      "absent": "0.0 by the same seed-and-assign-back pattern as sdfNarrowBandThickness, rather than the cooking default 0.01. The producer publishes the USD fallback 0.01.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseCollision.cpp"
+      ],
+      "notes": "Fraction of the mesh bounding-box diagonal, not a length."
+    },
+    {
+      "name": "physxSDFMeshCollision:sdfEnableRemeshing",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": false,
+      "parser_default": false,
+      "absent": "false (same seed-and-assign-back pattern; here it matches the cooking default).",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseCollision.cpp"
+      ]
+    },
+    {
+      "name": "physxSDFMeshCollision:sdfTriangleCountReductionFactor",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 1.0,
+      "parser_default": 0.0,
+      "absent": "0.0 by the same seed-and-assign-back pattern, rather than the cooking default 1.0 (keep every triangle). The producer publishes the USD fallback 1.0.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseCollision.cpp"
+      ]
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysicsMeshCollisionAPI",
+      "rule": "Read only for descriptor kind sdf, and only when this API is in usd-schemas and sdfResolution > 0. Every other approximation forces sdfResolution to 0 on its descriptor."
+    },
+    {
+      "with": "PhysxTriangleMeshCollisionAPI",
+      "rule": "An sdf mesh also reads physxTriangleMeshCollision:weldTolerance for its triangle-mesh cooking."
+    }
+  ],
+  "findings": [
+    {
+      "column": "physxSDFMeshCollision:sdfNarrowBandThickness",
+      "severity": "note",
+      "side": "consumer",
+      "summary": "Absent column yields 0.0 instead of the header default 0.01 because the parser re-seeds a local to 0.0 and assigns it back unconditionally. USD population publishes the schema fallback 0.01, so only a hand-populated stage that omits the column is affected. Cooking input, not a PhysX default.",
+      "tracking": "follow-up to file"
+    },
+    {
+      "column": "physxSDFMeshCollision:sdfMargin",
+      "severity": "note",
+      "side": "consumer",
+      "summary": "Absent column yields 0.0 instead of the header default 0.01, same pattern as sdfNarrowBandThickness. Cooking input, not a PhysX default.",
+      "tracking": "follow-up to file"
+    },
+    {
+      "column": "physxSDFMeshCollision:sdfTriangleCountReductionFactor",
+      "severity": "note",
+      "side": "consumer",
+      "summary": "Absent column yields 0.0 instead of the header default 1.0, same pattern. Cooking input, not a PhysX default.",
+      "tracking": "follow-up to file"
+    },
+    {
+      "column": "physxSDFMeshCollision:sdfResolution",
+      "severity": "note",
+      "side": "consumer",
+      "summary": "Absent column yields 0 and disables the SDF entirely (the field falls back to triangle-mesh cooking) instead of the header default 256. USD population publishes 256. Deliberate validity probe in the parser; recorded so a hand populator knows the column is effectively mandatory.",
+      "tracking": "follow-up to file"
+    }
+  ],
+  "notes": [
+    "Cooking APIs on a Mesh cannot be verified by the generated tests: the parameters only change the cooked PxTriangleMesh SDF, which exposes no getter for them, and the builder writes no mesh arrays."
+  ]
+}

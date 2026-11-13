@@ -1,0 +1,21 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxVehicleSuspensionAPI",
+  "title": "PhysxVehicleSuspensionAPI",
+  "summary": "Suspension parameters of a PhysX vehicle, shareable between wheel attachments. The walkers parse every prim that lists it. A wheel attachment uses the prim its physxVehicleWheelAttachment:suspension relationship targets (exactly one target), or itself when it lists this API.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "Typed"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "columns": [],
+  "notes": [
+    "Its columns are not described yet."
+  ]
+}

@@ -43,7 +43,7 @@
 
 #include <ovstage/ovx_path_dictionary.h>           // ovx_primpath_list_t / ovx_path_dictionary_t
 #include <ovstage/ovstage_api/ovstage_api_types.h> // ovstage_read_group_t / ovstage_query_result_t
-#include <ovx/string_types.h>                       // ovx_string_or_token_t
+#include <ovx/string_types.h>                       // ovx_token_or_string_t
 
 #include <cstddef>
 #include <cstdint>
@@ -78,7 +78,7 @@ enum OvxObjectType : uint32_t
 {
     kOvxRigidBody         = 0, //!< dynamic rigid bodies (standalone + point-instancer instances)
     kOvxArticulationLink  = 1, //!< articulation link body transforms
-    kOvxArticulationJoint = 2, //!< articulation joint state (per-axis; array group per joint)
+    kOvxArticulationJoint = 2, //!< articulation joint DOFs (one row per unlocked axis)
     kOvxVehicleWheel      = 3, //!< vehicle wheel transforms
     kOvxDeformableVolume  = 4, //!< volume deformable meshes (points / velocities)
     kOvxDeformableSurface = 5, //!< surface deformable meshes
@@ -121,6 +121,11 @@ enum OvxObjectType : uint32_t
     // Query-only: no read or write attribute; ovxEvaluateSdfShapes consumes the query. No active notion, so
     // kOvxActive behaves as kOvxAll. 24 matches OVPHYSX_QUERY_TARGET_SDF_SHAPE.
     kOvxSdfShape           = 24, //!< SDF collision shapes (prim: the collider carrying PhysxSDFMeshCollisionAPI)
+    // Skin meshes of volume and surface deformables, one row per skin mesh prim whatever the owner's kind.
+    // Read-only because skinning rewrites the positions every step. To move a skin mesh, write its owner's
+    // `points`.
+    // 25 matches OVPHYSX_QUERY_TARGET_DEFORMABLE_SKIN_MESH.
+    kOvxDeformableSkinMesh = 25, //!< deformable skin meshes (prim: the skinned mesh prim; `points` only, skin-mesh-local)
 };
 
 // Selection scope.
@@ -149,336 +154,24 @@ enum OvxObjectScope : uint32_t
 
 // Canonical physics-output attribute names (semantic, NOT USD attr names — e.g.
 // "position", not "xformOp:translate"). Pass any of these — or your own — as an
-// ovx_string_or_token_t to ovxReadAttributes. Which names a type produces is
+// ovx_token_or_string_t to ovxReadAttributes. Which names a type produces is
 // documented per type in ADR-0007 / PROPOSAL-ovx-generic-read-api.md.
 namespace OvxAttr
 {
-inline constexpr const char* kPosition         = "position";         //!< vec3 f32 (world)
-inline constexpr const char* kOrientation      = "orientation";      //!< quat f32 xyzw (world)
-inline constexpr const char* kLinearVelocity   = "linearVelocity";   //!< vec3 f32
-inline constexpr const char* kAngularVelocity  = "angularVelocity";  //!< vec3 f32
-inline constexpr const char* kLinearAcceleration  = "linearAcceleration";  //!< vec3 f32
-inline constexpr const char* kAngularAcceleration = "angularAcceleration"; //!< vec3 f32
-// Frames on a deformable, where the three below are not all in the same one: `points` and
-// `restPoints` are sim-mesh-local, `velocities` is world (matching the tensor binding's
-// `getSimulationNodalVelocities`). So differencing `points` against `restPoints` is meaningful,
-// while differencing `points` against a time-integrated `velocities` is not.
+// Angular joint conversion is per quantity: coordinates/rates use degrees, gains and
+// per-rate coefficients use inverse degrees, and efforts, inertia and enums take no fold.
+// Signed quantities also carry the joint body-order sign. Applying one fold to a whole
+// block causes 57.3x / 3283x errors; REQ-READ-ATTRS-001 AC-15 lists the per-attribute rules.
 //
-// Scoped to deformables: particle sets and the point-instancer array form read `points` /
-// `velocities` too, and there the pair shares one frame.
-inline constexpr const char* kPoints           = "points";           //!< vec3 f32 [array]
-inline constexpr const char* kVelocities       = "velocities";       //!< vec3 f32 [array]
-inline constexpr const char* kRestPoints       = "restPoints";       //!< vec3 f32 [array] (sim-mesh-local)
-inline constexpr const char* kSimElementIndices = "simElementIndices"; //!< int32 [array] (4 per tet / 3 per tri)
-inline constexpr const char* kCollisionElementIndices = "collisionElementIndices"; //!< int32 [array] (4 per tet)
-//!< Volume-deformable sim-node kinematic target: vec4 f32 [array], one PxVec4 per sim-mesh node
-//!< (xyz target + w active-flag; w==0 drives the node, w!=0 leaves it free). Volume only.
-inline constexpr const char* kKinematicTarget  = "kinematicTarget";
-inline constexpr const char* kPositions        = "positions";        //!< vec3 f32 [array] (instancer-local)
-inline constexpr const char* kOrientations     = "orientations";     //!< quat f32 xyzw [array] (instancer-local)
-inline constexpr const char* kAngularVelocities = "angularVelocities"; //!< vec3 f32 [array]
-inline constexpr const char* kAccelerations     = "accelerations";     //!< vec3 f32 [array]
-inline constexpr const char* kAngularAccelerations = "angularAccelerations"; //!< vec3 f32 [array]
-// Body properties. Simulation inputs rather than outputs, so these are host-resident columns even on
-// a DirectGPU scene, and they have no point-instancer array form (an instancer authors no per-instance
-// mass). centerOfMass* is in the body's local frame, unlike position/orientation which are world.
-inline constexpr const char* kMass             = "mass";             //!< f32
-inline constexpr const char* kInverseMass      = "inverseMass";      //!< f32
-inline constexpr const char* kInertia          = "inertia";          //!< mat3 f32 (9, COM frame)
-inline constexpr const char* kInverseInertia   = "inverseInertia";   //!< mat3 f32 (9, COM frame)
-inline constexpr const char* kCenterOfMassPosition    = "centerOfMassPosition";    //!< vec3 f32 (local)
-inline constexpr const char* kCenterOfMassOrientation = "centerOfMassOrientation"; //!< quat f32 xyzw (local)
-// Whole-articulation root-link state. Qualified instead of reusing the bare position / orientation /
-// linearVelocity / angularVelocity above, because on this type the row's prim is whichever prim
-// carries PhysicsArticulationRootAPI -- possibly an ancestor Xform of the root link. The bare names
-// mean "this row's own prim's pose" on every other type (REQ-READ-ATTRS-001 AC-11 corollary).
-inline constexpr const char* kRootPosition        = "rootPosition";        //!< vec3 f32 (scene world)
-inline constexpr const char* kRootOrientation     = "rootOrientation";     //!< quat f32 xyzw (scene world)
-inline constexpr const char* kRootLinearVelocity  = "rootLinearVelocity";  //!< vec3 f32
-inline constexpr const char* kRootAngularVelocity = "rootAngularVelocity"; //!< vec3 f32
-// Whole-articulation centres of mass. "world" is the same scene-world frame as that articulation's
-// `rootPosition` and is independent of TensorBindings subspace roots. "local" is the root link's
-// centre-of-mass (mass) frame, not its actor/prim frame.
-inline constexpr const char* kCenterOfMassWorld = "centerOfMassWorld"; //!< vec3 f32 (scene world)
-inline constexpr const char* kCenterOfMassLocal = "centerOfMassLocal"; //!< vec3 f32 (root-link mass frame)
-// Whole-articulation inverse dynamics. Row-major flattened into dtype.lanes, whose width depends on the
-// articulation's own topology (M = numDofs + (fixedBase ? 0 : 6)) rather than on the attribute --
-// so a read emits one group per cohort of structurally identical articulations (ADR-0026), and
-// lanes is read per group, never assumed. Four of the five recover their shape from lanes alone:
-// massMatrix is square, the two force columns are [lanes], centroidalMomentum has six rows.
-// jacobian is the exception -- both its dimensions vary -- so it carries kJacobianShape alongside.
-// Generalized joint coordinates follow the authored USD body relationship: +1 when body0 is the
-// articulation parent and -1 when body1 is the parent. With S_dof containing those signs and
-// T=S_dof for a fixed base or T=diag(I6,S_dof) for a floating base, the values satisfy J=J_physx*T,
-// M=T*M_physx*T, c=T*c_physx, g=T*g_physx, and [A|b]=[A_physx*T|b_physx]. The six floating-root
-// coordinates and bias are unchanged. Angular generalized-coordinate dimensions use radians and receive
-// no degree conversion; linear dimensions retain their units.
-inline constexpr const char* kJacobian           = "jacobian";           //!< f32 [rows*cols]
-inline constexpr const char* kJacobianShape      = "jacobianShape";      //!< int32 (2: rows, cols)
-inline constexpr const char* kMassMatrix         = "massMatrix";         //!< f32 [M*M]
-inline constexpr const char* kCoriolisForce      = "coriolisForce";      //!< f32 [M]
-inline constexpr const char* kGravityForce       = "gravityForce";       //!< f32 [M]
-inline constexpr const char* kCentroidalMomentum = "centroidalMomentum"; //!< f32 [6*(numDofs+7)], floating base only
-inline constexpr const char* kDisableGravity    = "disableGravity";    //!< uint8 (nonzero = disabled)
-inline constexpr const char* kDisableSimulation = "disableSimulation"; //!< uint8 (nonzero = disabled)
-// Host-resident sleep state for standalone rigid dynamics and articulation links. A link reports
-// its whole articulation's state. Scenes with sleeping disabled report 0; ACTIVE remains a selection
-// scope, not a sleep-state query. This has no point-instancer array spelling.
-inline constexpr const char* kIsSleeping = "isSleeping"; //!< uint8: 1 = sleeping, 0 = awake [read-only]
-//!< Borrowed PhysX SDK address. Host uint64. The column snapshots the address; it does not own
-//!< the object. See ADR-0044.
-inline constexpr const char* kPhysXPointer = "physxPointer"; //!< uint64: borrowed address [read-only]
-// Kinematic target pose, split into a POINT + QUATERNION pair like the live pose. Only a kinematic
-// PxRigidDynamic is driven; the read falls back to the current pose for everything else.
-inline constexpr const char* kKinematicTargetPosition    = "kinematicTargetPosition";    //!< vec3 f32 (world)
-inline constexpr const char* kKinematicTargetOrientation = "kinematicTargetOrientation"; //!< quat f32 xyzw (world)
-// Per-shape properties. One value per shape of the selected object, padded to the widest object in
-// the read, so a row is `shapeCount`-of-`lanes` real values followed by zeros. Read `shapeCount` to
-// find the end; the padding is zero-filled but 0.0 is a legal offset, so it is not a terminator.
-inline constexpr const char* kStaticFriction  = "staticFriction";  //!< f32 [per shape]
-inline constexpr const char* kDynamicFriction = "dynamicFriction"; //!< f32 [per shape]
-inline constexpr const char* kRestitution     = "restitution";     //!< f32 [per shape]
-inline constexpr const char* kContactOffset   = "contactOffset";   //!< f32 [per shape]
-inline constexpr const char* kRestOffset      = "restOffset";      //!< f32 [per shape]
-inline constexpr const char* kShapeCount = "shapeCount"; //!< int32 (one per body or whole articulation)
-// Whole-articulation topology metadata: one int32 per articulation. dofCount, linkCount and the two
-// tendon counts come from the per-articulation entry; jointCount comes from the interned metatype.
-// isFixedBase is read LIVE from the SDK articulation flag, not the metatype, so a between-step
-// setArticulationFlag(eFIX_BASE, ...) toggle is reflected rather than reading a value captured at view
-// build. Host-resident on every device like shapeCount. These replace the deprecated
-// ovphysx_articulation_metadata_t field-for-field.
-// `linkCount` is the count of articulation LINKS (the old struct's mislabelled `body_count`) -- not
-// standalone rigid bodies. Served as one scene-wide group even when base type varies per row, unlike the
-// legacy homogeneous-view getter.
-inline constexpr const char* kDofCount           = "dofCount";           //!< int32: DOFs
-inline constexpr const char* kLinkCount          = "linkCount";          //!< int32: articulation links
-inline constexpr const char* kJointCount         = "jointCount";         //!< int32: joints
-inline constexpr const char* kFixedTendonCount   = "fixedTendonCount";   //!< int32: fixed tendons
-inline constexpr const char* kSpatialTendonCount = "spatialTendonCount"; //!< int32: spatial tendons
-inline constexpr const char* kIsFixedBase        = "isFixedBase";        //!< int32: 1 = fixed base, 0 = floating
-// Whole-articulation DOF-column descriptor: which joint prim and which of its axes each inverse-dynamics
-// matrix column belongs to. Emitted like the topology metadata above -- one scene-wide group, one row per
-// articulation, host-resident -- but the row is a per-DOF array padded to the widest selected
-// articulation's `dofCount`, which is the real length (the pad is trailing, like shapeCount terminates a
-// per-shape row). The array runs in PhysX flattened cache-DOF order, i.e. jacobian / massMatrix column
-// `(isFixedBase ? 0 : 6) + k` maps to DOF `k` here -- so a consumer holding a cohort's `jacobian` recovers
-// `column -> (joint prim, axis)` with no side channel. `dofJointPath` is the joint's interned prim-path
-// handle, resolved through `ovxQueryDictionary` exactly as `prims.list` is (0 / OVX_INVALID_PRIMPATH pads);
-// prim-path identity replaces the deprecated tensor-binding DOF/body/joint name strings. `dofAxisIndex` is
-// the DOF's ordinal among that joint's UNLOCKED axes (in PhysX TWIST/SWING1/SWING2 order): 0 for a 1-DOF
-// joint, 0/1/2 for a fully free spherical joint -- a locked leading axis compacts it (locked TWIST gives
-// SWING1=0, SWING2=1, not 1/2), not a canonical axis id.
-inline constexpr const char* kDofJointPath = "dofJointPath"; //!< uint64 [array, per DOF]: owning joint prim handle
-inline constexpr const char* kDofAxisIndex = "dofAxisIndex"; //!< int32 [array, per DOF]: axis within that joint
-// Articulation DOF attributes. One value per enabled axis of the joint prim, so the emitted tensor
-// is one array per joint (`dtype.lanes` carries the per-axis width where an attribute has one).
-// On an angular axis the unit fold is per quantity, not per column: a coordinate or a rate is in
-// degrees as USD authored it, a gain or a per-rate coefficient is per degree (so jointStiffness,
-// jointDamping, jointViscousFriction and jointVelocityDependentResistance divide where a position
-// multiplies), and an effort, inertia or enum takes no fold. One fold applied to the whole block
-// below is the 57.3x-and-3283x class of bug; REQ-READ-ATTRS-001 AC-15 tabulates it per attribute.
-// A signed quantity also carries the joint's body-order sign. The `joint` prefix is load-bearing:
-// staticFriction/dynamicFriction also exist as per-shape rigid attributes, and tendonStiffness /
-// tendonDamping below are a different quantity from jointStiffness / jointDamping above.
-inline constexpr const char* kJointPosition    = "jointPosition";    //!< f32 [array, per-axis]
-inline constexpr const char* kJointVelocity    = "jointVelocity";    //!< f32 [array, per-axis]
-inline constexpr const char* kJointPositionTarget = "jointPositionTarget"; //!< f32 [array, per-axis]
-inline constexpr const char* kJointVelocityTarget = "jointVelocityTarget"; //!< f32 [array, per-axis]
-inline constexpr const char* kJointActuationForce = "jointActuationForce"; //!< f32 [array, per-axis]
-//!< The link's incoming joint force resolved onto this DOF's own axis -- "projected" is onto the
-//!< axis. Derived per read rather than read from a buffer.
-inline constexpr const char* kJointProjectedForce = "jointProjectedForce"; //!< f32 [array, per-axis] (read-only)
-// DOF properties. Simulation inputs rather than outputs, so these columns are host-resident (kDLCPU)
-// even on a DirectGPU scene: there is no device copy to hand back. One read can therefore mix a
-// kDLCUDA jointPosition with a kDLCPU jointStiffness; branch on `device_type`.
-inline constexpr const char* kJointStiffness   = "jointStiffness";   //!< f32: drive effort per unit position error
-inline constexpr const char* kJointDamping     = "jointDamping";     //!< f32: drive effort per unit rate error
-inline constexpr const char* kJointLimit       = "jointLimit";       //!< f32 x2 (low, high), FLT_MAX when free
-inline constexpr const char* kJointMaxVelocity = "jointMaxVelocity"; //!< f32: the joint's rate bound
-inline constexpr const char* kJointMaxForce    = "jointMaxForce";    //!< f32: the drive's effort bound
-inline constexpr const char* kJointArmature    = "jointArmature";    //!< f32: added rotor inertia on the axis
-inline constexpr const char* kJointStaticFriction  = "jointStaticFriction";  //!< f32: break-away effort
-inline constexpr const char* kJointDynamicFriction = "jointDynamicFriction"; //!< f32: sliding effort
-//!< A coefficient, where the two friction columns above are efforts -- which is why this one carries
-//!< an angular fold on a rotational axis and they do not.
-inline constexpr const char* kJointViscousFriction = "jointViscousFriction"; //!< f32: effort per unit rate
-inline constexpr const char* kJointSpeedEffortGradient = "jointSpeedEffortGradient"; //!< f32: envelope rate per effort
-//!< The actuator's rate bound, from the drive envelope. Not kJointMaxVelocity above, which bounds
-//!< the joint itself.
-inline constexpr const char* kJointMaxActuatorVelocity = "jointMaxActuatorVelocity"; //!< f32
-inline constexpr const char* kJointVelocityDependentResistance =
-    "jointVelocityDependentResistance"; //!< f32: drive envelope, resisting effort per unit rate
-inline constexpr const char* kJointDriveType   = "jointDriveType";   //!< uint8 [array] (0 none, 1 force, 2 accel)
-// On kOvxArticulationLink: the spatial force the inbound joint exerts on the link. The leading
-// `link` is the type qualifier every other qualified name here leads with, and matches PhysX's own
-// spelling (PxArticulationCache::linkIncomingJointForce) -- it is a link column, not a DOF one.
-inline constexpr const char* kLinkIncomingJointForce =
-    "linkIncomingJointForce"; //!< f32 x6: force xyz then torque xyz, in the joint frame USD authored
-// Tendon properties. Authoring-time values, so they change only when the tendon does. Named
-// tendon* rather than bare stiffness/damping/offset because those words also describe joint drive
-// and DOF properties, which this API will grow its own attributes for.
-inline constexpr const char* kTendonStiffness      = "tendonStiffness";      //!< f32
-inline constexpr const char* kTendonDamping        = "tendonDamping";        //!< f32
-inline constexpr const char* kTendonLimitStiffness = "tendonLimitStiffness"; //!< f32
-inline constexpr const char* kTendonLimit          = "tendonLimit";          //!< f32 x2 (low, high), fixed tendons only
-inline constexpr const char* kTendonRestLength     = "tendonRestLength";     //!< f32 — fixed tendons only
-inline constexpr const char* kTendonOffset         = "tendonOffset";         //!< f32
-
-// Deformable material properties. One row per material prim, host-resident: these are authored
-// simulation inputs that PhysX never writes back (REQ-TENSOR-CPU-ONLY-001).
+// Prefixes distinguish quantities and layouts: joint friction is per DOF, rigid friction
+// is per shape, and tendon stiffness/damping are separate from joint drive gains.
+// Deformable material properties are one scalar per material prim, unlike per-shape
+// rigid dynamicFriction. The deformable prefix also leaves material* names available
+// for a rigid-material type.
 //
-// The `deformable` prefix is load-bearing, the same way `joint` is above: unqualified
-// `dynamicFriction` already names a per-shape attribute served by the rigid and whole-articulation
-// tables, so one f32 per prim under that token would make one name mean two shapes. `deformable`
-// rather than `material` leaves the `material*` names free for a rigid-material type.
-inline constexpr const char* kDeformableDynamicFriction   = "deformableDynamicFriction";   //!< f32
-inline constexpr const char* kDeformableYoungsModulus     = "deformableYoungsModulus";     //!< f32
-inline constexpr const char* kDeformablePoissonsRatio     = "deformablePoissonsRatio";     //!< f32
-inline constexpr const char* kDeformableElasticityDamping = "deformableElasticityDamping"; //!< f32
-inline constexpr const char* kDeformableBendingStiffness  = "deformableBendingStiffness";  //!< f32 — surface only
-inline constexpr const char* kDeformableThickness         = "deformableThickness";         //!< f32 — surface only
-inline constexpr const char* kDeformableBendingDamping    = "deformableBendingDamping";    //!< f32 — surface only
-
-// Contact-sensor aggregates. One row per contact-reporting body, one component each: the net NORMAL
-// force (the sensor's contact-point impulses summed) and the net FRICTION force (its friction-anchor
-// impulses summed) PhysX reports on the sensor this step, each divided by the step dt and matching the
-// tensor binding's getNetNormalContactForces / getNetFrictionContactForces. Their sum is the total contact
-// force. Friction anchor forces that oppose each other cancel in the net vector, so a friction torque
-// does not show in it. Residency follows the scene's execution, like every read column: host (kDLCPU) on
-// a non-DirectGPU scene, device (kDLCUDA, reduced on-device) on a DirectGPU scene -- branch on the
-// column's device.device_type before touching the data.
-inline constexpr const char* kNetNormalContactForce   = "netNormalContactForce";   //!< vec3 f32 (per contact sensor)
-inline constexpr const char* kNetFrictionContactForce = "netFrictionContactForce"; //!< vec3 f32 (per contact sensor)
-// Contact-sensor force matrices, served on a contact query with filters (ovxQueryContacts, ADR-0044): one
-// row per sensor, its F filters' forces as F x 3 floats folded into the lanes (ADR-0026 lanes-fold), filter f
-// at lanes 3f..3f+2. Each cell is the force the sensor receives from that filter's body -- normal from the
-// pair's contact points, friction from its anchors -- matching getNormalContactForceMatrix /
-// getFrictionContactForceMatrix. Not served on a query without filters. A filter that is a collider rather
-// than a body is matched through its collider id on a host scene but reads zero on a DirectGPU scene (the
-// device reducer resolves body filters only), as in the binding; likewise for the filtered detail below.
-inline constexpr const char* kNormalContactForceMatrix   = "normalContactForceMatrix";   //!< F x vec3 f32 (per sensor)
-inline constexpr const char* kFrictionContactForceMatrix = "frictionContactForceMatrix"; //!< F x vec3 f32 (per sensor)
-// Contact-sensor filtered detail, served on a contact query with filters: the contact points (normal
-// family) and friction anchors (friction family) of each pair between a sensor and one of its filters'
-// bodies, matching getNormalContactData / getFrictionContactData. Each element attribute is an ARRAY group,
-// one tensor per sensor holding its elements ordered by filter column (host scenes: report order within a
-// column; DirectGPU scenes: unspecified order within a column), sized to this step's elements -- no capacity,
-// no truncation. A sensor with no element this step is absent from these groups. The count companions are
-// fixed groups over every sensor row, F int32 lanes: row r's lane f is the number of its elements from
-// filter f, so its tensor splits into per-filter runs. Forces are the element impulse divided by the step
-// dt, negated where the sensor is the pair's second body; normals are as reported (not flipped).
-inline constexpr const char* kFilteredContactForce      = "filteredContactForce";      //!< f32 (array per sensor)
-inline constexpr const char* kFilteredContactPoint      = "filteredContactPoint";      //!< vec3 f32 (array per sensor)
-inline constexpr const char* kFilteredContactNormal     = "filteredContactNormal";     //!< vec3 f32 (array per sensor)
-inline constexpr const char* kFilteredContactSeparation = "filteredContactSeparation"; //!< f32 (array per sensor)
-inline constexpr const char* kFilteredContactCount      = "filteredContactCount";      //!< F x i32 (per sensor)
-inline constexpr const char* kFilteredFrictionForce     = "filteredFrictionForce";     //!< vec3 f32 (array per sensor)
-inline constexpr const char* kFilteredFrictionPoint     = "filteredFrictionPoint";     //!< vec3 f32 (array per sensor)
-inline constexpr const char* kFilteredFrictionCount     = "filteredFrictionCount";     //!< F x i32 (per sensor)
-// Contact-sensor raw contacts, served on every contact-sensor query form: every contact point of every pair a
-// sensor is in, whatever the other body, matching getRawContactData. Each is an ARRAY group, one tensor per
-// sensor holding its points (host scenes: report order; DirectGPU scenes: unspecified order), sized to this
-// step's points; a sensor with no point this step is absent. The force is the point's impulse divided by the
-// step dt, negated where the sensor is the pair's second body; the normal is as reported (not flipped).
-// rawContactOtherBody is the other body's prim, as the path dictionary's interned prim-path handle
-// (ovx_primpath_t; 0 when the body has none).
-inline constexpr const char* kRawContactForce      = "rawContactForce";      //!< f32 (array per sensor)
-inline constexpr const char* kRawContactPoint      = "rawContactPoint";      //!< vec3 f32 (array per sensor)
-inline constexpr const char* kRawContactNormal     = "rawContactNormal";     //!< vec3 f32 (array per sensor)
-inline constexpr const char* kRawContactSeparation = "rawContactSeparation"; //!< f32 (array per sensor)
-inline constexpr const char* kRawContactOtherBody  = "rawContactOtherBody";  //!< u64 prim handle (array per sensor)
-// Contact-sensor events, served on every contact-sensor query form over a non-DirectGPU scene (PhysX's GPU
-// contact pairs carry no event type, so a DirectGPU scene returns no event group): each contact-report header
-// a sensor is a side of -- found, persisting or lost -- as seen from that sensor, in report order. Every name
-// is an ARRAY group at one of three levels: one element per event (the contactEvent* names without
-// Point/Anchor, and the two counts contactEventPointCount and contactEventAnchorCount), one per contact point
-// (the other contactEventPoint* names) or one per friction anchor (the other contactEventAnchor* names), points
-// and anchors concatenated in event order and split by those two counts. A sensor has a tensor when it has at
-// least one element at the name's level this step, so a sensor whose only event is a lost pair, which carries
-// no point, has event tensors but no point or anchor tensor. A pair between two sensors appears under each.
-// Identities (colliders, bodies, materials) are interned prim-path handles (0 when none), ordered own then
-// other; values are as reported -- impulses, not forces, and never negated. The type is ContactEventType's
-// value (0 found, 1 lost, 2 persist). The ProtoIndex names hold the collider's instance index in its point
-// instancer -- its slot in protoIndices, not the prototype that slot selects -- and 0xFFFFFFFF when the
-// collider is not an instance.
-inline constexpr const char* kContactEventType                = "contactEventType";                //!< i32
-inline constexpr const char* kContactEventSensorSide          = "contactEventSensorSide";          //!< 0 or 1 (i32)
-inline constexpr const char* kContactEventCollider            = "contactEventCollider";            //!< u64 prim handle
-inline constexpr const char* kContactEventOtherBody           = "contactEventOtherBody";           //!< u64 prim handle
-inline constexpr const char* kContactEventOtherCollider       = "contactEventOtherCollider";       //!< u64 prim handle
-inline constexpr const char* kContactEventProtoIndex          = "contactEventProtoIndex";          //!< u32
-inline constexpr const char* kContactEventOtherProtoIndex     = "contactEventOtherProtoIndex";     //!< u32
-inline constexpr const char* kContactEventPointCount          = "contactEventPointCount";          //!< i32
-inline constexpr const char* kContactEventAnchorCount         = "contactEventAnchorCount";         //!< i32
-inline constexpr const char* kContactEventPointPosition       = "contactEventPointPosition";       //!< vec3 f32
-inline constexpr const char* kContactEventPointNormal         = "contactEventPointNormal";         //!< vec3 f32
-inline constexpr const char* kContactEventPointImpulse        = "contactEventPointImpulse";        //!< vec3 f32
-inline constexpr const char* kContactEventPointSeparation     = "contactEventPointSeparation";     //!< f32
-inline constexpr const char* kContactEventPointFaceIndex      = "contactEventPointFaceIndex";      //!< u32
-inline constexpr const char* kContactEventPointOtherFaceIndex = "contactEventPointOtherFaceIndex"; //!< u32
-inline constexpr const char* kContactEventPointMaterial       = "contactEventPointMaterial";       //!< u64 prim handle
-inline constexpr const char* kContactEventPointOtherMaterial  = "contactEventPointOtherMaterial";  //!< u64 prim handle
-inline constexpr const char* kContactEventAnchorPosition      = "contactEventAnchorPosition";      //!< vec3 f32
-inline constexpr const char* kContactEventAnchorImpulse       = "contactEventAnchorImpulse";       //!< vec3 f32
-
-// WRITE-ONLY control inputs (ADR-0012). Named here beside the readable attributes because
-// the vocabulary is one flat list, but the READ never emits them: a force is consumed by the solver
-// and cleared each step, so there is no stored value to report. Asking for either through
-// ovxReadAttributes yields no column.
-inline constexpr const char* kForce  = "force";  //!< vec3 f32, at the centre of mass [write-only]
-inline constexpr const char* kWrench = "wrench"; //!< 9 x f32: force(3), torque(3), application point(3),
-                                                 //!< the point in WORLD space [write-only]
-// wake is a one-time command: nonzero wakes the addressed rigid dynamics, zero sleeps them. Later
-// simulation or mutations can change that state. The command remains write-only; read isSleeping
-// for the current state rather than the last command.
-inline constexpr const char* kWake = "wake"; //!< uint8, nonzero = wake / zero = sleep [write-only]
-
-// Persistent raw-wheel controls, writable only on vehicles without a drive.
-inline constexpr const char* kDriveTorque = "driveTorque"; //!< f32, per wheel
-inline constexpr const char* kBrakeTorque = "brakeTorque"; //!< f32, per wheel
-inline constexpr const char* kSteerAngle = "steerAngle"; //!< commanded radians, per wheel
-
-// Whole-vehicle controls and drive state. All columns are CPU-resident.
-inline constexpr const char* kAccelerator = "accelerator";
-inline constexpr const char* kBrake0 = "brake0";
-inline constexpr const char* kBrake1 = "brake1";
-inline constexpr const char* kSteer = "steer";
-inline constexpr const char* kRequestedGear = "requestedGear";
-inline constexpr const char* kThrust0 = "thrust0";
-inline constexpr const char* kThrust1 = "thrust1";
-inline constexpr const char* kResetToRestState = "resetToRestState";
-inline constexpr const char* kClutch = "clutch";
-inline constexpr const char* kCurrentGear = "currentGear";
-inline constexpr const char* kTargetGear = "targetGear";
-inline constexpr const char* kEngineRotationSpeed = "engineRotationSpeed";
-inline constexpr const char* kAutomaticTransmission = "automaticTransmission";
-inline constexpr const char* kGearSwitchTime = "gearSwitchTime";
-inline constexpr const char* kAutoboxTimeSinceLastShift = "autoboxTimeSinceLastShift";
-
-// Wheel telemetry. wheelSteerAngle is measured; steerAngle above is an input.
-inline constexpr const char* kRotationSpeed = "rotationSpeed";
-inline constexpr const char* kRotationAngle = "rotationAngle";
-inline constexpr const char* kWheelSteerAngle = "wheelSteerAngle";
-inline constexpr const char* kSuspensionJounce = "suspensionJounce";
-inline constexpr const char* kSuspensionForce = "suspensionForce";
-inline constexpr const char* kTireFriction = "tireFriction";
-inline constexpr const char* kTireLongitudinalDirection = "tireLongitudinalDirection";
-inline constexpr const char* kTireLateralDirection = "tireLateralDirection";
-inline constexpr const char* kTireLongitudinalSlip = "tireLongitudinalSlip";
-inline constexpr const char* kTireLateralSlip = "tireLateralSlip";
-inline constexpr const char* kTireForce = "tireForce";
-inline constexpr const char* kIsOnGround = "isOnGround";
-inline constexpr const char* kGroundPlane = "groundPlane";
-inline constexpr const char* kGroundHitPosition = "groundHitPosition";
-inline constexpr const char* kGroundActorPath = "groundActorPath";
-inline constexpr const char* kGroundShapePath = "groundShapePath";
-inline constexpr const char* kGroundMaterialPath = "groundMaterialPath";
-
-// Character-controller movement. A commit calls PxController::move once with this world-space
-// displacement and the owning scene's timestep. It is not replayed on later steps. The controller
-// prim's pose is the rigid-body position and orientation; this type has no readable columns.
-// Collision flags from move() are not published.
-inline constexpr const char* kMove = "move"; //!< vec3 f32, world-space displacement [write]
+// dofAxisIndex counts only unlocked axes in PhysX TWIST/SWING1/SWING2 order. A locked
+// TWIST compacts SWING1/SWING2 to 0/1; the result is not a canonical axis ID.
+#include <omni/physx/generated/AttributeNames.inc>
 } // namespace OvxAttr
 
 // Opaque handles. 0 is the invalid sentinel.
@@ -603,9 +296,6 @@ OMNI_OVX_API void ovxDebugRenderNoteAttach(uint64_t instanceId, uint64_t attach,
 // Drop the instance's settings. A live attach is pushed a disabled visualization first.
 OMNI_OVX_API void ovxDebugRenderForget(uint64_t instanceId);
 
-// 0 unclassified, 1 writable, 4 read-only. Matches the public writability enum.
-OMNI_OVX_API int ovxDebugRenderWritability(const char* name, size_t length);
-
 // The explicit attachment has the same idle-owner admission rules as ovxQuery.
 // Like ovxQuery, but the objects of `type` are narrowed to a prim-set selection instead of a scope, for
 // BOTH the read and a write opened over the query (ADR-0025). A selected query has no scope: it always
@@ -672,7 +362,20 @@ OMNI_OVX_API bool ovxFetchQueryResult(OvxOutputQueryHandle query, ovstage_query_
 // any selected articulation cannot be resolved. Membership and native objects belong
 // to the query's exact attachment. Returns false while that owner awaits fetch or
 // when called from a runtime callback, without updating any articulation.
-OMNI_OVX_API bool ovxUpdateArticulationsKinematic(OvxOutputQueryHandle query, uint32_t flags);
+//
+// On a DirectGPU scene the refresh is ordered on the device after `sync` -- everything queued
+// on `sync.stream` and `sync.wait_event` -- and everything queued on `sync.stream` afterwards
+// runs after it (ADR-0052). Nothing blocks the host, so the call can be captured into a CUDA
+// graph after the write it follows; a selected query must have refreshed once outside the
+// capture, which uploads its articulation list. A DirectGPU scene that has not stepped is
+// refused: nothing warms it up. A CPU scene refreshes on the host at once and refuses a
+// capturing stream. The legacy default stream -- the legacy sentinel, or a null stream on a
+// DirectGPU scene -- is refused while a blocking stream of its context is being captured. A
+// `sync.stream` of another CUDA context than the scene's is drained on the host instead, and
+// the refresh runs on the scene's own stream.
+OMNI_OVX_API bool ovxUpdateArticulationsKinematic(OvxOutputQueryHandle query,
+                                                  uint32_t flags,
+                                                  ovstage_cuda_sync_t sync = ovstage_cuda_sync_t{ 0, 0 });
 
 // Evaluate the signed distance fields of the SDF shapes `query` selects (ADR-0048), the successor of the SDF view. The
 // query must have type kOvxSdfShape; its rows are its selection in order -- explicit handles as given, a pattern in the
@@ -702,7 +405,7 @@ OMNI_OVX_API bool ovxEvaluateSdfShapes(OvxOutputQueryHandle query,
 OMNI_OVX_API bool ovxCheckSdfShapes(OvxOutputQueryHandle query, const DLTensor* points, const DLTensor* out);
 
 // READ (ovstage `read_attributes` analog): request named output attributes for a
-// query. Token takes precedence over string. An unresolvable token or a duplicate
+// query. A non-NULL string takes precedence over the token. An unresolvable token or a duplicate
 // canonical name fails the request, with its request index in the runtime error.
 // The particle alias positions canonicalizes to points. Unsupported names produce
 // no groups; optional metadata keeps their original slot with an invalid token
@@ -713,15 +416,22 @@ OMNI_OVX_API bool ovxCheckSdfShapes(OvxOutputQueryHandle query, const DLTensor* 
 // groups, and omissionReasons may be nonzero alongside available groups. A known
 // name with no applicable data has zero groups and no omission reason. The rows
 // remain valid until read release. A null outSummary skips optional summary work.
+// `sync` is the caller's producer handoff (ADR-0055): a DirectGPU device group is gathered on `sync.stream` after
+// everything queued on it and after `sync.wait_event`, with no host wait; a stream of another CUDA context, and every
+// other group, are waited for on the host. A read on a stream being captured records its gathers into the graph. It
+// needs the plan a released read over the query with the same attributes and rows left held, and is refused before
+// anything is queued without one, or when it holds a host-resident or contact group.
 OMNI_OVX_API OvxReadHandle ovxReadAttributes(OvxOutputQueryHandle query,
-                                             const ovx_string_or_token_t* attrs,
+                                             const ovx_token_or_string_t* attrs,
                                              size_t attrCount,
-                                             OvxReadResult* outSummary = nullptr);
+                                             OvxReadResult* outSummary = nullptr,
+                                             ovstage_cuda_sync_t sync = ovstage_cuda_sync_t{ 0, 0 });
 
 // ITERATE (ovstage `fetch_read_next` analog): fill the next typed column group.
-// Each group is homogeneous — fixed-size (one tensor over its prims) or array
-// (one ragged tensor per prim). The numeric tensors / prim and data index maps are borrowed and
-// stay valid until ovxReleaseRead; the stage-derived prims.list stays valid until
+// Each group carries one attribute column, columns[0] (column_count == 1), and is
+// homogeneous — fixed-size (one tensor over its prims) or array (one ragged tensor
+// per prim). The column, its numeric tensors and the prim and data index maps are
+// borrowed and stay valid until ovxReleaseRead; the stage-derived prims.list stays valid until
 // ovxReleaseGroup (see "Group lifetime" above; an intervening step invalidates
 // neither lifetime). Returns kOvxReadStatusOk with
 // `*outGroup` filled, kOvxReadStatusEndOfIteration when exhausted, or
@@ -732,14 +442,14 @@ OMNI_OVX_API OvxReadHandle ovxReadAttributes(OvxOutputQueryHandle query,
 // can still report an error for a bad handle or an attachment that was detached.
 // Expected omissions recorded at open do not turn end-of-iteration into failure.
 //
-// How many tensors a group carries depends on is_array, and reading only tensors[0] is
+// How many tensors a column carries depends on is_array, and reading only tensors[0] is
 // wrong for half of them. A FIXED group (is_array == false: rigid-body / link pose and
-// velocity) stacks every prim into ONE tensor, so tensor_count == 1 and row i belongs to
-// prim i. An ARRAY group (is_array == true: joint state, point-instancer arrays,
-// deformable points) carries ONE TENSOR PER PRIM, so tensor_count == prims.count and
-// tensors[i] is prim i's own variable-length array -- a joint read over 16k joints is ONE
-// group with 16k tensors, and taking tensors[0] yields the first joint's values with no
-// error to say the rest were dropped.
+// velocity, articulation joint DOFs) stacks every row into ONE tensor, so tensor_count == 1
+// and row i belongs to prims.list entry i; a joint group has one row per DOF, so a joint's
+// path repeats once per axis (ADR-0059). An ARRAY group (is_array == true: point-instancer
+// arrays, deformable points) carries ONE TENSOR PER PRIM, so tensor_count == prims.count and
+// tensors[i] is prim i's own variable-length array, and taking tensors[0] yields the first
+// prim's values with no error to say the rest were dropped.
 OMNI_OVX_API OvxReadStatus ovxFetchReadNext(OvxReadHandle read, ovstage_read_group_t* outGroup);
 
 // Release a fetched group's stage-derived prims.list. Numeric tensor/index-map
@@ -755,12 +465,16 @@ OMNI_OVX_API OvxReadStatus ovxFetchReadNext(OvxReadHandle read, ovstage_read_gro
 OMNI_OVX_API bool ovxReleaseGroup(OvxReadHandle read, const ovstage_read_group_t* group);
 
 // Release the read session, every scratch / device column it owns, and any prims.list still
-// outstanding.
+// outstanding. Device columns held for the query's next read go back to it without a host wait, after the read's
+// last use -- its last replay's gathers, for a captured read -- which the next read waits for on the device. When the
+// query already keeps columns of that scene and kind, the read's own are freed instead, after a host wait for that
+// use. Call it outside any CUDA graph capture.
 // False reports rejected admission (the session remains live) or a terminal release failure
 // (unsafe device buffers are quarantined).
 OMNI_OVX_API bool ovxReleaseRead(OvxReadHandle read);
 
-// Release the query.
+// Release the query. It frees the device columns the query keeps after a host wait for their last use, so call it
+// outside any CUDA graph capture.
 OMNI_OVX_API bool ovxReleaseQuery(OvxOutputQueryHandle query);
 
 } // extern "C"

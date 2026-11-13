@@ -5,11 +5,11 @@
 
 # PhysicsMeshCollisionAPI
 
-Chooses how a Mesh collider is approximated for PhysX. Its single token column selects the descriptor kind and which cooking API's columns are consulted; without the API a Mesh is a plain triangle mesh.
+Chooses how a [Mesh](glossary.md#mesh) collider is approximated for [PhysX](glossary.md#physx). Its single token column selects the descriptor kind and which cooking API's columns are consulted; without the API a Mesh is a plain triangle mesh.
 
-- **Applies to:** `Gprim`
+- **Applies to:** [`Gprim`](glossary.md#gprim)
 - **Requires on the same prim:** [`PhysicsCollisionAPI`](PhysicsCollisionAPI.md)
-- **Read only when listed in `usd-schemas`.**
+- **Read only when listed in [`usd-schemas`](prim.md#columns).**
 
 ## What USD population writes
 
@@ -17,19 +17,20 @@ Every declared attribute of an applied collision API is published at its resolve
 
 ## Columns
 
-*Raw fallback* is the USD schema value. *Producer writes* is what ovstage population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
+*Raw fallback* is the [USD](glossary.md#usd) schema value. *Producer writes* is what [ovstage](glossary.md#ovstage) population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
 
 | Column | Type | Units | Raw fallback | Producer writes | Parser default | If absent |
 |---|---|---|---|---|---|---|
-| `physics:approximation` | uint64, TOKEN_ID | none | none | resolved USD value (authored, else raw fallback) | none | none: a TriangleMeshPhysxShapeDesc with SDF cooking disabled (sdfResolution 0). The same result as not applying the API. Accepted tokens: none, convexHull, convexDecomposition, boundingSphere, boundingCube, meshSimplification, sphereFill, sdf. Any other token also resolves to none (the parser's safe fallback; the consumer's routing site logs and rejects an unsupported combination). |
+| `physics:approximation` | uint64, TOKEN_ID | none | none | resolved USD value (authored, else raw fallback) | none | none: a triangle mesh collider with SDF cooking disabled (sdfResolution 0). The same result as not applying the API. Accepted tokens: none, convexHull, convexDecomposition, boundingSphere, boundingCube, meshSimplification, sphereFill, sdf. Any other token also resolves to none (the parser's safe fallback; the consumer's routing site logs and rejects an unsupported combination). |
 
 ## Interactions
 
 - **[`PhysicsRigidBodyAPI`](PhysicsRigidBodyAPI.md):** Silent promotion: none or meshSimplification on a collider whose rigid body has physics:rigidBodyEnabled true and physics:kinematicEnabled false is rewritten to convexHull before the descriptor is built, because PhysX rejects a non-SDF triangle mesh as a dynamic simulation shape. The column keeps its authored value; only the descriptor changes.
-- **[`Mesh`](Mesh.md):** Meaningful only on a Mesh. Cube, Sphere, Capsule, Cylinder, Cone and Plane dispatch by prim type before the approximation is consulted.
+- **[`Mesh`](Mesh.md):** Meaningful only on a Mesh. Cube, Sphere, Capsule, Cylinder, Cone and Plane dispatch by [prim](glossary.md#prim) type before the approximation is consulted.
 - **[`PhysxConvexHullCollisionAPI`](PhysxConvexHullCollisionAPI.md):** Consulted only for convexHull (including the promoted case).
 - **[`PhysxConvexDecompositionCollisionAPI`](PhysxConvexDecompositionCollisionAPI.md):** Consulted only for convexDecomposition.
 - **[`PhysxTriangleMeshCollisionAPI`](PhysxTriangleMeshCollisionAPI.md):** Consulted for none and sdf.
 - **[`PhysxTriangleMeshSimplificationCollisionAPI`](PhysxTriangleMeshSimplificationCollisionAPI.md):** Consulted only for meshSimplification.
 - **[`PhysxSphereFillCollisionAPI`](PhysxSphereFillCollisionAPI.md):** Consulted only for sphereFill.
 - **[`PhysxSDFMeshCollisionAPI`](PhysxSDFMeshCollisionAPI.md):** Consulted only for sdf, and only when that API is applied with a positive sdfResolution; otherwise the sdf mesh cooks as a plain triangle mesh.
+- **[`NewtonMeshCollisionAPI`](NewtonMeshCollisionAPI.md):** Read for convexHull and convexDecomposition approximations without checking usd-schemas, when the matching PhysX hullVertexLimit is absent.

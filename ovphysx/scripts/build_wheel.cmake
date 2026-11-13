@@ -28,7 +28,7 @@ get_filename_component(PROJECT_ROOT "${SCRIPT_DIR}/.." ABSOLUTE)
 
 include("${SCRIPT_DIR}/build_common.cmake")
 include("${SCRIPT_DIR}/crossplatform_helpers.cmake")
-include("${SCRIPT_DIR}/preprocess_docs.cmake")
+include("${SCRIPT_DIR}/stage_documentation.cmake")
 # The target-deps Python (3.12) provides tomllib for the packaging scripts.
 if(WIN32)
     set(TARGET_PYTHON "${PROJECT_ROOT}/_build/target-deps/python/python.exe")
@@ -155,6 +155,7 @@ if(NOT FORCE_REBUILD)
         "${INSTALL_INTERNAL}"
         "${PYTHON_SRC_DIR}/pyproject.toml"
         "${SCRIPT_DIR}/preprocess_docs.cmake"
+        "${SCRIPT_DIR}/stage_documentation.cmake"
         "${SCRIPT_DIR}/preprocess_markdown.py"
     )
     list(APPEND STAMPED_LIBS ${_OVPHYSX_PKG_SOURCE_PATHS_ABS})
@@ -362,50 +363,12 @@ file(GLOB ALL_PLUGINS "${PKG_PLUGINS_DIR}/*${SHARED_LIB_SUFFIX}*")
 list(LENGTH ALL_PLUGINS PLUGIN_COUNT)
 message(STATUS "  Total plugins: ${PLUGIN_COUNT}")
 
-# The skills index and skills ship in the wheel package. AGENTS.md is a monorepo
-# developer doc and is intentionally not shipped.
-if(EXISTS "${PROJECT_ROOT}/SKILLS.md")
-    copy_file_if_different("${PROJECT_ROOT}/SKILLS.md" "${STAGING_WHEEL_PKG_DIR}/SKILLS.md")
-    message(STATUS "  Copied SKILLS.md into wheel package")
-else()
-    message(FATAL_ERROR "SKILLS.md not found at ${PROJECT_ROOT}/SKILLS.md")
-endif()
-if(EXISTS "${PROJECT_ROOT}/skills")
-    copy_tree_if_different("${PROJECT_ROOT}/skills" "${STAGING_WHEEL_PKG_DIR}/skills")
-    message(STATUS "  Copied skills/ into wheel package")
-else()
-    message(FATAL_ERROR "skills/ directory not found at ${PROJECT_ROOT}/skills")
-endif()
-
-
-# Preprocess and copy the public portable docs, excluding internal docs, so LLMs can
-# read headings/structure directly. Markdown has its MyST-only constructs resolved.
-# RST and image assets retain their source paths.
-preprocess_public_docs(
-    "${TARGET_PYTHON}" "${PROJECT_ROOT}"
-    "${PROJECT_ROOT}/docs" "${STAGING_WHEEL_PKG_DIR}/docs"
-)
-
-# Public sample source code and data ship in the wheel package under ovphysx/samples/.
-set(SAMPLES_DST "${STAGING_WHEEL_PKG_DIR}/samples")
-file(MAKE_DIRECTORY "${SAMPLES_DST}")
-
-if(EXISTS "${PROJECT_ROOT}/tests/python_samples")
-    # Generated local state is build-environment-specific and must not ship in
-    # the wheel. The helper excludes it from the copy itself.
-    stage_python_samples_tree(
-        "${PROJECT_ROOT}/tests/python_samples" "${SAMPLES_DST}/python_samples")
-    message(STATUS "  Copied tests/python_samples -> wheel: ovphysx/samples/python_samples/")
-else()
-    message(FATAL_ERROR "tests/python_samples not found at ${PROJECT_ROOT}/tests/python_samples")
-endif()
-
-if(EXISTS "${PROJECT_ROOT}/tests/data")
-    copy_tree_if_different("${PROJECT_ROOT}/tests/data" "${SAMPLES_DST}/data")
-    message(STATUS "  Copied tests/data -> wheel: ovphysx/samples/data/")
-else()
-    message(FATAL_ERROR "tests/data not found at ${PROJECT_ROOT}/tests/data")
-endif()
+# Stage the same portable docs, skills, and Python samples checked by the
+# docs-only job. Rendered HTML comes from the installed SDK in a native build.
+set(_DOC_HTML "")
+set(_DOC_REQUIRE_HTML OFF)
+stage_documentation_payload("${TARGET_PYTHON}" "${PROJECT_ROOT}" "${STAGING_WHEEL_PKG_DIR}"
+    wheel "${_DOC_HTML}" "${_DOC_REQUIRE_HTML}")
 
 if(NOT WIN32)
     if(BUILD_TYPE STREQUAL "Debug")

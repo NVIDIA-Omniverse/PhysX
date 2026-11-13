@@ -30,6 +30,7 @@ extern void initTensorBindings();
 extern void initLowLoad();
 extern void initLabCartpole();
 extern void initLabAnymal();
+extern void initLabHumanoid();
 extern void initAuthoringPopulationAdd();
 extern void initAuthoringTeleport();
 extern void initAuthoringDrain();
@@ -58,6 +59,7 @@ void bmInitialize(bool sanityCheck, const char* dataFolder, int32_t numThreads, 
     initLowLoad();
     initLabCartpole();
     initLabAnymal();
+    initLabHumanoid();
     initAuthoringPopulationAdd();
     initAuthoringTeleport();
     initAuthoringDrain();

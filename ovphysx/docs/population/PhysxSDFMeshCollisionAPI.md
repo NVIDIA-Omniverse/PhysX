@@ -5,9 +5,9 @@
 
 # PhysxSDFMeshCollisionAPI
 
-Signed-distance-field cooking parameters for a Mesh collider with physics:approximation sdf. Two-stage gate: the API must be in usd-schemas and sdfResolution must be positive, otherwise the mesh cooks as a plain triangle mesh. Cooking inputs only; nothing here is verified. Several absent-column seeds differ from the USD schema fallbacks.
+Signed-distance-field cooking parameters for a [Mesh](glossary.md#mesh) collider with physics:approximation sdf. Two-stage gate: the API must be in [usd-schemas](prim.md#columns) and sdfResolution must be positive, otherwise the mesh cooks as a plain triangle mesh. Cooking inputs only; nothing here is verified. Several absent-column seeds differ from the [USD](glossary.md#usd) schema fallbacks.
 
-- **Applies to:** `Gprim`
+- **Applies to:** [`Gprim`](glossary.md#gprim)
 - **Requires on the same prim:** [`PhysicsCollisionAPI`](PhysicsCollisionAPI.md)
 - **Read only when listed in `usd-schemas`.**
 
@@ -17,21 +17,21 @@ Every declared attribute of an applied collision API is published at its resolve
 
 ## Columns
 
-*Raw fallback* is the USD schema value. *Producer writes* is what ovstage population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
+*Raw fallback* is the USD schema value. *Producer writes* is what [ovstage](glossary.md#ovstage) population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
 
 | Column | Type | Units | Raw fallback | Producer writes | Parser default | If absent |
 |---|---|---|---|---|---|---|
-| `physxSDFMeshCollision:sdfResolution` | int32 | none | 256 | resolved USD value (authored, else raw fallback) | 0 **diverges** | 0, which fails the validity gate: parseSdfMeshCookingExt returns false, no SDF field is read, and the collider cooks as a plain triangle mesh (which PhysX then rejects on a dynamic body). The USD schema fallback 256 is what the producer publishes, so a hand-populated stage must write this column to get an SDF at all. The struct default defaultSdfResolution (256) is never used as the seed. |
-| `physxSDFMeshCollision:sdfSubgridResolution` | int32 | none | 6 | resolved USD value (authored, else raw fallback) | 6 | 6 (defaultSdfSubgridResolution) from the SdfMeshCookingParams constructor. 0 selects a dense SDF. |
+| `physxSDFMeshCollision:sdfResolution` | int32 | none | 256 | resolved USD value (authored, else raw fallback) | 0 **diverges** | 0, which fails the validity gate: the SDF parse gives up, no SDF field is read, and the collider cooks as a plain triangle mesh (which [PhysX](glossary.md#physx) then rejects on a dynamic body). The USD schema fallback 256 is what the producer publishes, so a hand-populated stage must write this column to get an SDF at all. The cooking default 256 is never used as the seed. |
+| `physxSDFMeshCollision:sdfSubgridResolution` | int32 | none | 6 | resolved USD value (authored, else raw fallback) | 6 | 6, the SDF cooking default. 0 selects a dense SDF. |
 | `physxSDFMeshCollision:sdfBitsPerSubgridPixel` | uint64, TOKEN_ID | none | BitsPerPixel16 | resolved USD value (authored, else raw fallback) | BitsPerPixel16 | 16 bits per subgrid pixel. Accepted tokens BitsPerPixel8, BitsPerPixel16, BitsPerPixel32 map to 8, 16, 32; an absent column or any other token keeps 16. |
-| `physxSDFMeshCollision:sdfNarrowBandThickness` | float32 | none | 0.01 | resolved USD value (authored, else raw fallback) | 0.0 **diverges** | 0.0: the parser seeds a local 0.0, reads into it, and assigns it back unconditionally, so an absent column yields 0.0 rather than defaultSdfNarrowBandThickness (0.01). The producer publishes the USD fallback 0.01. |
-| `physxSDFMeshCollision:sdfMargin` | float32 | none | 0.01 | resolved USD value (authored, else raw fallback) | 0.0 **diverges** | 0.0 by the same seed-and-assign-back pattern as sdfNarrowBandThickness, rather than defaultSdfMargin (0.01). The producer publishes the USD fallback 0.01. |
-| `physxSDFMeshCollision:sdfEnableRemeshing` | bool8 | none | false | resolved USD value (authored, else raw fallback) | false | false (same seed-and-assign-back pattern; here it matches defaultSdfEnableRemeshing). |
-| `physxSDFMeshCollision:sdfTriangleCountReductionFactor` | float32 | none | 1.0 | resolved USD value (authored, else raw fallback) | 0.0 **diverges** | 0.0 by the same seed-and-assign-back pattern, rather than defaultSdfTriangleCountReductionFactor (1.0, keep every triangle). The producer publishes the USD fallback 1.0. |
+| `physxSDFMeshCollision:sdfNarrowBandThickness` | float32 | none | 0.01 | resolved USD value (authored, else raw fallback) | 0.0 **diverges** | 0.0: the parser seeds a local 0.0, reads into it, and assigns it back unconditionally, so an absent column yields 0.0 rather than the cooking default 0.01. The producer publishes the USD fallback 0.01. |
+| `physxSDFMeshCollision:sdfMargin` | float32 | none | 0.01 | resolved USD value (authored, else raw fallback) | 0.0 **diverges** | 0.0 by the same seed-and-assign-back pattern as sdfNarrowBandThickness, rather than the cooking default 0.01. The producer publishes the USD fallback 0.01. |
+| `physxSDFMeshCollision:sdfEnableRemeshing` | bool8 | none | false | resolved USD value (authored, else raw fallback) | false | false (same seed-and-assign-back pattern; here it matches the cooking default). |
+| `physxSDFMeshCollision:sdfTriangleCountReductionFactor` | float32 | none | 1.0 | resolved USD value (authored, else raw fallback) | 0.0 **diverges** | 0.0 by the same seed-and-assign-back pattern, rather than the cooking default 1.0 (keep every triangle). The producer publishes the USD fallback 1.0. |
 
 ## Interactions
 
-- **[`PhysicsMeshCollisionAPI`](PhysicsMeshCollisionAPI.md):** Read by parseSdfMeshCookingExt only for descriptor kind sdf, and only when this API is in usd-schemas and sdfResolution > 0. Every other approximation forces sdfResolution to 0 on its descriptor.
+- **[`PhysicsMeshCollisionAPI`](PhysicsMeshCollisionAPI.md):** Read only for descriptor kind sdf, and only when this API is in usd-schemas and sdfResolution > 0. Every other approximation forces sdfResolution to 0 on its descriptor.
 - **[`PhysxTriangleMeshCollisionAPI`](PhysxTriangleMeshCollisionAPI.md):** An sdf mesh also reads physxTriangleMeshCollision:weldTolerance for its triangle-mesh cooking.
 
 ## Known divergences

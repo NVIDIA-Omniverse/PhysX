@@ -80,6 +80,14 @@ public:
 		mParticleDiffuseBufferUpdate = false;
 	}
 
+	void markForFullUpload()
+	{
+		particleContactOffset_prev = FLT_MIN;
+		fluidRestOffset_prev = FLT_MIN;
+		mParticleBufferUpdate = true;
+		mParticleDiffuseBufferUpdate = true;
+	}
+
 };
 
 } // namespace Dy

@@ -763,50 +763,29 @@ void IslandSim::activateNodeInternal(PxNodeIndex nodeIndex)
 	}
 }
 
-void IslandSim::deactivateNodeInternal(PxNodeIndex nodeIndex)
+static PX_FORCE_INLINE bool isActiveNode(const PxArray<Node>& nodes, PxNodeIndex nodeIndex)
 {
-	//We deactivate a node, we need to loop through all the edges and deactivate them *if* both bodies are asleep
+	return nodeIndex.isValid() && nodes[nodeIndex.index()].isActive();
+}
 
-	Node& node = mNodes[nodeIndex.index()];
+// Called by deactivateIsland() after all nodes of the island have been deactivated. Kinematics and statics are not
+// island nodes, so at that point an active kinematic is the only thing that can keep an island edge active.
+PX_FORCE_INLINE void IslandSim::deactivateIslandEdge(EdgeIndex edgeIndex)
+{
+	Edge& edge = mEdges[edgeIndex];
+	if(!edge.isActive())
+		return;
 
-	if(node.isActive())
-	{
-		if(node.isKinematic())
-			markKinematicInactive(nodeIndex);
-		else
-			markInactive(nodeIndex);
+	// Deactivate the edge *if* both bodies are asleep
+	const PxNodeIndex nodeIndex1 = mCpuData.mEdgeNodeIndices[edgeIndex * 2];
+	const PxNodeIndex nodeIndex2 = mCpuData.mEdgeNodeIndices[edgeIndex * 2 + 1];
+	if(isActiveNode(mNodes, nodeIndex1) || isActiveNode(mNodes, nodeIndex2))
+		return;
 
-		//Clear the active status flag
-		node.clearActive();
-		node.clearActivating();
-
-		EdgeInstanceIndex index = node.mFirstEdgeIndex;
-
-		while(index != IG_INVALID_EDGE)
-		{
-			const EdgeInstance& instance = mEdgeInstances[index];
-
-			const PxNodeIndex outboundNode = mCpuData.mEdgeNodeIndices[index ^ 1];
-			if(outboundNode.index() == PX_INVALID_NODE || 
-				!mNodes[outboundNode.index()].isActive())
-			{
-				const EdgeIndex idx = index/2;
-				Edge& edge = mEdges[idx]; //InstanceIndex/2 = edgeIndex
-				//PX_ASSERT(edge.isActive()); //The edge must currently be inactive because the node was active
-				//Deactivate the edge if both nodes connected are inactive OR if one node is static/kinematic and the other is inactive...
-				PX_ASSERT(mCpuData.mEdgeNodeIndices[index & (~1)].index() == PX_INVALID_NODE || !mNodes[mCpuData.mEdgeNodeIndices[index & (~1)].index()].isActive());
-				PX_ASSERT(mCpuData.mEdgeNodeIndices[index | 1].index() == PX_INVALID_NODE || !mNodes[mCpuData.mEdgeNodeIndices[index | 1].index()].isActive());
-				if(edge.isActive())
-				{
-					edge.deactivateEdge();
-					mActiveEdgeCount[edge.mEdgeType]--;
-					removeEdgeFromActivatingList(idx);
-					mDeactivatingEdges[edge.mEdgeType].pushBack(idx);
-				}
-			}
-			index = instance.mNextEdge;
-		}
-	}
+	edge.deactivateEdge();
+	mActiveEdgeCount[edge.mEdgeType]--;
+	removeEdgeFromActivatingList(edgeIndex);
+	mDeactivatingEdges[edge.mEdgeType].pushBack(edgeIndex);
 }
 
 #if IG_SANITY_CHECKS
@@ -906,17 +885,52 @@ void IslandSim::deactivateIsland(IslandId islandId)
 {
 	PX_ASSERT(mIslandAwake.test(islandId));
 	Island& island = mIslands[islandId];
-	
+
+	// All nodes are deactivated before any edge, so that deactivateIslandEdge() can decide on each edge in a single visit.
 	PxNodeIndex currentNode = island.mRootNode;
 	while(currentNode.index() != PX_INVALID_NODE)
 	{
-		const Node& node = mNodes[currentNode.index()];
-		
+		Node& node = mNodes[currentNode.index()];
+
 		//if(mActiveNodeIndex[currentNode.index()] < mInitialActiveNodeCount[node.mType])
-		mNodesToPutToSleep[node.mType].pushBack(currentNode); //If this node was previously active, then push it to the list of nodes to deactivate
-		deactivateNodeInternal(currentNode);
+		mNodesToPutToSleep[node.mType].pushBack(currentNode);
+
+		if(node.isActive())
+		{
+			// addNode(), addNodeToIsland() and setKinematic() keep kinematic nodes out of islands, so the kinematic
+			// branch is currently never reached. It keeps the active lists consistent if that ever changes.
+			if(node.isKinematic())
+				markKinematicInactive(currentNode);
+			else
+				markInactive(currentNode);
+
+			// Clear the active status flag
+			node.clearActive();
+			node.clearActivating();
+		}
 		currentNode = node.mNextNode;
 	}
+
+	// The island's own edge storage visits each edge once. The per-node edge-instance lists would visit each internal
+	// edge from both of its nodes, with several dependent cache misses per visit.
+	for(PxU32 t=0; t<Edge::eEDGE_TYPE_COUNT; t++)
+	{
+#if IG_STORE_ISLAND_EDGES_IN_ARRAYS
+		const PxArray<IslandEdgesData_Island::EdgeData>& edgeArray = island.mEdges.mEdges[t];
+		const PxU32 nbEdges = edgeArray.size();
+		for(PxU32 i=0; i<nbEdges; i++)
+			deactivateIslandEdge(edgeArray[i].mIndex);
+#else
+		EdgeIndex edgeIndex = island.mEdges.mFirstEdge[t];
+		while(edgeIndex != IG_INVALID_EDGE)
+		{
+			const EdgeIndex nextEdgeIndex = mEdges[edgeIndex].mLinks.mNextIslandEdge;
+			deactivateIslandEdge(edgeIndex);
+			edgeIndex = nextEdgeIndex;
+		}
+#endif
+	}
+
 	markIslandInactive(islandId);
 }
 

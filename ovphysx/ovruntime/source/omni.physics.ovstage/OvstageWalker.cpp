@@ -1,6 +1,14 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-SIM-LOCALVELOCITY-001
+// @covers AC-8
+
+/**
+ * @implements REQ-SOURCE-IDENTITY-001
+ * @covers AC-1 AC-4 AC-5
+ */
+
 /**
  * @implements REQ-PARSE-MASS-004
  * @covers AC-1 AC-4
@@ -120,39 +128,20 @@ ovx_string_t ovxStr(const char* s)
     return { s, std::string_view(s).size() };
 }
 
-// Test-only count of enumerate()'s data-column reads: a family with no matching prim must not
-// pay one to materialise zero prims.
+// Test-only count of enumerateSchema()'s `usd-schemas` reads: a scan whose schema families the
+// source's memo answers must not pay one.
 std::atomic_size_t& enumerateReadCounter()
 {
     static std::atomic_size_t counter{ 0 };
     return counter;
 }
 
-// Test-only count of enumerate()'s whole-stage filter queries: a prim-type family the source's
-// type index knows to be empty must not pay one.
+// Test-only count of enumerateSchema()'s whole-stage filter queries. Prim-type families never
+// pay one: the source's type index answers them.
 std::atomic_size_t& enumerateQueryCounter()
 {
     static std::atomic_size_t counter{ 0 };
     return counter;
-}
-
-// Test-only: the next N batched probe reads in enumerate() fail, so the per-column fallback runs.
-// Zero in production; set only by setOvstageWalkerEnumerateReadFaultForTest().
-std::atomic_int& enumerateReadFaultCounter()
-{
-    static std::atomic_int counter{ 0 };
-    return counter;
-}
-
-bool consumeEnumerateReadFault()
-{
-    int n = enumerateReadFaultCounter().load(std::memory_order_relaxed);
-    while (n > 0)
-    {
-        if (enumerateReadFaultCounter().compare_exchange_weak(n, n - 1, std::memory_order_relaxed))
-            return true;
-    }
-    return false;
 }
 
 // parse::Matrix4d is sixteen doubles in the layout PxMat44d/GfMatrix4d both use;
@@ -372,6 +361,8 @@ void appendCollisionShapeAttrs(Bucket& bucket)
         "physics:filteredPairs",
         "physics:approximation",
         "material:binding:physics",
+        "material:binding:physics:winning-binding-purpose",
+        "material:binding:physics:winning-binding-strength",
         "material:binding",
         "size",
         "radius",
@@ -488,29 +479,26 @@ void appendArticulationAttrs(Bucket& bucket)
     });
 }
 
-// Enumerate the ObjectKeys of prims matching a single-predicate filter, plus the
-// data attributes discovered on the matched set. `probeAttr` must be an attribute
-// every matched prim carries: the read group's prims.list materialises the
-// matched set (ovstage gives no path list on the query result itself).
-Bucket enumerate(const OvstageSource& src,
-                 ovstage_instance_t* inst,
-                 ovx_path_dictionary_t* dict,
-                 const char* predAttr,
-                 ovstage_filter_op_t op,
-                 const char* predValue,
-                 const char* probeAttr,
-                 ovstage_ordinal_t readOrdinal,
-                 const char* metadataProbeAttr)
+// Enumerate the ObjectKeys of the prims that apply `schemaName`, plus the data attributes
+// discovered on the matched set. ovstage gives no path list on the query result itself, so the
+// matched prims materialise as the prims.list of a `usd-schemas` read. Schema membership queries
+// are not ordinal-scoped, so that read is also the proof that the schema data is readable at
+// `readOrdinal`; any failure is a data error. Prim-type families do not come here: the source's
+// prim-type index answers them (REQ-PARSE-FEED-003 AC-10).
+Bucket enumerateSchema(const OvstageSource& src,
+                       ovstage_instance_t* inst,
+                       ovx_path_dictionary_t* dict,
+                       const char* schemaName,
+                       ovstage_ordinal_t readOrdinal)
 {
     Bucket out;
     std::vector<ObjectKey>& keys = out.keys;
-    const bool requiresSchemaProbe = std::string_view(predAttr) == conv::kUsdSchemas;
 
-    ovx_string_t value = ovxStr(predValue);
+    ovx_string_t value = ovxStr(schemaName);
     ovstage_predicate_t pred{};
-    pred.attribute.token = 0;
-    pred.attribute.string = ovxStr(predAttr);
-    pred.op = op;
+    pred.attribute.token = OVX_INVALID_TOKEN;
+    pred.attribute.string = ovxStr(conv::kUsdSchemas);
+    pred.op = OVSTAGE_FILTER_OP_CONTAINS;
     pred.values = &value;
     pred.value_count = 1;
 
@@ -527,150 +515,71 @@ Bucket enumerate(const OvstageSource& src,
     enumerateQueryCounter().fetch_add(1, std::memory_order_relaxed);
     const ovstage_enqueue_result_t qe = ovstage_query(inst, &filter, nullptr, 0, &q);
     if (!waitAndRelease(inst, qe) || q == OVSTAGE_INVALID_QUERY_HANDLE)
-    {
-        if (requiresSchemaProbe)
-            throwDataError(qe.status == OVSTAGE_OK ? OVSTAGE_ERROR_OP_FAILED : qe.status,
-                           "ovstage_query", readOrdinal);
-        return out;
-    }
+        throwDataError(qe.status == OVSTAGE_OK ? OVSTAGE_ERROR_OP_FAILED : qe.status, "ovstage_query", readOrdinal);
 
-    // ovstage gives no prim path list on the query result itself — the matched
-    // prims materialise only as a read group's prims.list. Rather than assume a
-    // specific probe attribute exists (different data models author different
-    // attributes — the hand populator vs ovpopulation), read the query result's
-    // own *discovered* attributes: those are exactly the attributes present on the
-    // matched set, so reading them back yields every matched prim. `probeAttr` is
-    // a fallback when the result reports no attributes. Schema membership queries
-    // are not ordinal-scoped, so `usd-schemas` itself is the required probe for a
-    // schema predicate; reading an ordinary column would not prove that the schema
-    // data is readable at `readOrdinal`.
     ovstage_query_handle_t use = q;
-    std::vector<ovx_token_t> probes; // all usable data columns; their union covers the matched set
     ovstage_query_result_t qr{};
     const ovstage_api_status_t queryResultStatus =
         ovstage_fetch_query_result(inst, q, OVSTAGE_TIMEOUT_INFINITE, &qr);
-    if (queryResultStatus != OVSTAGE_OK && requiresSchemaProbe)
+    if (queryResultStatus != OVSTAGE_OK)
         throwDataError(queryResultStatus, "ovstage_fetch_query_result", readOrdinal);
-    bool noMatch = false;
-    if (queryResultStatus == OVSTAGE_OK)
+    if (qr.all_handle != OVSTAGE_INVALID_QUERY_HANDLE)
+        use = qr.all_handle;
+    // The discovered attributes feed the bulk prefetch. Skip fabric-internal computed columns
+    // (leading '_', e.g. "_worldExtent"/"_worldVisibility"), which the data-plane read cannot
+    // return, and built-in usd-* metadata, which is not scalar parse data.
+    for (size_t i = 0; i < qr.attribute_count; ++i)
     {
-        noMatch = qr.total_prim_count == 0;
-        if (qr.all_handle != OVSTAGE_INVALID_QUERY_HANDLE)
-            use = qr.all_handle;
-        // Probe with attributes the matched prims actually carry: discovered
-        // attributes (data models differ — hand populator vs ovpopulation — so a
-        // hardcoded probe name is wrong). Skip fabric-internal computed columns
-        // (leading '_', e.g. "_worldExtent"/"_worldVisibility"): they aren't
-        // readable through the data-plane read, so probing them yields no prims.
-        for (size_t i = 0; i < qr.attribute_count; ++i)
-        {
-            ovx_string_t s{};
-            if (ovx_path_dictionary_token_to_string(dict, qr.attributes[i], &s) != OVX_OK || !s.ptr || s.length == 0)
-                continue;
-            if (s.ptr[0] == '_')
-                continue;
+        ovx_string_t s{};
+        if (ovx_path_dictionary_token_to_string(dict, qr.attributes[i], &s) != OVX_OK || !s.ptr || s.length == 0)
+            continue;
+        if (s.ptr[0] == '_')
+            continue;
+        if (s.length >= 4 && std::strncmp(s.ptr, "usd-", 4) == 0)
+            continue;
+        out.attrs.emplace_back(s.ptr, s.length);
+    }
+    (void)ovstage_release_query_result(inst, &qr);
 
-            // Built-in usd-* metadata is not scalar parse data. Some metadata
-            // columns are readable, though, so use the explicit metadata probe
-            // only for enumeration fallback, not as a bulk-prefetch attribute.
-            if (s.length >= 4 && std::strncmp(s.ptr, "usd-", 4) == 0)
-                continue;
-            if (!requiresSchemaProbe)
-                probes.push_back(qr.attributes[i]); // each usable column probes + bulk-reads
-            out.attrs.emplace_back(s.ptr, s.length);
-        }
-        (void)ovstage_release_query_result(inst, &qr);
-    }
-    // The query's own count decides an empty family: no fallback read to materialise zero
-    // prims. Schema predicates keep their read, which doubles as the readability proof.
-    if (noMatch && !requiresSchemaProbe)
-        return out;
-    if (requiresSchemaProbe || probes.empty())
-    {
-        // Schema predicates must read their metadata column. Other predicates
-        // use the explicit metadata/probe column only when no ordinary data
-        // column can materialize the matched prims.
-        ovx_token_t fb = OVX_INVALID_TOKEN;
-        const char* fallbackProbe = metadataProbeAttr ? metadataProbeAttr : probeAttr;
-        if (ovx_path_dictionary_intern_token(dict, ovxStr(fallbackProbe), &fb) == OVX_OK &&
-            fb != OVX_INVALID_TOKEN)
-            probes.push_back(fb);
-        else if (requiresSchemaProbe)
-            throw std::runtime_error("OVStage schema scan could not intern required usd-schemas token");
-    }
+    ovx_token_t schemasToken = OVX_INVALID_TOKEN;
+    if (ovx_path_dictionary_intern_token(dict, ovxStr(conv::kUsdSchemas), &schemasToken) != OVX_OK ||
+        schemasToken == OVX_INVALID_TOKEN)
+        throw std::runtime_error("OVStage schema scan could not intern required usd-schemas token");
 
     ovstage_ordinal_range_t range{};
     range.end_ordinal = readOrdinal;
     range.has_start_ordinal = false;
 
-    // Read EVERY usable column, in ONE multi-attribute read, and union the matched prim
-    // lists. A single column is only authored on the prims that carry it, so one probe
-    // under-counts the matched set: a read group's prims.list holds only the prims with that
-    // column, dropping matched prims whose authored column was not the first one
-    // picked (e.g. Sphere/Mesh/Cube colliders, particle systems). The discovered
-    // columns are the union over the matched set, so every matched prim carries at
-    // least one — reading them all and unioning (dedup by handle) yields the
-    // complete set, which is what let us drop the USD-Traverse supplement in
-    // OvstageSource::collectPrimTypeKeys. Handles come from the data-column read
-    // (the populator's canonical primpaths) so downstream key lookups still match. The
-    // groups come back tagged per column; only their prim lists matter here, so one round
-    // trip serves every column. Should that batched read fail, the columns are read one by
-    // one instead, so a single failing column drops only its own rows rather than emptying the
-    // family (a schema predicate's failing column is still an error, as before).
-    std::unordered_set<uint64_t> seen;
-    // One read over `toks`, its groups' prims unioned into `keys`. False when the read itself
-    // could not be issued (the batched caller then falls back per column).
-    auto readProbeUnion = [&](const ovx_token_t* toks, size_t tokCount, bool batched) -> bool
+    ovstage_read_handle_t rh = OVSTAGE_INVALID_READ_HANDLE;
+    CARB_SCOPE_EXIT
     {
-        if (batched && consumeEnumerateReadFault())
-            return false;
-        ovstage_read_handle_t rh = OVSTAGE_INVALID_READ_HANDLE;
-        CARB_SCOPE_EXIT
-        {
-            if (rh != OVSTAGE_INVALID_READ_HANDLE)
-                waitAndRelease(inst, ovstage_release_read(inst, rh));
-        };
-        enumerateReadCounter().fetch_add(1, std::memory_order_relaxed);
-        const ovstage_enqueue_result_t re = ovstage_read_attributes(inst, use, toks, tokCount, range, &rh);
-        if (!waitAndRelease(inst, re) || rh == OVSTAGE_INVALID_READ_HANDLE)
-        {
-            if (!batched && requiresSchemaProbe)
-                throwDataError(re.status == OVSTAGE_OK ? OVSTAGE_ERROR_OP_FAILED : re.status,
-                               "ovstage_read_attributes", readOrdinal);
-            return false;
-        }
-        ovstage_read_group_t g{};
-        // Union prims from EVERY read group, not just the first. A scalar column
-        // comes back as a single group whose prims.list covers all owning prims,
-        // but an array/relationship column (e.g. `collection:colliders:includes`,
-        // `physics:filteredGroups`) is emitted one group PER owning prim — so a
-        // first-group-only scan captured just one owner and dropped the rest (a
-        // second collision group with only a ragged membership column went missing).
-        // Dedup via `seen` keeps scalar reads idempotent.
-        ovstage_api_status_t fetchStatus = OVSTAGE_OK;
-        // A list is fetched and unioned once, however many groups (one per owning prim on an array
-        // column) address it.
-        ReadListMemo listMemo(dict);
-        std::unordered_set<ovx_primpath_list_t> unioned;
-        while ((fetchStatus = ovstage_fetch_read_next(inst, rh, OVSTAGE_TIMEOUT_INFINITE, &g)) == OVSTAGE_OK)
-        {
-            const ovx_primpath_t* paths = nullptr;
-            size_t count = 0;
-            if (listMemo.paths(g.prims.list, &paths, &count) && unioned.insert(g.prims.list).second)
-                for (size_t i = 0; i < count; ++i)
-                    if (seen.insert(paths[i]).second)
-                        keys.push_back(src.internKey(paths[i]));
-            ovstage_release_group(inst, &g);
-        }
-        if (fetchStatus != OVSTAGE_ERROR_END_OF_ITERATION && requiresSchemaProbe)
-            throwDataError(fetchStatus, "ovstage_fetch_read_next", readOrdinal);
-        return true;
+        if (rh != OVSTAGE_INVALID_READ_HANDLE)
+            waitAndRelease(inst, ovstage_release_read(inst, rh));
     };
-    if (!probes.empty() && !readProbeUnion(probes.data(), probes.size(), /*batched=*/true))
+    enumerateReadCounter().fetch_add(1, std::memory_order_relaxed);
+    const ovstage_enqueue_result_t re = ovstage_read_attributes(inst, use, &schemasToken, 1, range, &rh);
+    if (!waitAndRelease(inst, re) || rh == OVSTAGE_INVALID_READ_HANDLE)
+        throwDataError(re.status == OVSTAGE_OK ? OVSTAGE_ERROR_OP_FAILED : re.status, "ovstage_read_attributes",
+                       readOrdinal);
+    // Union prims from EVERY read group, not just the first: an array column is emitted one group
+    // per owning prim. A list is fetched and unioned once, however many groups address it.
+    std::unordered_set<uint64_t> seen;
+    ReadListMemo listMemo(dict);
+    std::unordered_set<ovx_primpath_list_t> unioned;
+    ReadColumnCursor cursor(inst, rh);
+    ReadGroupColumn g{};
+    ovstage_api_status_t fetchStatus = OVSTAGE_OK;
+    while ((fetchStatus = cursor.next(g)) == OVSTAGE_OK)
     {
-        for (const ovx_token_t probe : probes)
-            readProbeUnion(&probe, 1, /*batched=*/false);
+        const ovx_primpath_t* paths = nullptr;
+        size_t count = 0;
+        if (listMemo.paths(g.prims.list, &paths, &count) && unioned.insert(g.prims.list).second)
+            for (size_t i = 0; i < count; ++i)
+                if (seen.insert(paths[i].raw_id).second)
+                    keys.push_back(src.internKey(paths[i].raw_id));
     }
+    if (fetchStatus != OVSTAGE_ERROR_END_OF_ITERATION)
+        throwDataError(fetchStatus, "ovstage_fetch_read_next", readOrdinal);
     return out;
 }
 
@@ -749,11 +658,11 @@ bool tokenColumnContains(ovstage_instance_t* inst,
     if (!inst || !dict || !key.valid() || !attrName || wantedToken == OVX_INVALID_TOKEN)
         return false;
 
-    const uint64_t canonical = src.canonicalPath(key);
+    const uint64_t canonical = src.canonicalPath(key).raw_id;
     // key.handle is the packed, generation-tagged ObjectKey (ADR-0021), never
     // a valid ovx_primpath_t for the C API below -- rawHandle() is the true
     // raw-handle fallback when canonicalization fails.
-    ovx_primpath_t path = canonical ? canonical : src.rawHandle(key);
+    ovx_primpath_t path{ canonical ? canonical : src.rawHandle(key) };
     ovx_primpath_list_t list = OVX_INVALID_PRIMPATH_LIST;
     if (ovx_path_dictionary_create_path_list(dict, &path, 1, &list) != OVX_OK)
         return false;
@@ -783,8 +692,9 @@ bool tokenColumnContains(ovstage_instance_t* inst,
     if (re.status == OVSTAGE_OK)
     {
         waitAndRelease(inst, re);
-        ovstage_read_group_t g{};
-        while (!found && ovstage_fetch_read_next(inst, rh, OVSTAGE_TIMEOUT_INFINITE, &g) == OVSTAGE_OK)
+        ReadColumnCursor cursor(inst, rh);
+        ReadGroupColumn g{};
+        while (!found && cursor.next(g) == OVSTAGE_OK)
         {
             if (g.data.tensor_count > 0 && g.data.tensors && g.data.tensors[0].data)
             {
@@ -799,7 +709,7 @@ bool tokenColumnContains(ovstage_instance_t* inst,
                     const uint64_t* values = reinterpret_cast<const uint64_t*>(bytes);
                     for (size_t i = 0; i < valueCount; ++i)
                     {
-                        if (values[i] == static_cast<uint64_t>(wantedToken))
+                        if (values[i] == wantedToken.raw_id)
                         {
                             found = true;
                             break;
@@ -811,7 +721,7 @@ bool tokenColumnContains(ovstage_instance_t* inst,
                     const uint32_t* values = reinterpret_cast<const uint32_t*>(bytes);
                     for (size_t i = 0; i < valueCount; ++i)
                     {
-                        if (values[i] == static_cast<uint32_t>(wantedToken))
+                        if (values[i] == static_cast<uint32_t>(wantedToken.raw_id))
                         {
                             found = true;
                             break;
@@ -819,7 +729,6 @@ bool tokenColumnContains(ovstage_instance_t* inst,
                     }
                 }
             }
-            ovstage_release_group(inst, &g);
         }
         waitAndRelease(inst, ovstage_release_read(inst, rh));
     }
@@ -836,56 +745,23 @@ bool isXformable(const OvstageSource& src, ObjectKey key)
 
 // `src` provides the canonical identity used to dedup: `dst`/`srcKeys` may mix
 // keys minted through different routes for the same logical prim (schema-cache
-// keys are always canonical, but a raw enumerate()-sourced key is not
+// keys are always canonical, but a raw enumerateSchema()-sourced key is not
 // guaranteed to pack to the same value as its canonical alias -- ADR-0021), so
 // a raw ObjectKey.handle comparison alone is not a reliable identity test.
 void appendUnique(const OvstageSource& src, std::vector<ObjectKey>& dst, const std::vector<ObjectKey>& srcKeys)
 {
     for (const ObjectKey key : srcKeys)
     {
-        const uint64_t canonical = src.canonicalPath(key);
+        const uint64_t canonical = src.canonicalPath(key).raw_id;
         const uint64_t identity = canonical ? canonical : key.handle;
         const auto it = std::find_if(dst.begin(), dst.end(), [&](ObjectKey existing)
         {
-            const uint64_t existingCanonical = src.canonicalPath(existing);
+            const uint64_t existingCanonical = src.canonicalPath(existing).raw_id;
             return (existingCanonical ? existingCanonical : existing.handle) == identity;
         });
         if (it == dst.end())
             dst.push_back(key);
     }
-}
-
-Bucket enumerateSchema(const OvstageSource& src,
-                       ovstage_instance_t* inst,
-                       ovx_path_dictionary_t* dict,
-                       const char* schemaName,
-                       const char* probeAttr,
-                       ovstage_ordinal_t readOrdinal)
-{
-    return enumerate(src, inst, dict, "usd-schemas", OVSTAGE_FILTER_OP_CONTAINS,
-                     schemaName, probeAttr, readOrdinal, conv::kUsdSchemas);
-}
-
-Bucket enumerateSchemas(const OvstageSource& src,
-                        ovstage_instance_t* inst,
-                        ovx_path_dictionary_t* dict,
-                        const char* const* schemaNames,
-                        size_t schemaNameCount,
-                        const char* probeAttr,
-                        ovstage_ordinal_t readOrdinal)
-{
-    Bucket out;
-    for (size_t i = 0; i < schemaNameCount; ++i)
-    {
-        Bucket one = enumerateSchema(src, inst, dict, schemaNames[i], probeAttr, readOrdinal);
-        appendUnique(src, out.keys, one.keys);
-        for (const std::string& attr : one.attrs)
-        {
-            if (std::find(out.attrs.begin(), out.attrs.end(), attr) == out.attrs.end())
-                out.attrs.push_back(attr);
-        }
-    }
-    return out;
 }
 
 std::vector<ObjectKey> relationshipTargets(const OvstageSource& src, ObjectKey key, const char* relName)
@@ -1019,6 +895,8 @@ void prepareMeshShape(ParseContext& ctx, const IPhysicsSource& src,
     case MeshApproximation::eBoundingCube:
     {
         input.type = approximation == MeshApproximation::eBoundingSphere ? eBoundingSphereShape : eBoundingBoxShape;
+        if (input.merged)
+            break; // a merge collider's bounding input is its merged members, not the collider's own points
         const MeshGeometry geometry = parseMeshGeometry(ctx, gprimKey);
         input.points = ctx.getBuffer<carb::Float3>(geometry.points);
         break;
@@ -1039,6 +917,23 @@ void prepareMeshShape(ParseContext& ctx, const IPhysicsSource& src,
         input.cooking = PreparedTriangleMeshCookingExt{};
         break;
     }
+}
+
+// PhysxMeshMergeCollisionAPI on the collider: one typed mesh shape whose geometry is
+// the collisionmeshes collection concatenated in the collider's frame by the shared
+// parse::buildMergedMesh, the same builder the native walker's
+// buildMeshMergeCustomShape uses. The collider's own approximation picks the
+// descriptor type through prepareMeshShape with no body, so there is no dynamic-body
+// convex fallback, matching the native walker. Returns false when no member supplied
+// geometry; the collider then emits no shape.
+bool prepareMeshMergeShape(ParseContext& ctx, const IPhysicsSource& src, ObjectKey colliderKey,
+                           PreparedOvstageShape& input)
+{
+    // Allocated before classification: it marks the record as a merge, which keeps
+    // prepareMeshShape's bounding branch from reading the collider's own points.
+    input.merged = std::make_unique<MergeMeshDesc>();
+    prepareMeshShape(ctx, src, colliderKey, colliderKey, /*body=*/nullptr, input);
+    return buildMergedMesh(ctx, colliderKey, *input.merged) != 0;
 }
 
 } // namespace
@@ -1062,16 +957,6 @@ void resetOvstageWalkerEnumerateQueryCountForTest()
 size_t getOvstageWalkerEnumerateQueryCountForTest()
 {
     return enumerateQueryCounter().load(std::memory_order_relaxed);
-}
-
-void setOvstageWalkerEnumerateReadFaultForTest(int count)
-{
-    enumerateReadFaultCounter().store(count, std::memory_order_relaxed);
-}
-
-int getOvstageWalkerEnumerateReadFaultForTest()
-{
-    return enumerateReadFaultCounter().load(std::memory_order_relaxed);
 }
 
 void emitTireFrictionTable(PreparedOvstageVehicles& out, OvstageSource& src, ParseContext& ctx, ObjectKey key)
@@ -1840,6 +1725,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     std::array<double, 10> waveSeconds{};
     DescriptorPhaseTimer waveTimer(stats ? &waveSeconds[0] : nullptr);
     ParseContext ctx(src, allocator);
+    ctx.setOutputVelocitiesLocalSpaceDefault(filter && filter->outputVelocitiesLocalSpaceDefault);
     const SourceUnits units = src.getSourceUnits();
     const float massScale = (units.kilogramsPerUnit != 0.0f) ? (1.0f / units.kilogramsPerUnit) : 1.0f;
     const float lengthScale = (units.metersPerUnit != 0.0f) ? (1.0f / units.metersPerUnit) : 1.0f;
@@ -1899,16 +1785,16 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     };
     // --- Deterministic enumeration order ---------------------------------------
     //
-    // ovstage does NOT give a stage-derived enumeration order, from either of the
-    // two routes a bucket's keys arrive by:
-    //   - enumerate() unions the prims.list of every read group returned for a
+    // ovstage does NOT give a stage-derived enumeration order, from any of the
+    // routes a bucket's keys arrive by:
+    //   - enumerateSchema() unions the prims.list of every read group returned for a
     //     column, and ovstage emits those groups in an order that varies with
     //     process history. The same column with byte-identical group contents was
     //     observed coming back in three different orders depending on what had
     //     been attached earlier in the process.
-    //   - collectSchemaKeys() serves from an unordered_set of prim handles, so its
-    //     iteration order is hash order over handles that themselves migrate
-    //     between id arenas as more ovstage instances are created.
+    //   - collectSchemaKeys() and collectPrimTypeKeys() serve from unordered_sets of
+    //     prim handles, so their iteration order is hash order over handles that
+    //     themselves migrate between id arenas as more ovstage instances are created.
     //
     // Scan order is load-bearing: Articulation.cpp::createArticulationLinks sorts
     // the joint vector by scan index ("required to maintain parsing order and
@@ -1981,42 +1867,31 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         orderBucketKeys(bucket.keys);
         return bucket;
     };
-    auto enumerateFiltered = [&](const char* predAttr, ovstage_filter_op_t op, const char* predValue,
-                                 const char* probeAttr, ovstage_ordinal_t ordinal) -> Bucket
+    auto enumeratePrimTypeFiltered = [&](const char* typeName) -> Bucket
     {
-        return applyScanFilter(enumerate(src, instance, dict, predAttr, op, predValue, probeAttr, ordinal, nullptr));
-    };
-    auto enumeratePrimTypeFiltered = [&](const char* typeName, const char* probeAttr,
-                                         ovstage_ordinal_t ordinal) -> Bucket
-    {
-        // The authored-type column cannot be used in an IN filter. Its merged
-        // type index provides the exact keys; older stages retain live enumeration.
+        // The merged prim-type index provides the exact keys. It reads at the source's read
+        // ordinal (the range a drain is reading), and failing to complete it fails the scan.
+        // A live usd-prim-type IN enumeration would read at the scan target's ordinal, which
+        // lags a drain, and would silently drop prims whose probe columns are unsealed. With
+        // no authored-type column, usd-prim-type is the authored type and builds the index.
         std::vector<ObjectKey> indexed;
-        if (src.collectPrimTypeKeys(typeName, indexed))
-        {
-            // Nor does a populated family none of whose prims the scan's filter would keep (a
-            // scoped rescan below a spawned prim, with the scene elsewhere): the live enumerate
-            // could only return keys applyScanFilter drops.
-            const bool anyInScope = std::any_of(indexed.begin(), indexed.end(), [&](ObjectKey key)
-                                                { return keyPassesFilter(key) && !isBelowPointInstancer(key); });
-            if (!anyInScope)
-                return Bucket{};
-            if (src.hasAuthoredTypeColumn() == std::optional<bool>(true))
-            {
-                Bucket bucket;
-                bucket.keys = std::move(indexed);
-                return applyScanFilter(std::move(bucket));
-            }
-        }
-        if (src.hasAuthoredTypeColumn() != std::optional<bool>(false))
-            throw std::runtime_error("OVStage schema scan could not complete the authored prim-type index "
-                                     "for ovstage_read_attributes at read ordinal " + std::to_string(ordinal));
-        Bucket bucket = enumerate(src, instance, dict, conv::kUsdPrimType, OVSTAGE_FILTER_OP_IN,
-                                  typeName, probeAttr, ordinal, conv::kUsdPath);
+        if (!src.collectPrimTypeKeys(typeName, indexed))
+            throw std::runtime_error("OVStage schema scan could not complete the prim-type index "
+                                     "for ovstage_read_attributes at read ordinal " +
+                                     std::to_string(src.readOrdinal()));
+        // Nor does a populated family none of whose prims the scan's filter would keep (a
+        // scoped rescan below a spawned prim, with the scene elsewhere).
+        const bool anyInScope = std::any_of(indexed.begin(), indexed.end(), [&](ObjectKey key)
+                                            { return keyPassesFilter(key) && !isBelowPointInstancer(key); });
+        if (!anyInScope)
+            return Bucket{};
+        Bucket bucket;
+        bucket.keys = std::move(indexed);
         return applyScanFilter(std::move(bucket));
     };
-    auto enumerateSchemaFiltered = [&](const char* schemaName, const char* probeAttr,
-                                       ovstage_ordinal_t ordinal) -> Bucket
+    // A schema family the memo cannot answer reads at the source's read ordinal too, like the
+    // memo and the prim-type index: an attached source's drain reads ahead of the scan target.
+    auto enumerateSchemaFiltered = [&](const char* schemaName) -> Bucket
     {
         const TokenId schemaToken = src.internToken(schemaName);
         std::vector<ObjectKey> cachedKeys;
@@ -2025,23 +1900,23 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
             if (cachedKeys.empty())
                 return applyScanFilter(Bucket{});
 
-            (void)probeAttr;
-            (void)ordinal;
             Bucket bucket;
             bucket.keys = std::move(cachedKeys);
             return applyScanFilter(std::move(bucket));
         }
+        // Enumeration finds no row-less instance proxies, so it cannot replace failed discovery.
+        if (src.instancingDiscoveryFailed())
+            throwDataError(OVSTAGE_ERROR_OP_FAILED, "scene-graph instancing discovery", src.readOrdinal());
 
-        Bucket bucket = enumerateSchema(src, instance, dict, schemaName, probeAttr, ordinal);
+        Bucket bucket = enumerateSchema(src, instance, dict, schemaName, src.readOrdinal());
         return applyScanFilter(bucket);
     };
-    auto enumerateSchemasFiltered = [&](const char* const* schemaNames, size_t schemaCount, const char* probeAttr,
-                                        ovstage_ordinal_t ordinal) -> Bucket
+    auto enumerateSchemasFiltered = [&](const char* const* schemaNames, size_t schemaCount) -> Bucket
     {
         Bucket outBucket;
         for (size_t i = 0; i < schemaCount; ++i)
         {
-            Bucket one = enumerateSchemaFiltered(schemaNames[i], probeAttr, ordinal);
+            Bucket one = enumerateSchemaFiltered(schemaNames[i]);
             appendUnique(src, outBucket.keys, one.keys);
             for (const std::string& attr : one.attrs)
             {
@@ -2089,7 +1964,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     {
         for (const ObjectKey key : bucket.keys)
         {
-            const uint64_t canonical = src.canonicalPath(key);
+            const uint64_t canonical = src.canonicalPath(key).raw_id;
             const uint64_t identity = canonical ? canonical : key.handle;
             if (candidateIdentities.insert(identity).second)
                 particleObjectKeys.push_back(key);
@@ -2101,25 +1976,25 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     };
     for (const char* typeName : { "PhysxParticleSystem", "PointInstancer", "PhysxPhysicsJointInstancer" })
     {
-        const Bucket bucket = enumeratePrimTypeFiltered(typeName, conv::kLocalTransform, readOrdinal);
+        const Bucket bucket = enumeratePrimTypeFiltered(typeName);
         appendCandidates(bucket, std::string_view(typeName) != "PhysxParticleSystem");
     }
     for (const std::string& typeName : parse::customTokens(parse::CustomTokenKind::ePhysicsInstancer))
     {
         if (typeName == "PointInstancer" || typeName == "PhysxPhysicsJointInstancer")
             continue;
-        const Bucket bucket = enumeratePrimTypeFiltered(typeName.c_str(), conv::kLocalTransform, readOrdinal);
+        const Bucket bucket = enumeratePrimTypeFiltered(typeName.c_str());
         appendCandidates(bucket, true);
     }
     std::unordered_map<uint32_t, std::unordered_set<uint64_t>> candidateSchemaIdentities;
     for (const char* schemaName : { "PhysxParticleSetAPI", "PhysxParticleSamplingAPI", "InfiniteVoxelMapAPI" })
     {
-        const Bucket bucket = enumerateSchemaFiltered(schemaName, conv::kLocalTransform, readOrdinal);
+        const Bucket bucket = enumerateSchemaFiltered(schemaName);
         appendCandidates(bucket, false);
         std::unordered_set<uint64_t>& identities = candidateSchemaIdentities[src.internToken(schemaName).id];
         for (const ObjectKey key : bucket.keys)
         {
-            const uint64_t canonical = src.canonicalPath(key);
+            const uint64_t canonical = src.canonicalPath(key).raw_id;
             identities.insert(canonical ? canonical : key.handle);
         }
     }
@@ -2128,7 +2003,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     // on the stage when, for example, a visual PointInstancer has no ParticleSetAPI.
     auto hasCandidateSchema = [&](ObjectKey key, TokenId token) -> bool
     {
-        const uint64_t canonical = src.canonicalPath(key);
+        const uint64_t canonical = src.canonicalPath(key).raw_id;
         return candidateSchemaIdentities.at(token.id).count(canonical ? canonical : key.handle) != 0;
     };
     orderBucketKeys(particleObjectKeys);
@@ -2147,7 +2022,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
                 out.particleObjectCandidates.push_back({ key, Kind::eVoxelMap });
             else
             {
-                const uint64_t canonical = src.canonicalPath(key);
+                const uint64_t canonical = src.canonicalPath(key).raw_id;
                 if (instancerIdentities.count(canonical ? canonical : key.handle))
                     out.particleObjectCandidates.push_back({ key, Kind::eCustomInstancer });
             }
@@ -2163,7 +2038,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
             out.particleObjectCandidates.push_back({ key, Kind::eJointInstancer });
         else
         {
-            const uint64_t canonical = src.canonicalPath(key);
+            const uint64_t canonical = src.canonicalPath(key).raw_id;
             if (instancerIdentities.count(canonical ? canonical : key.handle))
                 out.particleObjectCandidates.push_back({ key, Kind::eCustomInstancer });
         }
@@ -2179,7 +2054,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
 
     waveTimer.transition(stats ? &waveSeconds[1] : nullptr);
     // --- Scenes (PRIM_TYPE == PhysicsScene) ---
-    Bucket sceneBucket = enumeratePrimTypeFiltered("PhysicsScene", "physics:gravityMagnitude", readOrdinal);
+    Bucket sceneBucket = enumeratePrimTypeFiltered("PhysicsScene");
     // Scoped additions commonly have no scene or material. Avoid assembling
     // their column lists and preparation storage after membership filtering.
     if (!sceneBucket.keys.empty())
@@ -2270,9 +2145,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     // material→shape binding is resolved by ovpopulation as a target-path
     // relationship and read back via OvstageSource::getMaterialBinding, wired
     // into each shape's sourceMaterials in the shape loop below.
-    Bucket materialBucket = enumerateSchemaFiltered("PhysicsMaterialAPI",
-                                                    "physics:dynamicFriction",
-                                                    readOrdinal);
+    Bucket materialBucket = enumerateSchemaFiltered("PhysicsMaterialAPI");
     if (!materialBucket.keys.empty())
     {
         const std::vector<std::string> materialDiscoveredAttrs = materialBucket.attrs;
@@ -2348,8 +2221,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         "OmniPhysicsSurfaceDeformableMaterialAPI",
         "OmniPhysicsCurveDeformableMaterialAPI",
     };
-    const Bucket deformableMaterialBucket = enumerateSchemasFiltered(deformableMaterialSchemas, 3,
-                                                             "omniphysics:youngsModulus", readOrdinal);
+    const Bucket deformableMaterialBucket = enumerateSchemasFiltered(deformableMaterialSchemas, 3);
     src.prefetchBucket(deformableMaterialBucket.keys, deformableMaterialBucket.attrs);
     {
         DescriptorPhaseTimer phase(stats ? &stats->prepareSeconds : nullptr);
@@ -2399,9 +2271,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     std::unordered_map<uint64_t, ObjectKey> bodyByCanonical;
 
     DescriptorPhaseTimer bodySetupTimer(stats ? &bodySetup.enumerate : nullptr);
-    Bucket bodyBucket = enumerateSchemaFiltered("PhysicsRigidBodyAPI",
-                                                conv::kLocalTransform,
-                                                readOrdinal);
+    Bucket bodyBucket = enumerateSchemaFiltered("PhysicsRigidBodyAPI");
     const std::vector<std::string> bodyDiscoveredAttrs = bodyBucket.attrs;
     const size_t bodyAttrCount = bodyBucket.attrs.size();
 
@@ -2411,7 +2281,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     // actor setup) ask. Complete load-cache coverage lets the per-section prefetches below
     // skip their preparation; usd-path in the set seeds the existence memo for the
     // ancestor chains the actor setup walks.
-    Bucket shapeBucket = enumerateSchemaFiltered("PhysicsCollisionAPI", conv::kLocalTransform, readOrdinal);
+    Bucket shapeBucket = enumerateSchemaFiltered("PhysicsCollisionAPI");
     const std::vector<std::string> shapeDiscoveredAttrs = shapeBucket.attrs;
     const size_t shapeAttrCount = shapeBucket.attrs.size();
     std::vector<ObjectKey> shapeReadKeys = shapeBucket.keys;
@@ -2420,14 +2290,14 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         shapeReadCanonical.reserve(shapeBucket.keys.size() * 2);
         for (const ObjectKey key : shapeBucket.keys)
         {
-            const uint64_t canonical = src.canonicalPath(key);
+            const uint64_t canonical = src.canonicalPath(key).raw_id;
             if (canonical)
                 shapeReadCanonical.insert(canonical);
         }
         for (const ObjectKey key : shapeBucket.keys)
         {
             const ObjectKey backingKey = src.geometryBackingKey(key);
-            const uint64_t canonical = src.canonicalPath(backingKey);
+            const uint64_t canonical = src.canonicalPath(backingKey).raw_id;
             if (canonical && shapeReadCanonical.insert(canonical).second)
                 shapeReadKeys.push_back(backingKey);
         }
@@ -2440,7 +2310,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         {
             for (const ObjectKey key : keys)
             {
-                const uint64_t canonical = src.canonicalPath(key);
+                const uint64_t canonical = src.canonicalPath(key).raw_id;
                 if (mergedIdentity.insert(canonical ? canonical : key.handle).second)
                     merged.keys.push_back(key);
             }
@@ -2672,7 +2542,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         {
             bodySet.insert(body->primKey);
             bodyByKey.emplace(body->primKey, body.get());
-            bodyByCanonical.emplace(src.canonicalPath(body->primKey), body->primKey);
+            bodyByCanonical.emplace(src.canonicalPath(body->primKey).raw_id, body->primKey);
         }
     }
     src.clearBucket();
@@ -2686,7 +2556,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         ObjectKey k = shapeKey;
         for (int guard = 0; k.valid() && guard < 64; ++guard)
         {
-            const auto it = bodyByCanonical.find(src.canonicalPath(k));
+            const auto it = bodyByCanonical.find(src.canonicalPath(k).raw_id);
             if (it != bodyByCanonical.end())
                 return it->second;
             k = src.getParent(k);
@@ -2699,8 +2569,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     // Parse before rigid collision shapes so deformable collision children can be
     // skipped by the rigid-shape scan, matching the native walker.
     std::unordered_map<uint64_t, bool> deformableBodyEnabledByCanonical;
-    Bucket deformableBodyBucket = enumerateSchemaFiltered("OmniPhysicsDeformableBodyAPI",
-                                                          conv::kLocalTransform, readOrdinal);
+    Bucket deformableBodyBucket = enumerateSchemaFiltered("OmniPhysicsDeformableBodyAPI");
     const std::vector<std::string> deformableBodyDiscoveredAttrs = deformableBodyBucket.attrs;
     const size_t deformableBodyAttrCount = deformableBodyBucket.attrs.size();
     appendDeformableBodyAttrs(deformableBodyBucket);
@@ -2733,7 +2602,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         for (size_t i = 0; i < inputs.size(); ++i)
         {
             if (!valid[i]) throw std::logic_error("unprepared deformable body input or storage");
-            deformableBodyEnabledByCanonical[src.canonicalPath(inputs[i].key)] = inputs[i].body.bodyEnabled;
+            deformableBodyEnabledByCanonical[src.canonicalPath(inputs[i].key).raw_id] = inputs[i].body.bodyEnabled;
         }
     }
     src.clearBucket();
@@ -2745,7 +2614,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         ObjectKey k = shapeKey;
         for (int guard = 0; k.valid() && guard < 64; ++guard)
         {
-            auto it = deformableBodyEnabledByCanonical.find(src.canonicalPath(k));
+            auto it = deformableBodyEnabledByCanonical.find(src.canonicalPath(k).raw_id);
             if (it != deformableBodyEnabledByCanonical.end() && it->second)
                 return true;
             k = src.getParent(k);
@@ -2829,7 +2698,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     };
     auto primTypeIs = [&](ObjectKey key, PrimType primType) -> bool
     {
-        const uint64_t canonical = src.canonicalPath(key);
+        const uint64_t canonical = src.canonicalPath(key).raw_id;
         if (!canonical)
             return false;
         std::unordered_map<uint64_t, PrimType>::const_iterator it = primTypeByCanonical.find(canonical);
@@ -2856,7 +2725,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
             return false;
         ovx_token_t typeToken = OVX_INVALID_TOKEN;
         if (ovx_path_dictionary_intern_token(dict, ovxStr(typeName), &typeToken) == OVX_OK &&
-            tokenColumnContains(instance, dict, src, key, conv::kUsdPrimType, typeToken, readOrdinal))
+            tokenColumnContains(instance, dict, src, key, conv::kUsdPrimType, typeToken, src.readOrdinal()))
         {
             // Remember the resolved type: the classifier calls primTypeIs() for
             // several candidate types per shape (and Mesh twice, for subset
@@ -2881,15 +2750,14 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     // canonical-path -> token index the way `rememberPrimType` does for the
     // analytic types.
     //
-    // `PhysxMeshMergeCollisionAPI` is deliberately excluded. It is pre-registered
-    // as a shape token but the native walker routes it to a *typed* mesh-merge
-    // descriptor (`buildMeshMergeCustomShape`), not to a generic
-    // CustomPhysxShapeDesc, and that builder has no ovstage counterpart. Letting
-    // it through here would replace today's behaviour (children picked up as
-    // ordinary colliders) with a custom shape whose hash no consumer has
-    // registered — strictly worse. Mesh merge stays exactly as measured in
-    // PLAN-ovstage-test-coverage-completion.md §6 gap #16.
+    // `PhysxMeshMergeCollisionAPI` stays out of this generic table on purpose. It is
+    // pre-registered as a shape token, but the native walker routes it to a *typed*
+    // mesh-merge descriptor (`buildMeshMergeCustomShape`), not to a generic
+    // CustomPhysxShapeDesc whose hash no consumer registers. emitShape below mirrors
+    // that: a collider carrying the schema becomes one merged mesh input
+    // (`prepareMeshMergeShape`) instead of descending into its children.
     static const std::string kMeshMergeToken = "PhysxMeshMergeCollisionAPI";
+    const TokenId tokMeshMerge = src.internToken(kMeshMergeToken);
     const std::vector<std::string> customShapeTokens = parse::customTokens(parse::CustomTokenKind::eShape);
     std::vector<TokenId> customShapeSchemaTokens;
     customShapeSchemaTokens.reserve(customShapeTokens.size());
@@ -2901,10 +2769,10 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
                                                                           src.internToken(shapeToken));
         if (shapeToken == kMeshMergeToken)
             continue;
-        const Bucket tokenBucket = enumeratePrimTypeFiltered(shapeToken.c_str(), conv::kLocalTransform, readOrdinal);
+        const Bucket tokenBucket = enumeratePrimTypeFiltered(shapeToken.c_str());
         for (const ObjectKey tokenKey : tokenBucket.keys)
         {
-            const uint64_t canonical = src.canonicalPath(tokenKey);
+            const uint64_t canonical = src.canonicalPath(tokenKey).raw_id;
             if (canonical)
                 customShapeTokenByCanonical.emplace(canonical, i);
         }
@@ -2922,7 +2790,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
             if (customShapeSchemaTokens[i].valid() && src.hasSchema(colliderKey, customShapeSchemaTokens[i]))
                 return i;
         }
-        const uint64_t canonical = src.canonicalPath(colliderKey);
+        const uint64_t canonical = src.canonicalPath(colliderKey).raw_id;
         if (canonical)
         {
             const std::unordered_map<uint64_t, size_t>::const_iterator it =
@@ -2973,14 +2841,14 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
             // ovstage-specific. A bodyless collider uses the gprim's world pose.
             if (info.rigidBody.valid())
             {
-                const uint64_t bodyCanonical = src.canonicalPath(info.rigidBody);
-                if (src.canonicalPath(gprimKey) != bodyCanonical)
+                const uint64_t bodyCanonical = src.canonicalPath(info.rigidBody).raw_id;
+                if (src.canonicalPath(gprimKey).raw_id != bodyCanonical)
                 {
                     ::physx::PxMat44d relativeTransform(::physx::PxIdentity);
                     ObjectKey current = gprimKey;
                     for (int guard = 0; current.valid() && guard < 64; ++guard)
                     {
-                        if (src.canonicalPath(current) == bodyCanonical)
+                        if (src.canonicalPath(current).raw_id == bodyCanonical)
                             break;
 
                         Matrix4d localTransform;
@@ -3028,6 +2896,18 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
             if (planeGprim)
             {
                 input.type = ePlaneShape;
+            }
+            else if (src.hasSchema(colliderKey, tokMeshMerge))
+            {
+                // One merged mesh at the collider; its members are geometry, not colliders,
+                // so returning true here keeps the caller from descending into them. A
+                // collider whose members supplied no geometry emits nothing (the builder
+                // warned) and counts as skipped.
+                if (!prepareMeshMergeShape(ctx, src, colliderKey, input))
+                {
+                    ++out.skippedShapes;
+                    return true;
+                }
             }
             else if (customShapeToken != std::string::npos)
             {
@@ -3077,11 +2957,12 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
             // sourceMaterials [0..N) with the collider's own binding as the trailing
             // default slot, which is the order the consumer hands to
             // PxShape::setMaterials. Mirrors the native walker's mesh-subset branch.
-            // Resolved on the geometry key so prototype-authored subsets are found for
-            // an instance proxy too.
+            // Walked at the logical gprim: an instance proxy presents its prototype's
+            // subsets at instance paths, so a material inside the prototype resolves to
+            // the instance's copy that material discovery registers.
             if (primTypeIs(geometryKey, PrimType::eMesh))
             {
-                src.forEachChild(geometryKey, [&](ObjectKey child)
+                src.forEachChild(gprimKey, [&](ObjectKey child)
                 {
                     if (!src.isA(child, tokGeomSubset))
                         return;
@@ -3132,7 +3013,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
             // geometry on descendant gprims — emit a shape per analytic child, with the
             // static body kept at the collider's path (mirrors the native walker's
             // Xform-collider descent). Child gprims carry no physics schema, so they are
-            // only present when the rendering domain was populated too.
+            // selected by the physics description's collider-child geometry selector.
             if (emitShape(key, key))
                 continue;
 
@@ -3328,7 +3209,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         for (int guard = 0; k.valid() && guard < 64; ++guard)
         {
             const std::unordered_map<uint64_t, ObjectKey>::const_iterator it =
-                bodyByCanonical.find(src.canonicalPath(k));
+                bodyByCanonical.find(src.canonicalPath(k).raw_id);
             if (it != bodyByCanonical.end())
                 return it->second;
             if (src.hasSchema(k, tokRigidBodyAPI))
@@ -3436,7 +3317,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         JointTimings perType;
         double firstStructureSeconds = 0;
         DescriptorPhaseTimer jointDetailTimer(stats ? &perType.enumerate : nullptr);
-        Bucket jointBucket = enumeratePrimTypeFiltered(jt.typeName, "physics:localPos0", readOrdinal);
+        Bucket jointBucket = enumeratePrimTypeFiltered(jt.typeName);
         if (jointBucket.keys.empty())
         {
             src.clearBucket();
@@ -3448,7 +3329,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         // Relationship topology is discovered serially. Numeric and token-valued
         // fields bind directly to retained rows after membership/storage is known.
         jointDetailTimer.transition(stats ? &perType.prefetch : nullptr);
-        src.prefetchBucket(jointBucket.keys, {"physics:body0", "physics:body1", "physics:hinge0", "physics:hinge1", "physics:hinge", "physics:prismatic", "newton:mimicJoint"});
+        src.prefetchBucket(jointBucket.keys, jointRelationshipColumns());
         jointDetailTimer.finish();
         jointSetupTimer.finish();
         DescriptorPhaseTimer topologyTimer(stats ? &readTimings.jointTopology : nullptr);
@@ -3763,9 +3644,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     // filteredGroups (group↔group filtering) + the `colliders` collection
     // membership, both resolved through the source from ovpopulation-persisted
     // relationships (parseCollisionGroup → getRelationshipTargets / resolveCollection).
-    Bucket cgBucket = enumeratePrimTypeFiltered("PhysicsCollisionGroup",
-                                                "physics:invertFilteredGroups",
-                                                readOrdinal);
+    Bucket cgBucket = enumeratePrimTypeFiltered("PhysicsCollisionGroup");
     const std::vector<std::string> cgDiscoveredAttrs = cgBucket.attrs;
     const size_t cgAttrCount = cgBucket.attrs.size();
     appendCollisionGroupAttrs(cgBucket);
@@ -3789,9 +3668,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     // algorithm (parse::buildArticulations); the native walker runs the same code.
     std::vector<ArticulationRootInput> artRoots;
     std::unordered_set<ObjectKey, ObjectKey::Hash> articulationRootKeys;
-    Bucket artBucket = enumerateSchemaFiltered("PhysicsArticulationRootAPI",
-                                               conv::kLocalTransform,
-                                               readOrdinal);
+    Bucket artBucket = enumerateSchemaFiltered("PhysicsArticulationRootAPI");
     const std::vector<std::string> artDiscoveredAttrs = artBucket.attrs;
     const size_t artAttrCount = artBucket.attrs.size();
     appendArticulationAttrs(artBucket);
@@ -3861,17 +3738,14 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
 
     waveTimer.transition(stats ? &waveSeconds[8] : nullptr);
     // --- Particles ---
-    Bucket particleSystemBucket = enumeratePrimTypeFiltered("PhysxParticleSystem",
-                                                           "particleSystemEnabled",
-                                                           readOrdinal);
+    Bucket particleSystemBucket = enumeratePrimTypeFiltered("PhysxParticleSystem");
     appendBucketAttr(particleSystemBucket, "physics:simulationOwner");
     appendBucketAttr(particleSystemBucket, "physics:filteredPairs");
     src.prefetchBucket(particleSystemBucket.keys, particleSystemBucket.attrs);
     appendPreparedParticleSystems(out, ctx, batches, execution, particleSystemBucket.keys);
     src.clearBucket();
 
-    Bucket particleSetBucket = enumerateSchemaFiltered("PhysxParticleSetAPI",
-                                                     "physxParticle:particleSystem", readOrdinal);
+    Bucket particleSetBucket = enumerateSchemaFiltered("PhysxParticleSetAPI");
     appendBucketAttr(particleSetBucket, "physxParticle:particleSystem");
     {
         DescriptorPhaseTimer phase(stats ? &stats->prepareSeconds : nullptr);
@@ -3905,8 +3779,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         });
     }
 
-    Bucket particleSamplerBucket = enumerateSchemaFiltered("PhysxParticleSamplingAPI",
-                                                          "physxParticleSampling:samplingDistance", readOrdinal);
+    Bucket particleSamplerBucket = enumerateSchemaFiltered("PhysxParticleSamplingAPI");
     appendBucketAttr(particleSamplerBucket, "physxParticleSampling:particles");
     {
         DescriptorPhaseTimer phase(stats ? &stats->prepareSeconds : nullptr);
@@ -3940,9 +3813,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     };
     for (const char* typeName : attachmentTypeNames)
     {
-        const Bucket attachmentBucket = enumeratePrimTypeFiltered(typeName,
-                                                                  "omniphysics:attachmentEnabled",
-                                                                  readOrdinal);
+        const Bucket attachmentBucket = enumeratePrimTypeFiltered(typeName);
         const ObjectType subtype = attachmentSubtypeForPrimType(typeName);
         DescriptorPhaseTimer phase(stats ? &stats->prepareSeconds : nullptr);
         std::vector<PreparedAttachment> inputs;
@@ -3968,9 +3839,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
             out.attachments.push_back(std::move(desc));
     }
 
-    const Bucket filterBucket = enumeratePrimTypeFiltered("OmniPhysicsElementCollisionFilter",
-                                                          "omniphysics:filterEnabled",
-                                                          readOrdinal);
+    const Bucket filterBucket = enumeratePrimTypeFiltered("OmniPhysicsElementCollisionFilter");
     {
         DescriptorPhaseTimer phase(stats ? &stats->prepareSeconds : nullptr);
         std::vector<PreparedAttachment> inputs;
@@ -3996,8 +3865,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     // --- Character controllers ---
     // Peer of NativeWalker's ApiFlag::eCharacterControllerAPI dispatch. Needs the
     // resolved world transform (position + scale), so it rides scanBucketWithTransform.
-    Bucket cctBucket = enumerateSchemaFiltered("PhysxCharacterControllerAPI",
-                                               "physxCharacterController:slopeLimit", readOrdinal);
+    Bucket cctBucket = enumerateSchemaFiltered("PhysxCharacterControllerAPI");
     appendBucketAttrs(cctBucket, {
         "physxCharacterController:slopeLimit",
         "physxCharacterController:simulationOwner",
@@ -4021,13 +3889,10 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     waveTimer.transition(stats ? &waveSeconds[9] : nullptr);
     // --- Vehicles: scene context + tire friction tables ---
     // Descriptors in their own right (a vehicle may reference them later): always scanned.
-    const Bucket vehCtxBucket = enumerateSchemaFiltered("PhysxVehicleContextAPI",
-                                                "physxVehicleContext:updateMode", readOrdinal);
+    const Bucket vehCtxBucket = enumerateSchemaFiltered("PhysxVehicleContextAPI");
     scanBucket(vehCtxBucket, [&](ObjectKey key) { emitVehicleContext(vehicleInputs, src, ctx, key); });
 
-    const Bucket tftBucket = enumeratePrimTypeFiltered("PhysxVehicleTireFrictionTable",
-                                                       "frictionValues",
-                                                       readOrdinal);
+    const Bucket tftBucket = enumeratePrimTypeFiltered("PhysxVehicleTireFrictionTable");
     scanBucket(tftBucket, [&](ObjectKey key) { emitTireFrictionTable(vehicleInputs, src, ctx, key); });
 
     // The ~16 component / vehicle enumerates below are each an ovstage query even when
@@ -4048,45 +3913,35 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
             .value_or(true))
     {
     // --- Vehicles: shareable wheel/tire/suspension components ---
-    const Bucket wheelBucket = enumerateSchemaFiltered("PhysxVehicleWheelAPI",
-                                               "physxVehicleWheel:radius", readOrdinal);
+    const Bucket wheelBucket = enumerateSchemaFiltered("PhysxVehicleWheelAPI");
     scanBucket(wheelBucket, [&](ObjectKey key) { emitVehicleWheel(vehicleInputs, ctx, key); });
 
-    const Bucket tireBucket = enumerateSchemaFiltered("PhysxVehicleTireAPI",
-                                              "physxVehicleTire:lateralStiffnessGraph", readOrdinal);
+    const Bucket tireBucket = enumerateSchemaFiltered("PhysxVehicleTireAPI");
     scanBucket(tireBucket, [&](ObjectKey key) { emitVehicleTire(vehicleInputs, instance, src, ctx, key, massScale); });
 
-    const Bucket suspensionBucket = enumerateSchemaFiltered("PhysxVehicleSuspensionAPI",
-                                                    "physxVehicleSuspension:springStrength", readOrdinal);
+    const Bucket suspensionBucket = enumerateSchemaFiltered("PhysxVehicleSuspensionAPI");
     scanBucket(suspensionBucket, [&](ObjectKey key) { emitVehicleSuspension(vehicleInputs, ctx, key); });
 
     // --- Vehicles: drivetrain components ---
-    const Bucket engineBucket = enumerateSchemaFiltered("PhysxVehicleEngineAPI",
-                                                "physxVehicleEngine:peakTorque", readOrdinal);
+    const Bucket engineBucket = enumerateSchemaFiltered("PhysxVehicleEngineAPI");
     scanBucket(engineBucket, [&](ObjectKey key) { emitVehicleEngine(vehicleInputs, src, ctx, key, kgmsScale); });
 
-    const Bucket gearsBucket = enumerateSchemaFiltered("PhysxVehicleGearsAPI",
-                                               "physxVehicleGears:ratios", readOrdinal);
+    const Bucket gearsBucket = enumerateSchemaFiltered("PhysxVehicleGearsAPI");
     scanBucket(gearsBucket, [&](ObjectKey key) { emitVehicleGears(vehicleInputs, src, ctx, key); });
 
-    const Bucket clutchBucket = enumerateSchemaFiltered("PhysxVehicleClutchAPI",
-                                                "physxVehicleClutch:strength", readOrdinal);
+    const Bucket clutchBucket = enumerateSchemaFiltered("PhysxVehicleClutchAPI");
     scanBucket(clutchBucket, [&](ObjectKey key) { emitVehicleClutch(vehicleInputs, ctx, key, kgmsScale); });
 
-    const Bucket driveBasicBucket = enumerateSchemaFiltered("PhysxVehicleDriveBasicAPI",
-                                                    "physxVehicleDriveBasic:peakTorque", readOrdinal);
+    const Bucket driveBasicBucket = enumerateSchemaFiltered("PhysxVehicleDriveBasicAPI");
     scanBucket(driveBasicBucket, [&](ObjectKey key) { emitVehicleDriveBasic(vehicleInputs, ctx, key, kgmsScale); });
 
-    const Bucket driveStandardBucket = enumerateSchemaFiltered("PhysxVehicleDriveStandardAPI",
-                                                       "physxVehicleDriveStandard:engine", readOrdinal);
+    const Bucket driveStandardBucket = enumerateSchemaFiltered("PhysxVehicleDriveStandardAPI");
     scanBucket(driveStandardBucket, [&](ObjectKey key) { emitVehicleDriveStandard(vehicleInputs, src, ctx, key); });
 
-    const Bucket tankDiffBucket = enumerateSchemaFiltered("PhysxVehicleTankDifferentialAPI",
-                                                  "physxVehicleTankDifferential:numberOfWheelsPerTrack", readOrdinal);
+    const Bucket tankDiffBucket = enumerateSchemaFiltered("PhysxVehicleTankDifferentialAPI");
     scanBucket(tankDiffBucket, [&](ObjectKey key) { emitVehicleTankDifferential(vehicleInputs, src, ctx, key); });
 
-    const Bucket multiDiffBucket = enumerateSchemaFiltered("PhysxVehicleMultiWheelDifferentialAPI",
-                                                   "physxVehicleMultiWheelDifferential:wheels", readOrdinal);
+    const Bucket multiDiffBucket = enumerateSchemaFiltered("PhysxVehicleMultiWheelDifferentialAPI");
     const TokenId tokTankDiffApi = src.internToken("PhysxVehicleTankDifferentialAPI");
     scanBucket(multiDiffBucket, [&](ObjectKey key)
     {
@@ -4094,22 +3949,18 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
             emitVehicleMultiWheelDifferential(vehicleInputs, src, ctx, key);
     });
 
-    const Bucket autoGearBucket = enumerateSchemaFiltered("PhysxVehicleAutoGearBoxAPI",
-                                                  "physxVehicleAutoGearBox:upRatios", readOrdinal);
+    const Bucket autoGearBucket = enumerateSchemaFiltered("PhysxVehicleAutoGearBoxAPI");
     scanBucket(autoGearBucket, [&](ObjectKey key) { emitVehicleAutoGearBox(vehicleInputs, src, ctx, key); });
 
     // --- Vehicles: brakes, steering, nonlinear response ---
     const char* const brakeSchemas[] = { "PhysxVehicleBrakesAPI:brakes0", "PhysxVehicleBrakesAPI:brakes1" };
-    const Bucket brakesBucket = enumerateSchemasFiltered(brakeSchemas, 2,
-                                                 "physxVehicleBrakes:brakes0:maxBrakeTorque", readOrdinal);
+    const Bucket brakesBucket = enumerateSchemasFiltered(brakeSchemas, 2);
     scanBucket(brakesBucket, [&](ObjectKey key) { emitVehicleBrakes(vehicleInputs, src, ctx, key); });
 
-    const Bucket steeringBucket = enumerateSchemaFiltered("PhysxVehicleSteeringAPI",
-                                                  "physxVehicleSteering:wheels", readOrdinal);
+    const Bucket steeringBucket = enumerateSchemaFiltered("PhysxVehicleSteeringAPI");
     scanBucket(steeringBucket, [&](ObjectKey key) { emitVehicleSteeringBasic(vehicleInputs, src, ctx, key); });
 
-    const Bucket ackermannBucket = enumerateSchemaFiltered("PhysxVehicleAckermannSteeringAPI",
-                                                   "physxVehicleAckermannSteering:wheel0", readOrdinal);
+    const Bucket ackermannBucket = enumerateSchemaFiltered("PhysxVehicleAckermannSteeringAPI");
     const TokenId tokSteeringApi = src.internToken("PhysxVehicleSteeringAPI");
     scanBucket(ackermannBucket, [&](ObjectKey key)
     {
@@ -4123,22 +3974,17 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         "PhysxVehicleNonlinearCommandResponseAPI:brakes0",
         "PhysxVehicleNonlinearCommandResponseAPI:brakes1",
     };
-    const Bucket ncrBucket = enumerateSchemasFiltered(ncrSchemas, 4,
-                                              "physxVehicleNonlinearCommandResponse:drive:commandValues", readOrdinal);
+    const Bucket ncrBucket = enumerateSchemasFiltered(ncrSchemas, 4);
     scanBucket(ncrBucket, [&](ObjectKey key) { emitVehicleNonlinearCmdResponse(vehicleInputs, src, ctx, key); });
 
     // --- Vehicles: wheel attachments, suspension compliance, chassis roots ---
-    const Bucket wheelAttachmentBucket = enumerateSchemaFiltered("PhysxVehicleWheelAttachmentAPI",
-                                                         "physxVehicleWheelAttachment:index", readOrdinal);
+    const Bucket wheelAttachmentBucket = enumerateSchemaFiltered("PhysxVehicleWheelAttachmentAPI");
     scanBucket(wheelAttachmentBucket, [&](ObjectKey key) { emitVehicleWheelAttachment(vehicleInputs, instance, src, ctx, key); });
 
-    const Bucket suspensionComplianceBucket = enumerateSchemaFiltered("PhysxVehicleSuspensionComplianceAPI",
-                                                              "physxVehicleSuspensionCompliance:suspensionForceAppPoint",
-                                                              readOrdinal);
+    const Bucket suspensionComplianceBucket = enumerateSchemaFiltered("PhysxVehicleSuspensionComplianceAPI");
     scanBucket(suspensionComplianceBucket, [&](ObjectKey key) { emitVehicleSuspensionCompliance(vehicleInputs, src, ctx, key); });
 
-    const Bucket vehicleBucket = enumerateSchemaFiltered("PhysxVehicleAPI",
-                                                 "physxVehicle:vehicleEnabled", readOrdinal);
+    const Bucket vehicleBucket = enumerateSchemaFiltered("PhysxVehicleAPI");
     scanBucketWithTransform(vehicleBucket, [&](ObjectKey key) { emitVehicle(vehicleInputs, src, ctx, key, lengthScale); });
     }
 
@@ -4178,6 +4024,29 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         if (execution.reportStatistics) execution.reportStatistics(*stats);
     }
     return out;
+}
+
+const std::vector<std::string>& physicsInputColumns()
+{
+    // Generated from the population contract: the columns the parser reads for the
+    // prim types and API schemas the compiled cache stores or reads, and every
+    // block's. Prefixes, written with a trailing '*', come from components' declared
+    // prefixes and from multi-apply APIs whose instance names the parser does not
+    // fix. Snapshot reads are audited against this plan: an undeclared read prevents
+    // publication.
+    static const std::vector<std::string> columns = []() {
+        std::vector<std::string> names = {
+#define POPULATION_COLUMN(column) column,
+#define POPULATION_COLUMN_PREFIX(prefix) prefix "*",
+#include <omni/physics/ovstage/PopulationReads.inl>
+        };
+        for (auto& name : names)
+            name = std::string(conv::toOvstageColumn(name));
+        std::sort(names.begin(), names.end());
+        names.erase(std::unique(names.begin(), names.end()), names.end());
+        return names;
+    }();
+    return columns;
 }
 
 } // namespace omni::physics::ovstage

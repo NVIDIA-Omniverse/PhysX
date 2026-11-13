@@ -29,7 +29,7 @@ namespace Gu
 							the TOI will return the time at which both shapes are touching.
 	*/
 	template<class ConvexA, class ConvexB>
-	bool gjkRaycast(const ConvexA& a, const ConvexB& b, const aos::Vec3VArg initialDir, const aos::FloatVArg initialLambda, const aos::Vec3VArg s, const aos::Vec3VArg r, aos::FloatV& lambda, aos::Vec3V& normal, aos::Vec3V& closestA, const PxReal _inflation)
+	bool gjkRaycast(const ConvexA& a, const ConvexB& b, const aos::Vec3VArg initialDir, const aos::FloatVArg initialLambda, const aos::Vec3VArg s, const aos::Vec3VArg r, aos::FloatV& lambda, aos::Vec3V& normal, aos::Vec3V& closestA, const PxReal _inflation, const PxReal toleranceScale = 0.1f)
 	{
 		PX_UNUSED(initialLambda);
 
@@ -64,7 +64,7 @@ namespace Gu
 		Vec3V support = Q[0];
 
 		const FloatV minMargin = FMin(a.ConvexA::getSweepMargin(), b.ConvexB::getSweepMargin());
-		const FloatV eps1 = FMul(minMargin, FLoad(0.1f));
+		const FloatV eps1 = FMul(minMargin, FLoad(toleranceScale));
 		const FloatV inflationPlusEps(FAdd(eps1, inflation));
 		const FloatV eps2 = FMul(eps1, eps1);
 
@@ -186,20 +186,22 @@ namespace Gu
 	*/
 	template<class ConvexA, class ConvexB>
 	bool gjkRaycastPenetration(const ConvexA& a, const ConvexB& b, const aos::Vec3VArg initialDir, const aos::FloatVArg initialLambda, const aos::Vec3VArg s, const aos::Vec3VArg r, aos::FloatV& lambda, 
-		aos::Vec3V& normal, aos::Vec3V& closestA, const PxReal _inflation, const bool initialOverlap)
+		aos::Vec3V& normal, aos::Vec3V& closestA, const PxReal _inflation, const bool initialOverlap, const bool useClosestB = false, const PxReal toleranceScale = 0.1f, const PxReal mtdInflation = 0.0f)
 	{
 		using namespace aos;
 		Vec3V closA;
 		Vec3V norm; 
 		FloatV _lambda;
-		if(gjkRaycast(a, b, initialDir, initialLambda, s, r, _lambda, norm, closA, _inflation))
+		if(gjkRaycast(a, b, initialDir, initialLambda, s, r, _lambda, norm, closA, _inflation, toleranceScale))
 		{
 			const FloatV zero = FZero();
 			lambda = _lambda;
 			if(FAllEq(_lambda, zero) && initialOverlap)
 			{
 				//time of impact is zero, the sweep shape is intesect, use epa to get the normal and contact point
-				const FloatV contactDist = getSweepContactEps(a.getMargin(), b.getMargin());
+				// Query inflation excludes the quadratic radii already included in penetration.
+				const FloatV additionalInflation = FLoad(mtdInflation);
+				const FloatV contactDist = FAdd(getSweepContactEps(a.getMargin(), b.getMargin()), additionalInflation);
 
 				FloatV sDist(zero);
 				PxU8 aIndices[4];
@@ -221,7 +223,7 @@ namespace Gu
 				//norm = V3Neg(norm);
 				if(status == GJK_CONTACT)
 				{
-					closA = output.closestA;
+					closA = useClosestB ? output.closestB : output.closestA;
 					sDist = output.penDep;
 					norm = output.normal;
 				}
@@ -231,13 +233,13 @@ namespace Gu
 
 					if (status == EPA_CONTACT || status == EPA_DEGENERATE)
 					{
-						closA = output.closestA;
+						closA = useClosestB ? output.closestB : output.closestA;
 						sDist = output.penDep;
 						norm = output.normal;
 					}
 					else
 					{
-						//ML: if EPA fail, we will use the ray direction as the normal and set pentration to be zero
+						// EPA failure falls back to the sweep direction and the query inflation shell.
 						closA = V3Zero();
 						sDist = zero;
 						norm = V3Normalize(V3Neg(r));
@@ -247,11 +249,11 @@ namespace Gu
 				{
 					//ML:: this will be gjk degenerate case. However, we can still
 					//reply on the previous iteration's closest feature information
-					closA = output.closestA;
+					closA = useClosestB ? output.closestB : output.closestA;
 					sDist = output.penDep;
 					norm = output.normal;
 				}
-				lambda = FMin(zero, sDist);
+				lambda = FMin(zero, FSub(sDist, additionalInflation));
 			}
 			closestA = closA;
 			normal = norm;

@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-CACHE-ATTACH-001
+// @covers AC-11
+
 #pragma once
 
 #include <PxPhysicsAPI.h>
@@ -46,8 +49,20 @@ public:
                        float gearingSign = 1.0f,
                        float offsetSign = 1.0f);
 
-    // for PhysXReplicator only
-    InternalMimicJoint(InternalScene&, ::physx::PxArticulationMimicJoint&, usdparser::ObjectType);
+    // Adopt a deserialized native joint; the caller registers scene trackers.
+    InternalMimicJoint(InternalScene&,
+                       ::physx::PxArticulationMimicJoint&,
+                       usdparser::ObjectType,
+                       float gearingSign = 1.0f,
+                       float offsetSign = 1.0f);
+    float getGearingSign() const
+    {
+        return mGearingSign;
+    }
+    float getOffsetSign() const
+    {
+        return mOffsetSign;
+    }
 
     void release(bool removeFromTrackers, bool releasePhysXObject);
 

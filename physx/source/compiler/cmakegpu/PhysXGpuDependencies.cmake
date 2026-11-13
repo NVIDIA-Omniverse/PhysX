@@ -11,6 +11,7 @@ SET(PHYSX_SOURCE_DIR ${PHYSX_ROOT_DIR}/source)
 include(${PHYSX_ROOT_DIR}/${PROJECT_CMAKE_FILES_DIR}/${TARGET_BUILD_PLATFORM}/PhysXGpuDependencies.cmake)
 
 SET(GPUDEPENDENCIES_INCLUDES
+	${PHYSX_SOURCE_DIR}/common/src/CmRadixSort.h
 	${PHYSX_SOURCE_DIR}/lowlevel/common/include/pipeline/PxcNpMemBlockPool.h
 	${PHYSX_SOURCE_DIR}/lowlevel/common/include/pipeline/PxcNpCacheStreamPair.h
 	${PHYSX_SOURCE_DIR}/lowlevel/common/include/pipeline/PxcNpThreadContext.h
@@ -23,6 +24,7 @@ SET(GPUDEPENDENCIES_INCLUDES
 SOURCE_GROUP("Includes" FILES ${GPUDEPENDENCIES_INCLUDES})
 
 SET(GPUDEPENDENCIES_SOURCE
+	${PHYSX_SOURCE_DIR}/common/src/CmRadixSort.cpp
 	${PHYSX_SOURCE_DIR}/lowlevel/common/src/pipeline/PxcNpMemBlockPool.cpp
 	${PHYSX_SOURCE_DIR}/lowlevel/common/src/pipeline/PxcNpThreadContext.cpp
 	${PHYSX_SOURCE_DIR}/lowlevel/common/src/pipeline/PxcNpCacheStreamPair.cpp

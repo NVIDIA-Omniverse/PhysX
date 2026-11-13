@@ -17,6 +17,8 @@ NpOmniPvdMetaData::NpOmniPvdMetaData()
 	physxVersionBugfix = PX_PHYSICS_VERSION_BUGFIX;
 	ovdIntegrationVersionMajor =  PX_PHYSICS_OVD_INTEGRATION_VERSION_MAJOR;
 	ovdIntegrationVersionMinor =  PX_PHYSICS_OVD_INTEGRATION_VERSION_MINOR;
+	recordSecondaryData = true;
+	captureAllObjects = true;
 }
 
 NpOmniPvdMetaData::~NpOmniPvdMetaData()

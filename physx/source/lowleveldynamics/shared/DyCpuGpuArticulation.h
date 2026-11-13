@@ -25,7 +25,7 @@ namespace Dy
 
 /**
  * Compute the parent-to-child world translation Rw from the stored world
- * orientations and link-local anchor offsets.  Precision-clean at any world
+ * orientations and link-local anchor offsets. Precision-clean at any world
  * coordinate: uses only unit world quaternions and small link-local offsets;
  * no world-scale position subtraction.
  *

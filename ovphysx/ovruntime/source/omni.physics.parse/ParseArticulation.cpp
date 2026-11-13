@@ -67,7 +67,7 @@ void parseArticulation(ParseContext& ctx, ObjectKey key, ArticulationFields& fie
 
     if (hasPhysxApi)
     {
-        src.getAttribute(key, tok.physxArticulationEnabled, fields.articulationEnabled);
+        src.getAttribute(key, tok.physxArticulationArticulationEnabled, fields.articulationEnabled);
 
         // Clamp each authored value to PhysX's documented valid range.
         fields.sleepThreshold = readClampedScalar<float>(

@@ -70,6 +70,17 @@ four reject the destroyed binding. Failures identify the method or capacity.
   filter selects its only partner. Complete anchor forces sum to that matrix
   entry (AC-1).
 
+## Failed Step Divisor
+
+- Given a successful positive step, the cached contact divisor equals its dt.
+- When `WorkerStep.DispatchErrorSurvivesFetchCallbacks` in
+  `tests/c_unittests/test_worker_step.cpp` injects a dispatch error at twice that
+  dt, the task fails and retains the successful contact divisor (AC-3).
+- When `GpuStepErrorGpuTest.SyncFailureSurvivesDisabledLogging` and
+  `AsyncFailureSurvivesDisabledLogging` in `tests/c_unittests/test_step_errors.cpp`
+  stop GPU simulation with CUDA abort mode and step at twice the successful dt,
+  both paths retain that divisor in readback and DirectGPU modes (AC-3).
+
 ## Deprecated Alias Compatibility
 
 - C `DeprecatedAggregateContactAliases` and Python

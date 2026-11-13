@@ -3,7 +3,7 @@
 
 /**
  * @implements REQ-CAPI-OVSTAGE-OUTPUT-001
- * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7
  */
 
 #pragma once
@@ -32,11 +32,12 @@ struct OvStageOutputResult
     }
 };
 
-/** Optional application-owned scale snapshots and reusable CPU/CUDA buffers.
- * Binds to the instance, stage pointer and attachment on its first use.
- * Destroy before the instance or stage. Serialize access with simulation and
- * stage edits. Call refresh() after authored transforms or topology change;
- * refreshing keeps the binding and does not permit reuse after reattachment.
+/** Optional application-owned reusable CPU/CUDA matrix buffers, one per
+ * published prim set and device. Binds to the instance, stage pointer and
+ * attachment on its first use. Destroy before the instance or stage. Serialize
+ * access with simulation and stage edits. Call refresh() after topology changes
+ * to release buffers for prim sets that are no longer published; refreshing
+ * keeps the binding and does not permit reuse after reattachment.
  */
 class OvStageOutputCache
 {
@@ -65,23 +66,32 @@ private:
  * Point-instancer array groups are skipped and counted in the result.
  *
  * The caller supplies the attached stage, waits for its simulation step, and
- * chooses outputOrdinal above the sealed write floor. Compute and seal current
- * world matrices before first use (including the hierarchy for nested bodies).
- * This helper does not step, seal, drain, update local transforms, or propagate
- * changes to descendants. Seal this output before the next call; never drain
- * physics output ordinals back into physics. A later hierarchy recomputation
- * can replace the written matrices with values derived from local transforms.
+ * chooses outputOrdinal above the sealed write floor. After writing, the helper
+ * computes the hierarchy at outputOrdinal with the CPU model, whatever the
+ * runtime default. This sets the published prims' local transforms to match
+ * their new world matrices, so a later parent edit moves them with their
+ * parent. This helper does not step, seal or drain. Seal this output before the
+ * next call; never drain physics output ordinals back into physics.
  *
- * With no cache, derive signed scale from the current sealed world matrices on
- * each call. A cache retains owned scales and buffers, never borrowed stage
- * views. Matrix decomposition follows the parser and does not preserve shear.
- * For a nondegenerate, shear-free world matrix, a negative linear determinant
- * gives three negative scale components; a positive one gives three positive
+ * Each matrix composes the physics position and orientation with the signed
+ * world scale ovphysx stored when the body was created (OVPHYSX_ATTR_WORLD_SCALE),
+ * read in the same physics read; no stage world matrix is read, so none has to
+ * exist before the first call, and direct edits to the stage's world matrices do
+ * not change the published scale. Neither does a runtime scale edit that physics
+ * does not apply (character controllers, DirectGPU rigid bodies, articulation
+ * links, kinematic bodies driven by time-sampled transforms): each publication
+ * overwrites the matrix a hierarchy recomputation derived from the edit with one
+ * at the creation scale, and its hierarchy computation folds that matrix into the
+ * local transform. A character controller's orientation is its capsule
+ * actor's, rotated so the capsule axis follows the up axis, while its scale keeps
+ * the prim's authored axes, so its matrix is not the prim's. The stored scale is the
+ * parser's decomposition of the world transform and does not preserve shear. For a
+ * nondegenerate, shear-free world matrix, a negative linear determinant gives
+ * three negative scale components; a positive one gives three positive
  * components. The physics rotation absorbs the remaining signs, so it need not
- * equal the authored rotation. The helper composes it with the decomposed scale.
- * Orientation writes must use the same physics frame.
- * ovstage supplies CPU world-matrix reads for scale capture, including for
- * matrices authored on CUDA. Cached CUDA frames use device poses and scales.
+ * equal the authored rotation. Orientation writes must use the same physics
+ * frame. On a DirectGPU scene the pose and scale columns are device-resident and
+ * the matrices are composed on that device without a host copy.
  *
  * Failures return status and message. A stage other than the instance's attached
  * stage is rejected before stage access or cache binding. Earlier writes,

@@ -375,6 +375,7 @@ namespace Sc
 
 					void						setSimulationEventCallback(PxSimulationEventCallback* callback);
 					PxSimulationEventCallback*	getSimulationEventCallback() const;
+	PX_FORCE_INLINE	bool						needsSleepNotifications()	const	{ return mSimulationEventCallback != NULL || mOnSleepingStateChanged != NULL;	}
 
 					void						setCCDContactModifyCallback(PxCCDContactModifyCallback* callback);
 					PxCCDContactModifyCallback*	getCCDContactModifyCallback() const;
@@ -466,7 +467,8 @@ namespace Sc
 	PX_FORCE_INLINE	PxU32						getNumActiveCompoundBodies()	const	{ return mActiveCompoundBodies.size();	}
 
 	PX_FORCE_INLINE	PxU32						getNbInteractions(InteractionType::Enum type)		const	{ return mInteractions[type].size();	}
-	PX_FORCE_INLINE	PxU32						getNbActiveInteractions(InteractionType::Enum type)	const	{ return mActiveInteractionCount[type];	}
+	// Not available for overlaps, see the comment on mActiveInteractionCount.
+	PX_FORCE_INLINE	PxU32						getNbActiveInteractions(InteractionType::Enum type)	const	{ PX_ASSERT(type != InteractionType::eOVERLAP); return mActiveInteractionCount[type];	}
 	// Get all interactions of a certain type
 	PX_FORCE_INLINE	ElementSimInteraction**		getInteractions(InteractionType::Enum type)					{ return mInteractions[type].begin();	}
 	PX_FORCE_INLINE	ElementSimInteraction**		getActiveInteractions(InteractionType::Enum type)			{ return mInteractions[type].begin();	}
@@ -500,6 +502,7 @@ namespace Sc
 		
 					void						addToActiveList(ActorSim& actor);
 					void						removeFromActiveList(ActorSim& actor);
+					void						compactActiveBodies(const PxBitMap& holes, PxU32 nbHoles, PxU32 nbKinematicHoles);
 					void						removeFromActiveCompoundBodyList(BodySim& actor);
 					void						swapInActiveBodyList(BodySim& body); // call when an active body gets switched from dynamic to kinematic or vice versa
 
@@ -633,6 +636,13 @@ namespace Sc
 					void						checkForceThresholdContactEvents(PxU32 ccdPass);
 	private:
 					void						putObjectsToSleep();
+					void						putInteractionsToSleep();
+					void						deactivateEdgeInteractions(IG::Edge::EdgeType edgeType);
+					// Task version of putObjectsToSleep() followed by putInteractionsToSleep(), for large islands in CPU
+					// scenes. See ScSleep.cpp. Returns false when the serial versions should run instead.
+					bool						putObjectsAndInteractionsToSleepParallel(PxBaseTask* continuation);
+					void						finishPutObjectsToSleep(PxBaseTask* continuation);
+					void						finishPutInteractionsToSleep(PxBaseTask*);
 					void						wakeObjectsUp();
 
 					void						collectPostSolverVelocitiesBeforeCCD();
@@ -663,7 +673,8 @@ namespace Sc
 					// - processing trigger interactions
 					// - updating dirty interactions
 					PxArray<ElementSimInteraction*>	mInteractions[InteractionType::eTRACKED_IN_SCENE_COUNT];
-					PxU32							mActiveInteractionCount[InteractionType::eTRACKED_IN_SCENE_COUNT]; // Interactions with id < activeInteractionCount are active
+					PxU32							mActiveInteractionCount[InteractionType::eTRACKED_IN_SCENE_COUNT]; // Interactions with id < activeInteractionCount are active. Not maintained for overlaps,
+																														// which keep their array slot when they sleep and are told apart by InteractionFlag::eIS_ACTIVE.
 
 					template <typename T, PxU32 size>
 					struct Block
@@ -862,6 +873,7 @@ namespace Sc
 					void						postThirdPassIslandGen(PxBaseTask*);
 					void						postSolver(PxBaseTask* continuation);
 					void						afterIntegration(PxBaseTask* continuation);  // performs sleep check, for instance
+					void						forceThresholdContactEvents(PxBaseTask*);
 					void						postCCDPass(PxBaseTask* continuation);
 					void						ccdBroadPhaseAABB(PxBaseTask* continuation);
 					void						ccdBroadPhase(PxBaseTask* continuation);
@@ -913,6 +925,8 @@ namespace Sc
 					Cm::DelegateTask<Scene,
 						&Scene::processNarrowPhaseLostTouchEvents>						mProcessNPLostTouchEvents;
 					Cm::DelegateTask<Scene, &Scene::postThirdPassIslandGen>				mPostThirdPassIslandGenTask;
+					Cm::DelegateTask<Scene, &Scene::finishPutObjectsToSleep>			mFinishPutObjectsToSleepTask;
+					Cm::DelegateTask<Scene, &Scene::finishPutInteractionsToSleep>		mFinishPutInteractionsToSleepTask;
 #if !USE_SPLIT_SECOND_PASS_ISLAND_GEN
 					Cm::DelegateTask<Scene, &Scene::postIslandGen>						mPostIslandGen;
 #endif
@@ -963,6 +977,23 @@ namespace Sc
 					OnOverlapCreatedTask*												mOverlapCreatedTaskHead;
 					IslandInsertionTask*												mIslandInsertionTaskHead;
 					PxArray<IG::EdgeIndex>												mPreallocatedHandles;
+				public:
+					// Per-body output of the tasks started by putObjectsAndInteractionsToSleepParallel(), consumed by finishPutObjectsToSleep().
+					struct BodySleepRecord
+					{
+						PxU32	mActiveListIndex;	// index the body had in mActiveBodies, or PX_INVALID_U32 when the body was not deactivated
+						PxU32	mPendingWork;		// combination of BodySim::DeactivationWork bits
+					};
+					// Per-pair output of the pair tasks, consumed by finishPutInteractionsToSleep(). See ScSleep.cpp for the flags.
+					struct PairSleepRecord
+					{
+						Gu::PersistentContactManifold*	mManifold;		// manifold to return to its pool, or NULL
+						PxU32							mManagerIndex;	// contact manager to return to its pool
+						PxU32							mFlags;
+					};
+				private:
+					PxArray<BodySleepRecord>											mBodySleepRecords;	// PT: tmp data passed from the body tasks to finishPutObjectsToSleep
+					PxArray<PairSleepRecord>											mPairSleepRecords;	// PT: tmp data passed from the pair tasks to finishPutInteractionsToSleep
 					DelayedGPUTypes														mGPUTypes;				// PT: GPU types found in last part of Sc::Scene::islandInsertion(), delayed for later processing
 					//~class members that should ideally just be local parameters passed from task to task
 

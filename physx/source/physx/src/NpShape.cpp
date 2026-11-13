@@ -156,8 +156,8 @@ void NpShape::requiresObjects(PxProcessPxBaseCallback& c)
 		{
 			PX_ASSERT(0);
 			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
-				"NpShape::requiresObjects: material %u of %u is not registered with the material manager "
-				"(see OMPE-109162); skipping it.", i, nbMaterials);
+				"NpShape::requiresObjects: material %u of %u is not registered with the material manager; "
+				"skipping it.", i, nbMaterials); // OMPE-109162
 			continue;
 		}
 
@@ -198,8 +198,7 @@ bool NpShape::resolveReferences(PxDeserializationContext& context)
 			if(!base || !base->is<PxMaterial>())
 			{
 				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
-					"NpShape::resolveReferences: material reference %u of %u did not resolve to a material "
-					"(see OMPE-109162).", i, nbIndices);
+					"NpShape::resolveReferences: material reference %u of %u did not resolve to a material.", i, nbIndices); // OMPE-109162
 
 				//Just leaving the slot alone is not safe: it still holds an index into the *source* SDK's
 				//material table, and this SDK hands that same index out again to an unrelated material as soon
@@ -229,8 +228,8 @@ bool NpShape::resolveReferences(PxDeserializationContext& context)
 			if(!anyResolved)
 			{
 				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
-					"NpShape::resolveReferences: none of the shape's material references resolved "
-					"(see OMPE-109162); failing the deserialization of this shape.");
+					"NpShape::resolveReferences: none of the shape's material references resolved; "
+					"failing the deserialization of this shape."); // OMPE-109162
 				return false;
 			}
 
@@ -263,8 +262,8 @@ bool NpShape::resolveReferences(PxDeserializationContext& context)
 		{
 			PX_ASSERT(0);
 			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
-				"NpShape::resolveReferences: material %u of %u is not registered with the material manager "
-				"(see OMPE-109162); skipping its reference count.", i, nbMaterials);
+				"NpShape::resolveReferences: material %u of %u is not registered with the material manager; "
+				"skipping its reference count.", i, nbMaterials); // OMPE-109162
 			continue;
 		}
 
@@ -278,6 +277,21 @@ NpShape* NpShape::createObject(PxU8*& address, PxDeserializationContext& context
 {
 	NpShape* obj = PX_PLACEMENT_NEW(address, NpShape(PxBaseFlag::eIS_RELEASABLE));
 	address += sizeof(NpShape);
+
+#if !PX_SUPPORT_GPU_PHYSX
+	//Without GPU support a shape cannot hold these geometry types, see NpFactory::createShapeInternal(). Such a shape
+	//from a collection serialized with GPU support carries material indices that this build does not read, so the type
+	//is checked before importExtraData(). The object is not destroyed, as after a failed resolveReferences() below.
+	const PxGeometryType::Enum type = obj->mCore.getGeometryType();
+	if(type == PxGeometryType::eTETRAHEDRONMESH || type == PxGeometryType::ePARTICLESYSTEM)
+	{
+		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL,
+			"NpShape::createObject: shapes with tetrahedron-mesh or particle-system geometry require GPU support; "
+			"failing the deserialization of this shape.");
+		return NULL;
+	}
+#endif
+
 	obj->importExtraData(context);
 
 	//Deliberately not destroyed: resolveReferences() reported the failure and bailed out before taking any mesh
@@ -359,6 +373,7 @@ void NpShape::setGeometry(const PxGeometry& g)
 	{
 		 NP_API_READ_WRITE_ERROR_MSG(
 			"NpShape::setGeometry() is not allowed when direct-GPU API is already initialized.");
+		return;
 	}
 	PX_CHECK_AND_RETURN(isWritable(), "PxShape::setGeometry: shared shapes attached to actors are not writable.");
 #if PX_CHECKED
@@ -570,7 +585,7 @@ void NpShape::setMaterialsInternal(PxMaterialType* const * materials, PxU16 mate
 				PX_ASSERT(0);
 				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
 					"PxShape::setMaterials: previous material %u of %u is not registered with the material "
-					"manager (see OMPE-109162); skipping its reference count.", i, oldMaterialCount);
+					"manager; skipping its reference count.", i, oldMaterialCount); // OMPE-109162
 				continue;
 			}
 

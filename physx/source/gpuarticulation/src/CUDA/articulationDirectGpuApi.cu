@@ -270,7 +270,7 @@ static PX_FORCE_INLINE __device__ void updateKinematicInternal(
 
 //This function is called after user update gpu buffer(Dy::ArticulationDirtyFlag::eDIRTY_ROOT || Dy::ArticulationDirtyFlag::eDIRTY_POSITIONS)
 extern "C" __global__ void artiUpdateKinematic(
-	const PxgArticulationCoreDesc* const PX_RESTRICT scDesc,
+	PxgArticulation* PX_RESTRICT articulations,
 	const PxgShapeSim* PX_RESTRICT gShapeSimPool,
 	const PxgShape* PX_RESTRICT gConvexShapes,
 	PxsCachedTransform* PX_RESTRICT gTransformCache,
@@ -280,6 +280,7 @@ extern "C" __global__ void artiUpdateKinematic(
 	PxBounds3* PX_RESTRICT bounds,
 	const PxArticulationGPUIndex* PX_RESTRICT gpuIndices,	// NULL: process all the dirty articulations
 	const PxU32 nbElements,						// can be 0 in combination with NULL index buffer.
+	const PxU32 nbSlots,						// number of slots in articulations, walked with a NULL index buffer.
     bool zeroSimOutput)
 {
 	// we launch blocks of 32x2 threads. 1 warp deals with 1 articulation.
@@ -290,16 +291,19 @@ extern "C" __global__ void artiUpdateKinematic(
 	const PxU32 globalWarpIndex = blockIdx.x * blockDim.y + threadIdx.y;
 	const PxU32 warpsPerGrid = gridDim.x * blockDim.y;
 
-	const PxU32 nbArticulations = gpuIndices ? nbElements : scDesc->nbArticulations;
+	// Without an index list, walk every slot. Slots are not compacted after a removal, so live articulations can be in
+	// slots at or above the number of articulations simulated in the last step.
+	const PxU32 nbArticulations = gpuIndices ? nbElements : nbSlots;
 
 	for (PxU32 i = globalWarpIndex; i < nbArticulations; i += warpsPerGrid)
 	{
 		const PxU32 articulationIndex = gpuIndices ? gpuIndices[i] : i;
 
-		PxgArticulation& articulation = scDesc->articulations[articulationIndex];
+		PxgArticulation& articulation = articulations[articulationIndex];
 
 		// An uploaded articulation stores its slot in data.index. A slot that no articulation was uploaded to, for
 		// example the slot of an articulation removed before its upload, keeps the 0xFFFFFFFF fill and is skipped.
+		// The step after the removal of an articulation writes the same value into its record, so its slot is skipped too.
 		if (!gpuIndices && articulation.data.index != articulationIndex)
 			continue;
 

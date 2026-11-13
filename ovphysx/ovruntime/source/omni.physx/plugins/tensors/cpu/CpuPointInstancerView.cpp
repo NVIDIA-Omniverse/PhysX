@@ -140,7 +140,9 @@ bool CpuPointInstancerView::getInstancerColumnsOvStage(const InstancerColumn col
 bool CpuPointInstancerView::setInstancerColumnOvStage(const InstancerColumn column,
                                                       const PxU32 instancerIndex,
                                                       const void* const src,
-                                                      const PxU32 arrayLength)
+                                                      const PxU32 arrayLength,
+                                                      const uint8_t* const hostMask,
+                                                      const OvStageDeviceWriteArgs*)
 {
     // The same decline getInstancerColumnsOvStage opens with: a view that no longer describes the
     // scene declines here rather than dereferencing the stale bodies below. The checks after it are
@@ -177,6 +179,9 @@ bool CpuPointInstancerView::setInstancerColumnOvStage(const InstancerColumn colu
             // slot as the caller zero-filled it, so both directions agree that an index without a
             // body is not addressable.
             if (!inst.body || inst.index >= e.arrayLength)
+                continue;
+            // A masked commit leaves an instance it does not select as it is.
+            if (hostMask && !hostMask[inst.index])
                 continue;
 
             switch (column)

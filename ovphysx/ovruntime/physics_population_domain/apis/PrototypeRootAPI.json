@@ -1,0 +1,25 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PrototypeRootAPI",
+  "title": "PrototypeRootAPI",
+  "summary": "Native-instancing tag on a generated prototype root (/__Prototype_<n>). Prototype content is published once there; the compiled cache stores paths below it by stable names resolved through the instancing graph.",
+  "status": "draft",
+  "compiled_cache": true,
+  "authoring": false,
+  "applies_to": [
+    "Xformable",
+    "Imageable",
+    "Typed"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": false,
+    "row": false
+  },
+  "producer_scope": "Written by ovstage population on every generated /__Prototype_<n> root.",
+  "columns": [],
+  "notes": [
+    "No USD schema applies this name and it declares no column; the parser keys native instancing on the ovstage instancing queries (instance and prototype roots), not on attributes."
+  ]
+}

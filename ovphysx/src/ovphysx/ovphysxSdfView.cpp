@@ -10,6 +10,12 @@
  *
  * @implements REQ-CAPI-PROFILER-001
  * @covers AC-5
+ *
+ * @implements REQ-CAPI-LANE-001
+ * @covers AC-1
+ *
+ * @implements REQ-CAPI-REENTRY-001
+ * @covers AC-2
  */
 
 #include "internal/sdk/ovphysxSDK.hpp"
@@ -106,7 +112,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_create_sdf_view(
     if (max_query_points == 0)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "max_query_points must be > 0");
 
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     ovphysx_api_status_t attachStatus = ovphysx_ensure_physics_attached(handle);
     if (attachStatus != OVPHYSX_API_SUCCESS)
@@ -241,7 +249,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_evaluate_sdf(
     if (!out_distances_and_gradients)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "out_distances_and_gradients is NULL");
 
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     // Reject a stale or unknown handle before any GPU work. Auto-warmup steps the
     // simulation and touches per-stage state, so a view left over from a torn-down
@@ -303,7 +313,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_destroy_sdf_view(
     ovphysx_sdf_view_handle_t sdf_handle)
 {
     OVPHYSX_API_PROFILE_ZONE(destroy_sdf_view);
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
     InstanceData* instance = get_instance_ptr(handle);

@@ -10,6 +10,9 @@
  *
  * @implements REQ-CAPI-BENCHMARK-003
  * @covers AC-2
+ *
+ * @implements REQ-CAPI-BENCHMARK-004
+ * @covers AC-6
  */
 
 // Adapted from omni.physx/tests/test.benchmarks/Harness.cpp.
@@ -42,6 +45,7 @@
 #include "Harness.h"
 #include "BenchmarkFailure.h"
 #include "TimingDiagnostics.h"
+#include "ContactAffinityBarrier.h"
 #include "framework/BmUtils.h"
 
 // Satisfies carb's linker requirement for a globals define somewhere in the
@@ -70,6 +74,8 @@ void parse(CmdLineParameters& result, const char* arg)
         result.reportFile = arg + 9;
     else if (match(arg, "--timing-diagnostics="))
         result.timingDiagnosticsFile = arg + 21;
+    else if (match(arg, "--contact-affinity-fds="))
+        result.contactAffinityFds = arg + 23;
     else if (match(arg, "--data="))
         result.dataFolder = arg + 7;
     else if (match(arg, "--steps="))
@@ -130,6 +136,7 @@ CmdLineParameters getCommandLineOptions(int argc, char** argv, PrintfCbFunc prin
             "--data=<directory>           Data folder for the benchmarks\n"
             "--report=<filename>          Dump results to <filename>\n"
             "--timing-diagnostics=<file>  Write untrimmed timing diagnostics as JSONL\n"
+            "--contact-affinity-fds=<notify:release>  Linux Contact GPU runner barriers\n"
             "--threads=<N>                Run benchmarks on N threads if supported by the benchmark\n"
             "--forceGpu                   Run benchmarks on GPU if supported by the benchmark\n"
             "--directGpu                  Use OVPhysX DirectGPU settings (requires --forceGpu)\n"
@@ -362,6 +369,12 @@ void harnessImpl(int argc, char** argv, PrintfCbFunc printCb)
     bmGetRegister(reg, effectiveFilter.empty() ? cmdLine.filterString : effectiveFilter.c_str(),
                   cmdLine.runHidden);
 
+    if (cmdLine.contactAffinityFds &&
+        (!cmdLine.forceGpu || !cmdLine.directGpu || !cmdLine.runHidden || cmdLine.numThreads != -1 ||
+         reg.size() != 1 || std::strcmp(reg[0]->getName(), "ContactReport.net_force_512_read_gpu") != 0))
+        throw std::invalid_argument("contact affinity barriers require only the default-worker Contact GPU row");
+    ContactAffinityBarrier contactAffinity(cmdLine.contactAffinityFds);
+
     std::vector<uint64_t> times, runs, actualTimes;
     times.reserve(2048);
     runs.reserve(2048);
@@ -439,6 +452,9 @@ void harnessImpl(int argc, char** argv, PrintfCbFunc printCb)
             }
             b.endRun();
 
+            // Finish the full unrecorded warmup before the runner applies and
+            // verifies placement while this thread waits.
+            contactAffinity.exchange('R');
             times.clear();
             // Run the test for (s steps) x (r runs).
             for (uint32_t r = 0; r < runCount; r++)
@@ -460,6 +476,8 @@ void harnessImpl(int argc, char** argv, PrintfCbFunc printCb)
 
                 b.endRun();
             }
+            // Validate the frozen thread inventory before statistics and teardown.
+            contactAffinity.exchange('E');
         }
         else
         {

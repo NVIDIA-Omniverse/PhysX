@@ -75,8 +75,7 @@ public:
                        PhysXUsdPhysicsInterface* usdPhysicsInt,
                        bool loadPhysics = true,
                        AttachedStageUsdHandle backingStage = AttachedStageUsdHandle{},
-                       const PhysxAttachOptions* options = nullptr,
-                       bool startConfiguredRecording = true);
+                       const PhysxAttachOptions* options = nullptr);
 
 
 
@@ -92,10 +91,13 @@ public:
 private:
     // Source-agnostic load core shared by attach() (USD) and attachOvstage()
     // (ovstage): realizes a private candidate, then publishes its owning pointer.
-    // startConfiguredRecording starts legacy startup OmniPVD output afterwards; an
-    // attachment without a public recording owner (companion preview) passes false.
-    uint64_t loadAttachedStage(std::unique_ptr<AttachedStage> attachedStage, bool loadPhysics,
-                               bool startConfiguredRecording = true);
+    // Publication never starts a recording; the host must request it explicitly.
+    // Without restore, a cached attach skips the whole-stage lookup and store, and
+    // its later insertions still use the cache.
+    uint64_t loadAttachedStage(std::unique_ptr<AttachedStage> attachedStage,
+                               bool loadPhysics,
+                               const PhysxCompiledStageCacheOptions* cacheOptions = nullptr,
+                               bool restore = true);
     static uint64_t allocateAttachHandle();
     void sendPhysicsObjectsReleasedEvent(AttachHandle attach) noexcept;
 
@@ -107,8 +109,7 @@ private:
                            uint64_t effectiveBackingStageId,
                            PhysXUsdPhysicsInterface* usdPhysicsInt,
                            bool loadPhysics,
-                           const PhysxAttachOptions* options,
-                           bool startConfiguredRecording);
+                           const PhysxAttachOptions* options);
 
 public:
 

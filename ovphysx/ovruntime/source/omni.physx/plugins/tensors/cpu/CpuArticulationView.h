@@ -127,7 +127,7 @@ public:
 
     // ovstage joint-state read (ADR-0008): gather one scalar per (joint-prim, enabled-axis) into a
     // flat host column of `numOutputs` float32 elements (records built by the ovphysx reader).
-    // CPU counterpart of GpuArticulationView::getDofPositionsOvStage.
+    // CPU counterpart of a DOF column of GpuArticulationView::readOvStageRecordColumns.
     bool getDofPositionsOvStage(const ArticulationDofOvStageRecord* records,
                                 ::physx::PxU32 numOutputs, const TensorDesc* dstTensor) const;
     bool getDofVelocitiesOvStage(const ArticulationDofOvStageRecord* records,
@@ -205,7 +205,7 @@ public:
 
     // ovstage tendon read: gather one property per tendon prim into a flat host column of
     // `numOutputs * comp` float32 elements. CPU counterpart of
-    // GpuArticulationView::getFixedTendonPropertiesOvStage.
+    // GpuArticulationView::readOvStageRecordColumns.
     bool getFixedTendonPropertiesOvStage(const ArticulationTendonOvStageRecord* records,
                                          ::physx::PxU32 numOutputs, TendonProperty prop,
                                          const TensorDesc* dstTensor) const;

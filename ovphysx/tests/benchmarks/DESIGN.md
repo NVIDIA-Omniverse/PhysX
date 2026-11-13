@@ -183,8 +183,8 @@ the measurement.
 
 ### L1B measurement policy and fixtures
 
-The L1B producer contract is the eighteen hidden `Authoring.*` and
-`WriteScaling.*` rows: twelve CPU rows and six requested-GPU diagnostics.
+The L1B producer contract is the twenty-two hidden `Authoring.*` and
+`WriteScaling.*` rows: twelve CPU rows and ten requested-GPU diagnostics.
 Normal wildcard runs do not see them. CPU is canonical, and only two absolute
 latencies are primary lower-is-better KPIs:
 
@@ -220,7 +220,7 @@ the dedicated contract uses `--regenerate`, so it has no baseline comparison.
 The CMake driver additionally treats a nonzero process, missing report, and
 requested exact-row mismatch as fatal.
 
-The Authoring sources consume four fixtures from `ovphysx/tests/data/`, shared
+The Authoring sources consume five fixtures from `ovphysx/tests/data/`, shared
 with the c_samples and shipped in the SDK/wheel sample payload:
 
 | Fixture | Consumers | Authored/default timestep |
@@ -229,6 +229,7 @@ with the c_samples and shipped in the SDK/wheel sample payload:
 | `empty_dynamic_boxes_cpu.usda` | CPU population add, runtime-write spawn, and population churn | CPU dynamics + MBP overlay; timestep remains unauthored, default 60 Hz. |
 | `simple_physics_scene.usda` | requested-GPU teleport | No `physxScene:timeStepsPerSecond`; schema default 60 Hz. |
 | `simple_physics_scene_cpu.usda` | CPU teleport and drain | CPU dynamics + MBP overlay; timestep remains unauthored, default 60 Hz. |
+| `simple_physics_scene_gpu.usda` | requested-GPU drain | DirectGPU dynamics + GPU broadphase overlay; timestep remains unauthored, default 60 Hz. |
 
 WriteScaling uses no file fixture. Its generated stage explicitly authors
 `physxScene:timeStepsPerSecond = 240` and verifies CPU dynamics plus MBP on the
@@ -240,7 +241,7 @@ realized-device proof. A warning callback scoped across attachment and warm-up
 recognizes known CPU-fallback and GPU contact-capacity messages. Either warning
 fails the requested-GPU Authoring row; silence in that window is only negative
 fallback and capacity evidence because ovphysx has no realized-device query.
-This pass/fail rule applies to all six hidden GPU diagnostics. Their frozen
+This pass/fail rule applies to all ten hidden GPU diagnostics. Their frozen
 names and the CPU KPI contract are unchanged, and the rows are neither
 baselined nor compared with CPU.
 
@@ -338,7 +339,7 @@ ratio comparisons with persistent-query, all-scope-seal benchmarks.
 ### ContactReport measurement policy and fixture
 
 ContactReport is a separate two-row hidden contract. It does not change the
-eighteen-row L1B inventory. Both rows are lower-is-better absolute
+twenty-two-row L1B inventory. Both rows are lower-is-better absolute
 latencies; the CPU registration is emitted unchanged and the GPU harness emits
 `ContactReport.net_force_512_read_gpu_GPU`.
 
@@ -434,6 +435,13 @@ truncate or interleave each other's output.
 
 `--filter=` syntax matches the shared harness and is intentionally
 not reduced.
+
+The Linux-only `--contact-affinity-fds=<notify:release>` runner protocol is
+restricted to the single hidden DirectGPU Contact row with default worker
+counts. `R`/`A` surrounds external placement after the full unrecorded warmup;
+`E`/`A` allows final validation after measured runs and before statistics or
+teardown. Each acknowledgement is bounded to thirty seconds. The harness
+does not choose or set affinity; see the ContactReport section of `README.md`.
 
 Two consequences of that catch everyone once, because both fail as an empty
 table rather than an error:

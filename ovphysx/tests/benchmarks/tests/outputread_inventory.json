@@ -144,6 +144,34 @@
             "purpose": "Articulation read at DOF granularity."
         },
         {
+            "name": "OutputRead.readonly_arti_one_joint_8192_cpu",
+            "device": "cpu",
+            "hidden": false,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "The DOF-granularity read selected to one joint of one environment: what a selected read pays for the articulation it reads."
+        },
+        {
+            "name": "OutputRead.readonly_arti_one_joint_8192_gpu",
+            "device": "gpu",
+            "hidden": true,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "The DOF-granularity read selected to one joint of one environment: on DirectGPU it fetches only that articulation's DOF state."
+        },
+        {
+            "name": "OutputRead.readonly_arti_one_joint_per_env_8192_cpu",
+            "device": "cpu",
+            "hidden": false,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "The DOF-granularity read selected to one joint in every environment: a selection over every articulation."
+        },
+        {
+            "name": "OutputRead.readonly_arti_one_joint_per_env_8192_gpu",
+            "device": "gpu",
+            "hidden": true,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "The DOF-granularity read selected to one joint in every environment: it packs its records but fetches the whole view."
+        },
+        {
             "name": "OutputRead.tensorbinding_arti_dof_8192_cpu",
             "device": "cpu",
             "hidden": false,

@@ -180,7 +180,7 @@ bool omni::physx::updateNewtonGravityEnabled(AttachedStage& attachedStage, Objec
             omni::physics::parse::KnownTokens tok;
             if (source)
                 tok.intern(*source);
-            updateGravityMagnitude(attachedStage, objectId, tok.gravityMagnitude, timeCode);
+            updateGravityMagnitude(attachedStage, objectId, tok.physicsGravityMagnitude, timeCode);
         }
     }
     return true;

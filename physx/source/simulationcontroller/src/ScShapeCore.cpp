@@ -67,24 +67,10 @@ void GeometryUnion::set(const PxGeometry& g)
 		}
 		break;
 
-		case PxGeometryType::ePARTICLESYSTEM:
-		{
-			reinterpret_cast<PxParticleSystemGeometry&>(mGeometry) = static_cast<const PxParticleSystemGeometry&>(g);
-			reinterpret_cast<PxParticleSystemGeometryLL&>(mGeometry).materialsLL = MaterialIndicesStruct();
-		}
-		break;
-
 		case PxGeometryType::eTRIANGLEMESH:
 		{
 			reinterpret_cast<PxTriangleMeshGeometry&>(mGeometry) = static_cast<const PxTriangleMeshGeometry&>(g);
 			reinterpret_cast<PxTriangleMeshGeometryLL&>(mGeometry).materialsLL = MaterialIndicesStruct();
-		}
-		break;
-
-		case PxGeometryType::eTETRAHEDRONMESH:
-		{
-			reinterpret_cast<PxTetrahedronMeshGeometry&>(mGeometry) = static_cast<const PxTetrahedronMeshGeometry&>(g);
-			reinterpret_cast<PxTetrahedronMeshGeometryLL&>(mGeometry).materialsLL = MaterialIndicesStruct();
 		}
 		break;
 
@@ -101,6 +87,24 @@ void GeometryUnion::set(const PxGeometry& g)
 		}
 		break;
 
+#if PX_SUPPORT_GPU_PHYSX
+		case PxGeometryType::ePARTICLESYSTEM:
+		{
+			reinterpret_cast<PxParticleSystemGeometry&>(mGeometry) = static_cast<const PxParticleSystemGeometry&>(g);
+			reinterpret_cast<PxParticleSystemGeometryLL&>(mGeometry).materialsLL = MaterialIndicesStruct();
+		}
+		break;
+
+		case PxGeometryType::eTETRAHEDRONMESH:
+		{
+			reinterpret_cast<PxTetrahedronMeshGeometry&>(mGeometry) = static_cast<const PxTetrahedronMeshGeometry&>(g);
+			reinterpret_cast<PxTetrahedronMeshGeometryLL&>(mGeometry).materialsLL = MaterialIndicesStruct();
+		}
+		break;
+#else
+		case PxGeometryType::ePARTICLESYSTEM:
+		case PxGeometryType::eTETRAHEDRONMESH:
+#endif
 		case PxGeometryType::eGEOMETRY_COUNT:
 		case PxGeometryType::eINVALID:
 			PX_ALWAYS_ASSERT_MESSAGE("geometry type not handled");
@@ -180,10 +184,12 @@ static PX_FORCE_INLINE const MaterialIndicesStruct* getMaterials(const GeometryU
 		return &gu.get<PxTriangleMeshGeometryLL>().materialsLL;
 	else if(type == PxGeometryType::eHEIGHTFIELD)
 		return &gu.get<PxHeightFieldGeometryLL>().materialsLL;
+#if PX_SUPPORT_GPU_PHYSX
 	else if(type == PxGeometryType::eTETRAHEDRONMESH)
 		return &gu.get<PxTetrahedronMeshGeometryLL>().materialsLL;
 	else if(type == PxGeometryType::ePARTICLESYSTEM)
 		return &gu.get<PxParticleSystemGeometryLL>().materialsLL;
+#endif
 	else
 		return NULL;
 }

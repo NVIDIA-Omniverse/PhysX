@@ -15,6 +15,7 @@ from pathlib import Path
 
 import numpy as np
 import ovstage
+from ovphysx.population import physics_population_descs
 
 import ovphysx
 from ovphysx.samples.python_samples.schema_support import physx_schema_paths
@@ -40,9 +41,8 @@ def attach_scene(physx, usd_path):
         _physx_schemas_registered = True
     stage = ovstage.Stage("ovphysx-kinematic-support-sample")
     try:
-        ovstage.population.open_usd(
-            stage, str(usd_path), ordinal=1, domains=ovstage.PopulationDomain.ALL
-        )
+        ovstage.population.open_usd_with_desc(
+            stage, str(usd_path), ordinal=1, time=ovstage.population.DEFAULT_TIME, descs=physics_population_descs(rendering=True))
         stage.advance_write_floor(ordinal=1).wait()
         physx.wait_task(physx.attach_ovstage(stage, read_ordinal=1))
         return stage

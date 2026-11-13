@@ -9,6 +9,7 @@
 set(PARSE_INCLUDE_DIR "${OVRUNTIME_ROOT_DIR}/include")
 
 set(PARSE_HEADERS
+    ${PARSE_INCLUDE_DIR}/omni/physics/parse/CacheArchive.h
     ${PARSE_INCLUDE_DIR}/omni/physics/parse/Handles.h
     ${PARSE_INCLUDE_DIR}/omni/physics/parse/Math.h
     ${PARSE_INCLUDE_DIR}/omni/physics/parse/Descriptors.h
@@ -19,6 +20,8 @@ set(PARSE_HEADERS
     ${PARSE_INCLUDE_DIR}/omni/physics/parse/ParseContext.h
     ${PARSE_INCLUDE_DIR}/omni/physics/parse/ParseApi.h
     ${PARSE_INCLUDE_DIR}/omni/physics/parse/KnownTokens.h
+    ${PARSE_INCLUDE_DIR}/omni/physics/parse/KnownTokenNames.inl
+    ${PARSE_INCLUDE_DIR}/omni/physics/parse/KnownTokenOtherNames.inl
     ${PARSE_INCLUDE_DIR}/omni/physics/parse/CustomTokens.h
     ${PARSE_INCLUDE_DIR}/omni/physics/parse/Allocator.h
     ${PARSE_INCLUDE_DIR}/omni/physics/parse/ScannedStage.h
@@ -37,6 +40,7 @@ source_group(include FILES ${PARSE_HEADERS})
 set(PARSE_SOURCE
     ${CMAKE_CURRENT_SOURCE_DIR}/KnownTokens.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/CustomTokens.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/CacheArchive.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ParseContext.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ParseMaterial.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ParseBody.cpp

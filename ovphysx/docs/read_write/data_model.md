@@ -11,7 +11,7 @@ required to *interpret* the values a read or write exchanges.
 A read or write returns its data as **groups**, with one attribute per group. Groups can be
 partitioned by scene and, for inverse dynamics, by cohort. Every group carries the numeric column
 and the associated prims. A **read** group (`ovstage_read_group_t`) also identifies the attribute
-and its USD geometric role:
+and its USD geometric role; its one column, `columns[0]`, carries the values, attribute and role:
 
 - **column**: the values (`tensors`).
 - **prims**: the objects associated with the API call (`prim_list`), row *i* ↔ prim *i*.
@@ -22,8 +22,12 @@ The column has one row per object, in one of two shapes:
 
 - **Fixed group** — rectangular: `N` objects give `N` rows, each row the value (a position is 3
   numbers, an orientation 4).
-- **Array group** — each object's value is a list, and the lengths differ (e.g. a joint's number of
-  DOFs), so it can't be rectangular: you get **one array per object**.
+- **Array group** — each object's value is a list, and the lengths differ (e.g. a deformable body's
+  number of points), so it can't be rectangular: you get **one array per object**.
+
+An articulation joint is the exception to "one row per object": its group is fixed with one row per
+DOF, and a joint's path repeats once per axis in the prim list
+([Articulation joints](readable.md)).
 
 A read group indicates the shape with `is_array`. A **write** group (`ovstage_map_group_t`) has no
 `attribute`, `semantic`, or `is_array` field: each fetch reports the group's `attribute_index` into
@@ -80,6 +84,13 @@ scale `(-2, -3, -4)`. That pair reconstructs the original matrix; pairing the
 read orientation with the authored `(-2, 3, 4)` does not. Quaternions `q` and
 `-q` represent the same rotation.
 
+ovphysx stores that signed scale with each body when the body is created, and
+the read API returns it as [`worldScale`](readable.md#rigid-bodies). Reading
+`position`, `orientation` and `worldScale` together reconstructs the body's
+world matrix without reading the stage; in the example above `worldScale` is
+`(-2, -3, -4)`. It is the scale the body was created with. PhysX simulates no
+scale, so it does not change while the body exists.
+
 Orientation writes use this same physics frame. Decompose a desired world
 transform with the same rule before writing its rotation. In the example above,
 writing the authored quaternion back does not restore the authored transform.
@@ -95,7 +106,7 @@ do not apply this sign conversion to those arrays.
 ## Articulation inverse dynamics cohorts
 
 The whole-articulation inverse dynamics columns (`jacobian`,
-`jacobianShape`, `massMatrix`, `coriolisForce`, `gravityForce`, `centroidalMomentum`) are a special case
+`massMatrix`, `coriolisForce`, `gravityForce`, `centroidalMomentum`) are a special case
 as their size can be quite large. In order to be memory efficient, the notion of **cohort** has
 been introduced. A **cohort** is a set of structurally identical articulations: the same fixed or
 floating base type, joint types and names, DOF parentage, and link leaf names.
@@ -106,11 +117,11 @@ The cohort can be identified by its prim list; the
 group *index* is not promised stable across reads. Every other column has one fixed shape for the
 whole read, so it needs no cohorts.
 
-**Layout.** Matrices are row-major flattened. `massMatrix` is square (`M = numDofs + (fixedBase ? 0 :
-6)`), so `M` is the square root of the lane count; `coriolisForce` and `gravityForce` are length `M`;
-`centroidalMomentum` has six rows, so its column count is `lanes / 6`, and its last column is the
-bias rather than a coordinate. `jacobian`'s two dimensions both vary, so they are published in
-`jacobianShape` as `(rows, cols)`.
+**Layout.** Unlike every other column, these carry each row's dimensions as tensor axes, with
+`dtype.lanes` 1, row-major. With `N` the cohort's rows and `M = numDofs + (fixedBase ? 0 : 6)`:
+`jacobian` is `[N, R, C]`, `massMatrix` `[N, M, M]`, `coriolisForce` and `gravityForce` `[N, M]`, and
+`centroidalMomentum` `[N, 6, numDofs + 7]`, whose last column is the bias rather than a coordinate.
+The shape is the whole description: there is no width limit and no companion column.
 
 **Sign convention.** Generalized coordinates follow each USD joint's authored direction: positive when
 `body0` is the articulation parent, negative when `body1` is. With `S_dof` the diagonal matrix of

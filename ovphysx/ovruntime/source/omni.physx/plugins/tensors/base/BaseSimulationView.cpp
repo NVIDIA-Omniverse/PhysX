@@ -5,6 +5,9 @@
 // @covers AC-1 AC-2 AC-3
 
 /**
+ * @implements REQ-READ-CCT-001
+ * @covers AC-3
+ *
  * @implements REQ-REPLICATE-001
  * @covers AC-7
  *
@@ -43,12 +46,20 @@
  *
  * @implements REQ-READ-SDF-001
  * @covers AC-1 AC-6 AC-7
+ *
+ * @implements REQ-TENSOR-CONTACT-005
+ * @covers AC-1
+ *
+ * @implements REQ-READ-ATTRS-001
+ * @covers AC-30
  */
 
 #include "tensors/base/BaseSimulationView.h"
+#include "tensors/base/SupersetRigidEntries.h"
 
 #include "tensors/base/BasePointInstancerView.h"
 #include "tensors/base/PathPatternMatcher.h"
+#include "tensors/base/SupersetRigidEntries.h"
 #include "tensors/base/BaseArticulationView.h"
 #include "tensors/base/BaseRigidBodyView.h"
 #include "tensors/base/BaseSdfShapeView.h"
@@ -89,9 +100,10 @@
 #include <private/omni/physx/IPhysxPrivate.h>
 
 #include <PxPhysicsAPI.h>
+#include <characterkinematic/PxController.h>
 
 #include <omni/physx/IPhysxSimulation.h>
-#include <omni/physx/IPhysxJoint.h>
+#include <omni/physx/NativeJointState.h>
 #include <omni/physx/IPhysxReplicator.h>
 #include <omni/physx/PhysxTokens.h>
 
@@ -622,6 +634,20 @@ void BaseSimulationView::onPhysXObjectDeletedCallback(const omni::physx::Physics
             {
                 CARB_LOG_WARN(
                     "prim '%s' was deleted while being used by a link in a tensor view class. The physics.tensors simulationView was invalidated.",
+                    event.path);
+                sim->invalidate();
+            }
+        }
+        if (type == ePTCct)
+        {
+            // A controller's record holds the PxController, but a rigid-body view holds its kinematic proxy
+            // actor, which is released with it. The notification precedes the release, so the proxy is
+            // still reachable here.
+            PxController* controller = static_cast<PxController*>(event.nativeObject);
+            if (controller && sim->hasRigidBody(controller->getActor()))
+            {
+                CARB_LOG_WARN(
+                    "prim '%s' was deleted while being used by a tensor view class. The physics.tensors simulationView was invalidated.",
                     event.path);
                 sim->invalidate();
             }
@@ -1266,6 +1292,7 @@ void BaseSimulationView::processRigidContactViewEntries(const std::vector<std::s
     // pairs sensors with filters positionally — so leaving duplicates
     // would silently pair a sensor with the wrong filter.
     std::unordered_set<omni::physics::parse::ObjectKey, omni::physics::parse::ObjectKey::Hash> seenSensorKeys;
+    size_t firstUnequalFilters = 0;
     for (size_t i = 0; i < patterns.size(); ++i)
     {
         size_t currentSize = entries.size();
@@ -1280,14 +1307,18 @@ void BaseSimulationView::processRigidContactViewEntries(const std::vector<std::s
                 CARB_LOG_ERROR("%s", filterPatterns[i][j].c_str());
             }
         }
-        filterPatternSize = uint32_t(filterPatterns[i].size());
-        if (i > 0 && filterPatterns[i].size() != filterPatterns[i - 1].size())
-        {
-            CARB_LOG_ERROR(
-                "Number of all filter patterns for sensors should be equal. Sensor %s has %d filters while sensor %s has %d filters\n",
-                patterns[i].c_str(), int(filterPatterns[i].size()), patterns[i - 1].c_str(),
-                int(filterPatterns[i - 1].size()));
-        }
+        // Filter indices are per sensor, so the stride must fit the longest list.
+        filterPatternSize = std::max(filterPatternSize, uint32_t(filterPatterns[i].size()));
+        if (i > 0 && firstUnequalFilters == 0 && filterPatterns[i].size() != filterPatterns[i - 1].size())
+            firstUnequalFilters = i;
+    }
+    if (firstUnequalFilters > 0)
+    {
+        const size_t i = firstUnequalFilters;
+        CARB_LOG_WARN("Sensor %s has %d filters while sensor %s has %d filters. The filter stride is the longest "
+                      "list (%u) and shorter rows are zero padded\n",
+                      patterns[i].c_str(), int(filterPatterns[i].size()), patterns[i - 1].c_str(),
+                      int(filterPatterns[i - 1].size()), filterPatternSize);
     }
 }
 void BaseSimulationView::findMatchingRigidContactSensors(const std::string& pattern,
@@ -2061,6 +2092,9 @@ bool BaseSimulationView::getRigidBodyAtPath(omni::physics::parse::ObjectKey key,
     entryRet.type = type;
     entryRet.path = path;
     entryRet.subspace = findSubspaceForPath(entryRet.path);
+    entryRet.orientationFixup = bodyOrientationFixup(mAttachedStage, body);
+
+    entryRet.worldScale = bodyWorldScale(mAttachedStage, body);
 
     // shapes
     PxU32 numShapes = body->getNbShapes();
@@ -2098,7 +2132,7 @@ bool BaseSimulationView::getVolumeDeformableBodyAtPath(omni::physics::parse::Obj
     {
         tok.intern(*src);
     }
-    const bool hasDeformableBodyApi = src && src->hasSchema(key, tok.omniphysicsDeformableBodyAPI);
+    const bool hasDeformableBodyApi = src && src->hasSchema(key, tok.omniPhysicsDeformableBodyAPI);
     if (!hasDeformableBodyApi)
     {
         CARB_LOG_WARN("Volume deformable body at '%s' requires OmniPhysicsDeformableBodyAPI", path.c_str());
@@ -2240,7 +2274,7 @@ bool BaseSimulationView::getSurfaceDeformableBodyAtPath(omni::physics::parse::Ob
     {
         tok.intern(*src);
     }
-    const bool hasDeformableBodyApi = src && src->hasSchema(key, tok.omniphysicsDeformableBodyAPI);
+    const bool hasDeformableBodyApi = src && src->hasSchema(key, tok.omniPhysicsDeformableBodyAPI);
     if (!hasDeformableBodyApi)
     {
         CARB_LOG_WARN("Surface deformable body at '%s' requires OmniPhysicsDeformableBodyAPI", path.c_str());

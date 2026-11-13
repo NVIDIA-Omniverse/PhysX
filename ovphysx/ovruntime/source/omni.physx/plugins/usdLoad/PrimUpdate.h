@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-PARSE-FEED-006
+ * @covers AC-7
+ */
+
 /**
  * @implements REQ-SIM-BODY-INPUT-001
  * @covers AC-2 AC-3 AC-5 AC-6
@@ -192,7 +196,7 @@ bool onSourceChange(AttachedStage& attachedStage, const omni::physics::parse::Ch
 void onSourceGroupComplete(AttachedStage& attachedStage);
 
 void processUpdates(AttachedStage& attachedStage, float currentTime);
-void flushBufferedChanges(AttachedStage& attachedStage, float currentTime);
+bool flushBufferedChanges(AttachedStage& attachedStage, float currentTime);
 void processChangeMap(AttachedStage& attachedStage, bool includeFlushChanges = false);
 
 } // namespace usdparser

@@ -22,7 +22,7 @@
 #include "ovphysx_companion/companion.h"
 #include "internal/sdk/ovphysxSDK.hpp"
 #include <omni/physx/IPhysx.h>
-#include <omni/physx/IPhysxStatistics.h>
+#include <omni/physx/NativeStatistics.h>
 #include <omni/physx/PhysXRuntime.h>
 #include <limits>
 #include <vector>
@@ -109,6 +109,8 @@ std::shared_ptr<Session> findSession(uint64_t handle)
 
 ovphysx_companion_status_t validate(const Session& session)
 {
+    // Attach and detach jobs publish the attachment under the registry lock.
+    std::shared_lock<std::shared_mutex> lock(g_instances_mutex);
     if (!session.instance->ovstage_attached || session.instance->attachHandle != session.attachment)
         return OVPHYSX_COMPANION_STALE;
     return OVPHYSX_COMPANION_OK;
@@ -149,20 +151,22 @@ ovphysx_companion_status_t sceneStatistics(uint64_t handle, const char* path, ui
         if (!retained)
             return OVPHYSX_COMPANION_NOT_FOUND;
         const Session& session = *retained;
+        CompanionOwnerLane owner;
+        if (!owner.tryAcquire(session.instance))
+            return OVPHYSX_COMPANION_BUSY;
         const ovphysx_companion_status_t status = validate(session);
         if (status != OVPHYSX_COMPANION_OK)
             return status;
         if (omni::physx::runtime::isRuntimeBusy(session.attachment))
             return OVPHYSX_COMPANION_BUSY;
         omni::physx::IPhysx * physics = omni::physx::runtime::tryGetPhysxInterface();
-        omni::physx::IPhysxStatistics * statistics = omni::physx::runtime::tryGetPhysxStatisticsInterface();
-        if (!physics || !statistics)
+        if (!physics)
             return OVPHYSX_COMPANION_UNAVAILABLE;
         const omni::physics::parse::ObjectKey key = physics->resolveObjectKey(session.attachment, path);
         if (!key.valid())
             return OVPHYSX_COMPANION_NOT_FOUND;
         omni::physx::PhysicsSceneStats counters;
-        if (!statistics->getPhysXSceneStatistics(session.attachment, key.handle, counters))
+        if (!omni::physx::getPhysXSceneStatistics(session.attachment, key.handle, counters))
             return OVPHYSX_COMPANION_ERROR;
         *output = {sizeof(*output), 1, {session.owner, session.attachment},
                    counters.nbDynamicRigids, counters.nbActiveDynamicRigids, counters.nbStaticRigids,
@@ -244,6 +248,54 @@ ovphysx_companion_status_t matchPoints(const float* source, uint32_t sourceCount
     catch (...) { return OVPHYSX_COMPANION_ERROR; }
 }
 } // namespace
+
+bool CompanionOwnerLane::tryAcquire(const std::shared_ptr<InstanceData>& instance)
+{
+    if (!instance || !instance->executor)
+        return true;
+    m_executor = instance->executor;
+    // A strict try: a lane this thread already holds is not free either.
+    m_hold = m_executor->tryAcquireIdleLane(ovphysx::InstanceExecutor::currentIdentity());
+    if (m_hold.held())
+        return true;
+    m_executor.reset();
+    return false;
+}
+
+bool CompanionOwnerLane::tryAcquireForAttachment(uint64_t attachment)
+{
+    if (!attachment)
+        return true;
+    std::shared_ptr<InstanceData> owner;
+    {
+        std::shared_lock<std::shared_mutex> lock(g_instances_mutex);
+        for (const std::pair<const uint64_t, std::shared_ptr<InstanceData>>& entry : g_instances)
+        {
+            if (entry.second && entry.second->attachHandle == attachment)
+            {
+                owner = entry.second;
+                break;
+            }
+        }
+    }
+    if (!owner)
+        return true;
+    if (!tryAcquire(owner))
+        return false;
+    // With the lane held no job of the owner runs, so its attachment is final. A detach
+    // that ran before the lane was taken retired this attachment; it then has no owner.
+    bool retired = false;
+    {
+        std::shared_lock<std::shared_mutex> lock(g_instances_mutex);
+        retired = owner->attachHandle != attachment;
+    }
+    if (retired)
+    {
+        m_hold.release();
+        m_executor.reset();
+    }
+    return true;
+}
 
 using namespace ovphysx::companion::sessions;
 extern "C" OVPHYSX_API ovphysx_companion_status_t ovphysx_companion_acquire(

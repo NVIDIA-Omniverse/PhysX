@@ -219,9 +219,10 @@ protected:
     static void SetUpTestSuite()
     {
         ovphysx_result_t create_result = ovphysx_create_instance(&s_handle);
-        bool cpuOnly = false;
+        ovphysx_config_value_t cpuOnly = {};
         if (create_result.status == OVPHYSX_API_SUCCESS &&
-            ovphysx_get_cpu_mode(&cpuOnly).status == OVPHYSX_API_SUCCESS && cpuOnly)
+            ovphysx_get_global_config(OVPHYSX_GLOBAL_CONFIG_CPU_ONLY, &cpuOnly).status == OVPHYSX_API_SUCCESS &&
+            cpuOnly.type == OVPHYSX_CONFIG_VALUE_BOOL && cpuOnly.value.bool_value)
         {
             s_skipReason = "particles require GPU";
             ovphysx_destroy_instance(s_handle);

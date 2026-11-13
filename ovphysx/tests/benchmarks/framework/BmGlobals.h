@@ -9,7 +9,7 @@
 // Adapted from omni.physx/tests/test.benchmarks/framework/BmGlobals.h.
 //
 // The class shape, registration mechanism (BmRegistrable / Register<>), the
-// matching-filter helpers, and the BmRecord / BmResult types are kept
+// matching-filter behavior, and the BmRecord / BmResult types are kept
 // identical so updates from omni.physx are easy to merge back. The one
 // deviation is BmRecord::executed, documented at its declaration below.
 // Upstream has no way to tell an unexecuted record from a measured one,

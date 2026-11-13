@@ -9,7 +9,11 @@ type: integration
 
 ## Coverage status
 
-Specification only - not implemented. See **Why not implemented** below.
+Partially automated: `PartialSealIncrementalScanCanRetryAfterSealingJointRelationships`
+in `ovphysx/tests/c_unittests/test_usd_loading.cpp` verifies that a real failed
+incremental scan produces a failed update task with its relationship-read cause
+and ordinal (AC-1). The controlled diagnostic-selection scenarios below are
+specification only; see **Why not implemented**.
 
 ## Scenario
 

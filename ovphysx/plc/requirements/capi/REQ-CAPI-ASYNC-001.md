@@ -36,12 +36,13 @@ and the simulation-operation wait behavior.
   If the budget expires while the operation remains pending, it returns
   `OVPHYSX_API_TIMEOUT`, reports the lowest pending operation, and leaves that
   operation unconsumed. Readiness observed by the final boundary check proceeds
-  to synchronous result finalization and reports the terminal result, even if
-  finalization extends total call duration beyond the readiness budget.
+  to outcome collection and reports the terminal result, even if
+  outcome collection extends total call duration beyond the readiness budget.
 - AC-5: A simulation-operation wait with `OVPHYSX_TIMEOUT_INFINITE` treats the
   sentinel literally as unbounded and returns only after the operation reaches
-  a terminal state. The pending simulation uses blocking
-  `fetchResults` directly only for this infinite-wait case.
+  a terminal state. The waiter may execute unstarted jobs under
+  REQ-CAPI-EXECUTOR-001 AC-6. A running step publishes completion only after
+  simulation finalization; the wait does not perform a second `fetchResults`.
 
 ## Test References
 
@@ -52,7 +53,7 @@ and the simulation-operation wait behavior.
 - ovphysx/include/ovphysx/ovphysx_types.h
 - ovphysx/include/ovphysx/ovphysx.h
 - ovphysx/include/ovphysx/experimental/ovphysx.hpp
-- ovphysx/src/include/internal/sdk/ovphysxAsyncWait.hpp
+- ovphysx/src/include/internal/sdk/InstanceExecutor.hpp
 - ovphysx/src/ovphysx/ovphysx.cpp
 - ovphysx/src/ovphysx/LogManager.cpp
 - ovphysx/src/ovphysx/PhysXWrapper.cpp

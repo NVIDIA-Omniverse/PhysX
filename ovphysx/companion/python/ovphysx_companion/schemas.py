@@ -135,16 +135,18 @@ def register_population_schemas(bundles, *, include_core=True):
 # @implements REQ-COMP-OVSTAGE-001
 # @covers AC-1
 def population_description(bundles):
-    """Populate resolved world transforms and explicitly select plugin parameters.
+    """Populate core physics and plugin parameters, with the RENDERING domain.
 
-    Use with ovstage.population.open_usd_with_desc (or the string counterpart).
-    ALL resolves nested transforms in OVStage 0.3; the PHYSICS domain alone
-    need not include external parameter columns or composed world transforms.
+    Use with ovstage.population.open_usd_with_desc (or the string counterpart),
+    as ``descs=[population_description(bundles)]``.
+    The physics description alone does not include external parameter columns.
     """
     _, schemas = _bundles(bundles, False)
     import ovstage
     from ovstage.population import Desc, Selector, PrimPredicate, PropertyPredicate
-    selectors = []
+    from ovphysx.population import physics_population_desc
+    core = physics_population_desc()
+    selectors = list(core.selectors)
     for schema in schemas:
         prim = (PrimPredicate.is_a_type(schema.identifier) if schema.kind == 'joint'
                 else PrimPredicate.has_applied_schema(schema.identifier))
@@ -157,4 +159,5 @@ def population_description(bundles):
                 'physics:localRot0', 'physics:localRot1', 'physics:jointEnabled',
                 'physics:collisionEnabled', 'physics:excludeFromArticulation',
                 'physics:breakForce', 'physics:breakTorque', 'physics:simulationOwner')))
-    return Desc(domains=ovstage.PopulationDomain.ALL, selectors=selectors)
+    return Desc(domains=ovstage.PopulationDomain.RENDERING, selectors=selectors,
+                stage_metadata_paths=core.stage_metadata_paths)

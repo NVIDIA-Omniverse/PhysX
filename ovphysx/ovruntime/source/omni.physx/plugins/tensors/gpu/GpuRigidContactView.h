@@ -52,6 +52,8 @@ public:
 
     ~GpuRigidContactView() override;
 
+    bool check() const override;
+
     bool getNetNormalContactForces(const TensorDesc* dstTensor, float dt) const override;
 
     bool getNetFrictionContactForces(const TensorDesc* dstTensor, float dt) const override;
@@ -148,6 +150,13 @@ public:
                            float dt) const override;
 
 private:
+    // Rebuilds and uploads the rigid-dynamic table when the scene's disable epoch moved, because a disable or
+    // enable frees or reassigns a sensor's island node. False when a lookup table failed to upload.
+    bool refreshReferentTables(const char* functionName) const;
+
+    // The rigid-dynamic table from the sensors' live island nodes. A disabled sensor owns no entry.
+    void collectRdContactIndices(std::vector<::physx::PxU32>& rdContactIndices) const;
+
     bool getNetForces(const TensorDesc* dstTensor,
                       float dt,
                       ForceComponent component,
@@ -164,13 +173,21 @@ private:
 
     GpuSimulationDataPtr mGpuSimData;
 
-    // O(1) map from physx GPU rigid dynamic index to referent index
-    ::physx::PxU32* mRdContactIndicesDev = nullptr;
+    // O(1) map from physx GPU rigid dynamic index to referent index, rebuilt by refreshReferentTables
+    mutable ::physx::PxU32* mRdContactIndicesDev = nullptr;
+    mutable ::physx::PxU32 mRdContactIndexCapacity = 0;
+    // GpuSimulationData::mRdDisableEpoch when the rigid-dynamic table was built
+    mutable uint64_t mRdDisableEpoch = 0;
 
     // O(1) map from physx GPU articulation link index to referent index
     ::physx::PxU32* mLinkContactIndicesDev = nullptr;
 
     GpuRigidContactFilterIdPair* mFilterLookupDev = nullptr;
+
+    mutable RigidContactReferentTables mReferentTables;
+
+    // False when a device table failed to upload: the table readers then return false instead of zeros.
+    bool mConstructed = false;
 
     // Scratch for getRawContactData's per-sensor bookkeeping: [0, numSensors) counts,
     // [numSensors, 2*numSensors) start indices. Kept contiguous and separate from the

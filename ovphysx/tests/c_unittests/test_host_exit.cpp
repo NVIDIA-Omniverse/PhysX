@@ -3,12 +3,13 @@
 
 /**
  * @implements REQ-CAPI-HOST-EXIT-001
- * @covers AC-1 AC-2 AC-3
+ * @covers AC-1 AC-2 AC-3 AC-4
  */
 
 #include <gtest/gtest.h>
 #include "ovphysx/ovphysx.h"
 #include "ovphysx/ovphysx_config.h"
+#include "ovphysxTestHelpers.h"
 #include "test_utilities.h"
 
 #include <cstdio>
@@ -111,4 +112,36 @@ TEST(HostExit, StageShutdownPreservesCleanExit)
 TEST(HostExit, RepeatedStageLifecyclesPreserveCleanExit)
 {
     checkHostExit(3, true);
+}
+
+// A host that exits without destroying its instance or shutting down: the instance's
+// worker is held with jobs queued, and nothing joins it at exit. Exit handlers that the
+// host registers after ovphysx started still run, and the exit code is kept.
+TEST(HostExit, LiveInstanceWithHeldWorkerExitsCleanly)
+{
+    GTEST_FLAG_SET(death_test_style, "threadsafe");
+    ASSERT_EXIT(
+        {
+            checkSuccess(ovphysx_initialize());
+            checkSuccess(ovphysx_set_global_config(
+                OVPHYSX_GLOBAL_CONFIG_CPU_ONLY, ovphysx_config_value_bool(true)));
+            checkSuccess(ovphysx_set_global_config(
+                OVPHYSX_GLOBAL_CONFIG_NUM_THREADS, ovphysx_config_value_int64(4)));
+            ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+            checkSuccess(ovphysx_create_instance(&handle));
+            if (!ovphysx_set_worker_hold_for_test_internal(handle, true))
+                std::_Exit(95);
+            for (int i = 0; i < 3; ++i)
+            {
+                if (ovphysx_submit_test_job_for_test_internal(handle, nullptr, 0).status != OVPHYSX_API_SUCCESS)
+                    std::_Exit(94);
+            }
+            // Registered after ovphysx started Carbonite, so it runs before Carbonite's
+            // own exit handler, which ends the process with the same code.
+            if (std::atexit(hostExitHandler) != 0)
+                std::_Exit(98);
+            std::fflush(stderr);
+            std::exit(23);
+        },
+        testing::ExitedWithCode(23), "OVPHYSX_HOST_EXIT_OK");
 }

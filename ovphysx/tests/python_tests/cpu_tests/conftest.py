@@ -50,31 +50,12 @@ def physx_sdk(_cpu_session_instance):
     """Provide the shared CPU-mode PhysX instance for each test.
 
     Teardown is resilient to prevent cascading failures from error-path tests.
+    A task failure the test left uncollected is reported once the instance is reset.
     """
+    from test_utils import reset_shared_instance
+
     yield _cpu_session_instance
-    try:
-        _cpu_session_instance.wait_all()
-    except RuntimeError:
-        pass
-    try:
-        from test_utils import destroy_ovstage_test_attachments
-
-        destroy_ovstage_test_attachments(_cpu_session_instance)
-    except Exception:
-        pass
-    try:
-        _cpu_session_instance.detach_ovstage()
-        _cpu_session_instance.wait_all()
-    except RuntimeError:
-        logging.getLogger(__name__).warning(
-            "physx_sdk teardown: detach_ovstage() failed -- instance may be degraded for subsequent tests"
-        )
-    try:
-        from test_utils import destroy_ovstage_test_attachments
-
-        destroy_ovstage_test_attachments(_cpu_session_instance)
-    except Exception:
-        pass
+    reset_shared_instance(_cpu_session_instance)
 
 
 @pytest.fixture(scope="function")

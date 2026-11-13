@@ -116,13 +116,16 @@ namespace physx
 	
 		PxU32*					boxProjectionRanks[3];
 
-		PxU32*					incrementalComparisons[3];
-		PxU32*					incrementalBlockComparisons[3];
+		// The prefix sums of the incremental SAP comparisons can exceed 32 bits (large teleports), so they are stored in two levels:
+		// a 64-bit base for each warp (32 projections) and a 32-bit offset within the warp for each projection.
+		PxU32*					incrementalComparisons[3];		// per projection, exclusive prefix within its warp
+		PxU64*					incrementalWarpComparisons[3];	// per warp, exclusive prefix over all projections
+		PxU64*					incrementalBlockComparisons[3];
 
 		PxU32*					aggReportBlock[2];
 		PxU32*					actorReportBlock[2];
 
-		PxU32					totalIncrementalComparisons[3];
+		PxU64					totalIncrementalComparisons[3];
 
 		PxU32					max_found_lost_pairs;
 		PxU32					max_found_lost_agg_pairs;

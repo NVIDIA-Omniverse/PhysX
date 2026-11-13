@@ -28,6 +28,12 @@
  *
  * @implements REQ-CAPI-CONFIG-001
  * @covers AC-9
+ *
+ * @implements REQ-CAPI-DIRECTGPU-DIAG-001
+ * @covers AC-2
+ *
+ * @implements REQ-CAPI-COMPILED-CACHE-001
+ * @covers AC-4
  */
 
 #include "CarboniteLoader/CarboniteLoader.hpp"
@@ -37,6 +43,7 @@
 #include "internal/sdk/ovphysxSDKSidecarLoader.hpp"
 #include <omni/physx/PhysXRuntime.h>
 
+#include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -639,18 +646,21 @@ bool CarboniteLoader::initialize()
         // ovphysx_set_cpu_mode().
         CARB_LOG_INFO("[CarboniteLoader] Startup: CUDA ordinal selection deferred to scene attachment");
 
-        // Log the host-set suppressReadback value at INFO so a host that expects
-        // DirectGPU but did not set it can see the misconfiguration.
+        // Log the suppressReadback value seen at bootstrap, at INFO. This is a pre-override snapshot:
+        // the bootstrap runs once per process, before per-instance create-config overrides (the
+        // documented DirectGPU opt-in) are applied, so it must not read as a final verdict. The
+        // effective mode is logged per instance after config is applied (see ovphysx.cpp).
         {
             const bool alreadySet = (settings->getItemType("/physics/suppressReadback") != carb::dictionary::ItemType::eCount);
             if (alreadySet)
             {
                 const bool currentValue = settings->getAsBool("/physics/suppressReadback");
-                CARB_LOG_INFO("[CarboniteLoader] /physics/suppressReadback=%s (host-set)", currentValue ? "true" : "false");
+                CARB_LOG_INFO("[CarboniteLoader] /physics/suppressReadback=%s at bootstrap (host-set)", currentValue ? "true" : "false");
             }
             else
             {
-                CARB_LOG_INFO("[CarboniteLoader] /physics/suppressReadback unset — DirectGPU disabled (default).");
+                CARB_LOG_INFO("[CarboniteLoader] /physics/suppressReadback not set at bootstrap; DirectGPU off "
+                              "unless a create-config override enables it (effective mode logged per instance).");
             }
         }
     }
@@ -724,6 +734,13 @@ std::string uniqueToken()
 void releaseProcessCacheDirLocked()
 {
     CarboniteLoaderState& loaderState = globalState().carboniteLoader;
+    // The datastore has stopped, so nothing uses the directory even if removal fails.
+    loaderState.processCacheDirInUse.store(false, std::memory_order_release);
+    {
+        // Nor the directory a configured datastore was built from: the next one records its own.
+        std::lock_guard<std::mutex> directoryGuard(loaderState.datastoreDirectoryMutex);
+        loaderState.datastoreDirectory.clear();
+    }
     if (loaderState.processCacheDir.empty())
         return;
     std::error_code ec;
@@ -755,7 +772,8 @@ void releaseProcessCacheDirAtExit()
 #if CARB_PLATFORM_WINDOWS
     // Windows dependency shutdown belongs to Carbonite's ExitProcess hook.
     // Releasing the framework here removes that hook and exposes OVStage/Fabric
-    // static-destructor crashes. The framework release hook removes the cache.
+    // static-destructor crashes. The packaged exit path bypasses release hooks;
+    // private cache directories can remain for host temporary-directory cleanup.
     return;
 #else
     CarboniteLoaderState& loaderState = globalState().carboniteLoader;
@@ -809,6 +827,76 @@ bool canWriteInto(const std::filesystem::path& dir)
 #endif
 }
 
+#ifndef _WIN32
+// lstat of a directory named without trailing separators, which would make lstat follow a
+// symlink and parent_path() name the directory itself.
+bool lstatDirectory(std::string& path, struct stat& status)
+{
+    while (path.size() > 1 && path.back() == '/')
+        path.pop_back();
+    return ::lstat(path.c_str(), &status) == 0;
+}
+#endif
+
+// Whether no other user can change what the datastore reads from the directory. On POSIX:
+// the path names the directory itself, not a symlink, with the given device and inode; this
+// user owns it, and its group and others have no access at all, so nothing below it is within
+// their reach whatever modes the datastore gives its files; and every directory above it is
+// owned by this user or root and writable by no one else unless it is sticky, as /tmp is, so
+// no other user can put another directory in its place. Windows has no such check; the
+// documented rule applies there.
+bool isPrivateDirectory(std::string path, uint64_t device, uint64_t inode)
+{
+#ifndef _WIN32
+    const uid_t user = ::geteuid();
+    struct stat status;
+    if (!lstatDirectory(path, status) || !S_ISDIR(status.st_mode) || status.st_uid != user ||
+        (status.st_mode & (S_IRWXG | S_IRWXO)) != 0 || uint64_t(status.st_dev) != device ||
+        uint64_t(status.st_ino) != inode)
+        return false;
+    // Resolved, so that the walk checks the directories that actually hold it.
+    const std::filesystem::path parent = std::filesystem::path(path).parent_path();
+    char* resolved = ::realpath(parent.empty() ? "." : parent.c_str(), nullptr);
+    if (!resolved)
+        return false;
+    std::filesystem::path ancestor(resolved);
+    std::free(resolved);
+    for (;;)
+    {
+        if (::stat(ancestor.c_str(), &status) != 0 || (status.st_uid != user && status.st_uid != 0) ||
+            ((status.st_mode & (S_IWGRP | S_IWOTH)) != 0 && (status.st_mode & S_ISVTX) == 0))
+            return false;
+        if (ancestor == ancestor.parent_path())
+            return true;
+        ancestor = ancestor.parent_path();
+    }
+#else
+    (void)path;
+    (void)device;
+    (void)inode;
+    return true;
+#endif
+}
+
+// Creates the missing directories of the path, each closed to group and others whatever the
+// umask: AUTOMATIC trusts only a directory no other user can reach into or replace.
+void createPrivateDirectories(const std::filesystem::path& dir)
+{
+#ifndef _WIN32
+    std::filesystem::path partial;
+    for (const std::filesystem::path& part : dir)
+    {
+        partial /= part;
+        // The umask can only take bits away from 0700.
+        if (::mkdir(partial.c_str(), S_IRWXU) != 0 && errno != EEXIST)
+            return;
+    }
+#else
+    std::error_code ec;
+    std::filesystem::create_directories(dir, ec);
+#endif
+}
+
 // Fresh, process-private cache dir under the OS temp dir. The name is unpredictable and the
 // directory is never adopted from an existing entry, so another local user cannot pre-create or
 // hijack it in a shared temp root.
@@ -856,10 +944,29 @@ void configureUjitsoLocalCache(carb::settings::ISettings* settings)
     // omni.physx.cooking loads before omni.physx seeds this default.
     settings->setDefaultBool(omni::physx::kSettingUjitsoCollisionCooking, true);
 
-    // Nothing to cache to: the app opted out of the local datastore, or out of cooking.
-    if (!settings->getAsBool("/UJITSO/datastore/allowLocalDataStore") ||
-        !settings->getAsBool(omni::physx::kSettingUjitsoCollisionCooking))
+    // Nothing to cache to: the app opted out of the local datastore.
+    if (!settings->getAsBool("/UJITSO/datastore/allowLocalDataStore"))
         return;
+
+    // Nor to cook into: the app opted out of cooking, so no directory is set up. The
+    // datastore then serves only an explicitly enabled compiled stage cache, in the
+    // directory the app configured. Without one it would use carb's app-dir default,
+    // so local caching stays off and that cache reports itself unavailable. A host
+    // that owns the framework owns its datastore settings, which every UJITSO client
+    // in the process shares: leave them, and make only ovphysx's cache unavailable.
+    if (!settings->getAsBool(omni::physx::kSettingUjitsoCollisionCooking))
+    {
+        const char* configured = settings->getStringBuffer("/UJITSO/datastore/localCachePath");
+        if (!configured || !*configured)
+        {
+            CarboniteLoaderState& loaderState = globalState().carboniteLoader;
+            if (loaderState.ownsFramework)
+                settings->setBool("/UJITSO/datastore/allowLocalDataStore", false);
+            else
+                loaderState.compiledCacheUnavailable.store(true, std::memory_order_release);
+        }
+        return;
+    }
 
     // The app configured a dir: create it and confirm it is writable. If it is not, fall through
     // to the process-private cache. Leaving the unusable path in place would make carb.datastore
@@ -870,7 +977,8 @@ void configureUjitsoLocalCache(carb::settings::ISettings* settings)
         // u8path: the app passes UTF-8 (Python str), which is not the Windows narrow encoding.
         const std::filesystem::path dir = std::filesystem::u8path(configured);
         std::error_code ec;
-        std::filesystem::create_directories(dir, ec);
+        // The compiled stage cache trusts what it reads here.
+        createPrivateDirectories(dir);
         if (std::filesystem::is_directory(dir, ec) && canWriteInto(dir))
             return;
         CARB_LOG_WARN("[CarboniteLoader] Configured UJITSO cooked-collider cache dir '%s' is not "
@@ -892,10 +1000,59 @@ void configureUjitsoLocalCache(carb::settings::ISettings* settings)
     // u8string: Carbonite setting strings are UTF-8, while path::string() would convert through
     // the Windows narrow code page and mangle a non-ASCII temp path.
     const std::string dir = loaderState.processCacheDir.u8string();
+    loaderState.processCacheDirInUse.store(true, std::memory_order_release);
     settings->setString("/UJITSO/datastore/localCachePath", dir.c_str());
     CARB_LOG_INFO("[CarboniteLoader] No cooked-collider cache directory configured "
                   "(PhysXConfig.cooked_collider_cache_dir); using the process-private cache '%s'. "
                   "Cooked colliders are discarded at shutdown.", dir.c_str());
+}
+
+// Records the directory carb.ujitso.default just built its datastore from, for
+// usesConfiguredCookedColliderCache(): an application-configured one while collision cooking
+// and the local datastore are on. Null settings record none.
+void recordDatastoreDirectory(carb::settings::ISettings* settings)
+{
+    CarboniteLoaderState& loaderState = globalState().carboniteLoader;
+    std::string directory;
+    uint64_t device = 0;
+    uint64_t inode = 0;
+    const char* configured = settings ? settings->getStringBuffer("/UJITSO/datastore/localCachePath") : nullptr;
+    if (configured && *configured && !loaderState.processCacheDirInUse.load(std::memory_order_acquire) &&
+        settings->getAsBool("/UJITSO/datastore/allowLocalDataStore") &&
+        settings->getAsBool(omni::physx::kSettingUjitsoCollisionCooking))
+    {
+        directory = configured;
+#ifndef _WIN32
+        std::string path = directory;
+        struct stat status;
+        if (lstatDirectory(path, status))
+        {
+            device = uint64_t(status.st_dev);
+            inode = uint64_t(status.st_ino);
+        }
+        else
+            directory.clear();
+#endif
+    }
+    std::lock_guard<std::mutex> guard(loaderState.datastoreDirectoryMutex);
+    loaderState.datastoreDirectory = std::move(directory);
+    loaderState.datastoreDirectoryDevice = device;
+    loaderState.datastoreDirectoryInode = inode;
+}
+
+// Whether a plugin is registered under the name. getPluginDesc would warn about a name it
+// does not know, which startup must not do for a plugin that is not loaded yet.
+bool pluginRegistered(carb::Framework* framework, const char* name)
+{
+    std::vector<carb::PluginDesc> plugins(framework->getPluginCount());
+    if (!plugins.empty())
+        framework->getPlugins(plugins.data());
+    for (const carb::PluginDesc& plugin : plugins)
+    {
+        if (plugin.impl.name && std::strcmp(plugin.impl.name, name) == 0)
+            return true;
+    }
+    return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -1321,8 +1478,8 @@ void disableProfilerBackend()
     }
 
     // Order matters for the trace backend: CARB_PROFILE_SHUTDOWN() is what makes
-    // carb.profiler-cpu write its JSON, so the file appears at this point and not
-    // before. Deregistering first would drop the interface pointer that writes it.
+    // carb.profiler-cpu finalize its JSON; the file may already exist.
+    // Deregistering first would drop the interface pointer that finalizes it.
     CARB_PROFILE_SHUTDOWN();
     carb::profiler::deregisterProfilerForClient();
     loaderState.profilerBackendActive = false;
@@ -1347,6 +1504,63 @@ BoundProfilerState boundProfilerState()
     state.outputPathCaptured = loaderState.profilerOutputPathCaptured;
     state.outputPath = loaderState.profilerBoundOutputPath;
     return state;
+}
+
+// @implements REQ-CAPI-COMPILED-CACHE-001
+// @covers AC-4
+bool usesConfiguredCookedColliderCache()
+{
+    CarboniteLoaderState& loaderState = globalState().carboniteLoader;
+    // An atomic rather than processCacheDir: attach must not take bootstrapMutex.
+    if (loaderState.processCacheDirInUse.load(std::memory_order_acquire))
+        return false;
+    carb::Framework* framework = carb::getFramework();
+    carb::settings::ISettings* settings =
+        framework ? framework->tryAcquireInterface<carb::settings::ISettings>() : nullptr;
+    // An application that turned UJITSO collision cooking off opted out of this datastore.
+    if (!settings || !settings->getAsBool("/UJITSO/datastore/allowLocalDataStore") ||
+        !settings->getAsBool(omni::physx::kSettingUjitsoCollisionCooking))
+        return false;
+    const char* configured = settings->getStringBuffer("/UJITSO/datastore/localCachePath");
+    if (!configured || configured[0] == '\0')
+        return false;
+    std::string directory;
+    uint64_t device = 0;
+    uint64_t inode = 0;
+    {
+        std::lock_guard<std::mutex> guard(loaderState.datastoreDirectoryMutex);
+        directory = loaderState.datastoreDirectory;
+        device = loaderState.datastoreDirectoryDevice;
+        inode = loaderState.datastoreDirectoryInode;
+    }
+    // The datastore reads the directory it was built from, which a later instance's
+    // configuration or a host's setting does not change.
+    if (directory != configured)
+    {
+        CARB_LOG_INFO(
+            "[ovphysx] attach_ovstage: AUTOMATIC leaves the compiled stage cache off, because the "
+            "datastore was not built from the cooked-collider cache directory '%s': it keeps the "
+            "directory it started with until it stops; READ_WRITE uses that datastore anyway.",
+            configured);
+        return false;
+    }
+    // A hit deserializes PhysX binary data from the directory, which a checksum guards
+    // against corruption but nothing authenticates: use only one no other user can change.
+    if (isPrivateDirectory(directory, device, inode))
+        return true;
+    CARB_LOG_INFO(
+        "[ovphysx] attach_ovstage: AUTOMATIC leaves the compiled stage cache off, because the "
+        "cooked-collider cache directory '%s' is not private: it must be the directory it was when "
+        "the datastore started, not a symlink, owned by this user and closed to its group and "
+        "others, and no directory above it may let another user replace it; READ_WRITE uses it "
+        "anyway.",
+        configured);
+    return false;
+}
+
+bool compiledStageCacheUnavailable()
+{
+    return globalState().carboniteLoader.compiledCacheUnavailable.load(std::memory_order_acquire);
 }
 
 // Load the Carbonite dependencies, then start the linked PhysX runtime.
@@ -1515,6 +1729,9 @@ bool CarboniteLoader::loadPhysxPlugins()
     // uncached, re-cooking every collider on every launch. Seed the local-only datastore
     // and collision-cooking settings, then load the UJITSO plugins before
     // omni.physx.cooking constructs its service (see configureUjitsoLocalCache).
+    // carb.ujitso.default builds its datastore as it starts; one a host already started
+    // was built from settings ovphysx did not configure.
+    const bool datastoreBuiltHere = !pluginRegistered(framework, "carb.ujitsodefault.plugin");
     if (auto* ujitsoSettings = framework->tryAcquireInterface<carb::settings::ISettings>())
         configureUjitsoLocalCache(ujitsoSettings);
 
@@ -1563,6 +1780,7 @@ bool CarboniteLoader::loadPhysxPlugins()
         }
         if (registryUp && defaultUp)
             CARB_LOG_INFO("[CarboniteLoader] UJITSO cooked-collider cache active (local, in-process)");
+        recordDatastoreDirectory(datastoreBuiltHere && defaultUp ? ujitsoSettings : nullptr);
     }
 
     static const char* const kRuntimeDependentPlugins[] = {

@@ -14,7 +14,11 @@ Follow and drone camera behavior consumes supported pose/velocity reads; camera 
 
 ## Acceptance Criteria
 
-- AC-1: **Read contract.** Camera controllers consume identified completed body pose/velocity data with explicit units/frame conversion and do not acquire raw actor pointers for ordinary follow behavior.
+- AC-1: **Read contract.** Camera controllers consume identified completed body
+  pose/velocity data with explicit units/frame conversion and do not acquire raw
+  actor pointers for ordinary follow behavior. After prior work completes, body
+  capture resolves the Stage native code owns from committed and pending
+  keepalives, so an uncollected attach receipt does not hide its dictionary.
 - AC-2: **Authoring.** Camera pose output uses the caller-selected destination and edit target through Python or host USD code; native simulation remains USD-free.
 - AC-3: **Restoration.** Disable, target deletion and stage close stop updates and restore captured camera opinions when the selected mode promises restoration.
 - AC-4: **Missing state.** Unavailable targets or stale frames produce a documented hold/reset/disable outcome and never follow another object because its key was reused.

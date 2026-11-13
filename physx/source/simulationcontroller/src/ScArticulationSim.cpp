@@ -206,7 +206,8 @@ void Sc::ArticulationSim::createLLStructure()
 	if(!mBodies.size())
 		return;
 
-	setupLinks(mLinks.size(), mLinks.begin());
+	setupLinks(mLinks.size(), mLinks.begin(),
+		(!mScene.isUsingGpuDynamics()) && (mScene.getSolverType() == PxSolverType::eTGS) && (mScene.getFlags() & PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS));
 
 	assignTendons(mSpatialTendons.size(), mSpatialTendons.begin());
 

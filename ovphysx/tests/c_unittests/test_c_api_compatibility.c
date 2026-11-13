@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-CAPI-OMNIPVD-CAPTURE-001
+// @covers AC-1
+
 // PARTIALLY DEPRECATED (tensor-binding-deprecation): Test 7 (TensorBinding API types) retires with the binding. The other C-API ABI checks stay.
 
 /*
@@ -9,6 +12,8 @@
  * @implements REQ-CAPI-OMNIPVD-LATE-001
  * @covers AC-1
  * @implements REQ-CAPI-BINDING-DEVICE-001
+ * @covers AC-1
+ * @implements REQ-CAPI-COMPILED-CACHE-001
  * @covers AC-1
  */
 
@@ -32,6 +37,7 @@
 #include <ovphysx/ovphysx.h>
 #include <ovphysx/ovphysx_config.h>
 #include <ovphysx/ovphysx_geometry_query.h>
+#include <ovphysx/ovphysx_utils.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,20 +56,22 @@ ASSERT_TASK_API(ovphysx_query_selection, ovphysx_instance_handle_t, ovphysx_quer
 ASSERT_TASK_API(ovphysx_query_contacts, ovphysx_instance_handle_t, const ovphysx_contact_sensor_selection_t*, uint32_t,
                 uint32_t, ovphysx_query_handle_t*, ovstage_query_result_t*);
 ASSERT_TASK_API(ovphysx_release_query, ovphysx_instance_handle_t, ovphysx_query_handle_t);
-ASSERT_TASK_API(ovphysx_read, ovphysx_instance_handle_t, ovphysx_query_handle_t, const ovx_string_or_token_t*, size_t,
-                ovphysx_read_handle_t*, ovphysx_read_result_t*);
+ASSERT_TASK_API(ovphysx_read, ovphysx_instance_handle_t, ovphysx_query_handle_t, const ovx_token_or_string_t*, size_t,
+                ovstage_cuda_sync_t, ovphysx_read_handle_t*, ovphysx_read_result_t*);
 ASSERT_TASK_API(ovphysx_fetch_read_next, ovphysx_instance_handle_t, ovphysx_read_handle_t, const ovstage_read_group_t**);
 ASSERT_TASK_API(ovphysx_release_group, ovphysx_instance_handle_t, ovphysx_read_handle_t, ovstage_read_group_id_t);
 ASSERT_TASK_API(ovphysx_release_read, ovphysx_instance_handle_t, ovphysx_read_handle_t);
-ASSERT_TASK_API(ovphysx_write, ovphysx_instance_handle_t, ovphysx_query_handle_t, const ovx_string_or_token_t*,
+ASSERT_TASK_API(ovphysx_write, ovphysx_instance_handle_t, ovphysx_query_handle_t, const ovx_token_or_string_t*,
                 size_t, ovphysx_write_handle_t*, ovphysx_write_result_t*);
 ASSERT_TASK_API(ovphysx_fetch_write_next, ovphysx_instance_handle_t, ovphysx_write_handle_t,
                 ovphysx_fetched_write_group_t*);
 ASSERT_TASK_API(ovphysx_commit_group, ovphysx_instance_handle_t, ovphysx_write_handle_t, const ovstage_map_group_t*,
                 ovstage_cuda_sync_t);
+ASSERT_TASK_API(ovphysx_commit_group_masked, ovphysx_instance_handle_t, ovphysx_write_handle_t,
+                const ovstage_map_group_t*, const DLTensor*, ovstage_cuda_sync_t);
 ASSERT_TASK_API(ovphysx_release_write, ovphysx_instance_handle_t, ovphysx_write_handle_t);
-ASSERT_TASK_API(
-    ovphysx_update_articulations_kinematic, ovphysx_instance_handle_t, ovphysx_query_handle_t, uint32_t);
+ASSERT_TASK_API(ovphysx_update_articulations_kinematic, ovphysx_instance_handle_t, ovphysx_query_handle_t, uint32_t,
+                ovstage_cuda_sync_t);
 ASSERT_TASK_API(ovphysx_evaluate_sdf_shapes, ovphysx_instance_handle_t, ovphysx_query_handle_t, const DLTensor*,
                 DLTensor*, ovstage_cuda_sync_t);
 #undef ASSERT_TASK_API
@@ -86,14 +94,25 @@ _Static_assert(OVPHYSX_CONFIG_PROFILER_OUTPUT_PATH == 4, "profiler-output-path s
 _Static_assert(OVPHYSX_PROFILER_BACKEND_NONE == 0, "profiler backend NONE ABI value");
 _Static_assert(OVPHYSX_PROFILER_BACKEND_NVTX == 1, "profiler backend NVTX ABI value");
 _Static_assert(OVPHYSX_PROFILER_BACKEND_TRACE == 2, "profiler backend TRACE ABI value");
+_Static_assert(OVPHYSX_GLOBAL_CONFIG_COMPILED_STAGE_CACHE == 0x0000000e, "compiled stage cache key ABI value");
+_Static_assert(OVPHYSX_COMPILED_STAGE_CACHE_AUTOMATIC == 0, "compiled stage cache AUTOMATIC ABI value");
+_Static_assert(OVPHYSX_COMPILED_STAGE_CACHE_DISABLED == 1, "compiled stage cache DISABLED ABI value");
+_Static_assert(OVPHYSX_COMPILED_STAGE_CACHE_READ_ONLY == 2, "compiled stage cache READ_ONLY ABI value");
+_Static_assert(OVPHYSX_COMPILED_STAGE_CACHE_READ_WRITE == 3, "compiled stage cache READ_WRITE ABI value");
 _Static_assert(OVPHYSX_OMNIPVD_TRANSPORT_FILE == 0, "OmniPVD FILE transport ABI value");
 _Static_assert(OVPHYSX_OMNIPVD_TRANSPORT_TCP == 1, "OmniPVD TCP transport ABI value");
 _Static_assert(
+    _Generic(((ovphysx_omnipvd_recording_options_t*)0)->record_secondary_data, bool: 1, default: 0),
+    "OmniPVD secondary-data option must be a C bool");
+_Static_assert(
+    _Generic(((ovphysx_omnipvd_recording_options_t*)0)->wait_for_selection, bool: 1, default: 0),
+    "OmniPVD wait-for-selection option must be a C bool");
+_Static_assert(
     _Generic(
         &ovphysx_ovd_start_recording,
-        ovphysx_result_t (*)(
-            ovphysx_instance_handle_t,
-            const ovphysx_omnipvd_destination_t*): 1,
+        ovphysx_result_t (*)(ovphysx_instance_handle_t,
+                            const ovphysx_omnipvd_destination_t*,
+                            const ovphysx_omnipvd_recording_options_t*): 1,
         default: 0),
     "start_recording C ABI shape");
 _Static_assert(
@@ -154,6 +173,15 @@ _Static_assert(
         default: 0),
     "wait_all C ABI shape");
 _Static_assert(
+    _Generic(&ovphysx_query_task_status,
+        ovphysx_result_t (*)(ovphysx_instance_handle_t, ovphysx_enqueue_result_t, ovphysx_task_status_t*): 1,
+        default: 0),
+    "query_task_status C ABI shape");
+_Static_assert(
+    sizeof(ovphysx_task_status_t) == sizeof(int) && OVPHYSX_TASK_STATUS_NOT_FOUND == 0 &&
+        OVPHYSX_TASK_STATUS_FAILED == 4,
+    "task status C ABI values");
+_Static_assert(
     _Generic(&ovphysx_get_last_task_error,
         ovphysx_string_t (*)(ovphysx_instance_handle_t, ovphysx_enqueue_result_t): 1,
         default: 0),
@@ -196,6 +224,15 @@ static void test_omnipvd_destination_type(void)
     (void)destination;
 }
 
+static void test_omnipvd_filter_type(void)
+{
+    ovphysx_omnipvd_recording_options_t capture = OVPHYSX_OMNIPVD_RECORDING_OPTIONS_DEFAULT;
+    const ovphysx_string_t objects[] = { OVPHYSX_LITERAL("/World/particles"), OVPHYSX_LITERAL("/World/robot") };
+    capture.object_paths = objects;
+    capture.object_count = 2;
+    (void)capture;
+}
+
 /* Deprecated exports must remain callable from C as well as C++. */
 #if defined(_MSC_VER)
 #pragma warning(push)
@@ -233,6 +270,15 @@ static void test_omnipvd_recording_capability_config(void)
 {
     ovphysx_config_value_t value = ovphysx_config_value_bool(true);
     ovphysx_global_config_key_t key = OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLE;
+    (void)value;
+    (void)key;
+}
+
+static void test_compiled_stage_cache_config(void)
+{
+    ovphysx_compiled_stage_cache_mode_t mode = OVPHYSX_COMPILED_STAGE_CACHE_READ_WRITE;
+    ovphysx_config_value_t value = ovphysx_config_value_int64(mode);
+    ovphysx_global_config_key_t key = OVPHYSX_GLOBAL_CONFIG_COMPILED_STAGE_CACHE;
     (void)value;
     (void)key;
 }
@@ -347,8 +393,10 @@ int main(void)
     test_tensor_binding_types();
     test_logging_api_shape();
     test_omnipvd_destination_type();
+    test_omnipvd_filter_type();
     test_omnipvd_recording_capability_config();
-    
+    test_compiled_stage_cache_config();
+
     printf("SUCCESS: All C API compatibility tests passed!\n");
     printf("  - Headers compile with C compiler (not C++)\n");
     printf("  - NULL used instead of nullptr\n");

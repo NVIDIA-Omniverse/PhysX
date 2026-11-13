@@ -1,0 +1,21 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxVehicleWheelAttachmentAPI",
+  "title": "PhysxVehicleWheelAttachmentAPI",
+  "summary": "One wheel of a PhysX vehicle: a descendant of the PhysxVehicleAPI prim that names its wheel, tire and suspension (relationships or the APIs on itself) and places the suspension and its force application points. The walkers parse every prim that lists it and take the nearest ancestor listing PhysxVehicleAPI as its vehicle.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "Xformable"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "columns": [],
+  "notes": [
+    "Its columns are not described yet."
+  ]
+}

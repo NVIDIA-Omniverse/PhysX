@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // @implements REQ-COMP-QUERY-001
-// @covers AC-1 AC-2 AC-4
+// @covers AC-1 AC-2 AC-4 AC-5
 #ifndef OVPHYSX_COMPANION_QUERIES_H
 #define OVPHYSX_COMPANION_QUERIES_H
 #include "inspection.h"
@@ -26,7 +26,8 @@ typedef struct ovphysx_companion_query_result {
     uint64_t attachment, step, revision, total;
     uint32_t count, truncated;
 } ovphysx_companion_query_result_t;
-/** CPU query on the selected existing runtime owner. Retain that owner during calls.
+/** Query on the selected existing runtime owner; CPU and GPU-dynamics scenes, while
+ * an owner with a DirectGPU scene returns UNAVAILABLE. Retain that owner during calls.
  * kind: ray 0, sweep 1, overlap 2; mode: closest 0, any 1, all 2.
  * geometry: sphere 1 (radius), box 2 (half extents xyz), capsule 3 (radius,
  * half height along local X), bound shape 4. Bound sphere/box/capsule/convex

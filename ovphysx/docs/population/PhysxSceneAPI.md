@@ -5,9 +5,9 @@
 
 # PhysxSceneAPI
 
-PhysX tuning for a PhysicsScene prim: solver, broadphase, flags, friction thresholds, iteration bounds and GPU memory budgets. Read only when PhysxSceneAPI is listed in usd-schemas of a PhysicsScene prim. Two friction columns have units-scaled defaults that the raw schema fallback does not reproduce; the producer creates them even without the API.
+[PhysX](glossary.md#physx) tuning for a PhysicsScene prim: solver, broadphase, flags, friction thresholds, iteration bounds and GPU memory budgets. Read only when PhysxSceneAPI is listed in [usd-schemas](prim.md#columns) of a PhysicsScene [prim](glossary.md#prim). Two friction columns have units-scaled defaults that the raw schema fallback does not reproduce; the producer creates them even without the API.
 
-- **Applies to:** `Typed`
+- **Applies to:** [`Typed`](glossary.md#typed)
 - **Read only when listed in `usd-schemas`.**
 - **Uses blocks:** [`stage_units`](stage_units.md)
 
@@ -17,7 +17,7 @@ Every declared attribute is published at its resolved value on a PhysicsScene pr
 
 ## Columns
 
-*Raw fallback* is the USD schema value. *Producer writes* is what ovstage population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
+*Raw fallback* is the [USD](glossary.md#usd) schema value. *Producer writes* is what [ovstage](glossary.md#ovstage) population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
 
 | Column | Type | Units | Raw fallback | Producer writes | Parser default | If absent |
 |---|---|---|---|---|---|---|
@@ -38,8 +38,8 @@ Every declared attribute is published at its resolved value on a PhysicsScene pr
 | `physxScene:solveArticulationContactLast` | bool8 | none | false | resolved USD value (authored, else raw fallback) | false | Off. |
 | `physxScene:disableSleeping` | bool8 | none | false | resolved USD value (authored, else raw fallback) | false | Off. The runtime also raises the PhysX flag on its own when GPU dynamics runs with readback suppressed. |
 | `physxScene:bounceThreshold` | float32 | length/s | 0.0 | resolved USD value (authored, else raw fallback) | 1e-06 | 1e-6, effectively every contact bounces. NOT units-scaled: the same 1e-6 on a meter and on a centimeter stage (PhysX's own default would be 0.2 * tolerances speed). The raw fallback 0 is clamped up to the same 1e-6, so writing it literally is harmless. |
-| `physxScene:frictionOffsetThreshold` | float32 | length | 0.04 | when unauthored: `0.04 / metersPerUnit` (column created even without the API) | `0.04 / metersPerUnit` **diverges** | Units-scaled default: 0.04 on a meter stage, 4 on a centimeter stage. Writing the raw fallback 0.04 on a centimeter stage makes friction anchors 100 times too short-lived. The producer writes the scaled value and creates the column even without PhysxSceneAPI applied; the consumer ignores it unless PhysxSceneAPI is in usd-schemas. |
-| `physxScene:frictionCorrelationDistance` | float32 | length | 0.025 | when unauthored: `0.025 / metersPerUnit` (column created even without the API) | `0.025 / metersPerUnit` **diverges** | Units-scaled default: 0.025 on a meter stage, 2.5 on a centimeter stage. Writing the raw fallback literally on a non-meter stage diverges the same way as frictionOffsetThreshold. Created by the producer even without PhysxSceneAPI applied. |
+| `physxScene:frictionOffsetThreshold` | float32 | length | 0.04 | when unauthored: `0.04 / metersPerUnit` (on is a PhysicsScene) (column created even without the API) | `0.04 / metersPerUnit` **diverges** | Units-scaled default: 0.04 on a meter stage, 4 on a centimeter stage. Writing the raw fallback 0.04 on a centimeter stage makes friction anchors 100 times too short-lived. The producer writes the scaled value and creates the column even without PhysxSceneAPI applied; the consumer ignores it unless PhysxSceneAPI is in usd-schemas. |
+| `physxScene:frictionCorrelationDistance` | float32 | length | 0.025 | when unauthored: `0.025 / metersPerUnit` (on is a PhysicsScene) (column created even without the API) | `0.025 / metersPerUnit` **diverges** | Units-scaled default: 0.025 on a meter stage, 2.5 on a centimeter stage. Writing the raw fallback literally on a non-meter stage diverges the same way as frictionOffsetThreshold. Created by the producer even without PhysxSceneAPI applied. |
 | `physxScene:maxBiasCoefficient` | float32 | none | `inf` | resolved USD value (authored, else raw fallback) | `FLT_MAX` | FLT_MAX, no cap on the constraint bias. +inf clamps to FLT_MAX, so writing the raw fallback literally is harmless. |
 | `physxScene:minPositionIterationCount` | uint32 | none | 1 | resolved USD value (authored, else raw fallback) | 0 **diverges** | 0: no lower bound on a body's solverPositionIterationCount. The raw fallback is 1, so a producer-populated stage clamps bodies authored with 0 position iterations up to 1 while an omitted column does not. Silently clamped down to physxScene:maxPositionIterationCount when it exceeds it. |
 | `physxScene:maxPositionIterationCount` | uint32 | none | 255 | resolved USD value (authored, else raw fallback) | 255 | 255: no upper bound in practice. |
@@ -72,8 +72,8 @@ Every declared attribute is published at its resolved value on a PhysicsScene pr
 - **note** (consumer) `physxScene:minPositionIterationCount`: Raw schema fallback 1 versus consumer absent default 0: only bodies authored with 0 position iterations observe the difference. When min exceeds max (either pair) min is silently clamped down to max; the diagnostic is emitted by the USD schema parser only, so an ovstage-populated stage gets no warning.
 - **note** (consumer) `physxScene:enableExternalForcesEveryIteration`: Deprecated, and on by default. Silently cleared when solverType is PGS; the warning exists only on the USD path.
 - **note** (consumer) `physxScene:gpuMaxNumPartitions`: A value in [1, 32] that is not a power of two is silently replaced by 8 rather than rounded.
-- **fragile** (consumer) `physxScene:timeStepsPerSecond`: The authored-bit gates (readClampedIfAuthored, readBoolIfAuthored) are no-ops on ovstage where every column reads as authored, so the resolved value always wins and a value equal to the raw fallback is indistinguishable from unauthored. This is what makes the newton:timeStepsPerSecond fallback unreachable on a producer-populated stage: the published 60 counts as authored.
-- **fragile** (consumer) `physxScene:maxBiasCoefficient`: Whether the authored value takes effect depends on the solver configuration, not on the stage: PhysX applies PxSceneDesc::maxBiasCoefficient in the PGS and GPU dynamics contexts but the CPU TGS context constructs with PX_MAX_F32 (physx DyTGSDynamics.cpp), so with solverType TGS and enableGPUDynamics false the column is silently ignored and PxScene::getMaxBiasCoefficient returns FLT_MAX. Observed in the population contract test (authored 10, read FLT_MAX).
+- **fragile** (consumer) `physxScene:timeStepsPerSecond`: The authored-bit gates are no-ops on ovstage where every column reads as authored, so the resolved value always wins and a value equal to the raw fallback is indistinguishable from unauthored. This is what makes the newton:timeStepsPerSecond fallback unreachable on a producer-populated stage: the published 60 counts as authored.
+- **fragile** (consumer) `physxScene:maxBiasCoefficient`: Whether the authored value takes effect depends on the solver configuration, not on the stage: PhysX applies the PxSceneDesc maximum bias coefficient in the PGS and GPU dynamics contexts but the CPU TGS context constructs with PX_MAX_F32, so with solverType TGS and enableGPUDynamics false the column is silently ignored and the PxScene reports a maximum bias coefficient of FLT_MAX. Observed in the population contract test (authored 10, read FLT_MAX).
 
 ## Notes
 

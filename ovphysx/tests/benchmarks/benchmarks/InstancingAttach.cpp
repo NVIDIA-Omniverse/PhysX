@@ -121,8 +121,8 @@ std::string populationError(const char* operation)
 class InstancingAttachBase : public BmBenchmark
 {
 public:
-    InstancingAttachBase(uint32_t prototypeCount, uint32_t populationDomains, bool instanceable = true)
-        : mUsda(buildInstancingFixture(prototypeCount, instanceable)), mPopulationDomains(populationDomains)
+    InstancingAttachBase(uint32_t prototypeCount, bool withRendering, bool instanceable = true)
+        : mUsda(buildInstancingFixture(prototypeCount, instanceable)), mWithRendering(withRendering)
     {
     }
 
@@ -237,10 +237,10 @@ private:
 
         const ovx_string_t usda{ mUsda.data(), mUsda.size() };
         const ovstage_population_enqueue_result_t population =
-            ovstage_population_open_usd_from_string(mStage, usda, kInitialOrdinal, 0.0, mPopulationDomains);
+            ovphysx_sample_open_usd_from_string(mStage, usda, kInitialOrdinal, 0.0, mWithRendering);
         if (population.status != OVSTAGE_OK || population.op_index == OVSTAGE_POPULATION_INVALID_OP_ID)
         {
-            failPreparation(populationError("ovstage_population_open_usd_from_string"));
+            failPreparation(populationError("ovphysx_sample_open_usd_from_string"));
         }
 
         ovstage_population_op_wait_result_t populationWait{};
@@ -311,7 +311,7 @@ private:
     }
 
     std::string mUsda;
-    uint32_t mPopulationDomains = OVSTAGE_POPULATION_DOMAIN_NONE;
+    bool mWithRendering = false;
     ovphysx::PhysX* mPhysX = nullptr;
     ovstage_instance_t* mStage = nullptr;
     bool mAttached = false;
@@ -320,7 +320,7 @@ private:
 class InstancingAttach_PhysicsN0100 : public InstancingAttachBase
 {
 public:
-    InstancingAttach_PhysicsN0100() : InstancingAttachBase(100, OVSTAGE_POPULATION_DOMAIN_PHYSICS)
+    InstancingAttach_PhysicsN0100() : InstancingAttachBase(100, /*withRendering=*/false)
     {
     }
 };
@@ -328,7 +328,7 @@ public:
 class InstancingAttach_PhysicsN0250 : public InstancingAttachBase
 {
 public:
-    InstancingAttach_PhysicsN0250() : InstancingAttachBase(250, OVSTAGE_POPULATION_DOMAIN_PHYSICS)
+    InstancingAttach_PhysicsN0250() : InstancingAttachBase(250, /*withRendering=*/false)
     {
     }
 };
@@ -336,7 +336,7 @@ public:
 class InstancingAttach_PhysicsN0500 : public InstancingAttachBase
 {
 public:
-    InstancingAttach_PhysicsN0500() : InstancingAttachBase(500, OVSTAGE_POPULATION_DOMAIN_PHYSICS)
+    InstancingAttach_PhysicsN0500() : InstancingAttachBase(500, /*withRendering=*/false)
     {
     }
 };
@@ -344,7 +344,7 @@ public:
 class InstancingAttach_AllN0100 : public InstancingAttachBase
 {
 public:
-    InstancingAttach_AllN0100() : InstancingAttachBase(100, OVSTAGE_POPULATION_DOMAIN_ALL)
+    InstancingAttach_AllN0100() : InstancingAttachBase(100, /*withRendering=*/true)
     {
     }
 };
@@ -352,7 +352,7 @@ public:
 class InstancingAttach_AllN0250 : public InstancingAttachBase
 {
 public:
-    InstancingAttach_AllN0250() : InstancingAttachBase(250, OVSTAGE_POPULATION_DOMAIN_ALL)
+    InstancingAttach_AllN0250() : InstancingAttachBase(250, /*withRendering=*/true)
     {
     }
 };
@@ -360,7 +360,7 @@ public:
 class InstancingAttach_AllN0500 : public InstancingAttachBase
 {
 public:
-    InstancingAttach_AllN0500() : InstancingAttachBase(500, OVSTAGE_POPULATION_DOMAIN_ALL)
+    InstancingAttach_AllN0500() : InstancingAttachBase(500, /*withRendering=*/true)
     {
     }
 };
@@ -371,7 +371,7 @@ public:
 class InstancingAttach_PhysicsFlatN0500 : public InstancingAttachBase
 {
 public:
-    InstancingAttach_PhysicsFlatN0500() : InstancingAttachBase(500, OVSTAGE_POPULATION_DOMAIN_PHYSICS, false)
+    InstancingAttach_PhysicsFlatN0500() : InstancingAttachBase(500, /*withRendering=*/false, false)
     {
     }
 };
@@ -379,7 +379,7 @@ public:
 class InstancingAttach_AllFlatN0500 : public InstancingAttachBase
 {
 public:
-    InstancingAttach_AllFlatN0500() : InstancingAttachBase(500, OVSTAGE_POPULATION_DOMAIN_ALL, false)
+    InstancingAttach_AllFlatN0500() : InstancingAttachBase(500, /*withRendering=*/true, false)
     {
     }
 };

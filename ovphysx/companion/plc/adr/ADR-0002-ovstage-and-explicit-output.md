@@ -20,11 +20,11 @@ Authoring and simulation both change scene state. Treating solver output as newl
 ## Decision
 
 1. The application owns ovstage, population and sealed input revisions. Runtime attachment borrows that stage and consumes explicit input updates.
-   Companion population adapters and examples use `PopulationDomain.ALL` for
-   OVStage 0.3 to resolve nested world transforms. A host selecting PHYSICS-only
-   must remove its local world-matrix seeds before sealing, as described by core
-   `REQ-CAPI-OVSTAGE-XFORM-001`; explicit world-matrix producers retain their
-   authored values. This does not widen the physics snapshot capture contract.
+   Companion population adapters and examples populate ovphysx's physics
+   population description with RENDERING beside it. Sealing the population
+   ordinal composes world transforms with or without RENDERING, as core
+   `REQ-CAPI-OVSTAGE-XFORM-001` describes; explicit world-matrix producers retain
+   their authored values. This does not widen the physics snapshot capture contract.
 2. Read simulation output through core sessions and publish selected data through a host-owned adapter at a separate output ordinal. Never submit that ordinal as authored input. On the shared ovstage, output
    columns use the reserved `companion:` namespace: publishing solver-input
    properties is rejected because a later same-object reparse reads their current

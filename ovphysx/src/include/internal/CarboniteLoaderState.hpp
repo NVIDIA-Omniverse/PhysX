@@ -7,6 +7,9 @@
  *
  * @implements REQ-CAPI-PROFILER-002
  * @covers AC-4 AC-11 AC-12
+ *
+ * @implements REQ-CAPI-COMPILED-CACHE-001
+ * @covers AC-4
  */
 
 #ifndef OVPHYSX_INTERNAL_CARBONITE_LOADER_STATE_HPP
@@ -37,6 +40,23 @@ struct CarboniteLoaderState
     // Keep the private cache alive until framework shutdown stops the datastore.
     // Cleanup holds bootstrapMutex and clears the path only after successful removal.
     std::filesystem::path processCacheDir;
+    // True while this lifecycle's datastore uses processCacheDir. Written under
+    // bootstrapMutex; attach reads it without that lock.
+    std::atomic<bool> processCacheDirInUse{false};
+    // Collision cooking is off and no cache directory is configured, in a framework
+    // a host owns: ovphysx leaves the host's datastore settings alone, so the compiled
+    // stage cache reports itself unavailable instead of writing into the host's.
+    std::atomic<bool> compiledCacheUnavailable{ false };
+    // The directory carb.ujitso.default built its datastore from, recorded right after
+    // ovphysx configured and started it. The datastore keeps that directory until it
+    // stops, whatever the setting says later, so AUTOMATIC judges this one. Empty for
+    // processCacheDir and when a host started the datastore before ovphysx. The device
+    // and inode identify the directory then: one put at that path later is not it.
+    // Guarded by datastoreDirectoryMutex, which attach takes without bootstrapMutex.
+    std::mutex datastoreDirectoryMutex;
+    std::string datastoreDirectory;
+    uint64_t datastoreDirectoryDevice = 0;
+    uint64_t datastoreDirectoryInode = 0;
 
     // Last-loader shutdown takes bootstrapMutex before profilerMutex.
     std::mutex profilerMutex;

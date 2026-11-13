@@ -174,7 +174,8 @@ endif()
 string(STRIP "${UV_VERSION}" UV_VERSION)
 message(STATUS "Found uv: ${UV_VERSION}")
 
-set(VENV_DIR "${PYTHON_TEST_DIR}/.venv")
+set(VENV_DIR "${BUILD_PATH}/venv/python_tests")
+ovphysx_require_build_path("${VENV_DIR}")
 if(EXISTS "${VENV_DIR}")
     file(REMOVE_RECURSE "${VENV_DIR}")
 endif()
@@ -188,27 +189,27 @@ if(NOT VENV_RESULT EQUAL 0)
     message(FATAL_ERROR "Failed to create venv with target-deps Python")
 endif()
 
-# Previous runs can leave stale editable-install metadata behind.
-set(PYTHON_TEST_EGG_INFO "${PYTHON_TEST_DIR}/ovphysx_python_tests.egg-info")
-if(EXISTS "${PYTHON_TEST_EGG_INFO}")
-    file(REMOVE_RECURSE "${PYTHON_TEST_EGG_INFO}")
-    if(EXISTS "${PYTHON_TEST_EGG_INFO}")
-        message(FATAL_ERROR "Cannot remove stale egg-info dir: ${PYTHON_TEST_EGG_INFO}. Please fix permissions or delete it.")
-    endif()
-endif()
-
 set(ENV{PYTEST_DISABLE_PLUGIN_AUTOLOAD} "1")
 # Test results go to _build so the source tree stays clean.
-set(PYTEST_RESULTS_DIR "${PROJECT_ROOT}/_build/test_results")
+set(PYTEST_RESULTS_DIR "${BUILD_PATH}/test_results")
+ovphysx_require_build_path("${PYTEST_RESULTS_DIR}")
 file(MAKE_DIRECTORY "${PYTEST_RESULTS_DIR}")
 set(PYTEST_RESULTS_XML "${PYTEST_RESULTS_DIR}/pytest_results.xml")
+ovphysx_require_build_path("${PYTEST_RESULTS_XML}")
 
-set(UV_CACHE_DIR_PATH "${PROJECT_ROOT}/_build/.uv_cache")
+set(UV_CACHE_DIR_PATH "${BUILD_PATH}/.uv_cache")
+foreach(_CACHE_PATH IN ITEMS "${UV_CACHE_DIR_PATH}" "${BUILD_PATH}/pycache"
+                             "${BUILD_PATH}/pytest_cache/python_tests")
+    ovphysx_require_build_path("${_CACHE_PATH}")
+endforeach()
 file(MAKE_DIRECTORY "${UV_CACHE_DIR_PATH}")
 include("${CMAKE_CURRENT_LIST_DIR}/ovstage_index.cmake")
 ovphysx_ovstage_index_env(OVSTAGE_INDEX_ENV)
 set(UV_ENV
     "UV_CACHE_DIR=${UV_CACHE_DIR_PATH}"
+    "UV_PROJECT_ENVIRONMENT=${VENV_DIR}"
+    "PYTHONPYCACHEPREFIX=${BUILD_PATH}/pycache"
+    "PYTEST_ADDOPTS=$ENV{PYTEST_ADDOPTS} -o cache_dir=\"${BUILD_PATH}/pytest_cache/python_tests\""
     "UV_NO_CONFIG=1"
     ${OVSTAGE_INDEX_ENV}
     "UV_HTTP_TIMEOUT=300"
@@ -249,6 +250,17 @@ foreach(_OVPHYSX_ENV_ENTRY IN LISTS OVPHYSX_PYTHON_NATIVE_ENV)
     list(APPEND UV_ENV "${_OVPHYSX_ENV_ENTRY}")
 endforeach()
 
+# This project is a dependency list, not an installable test package.
+execute_process(
+    COMMAND ${CMAKE_COMMAND} -E env ${UV_ENV}
+        "${OVPHYSX_UV_COMMAND}" sync --no-install-project
+    WORKING_DIRECTORY "${PYTHON_TEST_DIR}"
+    RESULT_VARIABLE _SYNC_RESULT
+)
+if(NOT _SYNC_RESULT EQUAL 0)
+    message(FATAL_ERROR "Failed to sync Python test dependencies")
+endif()
+
 # cpu_tests/, lifecycle_tests/ and utils_tests/ run in separate processes below, so
 # they are excluded from this whole-suite pass. The whole-suite pass uses GPU
 # fixtures and fails when no CUDA driver is present, so the no-CUDA run skips it.
@@ -260,7 +272,7 @@ if(OVPHYSX_SKIP_GPU_PASSES)
 else()
 message(STATUS "Running pytest...")
 execute_process(
-    COMMAND ${CMAKE_COMMAND} -E env ${UV_ENV} "${OVPHYSX_UV_COMMAND}" run pytest --ignore=cpu_tests --ignore=lifecycle_tests --ignore=utils_tests --junit-xml=${PYTEST_RESULTS_XML} -v -s
+    COMMAND ${CMAKE_COMMAND} -E env ${UV_ENV} "${OVPHYSX_UV_COMMAND}" run --no-sync pytest --ignore=cpu_tests --ignore=lifecycle_tests --ignore=utils_tests --junit-xml=${PYTEST_RESULTS_XML} -v -s
     WORKING_DIRECTORY "${PYTHON_TEST_DIR}"
     RESULT_VARIABLE PYTEST_RESULT
     OUTPUT_VARIABLE PYTEST_STDOUT
@@ -293,13 +305,24 @@ endif()
 set(CPU_TEST_DIR "${PYTHON_TEST_DIR}/cpu_tests")
 if(EXISTS "${CPU_TEST_DIR}")
     set(PYTEST_CPU_RESULTS_XML "${PYTEST_RESULTS_DIR}/pytest_cpu_results.xml")
+    ovphysx_require_build_path("${PYTEST_CPU_RESULTS_XML}")
     file(REMOVE "${PYTEST_CPU_RESULTS_XML}")
 
     message(STATUS "")
     message(STATUS "Running CPU-mode pytest (separate process)...")
 
+    # The pass TIMEOUTs here and below are outer bounds, not the guard that ends a
+    # hung test. CMake 3.28 to 4.1.2 (issue #27378; the Windows runners use 4.1.0)
+    # stop waiting at the TIMEOUT without terminating the child, and the orphaned
+    # `uv` and `python` then keep the CI step's pipes open until the job timeout;
+    # CMake 4.4 (GitLab Linux) kills the child. The guard is pytest's per-test
+    # faulthandler watchdog (300 s, tests/python_tests/pyproject.toml,
+    # REQ-PACKAGING-TESTHANG-001), whose dump has to reach this log before either
+    # happens: the pass TIMEOUT therefore stays above the watchdog plus the pass's
+    # own runtime (the slowest CPU-mode pass measured is about 150 s on linux-debug).
+
     execute_process(
-        COMMAND ${CMAKE_COMMAND} -E env ${UV_ENV} "${OVPHYSX_UV_COMMAND}" run pytest ${CPU_TEST_DIR} --junit-xml=${PYTEST_CPU_RESULTS_XML} -v -s
+        COMMAND ${CMAKE_COMMAND} -E env ${UV_ENV} "${OVPHYSX_UV_COMMAND}" run --no-sync pytest ${CPU_TEST_DIR} --junit-xml=${PYTEST_CPU_RESULTS_XML} -v -s
         WORKING_DIRECTORY "${PYTHON_TEST_DIR}"
         RESULT_VARIABLE PYTEST_CPU_RESULT
         OUTPUT_VARIABLE PYTEST_CPU_STDOUT
@@ -307,13 +330,46 @@ if(EXISTS "${CPU_TEST_DIR}")
         ECHO_OUTPUT_VARIABLE
         ECHO_ERROR_VARIABLE
         COMMAND_ECHO STDOUT
-        TIMEOUT 300
+        TIMEOUT 900
     )
 
     if(NOT PYTEST_CPU_RESULT EQUAL 0)
         message(FATAL_ERROR "CPU-mode Python tests failed (exit code: ${PYTEST_CPU_RESULT})")
     endif()
     parse_pytest_junit("CPU-mode Python Tests" "${PYTEST_CPU_RESULTS_XML}")
+
+    # The same tests again in each test execution mode, which the conftest applies before
+    # the first instance exists: "queue" queues every short async call and step as a job on
+    # the instance worker, even on an idle instance, through the library's private test
+    # hook; "noworker" creates every instance without a worker thread, so every call runs
+    # on the calling thread.
+    foreach(_MODE queue noworker)
+        set(_MODE_RESULTS_XML "${PYTEST_RESULTS_DIR}/pytest_cpu_${_MODE}_results.xml")
+        ovphysx_require_build_path("${_MODE_RESULTS_XML}")
+        file(REMOVE "${_MODE_RESULTS_XML}")
+
+        message(STATUS "")
+        message(STATUS "Running CPU-mode pytest with OVPHYSX_TEST_EXECUTION=${_MODE} (separate process)...")
+
+        execute_process(
+            COMMAND ${CMAKE_COMMAND} -E env ${UV_ENV} "OVPHYSX_TEST_EXECUTION=${_MODE}"
+                "${OVPHYSX_UV_COMMAND}" run --no-sync pytest ${CPU_TEST_DIR} --junit-xml=${_MODE_RESULTS_XML} -v -s
+            WORKING_DIRECTORY "${PYTHON_TEST_DIR}"
+            RESULT_VARIABLE _MODE_RESULT
+            OUTPUT_VARIABLE _MODE_STDOUT
+            ERROR_VARIABLE _MODE_STDERR
+            ECHO_OUTPUT_VARIABLE
+            ECHO_ERROR_VARIABLE
+            COMMAND_ECHO STDOUT
+            TIMEOUT 900
+        )
+
+        if(NOT _MODE_RESULT EQUAL 0)
+            message(FATAL_ERROR "CPU-mode Python tests with OVPHYSX_TEST_EXECUTION=${_MODE} failed (exit code: ${_MODE_RESULT})")
+        endif()
+        parse_pytest_junit("CPU-mode Python Tests, ${_MODE}" "${_MODE_RESULTS_XML}")
+        string(APPEND PYTEST_CPU_MODES_OUTPUT "${_MODE_STDOUT}${_MODE_STDERR}")
+    endforeach()
 else()
     message(STATUS "No cpu_tests/ directory found, skipping CPU-mode tests")
 endif()
@@ -343,6 +399,7 @@ if(EXISTS "${UTILS_TEST_DIR}" AND ARCH_NAME STREQUAL "aarch64")
     message(STATUS "Skipping ovphysx.utils pytest: no python USD on linux-aarch64 (usd-core publishes no wheel)")
 elseif(EXISTS "${UTILS_TEST_DIR}")
     set(PYTEST_UTILS_RESULTS_XML "${PYTEST_RESULTS_DIR}/pytest_utils_results.xml")
+    ovphysx_require_build_path("${PYTEST_UTILS_RESULTS_XML}")
     file(REMOVE "${PYTEST_UTILS_RESULTS_XML}")
 
     message(STATUS "")
@@ -356,7 +413,7 @@ elseif(EXISTS "${UTILS_TEST_DIR}")
     set(UTILS_ENV ${UV_ENV} "OVPHYSX_REQUIRE_CODELESS_SCHEMAS=1")
 
     execute_process(
-        COMMAND ${CMAKE_COMMAND} -E env ${UTILS_ENV} "${OVPHYSX_UV_COMMAND}" run pytest ${UTILS_TEST_DIR} --junit-xml=${PYTEST_UTILS_RESULTS_XML} -v -s
+        COMMAND ${CMAKE_COMMAND} -E env ${UTILS_ENV} "${OVPHYSX_UV_COMMAND}" run --no-sync pytest ${UTILS_TEST_DIR} --junit-xml=${PYTEST_UTILS_RESULTS_XML} -v -s
         WORKING_DIRECTORY "${PYTHON_TEST_DIR}"
         RESULT_VARIABLE PYTEST_UTILS_RESULT
         OUTPUT_VARIABLE PYTEST_UTILS_STDOUT
@@ -364,7 +421,7 @@ elseif(EXISTS "${UTILS_TEST_DIR}")
         ECHO_OUTPUT_VARIABLE
         ECHO_ERROR_VARIABLE
         COMMAND_ECHO STDOUT
-        TIMEOUT 300
+        TIMEOUT 900
     )
 
     if(NOT PYTEST_UTILS_RESULT EQUAL 0)
@@ -408,10 +465,11 @@ foreach(_COMPANION_SUITE tests_native tests)
         continue()
     endif()
     set(_COMPANION_XML "${PYTEST_RESULTS_DIR}/pytest_companion_${_COMPANION_SUITE}.xml")
+    ovphysx_require_build_path("${_COMPANION_XML}")
     file(REMOVE "${_COMPANION_XML}")
     execute_process(
         COMMAND ${CMAKE_COMMAND} -E env ${UV_ENV} "OVPHYSX_LIB=${_COMPANION_LIBRARY}"
-            "${OVPHYSX_UV_COMMAND}" run pytest
+            "${OVPHYSX_UV_COMMAND}" run --no-sync pytest
             "--confcutdir=${_COMPANION_DIR}" "${_COMPANION_DIR}"
             "--junit-xml=${_COMPANION_XML}" -v -s
         WORKING_DIRECTORY "${PYTHON_TEST_DIR}"
@@ -463,6 +521,7 @@ if(EXISTS "${LIFECYCLE_TEST_DIR}")
     set(LIFECYCLE_ALL_STDOUT "")
     set(LIFECYCLE_ALL_STDERR "")
     set(LIFECYCLE_JOB_DIR "${PYTEST_RESULTS_DIR}/lifecycle_jobs")
+    ovphysx_require_build_path("${LIFECYCLE_JOB_DIR}")
     file(MAKE_DIRECTORY "${LIFECYCLE_JOB_DIR}")
     set(LIFECYCLE_JOB_SCRIPTS "")
 
@@ -481,6 +540,7 @@ if(EXISTS "${LIFECYCLE_TEST_DIR}")
     foreach(TEST_FILE ${LIFECYCLE_TEST_FILES})
         get_filename_component(TEST_NAME "${TEST_FILE}" NAME_WE)
         set(LIFECYCLE_XML "${PYTEST_RESULTS_DIR}/pytest_lifecycle_${TEST_NAME}.xml")
+        ovphysx_require_build_path("${LIFECYCLE_XML}")
         file(REMOVE "${LIFECYCLE_XML}")
 
         if(WIN32)
@@ -488,6 +548,10 @@ if(EXISTS "${LIFECYCLE_TEST_DIR}")
         else()
             set(LIFECYCLE_JOB_SCRIPT "${LIFECYCLE_JOB_DIR}/${TEST_NAME}.sh")
         endif()
+        foreach(_JOB_PATH IN ITEMS "${LIFECYCLE_JOB_SCRIPT}" "${LIFECYCLE_JOB_SCRIPT}.log"
+                                    "${LIFECYCLE_JOB_SCRIPT}.err.log")
+            ovphysx_require_build_path("${_JOB_PATH}")
+        endforeach()
         file(REMOVE "${LIFECYCLE_JOB_SCRIPT}.log")
         file(REMOVE "${LIFECYCLE_JOB_SCRIPT}.err.log")
 
@@ -539,7 +603,7 @@ else()
 endif()
 
 # Check for simulation stage leaks in the output of all suites, including the lifecycle subprocesses.
-set(PYTEST_ALL_OUTPUT "${PYTEST_STDOUT}${PYTEST_STDERR}${PYTEST_CPU_STDOUT}${PYTEST_CPU_STDERR}${LIFECYCLE_ALL_STDOUT}${LIFECYCLE_ALL_STDERR}")
+set(PYTEST_ALL_OUTPUT "${PYTEST_STDOUT}${PYTEST_STDERR}${PYTEST_CPU_STDOUT}${PYTEST_CPU_STDERR}${PYTEST_CPU_MODES_OUTPUT}${LIFECYCLE_ALL_STDOUT}${LIFECYCLE_ALL_STDERR}")
 if(PYTEST_ALL_OUTPUT MATCHES "outstanding SimStageWithHistory")
     string(REGEX MATCH "had ([0-9]+) outstanding" LEAK_MATCH "${PYTEST_ALL_OUTPUT}")
     if(CMAKE_MATCH_1)

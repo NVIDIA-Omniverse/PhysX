@@ -11,15 +11,16 @@ from pathlib import Path
 import pytest
 from ovphysx_companion.inspection import Inspector,ObjectKind,_Api,_Body,_Object,_Articulation,_native_reference
 from ovphysx_companion.native import ToolsSession,CompanionError,Status
-from ovphysx_companion.preview import PreviewSession
+from ovphysx_companion.preview import PreviewSession,_Pose
 
 
 @pytest.fixture
 def inspection_stage(physics):
     import ovstage
+    from ovphysx.population import physics_population_descs
     stage=ovstage.Stage('typed-inspection')
-    ovstage.population.open_usd(stage,str(Path(__file__).resolve().parents[1]/'samples/scenes/inspection.usda'),
-                                ordinal=1,domains=ovstage.PopulationDomain.ALL)
+    ovstage.population.open_usd_with_desc(stage,str(Path(__file__).resolve().parents[1]/'samples/scenes/inspection.usda'),
+                                ordinal=1,time=ovstage.population.DEFAULT_TIME,descs=physics_population_descs(rendering=True))
     stage.advance_write_floor(ordinal=1).wait()
     yield stage
     stage.destroy()
@@ -101,6 +102,24 @@ def test_inspection_abi_canaries_and_capacity(physics,inspection_stage):
         for path,kind in [('/Absent',ObjectKind.BODY),('/World/Body',ObjectKind.MATERIAL)]:
             with pytest.raises(CompanionError) as error:inspector.resolve(path,kind)
             assert error.value.status==Status.NOT_FOUND
+
+
+# @implements REQ-COMP-PREVIEW-001
+# @covers AC-8
+def test_preview_rigid_pose_matches_inspection_and_failures_preserve_output(physics,inspection_stage):
+    with PreviewSession(physics,inspection_stage,read_ordinal=1) as preview,Inspector(preview) as inspector:
+        for _ in range(30):preview.step(.01)
+        for path,kind in [('/World/Floor','static'),('/World/Robot/Tip','link')]:
+            body=inspector.read(inspector.resolve(path));pose=preview.rigid_pose(path)
+            assert body.type==kind
+            assert pose.position==pytest.approx(body.pose[:3]) and pose.orientation==pytest.approx(body.pose[3:])
+        rigid_pose=preview._api.rigid_pose;handle=preview._handle.value
+        output=_Pose();C.memset(C.byref(output),0xa5,C.sizeof(output));before=bytes(output)
+        for path,status in [(b'World/Body',Status.INVALID_ARGUMENT),(b'/Absent',Status.NOT_FOUND),(b'/World/Hinge',Status.NOT_FOUND)]:
+            assert rigid_pose(handle,path,C.byref(output))==status and bytes(output)==before
+        preview.simulate(.01)
+        assert rigid_pose(handle,b'/World/Body',C.byref(output))==Status.BUSY and bytes(output)==before
+        preview.fetch()
 
 
 def test_inspector_extension_sample():

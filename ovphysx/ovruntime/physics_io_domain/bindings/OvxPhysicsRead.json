@@ -1,0 +1,2444 @@
+{
+  "schema_version": 1,
+  "source": "source/omni.physx/plugins/OvxPhysicsRead.cpp",
+  "tables": [
+    {
+      "name": "kRigidAttributes",
+      "row_type": "RigidAttributeRow",
+      "target": "RIGID_BODY",
+      "direction": "read",
+      "fields": [
+        "token",
+        "arrayToken",
+        "components",
+        "dtype",
+        "hostOnly",
+        "perShape",
+        "gpuRead",
+        "cpuRead",
+        "shapeProperty",
+        "gpuColumn"
+      ],
+      "rows": [
+        {
+          "attribute": "position",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "arrayToken": {
+              "cpp": "omni::physx::OvxAttr::kPositions"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "gpuRead": {
+              "cpp": "kRigidNotOnGpu"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::CpuRigidBodyView::getPositionsOvStage"
+            },
+            "shapeProperty": {
+              "cpp": "kNoShapeProperty"
+            },
+            "gpuColumn": {
+              "cpp": "RigidGpuColumn::ePosition"
+            }
+          }
+        },
+        {
+          "attribute": "orientation",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "arrayToken": {
+              "cpp": "omni::physx::OvxAttr::kOrientations"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "gpuRead": {
+              "cpp": "kRigidNotOnGpu"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::CpuRigidBodyView::getOrientationsOvStage"
+            },
+            "shapeProperty": {
+              "cpp": "kNoShapeProperty"
+            },
+            "gpuColumn": {
+              "cpp": "RigidGpuColumn::eOrientation"
+            }
+          }
+        },
+        {
+          "attribute": "linear_velocity",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "arrayToken": {
+              "cpp": "omni::physx::OvxAttr::kVelocities"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "gpuRead": {
+              "cpp": "kRigidNotOnGpu"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::CpuRigidBodyView::getLinearVelocitiesOvStage"
+            },
+            "shapeProperty": {
+              "cpp": "kNoShapeProperty"
+            },
+            "gpuColumn": {
+              "cpp": "RigidGpuColumn::eLinearVelocity"
+            }
+          }
+        },
+        {
+          "attribute": "angular_velocity",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "arrayToken": {
+              "cpp": "omni::physx::OvxAttr::kAngularVelocities"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "gpuRead": {
+              "cpp": "kRigidNotOnGpu"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::CpuRigidBodyView::getAngularVelocitiesOvStage"
+            },
+            "shapeProperty": {
+              "cpp": "kNoShapeProperty"
+            },
+            "gpuColumn": {
+              "cpp": "RigidGpuColumn::eAngularVelocity"
+            }
+          }
+        },
+        {
+          "attribute": "linear_acceleration",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "arrayToken": {
+              "cpp": "omni::physx::OvxAttr::kAccelerations"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "gpuRead": {
+              "cpp": "kRigidNotOnGpu"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::CpuRigidBodyView::getLinearAccelerationsOvStage"
+            },
+            "shapeProperty": {
+              "cpp": "kNoShapeProperty"
+            },
+            "gpuColumn": {
+              "cpp": "RigidGpuColumn::eLinearAcceleration"
+            }
+          }
+        },
+        {
+          "attribute": "angular_acceleration",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "arrayToken": {
+              "cpp": "omni::physx::OvxAttr::kAngularAccelerations"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "gpuRead": {
+              "cpp": "kRigidNotOnGpu"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::CpuRigidBodyView::getAngularAccelerationsOvStage"
+            },
+            "shapeProperty": {
+              "cpp": "kNoShapeProperty"
+            },
+            "gpuColumn": {
+              "cpp": "RigidGpuColumn::eAngularAcceleration"
+            }
+          }
+        },
+        {
+          "attribute": "world_scale",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "arrayToken": {
+              "cpp": "nullptr"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "gpuRead": {
+              "cpp": "kRigidNotOnGpu"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::CpuRigidBodyView::getWorldScalesOvStage"
+            },
+            "shapeProperty": {
+              "cpp": "kNoShapeProperty"
+            },
+            "gpuColumn": {
+              "cpp": "RigidGpuColumn::eWorldScale"
+            }
+          }
+        },
+        {
+          "attribute": "mass",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "arrayToken": {
+              "cpp": "nullptr"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "gpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getMassesOvStage"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getMassesOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "inverse_mass",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "arrayToken": {
+              "cpp": "nullptr"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "gpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getInvMassesOvStage"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getInvMassesOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "inertia",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "arrayToken": {
+              "cpp": "nullptr"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "gpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getInertiasOvStage"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getInertiasOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "inverse_inertia",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "arrayToken": {
+              "cpp": "nullptr"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "gpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getInvInertiasOvStage"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getInvInertiasOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "center_of_mass_position",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "arrayToken": {
+              "cpp": "nullptr"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "gpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getComPositionsOvStage"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getComPositionsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "center_of_mass_orientation",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "arrayToken": {
+              "cpp": "nullptr"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "gpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getComOrientationsOvStage"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getComOrientationsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "disable_gravity",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "arrayToken": {
+              "cpp": "nullptr"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "gpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getDisableGravitiesOvStage"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getDisableGravitiesOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "disable_simulation",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "arrayToken": {
+              "cpp": "nullptr"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "gpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getDisableSimulationsOvStage"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getDisableSimulationsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "is_sleeping",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "arrayToken": {
+              "cpp": "nullptr"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "gpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getSleepStatesOvStage"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getSleepStatesOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "kinematic_target_position",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "arrayToken": {
+              "cpp": "nullptr"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "gpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getKinematicTargetPositionsOvStage"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getKinematicTargetPositionsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "kinematic_target_orientation",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "arrayToken": {
+              "cpp": "nullptr"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "gpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getKinematicTargetOrientationsOvStage"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getKinematicTargetOrientationsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "static_friction",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "arrayToken": {
+              "cpp": "nullptr"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "gpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getStaticFrictionsOvStage"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getStaticFrictionsOvStage"
+            },
+            "shapeProperty": {
+              "cpp": "omni::physx::tensors::OvStageShapeProperty::eStaticFriction"
+            }
+          }
+        },
+        {
+          "attribute": "dynamic_friction",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "arrayToken": {
+              "cpp": "nullptr"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "gpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getDynamicFrictionsOvStage"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getDynamicFrictionsOvStage"
+            },
+            "shapeProperty": {
+              "cpp": "omni::physx::tensors::OvStageShapeProperty::eDynamicFriction"
+            }
+          }
+        },
+        {
+          "attribute": "restitution",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "arrayToken": {
+              "cpp": "nullptr"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "gpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getRestitutionsOvStage"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getRestitutionsOvStage"
+            },
+            "shapeProperty": {
+              "cpp": "omni::physx::tensors::OvStageShapeProperty::eRestitution"
+            }
+          }
+        },
+        {
+          "attribute": "contact_offset",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "arrayToken": {
+              "cpp": "nullptr"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "gpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getContactOffsetsOvStage"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getContactOffsetsOvStage"
+            },
+            "shapeProperty": {
+              "cpp": "omni::physx::tensors::OvStageShapeProperty::eContactOffset"
+            }
+          }
+        },
+        {
+          "attribute": "rest_offset",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "arrayToken": {
+              "cpp": "nullptr"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "gpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getRestOffsetsOvStage"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getRestOffsetsOvStage"
+            },
+            "shapeProperty": {
+              "cpp": "omni::physx::tensors::OvStageShapeProperty::eRestOffset"
+            }
+          }
+        },
+        {
+          "attribute": "shape_count",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "arrayToken": {
+              "cpp": "nullptr"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "gpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getShapeCountsOvStage"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::BaseRigidBodyView::getShapeCountsOvStage"
+            }
+          }
+        }
+      ],
+      "required_fields": 8,
+      "targets": [
+        "RIGID_BODY",
+        "ARTICULATION_LINK"
+      ]
+    },
+    {
+      "name": "kArticulationRootAttributes",
+      "row_type": "ArticulationRootAttributeRow",
+      "target": "ARTICULATION",
+      "direction": "read",
+      "fields": [
+        "token",
+        "components",
+        "dtype",
+        "hostOnly",
+        "perShape",
+        "perCohort",
+        "inverseDynamicsColumn",
+        "cpuRead",
+        "hostRead",
+        "rootState",
+        "gpuColumn"
+      ],
+      "rows": [
+        {
+          "attribute": "root_position",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "perCohort": {
+              "metadata": "perCohort"
+            },
+            "inverseDynamicsColumn": {
+              "cpp": "InvDynCol::eNone"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::CpuArticulationView::getPositionsOvStage"
+            },
+            "hostRead": {
+              "cpp": "kArtiRootNotOnHost"
+            },
+            "rootState": {
+              "cpp": "RSQ::ePosition"
+            },
+            "gpuColumn": {
+              "cpp": "ArtiGpuColumn::eRootPosition"
+            }
+          }
+        },
+        {
+          "attribute": "root_orientation",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "perCohort": {
+              "metadata": "perCohort"
+            },
+            "inverseDynamicsColumn": {
+              "cpp": "InvDynCol::eNone"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::CpuArticulationView::getOrientationsOvStage"
+            },
+            "hostRead": {
+              "cpp": "kArtiRootNotOnHost"
+            },
+            "rootState": {
+              "cpp": "RSQ::eOrientation"
+            },
+            "gpuColumn": {
+              "cpp": "ArtiGpuColumn::eRootOrientation"
+            }
+          }
+        },
+        {
+          "attribute": "root_linear_velocity",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "perCohort": {
+              "metadata": "perCohort"
+            },
+            "inverseDynamicsColumn": {
+              "cpp": "InvDynCol::eNone"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::CpuArticulationView::getLinearVelocitiesOvStage"
+            },
+            "hostRead": {
+              "cpp": "kArtiRootNotOnHost"
+            },
+            "rootState": {
+              "cpp": "RSQ::eLinearVelocity"
+            },
+            "gpuColumn": {
+              "cpp": "ArtiGpuColumn::eRootLinearVelocity"
+            }
+          }
+        },
+        {
+          "attribute": "root_angular_velocity",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "perCohort": {
+              "metadata": "perCohort"
+            },
+            "inverseDynamicsColumn": {
+              "cpp": "InvDynCol::eNone"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::CpuArticulationView::getAngularVelocitiesOvStage"
+            },
+            "hostRead": {
+              "cpp": "kArtiRootNotOnHost"
+            },
+            "rootState": {
+              "cpp": "RSQ::eAngularVelocity"
+            },
+            "gpuColumn": {
+              "cpp": "ArtiGpuColumn::eRootAngularVelocity"
+            }
+          }
+        },
+        {
+          "attribute": "center_of_mass_world",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "perCohort": {
+              "metadata": "perCohort"
+            },
+            "inverseDynamicsColumn": {
+              "cpp": "InvDynCol::eNone"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::CpuArticulationView::getMassCentersWorldOvStage"
+            },
+            "hostRead": {
+              "cpp": "kArtiRootNotOnHost"
+            },
+            "rootState": {
+              "cpp": "RSQ::eNone"
+            },
+            "gpuColumn": {
+              "cpp": "ArtiGpuColumn::eMassCenterWorld"
+            }
+          }
+        },
+        {
+          "attribute": "center_of_mass_local",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "perCohort": {
+              "metadata": "perCohort"
+            },
+            "inverseDynamicsColumn": {
+              "cpp": "InvDynCol::eNone"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::CpuArticulationView::getMassCentersLocalOvStage"
+            },
+            "hostRead": {
+              "cpp": "kArtiRootNotOnHost"
+            },
+            "rootState": {
+              "cpp": "RSQ::eNone"
+            },
+            "gpuColumn": {
+              "cpp": "ArtiGpuColumn::eMassCenterLocal"
+            }
+          }
+        },
+        {
+          "attribute": "static_friction",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "perCohort": {
+              "metadata": "perCohort"
+            },
+            "inverseDynamicsColumn": {
+              "cpp": "InvDynCol::eNone"
+            },
+            "cpuRead": {
+              "cpp": "kArtiRootNotOnCpu"
+            },
+            "hostRead": {
+              "cpp": "&omni::physx::tensors::BaseArticulationView::getStaticFrictionsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "dynamic_friction",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "perCohort": {
+              "metadata": "perCohort"
+            },
+            "inverseDynamicsColumn": {
+              "cpp": "InvDynCol::eNone"
+            },
+            "cpuRead": {
+              "cpp": "kArtiRootNotOnCpu"
+            },
+            "hostRead": {
+              "cpp": "&omni::physx::tensors::BaseArticulationView::getDynamicFrictionsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "restitution",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "perCohort": {
+              "metadata": "perCohort"
+            },
+            "inverseDynamicsColumn": {
+              "cpp": "InvDynCol::eNone"
+            },
+            "cpuRead": {
+              "cpp": "kArtiRootNotOnCpu"
+            },
+            "hostRead": {
+              "cpp": "&omni::physx::tensors::BaseArticulationView::getRestitutionsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "contact_offset",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "perCohort": {
+              "metadata": "perCohort"
+            },
+            "inverseDynamicsColumn": {
+              "cpp": "InvDynCol::eNone"
+            },
+            "cpuRead": {
+              "cpp": "kArtiRootNotOnCpu"
+            },
+            "hostRead": {
+              "cpp": "&omni::physx::tensors::BaseArticulationView::getContactOffsetsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "rest_offset",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "perCohort": {
+              "metadata": "perCohort"
+            },
+            "inverseDynamicsColumn": {
+              "cpp": "InvDynCol::eNone"
+            },
+            "cpuRead": {
+              "cpp": "kArtiRootNotOnCpu"
+            },
+            "hostRead": {
+              "cpp": "&omni::physx::tensors::BaseArticulationView::getRestOffsetsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "shape_count",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "perCohort": {
+              "metadata": "perCohort"
+            },
+            "inverseDynamicsColumn": {
+              "cpp": "InvDynCol::eNone"
+            },
+            "cpuRead": {
+              "cpp": "kArtiRootNotOnCpu"
+            },
+            "hostRead": {
+              "cpp": "&omni::physx::tensors::BaseArticulationView::getShapeCountsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "dof_count",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "perCohort": {
+              "metadata": "perCohort"
+            },
+            "inverseDynamicsColumn": {
+              "cpp": "InvDynCol::eNone"
+            },
+            "cpuRead": {
+              "cpp": "kArtiRootNotOnCpu"
+            },
+            "hostRead": {
+              "cpp": "&omni::physx::tensors::BaseArticulationView::getDofCountsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "link_count",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "perCohort": {
+              "metadata": "perCohort"
+            },
+            "inverseDynamicsColumn": {
+              "cpp": "InvDynCol::eNone"
+            },
+            "cpuRead": {
+              "cpp": "kArtiRootNotOnCpu"
+            },
+            "hostRead": {
+              "cpp": "&omni::physx::tensors::BaseArticulationView::getLinkCountsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "joint_count",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "perCohort": {
+              "metadata": "perCohort"
+            },
+            "inverseDynamicsColumn": {
+              "cpp": "InvDynCol::eNone"
+            },
+            "cpuRead": {
+              "cpp": "kArtiRootNotOnCpu"
+            },
+            "hostRead": {
+              "cpp": "&omni::physx::tensors::BaseArticulationView::getJointCountsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "fixed_tendon_count",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "perCohort": {
+              "metadata": "perCohort"
+            },
+            "inverseDynamicsColumn": {
+              "cpp": "InvDynCol::eNone"
+            },
+            "cpuRead": {
+              "cpp": "kArtiRootNotOnCpu"
+            },
+            "hostRead": {
+              "cpp": "&omni::physx::tensors::BaseArticulationView::getFixedTendonCountsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "spatial_tendon_count",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "perCohort": {
+              "metadata": "perCohort"
+            },
+            "inverseDynamicsColumn": {
+              "cpp": "InvDynCol::eNone"
+            },
+            "cpuRead": {
+              "cpp": "kArtiRootNotOnCpu"
+            },
+            "hostRead": {
+              "cpp": "&omni::physx::tensors::BaseArticulationView::getSpatialTendonCountsOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "is_fixed_base",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "perCohort": {
+              "metadata": "perCohort"
+            },
+            "inverseDynamicsColumn": {
+              "cpp": "InvDynCol::eNone"
+            },
+            "cpuRead": {
+              "cpp": "kArtiRootNotOnCpu"
+            },
+            "hostRead": {
+              "cpp": "&omni::physx::tensors::BaseArticulationView::getIsFixedBaseOvStage"
+            }
+          }
+        },
+        {
+          "attribute": "jacobian",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "perCohort": {
+              "metadata": "perCohort"
+            },
+            "inverseDynamicsColumn": {
+              "cpp": "InvDynCol::eJacobian"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::CpuArticulationView::getJacobiansOvStage"
+            },
+            "hostRead": {
+              "cpp": "kArtiRootNotOnHost"
+            },
+            "rootState": {
+              "cpp": "RSQ::eNone"
+            },
+            "gpuColumn": {
+              "cpp": "ArtiGpuColumn::eJacobian"
+            }
+          }
+        },
+        {
+          "attribute": "mass_matrix",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "perCohort": {
+              "metadata": "perCohort"
+            },
+            "inverseDynamicsColumn": {
+              "cpp": "InvDynCol::eMassMatrix"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::CpuArticulationView::getMassMatricesOvStage"
+            },
+            "hostRead": {
+              "cpp": "kArtiRootNotOnHost"
+            },
+            "rootState": {
+              "cpp": "RSQ::eNone"
+            },
+            "gpuColumn": {
+              "cpp": "ArtiGpuColumn::eMassMatrix"
+            }
+          }
+        },
+        {
+          "attribute": "coriolis_force",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "perCohort": {
+              "metadata": "perCohort"
+            },
+            "inverseDynamicsColumn": {
+              "cpp": "InvDynCol::eCoriolisForce"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::CpuArticulationView::getCoriolisForcesOvStage"
+            },
+            "hostRead": {
+              "cpp": "kArtiRootNotOnHost"
+            },
+            "rootState": {
+              "cpp": "RSQ::eNone"
+            },
+            "gpuColumn": {
+              "cpp": "ArtiGpuColumn::eCoriolisForce"
+            }
+          }
+        },
+        {
+          "attribute": "gravity_force",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "perCohort": {
+              "metadata": "perCohort"
+            },
+            "inverseDynamicsColumn": {
+              "cpp": "InvDynCol::eGravityForce"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::CpuArticulationView::getGravityForcesOvStage"
+            },
+            "hostRead": {
+              "cpp": "kArtiRootNotOnHost"
+            },
+            "rootState": {
+              "cpp": "RSQ::eNone"
+            },
+            "gpuColumn": {
+              "cpp": "ArtiGpuColumn::eGravityForce"
+            }
+          }
+        },
+        {
+          "attribute": "centroidal_momentum",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "components": {
+              "metadata": "components"
+            },
+            "dtype": {
+              "metadata": "dtype"
+            },
+            "hostOnly": {
+              "metadata": "hostOnly"
+            },
+            "perShape": {
+              "metadata": "perShape"
+            },
+            "perCohort": {
+              "metadata": "perCohort"
+            },
+            "inverseDynamicsColumn": {
+              "cpp": "InvDynCol::eCentroidalMomentum"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::CpuArticulationView::getCentroidalMomentaOvStage"
+            },
+            "hostRead": {
+              "cpp": "kArtiRootNotOnHost"
+            },
+            "rootState": {
+              "cpp": "RSQ::eNone"
+            },
+            "gpuColumn": {
+              "cpp": "ArtiGpuColumn::eCentroidalMomentum"
+            }
+          }
+        }
+      ],
+      "required_fields": 9,
+      "targets": [
+        "ARTICULATION"
+      ]
+    },
+    {
+      "name": "kJointAttributes",
+      "row_type": "JointAttributeRow",
+      "target": "ARTICULATION_JOINT",
+      "direction": "read",
+      "fields": [
+        "token",
+        "gpuColumn",
+        "cpuRead",
+        "stateQuantity"
+      ],
+      "rows": [
+        {
+          "attribute": "joint_position",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "gpuColumn": {
+              "cpp": "RecordGpuColumn::eDofPosition"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::CpuArticulationView::getDofPositionsOvStage"
+            },
+            "stateQuantity": {
+              "cpp": "omni::physx::tensors::BaseArticulationView::DofStateQuantity::ePosition"
+            }
+          }
+        },
+        {
+          "attribute": "joint_velocity",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "gpuColumn": {
+              "cpp": "RecordGpuColumn::eDofVelocity"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::CpuArticulationView::getDofVelocitiesOvStage"
+            },
+            "stateQuantity": {
+              "cpp": "omni::physx::tensors::BaseArticulationView::DofStateQuantity::eVelocity"
+            }
+          }
+        },
+        {
+          "attribute": "joint_position_target",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "gpuColumn": {
+              "cpp": "RecordGpuColumn::eDofPositionTarget"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::CpuArticulationView::getDofPositionTargetsOvStage"
+            },
+            "stateQuantity": {
+              "cpp": "omni::physx::tensors::BaseArticulationView::DofStateQuantity::ePositionTarget"
+            }
+          }
+        },
+        {
+          "attribute": "joint_velocity_target",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "gpuColumn": {
+              "cpp": "RecordGpuColumn::eDofVelocityTarget"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::CpuArticulationView::getDofVelocityTargetsOvStage"
+            },
+            "stateQuantity": {
+              "cpp": "omni::physx::tensors::BaseArticulationView::DofStateQuantity::eVelocityTarget"
+            }
+          }
+        },
+        {
+          "attribute": "joint_actuation_force",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "gpuColumn": {
+              "cpp": "RecordGpuColumn::eDofActuationForce"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::CpuArticulationView::getDofActuationForcesOvStage"
+            },
+            "stateQuantity": {
+              "cpp": "omni::physx::tensors::BaseArticulationView::DofStateQuantity::eActuationForce"
+            }
+          }
+        },
+        {
+          "attribute": "joint_projected_force",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "gpuColumn": {
+              "cpp": "RecordGpuColumn::eDofProjectedForce"
+            },
+            "cpuRead": {
+              "cpp": "&omni::physx::tensors::CpuArticulationView::getDofProjectedForcesOvStage"
+            }
+          }
+        }
+      ],
+      "required_fields": 3,
+      "targets": [
+        "ARTICULATION_JOINT"
+      ]
+    },
+    {
+      "name": "kJointPropertyAttributes",
+      "row_type": "JointPropertyAttributeRow",
+      "target": "ARTICULATION_JOINT",
+      "direction": "read",
+      "fields": [
+        "token",
+        "prop"
+      ],
+      "rows": [
+        {
+          "attribute": "joint_stiffness",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::DofProperty::eStiffness"
+            }
+          }
+        },
+        {
+          "attribute": "joint_damping",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::DofProperty::eDamping"
+            }
+          }
+        },
+        {
+          "attribute": "joint_limit",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::DofProperty::eLimit"
+            }
+          }
+        },
+        {
+          "attribute": "joint_max_velocity",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::DofProperty::eMaxVelocity"
+            }
+          }
+        },
+        {
+          "attribute": "joint_max_force",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::DofProperty::eMaxForce"
+            }
+          }
+        },
+        {
+          "attribute": "joint_armature",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::DofProperty::eArmature"
+            }
+          }
+        },
+        {
+          "attribute": "joint_static_friction",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::DofProperty::eStaticFriction"
+            }
+          }
+        },
+        {
+          "attribute": "joint_dynamic_friction",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::DofProperty::eDynamicFriction"
+            }
+          }
+        },
+        {
+          "attribute": "joint_viscous_friction",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::DofProperty::eViscousFriction"
+            }
+          }
+        },
+        {
+          "attribute": "joint_speed_effort_gradient",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::DofProperty::eSpeedEffortGradient"
+            }
+          }
+        },
+        {
+          "attribute": "joint_max_actuator_velocity",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::DofProperty::eMaxActuatorVelocity"
+            }
+          }
+        },
+        {
+          "attribute": "joint_velocity_dependent_resistance",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::DofProperty::eVelocityDependentResistance"
+            }
+          }
+        },
+        {
+          "attribute": "joint_drive_type",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::DofProperty::eDriveType"
+            }
+          }
+        }
+      ],
+      "required_fields": 2,
+      "targets": [
+        "ARTICULATION_JOINT"
+      ]
+    },
+    {
+      "name": "kTendonAttributes",
+      "row_type": "TendonAttributeRow",
+      "target": "FIXED_TENDON",
+      "direction": "read",
+      "fields": [
+        "token",
+        "prop",
+        "fixedOnly"
+      ],
+      "rows": [
+        {
+          "attribute": "tendon_stiffness",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::TendonProperty::eStiffness"
+            },
+            "fixedOnly": {
+              "cpp": "false"
+            }
+          }
+        },
+        {
+          "attribute": "tendon_damping",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::TendonProperty::eDamping"
+            },
+            "fixedOnly": {
+              "cpp": "false"
+            }
+          }
+        },
+        {
+          "attribute": "tendon_limit_stiffness",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::TendonProperty::eLimitStiffness"
+            },
+            "fixedOnly": {
+              "cpp": "false"
+            }
+          }
+        },
+        {
+          "attribute": "tendon_offset",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::TendonProperty::eOffset"
+            },
+            "fixedOnly": {
+              "cpp": "false"
+            }
+          }
+        },
+        {
+          "attribute": "tendon_limit",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::TendonProperty::eLimit"
+            },
+            "fixedOnly": {
+              "cpp": "true"
+            }
+          }
+        },
+        {
+          "attribute": "tendon_rest_length",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "prop": {
+              "cpp": "omni::physx::tensors::TendonProperty::eRestLength"
+            },
+            "fixedOnly": {
+              "cpp": "true"
+            }
+          }
+        }
+      ],
+      "required_fields": 3,
+      "targets": [
+        "FIXED_TENDON",
+        "SPATIAL_TENDON"
+      ]
+    },
+    {
+      "name": "kVehicleDriveAttrs",
+      "row_type": "VehicleDriveAttribute",
+      "target": "VEHICLE",
+      "direction": "read",
+      "fields": [
+        "token",
+        "component"
+      ],
+      "rows": [
+        {
+          "attribute": "accelerator",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "component": {
+              "cpp": "VehicleView::DriveState::eAccelerator"
+            }
+          }
+        },
+        {
+          "attribute": "brake0",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "component": {
+              "cpp": "VehicleView::DriveState::eBrake0"
+            }
+          }
+        },
+        {
+          "attribute": "brake1",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "component": {
+              "cpp": "VehicleView::DriveState::eBrake1"
+            }
+          }
+        },
+        {
+          "attribute": "steer",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "component": {
+              "cpp": "VehicleView::DriveState::eSteer"
+            }
+          }
+        },
+        {
+          "attribute": "clutch",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "component": {
+              "cpp": "VehicleView::DriveState::eClutch"
+            }
+          }
+        },
+        {
+          "attribute": "current_gear",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "component": {
+              "cpp": "VehicleView::DriveState::eCurrentGear"
+            }
+          }
+        },
+        {
+          "attribute": "target_gear",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "component": {
+              "cpp": "VehicleView::DriveState::eTargetGear"
+            }
+          }
+        },
+        {
+          "attribute": "engine_rotation_speed",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "component": {
+              "cpp": "VehicleView::DriveState::eEngineRotationSpeed"
+            }
+          }
+        },
+        {
+          "attribute": "automatic_transmission",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "component": {
+              "cpp": "VehicleView::DriveState::eAutomaticTransmission"
+            }
+          }
+        },
+        {
+          "attribute": "gear_switch_time",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "component": {
+              "cpp": "VehicleView::DriveState::eGearSwitchTime"
+            }
+          }
+        },
+        {
+          "attribute": "autobox_time_since_last_shift",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "component": {
+              "cpp": "VehicleView::DriveState::eAutoboxTimeSinceLastShift"
+            }
+          }
+        }
+      ],
+      "required_fields": 2,
+      "targets": [
+        "VEHICLE"
+      ]
+    },
+    {
+      "name": "kVehicleWheelStateAttrs",
+      "row_type": "VehicleWheelAttribute",
+      "target": "VEHICLE_WHEEL",
+      "direction": "read",
+      "fields": [
+        "token",
+        "component"
+      ],
+      "rows": [
+        {
+          "attribute": "rotation_speed",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "component": {
+              "cpp": "VehicleView::WheelState::eRotationSpeed"
+            }
+          }
+        },
+        {
+          "attribute": "rotation_angle",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "component": {
+              "cpp": "VehicleView::WheelState::eRotationAngle"
+            }
+          }
+        },
+        {
+          "attribute": "wheel_steer_angle",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "component": {
+              "cpp": "VehicleView::WheelState::eWheelSteerAngle"
+            }
+          }
+        },
+        {
+          "attribute": "suspension_jounce",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "component": {
+              "cpp": "VehicleView::WheelState::eSuspensionJounce"
+            }
+          }
+        },
+        {
+          "attribute": "suspension_force",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "component": {
+              "cpp": "VehicleView::WheelState::eSuspensionForce"
+            }
+          }
+        },
+        {
+          "attribute": "tire_friction",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "component": {
+              "cpp": "VehicleView::WheelState::eTireFriction"
+            }
+          }
+        },
+        {
+          "attribute": "tire_longitudinal_direction",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "component": {
+              "cpp": "VehicleView::WheelState::eTireLongitudinalDirection"
+            }
+          }
+        },
+        {
+          "attribute": "tire_lateral_direction",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "component": {
+              "cpp": "VehicleView::WheelState::eTireLateralDirection"
+            }
+          }
+        },
+        {
+          "attribute": "tire_longitudinal_slip",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "component": {
+              "cpp": "VehicleView::WheelState::eTireLongitudinalSlip"
+            }
+          }
+        },
+        {
+          "attribute": "tire_lateral_slip",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "component": {
+              "cpp": "VehicleView::WheelState::eTireLateralSlip"
+            }
+          }
+        },
+        {
+          "attribute": "tire_force",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "component": {
+              "cpp": "VehicleView::WheelState::eTireForce"
+            }
+          }
+        },
+        {
+          "attribute": "is_on_ground",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "component": {
+              "cpp": "VehicleView::WheelState::eIsOnGround"
+            }
+          }
+        },
+        {
+          "attribute": "ground_plane",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "component": {
+              "cpp": "VehicleView::WheelState::eGroundPlane"
+            }
+          }
+        },
+        {
+          "attribute": "ground_hit_position",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "component": {
+              "cpp": "VehicleView::WheelState::eGroundHitPosition"
+            }
+          }
+        },
+        {
+          "attribute": "ground_actor_path",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "component": {
+              "cpp": "VehicleView::WheelState::eGroundActorId"
+            }
+          }
+        },
+        {
+          "attribute": "ground_shape_path",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "component": {
+              "cpp": "VehicleView::WheelState::eGroundShapeId"
+            }
+          }
+        },
+        {
+          "attribute": "ground_material_path",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "component": {
+              "cpp": "VehicleView::WheelState::eGroundMaterialId"
+            }
+          }
+        }
+      ],
+      "required_fields": 2,
+      "targets": [
+        "VEHICLE_WHEEL"
+      ]
+    },
+    {
+      "name": "kMaterialAttributes",
+      "row_type": "MaterialAttributeRow",
+      "target": "DEFORMABLE_MATERIAL",
+      "direction": "read",
+      "fields": [
+        "token",
+        "surfaceOnly",
+        "read"
+      ],
+      "rows": [
+        {
+          "attribute": "deformable_dynamic_friction",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "surfaceOnly": {
+              "cpp": "false"
+            },
+            "read": {
+              "cpp": "ioReadDeformableDynamicFriction"
+            }
+          }
+        },
+        {
+          "attribute": "deformable_youngs_modulus",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "surfaceOnly": {
+              "cpp": "false"
+            },
+            "read": {
+              "cpp": "ioReadDeformableYoungsModulus"
+            }
+          }
+        },
+        {
+          "attribute": "deformable_poissons_ratio",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "surfaceOnly": {
+              "cpp": "false"
+            },
+            "read": {
+              "cpp": "ioReadDeformablePoissonsRatio"
+            }
+          }
+        },
+        {
+          "attribute": "deformable_elasticity_damping",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "surfaceOnly": {
+              "cpp": "false"
+            },
+            "read": {
+              "cpp": "ioReadDeformableElasticityDamping"
+            }
+          }
+        },
+        {
+          "attribute": "deformable_bending_stiffness",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "surfaceOnly": {
+              "cpp": "true"
+            },
+            "read": {
+              "cpp": "ioReadDeformableBendingStiffness"
+            }
+          }
+        },
+        {
+          "attribute": "deformable_thickness",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "surfaceOnly": {
+              "cpp": "true"
+            },
+            "read": {
+              "cpp": "ioReadDeformableThickness"
+            }
+          }
+        },
+        {
+          "attribute": "deformable_bending_damping",
+          "values": {
+            "token": {
+              "metadata": "name"
+            },
+            "surfaceOnly": {
+              "cpp": "true"
+            },
+            "read": {
+              "cpp": "ioReadDeformableBendingDamping"
+            }
+          }
+        }
+      ],
+      "required_fields": 3,
+      "targets": [
+        "DEFORMABLE_MATERIAL"
+      ]
+    }
+  ]
+}

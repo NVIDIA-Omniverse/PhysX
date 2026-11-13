@@ -7,6 +7,7 @@
 #define OMNI_PVD_SOCKET_READ_STREAM_H
 
 #include "OmniPvdReadStream.h"
+#include "OmniPvdCaptureRequest.h"
 
 /**
  * \brief A TCP socket read stream: receives the OmniPVD command stream from a connected peer.
@@ -72,6 +73,28 @@ public:
 	 * \return True (close always succeeds).
 	 */
 	virtual bool OMNI_PVD_CALL closeStream() = 0;
+
+	/**
+	 * \brief Sends a capture request to a producer advertising capture-control support.
+	 * May run concurrently with readBytes()/skipBytes(); control sends are internally serialized.
+	 * Do not close, reopen or destroy the stream concurrently. The socket's send timeout applies
+	 * separately to each partial send; it is not a deadline for the complete request, so this call
+	 * can block longer than one timeout interval. The producer applies requests only when its application processes them at a
+	 * simulation safe point. Older producers return false without receiving any control bytes.
+	 * \param request Selection and connection-local request ID; arrays are borrowed for this call.
+	 * \return True when sent, false for an invalid request, unsupported peer or transport failure.
+	 */
+	virtual bool OMNI_PVD_CALL requestCapture(const OmniPvdCaptureRequest& request) { (void)request; return false; }
+
+	/**
+	 * \brief Requests the current eligible-object catalog without changing the recording selection.
+	 * The producer returns catalog metadata through the ordinary OmniPVD command stream when its
+	 * application processes the request. Uses the same serialization and timeout rules as requestCapture().
+	 * Older producers without catalog support return false without receiving any control bytes.
+	 * \param requestId Nonzero, increasing connection-local ID shared with selection requests.
+	 * \return True when sent, false for an invalid ID, unsupported peer or transport failure.
+	 */
+	virtual bool OMNI_PVD_CALL requestCaptureCatalog(uint64_t requestId) { (void)requestId; return false; }
 
 protected:
 	// Factory-created interface: only the derived Impl constructs it (via

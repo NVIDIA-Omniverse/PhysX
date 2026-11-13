@@ -403,10 +403,10 @@ def test_write_groups_match_the_read(physx_sdk):
 # ---------------------------------------------------------------------------
 # Articulation joints.
 #
-# These are BINDING tests, not correctness tests. They prove the C and Python layers carry an
-# array group end to end: N tensors per group, the right selector, the link refusal surfacing as
-# an exception. They key by tensor INDEX, so they would not catch the read and write disagreeing
-# about prim ORDER.
+# These are BINDING tests, not correctness tests. They prove the C and Python layers carry a
+# joint group end to end: one fixed tensor with one row per DOF, the right selector, the link
+# refusal surfacing as an exception. They key by ROW index, so they would not catch the read and
+# write disagreeing about prim ORDER.
 #
 # That per-prim guarantee, and the angular-scale inversion in the joint path, are asserted in
 # TestOvstageWriteScatter.cpp, where the values are compared per prim path and a flipped scale
@@ -415,18 +415,18 @@ def test_write_groups_match_the_read(physx_sdk):
 
 
 def _read_joint_state(physx, attr="jointPosition"):
-    """path -> that joint's per-axis values.
+    """row -> that DOF's values.
 
-    Joint groups are ARRAY groups: one tensor PER PRIM, so the value for prim i is tensors[i], not a
-    slice of tensors[0]. Reading them the fixed-group way would alias every joint onto one tensor and
-    still produce plausible numbers.
+    A joint group is one tensor with one row per DOF, each row's prim the joint it belongs to
+    (ADR-0059). CartPole's joints have one DOF each, so a row is a joint.
     """
     out = {}
     with physx.read_sync(SimObjectType.ARTICULATION_JOINT, [attr]) as result:
         for g in result.groups:
-            assert len(g.tensors) == g.prim_count, "array group: one tensor per prim"
-            for i, t in enumerate(g.tensors):
-                out[i] = _to_host(t).reshape(-1)
+            assert not g.is_array and len(g.tensors) == 1, "a joint group is one tensor"
+            rows = _to_host(g.tensors[0]).reshape(g.prim_count, -1)  # one row per DOF
+            for r in range(g.prim_count):
+                out[r] = rows[r].copy()  # a host column's view dies with the read
     return out
 
 
@@ -449,13 +449,14 @@ def test_joint_position_round_trips(physx_sdk):
     with physx_sdk.write_sync(SimObjectType.ARTICULATION_JOINT, "jointPosition") as w:
         assert w.groups, "expected a writable joint group"
         for g in w.groups:
-            assert len(g.tensors) == g.prim_count
-            for i, t in enumerate(g.tensors):
-                assert isinstance(t, wp.array)
-                n = int(t.size)
-                block = np.full(n, 0.25 * (i + 1), dtype=np.float32)
-                _fill(t, block)
-                target[i] = block
+            assert len(g.tensors) == 1, "a joint group is one tensor, one row per DOF"
+            t = g.tensors[0]
+            assert isinstance(t, wp.array)
+            assert int(t.shape[0]) == g.prim_count
+            block = np.array([0.25 * (r + 1) for r in range(g.prim_count)], dtype=np.float32)
+            _fill(t, block)
+            for r in range(g.prim_count):
+                target[r] = block[r : r + 1]
             _commit_after_fill(w, g)
 
     after = _read_joint_state(physx_sdk)

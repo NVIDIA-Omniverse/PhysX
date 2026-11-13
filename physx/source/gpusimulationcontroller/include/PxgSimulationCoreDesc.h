@@ -144,8 +144,9 @@ namespace physx
 		static constexpr PxU32 DEFORMABLE_SHIFT = 34;
 		static constexpr PxU32 DEFORMABLE_BITS = 64 - DEFORMABLE_SHIFT;
 
-		// Limits dictated by the public API macros, as opposed to FEATURE_ID_MASK, which is the field's
-		// capacity.
+		// Limits dictated by the public API macros, as opposed to the field capacities given by
+		// DEFORMABLE_BITS and FEATURE_ID_MASK. Every deformable id stays below MAX_NB_DEFORMABLES, because the
+		// scene limit also counts removed deformables whose ids are not reused yet.
 		static constexpr PxU32 MAX_NB_DEFORMABLES = PX_MAX_NB_DEFORMABLE_SURFACE;
 		static constexpr PxU32 MAX_NB_FEATURES = PX_MAX_NB_DEFORMABLE_SURFACE_TRI;
 
@@ -484,6 +485,8 @@ namespace physx
 		PxU32					mTotalUnfrozenShapes;
 	};
 
+	// Uploaded once per simulation step in solver setup, for the direct GPU API write kernels that run between steps. Kernels
+	// that run within the step take their buffers as launch arguments, because the step can reallocate them before they run.
 	struct PxgUpdateActorDataDesc
 	{
 		PxgBodySim*			mBodySimBufferDeviceData;
@@ -497,9 +500,6 @@ namespace physx
 		PxU32*				mShapeIndices;
 
 		PxU32*				mUpdated;					//Direct API changed handle
-		PxU32*				mChangedAABBMgrHandles;		//CPU API changed handle
-
-		PxU32				mBitMapWordCounts;
 
 		const PxgShapeSim*	mShapeSimsBufferDeviceData;
 	};

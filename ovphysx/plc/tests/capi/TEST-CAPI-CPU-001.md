@@ -9,8 +9,9 @@ type: unit
 
 ## Scenario
 
-The public `ovphysx_get_cpu_mode` query reports the effective hard CPU-only
-policy, rejects a null out-parameter, and instance creation names the policy
+The public `ovphysx_get_global_config(OVPHYSX_GLOBAL_CONFIG_CPU_ONLY)` query
+reports the effective hard CPU-only policy. `ovphysx_get_cpu_mode` forwards to
+that key, rejects a null out-parameter, and instance creation names the policy
 in its INFO create line. Empty versus `"-1"` `active_cuda_gpus` create-log
 labels follow ADR-0011. Fresh subprocesses also pin the first non-empty
 `warp.array` construction through both the read and write frontends.
@@ -18,8 +19,9 @@ labels follow ADR-0011. Fresh subprocesses also pin the first non-empty
 ## Given
 
 - A process where either `OVPHYSX_DISABLE_GPU` is set (CPU CTest pass) or
-  `ovphysx_set_cpu_mode(true)` has succeeded (isolated
-  `CpuNoCudaContextGpuTest` process / Python `cpu_tests` process).
+  `OVPHYSX_GLOBAL_CONFIG_CPU_ONLY` has been set true (isolated
+  `CpuNoCudaContextGpuTest` process). The Python `cpu_tests` process still
+  enables the same policy through `PhysX.set_cpu_mode(True)`.
 - A fresh Python lifecycle subprocess with `OVPHYSX_DISABLE_GPU` unset for
   the default-false and pre-init setenv latch sequence.
 - An isolated `ActiveCudaGpusAttachTest` process without
@@ -31,8 +33,8 @@ labels follow ADR-0011. Fresh subprocesses also pin the first non-empty
 
 - `ovphysx_get_cpu_mode(NULL)` is called.
 - `ovphysx_get_cpu_mode(&out)` is called after hard CPU-only mode is active.
-- `ovphysx_get_cpu_mode(&out)` is called before `set_cpu_mode` in the
-  isolated CPU-no-CUDA process (env unset).
+- `ovphysx_get_global_config(OVPHYSX_GLOBAL_CONFIG_CPU_ONLY)` is called before
+  `ovphysx_set_global_config` in the isolated CPU-no-CUDA process (env unset).
 - Python: `get_cpu_mode()` then setenv `OVPHYSX_DISABLE_GPU` then
   `PhysX()` / initialize in a fresh lifecycle subprocess.
 - Python `PhysX.get_cpu_mode()` is called in the `cpu_tests` process after
@@ -47,8 +49,8 @@ labels follow ADR-0011. Fresh subprocesses also pin the first non-empty
 
 - The null out-parameter call returns `OVPHYSX_API_INVALID_ARGUMENT` (REQ AC-2).
 - The successful query writes true when hard CPU-only mode is active (REQ AC-1).
-- The isolated CPU-no-CUDA process reports false before `set_cpu_mode` when
-  the env is unset (REQ AC-1 inactive case).
+- The isolated CPU-no-CUDA process reports false for `CPU_ONLY` before the
+  global-config setter when the env is unset (REQ AC-1 inactive case).
 - The lifecycle probe reports false, then true after setenv before
   initialize, and true after `PhysX()` even once `OVPHYSX_DISABLE_GPU` is
   cleared post-init (REQ AC-1 latch sequence).

@@ -10,7 +10,7 @@
 # @covers AC-1 AC-2
 #
 # @implements REQ-CAPI-BENCHMARK-004
-# @covers AC-1 AC-2 AC-5
+# @covers AC-1 AC-2 AC-5 AC-6
 #
 # Built only when OVPHYSX_BUILD_BENCHMARKS=ON. The harness and framework files
 # under framework/ are imported from omni.physx/tests/test.benchmarks/ to keep
@@ -57,6 +57,7 @@ set(OVPHYSX_BENCHMARK_SUITE_SRCS
     benchmarks/LowLoad.cpp
     benchmarks/LabCartpole.cpp
     benchmarks/LabAnymal.cpp
+    benchmarks/LabHumanoid.cpp
     benchmarks/AuthoringPopulationAdd.cpp
     benchmarks/AuthoringTeleport.cpp
     benchmarks/AuthoringDrain.cpp
@@ -90,6 +91,19 @@ set_tests_properties(benchmark-failure-unit PROPERTIES
     LABELS "benchmark-unit;benchmarks"
 )
 
+# Filter semantics are independent of the SDK and need no test framework.
+add_executable(benchmark_filter_tests tests/BenchmarkFilterTest.cpp)
+ovphysx_apply_compiler_defaults(benchmark_filter_tests)
+set_target_properties(benchmark_filter_tests PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+)
+add_test(NAME benchmark-filter-unit COMMAND benchmark_filter_tests)
+set_tests_properties(benchmark-filter-unit PROPERTIES
+    LABELS "benchmark-unit;benchmarks"
+    TIMEOUT 10
+)
+
 add_executable(benchmark_timing_diagnostics_tests
     tests/TimingDiagnosticsTest.cpp
     TimingDiagnostics.cpp
@@ -106,6 +120,20 @@ add_test(NAME benchmark-timing-diagnostics-unit
 set_tests_properties(benchmark-timing-diagnostics-unit PROPERTIES
     LABELS "benchmark-unit;benchmarks"
 )
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    add_executable(benchmark_contact_affinity_tests tests/ContactAffinityBarrierTest.cpp)
+    ovphysx_apply_compiler_defaults(benchmark_contact_affinity_tests)
+    set_target_properties(benchmark_contact_affinity_tests PROPERTIES
+        CXX_STANDARD 17
+        CXX_STANDARD_REQUIRED ON
+    )
+    add_test(NAME benchmark-contact-affinity-unit COMMAND benchmark_contact_affinity_tests)
+    set_tests_properties(benchmark-contact-affinity-unit PROPERTIES
+        LABELS "benchmark-unit;benchmarks"
+        TIMEOUT 10
+    )
+endif()
 
 target_link_libraries(ovphysx_benchmarks PRIVATE ovphysx ovphysx::ovstage)
 

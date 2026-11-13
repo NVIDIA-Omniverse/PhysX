@@ -28,10 +28,13 @@ in the getting-started documentation.
   bootstrap, including a newer patch within the same minor release. If no
   compatible package is available and fetching is disabled, required
   resolution fails while a quiet optional lookup reports not-found. The
-  existing schema-registration capability check remains in force.
+  existing schema-registration capability check remains in force, and a
+  package without the strong ovx handles (`ovx_token_is_valid()`) fails the
+  same way.
 - AC-3: **Invalid pins fail.** Package generation fails when the pin source
-  is missing, the assignment is missing or duplicated, or its value is not
-  `major.minor.patch[.build[.hash]]` with numeric version components.
+  is missing, the assignment is missing or duplicated, or its value is
+  neither `major.minor.patch[.build[.hash]]` with numeric version components
+  nor a dev build's `major.minor.patch.devN+label.hash`.
 
 ## Known limitations
 

@@ -40,7 +40,8 @@ def _read_pin_commands(pin_source: Path) -> str:
     )
 
 
-def _generate_packages(tmp_path: Path, pin: str, supplied_version: str, *, schema_api: bool = True) -> Path:
+def _generate_packages(tmp_path: Path, pin: str, supplied_version: str, *, schema_api: bool = True,
+                       strong_handles: bool = True, description_api: bool = True, signed_ordinals: bool = True) -> Path:
     """Use the shipped template and CMake's normal package-version selection."""
     sdk = tmp_path / "sdk"
     config_dir = sdk / "lib" / "cmake" / "ovphysx"
@@ -67,6 +68,25 @@ def _generate_packages(tmp_path: Path, pin: str, supplied_version: str, *, schem
     (include_dir / "ovstage").mkdir(parents=True, exist_ok=True)
     (include_dir / "ovstage" / "ovstage_population.h").write_text(
         "void ovstage_population_register_usd_schemas();\n" if schema_api else "/* No schema API. */\n",
+        encoding="utf-8",
+    )
+    if description_api:
+        population_h = include_dir / "ovstage/ovstage_population.h"
+        population_h.write_text(population_h.read_text() + "void ovstage_population_open_usd_from_file_with_desc();\n")
+        (include_dir / "ovstage/ovstage_population_expression.h").write_text(
+            "void ovstage_population_expression_resolved_bound_material();\n")
+        (include_dir / "ovstage/ovstage_population_predicate.h").write_text(
+            "void ovstage_population_prim_predicate_is_targeted_by();\n")
+    api = include_dir / "ovstage/ovstage_api"
+    api.mkdir(exist_ok=True)
+    (api / "ovstage_api_types.h").write_text(
+        "typedef int64_t ovstage_ordinal_t;\n#define OVSTAGE_ORDINAL_MAX INT64_MAX\n" if signed_ordinals
+        else "typedef uint64_t ovstage_ordinal_t;\n")
+    (include_dir / "ovx").mkdir(exist_ok=True)
+    (include_dir / "ovx" / "string_types.h").write_text(
+        "typedef struct ovx_token_t { unsigned long long raw_id; } ovx_token_t;\n"
+        "static inline int ovx_token_is_valid(ovx_token_t token);\n" if strong_handles
+        else "typedef unsigned long long ovx_token_t;\n",
         encoding="utf-8",
     )
     (ovstage / "ovstageConfig.cmake").write_text(
@@ -152,7 +172,7 @@ def test_consumer_rejects_incompatible_ovstage_when_fetch_disabled(tmp_path, sup
     assert "OVPHYSX_FETCH_OVSTAGE is OFF" in " ".join(_output(result).split())
 
 
-@pytest.mark.parametrize("pin", [PIN, "0.7.2.999999", "0.8.0"])
+@pytest.mark.parametrize("pin", [PIN, "0.7.2.999999", "0.8.0", "0.3.1.dev1793576840+main.2fce4391"])
 def test_consumer_accepts_matching_release_and_exposes_full_pin(tmp_path, pin):
     semver = ".".join(pin.split(".")[:3])
     config_dir = _generate_packages(tmp_path, pin, semver)
@@ -186,6 +206,14 @@ def test_consumer_rejects_missing_schema_registration_api(tmp_path):
     assert "ovstage_population_register_usd_schemas" in _output(result)
 
 
+def test_consumer_rejects_ovstage_without_strong_handles(tmp_path):
+    # A pre-migration 0.4.0 build advertises the same CMake version as the pinned one.
+    config_dir = _generate_packages(tmp_path, PIN, "0.3.1", strong_handles=False)
+    result = _configure_consumer(tmp_path, config_dir)
+    assert result.returncode != 0, _output(result)
+    assert "ovx_token_is_valid" in _output(result)
+
+
 @pytest.mark.parametrize(
     "source",
     [
@@ -193,9 +221,10 @@ def test_consumer_rejects_missing_schema_registration_api(tmp_path):
         "# No pin\n",
         'OVSTAGE_VERSION = "0.2"\n',
         'OVSTAGE_VERSION = "0.2.1.bad"\n',
+        'OVSTAGE_VERSION = "0.2.1.dev385922+main"\n',
         'OVSTAGE_VERSION = "0.2.1.385922"\nOVSTAGE_VERSION = "0.2.2.999999"\n',
     ],
-    ids=["missing-file", "missing-pin", "missing-patch", "invalid-build", "duplicate-pin"],
+    ids=["missing-file", "missing-pin", "missing-patch", "invalid-build", "dev-without-hash", "duplicate-pin"],
 )
 def test_package_generation_rejects_missing_or_malformed_pin(tmp_path, source):
     pin_source = tmp_path / "fetch_ovstage_release.py"
@@ -272,3 +301,11 @@ def test_windows_launcher_preserves_parent_path_and_child_exit_code(tmp_path, ex
         text=True, capture_output=True, check=False,
     )
     assert result.returncode == 0, _output(result)
+
+
+@pytest.mark.parametrize('missing', ['description_api', 'signed_ordinals'])
+def test_consumer_rejects_pre_description_same_minor_build(tmp_path, missing):
+    config_dir = _generate_packages(tmp_path, "0.4.0.1793943476", "0.4.0", **{missing: False})
+    result = _configure_consumer(tmp_path, config_dir)
+    assert result.returncode != 0, _output(result)
+    assert "requires population descriptions and signed ordinal bounds" in " ".join(_output(result).split())

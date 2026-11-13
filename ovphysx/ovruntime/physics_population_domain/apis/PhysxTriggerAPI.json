@@ -1,0 +1,39 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxTriggerAPI",
+  "title": "PhysxTriggerAPI",
+  "summary": "Marks a collision shape as a trigger volume. The API declares no properties: its presence in usd-schemas is the whole signal. The shape is created with PxShapeFlag::eTRIGGER_SHAPE set (to physics:collisionEnabled) and eSIMULATION_SHAPE and eSCENE_QUERY_SHAPE cleared.",
+  "status": "draft",
+  "applies_to": [
+    "Gprim"
+  ],
+  "requires": [
+    "PhysicsCollisionAPI"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "producer_scope": "The API has no attributes or relationships, so the producer publishes only its token in usd-schemas. Nothing else changes on the row.",
+  "columns": [],
+  "interactions": [
+    {
+      "with": "PhysicsCollisionAPI",
+      "rule": "The collision parse marks the shape as a trigger when this API is in usd-schemas (the mark is only ever set, never cleared). At shape creation the consumer then sets eSIMULATION_SHAPE false, eTRIGGER_SHAPE to physics:collisionEnabled, eSCENE_QUERY_SHAPE false. Verification of a trigger prim: the shape has PxShapeFlag::eTRIGGER_SHAPE set and eSIMULATION_SHAPE clear; the contract can attach this only to a column, and this API owns none."
+    },
+    {
+      "with": "PhysicsMeshCollisionAPI",
+      "rule": "A trigger on a triangle-mesh shape (approximation none, meshSimplification or sdf on a static or kinematic body) is refused: the consumer logs a warning and creates a regular collision shape instead."
+    },
+    {
+      "with": "PhysxTriggerStateAPI",
+      "rule": "When PhysxTriggerStateAPI is also applied, the shape is also marked for trigger output and the trigger manager writes physxTrigger:triggeredCollisions back to a USD stage; on a stage-less ovstage attach the trigger preload does nothing."
+    }
+  ],
+  "notes": [
+    "The generated tests cannot verify this API because verify blocks hang on columns and the API has none; the expected observation on a trigger collider is a shape with PxShapeFlag::eTRIGGER_SHAPE set.",
+    "Because eTRIGGER_SHAPE is set to physics:collisionEnabled, a trigger whose collider is disabled has neither the simulation nor the trigger flag."
+  ]
+}

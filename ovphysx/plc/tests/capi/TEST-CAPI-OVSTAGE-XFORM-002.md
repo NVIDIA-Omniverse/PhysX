@@ -11,24 +11,28 @@ type: integration
 
 Population retains a world-matrix column usable by output publication.
 Automated coverage is
-`OvStageOutputGpuTest.DirectGpuCachedAndUncachedMatricesPreserveScaleAndCallerContext`
+`OvStageOutputGpuTest.DirectGpuCachedAndUncachedMatricesUseDeviceScaleAndCallerContext`
 in `tests/c_unittests/test_ovstage_output.cpp`.
 
 ## Given
 
 - A CUDA-capable GPU and a fresh ovphysx instance.
-- `tests/data/boxes_falling_on_groundplane_gpu.usda`, populated through
+- `tests/data/ovstage_output_bodies_gpu.usda`, a DirectGPU scene with a mirrored
+  body and a body under a scaled parent, populated through
   `attach_usd_with_ovstage` at sealed ordinal 1.
 
 ## When
 
-- Step once, read the populated world matrix, write signed scale at ordinal 2,
-  and seal it.
-- Publish world transforms at ordinals 3 through 6 with cached and uncached
+- Step once, read the populated world matrices at ordinal 1, and read the
+  device-resident physics pose and `worldScale` columns.
+- With no CUDA context current on the calling thread, publish world transforms
+  at ordinals 2 through 5 with cached (2 and 3), uncached (4) and refreshed (5)
   `writeWorldTransformsToOvstage` calls, sealing each output ordinal.
 
 ## Then
 
-- The initial world-matrix read returns a matrix (REQ AC-1).
-- Every publication succeeds and writes at least one matrix; signed scale is
-  preserved and the box's translation reflects gravity (REQ AC-1).
+- The initial world-matrix read returns a matrix for each body, and its
+  decomposed scale matches the stored `worldScale` (REQ AC-1).
+- Every publication succeeds and writes one matrix per body, each composed from
+  the physics pose and the stored signed scale, and the calling thread still has
+  no CUDA context current afterwards (REQ AC-1).

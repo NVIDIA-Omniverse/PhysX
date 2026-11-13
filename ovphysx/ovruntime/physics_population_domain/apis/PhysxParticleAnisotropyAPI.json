@@ -1,0 +1,127 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxParticleAnisotropyAPI",
+  "title": "PhysxParticleAnisotropyAPI",
+  "summary": "Anisotropy post-processing on a particle system: per-particle ellipsoid scales and orientations computed for rendering fluid particle sets, without effect on the dynamics. The system parse reads the enable flag only when the API is listed, and the post-process re-parses the API for the generator settings.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "PhysxParticleSystem"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "columns": [
+    {
+      "name": "physxParticleAnisotropy:particleAnisotropyEnabled",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": true,
+      "parser_default": false,
+      "absent": "false: no anisotropy post-processing (the stage is not enabled at creation, and a generator, if any, is disabled). USD's fallback is true, so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/particles/PhysXParticlePost.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceParticle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXParticlePropertiesUpdate.cpp"
+      ],
+      "notes": "Read twice: by the system parse (it selects the post-process stage when the system is created) and by the anisotropy parse, which enables or disables the anisotropy generator. On change the property update enables or disables the stage without checking that the API is listed."
+    },
+    {
+      "name": "physxParticleAnisotropy:scale",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 1.0,
+      "parser_default": 0.0,
+      "absent": "0 is passed as the anisotropy scale of the PhysX anisotropy generator. USD's fallback is 1, so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/particles/PhysXParticlePost.cpp"
+      ],
+      "notes": "Used only while the anisotropy stage is enabled; re-read whenever the post-process refreshes its generator."
+    },
+    {
+      "name": "physxParticleAnisotropy:min",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.2,
+      "parser_default": 0.0,
+      "absent": "0 is passed as the minimum anisotropy of the PhysX anisotropy generator. USD's fallback is 0.2, so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/particles/PhysXParticlePost.cpp"
+      ],
+      "notes": "Used only while the anisotropy stage is enabled."
+    },
+    {
+      "name": "physxParticleAnisotropy:max",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 2.0,
+      "parser_default": 0.0,
+      "absent": "0 is passed as the maximum anisotropy of the PhysX anisotropy generator. USD's fallback is 2, so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/particles/PhysXParticlePost.cpp"
+      ],
+      "notes": "Used only while the anisotropy stage is enabled."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysxParticleSystem",
+      "rule": "The enable flag is read in the system parse when this API is listed on the system. Applying or removing the API at runtime turns the stage on or off."
+    },
+    {
+      "with": "Points",
+      "rule": "Anisotropy without an isosurface cannot be rendered on a Points particle set; the runtime warns when it creates such a set."
+    }
+  ]
+}

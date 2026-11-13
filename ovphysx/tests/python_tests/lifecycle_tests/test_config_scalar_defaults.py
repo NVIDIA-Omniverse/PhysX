@@ -5,11 +5,13 @@
 
 @implements REQ-CAPI-CONFIG-001
 @covers AC-5
+@implements REQ-CAPI-COMPILED-CACHE-001
+@covers AC-2
 
 Runs in its own subprocess (see test_python_runtime.cmake).
 """
 
-from ovphysx import GlobalConfigKey, ProfilerBackend, get_global_config
+from ovphysx import CompiledStageCacheMode, GlobalConfigKey, ProfilerBackend, get_global_config
 
 
 def test_scalar_defaults_before_create(monkeypatch):
@@ -25,3 +27,4 @@ def test_scalar_defaults_before_create(monkeypatch):
     assert get_global_config(GlobalConfigKey.COLLISION_CONE_CUSTOM_GEOMETRY) is True
     assert get_global_config(GlobalConfigKey.COLLISION_CYLINDER_CUSTOM_GEOMETRY) is True
     assert get_global_config(GlobalConfigKey.PROFILER_BACKEND) == int(ProfilerBackend.NONE)
+    assert get_global_config(GlobalConfigKey.COMPILED_STAGE_CACHE) == int(CompiledStageCacheMode.AUTOMATIC)

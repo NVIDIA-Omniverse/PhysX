@@ -1,8 +1,12 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-CACHE-ATTACH-001
+ * @covers AC-9 AC-14
+ */
+
 /** @implements REQ-PARSE-FEED-006
- * @covers AC-1 AC-2 AC-3 AC-4
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-8
  */
 
 /**
@@ -19,7 +23,7 @@
  * @covers AC-4
  *
  * @implements REQ-SIM-OVSTAGE-WRITEAPPLY-001
- * @covers AC-8
+ * @covers AC-8 AC-14 AC-15 AC-16 AC-17 AC-20
  *
  * @implements REQ-PARSE-FEED-002
  * @covers AC-1 AC-2 AC-3 AC-4 AC-5
@@ -43,6 +47,7 @@
 #include "OvstageSource.h"
 #include "ReadGroupUtils.h"
 #include "ReadColumn.h"
+#include <ovstage/ovstage_api/experimental/ovstage_placement_extension.h> // official ovstage.placement device read
 
 #include <ovstage/ovstage_api/ovstage_tensor_utils.h>
 
@@ -54,6 +59,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <future>
 #include <initializer_list>
 #include <string>
 #include <string_view>
@@ -68,6 +74,17 @@ namespace
 ovx_string_t ovxStr(const char* s)
 {
     return { s, std::string_view(s).size() };
+}
+
+// Test-only count of live initial-baseline scans (seedKnownPhysicsPaths).
+std::atomic_size_t initialBaselineScans{ 0 };
+
+// True when ovstage exposes the device-placement read ("ovstage.placement"); an ovstage without it
+// returns not-OK here, gating the feed onto the host read path.
+bool deviceReadAvailable(ovstage_instance_t* instance)
+{
+    const ovstage_placement_extension_v1_t* ext = nullptr;
+    return instance && ovstage_query_placement_extension(instance, &ext) == OVSTAGE_OK;
 }
 
 // Test-only count of structural drains that dropped the hierarchy cache instead of
@@ -168,7 +185,7 @@ uint64_t tokenIdAt(const DLTensor& t, int64_t i)
 
 // usd-prim-type row: fixed token column, one id per prim (OvstageSource::buildSchemaCache's
 // fixed-column decode). False when the payload is not that shape.
-bool decodeTypeRow(const ovstage_read_group_t& g, uint32_t row, uint64_t& value)
+bool decodeTypeRow(const ReadGroupColumn& g, uint32_t row, uint64_t& value)
 {
     if (g.is_array || g.data.tensor_count == 0 || !g.data.tensors)
         return false;
@@ -189,7 +206,7 @@ bool decodeTypeRow(const ovstage_read_group_t& g, uint32_t row, uint64_t& value)
 // usd-schemas row: token-id array, one tensor per prim. A packed single-tensor group with
 // several prims fails the tensor_count bound and is reported undecodable.
 template <typename Fn>
-bool forEachSchemaToken(const ovstage_read_group_t& g, uint32_t row, Fn&& fn)
+bool forEachSchemaToken(const ReadGroupColumn& g, uint32_t row, Fn&& fn)
 {
     if (!g.is_array || !g.data.tensors)
         return false;
@@ -255,8 +272,10 @@ bool isValueAttributeName(std::string_view name)
 // (PhysxCharacterControllerAPI was missing, so CCT property updates never reached the
 // runtime on any non-USD source). Keep them here, in one place.
 const ovx_string_t kKnownPhysicsSchemas[] = {
-    ovxStr("PhysicsRigidBodyAPI"), ovxStr("PhysicsCollisionAPI"), ovxStr("PhysicsMaterialAPI"),
+    ovxStr("PhysicsRigidBodyAPI"), ovxStr("PhysicsCollisionAPI"), ovxStr("PhysicsMaterialAPI"), ovxStr("PhysxForceAPI"),
+    ovxStr("PhysxSurfaceVelocityAPI"), ovxStr("PhysxContactReportAPI"), ovxStr("PhysicsFilteredPairsAPI"),
     ovxStr("PhysicsArticulationRootAPI"), ovxStr("PhysxCharacterControllerAPI"), ovxStr("PhysxVehicleTireAPI"),
+    ovxStr("PhysxVehicleWheelAttachmentAPI"),
     // Particle sets carry per-particle arrays the drain applies through the write backend. Deformable
     // bodies (volume + surface) are also queried, but their per-vertex `deformablePose` change is NOT
     // drained -- it is the sim mesh's bind pose, which falls back to the parse-path resync/re-cook; the
@@ -264,22 +283,29 @@ const ovx_string_t kKnownPhysicsSchemas[] = {
     // SIM-MESH prim, which under a hierarchical layout is a child of the body prim and carries the sim API,
     // NOT the body API -- so its schemas must be selected too, or the child's changes are silently dropped
     // while the ordinal advances and the resync never runs.
-    ovxStr("OmniPhysicsDeformableBodyAPI"), ovxStr("PhysxParticleSetAPI"),
-    ovxStr("OmniPhysicsVolumeDeformableSimAPI"), ovxStr("OmniPhysicsSurfaceDeformableSimAPI")
+    ovxStr("OmniPhysicsDeformableBodyAPI"), ovxStr("PhysxParticleSetAPI"), ovxStr("OmniPhysicsVolumeDeformableSimAPI"),
+    ovxStr("OmniPhysicsSurfaceDeformableSimAPI")
 };
 const ovx_string_t kKnownPhysicsPrimTypes[] = {
-    ovxStr("PhysicsScene"),          ovxStr("PhysicsFixedJoint"),
-    ovxStr("PhysicsRevoluteJoint"),  ovxStr("PhysicsPrismaticJoint"),
-    ovxStr("PhysicsSphericalJoint"), ovxStr("PhysicsDistanceJoint"),
-    ovxStr("PhysicsJoint"),          ovxStr("PhysxPhysicsGearJoint"),
-    ovxStr("PhysxPhysicsRackAndPinionJoint"), ovxStr("PhysicsCollisionGroup"),
-    ovxStr("PointInstancer")
+    ovxStr("PhysicsScene"),          ovxStr("PhysicsFixedJoint"),     ovxStr("PhysicsRevoluteJoint"),
+    ovxStr("PhysicsPrismaticJoint"), ovxStr("PhysicsSphericalJoint"), ovxStr("PhysicsDistanceJoint"),
+    ovxStr("PhysicsJoint"),          ovxStr("PhysxPhysicsGearJoint"), ovxStr("PhysxPhysicsRackAndPinionJoint"),
+    ovxStr("PhysicsCollisionGroup"), ovxStr("PointInstancer"),        ovxStr("PhysxPhysicsJointInstancer")
 };
 
 } // namespace
 
 // Not declared in the public header; test translation units forward-declare these
 // (same pattern as the OvstageSource.cpp counters).
+void resetOvstageInitialBaselineScanCountForTest()
+{
+    initialBaselineScans.store(0, std::memory_order_relaxed);
+}
+size_t getOvstageInitialBaselineScanCountForTest()
+{
+    return initialBaselineScans.load(std::memory_order_relaxed);
+}
+
 void resetOvstageHierarchyFallbackCountForTest()
 {
     hierarchyFallbackCounter().store(0, std::memory_order_relaxed);
@@ -386,11 +412,15 @@ void OvstageChangeFeed::refreshCustomFamilies()
     mCustomTokenGeneration=generation;
 }
 
-OvstageChangeFeed::OvstageChangeFeed(OvstageSource& source, ovstage_instance_t* instance, ovx_path_dictionary_t* dict)
+OvstageChangeFeed::OvstageChangeFeed(OvstageSource& source,
+                                     ovstage_instance_t* instance,
+                                     ovx_path_dictionary_t* dict,
+                                     bool deferBaseline)
     : mSource(source), mInstance(instance), mDict(dict), mLastDrainedOrd1(source.readOrdinal())
 {
     refreshCustomFamilies();
-    seedKnownPhysicsPaths();
+    if (!deferBaseline)
+        initializeBaseline();
 }
 
 OvstageChangeFeed::~OvstageChangeFeed()
@@ -427,6 +457,11 @@ void OvstageChangeFeed::setEnabled(bool enabled)
     mEnabled = enabled;
 }
 
+void OvstageChangeFeed::setDeviceOrdinal(int ordinal)
+{
+    mDeviceOrdinal = ordinal;
+}
+
 bool OvstageChangeFeed::dispatch(const ChangeBatch& batch) const
 {
     bool ok = true;
@@ -450,8 +485,121 @@ bool OvstageChangeFeed::dispatch(const ChangeBatch& batch) const
     return ok;
 }
 
+void OvstageChangeFeed::initializeBaseline()
+{
+    if (mBaselineInitialized)
+        return;
+    seedKnownPhysicsPaths();
+    mBaselineInitialized = true;
+}
+bool OvstageChangeFeed::forEachBaselinePath(const std::function<void(std::string_view)>& visit) const
+{
+    if (!mBaselineInitialized || !mKnownSetAuthoritative)
+        return false;
+    // Membership is a set; the archive orders its own copies.
+    for (const auto& path : mKnownPhysicsPaths)
+        visit(path);
+    return true;
+}
+bool OvstageChangeFeed::forEachBaselinePath(const std::vector<std::string>& selected,
+                                            const std::function<void(std::string_view)>& visit) const
+{
+    if (!mBaselineInitialized || !mKnownSetAuthoritative)
+        return false;
+    for (const auto& path : selected)
+        if (mKnownPhysicsPaths.count(path))
+            visit(path);
+    return true;
+}
+bool OvstageChangeFeed::restoreBaseline(const std::vector<std::string_view>& paths)
+{
+    if (mBaselineInitialized)
+        return false;
+    return restoreBaseline(prepareBaseline(paths));
+}
+
+template <typename Paths>
+void OvstageChangeFeed::countTransformPaths(const Paths& physicsPaths, std::unordered_map<std::string, size_t>& counts)
+{
+    for (const auto& path : physicsPaths)
+    {
+        std::string current(path);
+        while (!current.empty())
+        {
+            ++counts[current];
+            if (current == "/")
+                break;
+            const size_t slash = current.find_last_of('/');
+            if (slash == std::string::npos || slash == 0)
+                current = "/";
+            else
+                current.resize(slash);
+        }
+    }
+}
+
+OvstageChangeFeed::PreparedBaseline OvstageChangeFeed::prepareBaseline(const std::vector<std::string_view>& paths)
+{
+    // The three sets depend on the paths alone; a large membership builds them side by side.
+    // A path named twice invalidates the baseline whatever the other two hold.
+    const auto launch = paths.size() > 4096 ? std::launch::async : std::launch::deferred;
+    auto transforms = std::async(launch, [&paths]() {
+        std::unordered_set<std::string> result;
+        result.reserve(paths.size());
+        for (const auto path : paths)
+        {
+            // This local set is ancestor-closed. An existing ancestor proves that
+            // its entire chain is already present, so shared prefixes stop early.
+            std::string ancestor(path);
+            while (!ancestor.empty() && result.insert(ancestor).second)
+            {
+                if (ancestor == "/")
+                    break;
+                const auto slash = ancestor.find_last_of('/');
+                if (slash == std::string::npos || slash == 0)
+                    ancestor = "/";
+                else
+                    ancestor.resize(slash);
+            }
+        }
+        return result;
+    });
+    auto counts = std::async(launch, [&paths]() {
+        std::unordered_map<std::string, size_t> result;
+        result.reserve(paths.size());
+        countTransformPaths(paths, result);
+        return result;
+    });
+    PreparedBaseline baseline;
+    baseline.physics.reserve(paths.size());
+    for (const auto path : paths)
+        if (!baseline.physics.emplace(path).second)
+            return baseline;
+    baseline.transforms = transforms.get();
+    baseline.transformRefCounts = counts.get();
+    baseline.valid = true;
+    return baseline;
+}
+
+bool OvstageChangeFeed::restoreBaseline(PreparedBaseline&& baseline)
+{
+    if (mBaselineInitialized || !baseline.valid)
+        return false;
+    mKnownPhysicsPaths = std::move(baseline.physics);
+    mKnownTransformPaths = std::move(baseline.transforms);
+    mTransformPathRefCounts = std::move(baseline.transformRefCounts);
+    mKnownPhysicsQuery.noteReplaced();
+    mKnownTransformQuery.noteReplaced();
+    // Family queries are rebuilt lazily on the first update. Their initial
+    // counts are deliberately not used as evidence about the cached baseline.
+    mKnownSetAuthoritative = true;
+    mBaselineInitialized = true;
+    return true;
+}
+
 void OvstageChangeFeed::seedKnownPhysicsPaths()
 {
+    initialBaselineScans.fetch_add(1, std::memory_order_relaxed);
     if (!mInstance || !mDict)
         return;
 
@@ -480,22 +628,30 @@ bool OvstageChangeFeed::collectKnownPathsFromTypes(std::unordered_set<std::strin
     const std::optional<bool> authored = mSource.hasAuthoredTypeColumn();
     if (!authored.has_value())
         return false;
-    if (!*authored)
+    // Recovery reads the latest sealed families. Initial seeding instead shares the
+    // source's type index with the following descriptor scan, avoiding a second
+    // enumeration of the same prims on OVStage 0.4.
+    if (!*authored && oldPhysicsPaths)
         return collectKnownPathsFromFilter(conv::kUsdPrimType, OVSTAGE_FILTER_OP_IN,
             mPhysicsPrimTypes.data(), mPhysicsPrimTypes.size(), mTypeFamilyQuery,
             physicsPaths, transformPaths, newKeys, oldPhysicsPaths);
 
-    // Built-in type filters count renderer proxy types, not the authored physics
-    // families. Use the same merged type index as the walker. A recovery rescan
-    // needs a fresh snapshot because its range may have skipped structural rows.
-    mFamilyPrimCountReliable = false;
+    // A built-in type filter cannot see an authored-type override, so use the same merged
+    // type index as the walker. A recovery rescan needs a fresh snapshot because its range
+    // may have skipped structural rows.
+    if (*authored)
+        mFamilyPrimCountReliable = false;
+    else if (consumeKnownPathScanFaultForTest())
+        return false;
     OvstageSource latest(mInstance, mDict, mSource.readOrdinal());
     const OvstageSource& types = oldPhysicsPaths ? latest : mSource;
+    size_t indexedTypeCount = 0;
     for (const std::string& type : mPhysicsTypeNames)
     {
         std::vector<ObjectKey> keys;
         if (!types.collectPrimTypeKeys(type, keys))
             return false;
+        indexedTypeCount += keys.size();
         for (const ObjectKey key : keys)
         {
             const std::string path(types.sourceKeyToString(key));
@@ -506,6 +662,24 @@ bool OvstageChangeFeed::collectKnownPathsFromTypes(std::unordered_set<std::strin
             if (inserted && newKeys && oldPhysicsPaths && !oldPhysicsPaths->count(path))
                 newKeys->push_back(mSource.findByPath(path));
         }
+    }
+    if (!*authored)
+    {
+        // Keep the frozen family query and discovery used by later drains, but do
+        // not read its payload again. Trust its count only after a successful fetch
+        // agrees with the indexed baseline; otherwise the first drain must recover.
+        const ovstage_query_handle_t query = queryForFilter(conv::kUsdPrimType, OVSTAGE_FILTER_OP_IN,
+            mPhysicsPrimTypes.data(), mPhysicsPrimTypes.size(), mTypeFamilyQuery);
+        if (query == OVSTAGE_INVALID_QUERY_HANDLE)
+            return false;
+        ovstage_query_result_t result{};
+        if (ovstage_fetch_query_result(mInstance, query, OVSTAGE_TIMEOUT_INFINITE, &result) != OVSTAGE_OK)
+            return false;
+        const bool matches = result.total_prim_count == indexedTypeCount;
+        mTypeFamilyQuery.primCount = result.total_prim_count;
+        ovstage_release_query_result(mInstance, &result);
+        if (!matches)
+            return false;
     }
     return true;
 }
@@ -534,7 +708,7 @@ bool OvstageChangeFeed::collectKnownPathsFromFilter(const char* attrName,
         return false;
 
     ovstage_ordinal_range_t range{};
-    range.end_ordinal = ~ovstage_ordinal_t(0);
+    range.end_ordinal = OVSTAGE_ORDINAL_MAX;
     range.has_start_ordinal = false;
 
     bool ok = true;
@@ -545,9 +719,10 @@ bool OvstageChangeFeed::collectKnownPathsFromFilter(const char* attrName,
     {
         waitAndRelease(mInstance, re);
         ReadListMemo listMemo(mDict);
-        ovstage_read_group_t g{};
+        ReadColumnCursor cursor(mInstance, rh);
+        ReadGroupColumn g{};
         ovstage_api_status_t fetchErr;
-        while ((fetchErr = ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g)) == OVSTAGE_OK)
+        while ((fetchErr = cursor.next(g)) == OVSTAGE_OK)
         {
             if (!g.is_delete)
             {
@@ -557,7 +732,6 @@ bool OvstageChangeFeed::collectKnownPathsFromFilter(const char* attrName,
                 if (newKeys)
                     newKeys->insert(newKeys->end(), groupNewKeys.begin(), groupNewKeys.end());
             }
-            ovstage_release_group(mInstance, &g);
         }
         if (fetchErr != OVSTAGE_ERROR_END_OF_ITERATION)
             ok = false;
@@ -606,6 +780,9 @@ void OvstageChangeFeed::releaseCachedQuery(PathListQuery& query)
 {
     releaseCachedQuery(query.base);
     releaseCachedQuery(query.delta);
+    for (auto& segment : query.segments)
+        releaseCachedQuery(segment);
+    query.segments.clear();
     query.noteReplaced();
 }
 
@@ -638,15 +815,21 @@ bool OvstageChangeFeed::setDiscoveredValueAttributes(std::vector<ovx_token_t>& t
             fresh.push_back(attrs[i]);
     }
 
+    // A token that failed to resolve leaves `fresh` incomplete; never swap a partial set in. Leave the last
+    // fully-resolved set standing and report failure, so no caller -- including one already on path-list
+    // discovery -- classifies against an unverified set.
+    if (!resolved)
+        return false;
+
     // The refresh can run every drain; only a changed set may dirty the read list.
     bool same = fresh.size() == target.size();
     for (size_t i = 0; same && i < target.size(); ++i)
         same = seen.count(target[i]) != 0;
     if (same)
-        return resolved;
+        return true;
     target.swap(fresh);
     mValueReadAttrsDirty = true;
-    return resolved;
+    return true;
 }
 
 ovstage_query_handle_t OvstageChangeFeed::queryForFilter(const char* attrName,
@@ -668,7 +851,7 @@ ovstage_query_handle_t OvstageChangeFeed::queryForFilter(const char* attrName,
         return OVSTAGE_INVALID_QUERY_HANDLE;
 
     ovstage_predicate_t pred{};
-    pred.attribute.token = 0;
+    pred.attribute.token = ovx_token_t{0};
     pred.attribute.string = ovxStr(attrName);
     pred.op = op;
     pred.values = values;
@@ -712,7 +895,7 @@ bool OvstageChangeFeed::executeFamilyQuery(const char* attrName,
         return false;
 
     ovstage_predicate_t pred{};
-    pred.attribute.token = 0;
+    pred.attribute.token = ovx_token_t{0};
     pred.attribute.string = ovxStr(attrName);
     pred.op = op;
     pred.values = values;
@@ -772,10 +955,10 @@ bool OvstageChangeFeed::familyMembershipUnchanged(bool& unchanged)
 
 bool OvstageChangeFeed::refreshDiscoveryFromQuery(const PathListQuery& query)
 {
-    // One union over both handles. Fails closed like the single handle did: a fetch failure
-    // on either leaves the previous discovery standing rather than replacing it with half.
+    // Union all immutable segments. A fetch failure leaves the previous
+    // discovery standing rather than replacing it with a partial vocabulary.
     std::vector<ovx_token_t> attrs;
-    for (const PathListHandle* h : { &query.base, &query.delta })
+    for (const PathListHandle* h : query.handles())
     {
         if (!h->valid())
             continue;
@@ -792,10 +975,15 @@ bool OvstageChangeFeed::refreshDiscoveryFromQuery(const PathListQuery& query)
     // token resolved successfully, and only for the identical fresh metadata sequence.
     if (mUsePathListDiscovery && attrs == mLastPathListAttributes)
         return true;
-    if (setDiscoveredValueAttributes(mPathListDiscoveredAttrs, attrs.data(), attrs.size()))
-        mLastPathListAttributes = std::move(attrs);
-    else
+    // A token that failed to resolve makes setDiscoveredValueAttributes return false WITHOUT touching
+    // mPathListDiscoveredAttrs, so an attachment already on path-list discovery keeps classifying against the
+    // last fully-resolved set. Drop our sequence record and report failure.
+    if (!setDiscoveredValueAttributes(mPathListDiscoveredAttrs, attrs.data(), attrs.size()))
+    {
         mLastPathListAttributes.clear();
+        return false;
+    }
+    mLastPathListAttributes = std::move(attrs);
     if (!mUsePathListDiscovery)
     {
         mUsePathListDiscovery = true;
@@ -841,8 +1029,9 @@ bool OvstageChangeFeed::syncPathListQuery(const std::unordered_set<std::string>&
     // A full structural parse owns initial values for accepted adds. Avoid constructing
     // an unused delta when the base still addresses every older path. Keep the pending
     // paths dirty: the next structural read must materialize them, even after deletion.
-    if (allowDeferredAdds && mAddedPropertiesCovered &&
-        !query.fold && query.base.valid() && !query.deltaPaths.empty() && query.deltaPaths.size() <= threshold)
+    // This applies to large batches too: folding them now would rebuild the entire
+    // watched set and read initial values that the structural load already owns.
+    if (allowDeferredAdds && mAddedPropertiesCovered && !query.fold && query.base.valid() && !query.deltaPaths.empty())
     {
         const std::unordered_set<std::string>& added =
             &query == &mKnownPhysicsQuery ? mAddedPhysicsPaths : mAddedTransformPaths;
@@ -854,11 +1043,18 @@ bool OvstageChangeFeed::syncPathListQuery(const std::unordered_set<std::string>&
         }
     }
 
-    // Fold every ~sqrt(2n) adds: minimises c*(|delta| + n/T) for a per-path build cost c;
-    // the floor keeps small deltas on one cheap query. A base removal or wholesale
-    // replacement folds too; a delta-only removal preserves the base.
-    if (query.fold || query.deltaPaths.size() > threshold)
+    // Small additions share a cheap delta, then fold into the base. Retaining
+    // small segments saves path-list construction but adds read calls on every
+    // later drain. Only larger batches amortize that cost through segmentation.
+    // A delta-only removal preserves the older immutable segments.
+    if (query.fold || (query.deltaPaths.size() > threshold &&
+                      (query.deltaPaths.size() < PathListQuery::kMinSegmentPaths ||
+                       query.segments.size() >= PathListQuery::kMaxSegments)))
     {
+        query.fold = true; // a failed fold must retry the complete surviving set
+        for (auto& segment : query.segments)
+            releaseCachedQuery(segment);
+        query.segments.clear();
         releaseCachedQuery(query.base);
         releaseCachedQuery(query.delta);
         std::vector<const std::string*> all;
@@ -874,7 +1070,7 @@ bool OvstageChangeFeed::syncPathListQuery(const std::unordered_set<std::string>&
         return true;
     }
 
-    // Base intact: only the delta changes, rebuilt from the recorded adds (at most `threshold`).
+    // Older segments stay intact: rebuild only the pending additions.
     releaseCachedQuery(query.delta);
     if (!query.deltaPaths.empty())
     {
@@ -885,6 +1081,15 @@ bool OvstageChangeFeed::syncPathListQuery(const std::unordered_set<std::string>&
         query.delta = buildPathListQuery(added);
         if (!query.delta.valid())
             return false; // stays dirty
+    }
+    if (query.deltaPaths.size() > threshold)
+    {
+        // Keep a large immutable addition batch instead of rebuilding every
+        // older path at each spawn. The cap bounds read fanout; removals and
+        // replacements still fold the complete surviving set above.
+        query.segments.push_back(std::move(query.delta));
+        query.delta = {};
+        query.deltaPaths.clear();
     }
     query.dirty = false;
     return true;
@@ -898,7 +1103,8 @@ bool OvstageChangeFeed::readPathListQuery(const PathListQuery& query,
 {
     std::vector<ovx_token_t> sealed;
     bool sealedKnown = false;
-    for (const PathListHandle* h : { &query.base, &query.delta })
+    std::string path; // reused, so a lookup allocates only for a longer path
+    for (const PathListHandle* h : query.handles())
     {
         if (!h->valid())
             continue;
@@ -911,8 +1117,8 @@ bool OvstageChangeFeed::readPathListQuery(const PathListQuery& query,
             {
                 if (!allAdded)
                     break;
-                const ObjectKey key = mSource.internKey(raw);
-                if (added.count(std::string(mSource.sourceKeyToString(key))) == 0)
+                path.assign(mSource.sourceKeyToString(mSource.internKey(raw.raw_id)));
+                if (added.count(path) == 0)
                 {
                     allAdded = false;
                     break;
@@ -959,22 +1165,22 @@ ovx_token_t OvstageChangeFeed::internOvxToken(std::string_view attrName) const
 
 ObjectKey OvstageChangeFeed::resolveGroupPathKey(ovx_primpath_t raw)
 {
-    if (!raw)
+    if (raw == OVX_INVALID_PRIMPATH)
         return {};
-    const auto it = mResolvedPathKeys.find(raw);
+    const auto it = mResolvedPathKeys.find(raw.raw_id);
     if (it != mResolvedPathKeys.end())
         return it->second;
 
-    ObjectKey key = mSource.canonicalKey(mSource.internKey(raw));
+    ObjectKey key = mSource.canonicalKey(mSource.internKey(raw.raw_id));
     if (!key.valid())
-        key = mSource.internKey(raw);
-    mResolvedPathKeys[raw] = key;
+        key = mSource.internKey(raw.raw_id);
+    mResolvedPathKeys[raw.raw_id] = key;
     if (key.valid())
     {
         // Also index by the canonical RAW handle (not key.handle, which is now
         // the packed generation-tagged form -- ADR-0021) so a later call already
         // holding that raw value hits this same cache entry.
-        if (const uint64_t canonicalRaw = mSource.canonicalPath(key))
+        if (const uint64_t canonicalRaw = mSource.canonicalPath(key).raw_id)
             mResolvedPathKeys[canonicalRaw] = key;
     }
     return key;
@@ -994,11 +1200,15 @@ TokenId OvstageChangeFeed::propertyTokenFor(ovx_token_t attr)
     return property;
 }
 
-void OvstageChangeFeed::collectGroupKeys(const ovstage_read_group_t& group,
+void OvstageChangeFeed::collectGroupKeys(const ReadGroupColumn& group,
                                          std::vector<ObjectKey>& keys,
-                                         const PathListHandle* handle)
+                                         const PathListHandle* handle,
+                                         bool skipMaskedRows,
+                                         std::vector<uint32_t>* keptRows)
 {
     keys.clear();
+    if (keptRows)
+        keptRows->clear();
     mGroupListPaths = nullptr;
     mGroupListCount = 0;
     const ovx_primpath_t* gpaths = nullptr;
@@ -1048,16 +1258,22 @@ void OvstageChangeFeed::collectGroupKeys(const ovstage_read_group_t& group,
     mGroupListCount = gcount;
 
     keys.reserve(group.prims.count);
+    const uint64_t* const mask = skipMaskedRows ? group.data.mask : nullptr;
     for (uint32_t i = 0; i < group.prims.count; ++i)
     {
+        // Same bit layout as ReadColumn::present: one bit per logical row, set when the row carries a value.
+        if (mask && (mask[i / 64] & (uint64_t(1) << (i % 64))) == 0)
+            continue;
         const uint32_t idx = group.prims.index_map ? group.prims.index_map[i] : (group.prims.offset + i);
         // Skip out-of-range and null-primpath rows symmetrically with
         // seedBucketFromReadGroup, which skips raw==0 before advancing its key
         // ordinal; pushing a key for a raw==0 row here would misalign every
         // subsequent key with the seeded tensor row (issue #8).
-        if (idx >= gcount || gpaths[idx] == 0)
+        if (idx >= gcount || gpaths[idx] == OVX_INVALID_PRIMPATH)
             continue;
         keys.push_back(resolveGroupPathKey(gpaths[idx]));
+        if (keptRows)
+            keptRows->push_back(i);
     }
 }
 
@@ -1126,7 +1342,7 @@ void OvstageChangeFeed::rebuildValueReadAttributes()
 }
 
 std::vector<ObjectKey> OvstageChangeFeed::collectPathsFromGroup(
-    const ovstage_read_group_t& group,
+    const ReadGroupColumn& group,
     ReadListMemo& listMemo,
     std::unordered_set<std::string>& physicsPaths,
     std::unordered_set<std::string>& transformPaths,
@@ -1144,7 +1360,7 @@ std::vector<ObjectKey> OvstageChangeFeed::collectPathsFromGroup(
         if (idx >= pathCount)
             continue;
         const ovx_primpath_t raw = paths[idx];
-        const std::string_view path = mSource.sourceKeyToString(mSource.internKey(raw));
+        const std::string_view path = mSource.sourceKeyToString(mSource.internKey(raw.raw_id));
         if (path.empty())
             continue;
 
@@ -1163,7 +1379,7 @@ bool OvstageChangeFeed::hasAttributeFloorAtOrAfter(ovx_token_t attr, uint64_t or
         return true;
 
     ovstage_ordinal_query_handle_t q = OVSTAGE_INVALID_ORDINAL_QUERY_HANDLE;
-    const ovstage_enqueue_result_t re = ovstage_get_attribute_write_floor(mInstance, ovx_string_or_token_t{ attr, {} }, &q);
+    const ovstage_enqueue_result_t re = ovstage_get_attribute_write_floor(mInstance, ovx_token_or_string_t{ attr, {} }, &q);
     if (re.status != OVSTAGE_OK || q == OVSTAGE_INVALID_ORDINAL_QUERY_HANDLE)
         return true;
     waitAndRelease(mInstance, re);
@@ -1171,7 +1387,9 @@ bool OvstageChangeFeed::hasAttributeFloorAtOrAfter(ovx_token_t attr, uint64_t or
     ovstage_ordinal_t floor = 0;
     bool ok = ovstage_fetch_ordinal(mInstance, q, OVSTAGE_TIMEOUT_INFINITE, &floor) == OVSTAGE_OK;
     waitAndRelease(mInstance, ovstage_release_ordinal_query(mInstance, q));
-    return !ok || floor >= ordinal;
+    // Compare as ovstage ordinals: the floor of an attribute no seal reached yet is
+    // OVSTAGE_ORDINAL_MIN, which an unsigned comparison would read as the largest ordinal.
+    return !ok || floor >= static_cast<ovstage_ordinal_t>(ordinal);
 }
 
 bool OvstageChangeFeed::rangeWithinRetainedHistory(uint64_t ord0) const
@@ -1187,7 +1405,9 @@ bool OvstageChangeFeed::rangeWithinRetainedHistory(uint64_t ord0) const
     ovstage_ordinal_t oldest = 0;
     const bool ok = ovstage_fetch_ordinal(mInstance, q, OVSTAGE_TIMEOUT_INFINITE, &oldest) == OVSTAGE_OK;
     waitAndRelease(mInstance, ovstage_release_ordinal_query(mInstance, q));
-    return ok && ord0 >= oldest;
+    // Until retention discards history the frontier is OVSTAGE_ORDINAL_MIN: compare as ovstage
+    // ordinals, or the unsigned comparison fails every drain closed.
+    return ok && static_cast<ovstage_ordinal_t>(ord0) >= oldest;
 }
 
 bool OvstageChangeFeed::structuralAttributesChanged(uint64_t ordinal)
@@ -1203,21 +1423,7 @@ bool OvstageChangeFeed::structuralAttributesChanged(uint64_t ordinal)
 void OvstageChangeFeed::rebuildTransformPathRefCounts()
 {
     mTransformPathRefCounts.clear();
-    for (const std::string& path : mKnownPhysicsPaths)
-    {
-        std::string current(path);
-        while (!current.empty())
-        {
-            ++mTransformPathRefCounts[current];
-            if (current == "/")
-                break;
-            const size_t slash = current.find_last_of('/');
-            if (slash == std::string::npos || slash == 0)
-                current = "/";
-            else
-                current.resize(slash);
-        }
-    }
+    countTransformPaths(mKnownPhysicsPaths, mTransformPathRefCounts);
 }
 
 bool OvstageChangeFeed::rememberTransformPathAndAncestors(std::string_view path)
@@ -1296,7 +1502,7 @@ bool OvstageChangeFeed::buildKnownFamilyTokens()
     return mKnownFamilyTokensBuilt;
 }
 
-void OvstageChangeFeed::classifyStructuralGroup(const ovstage_read_group_t& g,
+void OvstageChangeFeed::classifyStructuralGroup(const ReadGroupColumn& g,
                                                 ReadListMemo& listMemo,
                                                 ovx_token_t schemasTok,
                                                 ovx_token_t primTypeTok,
@@ -1307,19 +1513,39 @@ void OvstageChangeFeed::classifyStructuralGroup(const ovstage_read_group_t& g,
     const bool authoredType = g.attribute == internOvxToken(conv::kUsdTypeName);
     const ovx_primpath_t* gpaths = nullptr;
     size_t gcount = 0;
-    if (!listMemo.paths(g.prims.list, &gpaths, &gcount))
+    // Filter reads often return a separate list for each one-row type group.
+    // The group already pins its list: read its slice directly, avoiding a
+    // second pin, allocation and full-list fetch for every individual prim.
+    std::vector<ovx_primpath_t> slice;
+    ovx_primpath_t single = OVX_INVALID_PRIMPATH;
+    if (!g.prims.index_map)
+    {
+        if (g.prims.count > 1)
+            slice.resize(g.prims.count);
+        auto* destination = g.prims.count == 1 ? &single : slice.data();
+        ovstage_compat::pathListFetchCounter().fetch_add(1, std::memory_order_relaxed);
+        if (ovstage_compat::status(
+                mDict, path_dictionary_get_paths_from_path_list(
+                           mDict, g.prims.list, g.prims.offset, g.prims.count, destination, &gcount)) != OVX_OK ||
+            gcount != g.prims.count)
+        {
+            out.exact = false;
+            return;
+        }
+        gpaths = destination;
+    }
+    else if (!listMemo.paths(g.prims.list, &gpaths, &gcount))
     {
         out.exact = false;
         return;
     }
 
-    auto pathAt = [&](uint32_t row, ovx_primpath_t& raw) -> std::string_view
-    {
-        const uint32_t idx = g.prims.index_map ? g.prims.index_map[row] : (g.prims.offset + row);
-        raw = idx < gcount ? gpaths[idx] : 0;
+    auto pathAt = [&](uint32_t row, ovx_primpath_t& raw) -> std::string_view {
+        const uint32_t idx = g.prims.index_map ? g.prims.index_map[row] : row;
+        raw = idx < gcount ? gpaths[idx] : OVX_INVALID_PRIMPATH;
         if (idx >= gcount)
             out.exact = false;
-        return raw ? mSource.sourceKeyToString(mSource.internKey(raw)) : std::string_view{};
+        return raw != OVX_INVALID_PRIMPATH ? mSource.sourceKeyToString(mSource.internKey(raw.raw_id)) : std::string_view{};
     };
 
     // A tombstone on a known path contradicts readKnownStructuralChanges having seen nothing
@@ -1334,7 +1560,7 @@ void OvstageChangeFeed::classifyStructuralGroup(const ovstage_read_group_t& g,
     {
         for (uint32_t row = 0; row < g.prims.count; ++row)
         {
-            ovx_primpath_t raw = 0;
+            ovx_primpath_t raw = OVX_INVALID_PRIMPATH;
             const std::string_view path = pathAt(row, raw);
             if (path.empty())
                 continue;
@@ -1365,9 +1591,9 @@ void OvstageChangeFeed::classifyStructuralGroup(const ovstage_read_group_t& g,
                            !(g.data.index_map && g.data.count < g.prims.count);
     for (uint32_t row = 0; row < g.prims.count; ++row)
     {
-        ovx_primpath_t raw = 0;
+        ovx_primpath_t raw = OVX_INVALID_PRIMPATH;
         const std::string_view path = pathAt(row, raw);
-        if (!raw)
+        if (raw == OVX_INVALID_PRIMPATH)
             continue;
         out.added.push_back(raw);
         if (path.empty())
@@ -1396,7 +1622,17 @@ void OvstageChangeFeed::classifyStructuralGroup(const ovstage_read_group_t& g,
             ok = decodeTypeRow(g, row, value);
             if (ok)
                 out.types.push_back({ raw, value, authoredType });
-            hit = ok && std::binary_search(mKnownTypeTokens.begin(), mKnownTypeTokens.end(), value);
+            if (ok && !authoredType && mSource.physicsInputSharingEnabled() &&
+                g.meta.attribute_write_floor_ordinal >= mSource.readOrdinal())
+            {
+                ReadColumn column;
+                // Preserve the exact fingerprint representation, not the effective
+                // type cache (which may contain an authored typeName override).
+                if (readColumn(g, column) && column.components == 1 && column.tensor->dtype.code == kDLUInt &&
+                    column.tensor->dtype.bits == 64 && column.tensor->dtype.lanes == 1)
+                    out.sharedTypes.push_back({ raw.raw_id, value, g.semantic });
+            }
+            hit = ok && std::binary_search(mKnownTypeTokens.begin(), mKnownTypeTokens.end(), ovx_token_t{value});
         }
         else
         {
@@ -1407,7 +1643,7 @@ void OvstageChangeFeed::classifyStructuralGroup(const ovstage_read_group_t& g,
                                     {
                                         schemaRow.schemaTokens.push_back(value);
                                         hit = hit ||
-                                              std::binary_search(mKnownSchemaTokens.begin(), mKnownSchemaTokens.end(), value);
+                                              std::binary_search(mKnownSchemaTokens.begin(), mKnownSchemaTokens.end(), ovx_token_t{value});
                                     });
         }
         if (!ok)
@@ -1462,26 +1698,30 @@ bool OvstageChangeFeed::readStructuralRows(uint64_t ord0, uint64_t ord1, Structu
     // Every prim carries the auto-maintained usd-path column, so HAS on it matches the whole
     // stage. HAS, not PREFIX "/": a range read over a value-predicate query returns every prim's
     // rows, not the range's (1000 rows stringified per value-only drain on a 1000-body stage).
-    // Its discovered-attribute list omits relationship columns, so it is not the vocabulary
-    // either: the source rebuilds that lazily, on the first relationship read after the drain.
     // Rebuilt each call: a filter query is frozen at build, so a cached one would never contain
     // the prims we are here to detect.
     ovstage_predicate_t pred{};
-    pred.attribute.token = 0;
+    pred.attribute.token = ovx_token_t{0};
     pred.attribute.string = ovxStr(conv::kUsdPath);
     pred.op = OVSTAGE_FILTER_OP_HAS;
     pred.values = nullptr;
     pred.value_count = 0;
     ovstage_filter_t filter{};
-    filter.predicates = &pred;
-    filter.count = 1;
+    const bool prepareInputs = mSource.physicsInputSharingEnabled();
+    // Unfiltered membership also supports exact ordinal ranges, and supplies
+    // the complete vocabulary (HAS discovery omits relationship columns).
+    // Cache-enabled insertion shares this query's discovery with fingerprinting.
+    if (!prepareInputs)
+    {
+        filter.predicates = &pred;
+        filter.count = 1;
+    }
 
     ovstage_query_handle_t q = OVSTAGE_INVALID_QUERY_HANDLE;
     const ovstage_enqueue_result_t qe = ovstage_query(mInstance, &filter, nullptr, 0, &q);
     if (qe.status != OVSTAGE_OK || q == OVSTAGE_INVALID_QUERY_HANDLE)
         return false;
     waitAndRelease(mInstance, qe);
-
     ovstage_ordinal_range_t range{};
     range.start_ordinal = ord0;
     range.end_ordinal = ord1;
@@ -1499,14 +1739,14 @@ bool OvstageChangeFeed::readStructuralRows(uint64_t ord0, uint64_t ord1, Structu
         // the classifier decided.
         std::unordered_map<std::string, size_t> rowIndex;
         ReadListMemo listMemo(mDict);
-        ovstage_read_group_t g{};
+        ReadColumnCursor cursor(mInstance, rh);
+        ReadGroupColumn g{};
         ovstage_api_status_t fetchErr;
-        while ((fetchErr = ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g)) == OVSTAGE_OK)
+        while ((fetchErr = cursor.next(g)) == OVSTAGE_OK)
         {
             out.rowCount += g.prims.count;
             structuralRowsReadCounter().fetch_add(g.prims.count, std::memory_order_relaxed);
             classifyStructuralGroup(g, listMemo, schemasTok, g.attribute == authoredTypeTok ? authoredTypeTok : primTypeTok, rowIndex, out, knownRowsExpected);
-            ovstage_release_group(mInstance, &g);
         }
         if (fetchErr != OVSTAGE_ERROR_END_OF_ITERATION)
             ok = false;
@@ -1516,6 +1756,29 @@ bool OvstageChangeFeed::readStructuralRows(uint64_t ord0, uint64_t ord1, Structu
     {
         ok = false;
     }
+    if (prepareInputs && ok && out.exact && !out.unfamiliar.empty() && !out.sharedTypes.empty())
+    {
+        ovstage_query_result_t result{};
+        if (ovstage_fetch_query_result(mInstance, q, OVSTAGE_TIMEOUT_INFINITE, &result) == OVSTAGE_OK)
+        {
+            bool complete = result.attribute_count == 0 || result.attributes;
+            std::vector<std::string> vocabulary;
+            vocabulary.reserve(result.attribute_count);
+            for (size_t i = 0; i < result.attribute_count && result.attributes; ++i)
+            {
+                ovx_string_t text{};
+                if (ovx_path_dictionary_token_to_string(mDict, result.attributes[i], &text) == OVX_OK && text.ptr &&
+                    text.length)
+                    vocabulary.emplace_back(text.ptr, text.length);
+                else
+                    complete = false;
+            }
+            ovstage_release_query_result(mInstance, &result);
+            if (complete)
+                mSource.sharePhysicsInputVocabulary(vocabulary);
+        }
+    }
+
     releaseCachedQuery(q);
     return ok;
 }
@@ -1585,7 +1848,11 @@ bool OvstageChangeFeed::reconcileStructuralChanges(uint64_t ord0, uint64_t ord1)
     if (!mKnownSetAuthoritative)
         return rescanKnownPaths(ord0, ord1, deletedPaths, cachesInvalidated, false);
     if (!structuralAttributesChanged(ord0))
+    {
+        // No structural column was sealed, no known prim changed, and the known set is authoritative:
+        // the prim set is provably identical to the previous drain; nothing to reconcile.
         return true;
+    }
 
     // The floors say a structural column was sealed but no known prim changed: a prim
     // joined a family, or a SCOPE_ALL seal advanced every floor with no real structural
@@ -1670,6 +1937,8 @@ bool OvstageChangeFeed::dispatchStructuralAdds(const std::vector<ObjectKey>& new
 bool OvstageChangeFeed::applyIncrementalGrowth(uint64_t ord0, uint64_t ord1)
 {
     patchSourceFromStructuralRows(ord0, ord1);
+    mSource.sharePhysicsInputTypes(
+        std::move(mStructuralRows.sharedTypes), mRangeGapSinceDrop ? nullptr : &mKnownPhysicsPaths);
 
     std::vector<ObjectKey> newKeys;
     mCollectAddedPaths = mAddedPropertiesCovered;
@@ -1690,9 +1959,8 @@ bool OvstageChangeFeed::applyIncrementalGrowth(uint64_t ord0, uint64_t ord1)
         schemaMatches += r.bySchemas ? 1 : 0;
         typeMatches += r.byType ? 1 : 0;
         ObjectKey key = resolveGroupPathKey(r.raw);
-        if (addedKeyResolutionFault().load(std::memory_order_relaxed) > 0)
+        if (consumeFault(addedKeyResolutionFault()))
         {
-            addedKeyResolutionFault().fetch_sub(1, std::memory_order_relaxed);
             key = {};
         }
         if (key.valid())
@@ -1816,6 +2084,16 @@ bool OvstageChangeFeed::rescanKnownPaths(uint64_t ord0,
             else
                 deletedPaths.erase(oldPath);
         }
+        // A rejected add can already exist in a subscriber. If the producer
+        // removed it before retry, neither snapshot contains it, but it still
+        // needs a tombstone. A live/recreated path must not be removed.
+        for (const std::string& path : mPendingRescanAddedPaths)
+        {
+            if (freshPhysicsPaths.find(path) == freshPhysicsPaths.end())
+                deletedPaths.insert(path);
+            else
+                deletedPaths.erase(path);
+        }
     }
     else
     {
@@ -1844,7 +2122,7 @@ bool OvstageChangeFeed::rescanKnownPaths(uint64_t ord0,
     {
         std::unordered_set<std::string> livePaths;
         for (const ovx_primpath_t raw : mStructuralRows.added)
-            livePaths.emplace(mSource.sourceKeyToString(mSource.internKey(raw)));
+            livePaths.emplace(mSource.sourceKeyToString(mSource.internKey(raw.raw_id)));
         for (const ObjectKey key : newKeys)
             drop = drop || livePaths.count(std::string(mSource.sourceKeyToString(key))) == 0;
     }
@@ -1867,12 +2145,6 @@ bool OvstageChangeFeed::rescanKnownPaths(uint64_t ord0,
             deleteKeys.push_back(key);
     }
 
-    mKnownPhysicsPaths = std::move(freshPhysicsPaths);
-    mKnownTransformPaths = std::move(freshTransformPaths);
-    rebuildTransformPathRefCounts();
-    mKnownPhysicsQuery.noteReplaced();
-    mKnownTransformQuery.noteReplaced();
-
     if (!deleteKeys.empty())
     {
         ChangeBatch batch;
@@ -1883,6 +2155,22 @@ bool OvstageChangeFeed::rescanKnownPaths(uint64_t ord0,
     }
 
     ok = dispatchStructuralAdds(newKeys) && ok;
+    // A rejected batch holds the drain cursor. Keep the previous membership so
+    // every rescan retry can discover and redeliver the pending deletions.
+    if (ok)
+    {
+        mKnownPhysicsPaths = std::move(freshPhysicsPaths);
+        mKnownTransformPaths = std::move(freshTransformPaths);
+        rebuildTransformPathRefCounts();
+        mKnownPhysicsQuery.noteReplaced();
+        mKnownTransformQuery.noteReplaced();
+        mPendingRescanAddedPaths.clear();
+    }
+    else
+    {
+        for (const ObjectKey key : newKeys)
+            mPendingRescanAddedPaths.emplace(mSource.sourceKeyToString(key));
+    }
     mKnownSetAuthoritative = ok;
     mFamilyCountsCurrent = ok;
     return ok;
@@ -1944,7 +2232,7 @@ bool OvstageChangeFeed::readKnownStructuralChanges(uint64_t ord0,
     std::vector<PrimTypeRowDelta> knownTypes;
     std::vector<ovx_primpath_t> tombstoneRaws;
     bool allRowsDecodable = true;
-    for (const PathListHandle* h : { &mKnownPhysicsQuery.base, &mKnownPhysicsQuery.delta })
+    for (const PathListHandle* h : mKnownPhysicsQuery.handles())
     {
         if (!h->valid())
             continue;
@@ -1961,9 +2249,10 @@ bool OvstageChangeFeed::readKnownStructuralChanges(uint64_t ord0,
         {
             waitAndRelease(mInstance, re);
             ReadListMemo listMemo(mDict);
-            ovstage_read_group_t g{};
+            ReadColumnCursor cursor(mInstance, rh);
+            ReadGroupColumn g{};
             ovstage_api_status_t fetchErr;
-            while ((fetchErr = ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g)) == OVSTAGE_OK)
+            while ((fetchErr = cursor.next(g)) == OVSTAGE_OK)
             {
                 if (sawChange)
                     *sawChange = true;
@@ -1990,7 +2279,7 @@ bool OvstageChangeFeed::readKnownStructuralChanges(uint64_t ord0,
                                 allRowsDecodable = false;
                                 continue;
                             }
-                            const std::string_view path = mSource.sourceKeyToString(mSource.internKey(groupPaths[idx]));
+                            const std::string_view path = mSource.sourceKeyToString(mSource.internKey(groupPaths[idx].raw_id));
                             if (path.empty())
                             {
                                 allRowsDecodable = false;
@@ -2043,7 +2332,6 @@ bool OvstageChangeFeed::readKnownStructuralChanges(uint64_t ord0,
                 }
                 else
                     allRowsDecodable = false;
-                ovstage_release_group(mInstance, &g);
             }
             if (fetchErr != OVSTAGE_ERROR_END_OF_ITERATION)
                 ok = false;
@@ -2075,7 +2363,7 @@ bool OvstageChangeFeed::readKnownStructuralChanges(uint64_t ord0,
             std::vector<ObjectKey> keys;
             keys.reserve(tombstoneRaws.size());
             for (const ovx_primpath_t raw : tombstoneRaws)
-                keys.push_back(mSource.internKey(raw));
+                keys.push_back(mSource.internKey(raw.raw_id));
             std::vector<bool> live;
             exact = mSource.existsBatchChecked(keys, live);
             for (size_t i = 0; exact && i < tombstoneRaws.size(); ++i)
@@ -2202,16 +2490,25 @@ bool OvstageChangeFeed::readKnownTransformChanges(uint64_t ord0, uint64_t ord1)
         waitAndRelease(mInstance, re);
 
         uint64_t groupCount = 0;
-        ovstage_read_group_t g{};
-        while ((err = ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g)) == OVSTAGE_OK)
+        ReadColumnCursor cursor(mInstance, rh);
+        ReadGroupColumn g{};
+        while ((err = cursor.next(g)) == OVSTAGE_OK)
         {
             ++groupCount;
-            mDeferredGroups.push_back(g);
-            if (g.is_delete)
-                continue;
-
+            cursor.keep(mDeferredGroups);
             const TokenId property = propertyTokenFor(g.attribute);
             collectGroupKeys(g, mGroupKeys, &h);
+            if (g.is_delete)
+            {
+                if (property == worldMatrixProperty)
+                    continue;
+                // Removing a local/reset input changes the resolved pose of a
+                // surviving prim. Whole-prim removal stays on the structural path.
+                mGroupKeys.erase(std::remove_if(mGroupKeys.begin(), mGroupKeys.end(),
+                    [&](ObjectKey key) { return !mSource.exists(key); }), mGroupKeys.end());
+                if (mGroupKeys.empty())
+                    continue;
+            }
             if (property == worldMatrixProperty)
             {
                 mSource.seedBucketFromReadGroup(property, g, mGroupKeys.empty() ? nullptr : mGroupKeys.data(),
@@ -2234,6 +2531,303 @@ bool OvstageChangeFeed::readKnownTransformChanges(uint64_t ord0, uint64_t ord1)
         return err == OVSTAGE_ERROR_END_OF_ITERATION;
     };
 
+    // Device POSE drain. On a DirectGPU sim, apply the authored poses straight from GPU: device-read the
+    // RESOLVED world matrix for EXACTLY the prims whose local frame / reset stack changed this range, then
+    // dispatch it as a device column the write side decomposes (pos + quat) and scatters with no host copy.
+    // The gating is the whole correctness point: omni:fabric:worldMatrix is a read-only OUTPUT column that
+    // hierarchy evaluation rewrites for unrelated bodies, so reading it over the WHOLE superset would
+    // teleport a body nobody re-posed (REQ-PARSE-XFORM-001 AC-5). Restricting the device
+    // read to the authored-local-frame path set -- the exact set the host read dispatches -- reads only the
+    // poses the producer actually authored. The host read below is INERT for a DirectGPU rigid (updateTransform is
+    // a no-op for a DirectGPU actor) but NOT for every prim (it resyncs a child collider), so rows are routed by
+    // whether they carry a world matrix:
+    //  - A row WITH a world matrix goes to the device path. applyPoseBatch SPLITS: it poses the serviceable bodies
+    //    on device and reports the rest for the per-prim path -- harmless, since a row it cannot serve is not a
+    //    created, posable body.
+    //  - An authored key with NO world-matrix row (masked out, or omitted from the read) is a local-only prim
+    //    (REQ-PARSE-XFORM-001 AC-5); it is routed through the host read, which handles it per prim. So is a delete.
+    //  - The device read refuses a query holding a local-only prim (NOT_SUPPORTED: it is all-or-nothing), so that
+    //    refusal is answered by device-reading just the prims that carry a world matrix; the rest go to the host
+    //    read. Any OTHER failure that leaves world-matrix data unapplied -- a setup/fetch error, or a row whose
+    //    value is present but not a usable CUDA column -- would be DROPPED by the inert host read, so it FAILS the
+    //    drain (retryable).
+    const bool poseDeviceAvail = mDeviceOrdinal >= 0 && deviceReadAvailable(mInstance);
+    bool anyTransformFloor = false;
+    if (poseDeviceAvail)
+        for (ovx_token_t tok : mTransformAttrToks)
+            if (hasAttributeFloorAtOrAfter(tok, ord0))
+            {
+                anyTransformFloor = true;
+                break;
+            }
+
+    if (poseDeviceAvail && anyTransformFloor)
+    {
+        // Phase 1: collect the authored-local-frame set (keys + owned path strings) from a change-range read
+        // of the LOCAL-FRAME attrs only -- only rows that carry a value (a masked-out row did not change, and
+        // reading its world matrix in Phase 2 would teleport an unposed body) and only prims that still exist (a
+        // whole-prim removal is structural, reconciled before this read, as the host transform read drops a key
+        // whose prim is gone). A delete of a local/reset input re-poses a surviving prim and is reconciled by the
+        // host read below (sawDelete), without standing down the device serve for the authored poses.
+        std::vector<ObjectKey> authoredKeys;
+        std::vector<std::string> authoredPaths; // owns the strings buildPathListQuery views into
+        std::unordered_set<ObjectKey, ObjectKey::Hash> seen;
+        bool sawDelete = false;
+        auto collectAuthored = [&](const PathListHandle& h, const std::vector<ovx_token_t>& attrs,
+                                   ovstage_api_status_t& err) -> bool
+        {
+            ovstage_ordinal_range_t range{};
+            range.start_ordinal = ord0;
+            range.end_ordinal = ord1;
+            range.has_start_ordinal = true;
+
+            ovstage_read_handle_t rh = OVSTAGE_INVALID_READ_HANDLE;
+            const ovstage_enqueue_result_t re =
+                ovstage_read_attributes(mInstance, h.query, attrs.data(), attrs.size(), range, &rh);
+            err = re.status;
+            if (re.status != OVSTAGE_OK)
+                return false;
+            waitAndRelease(mInstance, re);
+
+            ReadColumnCursor cursor(mInstance, rh);
+            ReadGroupColumn g{};
+            while ((err = cursor.next(g)) == OVSTAGE_OK)
+            {
+                if (g.is_delete)
+                    sawDelete = true;
+                else
+                {
+                    collectGroupKeys(g, mGroupKeys, &h, /*skipMaskedRows=*/true);
+                    for (ObjectKey key : mGroupKeys)
+                        if (mSource.exists(key) && seen.insert(key).second)
+                        {
+                            authoredKeys.push_back(key);
+                            authoredPaths.emplace_back(mSource.sourceKeyToString(key));
+                        }
+                }
+                cursor.keep(mDeferredGroups);
+            }
+            releaseDeferredGroups();
+            waitAndRelease(mInstance, ovstage_release_read(mInstance, rh));
+            return err == OVSTAGE_ERROR_END_OF_ITERATION;
+        };
+
+        const bool collectOk =
+            readPathListQuery(mKnownTransformQuery, mTransformAttrToks, ord0, collectAuthored, true);
+
+        // Phase 2: device-read the resolved world matrix for the AUTHORED (non-delete) paths and dispatch it as a
+        // device column. A delete in the range (sawDelete) does NOT disable the device serve for the surviving
+        // authored poses -- that would send them to the host transform path, inert on a DirectGPU scene, and drop
+        // them. The deletes themselves are reconciled by the host read below, which `needsHost = sawDelete` forces.
+        // A failed authored-set collection (read enqueue/fetch or query-sync error) must FAIL the drain, not
+        // fall through to the host read: inside this block the attach is all-DirectGPU (mDeviceOrdinal >= 0),
+        // where the host read's per-prim transform path is inert (updateTransform is a no-op for a DirectGPU
+        // actor, UsdInterface.cpp), so a "successful" host read would advance the ordinal applying nothing.
+        // These setup failures are transient -- retry can succeed -- so holding the cursor recovers the poses.
+        // An EMPTY authored set is NOT a failure: no local frame resolved to a serviceable key (deletes-only or
+        // a no-op floor), which the host read reconciles.
+        if (!collectOk)
+            ok = false;
+        else if (!authoredKeys.empty())
+        {
+            std::vector<const std::string*> pathPtrs;
+            pathPtrs.reserve(authoredPaths.size());
+            for (const std::string& p : authoredPaths)
+                pathPtrs.push_back(&p);
+            PathListHandle sub = buildPathListQuery(pathPtrs);
+            if (sub.valid())
+            {
+                bool served = false;          // at least one group was dispatched on device
+                bool needsHost = sawDelete;   // a delete, or an authored key with no world-matrix row, still needs
+                                              // the host read (see the coverage check below)
+                std::unordered_set<ObjectKey, ObjectKey::Hash> covered; // authored keys handed to the device path
+                std::vector<uint32_t> keptRows; // per present key: its logical row in the group
+                std::vector<uint32_t> rowMap;   // per present key: its storage row (the gather the write side runs)
+                // A LATEST snapshot read (no start ordinal), not a change-range read: the authored set is already known
+                // (Phase 1), so what is wanted is each authored prim's CURRENT resolved world matrix. The snapshot
+                // reflects the authored local edit this range, so the pose applied equals the authored pose.
+                ovstage_ordinal_range_t range{};
+                range.end_ordinal = ord1;
+                range.has_start_ordinal = false;
+                const ovx_token_t worldMatrixTok = internOvxToken(conv::kFabricWorldMatrix);
+
+                // Device-read `q`'s world matrices and dispatch every row that carries one. Returns the enqueue status;
+                // a fetch error fails the drain in place.
+                const auto serveOnDevice = [&](const PathListHandle& q) -> ovstage_api_status_t
+                {
+                    ovstage_placement_t placement = OVSTAGE_PLACEMENT_INIT;
+                    placement.device.device_type = kDLCUDA;
+                    placement.device.device_id = mDeviceOrdinal;
+                    ovstage_read_handle_t rh = OVSTAGE_INVALID_READ_HANDLE;
+                    const ovstage_enqueue_result_t re = ovstage_read_attributes_on_device(
+                        mInstance, q.query, &worldMatrixTok, 1, range, &placement, &rh);
+                    if (re.status != OVSTAGE_OK)
+                        return re.status;
+                    waitAndRelease(mInstance, re);
+                    ReadColumnCursor cursor(mInstance, rh);
+                    ReadGroupColumn g{};
+                    ovstage_api_status_t fetchErr;
+                    while ((fetchErr = cursor.next(g)) == OVSTAGE_OK)
+                    {
+                        // Route by WORLD-MATRIX PRESENCE. A row carrying a world matrix is the device path's: it is
+                        // served here (applyPoseBatch poses the serviceable bodies and reports the rest for the
+                        // per-prim path). A row with NO world-matrix value -- masked out of the group, or omitted
+                        // from the read altogether -- is a LOCAL-ONLY prim (REQ-PARSE-XFORM-001 AC-5), e.g. a child
+                        // collider. The host transform read handles that per prim (handleTransformChange resyncs
+                        // a collider's body; it is inert only for a DirectGPU rigid), so it is left uncovered and
+                        // routed there by the coverage check after the loop. A delete goes to the host read too.
+                        if (g.is_delete)
+                        {
+                            needsHost = true;
+                            cursor.keep(mDeferredGroups);
+                            continue;
+                        }
+                        collectGroupKeys(g, mGroupKeys, &q, /*skipMaskedRows=*/true, &keptRows);
+                        if (!mGroupKeys.empty())
+                        {
+                            // The column comes back dense or index-mapped (both observed: a 1-of-N subset whose other
+                            // prims' world matrices also changed is index-mapped; a subset whose storage compacts is
+                            // dense), and may be masked. A present key's matrix is at storage row index_map[row] when
+                            // index-mapped, else at its own logical row. Each matrix is 16 float64 -- or 16 float32,
+                            // a representation the host source widens too (OvstageSource decodeMatrixAt) -- so the
+                            // storage row count the map indexes into is totalElements/16 -- not g.data.count (the
+                            // LOGICAL count).
+                            const DLTensor* t = (g.data.tensor_count > 0 && g.data.tensors && g.data.tensors[0].data &&
+                                                 !g.is_array && g.data.tensors[0].device.device_type == kDLCUDA) ?
+                                                    &g.data.tensors[0] :
+                                                    nullptr;
+                            const bool f32 = t && t->dtype.code == kDLFloat && t->dtype.bits == 32;
+                            const bool f64 = t && t->dtype.code == kDLFloat && t->dtype.bits == 64;
+                            const int64_t storageRows =
+                                ((f32 || f64) && totalElements(*t) % 16 == 0) ? totalElements(*t) / 16 : 0;
+                            rowMap.clear();
+                            bool inStorage = storageRows > 0;
+                            bool identity = true;
+                            for (size_t k = 0; k < keptRows.size(); ++k)
+                            {
+                                const uint32_t s = g.data.index_map ? g.data.index_map[keptRows[k]] : keptRows[k];
+                                inStorage = inStorage && int64_t(s) < storageRows;
+                                identity = identity && s == k;
+                                rowMap.push_back(s);
+                            }
+                            if (t && inStorage)
+                            {
+                                ChangeBatch batch;
+                                batch.isDelete = false;
+                                batch.numChanges = mGroupKeys.size();
+                                batch.keys =
+                                    ColumnView{ ColumnType::eObjectKey, -1, mGroupKeys.size(), mGroupKeys.data() };
+                                batch.property = worldMatrixProperty;
+                                // eDouble / eFloat is the element type; the property tells the consumer each row is
+                                // a 16-element matrix. Carry ovstage's producer event so the device decompose
+                                // waits on it (ColumnView is CUDA-free, so the handles pass as opaque uintptr).
+                                batch.values = ColumnView{ f32 ? ColumnType::eFloat : ColumnType::eDouble,
+                                                           mDeviceOrdinal, mGroupKeys.size(),
+                                                           static_cast<const uint8_t*>(t->data) + t->byte_offset,
+                                                           static_cast<uint64_t>(g.data.cuda_sync.stream),
+                                                           static_cast<uint64_t>(g.data.cuda_sync.wait_event) };
+                                // Row map (host storage-row indices the write side gathers through); null when the
+                                // present rows ARE the storage rows in order -- a dense, unmasked column.
+                                batch.values.rowMap =
+                                    (identity && int64_t(rowMap.size()) == storageRows) ? nullptr : rowMap.data();
+                                ok = dispatch(batch) && ok;
+                                served = true;
+                                covered.insert(mGroupKeys.begin(), mGroupKeys.end());
+                            }
+                            else
+                                // A world-matrix value IS present but is not a usable CUDA column (host-resident,
+                                // malformed storage) -- a contract violation. The host transform read cannot apply
+                                // it (inert for a DirectGPU rigid), so FAIL the drain: cursor held, range retried.
+                                ok = false;
+                        }
+                        cursor.keep(mDeferredGroups);
+                    }
+                    // A real fetch ERROR (anything other than end-of-iteration) can leave authored groups unread
+                    // after some were dispatched on device. FAIL the drain so the range stays retryable: forcing the
+                    // host read would not recover them -- the per-prim transform path it feeds is inert on a
+                    // DirectGPU scene (updateTransform is a no-op for a DirectGPU actor), so a "successful" host read
+                    // would advance the ordinal while applying nothing. `ok = false` matches the host and value
+                    // fetch loops elsewhere in this file, which fail the drain the same way on a non-end error.
+                    if (fetchErr != OVSTAGE_ERROR_END_OF_ITERATION)
+                        ok = false;
+                    releaseDeferredGroups();
+                    waitAndRelease(mInstance, ovstage_release_read(mInstance, rh));
+                    return OVSTAGE_OK;
+                };
+
+                ovstage_api_status_t status = serveOnDevice(sub);
+                if (status == OVSTAGE_ERROR_NOT_SUPPORTED)
+                {
+                    // The device read is all-or-nothing: it refuses a query in which some prim carries NO world-matrix
+                    // column -- a local-only prim (REQ-PARSE-XFORM-001 AC-5), e.g. a child collider. That is not
+                    // transient (the same range is refused again on retry), so find which authored prims DO carry one
+                    // with a HOST snapshot read -- a host read tolerates an absent column -- and device-read just
+                    // those. The rest stay uncovered and go to the host read. Paid only when such a prim is in the
+                    // authored set.
+                    std::unordered_set<ObjectKey, ObjectKey::Hash> withWorld;
+                    ovstage_read_handle_t ph = OVSTAGE_INVALID_READ_HANDLE;
+                    const ovstage_enqueue_result_t pe =
+                        ovstage_read_attributes(mInstance, sub.query, &worldMatrixTok, 1, range, &ph);
+                    status = pe.status;
+                    if (pe.status == OVSTAGE_OK)
+                    {
+                        waitAndRelease(mInstance, pe);
+                        ReadColumnCursor probe(mInstance, ph);
+                        ReadGroupColumn pg{};
+                        ovstage_api_status_t probeErr;
+                        while ((probeErr = probe.next(pg)) == OVSTAGE_OK)
+                        {
+                            if (!pg.is_delete)
+                            {
+                                collectGroupKeys(pg, mGroupKeys, &sub, /*skipMaskedRows=*/true);
+                                withWorld.insert(mGroupKeys.begin(), mGroupKeys.end());
+                            }
+                            probe.keep(mDeferredGroups);
+                        }
+                        releaseDeferredGroups();
+                        waitAndRelease(mInstance, ovstage_release_read(mInstance, ph));
+                        status = probeErr == OVSTAGE_ERROR_END_OF_ITERATION ? OVSTAGE_OK : probeErr;
+                    }
+                    if (status == OVSTAGE_OK && !withWorld.empty())
+                    {
+                        std::vector<const std::string*> worldPaths;
+                        for (size_t i = 0; i < authoredKeys.size(); ++i)
+                            if (withWorld.count(authoredKeys[i]) != 0)
+                                worldPaths.push_back(&authoredPaths[i]);
+                        PathListHandle worldSub = buildPathListQuery(worldPaths);
+                        status = worldSub.valid() ? serveOnDevice(worldSub) : OVSTAGE_ERROR_INTERNAL;
+                        if (worldSub.valid())
+                            releaseCachedQuery(worldSub);
+                    }
+                }
+                // Any other enqueue failure -- or a failed probe or retry -- leaves world-matrix data unapplied that
+                // the host read cannot recover (it is inert for a DirectGPU rigid): FAIL the drain, cursor held, range
+                // retried.
+                if (status != OVSTAGE_OK)
+                    ok = false;
+                // Coverage: "some group was served" does not mean every authored key was. A key no served group carried
+                // has no world-matrix row (a local-only prim); route it through the host read.
+                if (!needsHost)
+                    for (ObjectKey key : authoredKeys)
+                        if (covered.count(key) == 0)
+                        {
+                            needsHost = true;
+                            break;
+                        }
+                releaseCachedQuery(sub);
+                // Skip the host transform read ONLY when every authored key went to the device path and there is no
+                // delete to reconcile; otherwise fall through -- the host read routes the uncovered (local-only) keys
+                // per prim, and re-applying the device-served rows there is idempotent and harmless.
+                if (served && !needsHost)
+                    return ok;
+            }
+            else
+                // Sub-query construction failed (buildPathListQuery). Same fail-closed reasoning: an all-
+                // DirectGPU attach cannot recover these poses on the inert host read.
+                ok = false;
+        }
+    }
+
     return readPathListQuery(mKnownTransformQuery, readAttrs, ord0, runRead, true) && ok;
 }
 
@@ -2247,12 +2841,10 @@ bool OvstageChangeFeed::readValueChanges(uint64_t ord0, uint64_t ord1)
     if (!syncPathListQuery(mKnownPhysicsPaths, mKnownPhysicsQuery, true) || !mKnownPhysicsQuery.valid())
         return false;
 
-    {
-        // The attribute set of the known prims can grow any frame (a column first
-        // authored at runtime), so it is re-read from the path-list query every drain.
-        // On failure the family filters' discovery from the last (re)build stands in.
-        refreshDiscoveryFromQuery(mKnownPhysicsQuery);
-    }
+    // The attribute set of the known prims can grow any frame (a column first authored at
+    // runtime), so it is re-read from the path-list query every drain. On failure the family
+    // filters' discovery from the last (re)build stands in.
+    refreshDiscoveryFromQuery(mKnownPhysicsQuery);
 
     if (mValueReadAttrsDirty || mRegisteredAttributeTokensDirty)
         rebuildValueReadAttributes();
@@ -2301,7 +2893,7 @@ bool OvstageChangeFeed::readValueChanges(uint64_t ord0, uint64_t ord1)
         };
         std::vector<CoalescedColumn> coalesced;
 
-        auto tryCoalesce = [&](const ovstage_read_group_t& grp, TokenId property) -> bool
+        auto tryCoalesce = [&](const ReadGroupColumn& grp, TokenId property) -> bool
         {
             ReadColumn column;
             if (!readColumn(grp, column) || mGroupKeys.size() != grp.prims.count || !mGroupListPaths)
@@ -2341,7 +2933,7 @@ bool OvstageChangeFeed::readValueChanges(uint64_t ord0, uint64_t ord1)
                 for (uint32_t i = 0; i < rows; ++i)
                 {
                     const uint32_t idx = grp.prims.index_map ? grp.prims.index_map[i] : (grp.prims.offset + i);
-                    col->raws.push_back(idx < mGroupListCount ? mGroupListPaths[idx] : 0);
+                    col->raws.push_back(idx < mGroupListCount ? mGroupListPaths[idx].raw_id : 0);
                 }
                 const uint8_t* src = column.data(0);
                 col->bytes.insert(col->bytes.end(), src, src + static_cast<size_t>(rows) * rowBytes);
@@ -2353,7 +2945,7 @@ bool OvstageChangeFeed::readValueChanges(uint64_t ord0, uint64_t ord1)
                     continue;
                 col->keys.push_back(mGroupKeys[i]);
                 const uint32_t idx = grp.prims.index_map ? grp.prims.index_map[i] : (grp.prims.offset + i);
-                col->raws.push_back(idx < mGroupListCount ? mGroupListPaths[idx] : 0);
+                col->raws.push_back(idx < mGroupListCount ? mGroupListPaths[idx].raw_id : 0);
                 const uint8_t* src = column.data(i);
                 col->bytes.insert(col->bytes.end(), src, src + rowBytes);
             }
@@ -2390,10 +2982,11 @@ bool OvstageChangeFeed::readValueChanges(uint64_t ord0, uint64_t ord1)
         };
 
         uint64_t groupCount = 0;
-        ovstage_read_group_t g{};
+        ReadColumnCursor cursor(mInstance, rh);
+        ReadGroupColumn g{};
         for (;;)
         {
-            err = ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g);
+            err = cursor.next(g);
             if (err != OVSTAGE_OK)
                 break;
             ++groupCount;
@@ -2422,12 +3015,12 @@ bool OvstageChangeFeed::readValueChanges(uint64_t ord0, uint64_t ord1)
                         valueBatchDispatchCounter().fetch_add(1, std::memory_order_relaxed);
                         ok = dispatch(batch) && ok;
                     }
-                    mDeferredGroups.push_back(g);
+                    cursor.keep(mDeferredGroups);
                     continue;
                 }
                 if (tryCoalesce(g, property))
                 {
-                    mDeferredGroups.push_back(g);
+                    cursor.keep(mDeferredGroups);
                     continue;
                 }
 
@@ -2559,7 +3152,7 @@ bool OvstageChangeFeed::readValueChanges(uint64_t ord0, uint64_t ord1)
                 ok = dispatch(batch) && ok;
                 mSource.clearBucket();
             }
-            mDeferredGroups.push_back(g);
+            cursor.keep(mDeferredGroups);
         }
         // A truncated read fails the drain and the range is redelivered: do not dispatch
         // the partial coalesced columns.
@@ -2570,23 +3163,179 @@ bool OvstageChangeFeed::readValueChanges(uint64_t ord0, uint64_t ord1)
         return err == OVSTAGE_ERROR_END_OF_ITERATION;
     };
 
-    return readPathListQuery(mKnownPhysicsQuery, mValueReadAttrs, ord0, runRead, true) && ok;
+    // Device value drain. On a DirectGPU sim, read the ovstage-authored velocity columns ON DEVICE (via the
+    // ovstage.placement device read) over the drained ordinal range and deliver each as a device column the
+    // scatter applies with no host copy: linear velocity borrows in place, angular velocity is deg->rad
+    // scaled on device. The read is a change-range read (AC-16) -- only the rows written this range -- and
+    // the device path engages for the dense pattern: a DirectGPU sim that authors every body each drain
+    // rewrites every row of the column. Every other attribute stays on the host change-range path below.
+    const bool deviceReadAvail = mDeviceOrdinal >= 0 && deviceReadAvailable(mInstance);
+    // The attributes served on device on a DirectGPU sim: rigid-body velocity + angular velocity (fixed-size
+    // vec3 columns) and the single-DOF articulation joint drive/state DOF scalars. The ovstage device read
+    // serves all of them; a token the read returns index-mapped or on the host (a sparse multi-axis set that
+    // does not cover every queried prim, or a partial rewrite) stays on the host change-range path below, like
+    // any partial rigid column, and drains through applyArticulationBatch's host scatter -- never dropped.
+    std::vector<ovx_token_t> deviceEligibleTokens;
+    if (deviceReadAvail)
+        deviceEligibleTokens = { internOvxToken("physics:velocity"),
+                                 internOvxToken("physics:angularVelocity"),
+                                 internOvxToken("drive:linear:physics:targetPosition"),
+                                 internOvxToken("drive:angular:physics:targetPosition"),
+                                 internOvxToken("drive:linear:physics:targetVelocity"),
+                                 internOvxToken("drive:angular:physics:targetVelocity"),
+                                 internOvxToken("state:linear:physics:position"),
+                                 internOvxToken("state:angular:physics:position"),
+                                 internOvxToken("state:linear:physics:velocity"),
+                                 internOvxToken("state:angular:physics:velocity") };
+    const auto authoredValueAttr = [&](ovx_token_t tok) {
+        return tok != OVX_INVALID_TOKEN &&
+               std::find(mValueReadAttrs.begin(), mValueReadAttrs.end(), tok) != mValueReadAttrs.end();
+    };
+
+    // Per-token device-serve outcome (reset before each token's read). An attribute is served on device
+    // -- and so removed from the host change-range read below -- ONLY when the device read actually
+    // delivered it as a dense device (kDLCUDA) column. The placement read is permissive: it materializes a
+    // host-authored dense column onto CUDA, so host authoring alone does NOT keep a device-eligible column
+    // on the host read. A group comes back undispatched (kDLCPU or non-dense) only when it is index-mapped
+    // or masked (a partial rewrite) or hits ovstage's single-prim placement downgrade -- that must stay on
+    // the host path, not be silently dropped between the two.
+    bool tokDeviceServed = false;
+    bool tokNeedsHostRead = false;
+
+    auto deviceRead = [&](const PathListHandle& h, const std::vector<ovx_token_t>& attrs,
+                          ovstage_api_status_t& err) -> bool
+    {
+        // Change-range [ord0, ord1], like the host read: only the rows actually written in this range,
+        // so a body nobody rewrote this drain keeps its simulated state instead of being overwritten with
+        // its stale last-authored value (a latest/whole-superset read re-applied every row every drain).
+        ovstage_ordinal_range_t range{};
+        range.start_ordinal = ord0;
+        range.end_ordinal = ord1;
+        range.has_start_ordinal = true;
+
+        ovstage_placement_t placement = OVSTAGE_PLACEMENT_INIT;
+        placement.device.device_type = kDLCUDA;
+        placement.device.device_id = mDeviceOrdinal;
+        ovstage_read_handle_t rh = OVSTAGE_INVALID_READ_HANDLE;
+        ovstage_enqueue_result_t re = ovstage_read_attributes_on_device(
+            mInstance, h.query, attrs.data(), attrs.size(), range, &placement, &rh);
+        err = re.status;
+        if (re.status != OVSTAGE_OK)
+            return false;
+        waitAndRelease(mInstance, re);
+
+        ReadColumnCursor cursor(mInstance, rh);
+        ReadGroupColumn g{};
+        for (;;)
+        {
+            err = cursor.next(g);
+            if (err != OVSTAGE_OK)
+                break;
+            const bool dense = !g.is_delete && g.data.tensor_count > 0 && g.data.tensors &&
+                               g.data.tensors[0].data && !g.is_array && g.data.index_map == nullptr &&
+                               g.data.mask == nullptr && g.prims.count > 0;
+            bool dispatched = false;
+            if (dense && g.data.tensors[0].device.device_type == kDLCUDA)
+            {
+                collectGroupKeys(g, mGroupKeys, &h);
+                if (mGroupKeys.size() == g.prims.count)
+                {
+                    const DLTensor& t = g.data.tensors[0];
+                    const uint32_t rows = g.prims.count;
+                    const int64_t comps = totalElements(t) / static_cast<int64_t>(rows);
+                    const ColumnType ct = columnTypeOf(t.dtype, comps);
+                    if (ct != ColumnType::eNone)
+                    {
+                        ChangeBatch batch;
+                        batch.isDelete = false;
+                        batch.numChanges = mGroupKeys.size();
+                        batch.keys = ColumnView{ ColumnType::eObjectKey, -1, mGroupKeys.size(), mGroupKeys.data() };
+                        batch.property = propertyTokenFor(g.attribute);
+                        // Borrow the device column in place; carry ovstage's producer event so the
+                        // scatter waits on it before reading (ColumnView is CUDA-free, so the sync
+                        // handles pass as opaque uintptr_t values). No bucket seed: a device tensor
+                        // cannot be read host-side, and this dense group's borrow covers every row it
+                        // carries, so those rows need no per-key host fallback.
+                        batch.values = ColumnView{ ct, mDeviceOrdinal, rows,
+                                                   static_cast<const uint8_t*>(t.data) + t.byte_offset,
+                                                   static_cast<uint64_t>(g.data.cuda_sync.stream),
+                                                   static_cast<uint64_t>(g.data.cuda_sync.wait_event) };
+                        ok = dispatch(batch) && ok;
+                        dispatched = true; // a device column reached the consumer for these rows
+                    }
+                }
+            }
+            // Any group NOT dispatched on device -- a host (kDLCPU) column, an index-mapped or masked
+            // chunk, a delete, a key-count mismatch, or an unmapped dtype -- keeps the WHOLE attribute on
+            // the host change-range read below so its rows are never dropped between the two paths. The
+            // read runs per handle (base + delta) and can split into a dispatched group plus an undispatched
+            // one for the same attribute; the host read then re-applies the device-served rows idempotently.
+            if (dispatched)
+                tokDeviceServed = true;
+            else
+                tokNeedsHostRead = true;
+            cursor.keep(mDeferredGroups);
+        }
+        releaseDeferredGroups();
+        waitAndRelease(mInstance, ovstage_release_read(mInstance, rh));
+        return err == OVSTAGE_ERROR_END_OF_ITERATION;
+    };
+
+    // Serve each device-eligible attribute on device when possible; a device read that cannot fully
+    // cover (partial column / hook rejection) leaves that attribute on the host change-range path below.
+    // Re-applying the same authored value is idempotent, so a partial device serve is harmless.
+    std::vector<ovx_token_t> servedOnDevice;
+    if (deviceReadAvail)
+        for (ovx_token_t tok : deviceEligibleTokens)
+        {
+            // Change-driven: read + scatter this attribute ONLY when it actually changed in this range
+            // (its write floor reached ord0). An attribute nobody wrote this drain is skipped entirely --
+            // no re-read, no re-scatter of state PhysX already holds. The read below is a change-range read
+            // (AC-16): only the rows written in [ord0, ord1] come back, so a body nobody rewrote this range
+            // is not re-applied and keeps its simulated state.
+            if (!authoredValueAttr(tok) || !hasAttributeFloorAtOrAfter(tok, ord0))
+                continue;
+            tokDeviceServed = false;
+            tokNeedsHostRead = false;
+            const bool readOk =
+                readPathListQuery(mKnownPhysicsQuery, std::vector<ovx_token_t>{ tok }, ord0, deviceRead);
+            // Removed from the host read only when a device column was served AND no group needed the host
+            // read; otherwise it stays in the host read set (a host-authored, partial, or mixed column is
+            // not dropped -- the delta handle that came back index-mapped is the case this guards).
+            if (readOk && tokDeviceServed && !tokNeedsHostRead)
+                servedOnDevice.push_back(tok);
+        }
+
+    // The device serve above is the whole value apply for the device-resident attributes. Every other
+    // authored attribute (host-authored, or a device-eligible column the read returned on the host) goes
+    // through the host change-range read below so a value that changed this range is never dropped.
+    std::vector<ovx_token_t> hostAttrs;
+    for (ovx_token_t tok : mValueReadAttrs)
+        if (std::find(servedOnDevice.begin(), servedOnDevice.end(), tok) == servedOnDevice.end())
+            hostAttrs.push_back(tok);
+
+    bool readOk = true;
+    if (!hostAttrs.empty())
+        readOk = readPathListQuery(mKnownPhysicsQuery, hostAttrs, ord0, runRead, true);
+    return readOk && ok;
 }
 
-// release_group's cost depends on order: releasing each group while later ones are still
+// Release cost depends on order: releasing each group while later ones are still
 // pending costs O(remaining) per call (31 ms for 4096 groups), releasing them all after the
 // loop last-fetched-first costs ~1.6 us each. Groups stay valid until released, so nothing
 // read from them (bucket tensors included) dangles before the flush that follows.
 void OvstageChangeFeed::releaseDeferredGroups()
 {
-    for (auto it = mDeferredGroups.rbegin(); it != mDeferredGroups.rend(); ++it)
-        ovstage_release_group(mInstance, &*it);
+    std::reverse(mDeferredGroups.begin(), mDeferredGroups.end());
+    ovstage_release_groups(mInstance, mDeferredGroups.data(), mDeferredGroups.size());
     mDeferredGroups.clear();
     mListMemo.clear(); // list handles may be recycled once the groups are gone
 }
 
 bool OvstageChangeFeed::drainRange(uint64_t ord0, uint64_t ord1)
 {
+    if (!mBaselineInitialized)
+        return false;
     if (!mEnabled || !mInstance || !mDict)
         return true;
 
@@ -2598,6 +3347,16 @@ bool OvstageChangeFeed::drainRange(uint64_t ord0, uint64_t ord1)
     // The source's ordinal-gated reads (child cache under a load cache, whole-stage schema
     // reads) target the range being drained, not the attach ordinal.
     mSource.setReadOrdinal(static_cast<ovstage_ordinal_t>(ord1));
+    struct SharedInputGuard
+    {
+        OvstageSource& source;
+        bool keep = false;
+        ~SharedInputGuard()
+        {
+            if (!keep)
+                source.clearSharedPhysicsInputs();
+        }
+    } sharedInputGuard{ mSource };
 
     // Existence answers are exact as of the previous drain only. A prim deleted in this range
     // appears in no structural read (query membership is live prims), so nothing below could
@@ -2623,8 +3382,10 @@ bool OvstageChangeFeed::drainRange(uint64_t ord0, uint64_t ord1)
         CARB_PROFILE_ZONE(0, "OvstageChangeFeed::structuralChangeCheck");
         ok = reconcileStructuralChanges(ord0, ord1) && ok;
     }
+
     {
         CARB_PROFILE_ZONE(0, "OvstageChangeFeed::cachedChangeRead");
+        // The family queries feed the growth classification and the discovery fallback.
         queryForFilter("usd-schemas", OVSTAGE_FILTER_OP_CONTAINS, mPhysicsSchemas.data(), mPhysicsSchemas.size(),
                        mSchemaFamilyQuery);
         queryForFilter(conv::kUsdPrimType, OVSTAGE_FILTER_OP_IN, mPhysicsPrimTypes.data(), mPhysicsPrimTypes.size(),
@@ -2636,11 +3397,13 @@ bool OvstageChangeFeed::drainRange(uint64_t ord0, uint64_t ord1)
     if (mGroupComplete)
         mGroupComplete();
     mSource.clearBucket();
+
     // A failed drain is redelivered from ord0; whatever it half-patched is suspect either way.
     if (ok)
     {
         mLastDrainedOrd1 = ord1;
         mPendingAuthoredTypeChanges.clear();
+        sharedInputGuard.keep = true;
     }
     else
         mRangeGapSinceDrop = true;

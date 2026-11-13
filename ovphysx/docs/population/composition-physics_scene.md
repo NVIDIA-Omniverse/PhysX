@@ -5,7 +5,7 @@
 
 # Physics scene
 
-Convenience composition: one PhysicsScene prim, optionally with PhysxSceneAPI. Owns no columns; gravity comes from the PhysicsScene type and PhysX tuning from the PhysxSceneAPI component.
+Convenience composition: one PhysicsScene [prim](glossary.md#prim), optionally with PhysxSceneAPI. Owns no columns; gravity comes from the PhysicsScene type and [PhysX](glossary.md#physx) tuning from the PhysxSceneAPI component.
 
 - **Type:** [`PhysicsScene`](PhysicsScene.md)
 - **Required APIs:** 

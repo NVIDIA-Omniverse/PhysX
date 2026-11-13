@@ -87,6 +87,7 @@ struct PxTriangleMeshGeometryLL: public PxTriangleMeshGeometry
 	MaterialIndicesStruct	materialsLL;
 };
 
+#if PX_SUPPORT_GPU_PHYSX
 struct PxParticleSystemGeometryLL : public PxParticleSystemGeometry
 {
 	MaterialIndicesStruct	materialsLL;
@@ -96,17 +97,20 @@ struct PxTetrahedronMeshGeometryLL : public PxTetrahedronMeshGeometry
 {
 	MaterialIndicesStruct	materialsLL;
 };
+#endif
 
 struct PxHeightFieldGeometryLL : public PxHeightFieldGeometry
 {
 	MaterialIndicesStruct	materialsLL;
 };
 
-template <> struct PxcGeometryTraits<PxParticleSystemGeometryLL>	{ enum { TypeID = PxGeometryType::ePARTICLESYSTEM}; };
 template <> struct PxcGeometryTraits<PxConvexMeshGeometryLL>		{ enum { TypeID = PxGeometryType::eCONVEXMESH }; };
 template <> struct PxcGeometryTraits<PxTriangleMeshGeometryLL>		{ enum { TypeID = PxGeometryType::eTRIANGLEMESH }; };
-template <> struct PxcGeometryTraits<PxTetrahedronMeshGeometryLL>	{ enum { TypeID = PxGeometryType::eTETRAHEDRONMESH }; };
 template <> struct PxcGeometryTraits<PxHeightFieldGeometryLL>		{ enum { TypeID = PxGeometryType::eHEIGHTFIELD }; };
+#if PX_SUPPORT_GPU_PHYSX
+template <> struct PxcGeometryTraits<PxParticleSystemGeometryLL>	{ enum { TypeID = PxGeometryType::ePARTICLESYSTEM}; };
+template <> struct PxcGeometryTraits<PxTetrahedronMeshGeometryLL>	{ enum { TypeID = PxGeometryType::eTETRAHEDRONMESH }; };
+#endif
 
 class InvalidGeometry : public PxGeometry
 {
@@ -151,11 +155,13 @@ private:
 		PxU8	plane[sizeof(PxPlaneGeometry)];
 		PxU8	convexCore[sizeof(PxConvexCoreGeometry)];
 		PxU8	convex[sizeof(PxConvexMeshGeometryLL)];
-		PxU8	particleSystem[sizeof(PxParticleSystemGeometryLL)];
 		PxU8	mesh[sizeof(PxTriangleMeshGeometryLL)];
-		PxU8	tetMesh[sizeof(PxTetrahedronMeshGeometryLL)];
 		PxU8	heightfield[sizeof(PxHeightFieldGeometryLL)];
 		PxU8	custom[sizeof(PxCustomGeometry)];
+#if PX_SUPPORT_GPU_PHYSX
+		PxU8	particleSystem[sizeof(PxParticleSystemGeometryLL)];
+		PxU8	tetMesh[sizeof(PxTetrahedronMeshGeometryLL)];
+#endif
 		PxU8	invalid[sizeof(InvalidGeometry)];
 	} mGeometry;
 };

@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# @implements REQ-PYTHON-OMNIPVD-SAMPLE-001
+# @covers AC-1
+
 # NOTE: This file is included verbatim in documentation via literalinclude.
 # Tutorial marker comments below define the included range.
 
@@ -23,7 +26,6 @@ compatibility policy.
 # @implements REQ-CAPI-OVSTAGE-XFORM-001
 # @covers AC-1
 
-import glob
 import os
 import tempfile
 from pathlib import Path
@@ -38,6 +40,7 @@ _physx_schemas_registered = False
 
 def attach_scene(physx, usd_path, stage_name):
     import ovstage
+    from ovphysx.population import physics_population_descs
 
     if not ovstage.population.available():
         raise RuntimeError("ovstage population bridge is unavailable")
@@ -52,7 +55,7 @@ def attach_scene(physx, usd_path, stage_name):
     stage = ovstage.Stage(stage_name)
     ordinal = 1
     try:
-        ovstage.population.open_usd(stage, str(usd_path), ordinal=ordinal, domains=ovstage.PopulationDomain.ALL)
+        ovstage.population.open_usd_with_desc(stage, str(usd_path), ordinal=ordinal, time=ovstage.population.DEFAULT_TIME, descs=physics_population_descs(rendering=True))
         stage.advance_write_floor(ordinal=ordinal).wait()
         physx.wait_task(physx.attach_ovstage(stage, read_ordinal=ordinal))
         return stage
@@ -107,7 +110,7 @@ physx.destroy()
 print("Runtime cleanup complete; recording retained for inspection")
 
 # List the produced .ovd files
-ovd_files = glob.glob(os.path.join(output_dir, "*.ovd"))
+ovd_files = list(Path(output_dir).glob("*.ovd"))
 if ovd_files:
     print(f"\nRecorded {len(ovd_files)} OVD file(s):")
     for f in ovd_files:

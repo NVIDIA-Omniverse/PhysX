@@ -1,0 +1,44 @@
+#usda 1.0
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+def Xform "World"
+{
+    def PhysicsScene "SceneA" {}
+    def PhysicsScene "SceneB" {}
+
+    def Cube "SharedDynamic" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+    )
+    {
+        double size = 1
+        float physics:mass = 1
+        rel physics:simulationOwner = [</World/SceneA>, </World/SceneB>]
+        double3 xformOp:translate = (0, 4, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+    def Cube "SharedStatic" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        double size = 1
+        rel physics:simulationOwner = [</World/SceneA>, </World/SceneB>]
+        double3 xformOp:translate = (4, 4, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+    def Cube "Excluded" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+    )
+    {
+        double size = 1
+        float physics:mass = 1
+        rel physics:simulationOwner = </World/SceneA>
+        double3 xformOp:translate = (8, 4, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+}

@@ -5,6 +5,22 @@
         "heavy": false,
         "note": "physics:velocity via OVStage, sealed+drained, then step"
       },
+      "Authoring.drain_ovstage_gpu": {
+        "heavy": false,
+        "note": "physics:velocity and physics:angularVelocity as device (kDLCUDA) columns on the three dynamic bodies of a DirectGPU scene, sealed SCOPE_INCLUDE and drained together on the device, then step"
+      },
+      "Authoring.drain_ovstage_scaled_4096_gpu": {
+        "heavy": false,
+        "note": "scaled device drain: velocity + angularVelocity device columns on 4096 bodies, sealed SCOPE_INCLUDE and drained (no sim step), isolating the drain"
+      },
+      "Authoring.drain_ovstage_scaled_16384_gpu": {
+        "heavy": false,
+        "note": "scaled device drain: velocity + angularVelocity device columns on 16384 bodies, sealed SCOPE_INCLUDE and drained (no sim step), isolating the drain"
+      },
+      "Authoring.drain_ovstage_scaled_65536_gpu": {
+        "heavy": false,
+        "note": "scaled device drain: velocity + angularVelocity device columns on 65536 bodies, sealed SCOPE_INCLUDE and drained (no sim step), isolating the drain"
+      },
       "Authoring.drain_step_only_cpu": {
         "heavy": false,
         "note": "floor: step only, no control write"
@@ -15,7 +31,7 @@
       }
     },
     "category": "Authoring",
-    "description": "L1B Authoring diagnostics for existing-body control-plane writes on a loaded scene (ported from the ovphysx c_samples; see tests/benchmarks/README.md#l1b-authoring-and-writescaling-rows). `drain_ovstage_cpu` writes `physics:velocity` through the OVStage control plane, sealed and drained, then steps. `drain_tensor_cpu` makes the same linear-velocity change through a persistent tensor write and steps, with no OVStage drain. `drain_step_only_cpu` is the floor: step only, no control write. All three are hidden diagnostics, not primary KPIs.",
+    "description": "L1B Authoring diagnostics for existing-body control-plane writes on a loaded scene (ported from the ovphysx c_samples; see tests/benchmarks/README.md#l1b-authoring-and-writescaling-rows). `drain_ovstage_cpu` writes `physics:velocity` through the OVStage control plane, sealed and drained, then steps. `drain_tensor_cpu` makes the same linear-velocity change through a persistent tensor write and steps, with no OVStage drain. `drain_step_only_cpu` is the floor: step only, no control write. `drain_ovstage_gpu` is the DirectGPU counterpart: it authors physics:velocity + physics:angularVelocity as device (kDLCUDA) columns on the three dynamic bodies, seals SCOPE_INCLUDE and drains them on the device, then steps. `drain_ovstage_scaled_4096_gpu` / `_16384_gpu` / `_65536_gpu` run that same device drain over 4,096 / 16,384 / 65,536 bodies, drain-only (no sim step), timing the device write and drain as body count grows. All seven are hidden diagnostics, not primary KPIs.",
     "tags": [
       "Authoring",
       "Property Updates"
@@ -92,10 +108,18 @@
       "RuntimeSpawnScaling.collider_heavy_1280_cpu": {
         "heavy": true,
         "note": "Diagnostic: seal/drain + one step of one spawned body into 1,280 existing static colliders; outside the L1B Authoring.* selection"
+      },
+      "QueryRetention.runtime_write_spawn_cpu": {
+        "heavy": true,
+        "note": "Diagnostic: 80 body/collider pairs, 160 caller queries for 1,040 separate writes; creation/retirement, five drains and steps remain timed"
+      },
+      "BatchedWrite.runtime_write_spawn_cpu": {
+        "heavy": true,
+        "note": "Diagnostic: 80 body/collider pairs, 160 caller queries and 160 WRITE batches carrying 1,040 attribute payloads (8 per body, 5 per collider); creation/retirement, five drains and steps remain timed"
       }
     },
     "category": "Authoring",
-    "description": "Diagnostic. The same 80 bodies as AuthoringPopulationAdd, authored directly through 13 OVStage columns per body in five drained and stepped batches, with no population references. `RuntimeSpawnScaling.collider_heavy_1280_cpu` reuses the same column writes to author one body into a generated scene that already holds 1,280 static colliders; the writes are outside the timer and the timed sample is the seal, the structural drain, and one synchronous step, gated on the realized rigid body at the exact authored path (REQ-CAPI-BENCHMARK-005).",
+    "description": "Diagnostic. The same 80 bodies as AuthoringPopulationAdd, authored directly through 13 OVStage columns per body in five drained and stepped batches, with no population references. `RuntimeSpawnScaling.collider_heavy_1280_cpu` reuses the same column writes to author one body into a generated scene that already holds 1,280 static colliders; the writes are outside the timer and the timed sample is the seal, the structural drain, and one synchronous step, gated on the realized rigid body at the exact authored path (REQ-CAPI-BENCHMARK-005). QueryRetention.runtime_write_spawn_cpu is a separate hidden CPU diagnostic retaining one query for each body and collider; it preserves the original fresh-query row and physics work (REQ-CAPI-BENCHMARK-008). BatchedWrite.runtime_write_spawn_cpu keeps those 160 query lifecycles and groups the same payloads into one completed body batch and one completed collider batch per pair; exact payload and actor validation remains outside timing (REQ-CAPI-BENCHMARK-009).",
     "tags": [
       "Authoring",
       "Loading & Attach"
@@ -278,6 +302,38 @@
       "Articulations"
     ]
   },
+  "tests/benchmarks/benchmarks/LabHumanoid.cpp": {
+    "cases": {
+      "Lab.humanoid_8192_control_step_tensorbinding_gpu": {
+        "heavy": false,
+        "note": "deprecated baseline: bindings built once; policy copy, two actuation-force writes and 1/120s steps, root pose/velocity and DOF position/velocity reads, physics included"
+      },
+      "Lab.humanoid_8192_control_step_session_gpu": {
+        "heavy": false,
+        "note": "held queries; a write session per substep filled with one device copy of the policy output, two reads, physics included"
+      },
+      "Lab.humanoid_8192_control_step_session_captured_gpu": {
+        "heavy": false,
+        "note": "the session row with the fill and commit, and the reads, replayed from CUDA graphs captured once; the policy and the steps run outside the graphs"
+      },
+      "Lab.humanoid_8192_reset_tensorbinding_gpu": {
+        "heavy": false,
+        "note": "deprecated baseline: masked writes of root pose/velocity and DOF position/velocity for a rotating 1/16 of the environments"
+      },
+      "Lab.humanoid_8192_reset_session_gpu": {
+        "heavy": false,
+        "note": "row-masked commits of the root and joint state for a rotating 1/16 of the environments, each column filled with one device copy"
+      }
+    },
+    "category": "Lab Probes",
+    "description": "IsaacLab's Humanoid task over 8192 environments on DirectGPU, through the session read/write API and through the deprecated tensor binding, with every input and output in device memory on both sides. `control_step` rows time IsaacLab's control step: a stand-in policy's device copy, two actuation-force writes each followed by a 1/120s step, then the root and joint state reads, physics included. `reset` rows time a masked write of the root and joint state of a rotating sixteenth of the environments back to their initial values, with an untimed step between samples. Each row prints a PHASES line splitting write, step and read time, and validates its reads and writes during setup. All require `--forceGpu --directGpu`, `--hidden` and the exact `--filter`, in a dedicated process.",
+    "tags": [
+      "Lab Probes",
+      "Tensor I/O",
+      "Output Read",
+      "Articulations"
+    ]
+  },
   "tests/benchmarks/benchmarks/LowLoad.cpp": {
     "cases": {
       "LowLoad.empty_step": {
@@ -331,19 +387,19 @@
       },
       "OutputRead.readonly_settled_rb_8192_cpu": {
         "heavy": false,
-        "note": "TASK-16 same-scene control: SCOPE_ALL read on the settled scene (every body), the baseline readonly_active_rb's subset read is measured against"
+        "note": "Same-scene control: SCOPE_ALL read on the settled scene (every body), the baseline readonly_active_rb's subset read is measured against"
       },
       "OutputRead.readonly_settled_rb_8192_gpu": {
         "heavy": false,
-        "note": "requires --forceGpu --directGpu; TASK-16 same-scene control: SCOPE_ALL DirectGPU read on the settled scene (whole-scene fetch), the baseline readonly_active_rb is measured against"
+        "note": "requires --forceGpu --directGpu; same-scene control: SCOPE_ALL DirectGPU read on the settled scene (whole-scene fetch), the baseline readonly_active_rb is measured against"
       },
       "OutputRead.readonly_active_rb_8192_cpu": {
         "heavy": false,
-        "note": "TASK-16: SCOPE_ACTIVE subset read on the settled scene -- reads only the falling, non-kinematic fraction of bodies, so the fetch is sized by the subset not the whole scene; readonly_settled_rb (SCOPE_ALL, same scene) is the control"
+        "note": "SCOPE_ACTIVE subset read on the settled scene -- reads only the falling, non-kinematic fraction of bodies, so the fetch is sized by the subset not the whole scene; readonly_settled_rb (SCOPE_ALL, same scene) is the control"
       },
       "OutputRead.readonly_active_rb_8192_gpu": {
         "heavy": false,
-        "note": "requires --forceGpu --directGpu; TASK-16 SCOPE_ACTIVE subset read on the settled scene -- the DirectGPU copy is sized by the active (non-kinematic) subset, not the whole-scene superset (readonly_settled_rb is the SCOPE_ALL same-scene control)"
+        "note": "requires --forceGpu --directGpu; SCOPE_ACTIVE subset read on the settled scene -- the DirectGPU copy is sized by the active (non-kinematic) subset, not the whole-scene superset (readonly_settled_rb is the SCOPE_ALL same-scene control)"
       },
       "OutputRead.tensorbinding_rb_8192_cpu": {
         "heavy": false,
@@ -384,6 +440,22 @@
       "OutputRead.readonly_arti_dof_8192_gpu": {
         "heavy": false,
         "note": "requires --forceGpu --directGpu; host-backed output read even on a DirectGPU scene"
+      },
+      "OutputRead.readonly_arti_one_joint_8192_cpu": {
+        "heavy": false,
+        "note": "the held articulation-DOF read selected to one joint of one environment on the cartpole fixture"
+      },
+      "OutputRead.readonly_arti_one_joint_8192_gpu": {
+        "heavy": false,
+        "note": "requires --forceGpu --directGpu; the one-joint selected read fetches only that articulation's DOF state"
+      },
+      "OutputRead.readonly_arti_one_joint_per_env_8192_cpu": {
+        "heavy": false,
+        "note": "the held articulation-DOF read selected to the pole joint of every environment on the cartpole fixture"
+      },
+      "OutputRead.readonly_arti_one_joint_per_env_8192_gpu": {
+        "heavy": false,
+        "note": "requires --forceGpu --directGpu; a selection over every articulation packs its records but fetches the whole view"
       },
       "OutputRead.tensorbinding_arti_dof_8192_cpu": {
         "heavy": false,
@@ -463,6 +535,293 @@
     "tags": [
       "Output Read",
       "Tensor I/O"
+    ]
+  },
+  "tests/benchmarks/benchmarks/OutputWrite.cpp": {
+    "cases": {
+      "OutputWrite.querywrite_rb_1024_cpu": {
+        "heavy": false,
+        "note": "query, write session, host fill, commit and releases every sample: rigid-body `position` over cubes20 (20 bodies per env)"
+      },
+      "OutputWrite.querywrite_rb_8192_cpu": {
+        "heavy": false,
+        "note": "query, write session, host fill, commit and releases every sample: rigid-body `position` over cubes20 (20 bodies per env)"
+      },
+      "OutputWrite.querywrite_rb_1024_gpu": {
+        "heavy": false,
+        "note": "query, write session, host fill, commit and releases every sample: rigid-body `position` over cubes20 (20 bodies per env); requires --forceGpu --directGpu"
+      },
+      "OutputWrite.querywrite_rb_8192_gpu": {
+        "heavy": false,
+        "note": "query, write session, host fill, commit and releases every sample: rigid-body `position` over cubes20 (20 bodies per env); requires --forceGpu --directGpu"
+      },
+      "OutputWrite.writeonly_rb_8192_cpu": {
+        "heavy": false,
+        "note": "held query; write session, host fill and commit of rigid-body `position` over cubes20 (20 bodies per env)"
+      },
+      "OutputWrite.writeonly_rb_8192_gpu": {
+        "heavy": false,
+        "note": "held query; write session, host fill and commit of rigid-body `position` over cubes20 (20 bodies per env); requires --forceGpu --directGpu"
+      },
+      "OutputWrite.tensorbinding_rb_8192_cpu": {
+        "heavy": false,
+        "note": "deprecated binding: rigid-body pose [bodies, 7] written from a tensor on the scene's device, facing writeonly_rb (position is 3 floats)"
+      },
+      "OutputWrite.tensorbinding_rb_8192_gpu": {
+        "heavy": false,
+        "note": "deprecated binding: rigid-body pose [bodies, 7] written from a tensor on the scene's device, facing writeonly_rb (position is 3 floats); requires --forceGpu --directGpu"
+      },
+      "OutputWrite.writeonly_property_rb_1024_cpu": {
+        "heavy": false,
+        "note": "held query; rigid-body `inertia` (9 floats, host setters); CPU only, a property has no device destination"
+      },
+      "OutputWrite.writeonly_property_rb_8192_cpu": {
+        "heavy": false,
+        "note": "held query; rigid-body `inertia` (9 floats, host setters); CPU only, a property has no device destination"
+      },
+      "OutputWrite.tensorbinding_property_1024_cpu": {
+        "heavy": false,
+        "note": "deprecated binding: rigid-body inertia, facing writeonly_property_rb"
+      },
+      "OutputWrite.tensorbinding_property_8192_cpu": {
+        "heavy": false,
+        "note": "deprecated binding: rigid-body inertia, facing writeonly_property_rb"
+      },
+      "OutputWrite.writeonly_shape_rb_1024_cpu": {
+        "heavy": false,
+        "note": "held query; per-shape `staticFriction` over cubes20_compound (4 colliders per body, padded per-shape column); CPU only"
+      },
+      "OutputWrite.writeonly_shape_rb_8192_cpu": {
+        "heavy": false,
+        "note": "held query; per-shape `staticFriction` over cubes20_compound (4 colliders per body, padded per-shape column); CPU only"
+      },
+      "OutputWrite.writeonly_arti_root_1024_cpu": {
+        "heavy": false,
+        "note": "held query; articulation `rootPosition` over cartpole, a read-modify-write of the root pose"
+      },
+      "OutputWrite.writeonly_arti_root_8192_cpu": {
+        "heavy": false,
+        "note": "held query; articulation `rootPosition` over cartpole, a read-modify-write of the root pose"
+      },
+      "OutputWrite.writeonly_arti_root_1024_gpu": {
+        "heavy": false,
+        "note": "held query; articulation `rootPosition` over cartpole, a read-modify-write of the root pose; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.writeonly_arti_root_8192_gpu": {
+        "heavy": false,
+        "note": "held query; articulation `rootPosition` over cartpole, a read-modify-write of the root pose; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.tensorbinding_arti_root_8192_cpu": {
+        "heavy": false,
+        "note": "deprecated binding: articulation root pose [articulations, 7] over cartpole, facing writeonly_arti_root (position is 3 floats)"
+      },
+      "OutputWrite.tensorbinding_arti_root_8192_gpu": {
+        "heavy": false,
+        "note": "deprecated binding: articulation root pose [articulations, 7] over cartpole, facing writeonly_arti_root (position is 3 floats); requires --forceGpu --directGpu"
+      },
+      "OutputWrite.writeonly_arti_dof_1024_cpu": {
+        "heavy": false,
+        "note": "held query; `jointPosition` over cartpole, one tensor per joint, filled from the host tensor by tensor"
+      },
+      "OutputWrite.writeonly_arti_dof_8192_cpu": {
+        "heavy": false,
+        "note": "held query; `jointPosition` over cartpole, one tensor per joint, filled from the host tensor by tensor"
+      },
+      "OutputWrite.writeonly_arti_dof_1024_gpu": {
+        "heavy": false,
+        "note": "held query; `jointPosition` over cartpole, one tensor per joint, filled from the host tensor by tensor; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.writeonly_arti_dof_8192_gpu": {
+        "heavy": false,
+        "note": "held query; `jointPosition` over cartpole, one tensor per joint, filled from the host tensor by tensor; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.writeonly_arti_dof_prop_1024_cpu": {
+        "heavy": false,
+        "note": "held query; DOF property `jointStiffness` over cartpole (host setters); CPU only"
+      },
+      "OutputWrite.writeonly_arti_dof_prop_8192_cpu": {
+        "heavy": false,
+        "note": "held query; DOF property `jointStiffness` over cartpole (host setters); CPU only"
+      },
+      "OutputWrite.tensorbinding_arti_dof_8192_cpu": {
+        "heavy": false,
+        "note": "deprecated binding: DOF position [articulations, DOFs] over cartpole, facing writeonly_arti_dof"
+      },
+      "OutputWrite.tensorbinding_arti_dof_8192_gpu": {
+        "heavy": false,
+        "note": "deprecated binding: DOF position [articulations, DOFs] over cartpole, facing writeonly_arti_dof; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.writedevice_rb_8192_gpu": {
+        "heavy": false,
+        "note": "writeonly_rb with the payload in device memory: one device copy per fill and a wait for the commit, facing tensorbinding_rb_8192_gpu; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.writedevice_arti_root_8192_gpu": {
+        "heavy": false,
+        "note": "writeonly_arti_root with the payload in device memory: one device copy per fill and a wait for the commit, facing tensorbinding_arti_root_8192_gpu; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.writedevice_arti_dof_8192_gpu": {
+        "heavy": false,
+        "note": "writeonly_arti_dof with the payload in device memory: one device copy over the joint column per fill and a wait for the commit, facing tensorbinding_arti_dof_8192_gpu; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.writeonly_tendon_fixed_1024_cpu": {
+        "heavy": false,
+        "note": "held query; `tendonStiffness` of the one fixed tendon per cartpole_tendon env"
+      },
+      "OutputWrite.writeonly_tendon_fixed_8192_cpu": {
+        "heavy": false,
+        "note": "held query; `tendonStiffness` of the one fixed tendon per cartpole_tendon env"
+      },
+      "OutputWrite.writeonly_tendon_fixed_1024_gpu": {
+        "heavy": false,
+        "note": "held query; `tendonStiffness` of the one fixed tendon per cartpole_tendon env; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.writeonly_tendon_fixed_8192_gpu": {
+        "heavy": false,
+        "note": "held query; `tendonStiffness` of the one fixed tendon per cartpole_tendon env; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.writeonly_tendon_spatial_8192_cpu": {
+        "heavy": false,
+        "note": "held query; `tendonStiffness` of the one spatial tendon per cartpole_tendon env"
+      },
+      "OutputWrite.writeonly_tendon_spatial_8192_gpu": {
+        "heavy": false,
+        "note": "held query; `tendonStiffness` of the one spatial tendon per cartpole_tendon env; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.tensorbinding_tendon_fixed_8192_cpu": {
+        "heavy": false,
+        "note": "deprecated binding: fixed tendon stiffness over cartpole_tendon, facing writeonly_tendon_fixed"
+      },
+      "OutputWrite.tensorbinding_tendon_fixed_8192_gpu": {
+        "heavy": false,
+        "note": "deprecated binding: fixed tendon stiffness over cartpole_tendon, facing writeonly_tendon_fixed; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.tensorbinding_tendon_spatial_8192_cpu": {
+        "heavy": false,
+        "note": "deprecated binding: spatial tendon stiffness over cartpole_tendon, facing writeonly_tendon_spatial"
+      },
+      "OutputWrite.tensorbinding_tendon_spatial_8192_gpu": {
+        "heavy": false,
+        "note": "deprecated binding: spatial tendon stiffness over cartpole_tendon, facing writeonly_tendon_spatial; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.writeonly_force_rb_1024_cpu": {
+        "heavy": false,
+        "note": "held query; rigid-body `force` (zero input); write-only, no read lane to face"
+      },
+      "OutputWrite.writeonly_force_rb_8192_cpu": {
+        "heavy": false,
+        "note": "held query; rigid-body `force` (zero input); write-only, no read lane to face"
+      },
+      "OutputWrite.writeonly_force_rb_1024_gpu": {
+        "heavy": false,
+        "note": "held query; rigid-body `force` (zero input); write-only, no read lane to face; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.writeonly_force_rb_8192_gpu": {
+        "heavy": false,
+        "note": "held query; rigid-body `force` (zero input); write-only, no read lane to face; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.writeonly_wrench_rb_8192_cpu": {
+        "heavy": false,
+        "note": "held query; rigid-body `wrench` [bodies, 9]: a pose read and the torque about the centre of mass"
+      },
+      "OutputWrite.writeonly_wrench_rb_8192_gpu": {
+        "heavy": false,
+        "note": "held query; rigid-body `wrench` [bodies, 9]: a pose read and the torque about the centre of mass; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.writeonly_wrench_link_8192_cpu": {
+        "heavy": false,
+        "note": "held query; articulation-link `wrench` over cartpole links, the (articulation, link) route"
+      },
+      "OutputWrite.writeonly_wrench_link_8192_gpu": {
+        "heavy": false,
+        "note": "held query; articulation-link `wrench` over cartpole links, the (articulation, link) route; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.tensorbinding_force_rb_8192_cpu": {
+        "heavy": false,
+        "note": "deprecated binding: rigid-body force, facing writeonly_force_rb"
+      },
+      "OutputWrite.tensorbinding_force_rb_8192_gpu": {
+        "heavy": false,
+        "note": "deprecated binding: rigid-body force, facing writeonly_force_rb; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.tensorbinding_wrench_rb_8192_cpu": {
+        "heavy": false,
+        "note": "deprecated binding: rigid-body wrench, facing writeonly_wrench_rb"
+      },
+      "OutputWrite.tensorbinding_wrench_rb_8192_gpu": {
+        "heavy": false,
+        "note": "deprecated binding: rigid-body wrench, facing writeonly_wrench_rb; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.tensorbinding_wrench_link_8192_cpu": {
+        "heavy": false,
+        "note": "deprecated binding: articulation-link wrench, facing writeonly_wrench_link"
+      },
+      "OutputWrite.tensorbinding_wrench_link_8192_gpu": {
+        "heavy": false,
+        "note": "deprecated binding: articulation-link wrench, facing writeonly_wrench_link; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.writeonly_rb_instancer_1024_cpu": {
+        "heavy": false,
+        "note": "held query; point-instancer instance `position` (20 per env, authored envs), with the inverse reframe"
+      },
+      "OutputWrite.writeonly_rb_instancer_8192_cpu": {
+        "heavy": false,
+        "note": "held query; point-instancer instance `position` (20 per env, authored envs), with the inverse reframe"
+      },
+      "OutputWrite.writeonly_rb_instancer_1024_gpu": {
+        "heavy": false,
+        "note": "held query; point-instancer instance `position` (20 per env, authored envs), with the inverse reframe; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.writeonly_rb_instancer_8192_gpu": {
+        "heavy": false,
+        "note": "held query; point-instancer instance `position` (20 per env, authored envs), with the inverse reframe; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.writeonly_rb_instancer_vel_8192_cpu": {
+        "heavy": false,
+        "note": "held query; point-instancer instance `linearVelocity` (20 per env, authored envs), no reframe"
+      },
+      "OutputWrite.writeonly_rb_instancer_vel_8192_gpu": {
+        "heavy": false,
+        "note": "held query; point-instancer instance `linearVelocity` (20 per env, authored envs), no reframe; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.writeonly_deformable_mat_128_gpu": {
+        "heavy": false,
+        "note": "held query; deformable material `youngsModulus`, one material per authored env; a host column on the only scene deformables have; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.writeonly_deformable_mat_512_gpu": {
+        "heavy": false,
+        "note": "held query; deformable material `youngsModulus`, one material per authored env; a host column on the only scene deformables have; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.writeonly_deformable_points_128_gpu": {
+        "heavy": false,
+        "note": "held query; volume deformable `points`, each body's whole simulation mesh, reframed on the device, over authored envs; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.writeonly_deformable_points_512_gpu": {
+        "heavy": false,
+        "note": "held query; volume deformable `points`, each body's whole simulation mesh, reframed on the device, over authored envs; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.writeonly_particle_points_128_gpu": {
+        "heavy": false,
+        "note": "held query; particle-set `points` over authored envs, staged for the next step; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.writeonly_deformable_kinematic_target_128_gpu": {
+        "heavy": false,
+        "note": "held query; volume deformable `kinematicTarget`, every sim-mesh node driven where the `points` read found it; a session opened, filled, committed and released per sample; the targets read back after the samples must be the last written; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.writedevice_deformable_kinematic_target_128_gpu": {
+        "heavy": false,
+        "note": "the writeonly kinematic-target row with the targets already on the device: the fill is one device copy over the group's column, and the commit's device work is waited for; the targets read back after the samples must be the last written; requires --forceGpu --directGpu"
+      },
+      "OutputWrite.writecaptured_deformable_kinematic_target_128_gpu": {
+        "heavy": false,
+        "note": "volume deformable `kinematicTarget`: a device fill and commit on the row's stream, captured once into a CUDA graph with the session kept open, replayed per sample over two alternating target sets; fails at setup while the commit cannot be captured; the targets read back after the samples must be the last written; requires --forceGpu --directGpu"
+      }
+    },
+    "category": "Output Write",
+    "description": "App-to-physics writes (ADR-0012) at scale through the session write API, against the deprecated tensor binding. `querywrite` rows pay the query, write session, fill, commit and releases every sample, as a stateless caller does; `writeonly` rows hold the query; `writedevice` rows are writeonly rows with the payload already in device memory, so each fill is one device copy and the write waits for its commits, facing the `tensorbinding` rows with the same placement (DirectGPU only); `tensorbinding` rows write the same objects through a binding already built. Some pairs differ in payload width (a position is 3 floats where the binding's pose is 7), so read them as what each API costs to move one attribute; see the README's OutputWrite validity section. The fill is inside the timing: a write session hands the caller its destination buffer. `_cpu` rows run on the default pass; `_gpu` rows need `--forceGpu --directGpu --hidden` in a dedicated process.",
+    "tags": [
+      "Output Write",
+      "Tensor I/O",
+      "Articulations"
     ]
   },
   "tests/benchmarks/benchmarks/Smoke.cpp": {
@@ -635,10 +994,14 @@
       "WriteOnly.velocity_tensor_16384_cpu": {
         "heavy": true,
         "note": "CPU: send movement commands to 16384 bodies via tensor; completion waits included, simulation excluded"
+      },
+      "QueryRetention.velocity_ovstage_4096_cpu": {
+        "heavy": true,
+        "note": "Diagnostic: one query per run before warmup, reused for 20 measured writes plus warmup/verification; write, scoped floor, update and step remain timed"
       }
     },
     "category": "Authoring",
-    "description": "`velocity_ovstage_4096_cpu` is the **primary KPI**: a 4,096-body linear-velocity write through OVStage, write completion, query release, velocity-scoped floor, update, and a 1/60s step. `velocity_tensor_4096_cpu` is the comparator: the same step shape but writing a persistent [4096,6] tensor instead. The two use different wait/seal boundaries than the Authoring.* rows above (single-seal-wait vs. separate waits) -- not directly comparable across files; see README's Comparability boundary section. The four hidden `WriteScalingHighN.*` rows are the same fixture at 8,192 and 16,384 bodies with nothing else changed; they carry a separate family prefix so the frozen L1B `WriteScaling.*` selection still returns exactly the two 4,096-body rows, and they are non-paging diagnostics (REQ-CAPI-BENCHMARK-005). The six hidden WriteOnly rows reuse the same CPU fixture and command sequence but stop timing before simulation. They have a separate inventory and require independent threshold calibration (REQ-CAPI-BENCHMARK-007).",
+    "description": "`velocity_ovstage_4096_cpu` is the **primary KPI**: a 4,096-body linear-velocity write through OVStage, write completion, query release, velocity-scoped floor, update, and a 1/60s step. `velocity_tensor_4096_cpu` is the comparator: the same step shape but writing a persistent [4096,6] tensor instead. The two use different wait/seal boundaries than the Authoring.* rows above (single-seal-wait vs. separate waits) -- not directly comparable across files; see README's Comparability boundary section. The four hidden `WriteScalingHighN.*` rows are the same fixture at 8,192 and 16,384 bodies with nothing else changed; they carry a separate family prefix so the frozen L1B `WriteScaling.*` selection still returns exactly the two 4,096-body rows, and they are non-paging diagnostics (REQ-CAPI-BENCHMARK-005). The six hidden WriteOnly rows reuse the same CPU fixture and command sequence but stop timing before simulation. They have a separate inventory and require independent threshold calibration (REQ-CAPI-BENCHMARK-007). QueryRetention.velocity_ovstage_4096_cpu retains one query per run across warmup, twenty measured steps and verification; its query setup/retirement are outside timing, while the original WriteScaling/HighN/WriteOnly query lifetimes remain unchanged (REQ-CAPI-BENCHMARK-008).",
     "tags": [
       "Authoring",
       "Property Updates",

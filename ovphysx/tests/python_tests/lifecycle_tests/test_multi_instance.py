@@ -22,6 +22,7 @@ import ctypes
 
 import numpy as np
 import ovstage
+from ovphysx.population import physics_population_descs
 import pytest
 from test_utils import data_path, get_cuda_driver, read_rigid_body_poses
 
@@ -70,11 +71,12 @@ def _populate_stage(name: str, usd_path: str):
     ovstage.population.register_usd_schemas([str(p) for p in physx_schema_paths()])
     stage = ovstage.Stage(name)
     try:
-        ovstage.population.open_usd(
+        ovstage.population.open_usd_with_desc(
             stage,
             usd_path,
             ordinal=1,
-            domains=ovstage.PopulationDomain.PHYSICS,
+            time=ovstage.population.DEFAULT_TIME,
+            descs=physics_population_descs(),
         )
         stage.advance_write_floor(ordinal=1).wait()
         return stage

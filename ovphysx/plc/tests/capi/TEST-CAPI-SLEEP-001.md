@@ -33,7 +33,7 @@ C classification and Python reads expose sleeping state with the existing owners
 - DirectGPU emits no pre-step groups, then a fixed host uint8 scalar per returned
   rigid-body row, all zero; the token read preserves the attribute and values (REQ AC-2).
 - On CPU, the named read returns ones and the later token read returns zeros. The
-  retained array still contains ones after the wake write, new read, and next step
+  retained array of that first result, dropped without a close, still contains ones after the wake write, new read, and next step
   (REQ AC-2).
 
 ## Automated coverage

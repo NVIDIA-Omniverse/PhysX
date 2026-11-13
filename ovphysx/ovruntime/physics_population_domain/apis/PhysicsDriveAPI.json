@@ -1,0 +1,236 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysicsDriveAPI",
+  "title": "PhysicsDriveAPI",
+  "summary": "Force- or acceleration-mode PD drive on one joint axis, applied as PhysicsDriveAPI:<inst>. The D6 reads transX..rotZ and distance, a revolute reads angular, a prismatic reads linear; presence of the instance enables the drive. Rotational instances are stored in degrees and the parser converts them: targets degrees to radians, stiffness and damping multiplied by 57.29577951308232.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "PhysicsJoint"
+  ],
+  "multi_apply": true,
+  "instances": [
+    "transX",
+    "transY",
+    "transZ",
+    "rotX",
+    "rotY",
+    "rotZ",
+    "distance",
+    "angular",
+    "linear"
+  ],
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "producer_scope": "All six declared attributes of every applied instance are published at their resolved values (type force, targets and gains 0, maxForce inf when unauthored). No rewrite.",
+  "columns": [
+    {
+      "name": "drive:<inst>:physics:type",
+      "usd_type": "uniform token",
+      "origin": "schema",
+      "kind": "token",
+      "semantic": "TOKEN_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "force",
+      "parser_default": "force",
+      "absent": "Force-mode drive. Only a token equal to the interned acceleration selects acceleration mode; any other token, including a malformed one, is force.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physics.parse/ParseJoint.cpp"
+      ],
+      "notes": "Token-dictionary id. No verify block: the observable is a flag (eACCELERATION in the standalone PxD6JointDrive flags or in the articulation PxArticulationDrive drive type) but the contract's map is numeric over v, and token samples are not expressible."
+    },
+    {
+      "name": "drive:<inst>:physics:targetPosition",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "verify": {
+        "target": "joint",
+        "expr": "harness::d6DriveTargetPosition(joint, inst)",
+        "kind": "float",
+        "map": "harness::isRotational(inst) ? v * 0.017453292519943295 : v",
+        "sample": 15.0,
+        "notes": "Standalone: translational instances read getDrivePosition().p[axis]; rotational instances extract the angle about the instance axis from getDrivePosition().q (the runtime composes qz * qy * qx, so a single driven axis is recoverable). Articulation: getDriveTarget(axis), negated when body0 is not the parent link."
+      },
+      "parser_default": 0.0,
+      "absent": "Target at zero.",
+      "raw_fallback_diverges": false,
+      "units": "rot: deg; trans: length",
+      "conversion": "deg_to_rad",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physics.parse/ParseJoint.cpp"
+      ],
+      "notes": "deg_to_rad on rotX/rotY/rotZ/angular only."
+    },
+    {
+      "name": "drive:<inst>:physics:targetVelocity",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "verify": {
+        "target": "joint",
+        "expr": "harness::d6DriveTargetVelocity(joint, inst)",
+        "kind": "float",
+        "map": "harness::isRotational(inst) ? v * 0.017453292519943295 : v",
+        "sample": 10.0,
+        "notes": "Standalone: getDriveVelocity(linear, angular); translational instances read linear[axis], rotational instances read -angular[axis] because the runtime negates the angular target (OM-42441) and the helper undoes it. Articulation: getDriveVelocity(axis), negated when body0 is not the parent link."
+      },
+      "parser_default": 0.0,
+      "absent": "Zero velocity target.",
+      "raw_fallback_diverges": false,
+      "units": "rot: deg/s; trans: length/s",
+      "conversion": "deg_to_rad",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physics.parse/ParseJoint.cpp"
+      ],
+      "notes": "deg_to_rad on rotational instances only."
+    },
+    {
+      "name": "drive:<inst>:physics:stiffness",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "verify": {
+        "target": "joint",
+        "expr": "harness::d6DriveStiffness(joint, inst)",
+        "kind": "float",
+        "map": "harness::isRotational(inst) ? v * 57.29577951308232 : v",
+        "sample": 100.0,
+        "notes": "Standalone: getDrive(PxD6Drive for inst).stiffness. Articulation: getDriveParams(axis).stiffness."
+      },
+      "parser_default": 0.0,
+      "absent": "No positional spring.",
+      "raw_fallback_diverges": false,
+      "units": "rot: torque/deg; trans: force/length",
+      "conversion": "none",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physics.parse/ParseJoint.cpp"
+      ],
+      "notes": "The parser multiplies by 57.29577951308232 (180/pi) on rotational instances (rotX, rotY, rotZ, angular), converting torque per degree to torque per radian; the schema's conversion enum has no value for this product, hence conversion none."
+    },
+    {
+      "name": "drive:<inst>:physics:damping",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "verify": {
+        "target": "joint",
+        "expr": "harness::d6DriveDamping(joint, inst)",
+        "kind": "float",
+        "map": "harness::isRotational(inst) ? v * 57.29577951308232 : v",
+        "sample": 10.0,
+        "notes": "Standalone: getDrive(PxD6Drive for inst).damping. Articulation: getDriveParams(axis).damping."
+      },
+      "parser_default": 0.0,
+      "absent": "No velocity damping.",
+      "raw_fallback_diverges": false,
+      "units": "rot: torque*s/deg; trans: force*s/length",
+      "conversion": "none",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physics.parse/ParseJoint.cpp"
+      ],
+      "notes": "The parser multiplies by 57.29577951308232 (180/pi) on rotational instances; conversion none because the enum cannot express the product."
+    },
+    {
+      "name": "drive:<inst>:physics:maxForce",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "inf",
+      "verify": {
+        "target": "joint",
+        "expr": "harness::d6DriveForceLimit(joint, inst)",
+        "kind": "float",
+        "map": "std::isfinite(v) ? v : 3.4028234663852886e38",
+        "sample": 500.0,
+        "notes": "Standalone: getDrive(PxD6Drive for inst).forceLimit. Articulation: getDriveParams(axis).envelope.maxEffort."
+      },
+      "parser_default": "FLT_MAX",
+      "absent": "Unlimited drive force. The walker seeds FLT_MAX and the parser maps any non-finite value to FLT_MAX, so the USD fallback inf is safe to write literally.",
+      "raw_fallback_diverges": false,
+      "sentinel": "Non-finite (inf) or FLT_MAX means unlimited.",
+      "units": "rot: torque; trans: force",
+      "conversion": "none",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physics.parse/ParseJoint.cpp"
+      ]
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysicsJoint",
+      "rule": "The drive is enabled by the mere presence of PhysicsDriveAPI:<inst> in usd-schemas; there is no enable attribute. The D6 gate is per instance for transX..rotZ and distance; revolute reads angular and prismatic reads linear directly."
+    },
+    {
+      "with": "PhysxDrivePerformanceEnvelopeAPI",
+      "rule": "PhysxDrivePerformanceEnvelopeAPI:<same inst> extends this drive with an actuator envelope; it is read only when the drive exists and only takes effect on articulation joints."
+    }
+  ],
+  "notes": [
+    "Per-joint-type instance matrix: Fixed none; Revolute angular; Prismatic linear; Spherical none; Distance none; D6 (PhysicsJoint) transX transY transZ rotX rotY rotZ distance; Gear, Rack, Custom none.",
+    "Standalone mapping: transX/Y/Z and linear -> PxD6Drive::eX/eY/eZ (linear -> eX); rotX and angular -> eTWIST; rotY -> eSWING1; rotZ -> eSWING2 (the standalone D6 uses PxD6AngularDriveConfig::eSWING_TWIST). The distance instance is parsed into the descriptor but the runtime creates no drive for it.",
+    "Articulation mapping: angular/rotX -> PxArticulationAxis::eTWIST, rotY -> eSWING1, rotZ -> eSWING2, linear -> eX; translational D6 instances are ignored. Position and velocity targets are negated when body0 is not the parent link, and a position target beyond +-2pi on an unlimited revolute is wrapped with a warning.",
+    "Rotational instances (rotX, rotY, rotZ, angular) are stored in degrees; the parser converts targets degrees to radians and multiplies stiffness and damping by 57.29577951308232. Linear and translational instances are stored unconverted."
+  ]
+}

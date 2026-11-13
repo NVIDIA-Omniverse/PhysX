@@ -3,7 +3,9 @@
 
 #include <gtest/gtest.h>
 #include "ovphysx/ovphysx.h"
+#include "ovphysx/ovphysx_config.h"
 #include "global_test_environment.h"
+#include "ovphysxTestHelpers.h"
 #include <filesystem>
 #include <iostream>
 #include <cstdlib>
@@ -105,8 +107,33 @@ private:
     bool m_initialized = false;
 };
 
+// OVPHYSX_TEST_EXECUTION ("queue" or "noworker") chooses where the instances of this test
+// process run their short async calls and steps: "queue" queues every short call through the
+// library's private test hook, "noworker" creates every instance without a worker thread
+// (OVPHYSX_GLOBAL_CONFIG_ASYNC_EXECUTION false). The library reads no environment for
+// it: this program applies the choice before any instance exists (scripts/test_cpp.cmake
+// runs the CPU tests once more in each mode).
+static void apply_test_execution()
+{
+    const std::string mode = ovphysxTestExecution();
+    if (mode.empty())
+        return;
+    if (mode == "queue")
+    {
+        if (ovphysx_set_test_execution_for_test_internal(OVPHYSX_TEST_EXECUTION_QUEUE))
+            return;
+    }
+    if (mode == "noworker" &&
+        ovphysx_set_global_config(OVPHYSX_GLOBAL_CONFIG_ASYNC_EXECUTION, ovphysx_config_value_bool(false))
+                .status == OVPHYSX_API_SUCCESS)
+        return;
+    std::cerr << "ERROR: OVPHYSX_TEST_EXECUTION must be queue or noworker, got " << mode << "\n";
+    std::exit(1);
+}
+
 int main(int argc, char **argv) {
     bootstrap_test_environment();
+    apply_test_execution();
     ::testing::InitGoogleTest(&argc, argv);
     ::testing::AddGlobalTestEnvironment(new PhysXShutdownEnvironment());
     return RUN_ALL_TESTS();

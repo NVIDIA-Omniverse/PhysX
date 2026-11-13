@@ -10,6 +10,8 @@
 #if PX_SUPPORT_OMNI_PVD
 
 #include "foundation/PxUserAllocated.h"
+#include "foundation/PxHashSet.h"
+#include "foundation/PxHashMap.h"
 #include "omnipvd/PxOmniPvd.h"
 
 #include "ExtOmniPvdRegistrationData.h"
@@ -18,6 +20,8 @@ namespace physx
 {
 	class PxOmniPvd;
 	class PxPhysics;
+	class PxConstraint;
+	class PxShape;
 }
 
 
@@ -40,12 +44,21 @@ public:
 	// PxOmniPvdEventCallback: called by startSampling() after the core world is emitted. Re-registers
 	// the schema, then re-emits the live extension joints and custom-geometry callbacks onto the bound
 	// stream (registerClasses + snapshotConstraints + snapshotCustomGeometryCallbacks).
-	virtual void onStartSampling(physx::PxOmniPvd& omniPvd) PX_OVERRIDE;
+	virtual void onStartSampling(physx::PxOmniPvd& omniPvd, const physx::PxOmniPvdFilterDesc* filter) PX_OVERRIDE;
+	virtual void onObjectCapture(physx::PxOmniPvd& omniPvd, const physx::PxBase& object) PX_OVERRIDE;
+	virtual void onCaptureReset(physx::PxOmniPvd& omniPvd, const physx::PxOmniPvdFilterDesc& filter) PX_OVERRIDE;
+
+	bool shouldRecordCreation(const char* className, physx::PxU64 objectHandle);
+	bool shouldRecordDestruction(physx::PxU64 objectHandle);
+	bool shouldRecordValue(const char* className, const char* attributeName, physx::PxU64 objectHandle) const;
+	const physx::PxBase* captureJointReference(const physx::PxBase* joint, OmniPvdWriter* writer);
 
 	// Re-emit every joint the SDK tracks onto the currently bound write stream, for a full-state
 	// snapshot. Enumerates the factory's constraints (scene-less included), filters to joints, and
 	// emits each by concrete joint type. onStartSampling() re-registers the schema before calling this.
 	void snapshotConstraints();
+	// Called under the writer lock with the unfiltered references of a recorded gear or rack.
+	void cacheJointReferences(physx::PxU64 dependent, const physx::PxBase* joint0, const physx::PxBase* joint1);
 
 	// Re-emit every live PxCustomGeometryExt callbacks object (cylinder / cone, with their base
 	// margin) onto the currently bound write stream, for a full-state snapshot. These are emitted
@@ -61,9 +74,18 @@ public:
 	static void destroyInstance();
 
 private:
+	void snapshotConstraint(physx::PxConstraint& constraint, OmniPvdWriter* writer);
+	void snapshotCustomGeometry(const physx::PxShape& shape, OmniPvdWriter* writer);
 	physx::PxOmniPvd* mOmniPvdInstance;
 	physx::PxPhysics& mPhysics;
+	bool mRecordSecondaryData;
+	bool mRecordAllObjects;
 	physx::Ext::OmniPvdPxExtensionsRegistrationData mRegistrationData;
+	physx::PxHashSet<physx::PxU64> mEmittedObjects;
+	physx::PxHashSet<physx::PxU64> mRefreshingJoints;
+	struct JointReferences { physx::PxU64 joint0; physx::PxU64 joint1; };
+	physx::PxHashMap<physx::PxU64, JointReferences> mJointReferences;
+	physx::PxHashSet<const void*> mSelectedCustomCallbacks;
 };
 
 
@@ -74,6 +96,12 @@ namespace Ext
 
 const OmniPvdPxExtensionsRegistrationData* OmniPvdGetPxExtensionsRegistrationData();
 PxOmniPvd* OmniPvdGetInstance();
+bool OmniPvdShouldRecordCreation(const char* className, PxU64 objectHandle);
+bool OmniPvdShouldRecordDestruction(PxU64 objectHandle);
+bool OmniPvdShouldRecordValue(const char* className, const char* attributeName, PxU64 objectHandle);
+bool OmniPvdCaptureJoint(const PxJoint& joint);
+const PxBase* OmniPvdCaptureJointReference(const PxBase* joint, OmniPvdWriter* writer);
+void OmniPvdCacheJointReferences(const PxJoint& dependent, const PxBase* joint0, const PxBase* joint1);
 }
 }
 

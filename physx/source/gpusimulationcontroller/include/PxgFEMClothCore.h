@@ -60,7 +60,7 @@ namespace physx
 
 		void clampContactCounts();
 
-		void sortContacts(PxU32 nbActiveFemCloths);
+		void sortContacts();
 
 		void solve(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd, PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd,
 				   PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, const PxReal rigidAttachmentBiasCoefficient, const PxVec3& gravity,

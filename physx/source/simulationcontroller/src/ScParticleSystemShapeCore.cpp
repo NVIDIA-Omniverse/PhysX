@@ -47,9 +47,6 @@ ParticleSystemShapeCore::ParticleSystemShapeCore()
 	mLLCore.solidRestOffset = mLLCore.restOffset;
 	mLLCore.fluidRestOffset = mLLCore.restOffset * 0.6f;
 
-	mLLCore.particleContactOffset_prev = FLT_MIN;
-	mLLCore.fluidRestOffset_prev = FLT_MIN;
-
 	mLLCore.fluidBoundaryDensityScale = 0.0f;
 
 	mLLCore.gridSizeX = 128;

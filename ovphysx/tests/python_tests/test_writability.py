@@ -52,6 +52,7 @@ CASES = [
     (SimObjectType.RIGID_BODY, "linearAcceleration", READ_ONLY),
     (SimObjectType.RIGID_BODY, "inverseMass", READ_ONLY),
     (SimObjectType.RIGID_BODY, "isSleeping", READ_ONLY),
+    (SimObjectType.RIGID_BODY, "worldScale", READ_ONLY),  # creation-time scale; physics never changes it in place
     # Conditional: driven on a CPU scene, refused on a DirectGPU scene (no device counterpart).
     (SimObjectType.RIGID_BODY, "kinematicTargetPosition", CONDITIONAL),
     # wake is a write-only command supported on CPU and GPU-with-CPU-readback scenes.
@@ -59,6 +60,7 @@ CASES = [
     (SimObjectType.RIGID_BODY, "wake", CONDITIONAL),
     (SimObjectType.ARTICULATION_LINK, "position", READ_ONLY),  # link pose is derived
     (SimObjectType.ARTICULATION_LINK, "isSleeping", READ_ONLY),
+    (SimObjectType.ARTICULATION_LINK, "worldScale", READ_ONLY),
     (SimObjectType.ARTICULATION_LINK, "kinematicTargetPosition", READ_ONLY),  # reads pose, no target to drive
     (SimObjectType.ARTICULATION_LINK, "mass", WRITABLE),
     (SimObjectType.ARTICULATION_LINK, "force", WRITE_ONLY),
@@ -108,9 +110,8 @@ CASES = [
     (SimObjectType.DEFORMABLE_VOLUME, "points", WRITABLE),
     (SimObjectType.DEFORMABLE_VOLUME, "restPoints", READ_ONLY),
     # Volume-only, and CONDITIONAL: no device-mode restriction (it drives through a device buffer that
-    # survives DirectGPU, unlike the rigid one), but object-state preconditions the write reports as unmet --
-    # refused on a volume already kinematic via another path (eKINEMATIC or a view's ePARTIALLY_KINEMATIC),
-    # and on an un-pin (moving an already-driven node back to free; driving is monotonic).
+    # survives DirectGPU, unlike the rigid one), but an object-state precondition the write reports as unmet --
+    # refused on a volume already kinematic via another path (eKINEMATIC or a view's ePARTIALLY_KINEMATIC).
     (SimObjectType.DEFORMABLE_VOLUME, "kinematicTarget", CONDITIONAL),
     (SimObjectType.DEFORMABLE_SURFACE, "kinematicTarget", UNCLASSIFIED),  # no setKinematicTargetBufferD
     (SimObjectType.DEFORMABLE_SURFACE, "velocities", WRITABLE),
@@ -163,6 +164,7 @@ CASES = [
     (SimObjectType.CHARACTER_CONTROLLER, "position", UNCLASSIFIED),
     (SimObjectType.CHARACTER_CONTROLLER, "orientation", UNCLASSIFIED),
     (SimObjectType.CHARACTER_CONTROLLER, "move", CONDITIONAL),
+    (SimObjectType.DEFORMABLE_SKIN_MESH, "points", READ_ONLY),  # skinning output, rewritten every step
 ]
 
 
@@ -197,4 +199,5 @@ def test_writability_is_bare_process():
 def test_vehicle_selector_matches_public_c_value():
     assert int(SimObjectType.VEHICLE) == 13
     assert int(SimObjectType.DEBUG_RENDER) == 23
-    assert int(max(SimObjectType)) == 24
+    assert int(SimObjectType.DEFORMABLE_SKIN_MESH) == 25
+    assert int(max(SimObjectType)) == 25

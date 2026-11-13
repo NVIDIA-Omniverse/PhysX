@@ -35,7 +35,9 @@ protected:
         if (carb::thread::hardware_concurrency() < static_cast<uint32_t>(requested))
             GTEST_SKIP() << "Requested count exceeds this host's default tasking capacity";
         // test_cpp.cmake runs each case alone; test_main owns initialize/shutdown.
-        ASSERT_EQ(ovphysx_set_cpu_mode(true).status, OVPHYSX_API_SUCCESS);
+        ASSERT_EQ(ovphysx_set_global_config(
+                      OVPHYSX_GLOBAL_CONFIG_CPU_ONLY, ovphysx_config_value_bool(true)).status,
+                  OVPHYSX_API_SUCCESS);
         const ovphysx_config_entry_t entry = ovphysx_config_entry_num_threads(requested);
         ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
         args.config_entries = &entry;

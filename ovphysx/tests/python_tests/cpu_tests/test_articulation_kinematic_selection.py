@@ -13,7 +13,7 @@ CPU check could not tell a refreshed articulation from an untouched one.
 """
 
 import pytest
-from ovphysx.types import ObjectScope
+from ovphysx.types import ObjectScope, SimObjectType
 from test_utils import attach_usd_with_ovstage, data_path
 
 
@@ -29,3 +29,18 @@ def test_kinematic_update_rejects_an_empty_pattern(physx_sdk_cpu):
     attach_usd_with_ovstage(physx_sdk_cpu, data_path("two_articulations.usda"))
     with pytest.raises(ValueError, match="pattern must be non-empty"):
         physx_sdk_cpu.update_articulations_kinematic(pattern="")
+
+
+def test_kinematic_update_takes_a_held_query(physx_sdk_cpu):
+    """A held articulation query is updated in place and stays open, so a graph capturing the update can replay it
+    (ADR-0052); it cannot be combined with a selection, and another object type is refused."""
+    attach_usd_with_ovstage(physx_sdk_cpu, data_path("two_articulations.usda"))
+    physx_sdk_cpu.step_sync(1.0 / 60.0)
+    with physx_sdk_cpu.query(SimObjectType.ARTICULATION).wait() as query:
+        assert physx_sdk_cpu.update_articulations_kinematic(query=query) is None
+        assert physx_sdk_cpu.update_articulations_kinematic(query=query) is None
+        with pytest.raises(ValueError, match="either a held query or a selection"):
+            physx_sdk_cpu.update_articulations_kinematic(query=query, pattern="/World/articulation")
+    with physx_sdk_cpu.query(SimObjectType.RIGID_BODY).wait() as rigid:
+        with pytest.raises(ValueError, match="must select articulations"):
+            physx_sdk_cpu.update_articulations_kinematic(query=rigid)

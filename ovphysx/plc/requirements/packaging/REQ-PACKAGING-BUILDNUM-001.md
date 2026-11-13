@@ -62,11 +62,16 @@ the bare `VERSION` value, so local artifacts stay stable across rebuilds.
   exists only in generated and stamped outputs.
 
 - AC-7: `_check_version_match()` compares only the first three release
-  components. A Python package and native library from the same release but
-  different builds — which a source-tree or editable install always produces,
+  components after required native APIs have been bound. A Python package and
+  native library from the same release but different builds — which a source-tree
+  or editable install always produces,
   because `_version.py` exists only in a staged wheel — logs a warning and
   continues; a genuine release difference (`0.6.3` against `0.6.4`) still
-  raises.
+  raises. If the selected library lacks a required symbol, native binding
+  instead raises `RuntimeError` before construction, identifying the library,
+  symbol, Python version, native version (or `unavailable`), and matching-library
+  remedy, even when the versions match. `ignore_version_mismatch` cannot bypass
+  missing APIs. Later optional-symbol probes retain `AttributeError` behavior.
 
 ## Test References
 
@@ -88,6 +93,7 @@ the bare `VERSION` value, so local artifacts stay stable across rebuilds.
   and publication paths (AC-4)
 - ovphysx/scripts/push_public_source_distro.cmake — source distro path (AC-4)
 - ovphysx/python/ovphysx/api.py — `_check_version_match()` (AC-7)
+- ovphysx/python/ovphysx/_bindings.py - missing native API diagnostics (AC-7)
 - ovphysx/tools/internal/relay_ci_wheel_to_ngc.py — `_artifact_version()`,
   `_expected_wheel_version()`, `verify_pdx_publication()` (AC-4)
 

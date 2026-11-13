@@ -1,0 +1,4 @@
+/World/Shelf/*     /World/Shelf/BoxB, /World/Shelf/BoxA
+/World/**          /World/Shelf/BoxB, /World/Shelf/BoxA, /World/Floor/Ball
+/World/Floor/Ball  /World/Floor/Ball
+/World/Box*        /World/Shelf/BoxB, /World/Shelf/BoxA

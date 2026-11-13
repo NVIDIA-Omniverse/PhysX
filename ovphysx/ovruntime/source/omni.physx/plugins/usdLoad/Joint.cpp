@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-LOAD-JOINTFRAME-001
+// @covers AC-1 AC-2 AC-3
+
 #include <carb/Types.h>
 #include <carb/logging/Log.h>
 #include <common/foundation/Allocator.h>
@@ -81,7 +84,7 @@ ObjectId createJoint(AttachedStage& attachedStage, omni::physics::parse::ObjectK
                 }
             }
 
-            if (!desc->validBodyTransformations)
+            if (desc->jointEnabled && !desc->validBodyTransformations)
             {
                 CARB_LOG_WARN(
                     "PhysicsUSD: CreateJoint - found a joint with disjointed body transforms, the simulation will most likely snap objects together: %s",

@@ -7,6 +7,12 @@
  *
  * @implements REQ-CAPI-BENCHMARK-005
  * @covers AC-1 AC-3 AC-4 AC-5
+ *
+ * @implements REQ-CAPI-BENCHMARK-008
+ * @covers AC-1 AC-2 AC-4
+ *
+ * @implements REQ-CAPI-BENCHMARK-009
+ * @covers AC-1 AC-2 AC-3 AC-4
  */
 
 // Authoring.runtime_write_spawn_*: in-process runtime spawn through OVStage
@@ -44,15 +50,23 @@
 #include "../framework/BmUtils.h"
 #include "../BenchmarkFailure.h"
 #include "AuthoringCommon.h"
+#include "AuthoringSpawnBatch.h"
+#include "AuthoringReadback.h"
 
 #include <ovphysx/experimental/ovphysx.hpp>
 
 #include <cmath>
+#include <algorithm>
+#include <array>
 #include <cstdio>
 #include <cstring>
 #include <iomanip>
+#include <initializer_list>
+#include <optional>
 #include <sstream>
 #include <string>
+#include <string_view>
+#include <utility>
 #include <vector>
 
 
@@ -114,7 +128,8 @@ bool authoringWriteF32(ovstage_instance_t* stage,
                        uint16_t lanes,
                        ovstage_attribute_semantic_t semantic,
                        const char* row,
-                       AuthoringWritePayload* payload)
+                       AuthoringWritePayload* payload,
+                       ovstage_query_handle_t retainedQuery = OVSTAGE_INVALID_QUERY_HANDLE)
 {
     if (!payload || !values || lanes == 0 || lanes > AuthoringWritePayload::kF32Capacity)
     {
@@ -123,8 +138,8 @@ bool authoringWriteF32(ovstage_instance_t* stage,
         return false;
     }
 
-    ovstage_query_handle_t query = OVSTAGE_INVALID_QUERY_HANDLE;
-    if (!authoringbm::queryPath(stage, path, &query, row))
+    ovstage_query_handle_t query = retainedQuery;
+    if (query == OVSTAGE_INVALID_QUERY_HANDLE && !authoringbm::queryPath(stage, path, &query, row))
     {
         bmRecordFailure(row, "query %s failed", path);
         return false;
@@ -151,7 +166,8 @@ bool authoringWriteF32(ovstage_instance_t* stage,
     const ovstage_enqueue_result_t enqueue = ovstage_write_attribute(
         stage, query, authoringbm::nameString(attr), ordinal, payload->write, OVSTAGE_PRIM_MODE_UPSERT);
     const bool ok = enqueue.status == OVSTAGE_OK && authoringbm::waitStage(stage, enqueue.op_index, row, attr);
-    const bool released = authoringbm::releaseQueryChecked(stage, query, row);
+    const bool released = retainedQuery != OVSTAGE_INVALID_QUERY_HANDLE ||
+                          authoringbm::releaseQueryChecked(stage, query, row);
     return ok && released;
 }
 
@@ -162,10 +178,11 @@ bool authoringWriteF64Scalar(ovstage_instance_t* stage,
                              ovstage_ordinal_t ordinal,
                              double value,
                              const char* row,
-                             AuthoringWritePayload* payload)
+                             AuthoringWritePayload* payload,
+                             ovstage_query_handle_t retainedQuery = OVSTAGE_INVALID_QUERY_HANDLE)
 {
-    ovstage_query_handle_t query = OVSTAGE_INVALID_QUERY_HANDLE;
-    if (!authoringbm::queryPath(stage, path, &query, row))
+    ovstage_query_handle_t query = retainedQuery;
+    if (query == OVSTAGE_INVALID_QUERY_HANDLE && !authoringbm::queryPath(stage, path, &query, row))
     {
         bmRecordFailure(row, "query %s failed", path);
         return false;
@@ -189,7 +206,8 @@ bool authoringWriteF64Scalar(ovstage_instance_t* stage,
     const ovstage_enqueue_result_t enqueue = ovstage_write_attribute(
         stage, query, authoringbm::nameString(attr), ordinal, payload->write, OVSTAGE_PRIM_MODE_UPSERT);
     const bool ok = enqueue.status == OVSTAGE_OK && authoringbm::waitStage(stage, enqueue.op_index, row, attr);
-    const bool released = authoringbm::releaseQueryChecked(stage, query, row);
+    const bool released = retainedQuery != OVSTAGE_INVALID_QUERY_HANDLE ||
+                          authoringbm::releaseQueryChecked(stage, query, row);
     return ok && released;
 }
 
@@ -205,7 +223,8 @@ bool authoringWriteTokens(ovstage_instance_t* stage,
                           bool isArray,
                           ovstage_attribute_semantic_t semantic,
                           const char* row,
-                          AuthoringWritePayload* payload)
+                          AuthoringWritePayload* payload,
+                          ovstage_query_handle_t retainedQuery = OVSTAGE_INVALID_QUERY_HANDLE)
 {
     path_dictionary_instance_t* dict = ovstage_get_path_dictionary(stage);
     if (!dict)
@@ -214,7 +233,7 @@ bool authoringWriteTokens(ovstage_instance_t* stage,
     }
 
     std::vector<ovx_string_t> strings(tokenCount);
-    std::vector<ovx_token_t> interned(tokenCount, 0);
+    std::vector<ovx_token_t> interned(tokenCount, ovx_token_t{0});
     for (size_t i = 0; i < tokenCount; ++i)
     {
         strings[i] = authoringbm::stringView(tokens[i]);
@@ -226,8 +245,8 @@ bool authoringWriteTokens(ovstage_instance_t* stage,
         return false;
     }
 
-    ovstage_query_handle_t query = OVSTAGE_INVALID_QUERY_HANDLE;
-    if (!authoringbm::queryPath(stage, path, &query, row))
+    ovstage_query_handle_t query = retainedQuery;
+    if (query == OVSTAGE_INVALID_QUERY_HANDLE && !authoringbm::queryPath(stage, path, &query, row))
     {
         bmRecordFailure(row, "query %s failed", path);
         return false;
@@ -237,7 +256,7 @@ bool authoringWriteTokens(ovstage_instance_t* stage,
     payload->tokens.resize(tokenCount);
     for (size_t i = 0; i < tokenCount; ++i)
     {
-        payload->tokens[i] = static_cast<uint64_t>(interned[i]);
+        payload->tokens[i] = interned[i].raw_id;
     }
 
     payload->shape = static_cast<int64_t>(tokenCount);
@@ -257,7 +276,8 @@ bool authoringWriteTokens(ovstage_instance_t* stage,
     const ovstage_enqueue_result_t enqueue = ovstage_write_attribute(
         stage, query, authoringbm::nameString(attr), ordinal, payload->write, OVSTAGE_PRIM_MODE_UPSERT);
     const bool ok = enqueue.status == OVSTAGE_OK && authoringbm::waitStage(stage, enqueue.op_index, row, attr);
-    const bool released = authoringbm::releaseQueryChecked(stage, query, row);
+    const bool released = retainedQuery != OVSTAGE_INVALID_QUERY_HANDLE ||
+                          authoringbm::releaseQueryChecked(stage, query, row);
     return ok && released;
 }
 
@@ -265,7 +285,12 @@ bool authoringWriteTokens(ovstage_instance_t* stage,
 // The exact column layout a population-created body ends up with, reproduced
 // write-for-write.
 bool authoringSpawnBody(
-    ovstage_instance_t* stage, ovstage_ordinal_t ordinal, int index, const char* row, AuthoringWritePayload* payload)
+    ovstage_instance_t* stage,
+    ovstage_ordinal_t ordinal,
+    int index,
+    const char* row,
+    AuthoringWritePayload* payload,
+    bool retainQueries = false)
 {
     char bodyPath[96];
     char colliderPath[112];
@@ -290,32 +315,70 @@ bool authoringSpawnBody(
     const char* const xformType[] = { "Xform" };
     const char* const cubeType[] = { "Cube" };
 
+    // The retained variant still creates and retires both selections inside
+    // this timed spawn. Only attribute writes for the same path share a query;
+    // no selection survives into the next body or stage.
+    std::optional<authoringbm::ScopedQuery> bodyQuery;
+    std::optional<authoringbm::ScopedQuery> colliderQuery;
+    ovstage_query_handle_t bodyHandle = OVSTAGE_INVALID_QUERY_HANDLE;
+    ovstage_query_handle_t colliderHandle = OVSTAGE_INVALID_QUERY_HANDLE;
+    if (retainQueries)
+    {
+        if (!authoringbm::queryPath(stage, bodyPath, &bodyHandle, row))
+        {
+            bmRecordFailure(row, "query %s failed", bodyPath);
+            return false;
+        }
+        bodyQuery.emplace(stage, bodyHandle, row);
+    }
+
     bool ok = true;
-    ok = ok && authoringWriteTokens(
-                   stage, bodyPath, "usd-prim-type", ordinal, xformType, 1, false, OVSTAGE_SEMANTIC_NONE, row, payload);
-    ok = ok && authoringWriteTokens(
-                   stage, bodyPath, "usd-schemas", ordinal, bodySchemas, 2, true, OVSTAGE_SEMANTIC_NONE, row, payload);
-    ok = ok && authoringWriteF32(
-                   stage, bodyPath, "xformOp:translate", ordinal, translate, 3, OVSTAGE_SEMANTIC_POINT, row, payload);
-    ok = ok && authoringWriteF32(
-                   stage, bodyPath, "xformOp:orient", ordinal, orient, 4, OVSTAGE_SEMANTIC_QUATERNION, row, payload);
+    ok = ok && authoringWriteTokens(stage, bodyPath, "usd-prim-type", ordinal, xformType, 1, false,
+                                    OVSTAGE_SEMANTIC_NONE, row, payload, bodyHandle);
+    ok = ok && authoringWriteTokens(stage, bodyPath, "usd-schemas", ordinal, bodySchemas, 2, true,
+                                    OVSTAGE_SEMANTIC_NONE, row, payload, bodyHandle);
+    ok = ok && authoringWriteF32(stage, bodyPath, "xformOp:translate", ordinal, translate, 3,
+                                 OVSTAGE_SEMANTIC_POINT, row, payload, bodyHandle);
+    ok = ok && authoringWriteF32(stage, bodyPath, "xformOp:orient", ordinal, orient, 4,
+                                 OVSTAGE_SEMANTIC_QUATERNION, row, payload, bodyHandle);
     ok = ok && authoringWriteTokens(stage, bodyPath, "xformOpOrder", ordinal, bodyOrder, 2, true,
-                                    OVSTAGE_SEMANTIC_TOKEN_ID, row, payload);
-    ok = ok && authoringWriteF32(stage, bodyPath, "physics:mass", ordinal, &mass, 1, OVSTAGE_SEMANTIC_NONE, row, payload);
-    ok = ok && authoringWriteF32(
-                   stage, bodyPath, "physics:velocity", ordinal, zero3, 3, OVSTAGE_SEMANTIC_VECTOR, row, payload);
-    ok = ok && authoringWriteF32(stage, bodyPath, "physics:angularVelocity", ordinal, zero3, 3, OVSTAGE_SEMANTIC_VECTOR,
-                                 row, payload);
+                                    OVSTAGE_SEMANTIC_TOKEN_ID, row, payload, bodyHandle);
+    ok = ok && authoringWriteF32(stage, bodyPath, "physics:mass", ordinal, &mass, 1,
+                                 OVSTAGE_SEMANTIC_NONE, row, payload, bodyHandle);
+    ok = ok && authoringWriteF32(stage, bodyPath, "physics:velocity", ordinal, zero3, 3,
+                                 OVSTAGE_SEMANTIC_VECTOR, row, payload, bodyHandle);
+    ok = ok && authoringWriteF32(stage, bodyPath, "physics:angularVelocity", ordinal, zero3, 3,
+                                 OVSTAGE_SEMANTIC_VECTOR, row, payload, bodyHandle);
+
+    // The pinned runtime refreshes every live query after structural writes.
+    // Retire the body selection before collider upserts, which no longer use it.
+    // Always attempt retirement, including after a failed body write.
+    const bool bodyReleased = !bodyQuery || bodyQuery->close();
+    ok = ok && bodyReleased;
+
+    if (ok && retainQueries)
+    {
+        if (!authoringbm::queryPath(stage, colliderPath, &colliderHandle, row))
+        {
+            bmRecordFailure(row, "query %s failed", colliderPath);
+            return false; // The body selection has already been retired.
+        }
+        colliderQuery.emplace(stage, colliderHandle, row);
+    }
 
     ok = ok && authoringWriteTokens(stage, colliderPath, "usd-prim-type", ordinal, cubeType, 1, false,
-                                    OVSTAGE_SEMANTIC_NONE, row, payload);
+                                    OVSTAGE_SEMANTIC_NONE, row, payload, colliderHandle);
     ok = ok && authoringWriteTokens(stage, colliderPath, "usd-schemas", ordinal, colliderSchemas, 1, true,
-                                    OVSTAGE_SEMANTIC_NONE, row, payload);
-    ok = ok && authoringWriteF64Scalar(stage, colliderPath, "size", ordinal, 1.0, row, payload);
-    ok = ok &&
-         authoringWriteF32(stage, colliderPath, "xformOp:scale", ordinal, scale, 3, OVSTAGE_SEMANTIC_NONE, row, payload);
+                                    OVSTAGE_SEMANTIC_NONE, row, payload, colliderHandle);
+    ok = ok && authoringWriteF64Scalar(stage, colliderPath, "size", ordinal, 1.0, row, payload, colliderHandle);
+    ok = ok && authoringWriteF32(stage, colliderPath, "xformOp:scale", ordinal, scale, 3,
+                                 OVSTAGE_SEMANTIC_NONE, row, payload, colliderHandle);
     ok = ok && authoringWriteTokens(stage, colliderPath, "xformOpOrder", ordinal, colliderOrder, 1, true,
-                                    OVSTAGE_SEMANTIC_TOKEN_ID, row, payload);
+                                    OVSTAGE_SEMANTIC_TOKEN_ID, row, payload, colliderHandle);
+
+    // Do not short-circuit cleanup when a collider write fails.
+    const bool colliderReleased = !colliderQuery || colliderQuery->close();
+    ok = ok && colliderReleased;
 
     if (!ok)
     {
@@ -325,10 +388,295 @@ bool authoringSpawnBody(
 }
 
 
+bool appendSpawnTokens(ovstage_instance_t* stage, authoringbm::SpawnBatchPayload& payload,
+                       std::string_view attribute, const char* const* values, size_t count, bool isArray,
+                       ovstage_attribute_semantic_t semantic)
+{
+    path_dictionary_instance_t* const dictionary = ovstage_get_path_dictionary(stage);
+    if (!dictionary || count > authoringbm::SpawnBatchPayload::kTokenCapacity)
+        return false;
+    std::array<ovx_string_t, authoringbm::SpawnBatchPayload::kTokenCapacity> strings{};
+    std::array<ovx_token_t, authoringbm::SpawnBatchPayload::kTokenCapacity> tokens{};
+    std::array<uint64_t, authoringbm::SpawnBatchPayload::kTokenCapacity> ids{};
+    for (size_t i = 0; i < count; ++i)
+        strings[i] = authoringbm::stringView(values[i]);
+    if (path_dictionary_create_tokens_from_strings(dictionary, strings.data(), count, tokens.data()).status !=
+        OVX_API_SUCCESS)
+        return false;
+    for (size_t i = 0; i < count; ++i)
+        ids[i] = tokens[i].raw_id;
+    return payload.addTokens(attribute, ids.data(), count, isArray, semantic);
+}
+
+bool submitSpawnBatch(ovstage_instance_t* stage, const char* path, ovstage_ordinal_t ordinal,
+                      const char* row, const authoringbm::SpawnBatchPayload& payload)
+{
+    ovstage_query_handle_t query = OVSTAGE_INVALID_QUERY_HANDLE;
+    if (!authoringbm::queryPath(stage, path, &query, row))
+    {
+        bmRecordFailure(row, "batch query %s failed", path);
+        return false;
+    }
+    authoringbm::ScopedQuery owner(stage, query, row);
+    const ovstage_enqueue_result_t result = ovstage_write_attributes(
+        stage, query, payload.writes(), payload.size(), ordinal, OVSTAGE_PRIM_MODE_UPSERT);
+    bool ok = result.status == OVSTAGE_OK;
+    if (!ok)
+        bmRecordFailure(row, "batch write %s rejected: %d", path, static_cast<int>(result.status));
+    else
+        ok = authoringbm::waitStage(stage, result.op_index, row, "spawn attribute batch");
+    // Even after failure, retire the selection before resetting borrowed data.
+    // waitStage drains a timed-out operation before these payloads can be reused.
+    const bool released = owner.close();
+    return ok && released;
+}
+
+bool authoringSpawnBodyBatched(ovstage_instance_t* stage, ovstage_ordinal_t ordinal, int index,
+                               const char* row, authoringbm::SpawnBatchPayload& payload)
+{
+    char bodyPath[96];
+    char colliderPath[112];
+    std::snprintf(bodyPath, sizeof(bodyPath), "/World/Runtime/Body_%04d", index);
+    std::snprintf(colliderPath, sizeof(colliderPath), "%s/Collider", bodyPath);
+    float x = 0.0f;
+    float y = 0.0f;
+    float z = 0.0f;
+    authoringSpawnPose(index, x, y, z);
+    const float translate[] = { x, y, z };
+    const float orient[] = { 1.0f, 0.0f, 0.0f, 0.0f };
+    const float mass = 1.0f;
+    const float zero3[] = { 0.0f, 0.0f, 0.0f };
+    const float scale[] = { 0.5f, 0.5f, 0.5f };
+    const char* const xformType[] = { "Xform" };
+    const char* const bodySchemas[] = { "PhysicsMassAPI", "PhysicsRigidBodyAPI" };
+    const char* const bodyOrder[] = { "xformOp:translate", "xformOp:orient" };
+    const char* const cubeType[] = { "Cube" };
+    const char* const colliderSchemas[] = { "PhysicsCollisionAPI" };
+    const char* const colliderOrder[] = { "xformOp:scale" };
+
+    payload.reset();
+    const bool bodyPrepared =
+        appendSpawnTokens(stage, payload, "usd-prim-type", xformType, 1, false, OVSTAGE_SEMANTIC_NONE) &&
+        appendSpawnTokens(stage, payload, "usd-schemas", bodySchemas, 2, true, OVSTAGE_SEMANTIC_NONE) &&
+        payload.addFloat("xformOp:translate", translate, 3, OVSTAGE_SEMANTIC_POINT) &&
+        payload.addFloat("xformOp:orient", orient, 4, OVSTAGE_SEMANTIC_QUATERNION) &&
+        appendSpawnTokens(stage, payload, "xformOpOrder", bodyOrder, 2, true, OVSTAGE_SEMANTIC_TOKEN_ID) &&
+        payload.addFloat("physics:mass", &mass, 1, OVSTAGE_SEMANTIC_NONE) &&
+        payload.addFloat("physics:velocity", zero3, 3, OVSTAGE_SEMANTIC_VECTOR) &&
+        payload.addFloat("physics:angularVelocity", zero3, 3, OVSTAGE_SEMANTIC_VECTOR);
+    if (!bodyPrepared || payload.size() != 8)
+    {
+        bmRecordFailure(row, "body batch payload preparation failed");
+        return false;
+    }
+    if (!submitSpawnBatch(stage, bodyPath, ordinal, row, payload))
+        return false;
+
+    // Body completion and query retirement precede every collider operation.
+    // Batches are not transactions; a failed body stops this spawn, without retry.
+    payload.reset();
+    const bool colliderPrepared =
+        appendSpawnTokens(stage, payload, "usd-prim-type", cubeType, 1, false, OVSTAGE_SEMANTIC_NONE) &&
+        appendSpawnTokens(stage, payload, "usd-schemas", colliderSchemas, 1, true, OVSTAGE_SEMANTIC_NONE) &&
+        payload.addDouble("size", 1.0) &&
+        payload.addFloat("xformOp:scale", scale, 3, OVSTAGE_SEMANTIC_NONE) &&
+        appendSpawnTokens(stage, payload, "xformOpOrder", colliderOrder, 1, true, OVSTAGE_SEMANTIC_TOKEN_ID);
+    if (!colliderPrepared || payload.size() != 5)
+    {
+        bmRecordFailure(row, "collider batch payload preparation failed");
+        return false;
+    }
+    return submitSpawnBatch(stage, colliderPath, ordinal, row, payload);
+}
+
+// A singleton read can still refer to a larger backing list or tensor. Resolve
+// both mappings so exact payload checks do not assume compact result storage.
+template <typename T>
+bool verifySpawnAttribute(ovstage_instance_t* stage, const char* path, const char* attribute,
+                          ovstage_ordinal_t ordinal, std::vector<T> expected, uint8_t code,
+                          uint16_t lanes, bool isArray, const char* row, bool unordered = false,
+                          ovstage_attribute_semantic_t expectedSemantic = OVSTAGE_SEMANTIC_NONE)
+{
+    path_dictionary_instance_t* const dictionary = ovstage_get_path_dictionary(stage);
+    const ovx_string_t pathString = authoringbm::stringView(path);
+    const ovx_string_t attributeString = authoringbm::stringView(attribute);
+    ovx_primpath_t expectedPath{};
+    ovx_token_t attributeToken{};
+    if (!dictionary || expected.empty() || expected.size() > 4 ||
+        path_dictionary_create_paths_from_strings(dictionary, &pathString, 1, &expectedPath).status != OVX_API_SUCCESS ||
+        path_dictionary_create_tokens_from_strings(dictionary, &attributeString, 1, &attributeToken).status !=
+            OVX_API_SUCCESS)
+    {
+        bmRecordFailure(row, "spawn readback identity preparation failed for %s/%s", path, attribute);
+        return false;
+    }
+    if (unordered)
+        std::sort(expected.begin(), expected.end());
+    ovstage_query_handle_t query = OVSTAGE_INVALID_QUERY_HANDLE;
+    if (!authoringbm::queryPath(stage, path, &query, row))
+        return false;
+    authoringbm::ScopedQuery queryOwner(stage, query, row);
+    ovstage_ordinal_range_t range{};
+    range.end_ordinal = ordinal;
+    ovstage_read_handle_t read = OVSTAGE_INVALID_READ_HANDLE;
+    const ovstage_enqueue_result_t enqueued =
+        ovstage_read_attributes(stage, query, &attributeToken, 1, range, &read);
+    bool ok = enqueued.status == OVSTAGE_OK;
+    if (ok)
+        ok = authoringbm::waitStage(stage, enqueued.op_index, row, "spawn attribute readback");
+    else
+        bmRecordFailure(row, "spawn readback enqueue failed for %s/%s: %d", path, attribute,
+                        static_cast<int>(enqueued.status));
+    size_t groups = 0;
+    while (ok)
+    {
+        ovstage_read_group_t group{};
+        size_t fetched = 0;
+        const ovstage_api_status_t status =
+            ovstage_fetch_read_next(stage, read, authoringbm::kWaitTimeoutNs, &group, 1, &fetched);
+        if (status == OVSTAGE_ERROR_END_OF_ITERATION)
+            break;
+        if (status != OVSTAGE_OK)
+        {
+            bmRecordFailure(row, "spawn readback fetch failed for %s/%s: %d", path, attribute,
+                            static_cast<int>(status));
+            ok = false;
+            break;
+        }
+        bool valid = groups++ == 0 && group.column_count == 1 && !group.columns[0].is_delete && group.columns[0].is_array == isArray &&
+                     group.columns[0].attribute == attributeToken && group.columns[0].semantic == expectedSemantic &&
+                     group.prims.count == 1 && group.columns[0].data.tensors;
+        ovx_primpath_t actualPath{};
+        size_t pathCount = 0;
+        if (valid)
+        {
+            const uint32_t pathIndex = group.prims.index_map ? group.prims.index_map[0] : group.prims.offset;
+            valid = path_dictionary_get_paths_from_path_list(
+                        dictionary, group.prims.list, pathIndex, 1, &actualPath, &pathCount).status == OVX_API_SUCCESS &&
+                    pathCount == 1 && actualPath == expectedPath;
+        }
+        const uint32_t dataRow = valid && group.columns[0].data.index_map ? group.columns[0].data.index_map[0] : 0;
+        if (valid)
+            valid = (!group.columns[0].data.mask || (group.columns[0].data.mask[0] & 1) != 0) &&
+                    ((!group.columns[0].data.mask && !group.columns[0].data.index_map)
+                     || group.columns[0].data.count == 1) &&
+                    (isArray ? group.columns[0].data.tensor_count > dataRow : group.columns[0].data.tensor_count == 1);
+        if (valid)
+        {
+            const DLTensor& tensor = group.columns[0].data.tensors[isArray ? dataRow : 0];
+            std::array<T, 4> actual{};
+            valid = authoringbm::readSpawnTensor(
+                tensor, dataRow, code, lanes, isArray, expected.size(), actual);
+            if (!valid)
+                bmRecordFailure(row, "spawn tensor layout/type mismatch for %s/%s: ndim=%d code=%u bits=%u lanes=%u",
+                                path, attribute, tensor.ndim, unsigned(tensor.dtype.code),
+                                unsigned(tensor.dtype.bits), unsigned(tensor.dtype.lanes));
+            if (valid)
+            {
+                if (unordered)
+                    std::sort(actual.begin(), actual.begin() + expected.size());
+                for (size_t i = 0; i < expected.size(); ++i)
+                    valid = valid && actual[i] == expected[i];
+            }
+        }
+        const ovstage_api_status_t released = ovstage_release_groups(stage, &group, 1);
+        if (!valid || released != OVSTAGE_OK)
+        {
+            bmRecordFailure(row, "spawn readback mismatch or group release failure for %s/%s", path, attribute);
+            ok = false;
+        }
+    }
+    if (ok && groups != 1)
+    {
+        bmRecordFailure(row, "spawn readback expected one value group for %s/%s, found %zu", path, attribute, groups);
+        ok = false;
+    }
+    if (read != OVSTAGE_INVALID_READ_HANDLE)
+    {
+        const ovstage_enqueue_result_t released = ovstage_release_read(stage, read);
+        if (released.status != OVSTAGE_OK)
+        {
+            bmRecordFailure(row, "spawn readback release failed: %d", static_cast<int>(released.status));
+            ok = false;
+        }
+        else
+        {
+            const bool retired = authoringbm::waitStage(stage, released.op_index, row, "spawn read release");
+            ok = ok && retired;
+        }
+    }
+    const bool queryReleased = queryOwner.close();
+    return ok && queryReleased;
+}
+
+bool verifySpawnTokens(ovstage_instance_t* stage, const char* path, const char* attribute,
+                       ovstage_ordinal_t ordinal, std::initializer_list<const char*> values,
+                       bool isArray, const char* row, bool unordered = false)
+{
+    std::vector<ovx_string_t> strings;
+    for (const char* value : values)
+        strings.push_back(authoringbm::stringView(value));
+    std::vector<ovx_token_t> tokens(values.size());
+    path_dictionary_instance_t* const dictionary = ovstage_get_path_dictionary(stage);
+    if (!dictionary || path_dictionary_create_tokens_from_strings(
+            dictionary, strings.data(), strings.size(), tokens.data()).status != OVX_API_SUCCESS)
+    {
+        bmRecordFailure(row, "spawn expected token preparation failed");
+        return false;
+    }
+    return verifySpawnAttribute(stage, path, attribute, ordinal, std::move(tokens), kDLUInt, 1, isArray, row, unordered,
+                                std::strcmp(attribute, "xformOpOrder") == 0 ?
+                                    OVSTAGE_SEMANTIC_TOKEN_ID : OVSTAGE_SEMANTIC_NONE);
+}
+
+bool verifySpawnPayloads(ovstage_instance_t* stage, ovstage_ordinal_t ordinal, int count, const char* row)
+{
+    for (int index = 0; index < count; ++index)
+    {
+        char body[96];
+        char collider[112];
+        std::snprintf(body, sizeof(body), "/World/Runtime/Body_%04d", index);
+        std::snprintf(collider, sizeof(collider), "%s/Collider", body);
+        float x = 0.0f;
+        float y = 0.0f;
+        float z = 0.0f;
+        authoringSpawnPose(index, x, y, z);
+        // Read the final sealed state, not an earlier historical snapshot.
+        // This input stage keeps authored columns while Physics owns simulation state.
+        if (!verifySpawnTokens(stage, body, "usd-prim-type", ordinal, { "Xform" }, false, row) ||
+            !verifySpawnTokens(stage, body, "usd-schemas", ordinal,
+                               { "PhysicsMassAPI", "PhysicsRigidBodyAPI" }, true, row, true) ||
+            !verifySpawnAttribute<float>(
+                stage, body, "xformOp:translate", ordinal, { x, y, z }, kDLFloat, 3, false, row, false,
+                OVSTAGE_SEMANTIC_POINT) ||
+            !verifySpawnAttribute<float>(
+                stage, body, "xformOp:orient", ordinal, { 1, 0, 0, 0 }, kDLFloat, 4, false, row, false,
+                OVSTAGE_SEMANTIC_QUATERNION) ||
+            !verifySpawnTokens(stage, body, "xformOpOrder", ordinal,
+                               { "xformOp:translate", "xformOp:orient" }, true, row) ||
+            !verifySpawnAttribute<float>(stage, body, "physics:mass", ordinal, { 1 }, kDLFloat, 1, false, row) ||
+            !verifySpawnAttribute<float>(
+                stage, body, "physics:velocity", ordinal, { 0, 0, 0 }, kDLFloat, 3, false, row, false,
+                OVSTAGE_SEMANTIC_VECTOR) ||
+            !verifySpawnAttribute<float>(
+                stage, body, "physics:angularVelocity", ordinal, { 0, 0, 0 }, kDLFloat, 3, false, row, false,
+                OVSTAGE_SEMANTIC_VECTOR) ||
+            !verifySpawnTokens(stage, collider, "usd-prim-type", ordinal, { "Cube" }, false, row) ||
+            !verifySpawnTokens(stage, collider, "usd-schemas", ordinal, { "PhysicsCollisionAPI" }, true, row) ||
+            !verifySpawnAttribute<double>(stage, collider, "size", ordinal, { 1 }, kDLFloat, 1, false, row) ||
+            !verifySpawnAttribute<float>(
+                stage, collider, "xformOp:scale", ordinal, { 0.5f, 0.5f, 0.5f }, kDLFloat, 3, false, row) ||
+            !verifySpawnTokens(stage, collider, "xformOpOrder", ordinal, { "xformOp:scale" }, true, row))
+            return false;
+    }
+    return true;
+}
+
 class AuthoringRuntimeWriteSpawn : public BmBenchmark
 {
 public:
-    AuthoringRuntimeWriteSpawn(const char* rowName, bool gpu) : mRow(rowName), mGpu(gpu)
+    AuthoringRuntimeWriteSpawn(const char* rowName, bool gpu, bool retainQueries = false, bool batchWrites = false)
+        : mRow(rowName), mGpu(gpu), mRetainQueries(retainQueries), mBatchWrites(batchWrites)
     {
     }
 
@@ -398,6 +746,11 @@ public:
         }
         mOrdinal = mStageAttachment.ordinal;
         mLastDrained = mStageAttachment.ordinal;
+        if (mBatchWrites && (!mStageAttachment.stage->data_plane.vtable || !mStageAttachment.stage->data_plane.vtable->write_attributes))
+        {
+            bmRecordFailure(mRow, "OVStage runtime does not provide the batched write slot");
+            return;
+        }
         mStepOk = true;
         mSetupOk = true;
     }
@@ -448,7 +801,9 @@ protected:
             ++mOrdinal;
             for (int i = first; i < last; ++i)
             {
-                if (!authoringSpawnBody(stage, mOrdinal, i, mRow, &mWritePayload))
+                const bool spawned = mBatchWrites ? authoringSpawnBodyBatched(stage, mOrdinal, i, mRow, mBatchPayload) :
+                    authoringSpawnBody(stage, mOrdinal, i, mRow, &mWritePayload, mRetainQueries);
+                if (!spawned)
                 {
                     mStepOk = false;
                     return;
@@ -500,10 +855,17 @@ private:
             bmRecordFailure(mRow, "expected %u simulated rigid bodies (%u seed + %d written), found %u", expected,
                             mSeedBodies, mSpawned, simulated);
         }
+        // Both comparison rows use the same untimed payload gate. Keep the
+        // original Authoring row and its verification contract unchanged.
+        if (mRetainQueries && !verifySpawnPayloads(
+                mStageAttachment.stage, mOrdinal, mSpawned, mRow))
+            bmRecordFailure(mRow, "spawn attribute payload verification failed");
     }
 
     const char* mRow = nullptr;
     bool mGpu = false;
+    bool mRetainQueries = false;
+    bool mBatchWrites = false;
 
     ovphysx::PhysX* mPhysX = nullptr;
     ovphysx_sample_stage_attachment_t mStageAttachment{};
@@ -517,6 +879,7 @@ private:
     ovstage_ordinal_t mOrdinal = 0;
     ovstage_ordinal_t mLastDrained = 0;
     AuthoringWritePayload mWritePayload;
+    authoringbm::SpawnBatchPayload mBatchPayload;
 };
 
 
@@ -537,6 +900,28 @@ struct AuthoringRuntimeWriteSpawnGpu : AuthoringRuntimeWriteSpawn
 
 Register<AuthoringRuntimeWriteSpawnCpu, true> sAuthoringRuntimeWriteSpawnCpu("Authoring.runtime_write_spawn_cpu");
 Register<AuthoringRuntimeWriteSpawnGpu, true> sAuthoringRuntimeWriteSpawnGpu("Authoring.runtime_write_spawn_gpu");
+
+struct QueryRetentionRuntimeWriteSpawnCpu : AuthoringRuntimeWriteSpawn
+{
+    QueryRetentionRuntimeWriteSpawnCpu()
+        : AuthoringRuntimeWriteSpawn("QueryRetention.runtime_write_spawn_cpu", false, true)
+    {
+    }
+};
+
+Register<QueryRetentionRuntimeWriteSpawnCpu, true> sQueryRetentionRuntimeWriteSpawnCpu(
+    "QueryRetention.runtime_write_spawn_cpu");
+
+struct BatchedWriteRuntimeWriteSpawnCpu : AuthoringRuntimeWriteSpawn
+{
+    BatchedWriteRuntimeWriteSpawnCpu()
+        : AuthoringRuntimeWriteSpawn("BatchedWrite.runtime_write_spawn_cpu", false, true, true)
+    {
+    }
+};
+
+Register<BatchedWriteRuntimeWriteSpawnCpu, true> sBatchedWriteRuntimeWriteSpawnCpu(
+    "BatchedWrite.runtime_write_spawn_cpu");
 
 
 // ---------------------------------------------------------------------------

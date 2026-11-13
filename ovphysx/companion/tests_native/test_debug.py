@@ -10,6 +10,7 @@ from dataclasses import FrozenInstanceError
 from pathlib import Path
 import pytest
 from ovphysx_companion.debug import DebugDraw, Parameter, SnapshotLimitError, _Api, _Config, _Info, _Vertex
+from ovphysx_companion.inspection import Inspector
 from ovphysx_companion.native import ToolsSession, CompanionError, Status
 from ovphysx_companion.preview import PreviewSession
 
@@ -33,6 +34,24 @@ def test_debug_completed_frame_units_color_identity_and_immutable_lifetime(attac
     assert frame.lines==retained
 
 
+def test_debug_frame_draws_moving_bodies_at_step_start_poses(attached):
+    # Intended PhysX timing: shapes use pre-step poses so they line up with that step's contacts.
+    with ToolsSession(attached) as session,Inspector(session) as inspector,DebugDraw(session) as debug:
+        debug.configure(Parameter.COLLISION_SHAPES)
+        boxes=[inspector.resolve(path) for path in ('/World/BoxA','/World/BoxB')]
+        for _ in range(3):
+            before=[inspector.read(box).pose[:3] for box in boxes]
+            attached.step(1/60);attached.wait_all()
+            frame=debug.capture()
+            for box,start in zip(boxes,before):
+                after=inspector.read(box)
+                # Both boxes are still falling, 2 m apart in x; the floor's edges stay below z=0.
+                points=[v.position for line in frame.lines for v in line if v.position[2]>1 and abs(v.position[0]-start[0])<1]
+                assert len(points)==24 and frame.step==after.step
+                assert tuple(sum(axis)/len(points) for axis in zip(*points))==pytest.approx(start,abs=1e-5)
+                assert start[2]-after.pose[2]>1e-3
+
+
 def test_debug_pending_rejection_and_disable(attached):
     with ToolsSession(attached) as session:
         with DebugDraw(session) as debug:
@@ -52,9 +71,10 @@ def test_debug_pending_rejection_and_disable(attached):
 
 def test_debug_preview_pending_peer_isolation_and_retirement(physics,attached):
     import ovstage
+    from ovphysx.population import physics_population_descs
     stage=ovstage.Stage('debug-preview')
-    ovstage.population.open_usd(stage,str(Path(__file__).resolve().parents[1]/'samples/scenes/two_boxes.usda'),
-                                ordinal=1,domains=ovstage.PopulationDomain.ALL)
+    ovstage.population.open_usd_with_desc(stage,str(Path(__file__).resolve().parents[1]/'samples/scenes/two_boxes.usda'),
+                                ordinal=1,time=ovstage.population.DEFAULT_TIME,descs=physics_population_descs(rendering=True))
     stage.advance_write_floor(ordinal=1).wait()
     try:
         with ToolsSession(attached) as playback, DebugDraw(playback) as a:
@@ -80,9 +100,10 @@ def test_debug_preview_pending_peer_isolation_and_retirement(physics,attached):
 
 def test_debug_native_copy_canaries_and_frame_after_owner_close(physics):
     import ovstage
+    from ovphysx.population import physics_population_descs
     stage=ovstage.Stage('debug-native-copy')
-    ovstage.population.open_usd(stage,str(Path(__file__).resolve().parents[1]/'samples/scenes/two_boxes.usda'),
-                                ordinal=1,domains=ovstage.PopulationDomain.ALL)
+    ovstage.population.open_usd_with_desc(stage,str(Path(__file__).resolve().parents[1]/'samples/scenes/two_boxes.usda'),
+                                ordinal=1,time=ovstage.population.DEFAULT_TIME,descs=physics_population_descs(rendering=True))
     stage.advance_write_floor(ordinal=1).wait()
     api=_Api();C.memset(C.byref(api),0xa5,C.sizeof(api));before=bytes(api)
     acquire=physics._lib.ovphysx_companion_debug_acquire

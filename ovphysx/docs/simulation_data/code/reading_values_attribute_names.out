@@ -1,0 +1,7 @@
+angularAcceleration, angularVelocity, centerOfMassOrientation,
+centerOfMassPosition, contactOffset, disableGravity, disableSimulation,
+dynamicFriction, inertia, inverseInertia, inverseMass, isSleeping,
+kinematicTargetOrientation, kinematicTargetPosition, linearAcceleration,
+linearVelocity, mass, orientation, position, restOffset, restitution,
+shapeCount, staticFriction
+angularVelocity: rad / sec, world frame

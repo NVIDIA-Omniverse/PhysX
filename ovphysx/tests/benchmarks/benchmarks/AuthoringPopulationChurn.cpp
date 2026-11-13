@@ -133,7 +133,7 @@ public:
         mBaselineBodies = 0;
         mOrdinal = 0;
         mLastDrained = 0;
-        mVerifyRef = 0;
+        mVerifyRef = OVSTAGE_POPULATION_INVALID_USD_REFERENCE_HANDLE;
         if (!authoringbm::prepareStageAttachmentForRun(mStageAttachment, mRow, &mLeftoverAttachmentReported))
         {
             return;
@@ -238,7 +238,7 @@ private:
 
         // --- create ---
         ++mOrdinal;
-        ovstage_population_usd_reference_handle_t reference = 0;
+        ovstage_population_usd_reference_handle_t reference = OVSTAGE_POPULATION_INVALID_USD_REFERENCE_HANDLE;
         const ovstage_population_enqueue_result_t add = ovstage_population_add_usd_reference_from_string(
             stage, authoringbm::stringView(usda), authoringbm::stringView(target), &reference);
         if (add.status != OVSTAGE_OK)
@@ -268,7 +268,7 @@ private:
 
         // --- remove ---
         ++mOrdinal;
-        if (reference != 0)
+        if (reference != OVSTAGE_POPULATION_INVALID_USD_REFERENCE_HANDLE)
         {
             const ovstage_population_enqueue_result_t remove = ovstage_population_remove_usd_reference(stage, reference);
             if (remove.status != OVSTAGE_OK)
@@ -409,7 +409,7 @@ private:
         const std::string target = std::string(kAuthoringChurnParent) + "/box_0";
 
         ++mOrdinal;
-        if (mVerifyRef != 0)
+        if (mVerifyRef != OVSTAGE_POPULATION_INVALID_USD_REFERENCE_HANDLE)
         {
             const ovstage_population_enqueue_result_t remove = ovstage_population_remove_usd_reference(stage, mVerifyRef);
             if (remove.status != OVSTAGE_OK ||
@@ -423,7 +423,7 @@ private:
             {
                 return false;
             }
-            mVerifyRef = 0;
+            mVerifyRef = OVSTAGE_POPULATION_INVALID_USD_REFERENCE_HANDLE;
         }
 
         ovstage_query_handle_t query = OVSTAGE_INVALID_QUERY_HANDLE;
@@ -453,7 +453,7 @@ private:
         const std::string target = std::string(kAuthoringChurnParent) + "/box_0";
 
         ++mOrdinal;
-        mVerifyRef = 0;
+        mVerifyRef = OVSTAGE_POPULATION_INVALID_USD_REFERENCE_HANDLE;
         const ovstage_population_enqueue_result_t add = ovstage_population_add_usd_reference_from_string(
             stage, authoringbm::stringView(usda), authoringbm::stringView(target), &mVerifyRef);
         if (add.status != OVSTAGE_OK ||
@@ -487,7 +487,7 @@ private:
     uint32_t mBaselineBodies = 0;
     ovstage_ordinal_t mOrdinal = 0;
     ovstage_ordinal_t mLastDrained = 0;
-    ovstage_population_usd_reference_handle_t mVerifyRef = 0;
+    ovstage_population_usd_reference_handle_t mVerifyRef = OVSTAGE_POPULATION_INVALID_USD_REFERENCE_HANDLE;
 };
 
 struct AuthoringPopulationChurnCpu : AuthoringPopulationChurn

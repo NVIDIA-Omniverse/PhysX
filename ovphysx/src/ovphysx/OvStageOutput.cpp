@@ -3,7 +3,7 @@
 
 /**
  * @implements REQ-CAPI-OVSTAGE-OUTPUT-001
- * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7
  */
 
 #include <ovphysx/experimental/OvStageOutput.hpp>
@@ -14,18 +14,15 @@
 #include "OvStageOutputMath.h"
 #include "internal/sdk/ovphysxSDK.hpp"
 
-#include <common/foundation/MatrixTools.h>
 #include <carb/logging/Log.h>
+#include <ovstage/ovstage.h>
 #include <ovstage/ovstage_api/ovstage_api.h>
-#include <ovstage/ovstage_api/ovstage_tensor_utils.h>
 #include <ovx/path_dictionary/path_dictionary.h>
 
 #include <algorithm>
-#include <cmath>
 #include <limits>
 #include <stdexcept>
 #include <utility>
-#include <unordered_map>
 #include <vector>
 
 namespace ovphysx::utils
@@ -138,38 +135,34 @@ void cleanupStage(ovstage_instance_t* stage, ovstage_enqueue_result_t enqueue) n
 struct StageAccess
 {
     ovstage_instance_t* stage;
-    ovstage_query_handle_t query = 0;
-    ovstage_read_handle_t read = 0;
+    ovstage_query_handle_t query = OVSTAGE_INVALID_QUERY_HANDLE;
+    ovstage_read_handle_t read = OVSTAGE_INVALID_READ_HANDLE;
 
     explicit StageAccess(ovstage_instance_t* value) : stage(value)
     {
     }
     ~StageAccess()
     {
-        if (read)
+        if (read != OVSTAGE_INVALID_READ_HANDLE)
             cleanupStage(stage, ovstage_release_read(stage, read));
-        if (query)
+        if (query != OVSTAGE_INVALID_QUERY_HANDLE)
             cleanupStage(stage, ovstage_release_query(stage, query));
     }
     void finish()
     {
-        if (read)
-            waitStage(stage, ovstage_release_read(stage, std::exchange(read, 0)));
-        if (query)
-            waitStage(stage, ovstage_release_query(stage, std::exchange(query, 0)));
+        if (read != OVSTAGE_INVALID_READ_HANDLE)
+            waitStage(stage, ovstage_release_read(stage, std::exchange(read, OVSTAGE_INVALID_READ_HANDLE)));
+        if (query != OVSTAGE_INVALID_QUERY_HANDLE)
+            waitStage(stage, ovstage_release_query(stage, std::exchange(query, OVSTAGE_INVALID_QUERY_HANDLE)));
     }
 };
 
-struct StageGroup
+// Physics output groups carry one attribute column.
+const ovstage_read_column_t& onlyColumn(const ovstage_read_group_t& group)
 {
-    ovstage_instance_t* stage;
-    ovstage_read_group_t value{};
-    ~StageGroup()
-    {
-        if (value.read_group_id)
-            ovstage_release_group(stage, &value);
-    }
-};
+    require(group.column_count == 1 && group.columns, "Expected a single-column read group");
+    return group.columns[0];
+}
 
 struct PhysicsRead
 {
@@ -200,17 +193,28 @@ struct CacheEntry
 {
     std::vector<ovx_primpath_t> paths;
     DLDevice device{};
-    std::vector<double> scales;
     std::vector<double> matrices;
     std::unique_ptr<detail::OutputCudaBuffers> cuda;
 };
 
-struct PosePair
+// The three physics columns one world matrix is composed from, for one prim group.
+struct PoseColumns
 {
     const ovstage_read_group_t* position = nullptr;
     const ovstage_read_group_t* orientation = nullptr;
+    const ovstage_read_group_t* scale = nullptr;
     ovphysx_query_target_t type;
     CacheEntry* entry = nullptr;
+};
+
+// Token order of the physics read and of OvStageOutputCache::Impl::tokens.
+enum OutputToken
+{
+    kPositionToken,
+    kOrientationToken,
+    kWorldScaleToken,
+    kWorldMatrixToken,
+    kOutputTokenCount
 };
 
 void getPaths(path_dictionary_instance_t* dictionary, ovx_primpath_list_t list, std::vector<ovx_primpath_t>& paths)
@@ -226,17 +230,18 @@ void getPaths(path_dictionary_instance_t* dictionary, ovx_primpath_list_t list, 
 
 ovstage_ordinal_t writeFloor(ovstage_instance_t* stage, ovx_token_t attribute)
 {
-    ovstage_ordinal_query_handle_t query = 0;
+    ovstage_ordinal_query_handle_t query = OVSTAGE_INVALID_ORDINAL_QUERY_HANDLE;
     ovstage_ordinal_t floor = 0;
     try
     {
         waitStage(stage, ovstage_get_attribute_write_floor(stage, { attribute, {} }, &query));
         checkStage(stage, ovstage_fetch_ordinal(stage, query, OVSTAGE_TIMEOUT_INFINITE, &floor));
-        waitStage(stage, ovstage_release_ordinal_query(stage, std::exchange(query, 0)));
+        waitStage(stage,
+                  ovstage_release_ordinal_query(stage, std::exchange(query, OVSTAGE_INVALID_ORDINAL_QUERY_HANDLE)));
     }
     catch (...)
     {
-        if (query)
+        if (query != OVSTAGE_INVALID_ORDINAL_QUERY_HANDLE)
             cleanupStage(stage, ovstage_release_ordinal_query(stage, query));
         throw;
     }
@@ -258,139 +263,89 @@ void validateExtent(const DLTensor& tensor)
             "Tensor row extent exceeds addressable storage");
 }
 
-const DLTensor& poseTensor(const ovstage_read_group_t& group, uint16_t lanes)
+const DLTensor& columnTensor(const ovstage_read_group_t& group, uint16_t lanes)
 {
-    require(!group.is_array && !group.is_delete && group.prims.list && group.prims.count,
-            "Expected a nonempty fixed pose column");
-    require(!group.prims.offset && !group.prims.index_map && !group.data.index_map && !group.data.mask,
-            "Fixed pose columns must have dense prim and data coverage");
-    require(group.data.tensor_count == 1 && group.data.tensors, "Expected one fixed pose tensor");
-    const DLTensor& tensor = group.data.tensors[0];
+    const ovstage_read_column_t& column = onlyColumn(group);
+    require(!column.is_array && !column.is_delete && group.prims.list != OVX_INVALID_PRIMPATH_LIST && group.prims.count,
+            "Expected a nonempty fixed pose or scale column");
+    require(!group.prims.offset && !group.prims.index_map && !column.data.index_map && !column.data.mask,
+            "Fixed pose and scale columns must have dense prim and data coverage");
+    require(column.data.tensor_count == 1 && column.data.tensors, "Expected one fixed pose or scale tensor");
+    const DLTensor& tensor = column.data.tensors[0];
     require(tensor.data && tensor.ndim == 1 && tensor.shape && tensor.shape[0] == group.prims.count &&
                 tensor.dtype.code == kDLFloat && tensor.dtype.bits == 32 && tensor.dtype.lanes == lanes &&
                 (!tensor.strides || tensor.strides[0] > 0),
-            "Invalid fixed pose tensor layout");
+            "Invalid fixed pose or scale tensor layout");
     validateExtent(tensor);
     require(tensor.device.device_type == kDLCPU || tensor.device.device_type == kDLCUDA,
-            "Pose columns require CPU or CUDA storage");
+            "Pose and scale columns require CPU or CUDA storage");
     return tensor;
+}
+
+const float* columnData(const DLTensor& tensor, size_t row)
+{
+    const int64_t stride = tensor.strides ? tensor.strides[0] : 1;
+    return reinterpret_cast<const float*>(static_cast<const char*>(tensor.data) + tensor.byte_offset) +
+           row * stride * tensor.dtype.lanes;
 }
 
 void collectPoseGroups(PhysicsRead& session,
                        ovphysx_query_target_t type,
-                       ovx_token_t positionToken,
-                       ovx_token_t orientationToken,
-                       std::vector<PosePair>& pairs,
+                       const ovx_token_t* tokens,
+                       std::vector<PoseColumns>& groups,
                        OvStageOutputResult& result)
 {
     waitPhysics(session.instance, ovphysx_query(session.instance, type, OVPHYSX_SCOPE_ALL, &session.query, nullptr));
     if (!session.query)
         return;
-    const ovx_string_or_token_t attributes[] = { { positionToken, {} }, { orientationToken, {} } };
-    waitPhysics(session.instance, ovphysx_read(session.instance, session.query, attributes, 2, &session.read, nullptr));
+    const ovx_token_or_string_t attributes[] = { { tokens[kPositionToken], {} },
+                                                 { tokens[kOrientationToken], {} },
+                                                 { tokens[kWorldScaleToken], {} } };
+    waitPhysics(session.instance, ovphysx_read(session.instance, session.query, attributes, 3,
+                                               ovstage_cuda_sync_t{ 0, 0 }, &session.read, nullptr));
     for (;;)
     {
         const ovstage_read_group_t* group = nullptr;
         waitPhysics(session.instance, ovphysx_fetch_read_next(session.instance, session.read, &group));
         if (!group)
             break;
-        if (group->is_delete || !group->prims.count)
+        const ovstage_read_column_t& groupColumn = onlyColumn(*group);
+        if (groupColumn.is_delete || !group->prims.count)
             continue;
-        if (group->is_array)
+        // worldScale has no array form, so an instancer contributes its position and orientation arrays.
+        if (groupColumn.is_array)
         {
             ++result.instancerGroupsSkipped;
             continue;
         }
-        require(group->attribute == positionToken || group->attribute == orientationToken,
-                "Unexpected physics output attribute");
-        std::vector<PosePair>::iterator pair = std::find_if(pairs.begin(), pairs.end(), [&](const PosePair& value) {
-            const ovstage_read_group_t* first = value.position ? value.position : value.orientation;
-            return value.type == type && first->prims.list == group->prims.list;
-        });
-        if (pair == pairs.end())
+        static constexpr const ovstage_read_group_t* PoseColumns::*kMembers[] = { &PoseColumns::position,
+                                                                                  &PoseColumns::orientation,
+                                                                                  &PoseColumns::scale };
+        const ovstage_read_group_t* PoseColumns::*member = nullptr;
+        for (int token = kPositionToken; token <= kWorldScaleToken; ++token)
         {
-            pairs.push_back({ nullptr, nullptr, type, nullptr });
-            pair = pairs.end() - 1;
+            if (groupColumn.attribute == tokens[token])
+                member = kMembers[token];
         }
-        const ovstage_read_group_t*& column = group->attribute == positionToken ? pair->position : pair->orientation;
-        require(!column, "Duplicate pose column for a prim group");
+        require(member != nullptr, "Unexpected physics output attribute");
+        // The physics read emits every column of one body set under the same prim list.
+        std::vector<PoseColumns>::iterator columns =
+            std::find_if(groups.begin(), groups.end(), [&](const PoseColumns& value) {
+                const ovstage_read_group_t* first =
+                    value.position ? value.position : value.orientation ? value.orientation : value.scale;
+                return value.type == type && first->prims.list == group->prims.list;
+            });
+        if (columns == groups.end())
+        {
+            groups.push_back({ nullptr, nullptr, nullptr, type, nullptr });
+            columns = groups.end() - 1;
+        }
+        const ovstage_read_group_t*& column = (*columns).*member;
+        require(!column, "Duplicate pose or scale column for a prim group");
         // Later fetches preserve this borrowed group and its CPU or CUDA tensor storage.
         // The caller keeps the read session alive until pose processing is finished.
         column = group;
     }
-}
-
-void captureScales(ovstage_instance_t* stage,
-                   path_dictionary_instance_t* dictionary,
-                   ovx_token_t matrixToken,
-                   ovstage_ordinal_t floor,
-                   ovx_primpath_list_t paths,
-                   CacheEntry& entry)
-{
-    StageAccess access(stage);
-    checkStage(stage, ovstage_query_from_path_list(stage, paths, &access.query));
-    waitStage(stage, ovstage_read_attributes(stage, access.query, &matrixToken, 1, { 0, floor, false }, &access.read));
-    std::vector<bool> found(entry.paths.size(), false);
-    std::unordered_map<ovx_primpath_t, size_t> rows;
-    rows.reserve(entry.paths.size());
-    for (size_t i = 0; i < entry.paths.size(); ++i)
-        rows.emplace(entry.paths[i], i);
-    std::vector<ovx_primpath_t> groupPaths;
-    entry.scales.resize(entry.paths.size() * 3);
-    for (;;)
-    {
-        StageGroup group{ stage, {} };
-        const ovstage_api_status_t status =
-            ovstage_fetch_read_next(stage, access.read, OVSTAGE_TIMEOUT_INFINITE, &group.value);
-        if (status == OVSTAGE_ERROR_END_OF_ITERATION)
-            break;
-        checkStage(stage, status);
-        const ovstage_read_group_t& value = group.value;
-        if (value.is_delete || !value.prims.count)
-            continue;
-        require(!value.is_array && value.data.tensor_count == 1 && value.data.tensors,
-                "worldMatrix must be a fixed matrix column");
-        // OVStage reads expose component axes (N, 4, 4). Fold only the
-        // descriptor, including its row stride; the borrowed payload stays pinned.
-        DLTensor tensor{};
-        int64_t layout[2]{};
-        checkStage(stage, ovstage_tensor_to_write(&value.data.tensors[0], &tensor, layout));
-        require(tensor.data && tensor.ndim == 1 && tensor.shape && tensor.shape[0] > 0 && tensor.dtype.code == kDLFloat &&
-                    tensor.dtype.bits == 64 && tensor.dtype.lanes == 16 && (!tensor.strides || tensor.strides[0] > 0),
-                "worldMatrix must contain float64 matrices with 16 lanes");
-        validateExtent(tensor);
-        getPaths(dictionary, value.prims.list, groupPaths);
-        // The public OVStage read API returns CPU tensors, including GPU-backed columns.
-        require(tensor.device.device_type == kDLCPU, "Expected a CPU worldMatrix read");
-        const double* data = reinterpret_cast<const double*>(static_cast<const char*>(tensor.data) + tensor.byte_offset);
-        const int64_t stride = tensor.strides ? tensor.strides[0] : 1;
-        for (size_t i = 0; i < value.prims.count; ++i)
-        {
-            if (value.data.mask && !(value.data.mask[i / 64] & (uint64_t(1) << (i % 64))))
-                continue;
-            const size_t pathIndex = value.prims.index_map ? value.prims.index_map[i] : value.prims.offset + i;
-            const size_t row = value.data.index_map ? value.data.index_map[i] : i;
-            require(pathIndex < groupPaths.size() && row < static_cast<size_t>(tensor.shape[0]),
-                    "Invalid worldMatrix row coverage");
-            const std::unordered_map<ovx_primpath_t, size_t>::const_iterator target = rows.find(groupPaths[pathIndex]);
-            require(target != rows.end(), "Unexpected worldMatrix prim");
-            const size_t index = target->second;
-            require(!found[index], "Duplicate worldMatrix prim");
-            const double* matrix = data + row * stride * 16;
-            for (size_t component = 0; component < 16; ++component)
-                require(std::isfinite(matrix[component]), "worldMatrix contains a non-finite value");
-            ::physx::PxTransform pose;
-            ::physx::PxVec3 scale;
-            omni::physx::decomposeMatrix(pose, scale, matrix);
-            entry.scales[index * 3] = scale.x;
-            entry.scales[index * 3 + 1] = scale.y;
-            entry.scales[index * 3 + 2] = scale.z;
-            found[index] = true;
-        }
-    }
-    require(std::all_of(found.begin(), found.end(), [](bool value) { return value; }),
-            "Missing worldMatrix; compute and seal the current world transforms before publishing physics output");
-    access.finish();
 }
 
 } // namespace
@@ -400,7 +355,7 @@ struct OvStageOutputCache::Impl
     ovphysx_instance_handle_t instance = 0;
     ovstage_instance_t* stage = nullptr;
     uint64_t attachment = 0;
-    ovx_token_t tokens[3]{};
+    ovx_token_t tokens[kOutputTokenCount]{};
     std::vector<std::unique_ptr<CacheEntry>> entries;
     std::vector<ovx_primpath_t> paths;
 };
@@ -441,99 +396,88 @@ OvStageOutputResult writeWorldTransformsToOvstage(ovphysx_instance_handle_t inst
         {
             const ovx_string_t names[] = { literal_to_ovx_string(OVPHYSX_ATTR_POSITION),
                                            literal_to_ovx_string(OVPHYSX_ATTR_ORIENTATION),
+                                           literal_to_ovx_string(OVPHYSX_ATTR_WORLD_SCALE),
                                            literal_to_ovx_string("omni:fabric:worldMatrix") };
-            checkDictionary(dictionary, path_dictionary_create_tokens_from_strings(dictionary, names, 3, state.tokens));
+            checkDictionary(dictionary, path_dictionary_create_tokens_from_strings(
+                                            dictionary, names, kOutputTokenCount, state.tokens));
             state.instance = instance;
             state.stage = stage;
             state.attachment = attachment;
         }
-        const ovstage_ordinal_t floor = writeFloor(stage, state.tokens[2]);
+        const ovstage_ordinal_t floor = writeFloor(stage, state.tokens[kWorldMatrixToken]);
         require(outputOrdinal > floor, "Output ordinal must be above the worldMatrix write floor");
         PhysicsRead rigid(instance);
         PhysicsRead links(instance);
-        std::vector<PosePair> pairs;
-        collectPoseGroups(rigid, OVPHYSX_QUERY_TARGET_RIGID_BODY, state.tokens[0], state.tokens[1], pairs, result);
-        collectPoseGroups(links, OVPHYSX_QUERY_TARGET_ARTICULATION_LINK, state.tokens[0], state.tokens[1], pairs, result);
+        std::vector<PoseColumns> groups;
+        collectPoseGroups(rigid, OVPHYSX_QUERY_TARGET_RIGID_BODY, state.tokens, groups, result);
+        collectPoseGroups(links, OVPHYSX_QUERY_TARGET_ARTICULATION_LINK, state.tokens, groups, result);
 
-        // Capture every missing scale and validate every pose before the first write.
-        // Stage read views cannot remain live while writes address the same rows.
-        for (PosePair& pair : pairs)
+        // Compose and validate every group before the first write, so invalid physics data publishes nothing.
+        for (PoseColumns& group : groups)
         {
-            require(pair.position && pair.orientation, "Missing position or orientation column");
-            const DLTensor& positions = poseTensor(*pair.position, 3);
-            const DLTensor& orientations = poseTensor(*pair.orientation, 4);
-            require(positions.shape[0] == orientations.shape[0] &&
-                        positions.device.device_type == orientations.device.device_type &&
-                        positions.device.device_id == orientations.device.device_id,
-                    "Pose columns disagree on rows or device");
-            getPaths(dictionary, pair.position->prims.list, state.paths);
-            require(state.paths.size() == pair.position->prims.count, "Pose column does not cover its full prim list");
+            require(group.position && group.orientation && group.scale,
+                    "Missing position, orientation or worldScale column");
+            const DLTensor& positions = columnTensor(*group.position, 3);
+            const DLTensor& orientations = columnTensor(*group.orientation, 4);
+            const DLTensor& scales = columnTensor(*group.scale, 3);
+            for (const DLTensor* other : { &orientations, &scales })
+                require(other->shape[0] == positions.shape[0] &&
+                            other->device.device_type == positions.device.device_type &&
+                            other->device.device_id == positions.device.device_id,
+                        "Pose and scale columns disagree on rows or device");
+            getPaths(dictionary, group.position->prims.list, state.paths);
+            require(state.paths.size() == group.position->prims.count, "Pose column does not cover its full prim list");
             for (const std::unique_ptr<CacheEntry>& entry : state.entries)
             {
                 if (entry->device.device_type == positions.device.device_type &&
                     entry->device.device_id == positions.device.device_id && entry->paths == state.paths)
                 {
-                    pair.entry = entry.get();
+                    group.entry = entry.get();
                     break;
                 }
             }
-            if (!pair.entry)
+            if (!group.entry)
             {
                 std::unique_ptr<CacheEntry> entry(new CacheEntry);
                 entry->paths = state.paths;
                 entry->device = positions.device;
-                // Reading a previously published GPU column can also run inline.
-                detail::OutputCudaContextScope captureContext;
-                if (!captureContext.active())
-                    throw OutputFailure(OVPHYSX_API_ERROR, "Could not acquire the CUDA context for world-scale capture");
-                std::string error;
-                captureScales(stage, dictionary, state.tokens[2], floor, pair.position->prims.list, *entry);
                 if (entry->device.device_type == kDLCUDA)
                 {
+                    std::string error;
                     entry->cuda.reset(new detail::OutputCudaBuffers);
-                    if (!entry->cuda->initialize(
-                            entry->device.device_id, entry->paths.size(), entry->scales.data(), error))
+                    if (!entry->cuda->initialize(entry->device.device_id, entry->paths.size(), error))
                         throw OutputFailure(OVPHYSX_API_ERROR, error);
                 }
                 else
                     entry->matrices.resize(entry->paths.size() * 16);
-                if (!captureContext.restore(error))
-                    throw OutputFailure(OVPHYSX_API_ERROR, error);
-                pair.entry = entry.get();
+                group.entry = entry.get();
                 state.entries.push_back(std::move(entry));
             }
-            CacheEntry& entry = *pair.entry;
+            CacheEntry& entry = *group.entry;
             if (entry.cuda)
             {
                 std::string error;
-                if (!entry.cuda->compose(positions, orientations, pair.position->data.cuda_sync,
-                                         pair.orientation->data.cuda_sync, error))
+                if (!entry.cuda->compose(onlyColumn(*group.position), onlyColumn(*group.orientation),
+                                         onlyColumn(*group.scale), error))
                     throw OutputFailure(OVPHYSX_API_ERROR, error);
             }
             else
             {
-                const float* positionData =
-                    reinterpret_cast<const float*>(static_cast<const char*>(positions.data) + positions.byte_offset);
-                const float* orientationData = reinterpret_cast<const float*>(
-                    static_cast<const char*>(orientations.data) + orientations.byte_offset);
-                const int64_t positionStride = positions.strides ? positions.strides[0] : 1;
-                const int64_t orientationStride = orientations.strides ? orientations.strides[0] : 1;
                 for (size_t i = 0; i < entry.paths.size(); ++i)
-                    require(detail::composeWorldMatrix(positionData + i * positionStride * 3,
-                                                       orientationData + i * orientationStride * 4,
-                                                       entry.scales.data() + i * 3, entry.matrices.data() + i * 16),
-                            "Pose contains non-finite values or a zero quaternion");
+                    require(detail::composeWorldMatrix(columnData(positions, i), columnData(orientations, i),
+                                                       columnData(scales, i), entry.matrices.data() + i * 16),
+                            "Pose or scale contains non-finite values, or a zero quaternion");
             }
         }
-        for (const PosePair& pair : pairs)
+        for (const PoseColumns& group : groups)
         {
-            CacheEntry& entry = *pair.entry;
+            CacheEntry& entry = *group.entry;
             // OVStage can invoke CUDA inline even when CPU data overwrites a GPU-backed column.
             detail::OutputCudaContextScope context(entry.cuda.get());
             if (!context.active())
                 throw OutputFailure(OVPHYSX_API_ERROR, "Could not acquire the CUDA context for world-matrix publication");
             StageAccess access(stage);
-            checkStage(stage, ovstage_query_from_path_list(stage, pair.position->prims.list, &access.query));
+            checkStage(stage, ovstage_query_from_path_list(stage, group.position->prims.list, &access.query));
             int64_t count = static_cast<int64_t>(entry.paths.size());
             DLTensor tensor{};
             tensor.data = entry.cuda ? entry.cuda->matrices() : entry.matrices.data();
@@ -545,8 +489,8 @@ OvStageOutputResult writeWorldTransformsToOvstage(ovphysx_instance_handle_t inst
             data.tensors = &tensor;
             data.tensor_count = 1;
             data.semantic = OVSTAGE_SEMANTIC_MATRIX;
-            waitStage(stage, ovstage_write_attribute(stage, access.query, { state.tokens[2], {} }, outputOrdinal, data,
-                                                     OVSTAGE_PRIM_MODE_UPSERT));
+            waitStage(stage, ovstage_write_attribute(stage, access.query, { state.tokens[kWorldMatrixToken], {} },
+                                                     outputOrdinal, data, OVSTAGE_PRIM_MODE_UPSERT));
             result.matricesWritten += entry.paths.size();
             access.finish();
             std::string error;
@@ -555,6 +499,20 @@ OvStageOutputResult writeWorldTransformsToOvstage(ovphysx_instance_handle_t inst
         }
         links.finish();
         rigid.finish();
+        if (result.matricesWritten)
+        {
+            // The CPU hierarchy model folds a direct world write into the local transform at its next
+            // computation, against the parents of that time. Fold it now, so a later parent edit moves the body
+            // with it. The GPU models would instead rederive the world matrices from the old local transforms.
+            detail::OutputCudaContextScope context;
+            if (!context.active())
+                throw OutputFailure(OVPHYSX_API_ERROR, "Could not acquire the CUDA context for hierarchy computation");
+            waitStage(stage, ovstage_compute_hierarchy(
+                                 stage, OVSTAGE_HIERARCHY_COMPUTATION_MODEL_DEFAULT_CPU, outputOrdinal, outputOrdinal));
+            std::string error;
+            if (!context.restore(error))
+                throw OutputFailure(OVPHYSX_API_ERROR, error);
+        }
     }
     catch (const OutputFailure& error)
     {

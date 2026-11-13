@@ -13,6 +13,7 @@
 #define OVPHYSX_SAMPLE_OVSTAGE_SAMPLE_H
 
 #include <ovphysx/ovphysx.h>
+#include <ovphysx/ovphysx_population.h>
 #include <ovstage/ovstage.h>
 #include <ovstage/ovstage_population.h>
 
@@ -20,6 +21,29 @@
 
 #include <stdio.h>
 #include <string.h>
+
+/* Open USD into the stage through ovphysx's physics population description: alone, or with
+ * with_rendering an empty RENDERING description after it, so render prims are populated too. */
+static inline ovstage_population_enqueue_result_t ovphysx_sample_open_usd_from_file(
+    ovstage_instance_t* stage, ovx_string_t path, ovstage_ordinal_t ordinal, double time, bool with_rendering)
+{
+    ovstage_population_desc_t descs[2];
+    memset(descs, 0, sizeof(descs));
+    descs[0] = *ovphysx_get_physics_population_desc();
+    descs[1].domains = OVSTAGE_POPULATION_DOMAIN_RENDERING;
+    return ovstage_population_open_usd_from_file_with_desc(stage, path, ordinal, time, descs, with_rendering ? 2 : 1);
+}
+
+/* ovphysx_sample_open_usd_from_file for USDA text. */
+static inline ovstage_population_enqueue_result_t ovphysx_sample_open_usd_from_string(
+    ovstage_instance_t* stage, ovx_string_t usda, ovstage_ordinal_t ordinal, double time, bool with_rendering)
+{
+    ovstage_population_desc_t descs[2];
+    memset(descs, 0, sizeof(descs));
+    descs[0] = *ovphysx_get_physics_population_desc();
+    descs[1].domains = OVSTAGE_POPULATION_DOMAIN_RENDERING;
+    return ovstage_population_open_usd_from_string_with_desc(stage, usda, ordinal, time, descs, with_rendering ? 2 : 1);
+}
 
 /* Wait for this operation and report its diagnostic before releasing result storage. */
 static inline ovphysx_result_t ovphysx_sample_complete_task(
@@ -147,12 +171,12 @@ static inline int ovphysx_sample_attach_usd_with_ovstage(
     /* usd_path is a filesystem path, so PATH_MAX bounds the scan. */
     path.length = strnlen(usd_path, 4096);
 
-    ovstage_population_enqueue_result_t enqueue = ovstage_population_open_usd_from_file(
+    ovstage_population_enqueue_result_t enqueue = ovphysx_sample_open_usd_from_file(
         attachment->stage,
         path,
         attachment->ordinal,
         0.0,
-        OVSTAGE_POPULATION_DOMAIN_ALL);
+        /*with_rendering=*/true);
     if (enqueue.status != OVSTAGE_OK)
     {
         ovx_string_t err = ovstage_population_get_last_error();

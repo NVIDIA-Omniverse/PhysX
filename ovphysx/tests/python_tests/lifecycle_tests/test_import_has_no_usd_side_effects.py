@@ -3,6 +3,8 @@
 
 # @implements REQ-CAPI-OVSTAGE-SCHEMA-001
 # @covers AC-1 AC-3
+# @implements REQ-PYTHON-LIFECYCLE-001
+# @covers AC-8
 
 """``import ovphysx`` must not touch USD: fresh subprocess per scenario.
 
@@ -55,6 +57,7 @@ def _emit_lines(stdout: str, prefixes):
 
 
 _PROBE = r"""
+import atexit
 import os
 import sys
 
@@ -62,6 +65,7 @@ for _mod in list(sys.modules):
     if _mod == "ovphysx" or _mod.startswith("ovphysx."):
         del sys.modules[_mod]
 
+atexit.register(lambda: print("EXIT_NATIVE_LOADED:" + str("ovphysx.api" in sys.modules)))
 import ovphysx
 from schema_support import physx_schema_paths
 print("NAMESPACED_ENV:" + os.environ.get("OV_PXR_PLUGINPATH_2511", "<unset>"))
@@ -78,6 +82,7 @@ print("PXR_LOADED_AFTER_QUERY:" + str("pxr" in sys.modules))
 _PREFIXES = (
     "NAMESPACED_ENV:",
     "CLASSIC_ENV:",
+    "EXIT_NATIVE_LOADED:",
     "BOOTSTRAPPED:",
     "PXR_LOADED:",
     "SCHEMA_ROOT:",
@@ -128,6 +133,7 @@ def test_import_preserves_application_owned_plugin_paths():
 def test_import_and_schema_query_load_no_native_or_usd_code():
     """Import and schema discovery stay pure Python: no native bootstrap, no pxr."""
     lines = _probe_lines()
+    assert lines["EXIT_NATIVE_LOADED:"] == "False", "package cleanup triggered native load"
     assert lines["BOOTSTRAPPED:"] == "False", f"import ovphysx triggered native load: {lines['BOOTSTRAPPED:']!r}"
     assert lines["BOOTSTRAPPED_AFTER_QUERY:"] == "False", (
         f"physx_schema_paths() triggered native load: {lines['BOOTSTRAPPED_AFTER_QUERY:']!r}"

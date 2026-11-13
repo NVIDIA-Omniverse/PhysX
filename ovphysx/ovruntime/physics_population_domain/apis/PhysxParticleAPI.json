@@ -1,0 +1,133 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxParticleAPI",
+  "title": "PhysxParticleAPI (particle object base)",
+  "summary": "Base API of a particle object, applied automatically by USD with PhysxParticleSetAPI. The parser never checks it: its columns are read on every prim that lists PhysxParticleSetAPI, and its presence only steers property changes, where a PointInstancer that lists it is not handled as a rigid-body instancer.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "PointBased",
+    "PointInstancer"
+  ],
+  "requires": [
+    "PhysxParticleSetAPI"
+  ],
+  "usd_schemas_gate": false,
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "columns": [
+    {
+      "name": "physxParticle:particleSystem",
+      "usd_type": "rel",
+      "origin": "schema",
+      "kind": "relationship",
+      "semantic": "RELATIONSHIP_PATH_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": true
+      },
+      "required": true,
+      "absent": "The set has no particle system: the runtime logs 'PhysX Particles at <path> are missing a valid simulation-owner particle system and will not be simulated.' and creates nothing. Only the first target is used.",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceParticle.cpp"
+      ],
+      "notes": "The set takes its scene and the system's resolved solidRestOffset and fluidRestOffset from this target. The ovstage walker also parses a target system that its own PhysxParticleSystem enumeration did not reach."
+    },
+    {
+      "name": "physxParticle:particleEnabled",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": true,
+      "parser_default": true,
+      "absent": "true. With false the set is created but its particle buffer is not added to the particle system.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceParticle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXParticlePropertiesUpdate.cpp",
+        "source/omni.physx/plugins/ChangeRegister.cpp"
+      ],
+      "notes": "On change the property update enables or disables the set."
+    },
+    {
+      "name": "physxParticle:selfCollision",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": true,
+      "parser_default": false,
+      "absent": "false: the set's particle phase lacks the PhysX self-collide flag, so its particles do not interact with particles of the same group. USD's fallback is true, so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceParticle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXParticlePropertiesUpdate.cpp",
+        "source/omni.physx/plugins/ChangeRegister.cpp"
+      ],
+      "notes": "On change the property update sets or clears the flag on every particle phase of the set."
+    },
+    {
+      "name": "physxParticle:particleGroup",
+      "usd_type": "int",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "int",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0,
+      "parser_default": 0,
+      "absent": "Group 0. The group selects the PhysX phase of the set's particles; the runtime creates one phase per group and particle system, with the system's PBD material.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceParticle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXParticlePropertiesUpdate.cpp",
+        "source/omni.physx/plugins/ChangeRegister.cpp"
+      ],
+      "notes": "On change the property update rewrites the group bits (eParticlePhaseGroupMask) of every particle phase of the set."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysxParticleSetAPI",
+      "rule": "The columns are read in the particle-set parse, which is gated on PhysxParticleSetAPI alone; USD lists this API automatically with it."
+    },
+    {
+      "with": "PointInstancer",
+      "rule": "Live edits of positions, orientations, velocities, angularVelocities, protoIndices and ids on a PointInstancer are handled as rigid-body instancer changes only when the instancer does not list this API; a protoIndices or ids edit there is a structural change. A populator that lists PhysxParticleSetAPI on a PointInstancer should therefore list this API too, as USD applies it automatically with PhysxParticleSetAPI."
+    }
+  ]
+}

@@ -178,7 +178,7 @@ namespace physx
 			\brief Compute custom geometry mass properties. For geometries usable with dynamic rigidbodies.
 
 			\param[in] geometry			This geometry.
-			\param[out] massProperties	Mass properties to compute.
+			\param[out] massProperties	Mass properties at unit density. The inertia tensor is relative to the geometry's local origin.
 			*/
 			virtual void computeMassProperties(const PxGeometry& geometry, PxMassProperties& massProperties) const = 0;
 

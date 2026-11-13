@@ -106,6 +106,7 @@ _CHILD_SCRIPT = textwrap.dedent(f"""
     try:
         if order == "ovstage-first":
             import ovstage
+            from ovphysx.population import physics_population_descs
 
             # Schema discovery is pure Python: it does not load libovphysx, so
             # the ovstage-first native load order is preserved.
@@ -113,11 +114,12 @@ _CHILD_SCRIPT = textwrap.dedent(f"""
             from schema_support import physx_schema_paths
             ovstage.population.register_usd_schemas([str(p) for p in physx_schema_paths()])
             stage = ovstage.Stage("ovphysx-runtime-provider-ovstage-first")
-            ovstage.population.open_usd(
+            ovstage.population.open_usd_with_desc(
                 stage,
                 usd_path,
                 ordinal=1,
-                domains=ovstage.PopulationDomain.PHYSICS,
+                time=ovstage.population.DEFAULT_TIME,
+                descs=physics_population_descs(),
             )
             import ovphysx
 
@@ -132,14 +134,16 @@ _CHILD_SCRIPT = textwrap.dedent(f"""
             physx = ovphysx.PhysX()
             snapshots["after_physx"] = collect_runtime_mappings()
             import ovstage
+            from ovphysx.population import physics_population_descs
 
             ovstage.population.register_usd_schemas([str(p) for p in physx_schema_paths()])
             stage = ovstage.Stage("ovphysx-runtime-provider-physx-first")
-            ovstage.population.open_usd(
+            ovstage.population.open_usd_with_desc(
                 stage,
                 usd_path,
                 ordinal=1,
-                domains=ovstage.PopulationDomain.PHYSICS,
+                time=ovstage.population.DEFAULT_TIME,
+                descs=physics_population_descs(),
             )
         else:
             raise RuntimeError(f"unknown startup order: {{order}}")
@@ -190,14 +194,14 @@ def test_ovstage_runtime_is_singleton_in_both_startup_orders(order, tmp_path):
     print(f"{order} OVStage runtime mappings: {json.dumps(result_maps, sort_keys=True)}")
 
     if sys.platform == "win32":
-        client_names = {"omniclient.dll", "omniverse_connection.dll"}
+        client_names = {"omniclient.dll"}
         expected_names = {
             "omni_usd_resolver.dll",
             *client_names,
         }
         usd_monoliths = [name for name in mapped if name.startswith("ov_") and name.endswith("usd_ms.dll")]
     else:
-        client_names = {"libomniclient.so", "libomniverse_connection.so"}
+        client_names = {"libomniclient.so"}
         expected_names = {
             "libovstage.so",
             "libomni_usd_resolver.so",

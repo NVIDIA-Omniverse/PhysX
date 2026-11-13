@@ -7,6 +7,7 @@
 #include "foundation/PxTime.h"
 #include "foundation/PxMemory.h"
 #include "foundation/PxSort.h"
+#include "CmRadixSort.h"
 
 #include "common/PxProfileZone.h"
 #include "PxvSimStats.h"
@@ -35,6 +36,7 @@
 #include "cudamanager/PxCudaContextManager.h"
 
 #include "PxgKernelLauncher.h"
+#include "PxgCommonDefines.h"
 
 // PT: TODO:
 // - most of these functions don't need to be member functions
@@ -83,6 +85,7 @@ PxgCudaBroadPhaseSap::PxgCudaBroadPhaseSap(const PxGpuBroadPhaseDesc& desc, PxgC
 	mGpuKernelWranglerManager			(gpuKernelWrangler),
 	mCudaContextManager					(cudaContextManager),
 	mCudaContext						(cudaContextManager->getCudaContext()),
+	mIncrementalSapGridDimX				(PxgBPKernelGridDim::BP_INCREMENTAL_SAP),
 	mCreatedHandlesBuf					(allocDesc.deviceAlloc, PxsHeapStats::eBROADPHASE),
 	mRemovedHandlesBuf					(allocDesc.deviceAlloc, PxsHeapStats::eBROADPHASE),
 #ifdef SUPPORT_UPDATE_HANDLES_ARRAY_FOR_GPU
@@ -119,6 +122,7 @@ PxgCudaBroadPhaseSap::PxgCudaBroadPhaseSap(const PxGpuBroadPhaseDesc& desc, PxgC
 	mBlockOverlapChecksRegionBuf		(allocDesc.deviceAlloc, PxsHeapStats::eBROADPHASE),
 	mOverlapChecksHandleRegionBuf		(allocDesc.deviceAlloc, PxsHeapStats::eBROADPHASE),
 	mIncrementalComparisons				(allocDesc.deviceAlloc, PxsHeapStats::eBROADPHASE),
+	mIncrementalWarpComparisons			(allocDesc.deviceAlloc, PxsHeapStats::eBROADPHASE),
 	mIncrementalBlockComparisons		(allocDesc.deviceAlloc, PxsHeapStats::eBROADPHASE),
 	mAggregateReportBlockBuf			(allocDesc.deviceAlloc, PxsHeapStats::eBROADPHASE),
 	mActorReportBlockBuf				(allocDesc.deviceAlloc, PxsHeapStats::eBROADPHASE),
@@ -189,6 +193,22 @@ PxgCudaBroadPhaseSap::PxgCudaBroadPhaseSap(const PxGpuBroadPhaseDesc& desc, PxgC
 	}
 
 	createGpuStreamsAndEvents();
+	computeIncrementalSapGridDim();
+}
+
+// performIncrementalSAP distributes its work over the blocks of each axis with a grid-stride loop, so any number of
+// blocks gives the same results. With a fixed number of blocks, the blocks that do not fit in the first wave run in a
+// second wave while most SMs idle, depending on the GPU's SM count and on the kernel's register count (OMPE-120355).
+// So the grid is sized to the number of blocks that can be resident at the same time, split over the 3 axes.
+void PxgCudaBroadPhaseSap::computeIncrementalSapGridDim()
+{
+	int nbBlocksPerSM = 0;
+	const CUresult result = cuOccupancyMaxActiveBlocksPerMultiprocessor(&nbBlocksPerSM, mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::BP_INCREMENTAL_SAP), PxgBPKernelBlockDim::BP_INCREMENTAL_SAP, 0);
+	const int nbSMs = mCudaContextManager->getMultiprocessorCount();
+
+	// Keep the default grid if the query fails
+	if(result == CUDA_SUCCESS && nbBlocksPerSM > 0 && nbSMs > 0)
+		mIncrementalSapGridDimX = PxMax(PxU32(nbSMs * nbBlocksPerSM) / 3, 1u);
 }
 
 PxgCudaBroadPhaseSap::~PxgCudaBroadPhaseSap()
@@ -293,8 +313,9 @@ void PxgCudaBroadPhaseSap::gpuDMAUp(const Bp::BroadPhaseUpdateData& updateData, 
 			mStartPtHandleBuf[index].allocateCopyOldDataAsync(mNumOfBoxes*sizeof(int), mCudaContext, mStream, PX_FL);
 		}
 
-		mIncrementalComparisons[i].allocate(nbProjections* sizeof(int), PX_FL);
-		mIncrementalBlockComparisons[i].allocate(PxgBPKernelGridDim::BP_COMPUTE_INCREMENTAL_CMP_COUNTS1 * sizeof(int), PX_FL);
+		mIncrementalComparisons[i].allocate(nbProjections * sizeof(PxU32), PX_FL);
+		mIncrementalWarpComparisons[i].allocate(((nbProjections + WARP_SIZE - 1) / WARP_SIZE) * sizeof(PxU64), PX_FL);
+		mIncrementalBlockComparisons[i].allocate(PxgBPKernelGridDim::BP_COMPUTE_INCREMENTAL_CMP_COUNTS1 * sizeof(PxU64), PX_FL);
 
 		mTotalEndPtHistogramBuf[i].allocate(nbProjections*sizeof(PxU32), PX_FL);
 		mBlockTotalEndPtHistogramBuf[i].allocate(PxgBPKernelGridDim::BP_OUTPUT_ENDPT_HISTOGRAM*sizeof(PxU32), PX_FL);
@@ -496,76 +517,50 @@ struct ReportMore
 	return false;
 }*/
 
+// Below this number of pairs, PxSort is faster than the radix sort.
+static const PxU32 gMinNbPairsForRadixSort = 128;
+
+// The radix sort writes back only the two indices of each pair.
+PX_COMPILE_TIME_ASSERT(sizeof(PxgBroadPhasePair)==2*sizeof(PxU32));
+
 void PxgCudaBroadPhaseSap::sortBuffer(PxgBroadPhasePair* PX_RESTRICT reportBuffer, const PxU32 size)
 {
 	PX_PROFILE_ZONE("PxgCudaBroadPhaseSap::sortBuffer", mContextID);
 
-#if 1
-	PxSort(reportBuffer, size, ReportMore());
-#else
-	const PxU32 SmallBufferLimit = 512;
-
-	if (size < SmallBufferLimit)
-		PxSort(reportBuffer, size, ReportMore());
-	else
+	// Keys and ranks of the radix sort. The found and lost pairs are sorted in parallel, so they are allocated per call.
+	PxU32* keys0 = size>=gMinNbPairsForRadixSort ? PX_ALLOCATE(PxU32, size_t(size)*4, "PxgCudaBroadPhaseSap::sortBuffer") : NULL;
+	if(!keys0)
 	{
-		//Histogram sort...
-		mHistogramBuffer.forceSize_Unsafe(0);
-		mHistogramBuffer.reserve(mBoxesCapacity);
-		mHistogramBuffer.forceSize_Unsafe(mBoxesCapacity);
-
-		PxMemZero(mHistogramBuffer.begin(), sizeof(PxU32) * mBoxesCapacity);
-
-		mTempPairBuffer.forceSize_Unsafe(0);
-		mTempPairBuffer.reserve(size);
-		mTempPairBuffer.forceSize_Unsafe(size);
-
-		for (PxU32 a = 0; a < size; ++a)
-		{
-			++mHistogramBuffer[reportBuffer[a].mVolA];
-		}
-
-		//Compute runsum
-		PxU32 runsum = 0;
-		PxU32 boxesCapacity = mBoxesCapacity;
-		//for (PxU32 a = 0; a < mBoxesCapacity; ++a)
-		while(boxesCapacity--)
-		{
-			PxU32 value = mHistogramBuffer[boxesCapacity];
-			mHistogramBuffer[boxesCapacity] = runsum;
-			runsum += value;
-		}
-
-		for (PxU32 a = 0; a < size; ++a)
-		{
-			PxU32 idx = mHistogramBuffer[reportBuffer[a].mVolA]++;
-			mTempPairBuffer[idx] = reportBuffer[a];
-		}
-
-		PxMemZero(mHistogramBuffer.begin(), sizeof(PxU32) * mBoxesCapacity);
-
-		for (PxU32 a = 0; a < size; ++a)
-		{
-			++mHistogramBuffer[reportBuffer[a].mVolB];
-		}
-
-		runsum = 0;
-		boxesCapacity = mBoxesCapacity;
-		//for (PxU32 a = 0; a < mBoxesCapacity; ++a)
-		while(boxesCapacity--)
-		{
-			PxU32 value = mHistogramBuffer[boxesCapacity];
-			mHistogramBuffer[boxesCapacity] = runsum;
-			runsum += value;
-		}
-
-		for (PxU32 a = 0; a < size; ++a)
-		{
-			PxU32 idx = mHistogramBuffer[mTempPairBuffer[a].mVolB]++;
-			reportBuffer[idx] = mTempPairBuffer[a];
-		}
+		// Small buffer, or failed allocation reported by the allocator
+		PxSort(reportBuffer, size, ReportMore());
+		return;
 	}
-#endif
+
+	PxU32* keys1 = keys0 + size;
+	PxU32* ranks0 = keys1 + size;
+	PxU32* ranks1 = ranks0 + size;
+	for(PxU32 i=0;i<size;i++)
+	{
+		keys0[i] = reportBuffer[i].mVolA;
+		keys1[i] = reportBuffer[i].mVolB;
+	}
+
+	// The second sort is stable and starts from the order of the first one, so the pairs are sorted by mVolA, then by mVolB.
+	Cm::RadixSort rs;
+	PxU32 histogram[1024];
+	PxU32* links[256];
+	rs.SetBuffers(ranks0, ranks1, histogram, links);
+	const PxU32* sorted = rs.Sort(keys1, size, Cm::RADIX_UNSIGNED).Sort(keys0, size, Cm::RADIX_UNSIGNED).GetRanks();
+
+	// The keys are a copy of the pairs, which are written back in decreasing order like ReportMore sorts them.
+	for(PxU32 i=0;i<size;i++)
+	{
+		const PxU32 index = sorted[size-1-i];
+		reportBuffer[i].mVolA = keys0[index];
+		reportBuffer[i].mVolB = keys1[index];
+	}
+
+	PX_FREE(keys0);
 }
 
 void PxgCudaBroadPhaseSap::purgeDuplicates(Cm::PinnableArray<PxgBroadPhasePair>& pairs)
@@ -872,7 +867,7 @@ void PxgCudaBroadPhaseSap::performIncrementalSapKernel()
 
 		_launch<GPU_BP_DEBUG>(PROLOG, PxgKernelIds::BP_COMPUTE_INCREMENTAL_CMP_COUNTS1, PxgBPKernelGridDim::BP_COMPUTE_INCREMENTAL_CMP_COUNTS1, 1, 1, PxgBPKernelBlockDim::BP_COMPUTE_INCREMENTAL_CMP_COUNTS1, 1, 1, 0, EPILOG);
 		_launch<GPU_BP_DEBUG>(PROLOG, PxgKernelIds::BP_COMPUTE_INCREMENTAL_CMP_COUNTS2, PxgBPKernelGridDim::BP_COMPUTE_INCREMENTAL_CMP_COUNTS2, 1, 1, PxgBPKernelBlockDim::BP_COMPUTE_INCREMENTAL_CMP_COUNTS2, 1, 1, 0, EPILOG);
-		_launch<GPU_BP_DEBUG>(PROLOG, PxgKernelIds::BP_INCREMENTAL_SAP, PxgBPKernelGridDim::BP_INCREMENTAL_SAP, 3, 1, PxgBPKernelBlockDim::BP_INCREMENTAL_SAP, 1, 1, 0, EPILOG);
+		_launch<GPU_BP_DEBUG>(PROLOG, PxgKernelIds::BP_INCREMENTAL_SAP, mIncrementalSapGridDimX, 3, 1, PxgBPKernelBlockDim::BP_INCREMENTAL_SAP, 1, 1, 0, EPILOG);
 	}
 }
 
@@ -1047,7 +1042,8 @@ void PxgCudaBroadPhaseSap::updateDescriptor(PxgBroadPhaseDesc& desc)
 			}
 
 			desc.incrementalComparisons[i] = reinterpret_cast<PxU32*>(mIncrementalComparisons[i].getDevicePtr());
-			desc.incrementalBlockComparisons[i] = reinterpret_cast<PxU32*>(mIncrementalBlockComparisons[i].getDevicePtr());
+			desc.incrementalWarpComparisons[i] = reinterpret_cast<PxU64*>(mIncrementalWarpComparisons[i].getDevicePtr());
+			desc.incrementalBlockComparisons[i] = reinterpret_cast<PxU64*>(mIncrementalBlockComparisons[i].getDevicePtr());
 		}
 	}
 		

@@ -13,7 +13,11 @@ The ovphysx-shipped population artifacts are exactly what the runtime contract
 generates, and the shipped header compiles for an SDK consumer. Covers AC-1
 through AC-4. The behavior of what the builders write is verified by the
 runtime's generated doctest suite (TEST-POPULATION-CONTRACT-001), which this
-spec does not duplicate.
+spec does not duplicate. That suite has no case for the builders added with
+the compiled ovstage cache, so this spec reads their columns back from
+ovstage. The parser reads an array column by its scalar count, so that suite
+also passes when an array of tuples is stored as loose scalars; this spec
+checks the stored tuple width.
 
 ## Given
 
@@ -33,7 +37,19 @@ spec does not duplicate.
 - The ovphysx docs build runs with warnings as errors.
 - The Python test suite runs `test_population_builder.py`: a fresh interpreter
   imports `ovphysx.population`, then the builder is driven against an ovstage
-  Stage with warp present.
+  Stage with warp present. `test_new_builders_write_their_columns` writes one
+  prim with each of the 19 builders added with the compiled ovstage cache
+  (`define_scope`, `define_geom_subset`, `define_point_instancer`,
+  `define_physx_physics_joint_instancer`, `apply_collection_api`, the six
+  `apply_newton_*_api`, `apply_physx_force_api`, `apply_physx_mimic_joint_api`,
+  `apply_physx_pbdmaterial_api` and the five `apply_physx_tendon_*_api`),
+  giving every column a value, and reads the prim back.
+- `test_population_header.cpp` converts floats to half bits and writes one
+  prim with each of the same 19 C++ builders.
+- `test_array_columns_keep_their_tuple_width` (Python) and
+  `ArrayColumnsKeepTheirTupleWidth` (C++) write a point instancer with two
+  instances and a joint instancer with two joints, then read the array
+  columns back.
 
 ## Then
 
@@ -45,10 +61,21 @@ spec does not duplicate.
   ancestor paths are derived once, an API on a type it does not apply to, a
   write missing a required API and an envelope on another drive instance
   throw `std::invalid_argument`, and a rigid Cube batch writes (AC-1, AC-2).
+- Half columns take floats and store binary16 rounded to nearest even, as
+  numpy's float16 does, including ties, subnormals, overflow to infinity and
+  NaN; each of the 19 C++ builders writes (AC-1).
 - The population pages and the findings page render and are linked from the
   index (AC-3).
 - The import pulls neither warp nor ovstage; contract bool columns reach
-  ovstage as `kDLBool`, prebuilt arrays of another dtype are rejected, the same
+  ovstage as `kDLBool`, prebuilt arrays of another dtype and strided prebuilt
+  arrays (scalar and tuple rows) are rejected with `TypeError`, the same
   three rule violations raise `ValueError`, an authored zero friction is
   written, and a helper write emits no `ResourceWarning` for its path list
   (AC-1, AC-2).
+- Each of the 19 prims reads back with its prim type, its applied API
+  (qualified by instance for multi-apply) and every given column: values in
+  element order, half columns as the floats given, tokens and relationship
+  targets as the strings given (AC-1).
+- In both surfaces each array element reads back as one tuple: `protoIndices`
+  with shape `[2]`, `positions` and `physics:localPos0s` with `[2, 3]`,
+  `orientations` and `physics:localRot0s` with `[2, 4]` (AC-2).

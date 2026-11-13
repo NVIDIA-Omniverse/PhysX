@@ -27,8 +27,8 @@ row diverges from them.
   lists the split for the common columns; for example:
   - `RIGID_BODY_POSE` `(N, 7)` => `position` `(N, 3)` + `orientation` `(N, 4)`
   - `RIGID_BODY_VELOCITY` `(N, 6)` => `linearVelocity` `(N, 3)` + `angularVelocity` `(N, 3)`
-- **Angular units are per-axis, not per column.** An `ARTICULATION_JOINT` joint row holds one value
-  per unlocked reduced-coordinate DOF *axis*, so the unit of `jointPosition`, `jointVelocity`,
+- **Angular units are per-axis, not per column.** An `ARTICULATION_JOINT` group has one row per
+  unlocked reduced-coordinate DOF *axis*, so the unit of `jointPosition`, `jointVelocity`,
   `jointPositionTarget`, and `jointVelocityTarget` follows the axis kind, not the column: an **angular
   axis (revolute, or a D6 rotational DOF) is always in degrees**, and a **prismatic axis stays in the
   stage's base length unit** (no conversion). The joint's axis kind fixes this — authoring a
@@ -38,14 +38,23 @@ row diverges from them.
   [ovstage integration](ovstage_integration.md) for the full per-axis rule. Everything else,
   including the body / link / root `angularVelocity` columns, is the engine's native **radians** with
   **no conversion** — scaling those by 57.3× is likewise a bug.
-- **A subset is a prim selection, not a device index/mask.** `binding.write(tensor, indices=indices)`
-  or `binding.write(tensor, mask=mask)` addressed rows by device position. The session API narrows a
-  query by prim identity instead — Python
-  `query(object_type, prim_paths=..., pattern=...)`, C `ovphysx_query_selection`. Selection is
-  host-resolved by prim, so there is no GPU-resident row mask capturable inside a CUDA graph.
-  Python `prim_paths` takes interned prim handles, not the binding's path strings. Groups return
-  rows in engine order, not input-selection or binding order; resolve each group's prim list
-  before mapping values to rows. See [Selecting a subset of prims](read_write/index.md#selecting-a-subset-of-prims).
+- **Joint DOFs are one row each, not padded per articulation.** The binding's DOF tensors are
+  `(articulations, max_dofs)`. An `ARTICULATION_JOINT` group is one tensor with one row per unlocked
+  axis of every joint, a joint's rows consecutive and its prim-list entry naming the joint; a row
+  mask therefore selects DOFs. Rows follow the runtime's joint order, not the binding's
+  `(articulation, dof)` order: the k-th row of a joint's run is the DOF whose `dofJointPath` entry
+  is that joint and whose `dofAxisIndex` is k, which places it in its articulation.
+- **A subset is a prim selection or a row mask, not device indices.** `binding.write(tensor,
+  indices=indices)` or `binding.write(tensor, mask=mask)` addressed rows by device position. The
+  session API narrows a query by prim identity — Python `query(object_type, prim_paths=...,
+  pattern=...)`, C `ovphysx_query_selection` — and masks rows within a group at commit — Python
+  `commit(group, mask=...)`, C `ovphysx_commit_group_masked`. The mask is a bool or uint8 tensor with
+  one entry per group row; it may be computed on the GPU, and a captured masked commit reads it at
+  each replay. Indices are not offered: set the entries of a mask instead. Python `prim_paths` takes
+  interned prim handles, not the binding's path strings. Groups return rows in engine order, not
+  input-selection or binding order; resolve each group's prim list before mapping values or mask
+  entries to rows. See [Selecting a subset of prims](read_write/index.md#selecting-a-subset-of-prims)
+  and [Row masks](read_write/writable.md#write-timing-ordering-and-persistence).
 - **Writability is queryable at runtime.** With bindings, a `TensorType`'s read/write capability was
   a fixed flag. In the session API, which `(object type, attribute)` pairs are writable is checked at
   write time: `write_sync()` raises `TaskError` (a `RuntimeError`) for an unwritable attribute, and a
@@ -57,8 +66,8 @@ row diverges from them.
   in Python the receipt is an `Operation` you `.wait()`. The `read_sync` / `write_sync` variants do
   the waiting for you and return a session with its groups already fetched. Fetching past the last
   group is not an error: the wait succeeds with a null group, which marks the end. A write session can
-  carry several attributes; each fetched group's `attribute_index` names which one it holds. The calls
-  run inline today, but GPU work still needs its own CUDA event/stream ordering.
+  carry several attributes; each fetched group's `attribute_index` names which one it holds. A
+  completed task does not order GPU work: keep the CUDA event and stream ordering of each group.
 
 ## Capability map
 
@@ -70,14 +79,14 @@ above are not repeated here.
 | `create_tensor_binding(type, paths)` | `query(object_type)` for the whole set; `query(object_type, prim_paths=…, pattern=…)` / C `ovphysx_query_selection` for a subset |
 | `binding.read()` | `read(query, attributes)` / `read_sync(object_type, attributes, …)` |
 | `binding.write()` | `write(query, attributes)` / `write_sync(object_type, attributes, …)` |
-| `binding.write(tensor, indices=indices)` / `binding.write(tensor, mask=mask)` | a selection query (`prim_paths` / `pattern`) feeding `write`; resolve group prim identities before assigning rows |
+| `binding.write(tensor, indices=indices)` / `binding.write(tensor, mask=mask)` | `commit(group, mask=…)` / C `ovphysx_commit_group_masked` for a per-commit subset, or a selection query (`prim_paths` / `pattern`) feeding `write` for a fixed one; resolve group prim identities before assigning rows |
 | `tensor_binding_get_prim_paths()` | resolve each fetched group's prim-list handle through the query's path dictionary: `prim_list` / `prim_offset` / `prim_count` in Python, `prims.list` / `prims.offset` / `prims.count` in C |
 | `get_tensor_binding_spec()` / `get_tensor_binding_native_device()` | each fetched group's `prim_count` and each tensor's `shape`, `dtype`, and `device` in Python; `prims.count` and `data.tensors` descriptors in C. These do not require `metadata=True`, which adds count/availability summaries. See the [data contract](read_write/index.md). |
 | `get_articulation_metadata()` | read the read-only `dofCount`, `linkCount`, `jointCount`, `fixedTendonCount`, `spatialTendonCount`, `isFixedBase` attributes on `ARTICULATION` |
 | `articulation_get_dof_names()` | read `dofJointPath` + `dofAxisIndex` on `ARTICULATION`; key each DOF column by the full joint path and its unlocked-axis ordinal, since several DOFs can share a joint and different joints can share a leaf name |
 | `articulation_get_body_names()` | resolve the prim paths of fetched `ARTICULATION_LINK` groups and take their leaf names |
-| `articulation_get_joint_names()` | resolve the prim paths of fetched `ARTICULATION_JOINT` groups and take their leaf names. Fully locked (zero-DOF) joints have no group or descriptor entry; their names are not recoverable through the read API. See [Readable data](read_write/readable.md). |
-| `articulation_update_kinematic()` | `update_articulations_kinematic(flags=…, scope=…, prim_paths=…, pattern=…)` — a full drop-in that adds kinematic flags and subset selection |
+| `articulation_get_joint_names()` | read `physxPointer` on `ARTICULATION_JOINT` and resolve the group's prim paths through the attached Stage's dictionary; their leaf names include fixed (zero-DOF) joints without dereferencing pointers. These joints have no DOF-state rows or descriptor entries. Verify per-articulation ownership and ordering before replacing the getter. See [Readable data](read_write/readable.md). |
+| `articulation_update_kinematic()` | `update_articulations_kinematic(flags=…, scope=…, prim_paths=…, pattern=…)` or `(query=…)` — a full drop-in that adds kinematic flags, subset selection and, on DirectGPU, stream ordering (`cuda_stream=…`) |
 | `rigid_body_view_wake_up()` / `_sleep()` | write the `wake` attribute on `RIGID_BODY` (`uint8`: nonzero wakes, zero sleeps; write-only) — a data write, not a method call |
 | `destroy_tensor_binding()` | release the reusable query with `ovphysx_release_query` / `Query.close().wait()`; close read/write sessions separately. Python `read_sync` / `write_sync` sessions also release their internal query. |
 

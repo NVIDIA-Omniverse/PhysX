@@ -22,6 +22,7 @@ from dataclasses import dataclass, replace
 from functools import wraps
 import inspect
 import os
+from pathlib import PurePosixPath
 import pickle
 import subprocess
 import sys
@@ -443,8 +444,8 @@ _INT_FIELDS = ["num_threads", "scene_multi_gpu_mode", "ovstage_read_pool_max_mb"
         ("ovstage_read_pool_max_mb", 0),
         ("ovstage_read_pool_max_mb", 256),
         # The pool budget accepts the full int32 range: <= 0 disables the pool and INT32_MAX is the
-        # largest retention budget. Values outside int32 are not asserted here because the field has
-        # no range guard and the C ABI's int32 wraps them silently.
+        # largest retention budget. Dataclass construction still has no range guard. The legacy
+        # entry builder rejects values outside int32 before they are stored.
         ("ovstage_read_pool_max_mb", -1),
         ("ovstage_read_pool_max_mb", 2**31 - 1),
     ],
@@ -571,6 +572,40 @@ def test_carbonite_overrides_rejects_non_dict(bad_value):
         PhysXConfig(carbonite_overrides=bad_value)
 
 
+@pytest.mark.parametrize(
+    "bad_key",
+    [42, b"/custom/setting", PurePosixPath("/custom/setting")],
+    ids=["int", "bytes", "path"],
+)
+@pytest.mark.parametrize("input_state", ["construction", "dict_mutation", "field_replacement"])
+def test_carbonite_overrides_rejects_non_string_key_at_conversion(bad_key, input_state):
+    """Validate key types at conversion, including mutations after construction."""
+    if input_state == "construction":
+        cfg = PhysXConfig(carbonite_overrides={bad_key: True})
+    elif input_state == "dict_mutation":
+        cfg = PhysXConfig(carbonite_overrides={})
+        cfg.carbonite_overrides[bad_key] = True
+    else:
+        cfg = PhysXConfig()
+        cfg.carbonite_overrides = {bad_key: True}
+
+    with pytest.raises(
+        TypeError,
+        match=rf"^PhysXConfig\.carbonite_overrides keys must be str, got {type(bad_key).__name__}$",
+    ):
+        _to_c_config(cfg)
+
+
+@pytest.mark.parametrize("path", ["/custom/setting", "custom/setting"])
+def test_carbonite_overrides_preserves_unknown_string_key(path):
+    """An unknown string key retains its spelling through conversion."""
+    cfg = PhysXConfig(carbonite_overrides={path: True})
+    entries = _to_c_config(cfg)
+    assert len(entries) == 1
+    assert str(entries[0].key.carbonite_key) == path
+    assert str(entries[0].value.string_value) == "true"
+
+
 # Carbonite paths mapped to typed fields. Duplicating them in
 # carbonite_overrides must raise ValueError at _to_c_config time.
 _CONFLICTING_CARBONITE_PATHS = [
@@ -586,10 +621,20 @@ _CONFLICTING_CARBONITE_PATHS = [
 
 
 @pytest.mark.parametrize("path", _CONFLICTING_CARBONITE_PATHS)
-def test_carbonite_overrides_conflicts_typed_path(path):
-    """A carbonite_overrides key that matches a typed field's Carbonite path must raise ValueError."""
+@pytest.mark.parametrize("leading_slash", [True, False])
+def test_carbonite_overrides_conflicts_typed_path(path, leading_slash):
+    """Both spellings of a typed field's Carbonite path must raise ValueError."""
+    if not leading_slash:
+        path = path.removeprefix("/")
     cfg = PhysXConfig(carbonite_overrides={path: "true"})
     with pytest.raises(ValueError, match="conflicts with typed field"):
+        _to_c_config(cfg)
+
+
+@pytest.mark.parametrize("path", ["/persistent/physics/numThreads", "persistent/physics/numThreads"])
+def test_num_threads_override_conflict(path):
+    cfg = PhysXConfig(num_threads=2, carbonite_overrides={path: 5})
+    with pytest.raises(ValueError, match="conflicts with typed field 'num_threads'"):
         _to_c_config(cfg)
 
 
@@ -608,11 +653,10 @@ def test_carbonite_overrides_value_coercion():
     # No exception means the coercion succeeded.
 
 
-def test_combined_typed_and_overrides():
-    """Typed fields and non-conflicting carbonite_overrides can coexist."""
-    cfg = PhysXConfig(
-        num_threads=4,
-        carbonite_overrides={"/custom/setting": "value"},
-    )
+@pytest.mark.parametrize("path", ["/custom/setting", "custom/setting"])
+def test_combined_typed_and_overrides(path):
+    """Non-conflicting Carbonite paths retain their original spelling."""
+    cfg = PhysXConfig(num_threads=4, carbonite_overrides={path: "value"})
     entries = _to_c_config(cfg)
     assert len(entries) == 2  # one typed + one carbonite
+    assert str(entries[1].key.carbonite_key) == path

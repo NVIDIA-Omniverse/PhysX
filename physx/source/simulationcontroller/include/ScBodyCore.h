@@ -62,7 +62,7 @@ namespace Sc
 						void				clearSpatialVelocity(bool force, bool torque);
 
 		PX_FORCE_INLINE PxReal				getMaxPenetrationBias() const		{ return mCore.maxPenBias; }
-		PX_FORCE_INLINE void				setMaxPenetrationBias(PxReal p)		{ mCore.maxPenBias = p; }
+						void				setMaxPenetrationBias(PxReal p);
 
 						PxReal				getInverseMass()			const;
 						void				setInverseMass(PxReal m);
@@ -80,7 +80,7 @@ namespace Sc
 
 		PX_FORCE_INLINE	PxRigidDynamicLockFlags	getRigidDynamicLockFlags()					const	{ return mCore.lockFlags; }
 
-		PX_FORCE_INLINE void				setRigidDynamicLockFlags(PxRigidDynamicLockFlags flags) { mCore.lockFlags = flags; }
+						void				setRigidDynamicLockFlags(PxRigidDynamicLockFlags flags);
 
 		PX_FORCE_INLINE	PxReal				getSleepThreshold()	const	{ return mCore.sleepThreshold;	}
 						void				setSleepThreshold(PxReal t);		
@@ -118,7 +118,7 @@ namespace Sc
 						void				invalidateKinematicTarget();
 
 		PX_FORCE_INLINE	PxReal				getContactReportThreshold()	const	{ return mCore.contactReportThreshold;	}
-						void				setContactReportThreshold(PxReal t)	{ mCore.contactReportThreshold = t;		}
+						void				setContactReportThreshold(PxReal t);
 
 						void				onOriginShift(const PxVec3& shift);
 

@@ -94,6 +94,9 @@ public:
 	virtual void							markDirty(PxDeformableSurfaceDataFlags flags) PX_OVERRIDE;
 
 	// Internal
+#if PX_SUPPORT_OMNI_PVD
+	PX_FORCE_INLINE const NpShape* getShapeInternal() const { return mShape; }
+#endif
 
 	PX_FORCE_INLINE	const Sc::DeformableSurfaceCore&	getCore() const { return mCore; }
 	PX_FORCE_INLINE	Sc::DeformableSurfaceCore&			getCore() { return mCore; }

@@ -16,8 +16,10 @@ attachment handle to runtime operations. Attaching, detaching, or destroying
 one instance does not select or tear down another instance's attachment.
 
 The same ovstage instance cannot be attached twice. Process-wide limits remain
-the hard CPU-only mode, one SDK tolerance scale, and recording transitions that
-require every attached instance to be idle.
+the hard CPU-only mode, one SDK tolerance scale, and one recording session.
+The recording safe point synchronously drains pending operations without collecting
+task results. Callers serialize recording/attach/detach/destroy transitions across
+handles, as specified by REQ-CAPI-OMNIPVD-LATE-001 AC-11.
 
 ## Acceptance Criteria
 

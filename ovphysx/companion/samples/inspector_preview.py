@@ -17,6 +17,7 @@ from ovphysx_companion.native import CompanionError, Status
 def run(*, playback_first=False, recording=None):
     import ovphysx
     import ovstage
+    from ovphysx.population import physics_population_descs
     from ovphysx import PhysX, GlobalConfigKey, set_global_config, OmniPvdDestination
 
     from ovphysx_companion.schemas import physx_schema_paths
@@ -32,8 +33,8 @@ def run(*, playback_first=False, recording=None):
     unused = PhysX()  # Unattached owners cannot finalize another owner's recording.
     try:
         for stage in stages:
-            ovstage.population.open_usd(stage, str(Path(__file__).parent / 'scenes/two_boxes.usda'),
-                                       ordinal=1, domains=ovstage.PopulationDomain.ALL)
+            ovstage.population.open_usd_with_desc(stage, str(Path(__file__).parent / 'scenes/two_boxes.usda'),
+                                       ordinal=1, time=ovstage.population.DEFAULT_TIME, descs=physics_population_descs(rendering=True))
             stage.advance_write_floor(ordinal=1).wait()
         physics.wait_task(physics.attach_ovstage(stages[0], read_ordinal=1))
         physics.step(1 / 60)

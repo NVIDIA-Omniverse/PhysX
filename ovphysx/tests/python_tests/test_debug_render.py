@@ -4,14 +4,15 @@
 """Python debug-render settings, geometry, and attached-stage ownership."""
 
 # @implements REQ-CAPI-DEBUG-RENDER-001
-# @covers AC-1 AC-2 AC-3 AC-4 AC-6 AC-7 AC-8 AC-9
+# @covers AC-1 AC-2 AC-3 AC-4 AC-6 AC-7 AC-8 AC-9 AC-10
 # @maps_to TEST-CAPI-DEBUG-RENDER-001
 
 import numpy as np
 import ovstage
 import pytest
 import warp as wp
-from ovphysx._bindings import writability
+from ovphysx import TaskError
+from ovphysx._bindings import OVX_INVALID_TOKEN as _OVX_INVALID_TOKEN, writability
 from ovphysx.types import SimObjectType
 from test_utils import attach_usd_with_ovstage, data_path
 
@@ -42,7 +43,7 @@ def test_debug_render_settings_round_trip_and_empty_geometry(physx_sdk):
 
     with physx.write_sync(SimObjectType.DEBUG_RENDER, "enabled") as session:
         assert len(session.groups) == 1
-        assert session.groups[0].attribute == 0
+        assert session.groups[0].attribute == ovstage.Token(_OVX_INVALID_TOKEN)
         _fill(session.groups[0].tensors[0], np.array([1], dtype=np.uint8))
         session.commit(session.groups[0]).wait()
 
@@ -55,7 +56,7 @@ def test_debug_render_settings_round_trip_and_empty_geometry(physx_sdk):
         SimObjectType.DEBUG_RENDER, ["bodyAxes", "linePosition", "lineColor"]
     ) as result:
         assert len(result.groups) == 3
-        assert all(group.attribute == 0 for group in result.groups)
+        assert all(group.attribute == ovstage.Token(_OVX_INVALID_TOKEN) for group in result.groups)
         assert float(_to_host(result.groups[0].tensors[0]).reshape(-1)[0]) == pytest.approx(2.5)
         assert int(_to_host(result.groups[1].tensors[0]).shape[0]) == 0
         assert int(_to_host(result.groups[2].tensors[0]).shape[0]) == 0
@@ -82,6 +83,13 @@ def test_debug_render_attached_geometry_and_attribute_tokens(physx_sdk):
                     assert dictionary.token_to_string(group.attribute) == name
                 _fill(group.tensors[0], np.array([value], dtype=dtype))
                 session.commit(group).wait()
+
+        with physx.write_sync(SimObjectType.DEBUG_RENDER, "scale", metadata=True) as session:
+            assert session.metadata.total_prim_count == 0
+            assert [row.group_count for row in session.metadata.attributes] == [1]
+            with ovstage.PathDictionary(stage) as dictionary:
+                assert dictionary.token_to_string(session.metadata.attributes[0].attribute) == "scale"
+            assert session.groups[0].attribute == session.metadata.attributes[0].attribute
 
         physx.step(1.0 / 60.0)
         physx.wait_all()
@@ -125,7 +133,7 @@ def test_debug_render_detach_before_collection_has_no_stage(physx_sdk):
     attach_usd_with_ovstage(physx, data_path("boxes_falling_on_groundplane.usda"))
     task = physx.detach_ovstage()
     with physx.write_sync(SimObjectType.DEBUG_RENDER, "enabled") as session:
-        assert session.groups[0].attribute == 0
+        assert session.groups[0].attribute == ovstage.Token(_OVX_INVALID_TOKEN)
     physx.wait_task(task)
 
 
@@ -145,6 +153,14 @@ def test_debug_render_scope_and_culling_box_use_values(physx_sdk):
         scope = _to_host(result.groups[0].tensors[0]).reshape(-1)
         assert scope.tolist() == [11, 22]
 
+    # Scope entries are prim-path handles; a dictionary result passes as is.
+    with ovstage.Stage() as stage, ovstage.PathDictionary(stage) as dictionary:
+        body = dictionary.intern_path("/World/Body")
+        with physx.write_sync(SimObjectType.DEBUG_RENDER, "scope", values=[body, np.uint64(22)]) as session:
+            session.commit(session.groups[0]).wait()
+    with physx.read_sync(SimObjectType.DEBUG_RENDER, ["scope"]) as result:
+        assert _to_host(result.groups[0].tensors[0]).reshape(-1).tolist() == [body.raw_id, 22]
+
     with physx.write_sync(SimObjectType.DEBUG_RENDER, "scope", values=[]) as session:
         session.commit(session.groups[0]).wait()
     with physx.read_sync(SimObjectType.DEBUG_RENDER, ["scope"]) as result:
@@ -162,3 +178,26 @@ def test_debug_render_scope_and_culling_box_use_values(physx_sdk):
         session.commit(session.groups[0]).wait()
     with physx.read_sync(SimObjectType.DEBUG_RENDER, ["cullingBox"]) as result:
         assert int(_to_host(result.groups[0].tensors[0]).shape[0]) == 0
+
+
+def test_debug_render_write_takes_one_attribute(physx_sdk):
+    """A debug-render write names one attribute and opens holding the stored value."""
+    physx = physx_sdk
+    physx.detach_ovstage()
+    physx.wait_all()
+
+    try:
+        with physx.write_sync(SimObjectType.DEBUG_RENDER, "scale") as session:
+            _fill(session.groups[0].tensors[0], np.array([2.0], dtype=np.float32))
+            session.commit(session.groups[0]).wait()
+        with physx.write_sync(SimObjectType.DEBUG_RENDER, "scale") as session:
+            assert float(_to_host(session.groups[0].tensors[0])[0]) == pytest.approx(2.0)
+
+        with pytest.raises(TaskError, match="takes one attribute"):
+            physx.write_sync(SimObjectType.DEBUG_RENDER, ["enabled", "scale"])
+        with physx.read_sync(SimObjectType.DEBUG_RENDER, ["scale"]) as result:
+            assert float(_to_host(result.groups[0].tensors[0])[0]) == pytest.approx(2.0)
+    finally:
+        with physx.write_sync(SimObjectType.DEBUG_RENDER, "scale") as session:
+            _fill(session.groups[0].tensors[0], np.array([1.0], dtype=np.float32))
+            session.commit(session.groups[0]).wait()

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // @implements REQ-NATIVE-QUERY-001
-// @covers AC-1 AC-2 AC-3 AC-4
+// @covers AC-1 AC-2 AC-3 AC-4 AC-5
 #include <omni/physx/NativeQueries.h>
 #include <omni/physx/PhysXRuntime.h>
 #include "NativeObjects.h"
@@ -124,10 +124,10 @@ try
         if(!objectRecord(*owner,ref))return InspectionResult::Stale;
     }
     if(owner->getPhysXScenes().empty())return InspectionResult::Unavailable;
+    // GPU dynamics reads poses back into the scene-query structures; DirectGPU leaves them stale.
     for(const std::pair<const uint64_t, omni::physx::PhysXScene *> & item:owner->getPhysXScenes()) {
         const ::physx::PxScene * scene=item.second->getScene();
-        if(scene && (scene->getFlags().isSet(PxSceneFlag::eENABLE_GPU_DYNAMICS) ||
-            scene->getFlags().isSet(PxSceneFlag::eENABLE_DIRECT_GPU_API)))return InspectionResult::Unavailable;
+        if(scene && scene->getFlags().isSet(PxSceneFlag::eENABLE_DIRECT_GPU_API))return InspectionResult::Unavailable;
     }
     PxGeometryHolder geometry;
     if(query.kind) {

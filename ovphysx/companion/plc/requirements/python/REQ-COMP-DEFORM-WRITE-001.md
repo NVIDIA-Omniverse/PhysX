@@ -15,7 +15,11 @@ Write completed dynamic deformable data to customer USD through Python, independ
 ## Acceptance Criteria
 
 - AC-1: **Destination mapping.** write_simulation_output validates body/mesh identity and topology, converts frames/units and applies the declared simulation-to-collision/visual mapping before writing points or supported velocities.
-- AC-2: **Ready arrays.** GPU completion and explicit CPU transfer precede USD access; arrays are applied in batches per mesh, without Python per-vertex loops or mandatory CPU copies for non-USD consumers.
+- AC-2: **Ready arrays.** GPU completion and explicit CPU transfer precede USD
+  access; arrays are applied in batches per mesh, without Python per-vertex loops
+  or mandatory CPU copies for non-USD consumers. After prior work completes,
+  capture resolves the Stage native code owns from committed and pending
+  keepalives, including before an attach receipt is collected.
 - AC-3: **Time policy.** The caller selects preview-layer/default-value output or a bake time sample; each frame carries simulation step/time and writes neither rest/bind values nor unchanged topology.
 - AC-4: **No feedback.** Stale mappings fail before edits, and the host output-notice policy prevents USD writeback from becoming a new physics input; ovstage and USD outputs can be selected independently.
 

@@ -1,0 +1,151 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxSurfaceVelocityAPI",
+  "title": "PhysxSurfaceVelocityAPI",
+  "summary": "Conveyor-belt surface velocity on a rigid body: contacts against the body behave as if its surface moved with the given linear and angular velocity while the body itself stays put. Read only on dynamic bodies and articulation links; a static body ignores it.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "Xformable"
+  ],
+  "requires": [
+    "PhysicsRigidBodyAPI"
+  ],
+  "multi_apply": false,
+  "uses": [
+    "prim"
+  ],
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "producer_scope": "Every declared attribute is published at its resolved value. Nothing is rewritten or created by the producer.",
+  "columns": [
+    {
+      "name": "physxSurfaceVelocity:surfaceVelocityEnabled",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": true,
+      "parser_default": true,
+      "absent": "On: applying the API with nothing authored enables surface velocity (with zero velocities, i.e. a body whose contacts are solved as if its surface were static).",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseBody.cpp",
+        "source/omni.physx/plugins/internal/InternalActor.cpp"
+      ],
+      "notes": "Consumed by setting a surface-velocity contact-modification bit in every shape's simulation filter data and resetting the actor's filtering; the velocity itself is applied in the contact-modify callback. PhysX exposes no getter for any of this (it is not the PhysX kinematic surface velocity), so no column of this API has a verify block."
+    },
+    {
+      "name": "physxSurfaceVelocity:surfaceVelocityLocalSpace",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": true,
+      "parser_default": true,
+      "absent": "On: physxSurfaceVelocity:surfaceVelocity is in the body's local frame and the per-axis world scale is folded into it at parse time.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseBody.cpp"
+      ]
+    },
+    {
+      "name": "physxSurfaceVelocity:surfaceVelocity",
+      "usd_type": "vector3f",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "VECTOR",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 3,
+        "is_array": false,
+        "accepts": [
+          "float64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": [
+        0,
+        0,
+        0
+      ],
+      "parser_default": [
+        0,
+        0,
+        0
+      ],
+      "absent": "Zero linear surface velocity. When surfaceVelocityLocalSpace is true the parser multiplies each component by the matching component of the prim's decomposed world scale (no rotation); the pre-fold value is kept separately because the fold is not invertible (a zero scale component loses the axis).",
+      "units": "length/s",
+      "conversion": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseBody.cpp"
+      ],
+      "notes": "Stored USD-native, no unit conversion."
+    },
+    {
+      "name": "physxSurfaceVelocity:surfaceAngularVelocity",
+      "usd_type": "vector3f",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "VECTOR",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 3,
+        "is_array": false,
+        "accepts": [
+          "float64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": [
+        0,
+        0,
+        0
+      ],
+      "parser_default": [
+        0,
+        0,
+        0
+      ],
+      "absent": "Zero angular surface velocity. Authored in deg/s, converted to rad/s by the parser; no scale fold. The pivot is the body's global pose at creation.",
+      "units": "deg/s",
+      "conversion": "deg_to_rad",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseBody.cpp"
+      ]
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysicsRigidBodyAPI",
+      "rule": "Legacy promotion: a body with physics:kinematicEnabled true and a non-zero physics:velocity or physics:angularVelocity is treated as a surface-velocity body (enabled, world space, velocities copied) even without this API. When this API is applied it runs afterwards and fully overrides that promotion; the API is not restricted to kinematic bodies."
+    },
+    {
+      "with": "prim",
+      "rule": "With surfaceVelocityLocalSpace true the decomposed world scale of this prim is folded component-wise into surfaceVelocity. Rotation is never applied at parse time."
+    },
+    {
+      "with": "PhysxSplinesSurfaceVelocityAPI",
+      "rule": "Mutually exclusive: when both surfaceVelocityEnabled and the splines surfaceVelocityEnabled are true, the splines one is forced off."
+    }
+  ]
+}

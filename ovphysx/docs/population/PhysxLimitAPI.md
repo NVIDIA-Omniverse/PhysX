@@ -5,11 +5,11 @@
 
 # PhysxLimitAPI
 
-PhysX tuning of one joint limit (restitution, bounce threshold, soft-limit spring), applied as PhysxLimitAPI:<inst>. The instance is fixed by joint type: angular for revolute, linear for prismatic, cone for spherical, distance for distance joints, and the seven D6 axis names on a PhysicsJoint. The values only reach PhysX when the corresponding limit is enabled. No unit conversion is applied to any of the four columns.
+[PhysX](glossary.md#physx) tuning of one joint limit (restitution, bounce threshold, soft-limit spring), applied as PhysxLimitAPI:<inst>. The instance is fixed by joint type: angular for revolute, linear for prismatic, cone for spherical, distance for distance joints, and the seven D6 axis names on a [PhysicsJoint](glossary.md#physicsjoint). The values only reach PhysX when the corresponding limit is enabled. No unit conversion is applied to any of the four columns.
 
 - **Applies to:** `PhysicsJoint`
 - **Multi-apply:** applied as `PhysxLimitAPI:<instance>`; `<inst>` in a column name is the instance. Instances: `angular`, `linear`, `cone`, `distance`, `transX`, `transY`, `transZ`, `rotX`, `rotY`, `rotZ`.
-- **Read only when listed in `usd-schemas`.**
+- **Read only when listed in [`usd-schemas`](prim.md#columns).**
 
 ## What USD population writes
 
@@ -17,7 +17,7 @@ All four declared attributes of every applied instance are published at their re
 
 ## Columns
 
-*Raw fallback* is the USD schema value. *Producer writes* is what ovstage population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
+*Raw fallback* is the [USD](glossary.md#usd) schema value. *Producer writes* is what [ovstage](glossary.md#ovstage) population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
 
 | Column | Type | Units | Raw fallback | Producer writes | Parser default | If absent |
 |---|---|---|---|---|---|---|
@@ -28,18 +28,18 @@ All four declared attributes of every applied instance are published at their re
 
 ## Interactions
 
-- **[`PhysicsJoint`](PhysicsJoint.md):** Read with a raw getAttribute and no authored gate, so the resolved value always wins. The values are copied into the joint's limit descriptor and reach PhysX only when that limit is enabled (typed-joint bounds or PhysicsLimitAPI on the D6).
+- **[`PhysicsJoint`](PhysicsJoint.md):** Read directly with no authored gate, so the resolved value always wins. The values are copied into the joint's limit descriptor and reach PhysX only when that limit is enabled (typed-joint bounds or PhysicsLimitAPI on the D6).
 - **[`PhysicsLimitAPI`](PhysicsLimitAPI.md):** On the D6 the instance name must match the PhysicsLimitAPI instance whose limit it tunes. rotY and rotZ share one PxJointLimitPyramid, so the pyramid's restitution, bounceThreshold, stiffness and damping come from whichever of the two was processed last.
-- **[`PhysxPhysicsDistanceJointAPI`](PhysxPhysicsDistanceJointAPI.md):** On a distance joint, stiffness and damping are applied through PxDistanceJoint::setStiffness/setDamping and then overwritten by the spring values when springEnabled is true.
+- **[`PhysxPhysicsDistanceJointAPI`](PhysxPhysicsDistanceJointAPI.md):** On a distance joint, stiffness and damping are applied as the [PxDistanceJoint](glossary.md#pxdistancejoint) stiffness and damping and then overwritten by the spring values when springEnabled is true.
 
 ## Known divergences
 
-- **fragile** (consumer) `physxLimit:<inst>:restitution`: Restitution is clamped to [0, FLT_MAX] although the schema documents [0, 1] and PxJointLimitParameters::isValid requires restitution <= 1; a value above 1 produces an invalid PhysX limit instead of being clamped.
+- **fragile** (consumer) `physxLimit:<inst>:restitution`: Restitution is clamped to [0, FLT_MAX] although the schema documents [0, 1] and a valid PxJointLimitParameters requires restitution <= 1; a value above 1 produces an invalid PhysX limit instead of being clamped.
 - **note** (consumer) `physxLimit:<inst>:bounceThreshold`: Angular instances declare deg/s but no conversion is applied; PhysX reads the value as rad/s. Same on both backends, so parity is unaffected.
-- **note** (consumer) `physxLimit:<inst>:restitution`: physxLimit:<inst>:contactDistance is declared by the schema but is neither in the walker's column bucket nor in readPhysxLimitApi; it is never read.
+- **note** (consumer) `physxLimit:<inst>:restitution`: physxLimit:<inst>:contactDistance is declared by the schema but is neither in the walker's column bucket nor among the columns the PhysxLimitAPI parse reads; it is never read.
 
 ## Notes
 
 - Per-joint-type instance matrix: Fixed none; Revolute angular; Prismatic linear; Spherical cone (not rotX/rotY); Distance distance; D6 (PhysicsJoint) transX transY transZ rotX rotY rotZ distance; Gear, Rack, Custom none.
-- angular, linear, cone and distance are pre-interned tokens; the six D6 axis names fall through to a runtime internToken('PhysxLimitAPI:' + inst). The stage-wide presence probe covers all ten.
-- Standalone mapping of the tuned limit: angular/rotX -> PxD6Joint twist limit; linear/transX..Z -> linear limit on eX/eY/eZ; cone -> swing limit cone; rotY/rotZ -> pyramid swing limit; distance -> PxDistanceJoint stiffness/damping only. Articulation limits (PxArticulationLimit) carry only low/high, so none of these four columns reaches an articulation joint.
+- angular, linear, cone and distance are pre-interned tokens; for the six D6 axis names the qualified name PhysxLimitAPI:<inst> is interned at runtime. The stage-wide presence probe covers all ten.
+- Standalone mapping of the tuned limit: angular/rotX -> [PxD6Joint](glossary.md#pxd6joint) twist limit; linear/transX..Z -> linear limit on eX/eY/eZ; cone -> swing limit cone; rotY/rotZ -> pyramid swing limit; distance -> PxDistanceJoint stiffness/damping only. Articulation limits (PxArticulationLimit) carry only low/high, so none of these four columns reaches an articulation joint.

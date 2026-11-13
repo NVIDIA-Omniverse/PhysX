@@ -19,21 +19,49 @@ This tutorial shows how to use the clone API to replicate sub-sections of a USD 
 
 ## Key Concepts
 
-**Two ways to replicate.** ovphysx offers two cloning paths:
+**Stage and physics copies are separate.**
 
 - **Direct ovphysx API** (`PhysX.clone()` / `ovphysx_clone()`) — the approach used in this tutorial. After an ovstage-backed scene is attached and drained, `clone()` copies a source subtree in the internal physics representation. No USD prims are created, so it stays fast and memory-light at large environment counts.
-- **Up-front ovstage duplication** (`ovstage_clone`) — applications that own the ovstage `Stage` can duplicate the source subtree on the stage before attaching it. This keeps every scene edit on the producer-owned stream and avoids the warmup ordering constraint described in [Warmup and Determinism](../developer_guide.md#warmup-and-determinism).
+- **ovstage copies** (`Stage.clone()` / `ovstage_clone`) duplicate the populated
+  stage data for other consumers. When using both APIs, complete the attach
+  before cloning the stage. Clone the same source and targets separately in
+  ovphysx, before warmup or the first step. Use a dedicated ordinal for the
+  stage clone, seal it, and exclude it from every
+  `update_from_ovstage()` range. Forwarding that ordinal can ingest the copied
+  physics data as new scene objects; it does not invoke the PhysX replicator.
 
-Refer to [Scene Cloning](../developer_guide.md#scene-cloning) for the full comparison.
+Refer to [Scene Cloning](../developer_guide.md#scene-cloning) for ordinal ordering
+and the effect of later structural changes.
 
 Tensor-binding path patterns include direct ovphysx runtime clones even when an
 intermediate target path has no authored USD prim. For example, after cloning
 `/World/envs/env0/robot` to `/World/envs/env1/robot`, the pattern
 `/World/envs/env*/robot` resolves both objects.
 
-**Clone before warmup.** All `clone()` calls must happen **before** warmup and before the first `step()`. Cloning after `warmup()` or the first step reallocates physics structures and would corrupt already-initialized solver state, so the runtime rejects it with `OVPHYSX_API_INVALID_ARGUMENT` (surfaced in Python as `RuntimeError`). If you must clone later, call `detach_ovstage()`, wait for it to complete, then reload the source scene or reattach its ovstage before cloning again. Refer to [Warmup and Determinism](../developer_guide.md#warmup-and-determinism).
+**Do not use authored-ancestor deletion to remove runtime clones.** `PhysX.clone()`
+and `ovphysx_clone()` copies exist only in the physics runtime. They have no authored
+prim. In a sibling-environment layout, cloning `/World/envs/env0` to
+`/World/envs/env1` and then deleting `/World/envs` through ovstage removes the
+authored source bodies but leaves the runtime clone addressable. This is not a
+general guarantee that clones survive ancestor deletion in other layouts.
 
-**Grouping copies with `env_ids`.** A single `clone()` call numbers its copies automatically. One logical environment is sometimes assembled from **several** `clone()` calls — for example, first every environment's robot, then every environment's object. In that case, pass the optional per-target `env_ids` with the same ids in every call. Copies sharing an id land in the same runtime environment and can collide, and without `env_ids`, objects cloned by different calls never share an environment.
+**Clone before warmup.** Call `clone()` before warmup and before the first
+`step()`. A later clone fails because changing the physics layout would corrupt
+initialized solver state. Python reports this as `TaskError` when you wait.
+To clone later, detach, wait, reload or reattach the source Stage, then clone.
+See [Warmup and Determinism](../developer_guide.md#warmup-and-determinism).
+
+**Grouping copies with `env_ids`.** A single `clone()` call numbers its copies automatically. One logical environment is sometimes assembled from **several** `clone()` calls — for example, first every environment's robot, then every environment's object. In that case, pass the optional per-target `env_ids` with the same ids in every call. Copies sharing an id land in the same runtime environment and can collide.
+
+> **Mixing automatic and explicit ids can join environments unintentionally.**
+> The automatic numbering base belongs to the attachment; explicit logical ids
+> always map to runtime id `id + 1`. With environment-id filtering active on a
+> fresh attachment, a one-target automatic call uses runtime id 1. A later call
+> with `env_ids=[0]` also uses runtime id 1, so those copies can collide. In the
+> reverse order, the explicit call raises the base and the automatic call uses
+> runtime id 2. There is no warning or error for this overlap. Choose one ID
+> strategy for an attachment; use explicit ids consistently when you need to
+> control grouping across calls.
 
 Environment ids provide cross-environment collision isolation only when the
 scene uses GPU dynamics and GPU broadphase. They do not isolate CPU clones.

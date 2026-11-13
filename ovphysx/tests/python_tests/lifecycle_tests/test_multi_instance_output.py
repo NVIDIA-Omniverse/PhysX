@@ -14,6 +14,7 @@ import threading
 
 import numpy as np
 import ovstage
+from ovphysx.population import physics_population_descs
 from test_utils import data_path, register_physx_schemas_with_ovstage
 
 from ovphysx import PhysX
@@ -35,8 +36,8 @@ def test_output_while_peer_steps():
             cleanup.callback(stage.destroy)
             physx = PhysX()
             cleanup.callback(physx.destroy)
-            ovstage.population.open_usd(stage, data_path("boxes_falling_on_groundplane.usda"),
-                                        ordinal=1, domains=ovstage.PopulationDomain.PHYSICS)
+            ovstage.population.open_usd_with_desc(stage, data_path("boxes_falling_on_groundplane.usda"),
+                                        ordinal=1, time=ovstage.population.DEFAULT_TIME, descs=physics_population_descs())
             stage.advance_write_floor(ordinal=1).wait()
             physx.wait_task(physx.attach_ovstage(stage, read_ordinal=1))
             cleanup.callback(lambda p=physx: p.wait_task(p.detach_ovstage()))

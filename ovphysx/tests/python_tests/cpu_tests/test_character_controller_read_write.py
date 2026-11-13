@@ -9,7 +9,11 @@
 # @implements REQ-CAPI-WRITE-001
 # @covers AC-15
 # @maps_to TEST-CAPI-WRITE-001
+# @implements REQ-PYTHON-FRAME-001
+# @covers AC-3
+# @maps_to TEST-PYTHON-FRAME-001
 
+from contextlib import nullcontext
 from pathlib import Path
 
 import numpy as np
@@ -17,12 +21,14 @@ import ovstage
 import pytest
 from ovphysx import PhysX, ReadOmission
 from ovphysx.types import SimObjectType
+from ovphysx.utils import OvStageOutputCache, step_and_write_to_ovstage
 from test_utils import attach_usd_with_ovstage
 
 
 _SCENE = Path(__file__).parents[2] / "data" / "character_controller.usda"
 _CONTROLLER = "/World/Controller"
 _OTHER = "/World/Other"
+_OVX_INVALID_TOKEN = 2**64 - 1  # ovstage's <ovx/types.h>: an unsupported request's row carries it
 
 
 def _rigid_positions(physx: PhysX, stage) -> dict[str, np.ndarray]:
@@ -125,7 +131,7 @@ def test_character_controller_async_session_metadata(
             assert read.metadata.total_prim_count == expected_count
             assert len(read.metadata.attributes) == 2
             for attribute in read.metadata.attributes:
-                assert attribute.attribute == 0
+                assert attribute.attribute == ovstage.Token(_OVX_INVALID_TOKEN)
                 assert attribute.group_count == 0
                 assert attribute.omission_reasons == ReadOmission.UNSUPPORTED_ATTRIBUTE
             assert read.fetch_next().wait() is None
@@ -145,3 +151,54 @@ def test_character_controller_async_session_metadata(
                 assert group is None
             assert write.fetch_next().wait() is None
     physx_sdk_cpu.wait_all()
+
+
+@pytest.mark.parametrize("axis", ["X", "Y", "Z"])
+@pytest.mark.parametrize("scale", [(1, 1, 1), (2, 3, 4)])
+@pytest.mark.parametrize("use_cache", [False, True])
+def test_character_controller_publishes_prim_frame(physx_sdk_cpu, tmp_path, axis, scale, use_cache):
+    """Scene publication removes the capsule actor's axis rotation and preserves scale."""
+    scene = tmp_path / "controller.usda"
+    scene.write_text(
+        _SCENE.read_text(encoding="utf-8")
+        .replace('token axis = "Y"', f'token axis = "{axis}"')
+        .replace('physxCharacterController:upAxis = "Y"', f'physxCharacterController:upAxis = "{axis}"')
+        .replace("gravityMagnitude = 10", "gravityMagnitude = 0")
+        .replace("xformOp:scale = (1, 1, 1)", f"xformOp:scale = {scale}"),
+        encoding="utf-8",
+    )
+    stage = attach_usd_with_ovstage(physx_sdk_cpu, str(scene))
+    physx_sdk_cpu.warmup()
+    with physx_sdk_cpu.read_sync(SimObjectType.RIGID_BODY, ["kinematicTargetOrientation"]) as read:
+        assert sum(group.prim_count for group in read.groups) == 2
+        for group in read.groups:
+            targets = np.asarray(group.tensors[0].numpy()).reshape(group.prim_count, 4)
+            expected_targets = np.tile([0.0, 0.0, 0.0, 1.0], (group.prim_count, 1))
+            np.testing.assert_allclose(targets, expected_targets, atol=1e-5, rtol=0)
+    cache_context = OvStageOutputCache(physx_sdk_cpu) if use_cache else nullcontext(None)
+    with cache_context as cache, ovstage.PathDictionary(stage) as paths:
+        with paths.create_path_list_from_strings([_CONTROLLER]) as path_list:
+            with stage.query_from_path_list(path_list) as query:
+                for ordinal in (2, 3):
+                    step_and_write_to_ovstage(
+                        physx_sdk_cpu,
+                        dt=1.0 / 60.0,
+                        output_ordinal=ordinal,
+                        outputs={SimObjectType.RIGID_BODY: ["position", "orientation"]},
+                        cache=cache,
+                    )
+                    with stage.read_attributes(
+                        query, [paths.intern_token("omni:fabric:worldMatrix")],
+                        ovstage.OrdinalRange.latest(ordinal),
+                    ) as read:
+                        read.wait()
+                        matrices = []
+                        for group in read.groups():
+                            with group:
+                                column = group.columns[0]
+                                rows = np.asarray(column.array(0)).reshape(-1, 4, 4)
+                                matrices.append(rows[column.data_row_index(0)].copy())
+                    assert len(matrices) == 1
+                    expected = np.diag([*scale, 1.0])
+                    expected[3, :3] = [0.0, 5.0, 0.0]
+                    np.testing.assert_allclose(matrices[0], expected, atol=1e-5, rtol=0)

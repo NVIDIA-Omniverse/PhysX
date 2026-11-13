@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-PUBLICAPI-001
+// @covers AC-51
+
 #pragma once
 
 // omni::physx::queryPrim / PhysXPropertyQueryManager (ADR-0018): arbitrary live-stage-by-id
@@ -12,7 +15,7 @@
 // usdBridge/PropertyQueryBridge.cpp and reaches USD only through the parse::usdReparse()
 // seam; with no seam installed every query fails synchronously.
 
-#include <omni/physx/IPhysxPropertyQuery.h>
+#include <omni/physx/PropertyQueryTypes.h>
 #include <private/omni/physx/PhysxUsd.h> // pxr-free; PhysxRigidBodyDesc/PhysxShapeDesc
 
 #include <carb/extras/Timer.h>
@@ -30,12 +33,12 @@ namespace physx
 class PhysXPropertyQueryManager;
 struct PhysXPropertyQueryManagerImpl;
 
-// PhysX.cpp's fillInterface(IPhysxPropertyQuery&) wires this in; with no reparse seam
-// installed it always reports failure.
+// Native asynchronous USD property query. Callbacks report results after cooking;
+// with no reparse seam installed it always reports failure.
 void queryPrim(uint64_t stageId,
                uint64_t primKey,
                PhysxPropertyQueryMode::Enum queryMode,
-               const IPhysxPropertyQueryCallback& callbacks);
+               const PhysxPropertyQueryCallbacks& callbacks);
 
 // OmniPhysX.cpp constructs/destroys/calls this unconditionally. With no reparse seam there is
 // no live UsdStage to queue a request against, so updateQueuedRequests/cancelAllPendingRequests
@@ -52,7 +55,7 @@ public:
     void queryPrim(uint64_t stageId,
                    uint64_t primPathId,
                    PhysxPropertyQueryMode::Enum queryMode,
-                   const IPhysxPropertyQueryCallback& callbacks);
+                   const PhysxPropertyQueryCallbacks& callbacks);
 
     void updateQueuedRequests();
 

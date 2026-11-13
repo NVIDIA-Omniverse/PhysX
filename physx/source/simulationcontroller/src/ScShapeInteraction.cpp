@@ -145,19 +145,6 @@ PX_FORCE_INLINE	void Sc::ShapeInteraction::processReportPairOnActivate()
 	}
 }
 
-PX_FORCE_INLINE	void Sc::ShapeInteraction::processReportPairOnDeactivate()
-{
-	PX_ASSERT(isReportPair());
-	PX_ASSERT(mReportPairIndex != INVALID_REPORT_PAIR_ID);
-	PX_COMPILE_TIME_ASSERT(IS_IN_PERSISTENT_EVENT_LIST == (WAS_IN_PERSISTENT_EVENT_LIST >> 1));
-	PX_ASSERT(!(readFlag(WAS_IN_PERSISTENT_EVENT_LIST)));
-
-	const PxU32 wasInPersList = (mFlags & IS_IN_PERSISTENT_EVENT_LIST) << 1;
-	mFlags |= wasInPersList;
-
-	removeFromReportPairList();
-}
-
 void Sc::ShapeInteraction::setContactReportPostSolverVelocity(ContactStreamManager& cs)
 {
 	Scene& scene = getScene();
@@ -746,7 +733,7 @@ PX_FORCE_INLINE void Sc::ShapeInteraction::updateFlags(const Sc::Scene& scene, c
 	setFlag(CONTACTS_COLLECT_POINTS, (	(pairFlags & PxPairFlag::eNOTIFY_CONTACT_POINTS) ||
 										(pairFlags & PxPairFlag::eMODIFY_CONTACTS) || 
 #if PX_SUPPORT_GPU_PHYSX
-										scene.getSimulationController()->getEnableOVDCollisionReadback() ||
+										scene.getSimulationController()->getEnableOVDContactCollection() ||
 #endif
 										scene.getVisualizationParameter(PxVisualizationParameter::eCONTACT_POINT) ||
 										scene.getVisualizationParameter(PxVisualizationParameter::eCONTACT_NORMAL) ||
@@ -934,10 +921,29 @@ bool Sc::ShapeInteraction::onActivate(PxsContactManager* contactManager)
 		return false;
 }
 
-bool Sc::ShapeInteraction::onDeactivate()
+bool Sc::ShapeInteraction::onDeactivate(bool deferManagerUnregister)
 {
+	PxsContactManager* detachedManager;
+	bool needsReportListRemoval;
+	if(!onDeactivateThreadSafe(detachedManager, needsReportListRemoval))
+		return false;
+
+	if(needsReportListRemoval)
+		removeFromReportPairList();
+
+	if(detachedManager)
+		releaseManager(detachedManager, deferManagerUnregister);
+
+	return true;
+}
+
+bool Sc::ShapeInteraction::onDeactivateThreadSafe(PxsContactManager*& detachedManager, bool& needsReportListRemoval)
+{
+	detachedManager = NULL;
+	needsReportListRemoval = false;
+
 	PX_ASSERT(!getActor0().isStaticRigid() || !getActor1().isStaticRigid());
-	
+
 	const ActorSim& bodySim0 = getActor0();
 	const ActorSim& bodySim1 = getActor1();
 
@@ -948,7 +954,18 @@ bool Sc::ShapeInteraction::onDeactivate()
 	if((!bodySim0.isActive()) && (bodySim1.isStaticRigid() || !bodySim1.isActive()))
 	{
 		if(mReportPairIndex != INVALID_REPORT_PAIR_ID)
-			processReportPairOnDeactivate();
+		{
+			// The pair remembers that it was in the persistent event list, so that it can rejoin it when it wakes up. The
+			// caller takes it out of the list, see removeFromReportPairList().
+			PX_ASSERT(isReportPair());
+			PX_COMPILE_TIME_ASSERT(IS_IN_PERSISTENT_EVENT_LIST == (WAS_IN_PERSISTENT_EVENT_LIST >> 1));
+			PX_ASSERT(!(readFlag(WAS_IN_PERSISTENT_EVENT_LIST)));
+
+			const PxU32 wasInPersList = (mFlags & IS_IN_PERSISTENT_EVENT_LIST) << 1;
+			mFlags |= wasInPersList;
+
+			needsReportListRemoval = true;
+		}
 
 		PX_ASSERT((mManager->getTouchStatus() > 0) == (hasTouch() > 0));
 
@@ -965,7 +982,8 @@ bool Sc::ShapeInteraction::onDeactivate()
 				raiseFlag(HAS_NO_TOUCH);
 			}
 
-			destroyManager();	
+			detachedManager = mManager;
+			mManager = NULL;
 			if(mEdgeIndex != IG_INVALID_EDGE)
 				islandManager->clearEdgeRigidCM(mEdgeIndex);
 		}

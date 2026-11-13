@@ -40,9 +40,11 @@ numerical issues. Refer to
 
 ## Maximum Joint Velocity
 
-Early RL training produces high joint velocities that cause instability. Clamp
+Early RL training produces high joint velocities that cause instability. Limit
 per-axis joint velocity with `physxJointAxis:<axis>:maxJointVelocity`; a generous
 200-300 deg/s for revolute joints often reduces instability.
+This is a solver constraint, not an exact clamp; see
+[joint velocity limits](../simulation_setup/articulations.md#articulation-joint-drive-and-performance-envelope).
 
 ## Maximum Drive Force
 
@@ -89,10 +91,9 @@ acceleration drives can appear too weak in manipulation.
 High stiffness for tight target tracking causes large forces and instability. Instead:
 
 - Add feed-forward effort (gravity, acceleration, Coriolis compensation) using
-  the read-only inverse dynamics tensor types (`ARTICULATION_GRAVITY_FORCE`,
-  `ARTICULATION_MASS_MATRIX`, `ARTICULATION_CORIOLIS_AND_CENTRIFUGAL_FORCE`,
-  `ARTICULATION_JACOBIAN`) — refer to
-  [Tensor Bindings (deprecated)](../tutorials/tensor_bindings.md).
+  the read-only inverse dynamics columns (`gravityForce`, `massMatrix`,
+  `coriolisForce`, `jacobian`) — refer to
+  [Whole articulations](../read_write/readable.md#whole-articulations).
 - Limit the drive force, or rate-limit the drive targets, to avoid large forces
   from targets far from the current state.
 

@@ -1,0 +1,64 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    doc = "Volume deformable unit cube (six tetrahedra) with one skin mesh inside it, for ovphysx skin-mesh output tests"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "World"
+{
+    def PhysicsScene "PhysicsScene"
+    {
+        vector3f physics:gravityDirection = (0, 0, -1)
+        float physics:gravityMagnitude = 9.81
+        bool physxScene:enableGpuDynamics = 1
+        token physxScene:broadPhaseType = "GPU"
+    }
+
+    def Material "VolumeMaterial" (
+        prepend apiSchemas = ["PhysicsMaterialAPI", "OmniPhysicsDeformableMaterialAPI", "PhysxDeformableMaterialAPI"]
+    )
+    {
+        float omniphysics:dynamicFriction = 0.5
+        float omniphysics:poissonsRatio = 0.3
+        float omniphysics:youngsModulus = 100000
+    }
+
+    def Xform "Body" (
+        prepend apiSchemas = ["OmniPhysicsDeformableBodyAPI", "MaterialBindingAPI"]
+    )
+    {
+        bool omniphysics:deformableBodyEnabled = true
+        rel material:binding:physics = </World/VolumeMaterial> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        float3 xformOp:translate = (0, 0, 2)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+
+        def TetMesh "simMesh" (
+            prepend apiSchemas = ["OmniPhysicsVolumeDeformableSimAPI", "OmniPhysicsDeformablePoseAPI:default", "PhysicsCollisionAPI"]
+        )
+        {
+            point3f[] points = [(-0.5, -0.5, -0.5), (-0.5, -0.5, 0.5), (-0.5, 0.5, -0.5), (-0.5, 0.5, 0.5), (0.5, -0.5, -0.5), (0.5, -0.5, 0.5), (0.5, 0.5, -0.5), (0.5, 0.5, 0.5)]
+            int4[] tetVertexIndices = [(0, 4, 6, 7), (0, 5, 4, 7), (0, 6, 2, 7), (0, 2, 3, 7), (0, 1, 5, 7), (0, 3, 1, 7)]
+            int3[] surfaceFaceVertexIndices = [(0, 6, 4), (4, 6, 7), (0, 4, 5), (5, 4, 7), (0, 2, 6), (6, 2, 7), (0, 3, 2), (2, 3, 7), (0, 5, 1), (1, 5, 7), (0, 1, 3), (3, 1, 7)]
+            point3f[] omniphysics:restShapePoints = [(-0.5, -0.5, -0.5), (-0.5, -0.5, 0.5), (-0.5, 0.5, -0.5), (-0.5, 0.5, 0.5), (0.5, -0.5, -0.5), (0.5, -0.5, 0.5), (0.5, 0.5, -0.5), (0.5, 0.5, 0.5)]
+            int4[] omniphysics:restTetVtxIndices = [(0, 4, 6, 7), (0, 5, 4, 7), (0, 6, 2, 7), (0, 2, 3, 7), (0, 1, 5, 7), (0, 3, 1, 7)]
+            point3f[] deformablePose:default:omniphysics:points = [(-0.5, -0.5, -0.5), (-0.5, -0.5, 0.5), (-0.5, 0.5, -0.5), (-0.5, 0.5, 0.5), (0.5, -0.5, -0.5), (0.5, -0.5, 0.5), (0.5, 0.5, -0.5), (0.5, 0.5, 0.5)]
+            uniform token[] deformablePose:default:omniphysics:purposes = ["bindPose"]
+        }
+
+        def Mesh "skin" (
+            prepend apiSchemas = ["OmniPhysicsDeformablePoseAPI:default"]
+        )
+        {
+            point3f[] points = [(-0.2, -0.2, 0.1), (0.2, -0.2, 0.1), (0.2, 0.2, 0.1), (-0.2, 0.2, 0.1)]
+            point3f[] deformablePose:default:omniphysics:points = [(-0.2, -0.2, 0.1), (0.2, -0.2, 0.1), (0.2, 0.2, 0.1), (-0.2, 0.2, 0.1)]
+            uniform token[] deformablePose:default:omniphysics:purposes = ["bindPose"]
+            int[] faceVertexCounts = [3, 3]
+            int[] faceVertexIndices = [0, 1, 2, 0, 2, 3]
+            uniform token subdivisionScheme = "none"
+        }
+    }
+}

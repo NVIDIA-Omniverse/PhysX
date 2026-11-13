@@ -33,6 +33,12 @@ ovphysx does not control those handlers or promise implicit flushing through the
 - AC-2: **Repeatable lifecycle.** A subsequent initialize/create/destroy/shutdown cycle
   in the same process succeeds and preserves the same host-exit behavior.
 
+- AC-4: **Abandoned worker.** Process exit does not join or destroy an active
+  executor from static destruction. Its worker retains the executor state until
+  the process ends. This avoids teardown under loader/static-destruction locks;
+  it does not replace explicit shutdown or guarantee host flushing through other
+  libraries' exit handlers. Hosts complete shutdown before unloading ovphysx.
+
 ## Test References
 
 - [TEST-CAPI-HOST-EXIT-001](../../tests/capi/TEST-CAPI-HOST-EXIT-001.md)

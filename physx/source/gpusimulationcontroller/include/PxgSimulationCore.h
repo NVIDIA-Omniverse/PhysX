@@ -15,6 +15,7 @@
 #include "PxgFEMCloth.h"
 #include "PxgAllocatorDesc.h"
 #include "PxgShapeSimManager.h"
+#include "PxgCopyManager.h"
 #include "CmPinnableArray.h"
 
 #include "CmPinnableObject.h"
@@ -163,6 +164,8 @@ namespace physx
 		void updateArticulations(const PxU32 nbNewArticulations, PxgArticulationSimUpdate* updates,
 			const PxU32 nbUpdatedArticulations, PxReal* dofData);
 
+		void markRemovedArticulationSlotsEmpty(const PxgBodySimManager& bodySimManager);
+
 		void updateJointsAndSyncData(const Cm::PinnableArray<PxgD6JointData>& rigidJointData,
 			const Cm::PinnableArray<PxU32>& dirtyRigidJointIndices,
 			const Cm::PinnableArray<PxgD6JointData>& artiJointData,
@@ -191,6 +194,7 @@ namespace physx
 		// ones to OVD. A late attach uses this to recover forces that, with eRETAIN_ACCELERATIONS, persist
 		// across steps but were applied before sampling started. gpuIndices are PxRigidDynamic node indices.
 		void ovdSnapshotRigidDynamicForces(const PxRigidDynamicGPUIndex* gpuIndices, PxU32 nbElements);
+		bool ovdReadbackRigidDynamicData(const PxRigidDynamicGPUIndex* indices, PxU32 nbElements, PxRigidDynamicGPUAPIReadType::Enum dataType);
 #endif
 
 		void launchComputeRigidBodyAccelerations(const PxU32 nbBodies, const float oneOverDt);
@@ -343,6 +347,12 @@ namespace physx
 		PX_FORCE_INLINE PxgDevicePointer<PxgSimulationCoreDesc> getSimulationCoreDesc() { return mUpdatedCacheAndBoundsDescBuffer.getTypedDevicePtr(); }
 		PX_FORCE_INLINE PxgDevicePointer<PxgUpdateActorDataDesc> getUpdatedActorDescDesc() { return mUpdatedActorDescBuffer.getTypedDevicePtr(); }
 
+		// Direct GPU API: stages the body2World target of a kinematic for this step. applyKinematicTargets() writes the staged
+		// targets to the body sims after the solver, which takes the start pose of a kinematic from its solver body data, or
+		// instead of the solver in a step without one.
+		void			stageKinematicTarget(PxU32 nodeIndex, const PxTransform& body2World);
+		void			applyKinematicTargets();
+
 		PxU32			getMaxArticulationLinks() const;
 		PxU32			getMaxArticulationDofs() const;
 		PxU32			getMaxArticulationMimicJoints() const;
@@ -381,7 +391,8 @@ namespace physx
 		PxgTypedCudaBuffer<PxU32>	mActivateBuffer;
 		PxgTypedCudaBuffer<PxU32>	mDeactivateBuffer;
 
-		PxgTypedCudaBuffer<PxU32>	mUpdatedDirectBuffer;
+		PxgTypedCudaBuffer<PxU32>	mDirectGPUUpdateFlagsBuffer;
+		PxU32						mNbDirectGPUUpdateFlags;	// Number of update flags in mDirectGPUUpdateFlagsBuffer, a multiple of 32
 
 		// PT: new naming convention with "CudaBuffer" suffix and specific prefix for easier searching
 		PxgTypedCudaBuffer<PxgBodySim>	mBodySimCudaBuffer;						// PT: contains PxgBodySim structs.
@@ -414,6 +425,7 @@ namespace physx
 		PxgTypedCudaBuffer<PxgArticulationBlockTendonJointData>	mArticulationTendonJointBatchBuffer;
 
 		PxArray<PxgArticulationBuffer*>	mArticulationDataBuffer;// persistent data, map with mArticulationBuffer
+		Cm::PinnableArray<PxU32>		mRemovedArticulationSlots; //mapped, slots of the articulations removed since the last step
 		//PxU32			mMaxLinks;
 		//PxU32			mMaxDofs;
 
@@ -574,22 +586,29 @@ namespace physx
 		CUstream		mStream;
 		CUevent			mEvent;
 		CUevent			mDmaEvent; 
+		CUevent			mRemovedArticulationSlotsEvent; //recorded after the last kernel that reads mRemovedArticulationSlots
 	
 		PxVec3			mGravity;
 
 		PxArray<PxgSoftBody>	mSoftBodiesToFree;
 		PxArray<PxgFEMCloth>	mClothsToFree;
+
+		PxgCopyManager							mKinematicTargetCopyManager;
+		Cm::PinnableArray<PxAlignedTransform>	mKinematicTargets;		// host-mapped, the sources of the copies
+		PxArray<PxU32>							mKinematicTargetNodes;	// the node index of each staged target
 #if PX_SUPPORT_OMNI_PVD
 		PxU64 getRigidBodyDataTypeElementSize(PxRigidDynamicGPUAPIWriteType::Enum dataType);
 		void ovdRigidBodyCallback(const void* PX_RESTRICT data, const PxRigidDynamicGPUIndex* PX_RESTRICT gpuIndices, PxRigidDynamicGPUAPIWriteType::Enum dataType, PxU32 nbElements);		
 		
 		Cm::PinnableArray<PxU8>	mOvdDataBuffer;
 		Cm::PinnableArray<PxU8>	mOvdIndexBuffer;
+		PxArray<PxU32> mOvdBatchPositions;
+		PxgTypedCudaBuffer<PxU8> mOvdReadbackDataBuffer;
 
 		// Scratch for the full-state snapshot force/torque readback (ovdSnapshotRigidDynamicForces).
 		PxgTypedCudaBuffer<PxRigidDynamicGPUIndex>	mOvdSnapshotIndexBuffer;	// device: gathered node indices, uploaded once per readback
 		PxgTypedCudaBuffer<PxVec3>					mOvdSnapshotDataBuffer;		// device: kernel output, one PxVec3 per index
-		PxArray<PxRigidDynamicGPUIndex>	mOvdSnapshotValidIndices;	// host: incoming indices, dropped if past the resident pool
+		Cm::PinnableArray<PxRigidDynamicGPUIndex> mOvdSnapshotValidIndices; // host: indices uploaded on the gather stream
 		Cm::PinnableArray<PxVec3>	mOvdSnapshotForce;			// host (pinned): force read back
 		Cm::PinnableArray<PxVec3>	mOvdSnapshotTorque;			// host (pinned): torque read back
 		PxArray<PxVec3>			mOvdSnapshotCompactData;	// host: non-zero values, compacted for emit

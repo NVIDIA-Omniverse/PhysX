@@ -48,11 +48,15 @@ public:
 	virtual PxU32 getFlatListStartIndex() const PX_OVERRIDE PX_FINAL { return mFlatListStartIndex; }
 	virtual void raiseFlags(PxParticleBufferFlag::Enum flags) PX_OVERRIDE PX_FINAL { mBufferFlags |= flags; }
 	virtual PxU32 getUniqueId() const PX_OVERRIDE PX_FINAL { return mUniqueId; }
-	virtual void allocHostBuffers() PX_OVERRIDE PX_FINAL;
+#if PX_SUPPORT_OMNI_PVD
+	virtual bool readOmniPvdData(PxU32 flags, PxU64& transferredBytes) PX_OVERRIDE;
+	virtual void trimOmniPvdData(PxU32 flags) PX_OVERRIDE;
+	virtual bool getOmniPvdPhasesChanged() const PX_OVERRIDE PX_FINAL { return mOmniPvdPhasesChanged; }
+	virtual void setOmniPvdPhasesChanged(bool changed) PX_OVERRIDE PX_FINAL { mOmniPvdPhasesChanged = changed; }
+#endif
 	//~PxsParticleBuffer
 
 	void setFlatListStartIndex(PxU32 flatListStartIndex) { mFlatListStartIndex = flatListStartIndex; }
-	void copyToHost(CUstream stream);
 
 	PxU32 mBufferFlags;
 
@@ -69,6 +73,17 @@ public:
 	PxU32 mMaxNumParticles;
 	PxU32 mFlatListStartIndex;
 	PxU32 mUniqueId;
+#if PX_SUPPORT_OMNI_PVD
+	PxU32 mOmniPvdPositionCapacity;
+	PxU32 mOmniPvdVelocityCapacity;
+	PxU32 mOmniPvdPhaseCapacity;
+	bool mOmniPvdPhasesChanged;
+#endif
+
+protected:
+#if PX_SUPPORT_OMNI_PVD
+	bool enqueueOmniPvdData(PxU32 flags, PxU64& transferredBytes);
+#endif
 };
 
 class PxgParticleBuffer : public PxgParticleBufferBase<PxsParticleBuffer>
@@ -81,7 +96,6 @@ public:
 	virtual void release() PX_OVERRIDE PX_FINAL { PX_DELETE_THIS; }
 	//~PxsParticleBuffer
 
-	void copyToHost(CUstream stream);
 };
 
 class PxgParticleAndDiffuseBuffer : public PxgParticleBufferBase<PxsParticleAndDiffuseBuffer>
@@ -102,9 +116,15 @@ public:
 	virtual PxU32 getMaxDiffuseParticles() const PX_OVERRIDE PX_FINAL { return mMaxNumDiffuseParticles; }
 	virtual void setDiffuseParticleParams(const PxDiffuseParticleParams& params) PX_OVERRIDE PX_FINAL;
 	virtual const PxDiffuseParticleParams& getDiffuseParticleParams() const PX_OVERRIDE PX_FINAL { return mParams; }
+#if PX_SUPPORT_OMNI_PVD
+	virtual bool readOmniPvdData(PxU32 flags, PxU64& transferredBytes) PX_OVERRIDE PX_FINAL;
+	virtual void trimOmniPvdData(PxU32 flags) PX_OVERRIDE PX_FINAL;
+	virtual PxVec4* getDiffusePositionLifeTimeH() const PX_OVERRIDE PX_FINAL { return mOmniPvdDiffusePositions; }
+	virtual PxVec4* getDiffuseVelocitiesH() const PX_OVERRIDE PX_FINAL { return mOmniPvdDiffuseVelocities; }
+	virtual PxU32 getOmniPvdDiffuseCount() const PX_OVERRIDE PX_FINAL { return mOmniPvdDiffuseCount; }
+#endif
 	//~PxsParticleAndDiffuseBuffer
 
-	void copyToHost(CUstream stream);
 
 public:
 	PxDiffuseParticleParams	mParams;
@@ -114,6 +134,13 @@ public:
 	PxU32 mMaxNumDiffuseParticles;
 	PxU32 mMaxActiveDiffuseParticles;
 	PxI32* mNumActiveDiffuseParticlesH; //mapped pinned memory
+#if PX_SUPPORT_OMNI_PVD
+	PxVec4* mOmniPvdDiffusePositions;
+	PxVec4* mOmniPvdDiffuseVelocities;
+	PxU32 mOmniPvdDiffusePositionCapacity;
+	PxU32 mOmniPvdDiffuseVelocityCapacity;
+	PxU32 mOmniPvdDiffuseCount;
+#endif
 };
 
 class PxgParticleSystemBuffer

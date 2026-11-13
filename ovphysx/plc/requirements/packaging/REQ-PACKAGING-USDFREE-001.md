@@ -82,10 +82,12 @@ product payload.
   violates AC-2 or AC-4 is not a producible output.
 - AC-8: **No shipped SDK header includes pxr.** No header installed into the SDK
   `include/` tree `#include`s `pxr/`, so the shipped headers are self-contained
-  against a consumer that has no OpenUSD. The `common/` utilities headers
-  (`OmniPhysXUtilities.h`, `Utilities.h`) are pxr-free since ADR-0027 Flip-B
-  (their pxr halves moved into `omni.physics.usd`, REQ-PUBLICAPI-HANDLE-001
-  AC-3/AC-4) and are installed unconditionally like the rest of `common/`.
+  against a consumer that has no OpenUSD. The `common/` utilities header
+  `Utilities.h` is pxr-free since ADR-0027 Flip-B (its pxr half moved into
+  `omni.physics.usd`, REQ-PUBLICAPI-HANDLE-001 AC-3/AC-4) and is installed
+  unconditionally like the rest of `common/`. `OmniPhysXUtilities.h` held only
+  the removed default-simulator query and is no longer shipped
+  (REQ-PARSE-SCENE-OWNER-001 AC-4).
 
 ## Test References
 

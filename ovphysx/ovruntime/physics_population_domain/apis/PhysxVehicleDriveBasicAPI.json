@@ -1,0 +1,31 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxVehicleDriveBasicAPI",
+  "title": "PhysxVehicleDriveBasicAPI",
+  "summary": "Basic vehicle drive (a torque applied directly to the driven wheels) on the vehicle prim or on a separate prim that physxVehicle:drive targets. Outside the drive parse the runtime only checks whether the vehicle prim itself lists it, to take the vehicle prim as the drive when physxVehicle:drive has no target.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "Typed"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "columns": [],
+  "interactions": [
+    {
+      "with": "PhysxVehicleAPI",
+      "rule": "Listing both PhysxVehicleDriveBasicAPI and PhysxVehicleDriveStandardAPI on a vehicle prim without a physxVehicle:drive target logs an error and the vehicle is not created."
+    },
+    {
+      "with": "PhysxVehicleDriveStandardAPI",
+      "rule": "A physxVehicle:drive target is looked up as a standard drive first, then as a basic drive."
+    }
+  ],
+  "notes": [
+    "The drive parse reads physxVehicleDriveBasic:peakTorque and the runtime applies its live changes; it is not described yet."
+  ]
+}

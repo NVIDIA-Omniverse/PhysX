@@ -73,11 +73,11 @@ coverage gaps" after that.
   asserts that spelling present, callable, and absent from the submodule's own
   `__all__`. REQ AC-9 states why both halves are needed.
 
-  The package carries a dependency-free owner manifest for all 138 flat
+  The package carries a dependency-free owner manifest for all 139 flat
   exports. A case constructs the actual owner mapping from each loaded
   submodule's `__all__`, rejects duplicate names and requires both directions of
   the manifest to equal it exactly. A separate case still asserts the flat
-  surface is 138 helpers and `__all__` 153 entries, so the owner check and the
+  surface is 139 helpers and `__all__` 154 entries, so the owner check and the
   surface-size check fail for different forms of drift.
 - Two independent tables of AC-15's eight deprecated aliases, one per file, and
   the duplication is the point. `test_utils_surface.py` maps each old spelling to
@@ -307,7 +307,7 @@ callable, and fail rather than skip under the switch.
 - For each of the fourteen flattened submodules, every name in that submodule's own
   `__all__` resolves flat as well, and to the same object; and every name in
   `ovphysx.utils.__all__` resolves (REQ AC-2). An independent dependency-free
-  manifest maps all 138 flat names to their owners, and the suite requires its
+  manifest maps all 139 flat names to their owners, and the suite requires its
   forward and reverse mappings to equal the loaded submodules' `__all__` lists
   exactly, with no duplicate owner. What the spellings *are* is pinned one step
   further too: a
@@ -1089,7 +1089,7 @@ source text does not establish execution or assertions about its behavior.
   `remove_static_collider`, `set_static_collider`,
   `set_physics_scene_asyncsimrender`,
   `step_and_write_to_ovstage` and `triangulate_mesh`.
-- **30 of the 138 public helper names are not so much as named anywhere under
+- **30 of the 139 public helper names are not so much as named anywhere under
   `tests/python_tests/`** — word-matched against the concatenated text of every
   tracked `.py` file there, so a name matched by a comment counts as mentioned. The
   walk skips `.venv/` and the uv cache: sweeping them in reads a name as
@@ -1133,7 +1133,8 @@ source text does not establish execution or assertions about its behavior.
   `set_or_add_orient_op`, `set_or_add_scale_op` and
   `set_or_add_scale_orient_translate` directly. The current public surface also
   includes `OvStageOutputCache`, already named in tests, bringing the denominator
-  from the historical 137 to 138.
+  from the historical 137 to 138, and `split_joint_group`, named in tests, brings it
+  to 139.
 
   **The 45 this row used to carry was wrong by one, and the enumeration beside it
   was one name short of its own figure.** Re-running the match at the tip before
@@ -1381,7 +1382,7 @@ subset closed here was chosen for the value of the surface behind it.
 - **AC-2's current flat names and owners are pinned independently; their
   ancestry is not.** The dependency-free manifest closes the former gap: it is
   compared exactly with every loaded owner's `__all__` and with the reverse
-  owner mapping, while the separate size assertion pins 138 helpers. What
+  owner mapping, while the separate size assertion pins 139 helpers. What
   remains unpinned is the correspondence between a renamed helper and the
   `omni.physx.scripts` name it came from -- a rename to a *different*
   conventional spelling than the one chosen would pass everything here. Only

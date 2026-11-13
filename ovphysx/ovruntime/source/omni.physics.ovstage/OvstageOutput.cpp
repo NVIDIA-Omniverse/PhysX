@@ -103,7 +103,7 @@ bool internHandles(const IPhysicsSource& source,
         // invalid sentinel and is dropped. A handle kept from a dictionary that has since been destroyed (every
         // ovstage instance released) is invalid but undetectable -- the dictionary has no liveness query -- and
         // may name a different prim. The public contract requires handles from the attached Stage's dictionary.
-        const ObjectKey key = ovSource->canonicalKey(ovSource->internKey(static_cast<uint64_t>(handles[i])));
+        const ObjectKey key = ovSource->canonicalKey(ovSource->internKey(handles[i].raw_id));
         if (key.valid())
             outKeys.push_back(key);
     }

@@ -13,7 +13,6 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from types import SimpleNamespace
 
 import pytest
 
@@ -129,12 +128,32 @@ COPY_PASTE_SCHEMA_SUPPORT_SAMPLE_SITES = (
     ("docs/tutorials/contact_binding.md", "tests/python_samples/contact_binding.py"),
     ("docs/tutorials/tensor_bindings.md", "tests/python_samples/tensor_bindings.py"),
     ("docs/tutorials/omnipvd_recording.md", "tests/python_samples/omnipvd_recording.py"),
+    ("docs/tutorials/profiling.md", "tests/python_samples/profiling.py"),
     (
         "docs/simulation_setup/kinematic_support.md",
         "tests/python_samples/kinematic_support.py",
     ),
     ("docs/ovstage_integration.md", "tests/python_samples/output_read.py"),
 )
+
+# Prose that tells a reader to import the installed recipe, rather than embedding
+# a sample. These are the pages this change rewrote away from "copy schema_support/".
+INSTALLED_SCHEMA_SUPPORT_DOC_SITES = (
+    "README.md",
+    "skills/ovphysx-basic-workflow/SKILL.md",
+    "skills/ovphysx-clone-environments/SKILL.md",
+)
+
+RETIRED_TENSOR_SKILLS = ("tensor-bindings-cpu", "tensor-bindings-gpu")
+
+
+def test_retired_tensor_binding_skills_are_absent_and_session_skills_are_indexed():
+    index = (PROJECT_ROOT / "SKILLS.md").read_text(encoding="utf-8")
+    for name in RETIRED_TENSOR_SKILLS:
+        assert not (PROJECT_ROOT / "skills" / name).exists()
+        assert name not in index
+    assert "ovphysx-output-read" in index
+    assert "ovphysx-session-write" in index
 
 
 def _assert_sample_resolves_bundled_data(sample_path):
@@ -223,9 +242,15 @@ def test_copy_paste_samples_use_installed_schema_support():
             f"{doc_site} no longer literalincludes {include_path}"
         )
 
+    for doc_site in INSTALLED_SCHEMA_SUPPORT_DOC_SITES:
+        text = (PROJECT_ROOT / doc_site).read_text(encoding="utf-8")
+        assert _INSTALLED_SCHEMA_SUPPORT_MODULE in text, (
+            f"{doc_site} no longer names {_INSTALLED_SCHEMA_SUPPORT_MODULE}"
+        )
+
 
 @pytest.mark.parametrize("skill", (
-    "basic-workflow", "clone-environments", "tensor-bindings-cpu", "tensor-bindings-gpu",
+    "ovphysx-basic-workflow", "ovphysx-clone-environments",
 ))
 def test_skill_population_registers_physx_and_newton_schemas(skill):
     """NVBug 6900449: copied workflows must preserve authored newton:* values."""
@@ -233,8 +258,12 @@ def test_skill_population_registers_physx_and_newton_schemas(skill):
     blocks = re.findall(r"^```python\n(.*?)^```", text, re.DOTALL | re.MULTILINE)
     population_blocks = [block for block in blocks if "open_usd" in block]
     assert population_blocks, f"{skill} has no Python population example"
-    physx_roots = [Path("PhysxSchema/resources"), Path("OmniUsdPhysicsDeformableSchema/resources")]
-    newton_root = Path("newton_usd_schemas")
+    # Check the documented recipe structurally; never execute skill-authored code.
+    expected_registration = ast.parse(
+        "ovstage.population.register_usd_schemas("
+        "[*[str(p) for p in physx_schema_paths()], str(ovphysx.newton_schema_root())])",
+        mode="eval",
+    ).body
     for block in population_blocks:
         tree = ast.parse(block)
         # Require unconditional registration, not a scan of the stage's attributes.
@@ -245,15 +274,14 @@ def test_skill_population_registers_physx_and_newton_schemas(skill):
         ]
         assert len(registrations) == 1, f"{skill} must register schemas unconditionally"
         registration = registrations[0]
-        roots = eval(compile(ast.Expression(registration.args[0]), skill, "eval"), {
-            "__builtins__": {"str": str},
-            "physx_schema_paths": lambda: physx_roots,
-            "ovphysx": SimpleNamespace(newton_schema_root=lambda: newton_root),
-        })
-        assert roots == [str(root) for root in [*physx_roots, newton_root]]
+        assert ast.dump(registration) == ast.dump(expected_registration), (
+            f"{skill} must register the string paths from physx_schema_paths() "
+            "and ovphysx.newton_schema_root() using the documented recipe"
+        )
+        # Physics populates only through the description ovphysx publishes.
         population_calls = [
             node for node in ast.walk(tree) if isinstance(node, ast.Call)
-            and ast.unparse(node.func) == "ovstage.population.open_usd"
+            and ast.unparse(node.func) == "ovstage.population.open_usd_with_desc"
         ]
         assert population_calls
         assert registration.lineno < min(call.lineno for call in population_calls)
@@ -297,7 +325,7 @@ def test_getting_started_docs_match_shipped_packages():
         "docs/tutorials/quickstart.md",
         "README.md",
         "python/README.md",
-        "skills/basic-workflow/SKILL.md",
+        "skills/ovphysx-basic-workflow/SKILL.md",
     )
     for site in python_getting_started_sites:
         text = (PROJECT_ROOT / site).read_text(encoding="utf-8")
@@ -335,17 +363,18 @@ def test_getting_started_docs_match_shipped_packages():
             f"{site} teaches async physx.step() in a getting-started example"
         )
 
-    basic_workflow = (PROJECT_ROOT / "skills/basic-workflow/SKILL.md").read_text(
+    basic_workflow_c = (PROJECT_ROOT / "tests/c_samples/basic_workflow_c/main.c").read_text(
         encoding="utf-8"
     )
-    c_blocks = re.findall(
-        r"^```c\n(.*?)^```",
-        basic_workflow,
-        re.DOTALL | re.MULTILINE,
-    )
-    assert len(c_blocks) == 1
-    assert '"scene.usda"' not in c_blocks[0]
-    assert '"samples/data/simple_physics_scene.usda"' in c_blocks[0]
+    assert '"scene.usda"' not in basic_workflow_c
+    assert 'OVPHYSX_TEST_DATA "/simple_physics_scene.usda"' in basic_workflow_c
+
+    basic_workflow = (PROJECT_ROOT / "skills/ovphysx-basic-workflow/SKILL.md").read_text(encoding="utf-8")
+    assert "samples/python_samples/population_update.py" in basic_workflow
+    assert "ovphysx.samples.python_samples.population_update" in basic_workflow
+    assert (PROJECT_ROOT / "tests/python_samples/population_update.py").is_file()
+    assert "def add_usd_file_and_drain" not in basic_workflow
+    assert "def drain_population_change" not in basic_workflow
 
     hello_world = (PROJECT_ROOT / "tests/python_samples/hello_world.py").read_text(
         encoding="utf-8"
@@ -356,9 +385,12 @@ def test_getting_started_docs_match_shipped_packages():
     assert "step_sync" in hello_world_calls
     assert "step" not in hello_world_calls
 
+    staging = (PROJECT_ROOT / "scripts/stage_documentation.cmake").read_text(encoding="utf-8")
+    assert '"${PROJECT_ROOT}/tests/data" "${SAMPLES_DST}/data"' in staging
     for packaging_script in ("scripts/build_wheel.cmake", "scripts/install.cmake"):
         packaging = (PROJECT_ROOT / packaging_script).read_text(encoding="utf-8")
-        assert '"${PROJECT_ROOT}/tests/data" "${SAMPLES_DST}/data"' in packaging
+        assert 'include("${SCRIPT_DIR}/stage_documentation.cmake")' in packaging
+        assert "stage_documentation_payload(" in packaging
 
     fetch_script = (PROJECT_ROOT / "scripts/fetch_ovstage_release.py").read_text(
         encoding="utf-8"
@@ -367,9 +399,12 @@ def test_getting_started_docs_match_shipped_packages():
     assert version_match is not None
     ovstage_version = version_match.group(1)
     # pyproject.toml pins the pip/wheel version, which drops any trailing git-hash
-    # component (the optional 5th). See fetch_ovstage_release._numeric_version and
-    # scripts/sync_ovstage_version.py, which stamps this pin.
-    numeric_ovstage_version = ".".join(ovstage_version.split(".")[:4])
+    # component (the optional 5th); a dev build keeps its whole PEP 440 version. See
+    # fetch_ovstage_release._numeric_version and scripts/sync_ovstage_version.py,
+    # which stamps this pin.
+    numeric_ovstage_version = (
+        ovstage_version if "+" in ovstage_version else ".".join(ovstage_version.split(".")[:4])
+    )
     pyproject = (PROJECT_ROOT / "python/pyproject.toml").read_text(encoding="utf-8")
     assert f'"ovstage=={numeric_ovstage_version}"' in pyproject
     for site in ("docs/tutorials/quickstart.md", "SDK_README.md"):
@@ -380,30 +415,28 @@ def test_getting_started_docs_match_shipped_packages():
 
 
 def test_basic_workflow_c_sample_build_and_launch():
-    skill = (PROJECT_ROOT / "skills/basic-workflow/SKILL.md").read_text(encoding="utf-8")
-    section = re.search(
-        r"^### Build and run the C sample\n(.*?)(?=^#{1,3} |\Z)",
-        skill,
-        re.DOTALL | re.MULTILINE,
+    skill = (PROJECT_ROOT / "skills/ovphysx-basic-workflow/SKILL.md").read_text(encoding="utf-8")
+    sample_dir = PROJECT_ROOT / "tests/c_samples/basic_workflow_c"
+    for name in ("main.c", "CMakeLists.txt", "README.md"):
+        assert (sample_dir / name).is_file()
+        assert f"samples/c_samples/basic_workflow_c/{name}" in skill
+    assert not re.search(r"^```(?:c|cmake)\s*$", skill, re.MULTILINE), (
+        "The C program and build recipe must stay in the packaged sample"
     )
-    assert section is not None
-    instructions = section.group(1)
+    instructions = (sample_dir / "README.md").read_text(encoding="utf-8")
+    sample_cmake = (sample_dir / "CMakeLists.txt").read_text(encoding="utf-8")
     assert "Visual Studio Developer PowerShell" in " ".join(instructions.split())
     assert "-Arch amd64 -HostArch amd64" in instructions
-    cmake_blocks = re.findall(
-        r"^```cmake\n(.*?)^```", instructions, re.DOTALL | re.MULTILINE
-    )
-    sample_cmake = next(
-        (block for block in cmake_blocks if "project(ovphysx_example LANGUAGES C)" in block),
-        None,
-    )
-    assert sample_cmake is not None
     windows_setup = re.search(r"if\(WIN32\)(.*?)endif\(\)", sample_cmake, re.DOTALL)
     assert windows_setup is not None
-    assert "ovphysx_copy_runtime_dlls(my_app)" in windows_setup.group(1)
-    assert "ovphysx_set_ovstage_runtime_env(my_app)" in windows_setup.group(1)
+    assert "ovphysx_copy_runtime_dlls(basic_workflow_c)" in windows_setup.group(1)
+    assert "ovphysx_set_ovstage_runtime_env(basic_workflow_c)" in windows_setup.group(1)
 
-    configure = re.search(r"^cmake -B ([\w-]+) ", instructions, re.MULTILINE)
+    configure = re.search(
+        r"^cmake -S samples/c_samples/basic_workflow_c -B ([\w-]+) ",
+        instructions,
+        re.MULTILINE,
+    )
     assert configure is not None
     build_dir = configure.group(1)
     assert f"cmake --build {build_dir} --config Release" in instructions
@@ -415,7 +448,7 @@ def test_basic_workflow_c_sample_build_and_launch():
     )
     assert any(
         re.search(r'^export PHYSX_USD_SCHEMAS_ROOT="[^"\n]+"\n', block)
-        and f"./{build_dir}/my_app" in block
+        and f"./{build_dir}/basic_workflow_c" in block
         for block in bash_blocks
     )
     powershell_setup = re.search(
@@ -425,7 +458,7 @@ def test_basic_workflow_c_sample_build_and_launch():
     )
     assert powershell_setup is not None
     for generator, subdir in (("Visual Studio", "Release\\"), ("Ninja", "")):
-        command = f".\\{build_dir}\\{subdir}run_my_app.cmd"
+        command = f".\\{build_dir}\\{subdir}run_basic_workflow_c.cmd"
         launch = f"- Windows, {generator} generator: `{command}`."
         assert launch in instructions[powershell_setup.end() :]
 
@@ -439,7 +472,7 @@ def test_fixed_base_jacobian_shape_matches_public_header():
     )
 
     tutorial_match = re.search(
-        r"^- `R`, `C`: Jacobian shape from `getJacobianShape\(\)` .*"
+        r"^- `R`, `C`: Jacobian rows and columns .*"
         r"fixed-base:\s*`([^`]+)`;",
         tutorial,
         re.MULTILINE,
@@ -644,7 +677,7 @@ def test_skill_frontmatter_declares_canonical_metadata():
 
 
 # NVBug 6763283 / OMPE-109807: eval rubrics must use the current lifecycle API
-# and route new read/write code away from the deprecated tensor-binding skills.
+# and route new read/write code away from removed tensor-binding skill routes.
 def test_skill_evals_use_current_api_and_deprecation_routes():
     def eval_case(skill_name, case_id):
         dataset_path = (
@@ -653,7 +686,7 @@ def test_skill_evals_use_current_api_and_deprecation_routes():
         dataset = json.loads(dataset_path.read_text(encoding="utf-8"))
         return next(case for case in dataset["evals"] if case["id"] == case_id)
 
-    basic_lifecycle = eval_case("basic-workflow", 1)
+    basic_lifecycle = eval_case("ovphysx-basic-workflow", 1)
     lifecycle_rubric = " ".join(
         [basic_lifecycle["expected_output"], *basic_lifecycle["expectations"]]
     )
@@ -661,25 +694,14 @@ def test_skill_evals_use_current_api_and_deprecation_routes():
     assert "physx.release" not in lifecycle_rubric
 
     expected_routes = (
-        ("basic-workflow", 4, ("clone-environments", "ovphysx-session-write")),
+        ("ovphysx-basic-workflow", 4, ("ovphysx-clone-environments", "ovphysx-session-write")),
         ("ovphysx-output-read", 3, ("ovphysx-output-read",)),
         (
             "ovphysx-usd-authoring",
             5,
-            ("basic-workflow", "ovphysx-output-read"),
+            ("ovphysx-basic-workflow", "ovphysx-output-read"),
         ),
     )
-
-    def _is_negated_mention(clause):
-        lower = clause.lower()
-        return (
-            lower.startswith("does not select")
-            or "does not use" in lower
-            or (
-                "not " in lower
-                and "deprecated tensor-binding" in lower
-            )
-        )
 
     for skill_name, case_id, required_skills in expected_routes:
         case = eval_case(skill_name, case_id)
@@ -691,16 +713,10 @@ def test_skill_evals_use_current_api_and_deprecation_routes():
                 f"{required_skill}"
             )
 
-        stale_route = any(
-            deprecated in clause
-            for clause in rubric_clauses
-            if not _is_negated_mention(clause)
-            for deprecated in ("tensor-bindings-cpu", "tensor-bindings-gpu")
-        )
-        assert not stale_route, (
-            f"{skill_name} eval {case_id} positively routes new code to a "
-            "deprecated skill"
-        )
+        for retired in RETIRED_TENSOR_SKILLS:
+            assert retired not in rubric, (
+                f"{skill_name} eval {case_id} still names removed skill {retired}"
+            )
 
     output_read = eval_case("ovphysx-output-read", 3)
     output_read_rubric = " ".join(
@@ -719,7 +735,6 @@ _GPU_SCENE_DOCUMENTATION = (
 
 @pytest.mark.parametrize("site", (
     "docs/developer_guide.md",
-    "skills/tensor-bindings-gpu/SKILL.md",
     *_GPU_SCENE_DOCUMENTATION,
 ))
 def test_gpu_dynamics_default_documentation_consistent(site):

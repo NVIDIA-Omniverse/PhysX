@@ -31,6 +31,9 @@ fixed-base articulation chain.
 - Every displayed position and quaternion component is finite (REQ AC-2).
 - At least two displayed positions differ, and their maximum absolute position
   delta exceeds `1.0e-3` before success is reported (REQ AC-2).
+- Every displayed `rotation_y` value is finite, and the span of those values
+  across checkpoints exceeds `1.0e-3` degrees before success is reported
+  (REQ AC-3).
 
 ## Development-Time Negative Control
 

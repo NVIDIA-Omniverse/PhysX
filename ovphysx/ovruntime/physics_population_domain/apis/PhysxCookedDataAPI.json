@@ -1,0 +1,24 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxCookedDataAPI",
+  "title": "PhysxCookedDataAPI",
+  "summary": "Cooked-data storage on a collider (uchar[] physxCookedData:<inst>:buffer). The parser reads none of it: geometry is cooked from the geometry columns by the cooking service and its cache.",
+  "status": "draft",
+  "compiled_cache": true,
+  "authoring": false,
+  "applies_to": [
+    "Gprim",
+    "Xformable"
+  ],
+  "multi_apply": true,
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "producer_scope": "Published like any applied multi-apply API; the buffer is a uchar array per instance.",
+  "columns": [],
+  "notes": [
+    "Listed so a Stage carrying stored cooked data is not refused by the compiled cache; it owns no column because the ovruntime parser never reads physxCookedData:*."
+  ]
+}

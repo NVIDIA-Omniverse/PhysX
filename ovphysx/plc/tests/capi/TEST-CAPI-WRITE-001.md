@@ -193,6 +193,10 @@ links, joints and tendons.
   on a valid instance returns a successful task. An invalid or already-committed
   group pointer on a valid owned session instead returns an accepted failed task
   that reports no publication (REQ AC-7, AC-13).
+- The sidecar mirror preserves `Busy` as a distinct failure reporting runtime
+  contention and no publication. The `static_assert` checks in
+  `ovphysxSidecarLoader.cpp` compare the numeric values of the known mirrored enum
+  members with their runtime counterparts (REQ AC-13).
 - Admission rejections and execution failures are produced by the C API. Python's
   waiting adapters (`write_sync`, `commit_sync`, `close_sync`) collect their tasks and
   raise the same C-level errors (REQ AC-8, AC-9).
@@ -252,8 +256,9 @@ links, joints and tendons.
   attributes, and `ovphysx_articulation_get_{dof,body,joint}_names` prim-path identity plus the
   `dofJointPath` / `dofAxisIndex` DOF-column descriptor — every binding-coupled helper now names a
   landed successor. Path/pattern selection and query-based kinematic update are available;
-  the data-derived per-row masked write remains deferred, and the names successor retains
-  the documented zero-DOF joint limitation (REQ AC-11, AC-14). The per-language compat smoke test
+  the data-derived per-row masked write remains deferred. Fixed-joint identities are available
+  through `physxPointer` group prims, but the tests cited here do not verify that path or
+  per-articulation ownership and solver ordering (REQ AC-11, AC-14). The per-language compat smoke test
   `tests/python_tests/test_tensor_binding_deprecation.py` pins the Python side (the deprecated
   factory works AND raises `DeprecationWarning` naming the successor); the retained
   `tests/c_unittests/test_tensor_binding.cpp` is the C/C++ compat coverage. The names successor's C-ABI
@@ -262,9 +267,10 @@ links, joints and tendons.
   column's handle to its joint prim path through the attached Stage's dictionary, and confirms each of the four DOFs
   (two revolute joints on each of two articulations) names a distinct joint prim at axis 0 — the (joint
   prim, axis) identity that replaces `ovphysx_articulation_get_dof_names` (REQ AC-14).
-- `MultiInstance.OutputCompletesWhilePeerRuntimeCallbackIsBlocked` in
-  `tests/c_unittests/test_multi_instance.cpp` holds a peer's real teardown callback
-  on another thread. Query creation and cached-query validation, write/fetch/commit,
+- `MultiInstance.OutputCompletesWhilePeerSharedExecutionCallbackIsBlocked` in
+  `tests/c_unittests/test_multi_instance.cpp` holds a peer's real incremental-update
+  destruction callback under shared runtime admission on another thread. Query
+  creation and cached-query validation, write/fetch/commit,
   read/fetch/group release and session/query release on the idle owner must all
   finish before that callback returns. Committed CPU masses read back exactly;
   output calls made from the callback itself remain rejected (REQ AC-10).

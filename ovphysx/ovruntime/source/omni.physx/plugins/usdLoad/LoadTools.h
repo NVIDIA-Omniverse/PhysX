@@ -228,6 +228,14 @@ public:
                                           omni::physics::parse::ObjectKey::Hash>;
 
     void setParentResolver(ParentResolver resolver);
+    void reserveAdditional(size_t paths, size_t schemas)
+    {
+        mKeyMap.reserve(mKeyMap.size() + paths);
+        mKeyPathText.reserve(mKeyPathText.size() + paths);
+        mKeySchemaAPIMap.reserve(mKeySchemaAPIMap.size() + schemas);
+        mPrimHierarchyStorage.reserveAdditional(paths);
+    }
+
 
     /*
      * Create a new entry at the given path.
@@ -243,6 +251,10 @@ public:
     // mKeyPathText so removeEntry/removeEntries can undo the row (REQ-LOAD-OBJECTDB-001).
     void findOrCreateEntry(omni::physics::parse::ObjectKey key, std::string_view pathText, ObjectCategory category, ObjectId newEntryId);
     void findOrCreateEntryWithoutHierarchyStorage(omni::physics::parse::ObjectKey key, ObjectCategory category, ObjectId newEntryId);
+    // The path half of the pathText overload above: the hierarchy row and the remembered path,
+    // without an entry. A caller that records many paths ahead of their entries (a compiled-cache
+    // restore) adds each entry with findOrCreateEntryWithoutHierarchyStorage later.
+    void recordPathText(omni::physics::parse::ObjectKey key, std::string_view pathText);
 
     /*
      * Return the set of entries at the given path.  If the path has not had entries
@@ -305,6 +317,11 @@ public:
     }
 
     uint64_t getSchemaAPIs(omni::physics::parse::ObjectKey key) const;
+    // Export runtime-owned schema state without rediscovering the source graph.
+    const KeySchemaApiMap& getSchemaAPIMap() const
+    {
+        return mKeySchemaAPIMap;
+    }
 
 
     /*
@@ -391,9 +408,14 @@ inline void ObjectDb::findOrCreateEntry(omni::physics::parse::ObjectKey key, Obj
 inline void ObjectDb::findOrCreateEntry(omni::physics::parse::ObjectKey key, std::string_view pathText,
                                         ObjectCategory category, ObjectId newEntryId)
 {
+    recordPathText(key, pathText);
+    findOrCreateEntryWithoutHierarchyStorage(key, category, newEntryId);
+}
+
+inline void ObjectDb::recordPathText(omni::physics::parse::ObjectKey key, std::string_view pathText)
+{
     mPrimHierarchyStorage.addPrim(std::string(pathText));
     mKeyPathText[key].assign(pathText.data(), pathText.size());
-    findOrCreateEntryWithoutHierarchyStorage(key, category, newEntryId);
 }
 
 inline void ObjectDb::findOrCreateEntryWithoutHierarchyStorage(omni::physics::parse::ObjectKey key,

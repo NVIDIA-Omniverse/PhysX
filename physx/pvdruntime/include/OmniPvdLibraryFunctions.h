@@ -21,6 +21,41 @@ class OmniPvdSocketWriteStream;
 // the same module. Pass only objects returned by these create functions to the matching destroy
 // functions.
 OMNI_PVD_API OmniPvdReader* OMNI_PVD_CALL createOmniPvdReader();
+// Limits apply before payload allocation. Attribute paths cannot exceed 32 handles.
+// Returns nullptr if the reader cannot be allocated.
+OMNI_PVD_API OmniPvdReader* OMNI_PVD_CALL createOmniPvdReaderWithLimits(uint32_t maxAttributeBytes);
+struct OmniPvdReaderStatus
+{
+    enum Code { eNONE, eEND_OF_STREAM, eINVALID, eUNSUPPORTED, eLIMIT };
+    Code code;
+    uint8_t attributePathDepth;
+};
+// Accepts readers from this module's createOmniPvdReader* factories only.
+OMNI_PVD_API OmniPvdReaderStatus OMNI_PVD_CALL getOmniPvdReaderStatus(const OmniPvdReader& reader);
+
+/** \brief Borrowed diagnostic callback and opt-in successful-read tracing. */
+struct OmniPvdReaderDiagnostics
+{
+    OmniPvdLogFunction logFunction = nullptr; ///< Null disables this reader's callback, including errors.
+    bool verbose = false; ///< Enables accepted-header detail and completed-command traces.
+};
+
+/**
+ * \brief Replaces a factory reader's callback and verbosity without changing its parsing state.
+ *
+ * Accepts only readers from this module's createOmniPvdReader or createOmniPvdReaderWithLimits.
+ * Apply before reading to receive the corresponding output. Reconfiguration never replays a
+ * previous diagnostic. Errors, including a rejected complete header's version and reason, do not
+ * require verbose. A command may produce several ordered callbacks with escaped, bounded text.
+ * The callback runs synchronously. Its char buffer is read-only and valid only during that call;
+ * copy it to retain it. The callback must not throw, re-enter or destroy the active reader.
+ * Serialize reader access and protect mutable callback state shared by concurrent readers.
+ *
+ * \param[in,out] reader Reader created by this module's factory; custom and other-module readers are invalid.
+ * \param[in] diagnostics Both fields replace the current settings. A null callback disables all output.
+ */
+OMNI_PVD_API void OMNI_PVD_CALL setOmniPvdReaderDiagnostics(
+    OmniPvdReader& reader, const OmniPvdReaderDiagnostics& diagnostics);
 OMNI_PVD_API void OMNI_PVD_CALL destroyOmniPvdReader(OmniPvdReader& reader);
 
 OMNI_PVD_API OmniPvdWriter* OMNI_PVD_CALL createOmniPvdWriter();

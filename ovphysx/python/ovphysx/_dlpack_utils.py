@@ -111,7 +111,13 @@ def synchronize_tensor_producer(obj) -> object | None:
         del capsule
 
 
-def acquire_dltensor(obj) -> tuple[DLTensor, object | None]:
+def _dlpack_on_cuda(obj) -> bool:
+    """Whether a __dlpack__ exporter's tensor lives in CUDA device or managed memory."""
+    device = getattr(obj, "__dlpack_device__", None)
+    return device is not None and device()[0] in (DLDeviceType.kDLCUDA, DLDeviceType.kDLCUDAManaged)
+
+
+def acquire_dltensor(obj, *, synchronize: bool = True) -> tuple[DLTensor, object | None]:
     """Extract DLTensor and a keepalive reference (if needed).
 
     For objects implementing __dlpack__(), the returned DLTensor points into a
@@ -120,6 +126,10 @@ def acquire_dltensor(obj) -> tuple[DLTensor, object | None]:
 
     Args:
         obj: DLTensor, object with __dlpack__(), or numpy-like array
+        synchronize: Wait on the host for the producer first, as
+            ``synchronize_tensor_producer`` does. Pass False when the native call is itself
+            ordered after the stream that produced ``obj``: then a CUDA tensor is exported
+            with DLPack's no-synchronization stream, -1, and nothing is waited for.
 
     Returns:
         Tuple of (DLTensor, keepalive_object). The keepalive_object must be
@@ -128,12 +138,13 @@ def acquire_dltensor(obj) -> tuple[DLTensor, object | None]:
     if isinstance(obj, DLTensor):
         return obj, None
 
-    capsule = synchronize_tensor_producer(obj)
+    capsule = synchronize_tensor_producer(obj) if synchronize else None
 
     # __dlpack__ protocol (NumPy >= 1.22, PyTorch, etc.)
     if hasattr(obj, "__dlpack__"):
         if capsule is None:
-            capsule = obj.__dlpack__()
+            unordered = not synchronize and _dlpack_on_cuda(obj)
+            capsule = obj.__dlpack__(stream=-1) if unordered else obj.__dlpack__()
         try:
             if PyCapsule_IsValid(capsule, b"dltensor") != 1:
                 raise TypeError("__dlpack__() did not return a valid 'dltensor' capsule")

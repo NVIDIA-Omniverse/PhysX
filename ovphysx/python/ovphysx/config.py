@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# @implements REQ-PYTHON-OMNIPVD-CAPTURE-001
+# @covers AC-1
+
 # @implements REQ-CAPI-THREADS-001
 # @covers AC-2
 
@@ -13,6 +16,9 @@
 # @covers AC-1 AC-2
 # @implements REQ-PYTHON-READPOOL-001
 # @covers AC-2
+
+# @implements REQ-CAPI-CONFIG-001
+# @covers AC-2 AC-7
 
 """Typed config for ovphysx.
 
@@ -40,6 +46,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from inspect import Parameter, Signature, signature
+from collections.abc import Sequence
 
 from .types import ProfilerBackend
 
@@ -100,6 +107,10 @@ def _make_bool_entry(key: int, value: bool):
 
 
 def _make_int32_entry(key: int, value: int):
+    # Reject before the c_int32 store. ctypes wraps an out-of-range Python int,
+    # and the legacy create path would then apply that narrowed value.
+    if not (-(2**31) <= value <= 2**31 - 1):
+        raise ValueError("Configuration integer does not fit backend int32 storage")
     _b = _bindings()
     entry = _b.ovphysx_config_entry_t()
     entry.key_type = _b.OVPHYSX_CONFIG_KEY_TYPE_INT32
@@ -146,7 +157,7 @@ def _make_carbonite_entry(key: str, value: bool | int | float | str):
 
 @dataclass(frozen=True)
 class OmniPvdDestination:
-    """Exact destination for an explicit OVD recording session."""
+    """FILE path or TCP endpoint for an explicit OVD recording session."""
 
     transport: str
     file_path: str = ""
@@ -156,7 +167,13 @@ class OmniPvdDestination:
 
     @classmethod
     def file(cls, path: str) -> "OmniPvdDestination":
-        """Record to the exact file path ``path``."""
+        """Use ``path`` as an exact filename if it ends with literal ``.ovd``.
+
+        Other paths are directories receiving timestamped ``*_rec.ovd`` files.
+        The suffix is case-sensitive; add a trailing separator to use a
+        directory whose name ends in ``.ovd``. An admitted explicit start
+        creates missing directories or filename parents recursively.
+        """
         return cls(transport="file", file_path=path)
 
     @classmethod
@@ -193,6 +210,65 @@ class OmniPvdDestination:
             raise ValueError("OmniPvdDestination.transport must be 'file' or 'tcp'")
 
 
+def _is_absolute_prim_path(path: str) -> bool:
+    # Mirror the runtime's USD-free PrimPathGrammar.h, preserving Unicode names.
+    try:
+        path.encode("utf-8")
+    except UnicodeEncodeError:
+        return False
+    if not path.startswith("/"):
+        return False
+    for segment in path[1:].split("/"):
+        if not segment:
+            return False
+        for index, char in enumerate(segment):
+            if (ord(char) >= 0x80 or char == "_" or "A" <= char <= "Z" or
+                    "a" <= char <= "z" or (index > 0 and "0" <= char <= "9")):
+                continue
+            return False
+    return True
+
+
+@dataclass(frozen=True)
+class OmniPvdFilter:
+    """Initial recording filter, copied when a recording starts.
+
+    Empty lists select all shared-runtime objects; otherwise scenes and objects
+    form a union within the caller's attachment. Use exact absolute prim paths.
+    Scenes include future members. Objects may be rigid statics/dynamics,
+    whole articulations, deformables, particle systems or particle buffers.
+    Select owners for links, joints, shapes, materials and meshes.
+
+    Primary poses, velocities, acceleration, geometry, materials and vertex state
+    are always recorded. Set record_secondary_data to False for primary data only.
+    The default True adds forces, contacts, configuration, diffuse parameters and
+    vehicle-specific telemetry. FILE retains the filter until stop/restart. A TCP
+    receiver can replace it after an applied acknowledgment on the active
+    connection. Receiver selections remain limited to the recording owner's attachment.
+    """
+
+    record_secondary_data: bool = True
+    scenes: Sequence[str] = ()
+    objects: Sequence[str] = ()
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.record_secondary_data, bool):
+            raise TypeError("OmniPvdFilter.record_secondary_data must be a bool")
+        for name in ("scenes", "objects"):
+            paths = getattr(self, name)
+            if isinstance(paths, (str, bytes)) or not isinstance(paths, Sequence):
+                raise TypeError(f"OmniPvdFilter.{name} must be a sequence of path strings")
+            copied = tuple(paths)
+            if len(copied) > 2**32 - 1:
+                raise ValueError(f"OmniPvdFilter.{name} exceeds UINT32_MAX paths")
+            for path in copied:
+                if not isinstance(path, str):
+                    raise TypeError(f"OmniPvdFilter.{name} must contain only strings")
+                if not _is_absolute_prim_path(path):
+                    raise ValueError(f"OmniPvdFilter.{name} must contain exact absolute prim paths")
+            object.__setattr__(self, name, copied)
+
+
 @dataclass
 class PhysXConfig:
     """Typed configuration for ovphysx.
@@ -227,13 +303,21 @@ class PhysXConfig:
     profiler_backend: str | int | None = None
     #: Destination file for ``profiler_backend="trace"``, ignored by the other backends.
     #: Unset writes ``ct-profile <date> <time>.json`` to the working directory. The trace
-    #: is written when the last instance shuts down. Setting ``OVPHYSX_PROFILER_OUTPUT``
-    #: in the environment has the same effect.
+    #: JSON is finalized when the last instance shuts down; the file can appear earlier
+    #: with incomplete JSON. Setting ``OVPHYSX_PROFILER_OUTPUT`` in the environment
+    #: has the same effect.
     profiler_output_path: str | None = None
     #: Directory for the local cooked-collider (UJITSO) cache. Provide this to persist cooked
     #: colliders across runs and reuse them on the next launch. If left None, ovphysx cooks to a
     #: process-private temp directory that is discarded at shutdown, so nothing persists.
     #: Applied when the runtime first starts in a process. Later changes have no effect.
+    #: The compiled stage cache stores here too, and PhysX deserializes those results in place:
+    #: anyone who can write the directory can corrupt this process. Keep it private to the user
+    #: and on a local disk; a network share is not detected. On Linux, ovphysx creates missing
+    #: directories owner-only, and the default ``AUTOMATIC`` compiled stage cache mode uses only a
+    #: private one: not a symlink, owned by the user and closed to group and others, with every
+    #: directory above it owned by the user or root and writable by no one else unless sticky, as
+    #: ``/tmp`` is.
     cooked_collider_cache_dir: str | None = None
     #: Retention budget in MiB for the per-context device read-buffer pool that backs the ovstage
     #: output read (/physics/ovstageReadPoolMaxMB). Bounds the device and pinned-host memory the pool
@@ -382,17 +466,23 @@ _FIELD_TO_ENTRY: dict[str, tuple] = {
 def _to_c_config(config: PhysXConfig) -> list[ovphysx_config_entry_t]:
     """Convert a PhysXConfig dataclass to a list of C config entries."""
     entries: list[ovphysx_config_entry_t] = []
-    known_paths = {info[2]: name for name, info in _FIELD_TO_ENTRY.items()}
+    known_paths = {info[2].removeprefix("/"): name for name, info in _FIELD_TO_ENTRY.items()}
     for field_name, (factory, key, _) in _FIELD_TO_ENTRY.items():
         value = getattr(config, field_name)
         if value is not None:
             entries.append(factory(key, value))
     if config.carbonite_overrides:
         for carb_key, carb_value in config.carbonite_overrides.items():
-            if carb_key in known_paths:
+            if not isinstance(carb_key, str):
+                raise TypeError(
+                    "PhysXConfig.carbonite_overrides keys must be str, "
+                    f"got {type(carb_key).__name__}"
+                )
+            typed_field = known_paths.get(carb_key.removeprefix("/"))
+            if typed_field is not None:
                 raise ValueError(
                     f"carbonite_overrides key '{carb_key}' conflicts with typed field "
-                    f"'{known_paths[carb_key]}'. Use the typed field instead."
+                    f"'{typed_field}'. Use the typed field instead."
                 )
             entries.append(_make_carbonite_entry(carb_key, carb_value))
     return entries

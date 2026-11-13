@@ -4,6 +4,9 @@
 /**
  * @implements REQ-TENSOR-INDEX-001
  * @covers AC-3
+ *
+ * @implements REQ-TENSOR-VIEW-001
+ * @covers AC-15
  */
 #include <string>
 
@@ -103,26 +106,22 @@ GpuSurfaceDeformableBodyView::GpuSurfaceDeformableBodyView(GpuSimulationView* si
             deformableBodyRecord.collNodalPositions = nullptr;
 
             // tensor lib managed data
-            if (!CHECK_CUDA(cudaMalloc(&(deformableBodyRecord.simElementIndices), simElementIndicesBufferSize)))
-                return;
-
-            if (!CHECK_CUDA(cudaMemcpy(deformableBodyRecord.simElementIndices, entries[i].simIndices.data(),
-                                       simElementIndicesBufferSize, cudaMemcpyHostToDevice)))
-            {
-                CARB_LOG_ERROR("Unable to copy data from host to device for simElementIndicesBuffer\n");
-                return;
-            }
-
             deformableBodyRecord.collElementIndices = nullptr;
             deformableBodyRecord.simNodalKinematicTargets = nullptr;
-
-            if (!CHECK_CUDA(cudaMalloc(&(deformableBodyRecord.restNodalPositions), restNodalVec3BufferSize)))
-                return;
-
-            if (!CHECK_CUDA(cudaMemcpy(deformableBodyRecord.restNodalPositions, entries[i].restPositions.data(),
-                                       restNodalVec3BufferSize, cudaMemcpyHostToDevice)))
+            const bool allocated =
+                CHECK_CUDA(cudaMalloc(&(deformableBodyRecord.simElementIndices), simElementIndicesBufferSize)) &&
+                CHECK_CUDA(cudaMemcpy(deformableBodyRecord.simElementIndices, entries[i].simIndices.data(),
+                                      simElementIndicesBufferSize, cudaMemcpyHostToDevice)) &&
+                CHECK_CUDA(cudaMalloc(&(deformableBodyRecord.restNodalPositions), restNodalVec3BufferSize)) &&
+                CHECK_CUDA(cudaMemcpy(deformableBodyRecord.restNodalPositions, entries[i].restPositions.data(),
+                                      restNodalVec3BufferSize, cudaMemcpyHostToDevice));
+            if (!allocated)
             {
-                CARB_LOG_ERROR("Unable to copy data from host to device for restNodalPositionsBuffer\n");
+                // The record is not kept, so what it allocated is freed here, and the view stays unusable. The failure
+                // is reported here rather than left as CUDA's last error for a later launch check to report.
+                CARB_LOG_ERROR("Unable to allocate or upload the device buffers of a surface deformable body");
+                cudaGetLastError();
+                DeformableBodyBufferManager::freeRecordBuffers(deformableBodyRecord);
                 return;
             }
 
@@ -153,17 +152,18 @@ GpuSurfaceDeformableBodyView::GpuSurfaceDeformableBodyView(GpuSimulationView* si
     mSimElementIndices.setMaxBufferSize();
     mRestNodalPositions.setMaxBufferSize();
 
-    mSimElementIndices.uploadDeviceData("mSimElementIndices");
-    mRestNodalPositions.uploadDeviceData("mRestNodalPositions");
+    mUsable = mSimElementIndices.uploadDeviceData("mSimElementIndices") &&
+              mRestNodalPositions.uploadDeviceData("mRestNodalPositions");
+    if (!mUsable)
+        return;
 
     PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
 
-    DeformableBodyBufferManager::allocDevMemAndCopyH2D(
-        (void**)&mViewIndicesD, mViewIndices.data(), sizeof(PxU32) * numBodies, "ViewIndices");
-
-    DeformableBodyBufferManager::allocDevMemAndCopyH2D((void**)&mDeformableBodyRecordsD, mDeformableBodyRecords.data(),
-                                                       sizeof(GpuDeformableBodyRecord) * numBodies,
-                                                       "GpuDeformableBodyRecord");
+    mUsable = DeformableBodyBufferManager::allocDevMemAndCopyH2D(
+                  (void**)&mViewIndicesD, mViewIndices.data(), sizeof(PxU32) * numBodies, "ViewIndices") &&
+              DeformableBodyBufferManager::allocDevMemAndCopyH2D(
+                  (void**)&mDeformableBodyRecordsD, mDeformableBodyRecords.data(),
+                  sizeof(GpuDeformableBodyRecord) * numBodies, "GpuDeformableBodyRecord");
 }
 
 GpuSurfaceDeformableBodyView::~GpuSurfaceDeformableBodyView()

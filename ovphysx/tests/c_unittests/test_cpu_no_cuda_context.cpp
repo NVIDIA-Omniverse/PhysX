@@ -3,10 +3,11 @@
 
 // PARTIALLY DEPRECATED (tensor-binding-deprecation): only the ovphysx_read_tensor_binding
 // CUDA-tensor rejection arm is binding-specific (bindings take a user tensor, sessions do not)
-// and retires with the binding. The CPU-mode / no-CUDA-context contract (set/get_cpu_mode,
-// create_instance, the process_cpu_only log line) is the subject of this test and stays.
+// and retires with the binding. The CPU-only / no-CUDA-context contract
+// (OVPHYSX_GLOBAL_CONFIG_CPU_ONLY, create_instance, the process_cpu_only log line)
+// is the subject of this test and stays.
 
-// CpuNoCudaContextGpuTest: on a GPU-capable box, calling ovphysx_set_cpu_mode(true)
+// CpuNoCudaContextGpuTest: on a GPU-capable box, setting OVPHYSX_GLOBAL_CONFIG_CPU_ONLY
 // before creating an instance and stepping must not open a CUDA context. Device
 // mode is process-wide, not a per-instance create-arg, so once it is set no
 // instance may touch the CUDA driver regardless of which USD stages are loaded.
@@ -21,6 +22,7 @@
 // context. Self-skips if the context is already active.
 
 #include <ovphysx/ovphysx.h>
+#include <ovphysx/ovphysx_config.h>
 #include <gtest/gtest.h>
 
 #include "ovphysx_test_utils.h"
@@ -94,27 +96,34 @@ TEST(CpuNoCudaContextGpuTest, CpuOnlyFlagCreatesNoCudaContextOnGpuBox)
                      << ") before the test; run CpuNoCudaContextGpuTest.* isolated";
 
     // Fresh process (this pass does not set OVPHYSX_DISABLE_GPU): hard CPU-only
-    // must report false before set_cpu_mode (REQ-CAPI-CPU-001 AC-1 inactive case).
+    // must report false before the setter (REQ-CAPI-CPU-001 AC-1 inactive case).
     // test_main already called ovphysx_initialize(), which latched the unset env.
     {
-        bool cpuOnlyBefore = true;
-        ASSERT_EQ(ovphysx_get_cpu_mode(&cpuOnlyBefore).status, OVPHYSX_API_SUCCESS);
+        ovphysx_config_value_t cpuOnlyBefore = {};
+        ASSERT_EQ(ovphysx_get_global_config(
+                      OVPHYSX_GLOBAL_CONFIG_CPU_ONLY, &cpuOnlyBefore).status,
+                  OVPHYSX_API_SUCCESS);
         if (std::getenv("OVPHYSX_DISABLE_GPU") == nullptr)
         {
-            EXPECT_FALSE(cpuOnlyBefore)
-                << "get_cpu_mode must report false when neither set_cpu_mode nor "
+            EXPECT_EQ(cpuOnlyBefore.type, OVPHYSX_CONFIG_VALUE_BOOL);
+            EXPECT_FALSE(cpuOnlyBefore.value.bool_value)
+                << "CPU_ONLY must report false when neither the setter nor "
                    "OVPHYSX_DISABLE_GPU is active";
         }
     }
 
     // Set process-wide CPU-only mode before creating any instance.
-    ASSERT_EQ(ovphysx_set_cpu_mode(true).status, OVPHYSX_API_SUCCESS)
-        << "ovphysx_set_cpu_mode(true) failed";
+    ASSERT_EQ(ovphysx_set_global_config(
+                  OVPHYSX_GLOBAL_CONFIG_CPU_ONLY, ovphysx_config_value_bool(true)).status,
+              OVPHYSX_API_SUCCESS)
+        << "setting OVPHYSX_GLOBAL_CONFIG_CPU_ONLY failed";
 
-    bool cpuOnly = false;
-    ASSERT_EQ(ovphysx_get_cpu_mode(&cpuOnly).status, OVPHYSX_API_SUCCESS);
-    EXPECT_TRUE(cpuOnly)
-        << "ovphysx_get_cpu_mode must report true after set_cpu_mode(true)";
+    ovphysx_config_value_t cpuOnly = {};
+    ASSERT_EQ(ovphysx_get_global_config(OVPHYSX_GLOBAL_CONFIG_CPU_ONLY, &cpuOnly).status,
+              OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(cpuOnly.type, OVPHYSX_CONFIG_VALUE_BOOL);
+    EXPECT_TRUE(cpuOnly.value.bool_value)
+        << "CPU_ONLY must report true after the setter";
 
     // Verify that the explicit API activates the same TensorBinding policy as
     // OVPHYSX_DISABLE_GPU before any instance or CUDA interface is needed.
@@ -189,8 +198,8 @@ TEST(CpuNoCudaContextGpuTest, CpuOnlyFlagCreatesNoCudaContextOnGpuBox)
     }
 
     const ovx_string_t path{ assetPath, std::strlen(assetPath) };
-    const ovstage_population_enqueue_result_t enqueue = ovstage_population_open_usd_from_file(
-        stage, path, 1, 0.0, OVSTAGE_POPULATION_DOMAIN_PHYSICS);
+    const ovstage_population_enqueue_result_t enqueue = ovphysx_sample_open_usd_from_file(
+        stage, path, 1, 0.0, /*with_rendering=*/false);
     ASSERT_EQ(enqueue.status, OVSTAGE_OK);
 
     ovstage_population_op_wait_result_t populationWait{};
@@ -228,7 +237,7 @@ TEST(CpuNoCudaContextGpuTest, CpuOnlyFlagCreatesNoCudaContextOnGpuBox)
     ovphysx_destroy_instance(h);
 
     EXPECT_EQ(activeAfter, 0)
-        << "An instance created under ovphysx_set_cpu_mode(true) activated the CUDA primary "
+        << "An instance created under OVPHYSX_GLOBAL_CONFIG_CPU_ONLY activated the CUDA primary "
            "context -- the no-driver-touch contract is broken. CPU-only mode must never touch CUDA.";
 }
 

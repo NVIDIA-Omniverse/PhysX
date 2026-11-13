@@ -14,6 +14,7 @@
 #define LOG2_WARP_SIZE 5
 #define WARP_SIZE (1U << LOG2_WARP_SIZE)
 #define	FULL_MASK 0xffffffff //full mask for 32 thread in a warp
+#define PXG_MAX_GRID_DIM_YZ 65535 // CUDA limit on the grid's y and z dimensions
 
 
 #endif

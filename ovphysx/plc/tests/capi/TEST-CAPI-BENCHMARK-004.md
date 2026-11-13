@@ -46,6 +46,9 @@ inventory, device, output, or read semantics drift.
   including a cleanup failure that retires its session. As a positive control,
   make one successful warm-up read return no groups, an incomplete sensor set,
   or no live contacts before allowing subsequent complete, live reads.
+- On Linux, `benchmark-contact-affinity-unit` runs the pipe protocol with
+  acknowledgements and with a runner that disconnects, and rejects malformed
+  descriptor pairs. A disabled barrier is also exercised.
 
 ## Then
 
@@ -76,8 +79,14 @@ inventory, device, output, or read semantics drift.
   not-yet-live contact set retries and permits a positive 100-call result after
   three consecutive complete, live reads. Empty or incomplete measured reads
   fail immediately (REQ AC-4).
+- An enabled barrier blocks until acknowledged, accepts the ordered `R`/`E`
+  protocol, and fails when the runner disconnects or descriptors are invalid.
+  A disabled barrier returns without waiting (REQ AC-6).
 
 ## Coverage Limitations
+
+- The standalone barrier test covers protocol mechanics. Native Contact timing
+  boundaries and external runner placement require a GPU integration run.
 
 - The GPU row checks that each net-force tensor has device type `kDLCUDA`.
   These columns are device-resident only under

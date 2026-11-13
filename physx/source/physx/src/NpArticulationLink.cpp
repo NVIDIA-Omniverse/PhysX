@@ -222,6 +222,7 @@ void NpArticulationLink::addForce(const PxVec3& force, PxForceMode::Enum mode, b
 	if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
 	{
 		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationLink::addForce(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
+		return;
 	}
 
 	addSpatialForce(&force, NULL, mode);
@@ -241,6 +242,7 @@ void NpArticulationLink::addTorque(const PxVec3& torque, PxForceMode::Enum mode,
 	if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
 	{
 		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationLink::addTorque(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
+		return;
 	}
 
 	addSpatialForce(NULL, &torque, mode);
@@ -261,6 +263,7 @@ void NpArticulationLink::setForceAndTorque(const PxVec3& force, const PxVec3& to
 	if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
 	{
 		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationLink::setForceAndTorque(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
+		return;
 	}
 
 	setSpatialForce(&force, &torque, mode);
@@ -279,6 +282,7 @@ void NpArticulationLink::clearForce(PxForceMode::Enum mode)
 	if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
 	{
 		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationLink::clearForce(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
+		return;
 	}
 
 	clearSpatialForce(mode, true, false);
@@ -295,6 +299,7 @@ void NpArticulationLink::clearTorque(PxForceMode::Enum mode)
 	if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
 	{
 		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationLink::clearTorque(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
+		return;
 	}
 
 	clearSpatialForce(mode, false, true);
@@ -307,7 +312,7 @@ void NpArticulationLink::setCfmScale(const PxReal cfmScale)
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationLink::setCfmScale() not allowed while simulation is running. Call will be ignored.")
 
-	mCore.getCore().cfmScale = cfmScale;
+	mCore.setCfmScale(cfmScale);
 	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxArticulationLink, CFMScale, static_cast<PxArticulationLink&>(*this), cfmScale); // @@@
 }
 
@@ -328,6 +333,7 @@ void NpArticulationLink::setGlobalPoseInternal(const PxTransform& pose, bool aut
 	if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
 	{
 		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationLink::setGlobalPose(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
+		return;
 	}
 
 #if PX_CHECKED

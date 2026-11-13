@@ -7,14 +7,13 @@
 import json
 import os
 from pathlib import Path
-from ovphysx_companion._worker import run_worker, write_reply
+from ovphysx_companion._worker import load_library, run_worker, write_reply
 import sys
 
 
 def worker(request):
-    import ctypes
     from ovphysx_companion.vehicle import VehicleMath
-    service=VehicleMath(ctypes.CDLL(os.environ['OVPHYSX_LIB']))
+    service=VehicleMath(load_library())
     return {'masses':service.sprung_masses(request['points'],request['mass']),
             'frame':service.suspension_frame(request['body_pose'],request['wheel_pose'])}
 

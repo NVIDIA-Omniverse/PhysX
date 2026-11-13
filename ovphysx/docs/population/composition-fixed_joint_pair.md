@@ -5,7 +5,7 @@
 
 # Two rigid-body Cubes on a fixed joint
 
-Multi-prim test composition: two Cube rigid bodies one unit apart (B translated +3 in x, half extents 0.5) joined by a PhysicsFixedJoint (all six axes locked) whose local frames meet halfway between them. The bodies are not verified; the joint prim is. Standalone joints are PxD6Joint at runtime (distance joints PxDistanceJoint); the PhysxJointAxisAPI, PhysicsJointStateAPI and PhysxDrivePerformanceEnvelopeAPI columns target the articulation joint and are unobservable here (NaN on both sides), see the articulation compositions. Owns no columns and generates no helper.
+Multi-prim test composition: two Cube rigid bodies one unit apart (B translated +3 in x, half extents 0.5) joined by a PhysicsFixedJoint (all six axes locked) whose local frames meet halfway between them. The bodies are not verified; the joint [prim](glossary.md#prim) is. Standalone joints are [PxD6Joint](glossary.md#pxd6joint) at runtime (distance joints [PxDistanceJoint](glossary.md#pxdistancejoint)); the PhysxJointAxisAPI, PhysicsJointStateAPI and PhysxDrivePerformanceEnvelopeAPI columns target the articulation joint and are unobservable here (NaN on both sides), see the articulation compositions. Owns no columns and generates no helper.
 
 - **Form:** multi-prim; no helper, the contract test builds each prim with `PrimBatch`.
 

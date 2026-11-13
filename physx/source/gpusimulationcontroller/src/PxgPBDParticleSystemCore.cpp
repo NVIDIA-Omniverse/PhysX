@@ -479,7 +479,6 @@ namespace physx
 		//copy unsortedPositions_InvMass and velocity to user buffer
 		copyUnsortedArrayToUserBuffer(particleSystemsd, activeParticleSystemsd, nbActiveParticleSystems);
 
-		copyUserBufferDataToHost(particleSystems, activeParticleSystems, nbActiveParticleSystems);
 
 		//Wait for diffuse particles to complete
 		synchronizeStreams(mCudaContext, mStream, mFinalizeStream);
@@ -1033,6 +1032,11 @@ namespace physx
 						PxParticleBufferFlag::eUPDATE_PHASE);
 		    }
 
+#if PX_SUPPORT_OMNI_PVD
+			if (srcBuffer.mBufferFlags & PxParticleBufferFlag::eUPDATE_PHASE)
+				srcBuffer.mOmniPvdPhasesChanged = true;
+#endif
+
 			anyDirty |= ((srcBuffer.mBufferFlags & PxParticleBufferFlag::eUPDATE_PHASE) || (srcBuffer.mBufferFlags & PxParticleBufferFlag::eUPDATE_POSITION)
 				|| (srcBuffer.mBufferFlags & PxParticleBufferFlag::eUPDATE_VELOCITY));
 		}
@@ -1048,6 +1052,11 @@ namespace physx
 					(PxParticleBufferFlag::eUPDATE_POSITION | PxParticleBufferFlag::eUPDATE_VELOCITY |
 					 PxParticleBufferFlag::eUPDATE_PHASE | PxParticleBufferFlag::eUPDATE_DIFFUSE_PARAM);
 		    }
+
+#if PX_SUPPORT_OMNI_PVD
+			if (srcBuffer.mBufferFlags & PxParticleBufferFlag::eUPDATE_PHASE)
+				srcBuffer.mOmniPvdPhasesChanged = true;
+#endif
 
 			anyDirty |= ((srcBuffer.mBufferFlags & PxParticleBufferFlag::eUPDATE_PHASE) || (srcBuffer.mBufferFlags & PxParticleBufferFlag::eUPDATE_POSITION)
 				|| (srcBuffer.mBufferFlags & PxParticleBufferFlag::eUPDATE_VELOCITY) || (srcBuffer.mBufferFlags & PxParticleBufferFlag::eUPDATE_DIFFUSE_PARAM));
@@ -1574,19 +1583,6 @@ namespace physx
 				dyParticleSystem->mFlag &= (~Dy::ParticleSystemFlag::eUPDATE_PHASE);
 			}
 
-			if (dyParticleSystem->mFlag & Dy::ParticleSystemFlag::eENABLE_GPU_DATA_SYNC)
-			{
-				PxgParticleBuffer** particleBuffers = reinterpret_cast<PxgParticleBuffer**>(dyParticleSystemCore.mParticleBuffers.begin());
-				for (PxU32 j = 0; j < dyParticleSystemCore.mParticleBuffers.size(); ++j)
-				{
-					particleBuffers[j]->allocHostBuffers();
-				}
-				PxgParticleBuffer** particleDiffuseBuffers = reinterpret_cast<PxgParticleBuffer**>(dyParticleSystemCore.mParticleDiffuseBuffers.begin());
-				for (PxU32 j = 0; j < dyParticleSystemCore.mParticleDiffuseBuffers.size(); ++j)
-				{
-					particleDiffuseBuffers[j]->allocHostBuffers();
-				}
-			}
 		}
 
 		CUdeviceptr activeParticleSystemsd = getActiveParticleSystemBuffer().getDevicePtr();

@@ -102,6 +102,8 @@ namespace Sc
 			BF_KINEMATIC_SURFACE_VELOCITY	= 1 << 11,	//Set when the application calls setKinematicVelocity. Actor remains awake until application calls clearKinematicVelocity. 
 			BF_IS_COMPOUND_RIGID			= 1 << 12,	// Set when the body is a compound actor, we dont want to set the sq bounds
 			BF_RESET_ACCELERATION			= 1 << 13,	// Set when acceleration state should be reset (teleport, wake-up, etc.)
+			BF_HAS_NON_IG_INTERACTIONS		= 1 << 14,	// Set when the actor has interactions that island generation does not control, see Sc::isIslandGenControlled().
+														// Lets the activation code skip the interaction array when there is nothing in it for it to do.
 
 											// PT: WARNING: flags stored on 16-bits now.
 		};
@@ -136,6 +138,8 @@ namespace Sc
 		PX_FORCE_INLINE	ActorCore&			getActorCore()							const	{ return mCore;							}
 
 		PX_FORCE_INLINE	bool				isActive()								const	{ return (mActiveListIndex < SC_NOT_IN_ACTIVE_LIST_INDEX);	}
+		// Prefetches the data read by isActive() and the type queries above.
+		PX_FORCE_INLINE	void				prefetchActivationState()				const	{ PxPrefetchLine(&mActiveListIndex); PxPrefetchLine(&mFilterFlags);	}
 
 		PX_FORCE_INLINE PxU32				getActiveListIndex()					const	{ return mActiveListIndex;				}  // if the body is active, the index is smaller than SC_NOT_IN_ACTIVE_LIST_INDEX
 		PX_FORCE_INLINE void				setActiveListIndex(PxU32 index)					{ mActiveListIndex = index;				}

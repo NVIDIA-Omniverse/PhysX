@@ -93,7 +93,7 @@ def test_every_public_c_api_has_exactly_one_profile_zone():
     """A new or renamed public API must not ship without one canonical API zone."""
     root = _project_root()
     public_names = set()
-    for header_name in ("ovphysx.h", "ovphysx_geometry_query.h", "ovphysx_legacy.h"):
+    for header_name in ("ovphysx.h", "ovphysx_geometry_query.h", "ovphysx_population.h", "ovphysx_utils.h", "ovphysx_legacy.h"):
         public_names.update(_public_api_names(root / "include" / "ovphysx" / header_name))
     expected_zone_names = {name.removeprefix("ovphysx_") for name in public_names}
     source_dir = root / "src" / "ovphysx"

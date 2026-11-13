@@ -5,7 +5,7 @@
 
 # Two dynamic rigid-body Cubes
 
-Multi-prim proof composition: two Cube rigid bodies side by side, each its own collider, authored one PrimBatch per prim. Owns no columns and generates no helper; it exists to exercise the multi-prim contract test shape (per-prim values, transforms and observations).
+Multi-prim proof composition: two Cube rigid bodies side by side, each its own collider, authored one PrimBatch per [prim](glossary.md#prim). Owns no columns and generates no helper; it exists to exercise the multi-prim contract test shape (per-prim values, transforms and observations).
 
 - **Form:** multi-prim; no helper, the contract test builds each prim with `PrimBatch`.
 

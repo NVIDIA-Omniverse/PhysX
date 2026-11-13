@@ -8,6 +8,7 @@
 
 #include "OmniPvdSocketReadStream.h"
 #include "OmniPvdSocket.h"
+#include <mutex>
 
 //
 // Receives the OmniPVD command stream over a TCP connection. This stream is the TCP
@@ -26,17 +27,23 @@ public:
 	uint64_t OMNI_PVD_CALL skipBytes(uint64_t nbrBytes) override;
 	bool OMNI_PVD_CALL openStream() override;
 	bool OMNI_PVD_CALL closeStream() override;
+	bool OMNI_PVD_CALL requestCapture(const OmniPvdCaptureRequest& request) override;
+	bool OMNI_PVD_CALL requestCaptureCatalog(uint64_t requestId) override;
 
 private:
 	// Allows tests to establish an exclusive listener before exercising production accept and validation.
 	friend class OmniPvdSocketReadStreamTestAccess;
+	friend class OmniPvdCaptureControlTestAccess;
 
 	bool recvAll(uint8_t* bytes, uint64_t nbrBytes);
 	bool recvAndValidateHandshake();
 	bool acceptAndValidate();
+	bool sendControlBytes(const uint8_t* bytes, uint64_t count);
 
 	OmniPvdSocket mSocket;
 	uint16_t      mPort; // port to listen on (fixed at creation)
+	uint16_t mControlCapabilities;
+	std::mutex mControlSendMutex;
 };
 
 #endif

@@ -97,9 +97,9 @@ def test_contact_query_filtered_detail_device(physx_sdk, tmp_path):
 
 
 def test_contact_query_repeated_reads_keep_their_arrays_device(physx_sdk, tmp_path):
-    """Repeated reads with the same contacts, each read's array kept past its result: every call opens a fresh
-    contact query over the same rows, so the reads share one device reducer, and each kept array still holds
-    its own read's values -- /World/Light falling in the first, resting in the later ones."""
+    """Repeated reads with the same contacts, each read's array kept past its result, dropped without a close:
+    every call opens a fresh contact query over the same rows, so the reads share one device reducer, and each
+    kept array still holds its own read's values -- /World/Light falling in the first, resting in the later ones."""
     import numpy
     import ovstage
     from ovphysx.types import SimObjectType
@@ -121,12 +121,13 @@ def test_contact_query_repeated_reads_keep_their_arrays_device(physx_sdk, tmp_pa
         for _ in range(steps):
             physx_sdk.step(1.0 / 60.0)
         physx_sdk.wait_all()
-        with physx_sdk.read_sync(SimObjectType.CONTACT_SENSOR, [NORMAL_CONTACT_FORCE_MATRIX], contacts=contacts) as result:
-            (group,) = result.groups
-            assert paths.get_path_strings(group.prim_list) == ["/World/Light", "/World/Heavy"]
-            tensor = group.tensors[0]
-            assert tensor.device.is_cuda and tuple(tensor.shape) == (2, 3)
-            kept.append((tensor, tensor.numpy().copy()))
+        result = physx_sdk.read_sync(SimObjectType.CONTACT_SENSOR, [NORMAL_CONTACT_FORCE_MATRIX], contacts=contacts)
+        (group,) = result.groups
+        assert paths.get_path_strings(group.prim_list) == ["/World/Light", "/World/Heavy"]
+        tensor = group.tensors[0]
+        assert tensor.device.is_cuda and tuple(tensor.shape) == (2, 3)
+        kept.append((tensor, tensor.numpy().copy()))
+        del result, group
 
     # One filter per sensor: lane 2 is the ground's normal force along z.
     falling, *resting = [values for _, values in kept]

@@ -4,6 +4,6 @@
        exact version matching with separately published runtime bundles.
        Importers (ovphysx) override the linkPath via filter. -->
   <dependency name="carb_sdk_plugins" linkPath="../_build/target-deps/carb_sdk_plugins">
-    <package name="carb_sdk+plugins.${platform_target_abi}" version="214.0.0+release.15092.d5f9d716.gl" />
+    <package name="carb_sdk+plugins.${platform_target_abi}" version="215.0.1+release.16995.fe2d8147.gl" />
   </dependency>
 </project>

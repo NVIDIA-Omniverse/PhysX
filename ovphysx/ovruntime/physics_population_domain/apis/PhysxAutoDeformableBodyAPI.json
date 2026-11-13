@@ -1,0 +1,88 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxAutoDeformableBodyAPI",
+  "title": "PhysxAutoDeformableBodyAPI",
+  "summary": "Turns on automatic generation of a deformable body's simulation and collision meshes from a cooking source mesh, read on the prim carrying OmniPhysicsDeformableBodyAPI when PhysxAutoDeformableBodyAPI is listed in its usd-schemas. It also gates the PhysxAutoDeformableMeshSimplificationAPI and PhysxAutoDeformableHexahedralMeshAPI reads, and an explicit request to auto-cook the body requires it.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "Xformable"
+  ],
+  "requires": [
+    "OmniPhysicsDeformableBodyAPI"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "producer_scope": "Published like any applied physics API: every declared attribute at its resolved value, the relationship only when authored. No column is rewritten or created by the producer.",
+  "columns": [
+    {
+      "name": "physxDeformableBody:autoDeformableBodyEnabled",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": true,
+      "parser_default": false,
+      "absent": "false: no automatic generation. Body creation does not cook, so the simulation and collision mesh data already on the stage is used, and an explicit auto-cook request logs 'expected auto configuration'. USD's fallback is true, so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physics.ovstage/OvstageDeformableBatch.h",
+        "include/omni/physics/parse/Descriptors.h",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceDeformable.cpp",
+        "source/omni.physx/plugins/CookingDataAsync.cpp",
+        "source/omni.physx/plugins/PhysXCooking.cpp"
+      ],
+      "notes": "A change resyncs the deformable body and is one of the cooker's recook triggers."
+    },
+    {
+      "name": "physxDeformableBody:cookingSourceMesh",
+      "usd_type": "rel",
+      "origin": "schema",
+      "kind": "relationship",
+      "semantic": "RELATIONSHIP_PATH_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": true
+      },
+      "required": false,
+      "absent": "No cooking source: with generation on, the cook warns 'deformable has no valid source mesh for cooking' and produces nothing. Only the first target is used and it must be a Mesh; its bind pose is the OmniPhysicsDeformablePoseAPI instance whose purpose is bindPose.",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physics.ovstage/OvstageDeformableBatch.h",
+        "source/omni.physx/plugins/CookingDataAsync.cpp"
+      ]
+    }
+  ],
+  "interactions": [
+    {
+      "with": "OmniPhysicsDeformableBodyAPI",
+      "rule": "Read only on a prim enumerated by OmniPhysicsDeformableBodyAPI that the ovstage walker accepts as a deformable body: a Mesh, TetMesh or BasisCurves, or an Xformable that is not a Gprim, with exactly one simulation mesh (OmniPhysicsVolumeDeformableSimAPI or OmniPhysicsSurfaceDeformableSimAPI) on the prim itself or an immediate child."
+    },
+    {
+      "with": "PhysxAutoDeformableMeshSimplificationAPI",
+      "rule": "Its columns are read only when this API is listed too."
+    },
+    {
+      "with": "PhysxAutoDeformableHexahedralMeshAPI",
+      "rule": "Its column is read only when this API is listed too, and only for a volume body."
+    }
+  ],
+  "notes": [
+    "Cooking also reads and writes physxDeformableBody:deformableBodyDataCrc on the body prim, and attachment generation reads it; it is a runtime bookkeeping attribute that no schema declares and is not described here."
+  ]
+}

@@ -25,9 +25,10 @@ OVPHYSX_OUTPUT_HOST_DEVICE inline bool finiteOutputValue(double value)
     return value >= -DBL_MAX && value <= DBL_MAX;
 }
 
+// `scale` is the physics-owned signed world scale (OVPHYSX_ATTR_WORLD_SCALE), in the same frame as the pose.
 OVPHYSX_OUTPUT_HOST_DEVICE inline bool composeWorldMatrix(const float* position,
                                                           const float* orientation,
-                                                          const double* scale,
+                                                          const float* scale,
                                                           double* matrix)
 {
     for (int i = 0; i < 3; ++i)

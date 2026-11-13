@@ -6,7 +6,8 @@
 # @implements REQ-PYTHON-READ-001
 # @covers AC-5
 
-"""Explicit destroy keeps borrowed CPU read storage safe until its last view is dropped."""
+"""Explicit destroy keeps the borrowed CPU read storage of a result dropped without a close safe until
+its last view is dropped."""
 
 import gc
 
@@ -30,8 +31,7 @@ def test_destroy_rejects_live_cpu_read_view_and_allows_retry():
         assert array.device.is_cuda is False
         view = array[1:]
         expected = view.numpy().copy()
-        result.close()
-        result = array = None
+        result = array = None  # dropped without a close, so the view keeps the read alive
         gc.collect()
         handle = sdk.handle
         attachment = sdk._capture_attachment_query()

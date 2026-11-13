@@ -21,7 +21,7 @@ Expose live debug geometry, statistics and optional export diagnostics as stable
 
 ## Implementation scope
 
-CPU debug frames copy completed-step primitives with owner, color, frame, scale and
+CPU debug frames copy PhysX primitives after step completion with owner, color, frame, scale and
 culling contracts. Counter snapshots are immutable. collision_overlay derives
 per-shape triangles and transformed normals from retained cooked data without an
 attachment. export_availability reports RepX/legacy PVD unsupported separately
@@ -51,7 +51,7 @@ Existing integration anchors for remaining scope:
 
 - [ovphysx/include/ovphysx/ovphysx.h](../../../../include/ovphysx/ovphysx.h)
 - [ovphysx/ovruntime/include/omni/physx/IPhysxVisualization.h](../../../../ovruntime/include/omni/physx/IPhysxVisualization.h)
-- [ovphysx/ovruntime/include/omni/physx/IPhysxStatistics.h](../../../../ovruntime/include/omni/physx/IPhysxStatistics.h)
+- [ovphysx/ovruntime/include/omni/physx/NativeStatistics.h](../../../../ovruntime/include/omni/physx/NativeStatistics.h)
 
 
 

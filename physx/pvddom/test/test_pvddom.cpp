@@ -8,7 +8,10 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <cstdio>
 #include <string>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "PvdDom.h"
@@ -23,15 +26,41 @@
 #include "OmniPvdLibraryFunctions.h"
 #include "OmniPvdDefines.h"
 #include "OmniPvdCommands.h"
+#include "test_bytes.h"
 
 static PvdDomLogLevel gPvdDomCapturedLogLevel = ePvdDomLogInfo;
 static std::string gPvdDomCapturedLogMessage;
+static std::vector<std::string> gPvdDomCapturedErrors;
+static std::vector<std::pair<PvdDomLogLevel, std::string>> gPvdDomCapturedLines;
 
 static void capturePvdDomLog(PvdDomLogLevel level, const char* message)
 {
     gPvdDomCapturedLogLevel = level;
     gPvdDomCapturedLogMessage = message ? message : "";
+    gPvdDomCapturedLines.emplace_back(level, gPvdDomCapturedLogMessage);
+    if (level == ePvdDomLogError)
+        gPvdDomCapturedErrors.push_back(gPvdDomCapturedLogMessage);
 }
+
+static bool invalidAttributePayloadErrorLogged()
+{
+    return std::any_of(gPvdDomCapturedErrors.begin(), gPvdDomCapturedErrors.end(),
+                       [](const std::string& message) {
+                           return message.find("Invalid attribute payload") != std::string::npos;
+                       });
+}
+
+template<typename T>
+class HasPublicOwnedStorageCleanup
+{
+    template<typename U>
+    static auto test(int) -> decltype(std::declval<U&>().releaseOwnedStorage(), std::true_type());
+    template<typename>
+    static std::false_type test(...);
+
+public:
+    static const bool value = decltype(test<T>(0))::value;
+};
 
 // Helper: write OVD to memory, then parse into DOM
 class PvdDomTest : public ::testing::Test
@@ -52,6 +81,7 @@ protected:
 
     void TearDown() override
     {
+        pvdDomSetLogFunction(nullptr);
         if (writer)
         {
             destroyOmniPvdWriter(*writer);
@@ -87,7 +117,401 @@ protected:
         readStream->closeStream();
         return result;
     }
+
+    bool parseDomCapturingErrors(OmniPvdDOMState& domState)
+    {
+        gPvdDomCapturedErrors.clear();
+        pvdDomSetLogFunction(capturePvdDomLog);
+        const bool result = parseDom(domState);
+        pvdDomSetLogFunction(nullptr);
+        return result;
+    }
 };
+
+// ============================================================================
+// NVBug 6906901: malformed attribute payloads
+// ============================================================================
+TEST_F(PvdDomTest, ShortActorTypePayloadIsIgnored) // NVBug 6906901
+{
+    const OmniPvdClassHandle actorClass = writer->registerClass("PxActor");
+    const OmniPvdAttributeHandle type = writer->registerAttribute(actorClass, "type", OmniPvdDataType::eUINT32, 1);
+    writer->createObject(1, actorClass, 100, "actor");
+    const uint8_t shortType = 1;
+    writer->setAttribute(1, 100, type, &shortType, sizeof(shortType));
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDomCapturingErrors(domState));
+    EXPECT_TRUE(invalidAttributePayloadErrorLogged());
+    OmniPvdObject* actor = findOmniPvdObject(
+        getInternalHandle(100, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    ASSERT_TRUE(actor != nullptr);
+    EXPECT_FALSE(actor->mActortypeSet);
+}
+
+TEST_F(PvdDomTest, EmptySceneActorPayloadIsIgnored) // NVBug 6906901
+{
+    const OmniPvdClassHandle sceneClass = writer->registerClass("PxScene");
+    const OmniPvdAttributeHandle actors =
+        writer->registerUniqueListAttribute(sceneClass, "actors", OmniPvdDataType::eOBJECT_HANDLE);
+    writer->createObject(1, sceneClass, 100, "scene");
+    writer->addToUniqueListAttribute(1, 100, actors, nullptr, 0);
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDomCapturingErrors(domState));
+    EXPECT_TRUE(invalidAttributePayloadErrorLogged());
+    EXPECT_TRUE(findOmniPvdObject(
+        getInternalHandle(100, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap) != nullptr);
+}
+
+TEST_F(PvdDomTest, ShortSceneActorPayloadIsIgnored) // NVBug 6906901
+{
+    const OmniPvdClassHandle sceneClass = writer->registerClass("PxScene");
+    const OmniPvdAttributeHandle actors =
+        writer->registerUniqueListAttribute(sceneClass, "actors", OmniPvdDataType::eOBJECT_HANDLE);
+    writer->createObject(1, sceneClass, 100, "scene");
+    const uint8_t shortHandle = 1;
+    writer->addToUniqueListAttribute(1, 100, actors, &shortHandle, sizeof(shortHandle));
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDomCapturingErrors(domState));
+    EXPECT_TRUE(invalidAttributePayloadErrorLogged());
+    EXPECT_TRUE(findOmniPvdObject(
+        getInternalHandle(100, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap) != nullptr);
+}
+
+TEST_F(PvdDomTest, ShortShapeGeometryPayloadIsIgnored) // NVBug 6906901
+{
+    const OmniPvdClassHandle shapeClass = writer->registerClass("PxShape");
+    const OmniPvdAttributeHandle geometry =
+        writer->registerAttribute(shapeClass, "geom", OmniPvdDataType::eOBJECT_HANDLE, 1);
+    writer->createObject(1, shapeClass, 100, "shape");
+    const uint8_t shortHandle = 1;
+    writer->setAttribute(1, 100, geometry, &shortHandle, sizeof(shortHandle));
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDomCapturingErrors(domState));
+    EXPECT_TRUE(invalidAttributePayloadErrorLogged());
+    EXPECT_TRUE(findOmniPvdObject(
+        getInternalHandle(100, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap) != nullptr);
+}
+
+TEST_F(PvdDomTest, ShortStoredParentLinkIsIgnored) // NVBug 6906901
+{
+    const OmniPvdClassHandle jointClass = writer->registerClass("PxArticulationJointReducedCoordinate");
+    const OmniPvdAttributeHandle parentLink =
+        writer->registerAttribute(jointClass, "parentLink", OmniPvdDataType::eOBJECT_HANDLE, 1);
+    const OmniPvdAttributeHandle childLink =
+        writer->registerAttribute(jointClass, "childLink", OmniPvdDataType::eOBJECT_HANDLE, 1);
+    const OmniPvdClassHandle linkClass = writer->registerClass("PxArticulationLink");
+    writer->createObject(1, linkClass, 101, "link");
+    writer->createObject(1, jointClass, 100, "joint");
+    const uint8_t shortHandle = 1;
+    writer->setAttribute(1, 100, parentLink, &shortHandle, sizeof(shortHandle));
+    const uint64_t childHandle = 101;
+    writer->setAttribute(1, 100, childLink, reinterpret_cast<const uint8_t*>(&childHandle), sizeof(childHandle));
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDomCapturingErrors(domState));
+    EXPECT_TRUE(invalidAttributePayloadErrorLogged());
+    EXPECT_TRUE(findOmniPvdObject(
+        getInternalHandle(100, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap) != nullptr);
+}
+
+TEST_F(PvdDomTest, ShortStoredIntegrationVersionIsIgnored) // NVBug 6906901
+{
+    const OmniPvdClassHandle metadataClass = writer->registerClass("PxOmniPvdMetaData");
+    const OmniPvdAttributeHandle major =
+        writer->registerAttribute(metadataClass, "ovdIntegrationVersionMajor", OmniPvdDataType::eUINT32, 1);
+    const OmniPvdClassHandle sceneClass = writer->registerClass("PxScene");
+    writer->createObject(1, metadataClass, 100, "metadata");
+    const uint8_t shortVersion = 1;
+    writer->setAttribute(1, 100, major, &shortVersion, sizeof(shortVersion));
+    writer->createObject(1, sceneClass, 101, "scene");
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDomCapturingErrors(domState));
+    EXPECT_TRUE(invalidAttributePayloadErrorLogged());
+    EXPECT_EQ(domState.mStreamOvdIntegVersionMajor, 0u);
+    EXPECT_TRUE(domState.mOvdIntegVersionPassed);
+}
+
+TEST_F(PvdDomTest, ValidActorTypeAfterShortPayloadIsApplied) // NVBug 6906901
+{
+    const OmniPvdClassHandle actorClass = writer->registerClass("PxActor");
+    const OmniPvdAttributeHandle type = writer->registerAttribute(actorClass, "type", OmniPvdDataType::eUINT32, 1);
+    writer->createObject(1, actorClass, 100, "actor");
+    const uint8_t shortType = 1;
+    writer->setAttribute(1, 100, type, &shortType, sizeof(shortType));
+    const uint32_t validType = 2;
+    writer->setAttribute(1, 100, type, reinterpret_cast<const uint8_t*>(&validType), sizeof(validType));
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDomCapturingErrors(domState));
+    EXPECT_TRUE(invalidAttributePayloadErrorLogged());
+    OmniPvdObject* actor = findOmniPvdObject(
+        getInternalHandle(100, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    ASSERT_TRUE(actor != nullptr);
+    EXPECT_TRUE(actor->mActortypeSet);
+    EXPECT_EQ(actor->mActortype, validType);
+}
+
+TEST_F(PvdDomTest, ValidStoredParentLinkAfterShortPayloadIsApplied) // NVBug 6906901
+{
+    const OmniPvdClassHandle jointClass = writer->registerClass("PxArticulationJointReducedCoordinate");
+    const OmniPvdAttributeHandle parentLink =
+        writer->registerAttribute(jointClass, "parentLink", OmniPvdDataType::eOBJECT_HANDLE, 1);
+    const OmniPvdAttributeHandle childLink =
+        writer->registerAttribute(jointClass, "childLink", OmniPvdDataType::eOBJECT_HANDLE, 1);
+    const OmniPvdClassHandle linkClass = writer->registerClass("PxArticulationLink");
+    writer->createObject(1, linkClass, 101, "child");
+    writer->createObject(1, linkClass, 102, "parent");
+    writer->createObject(1, jointClass, 100, "joint");
+    const uint8_t shortHandle = 1;
+    writer->setAttribute(1, 100, parentLink, &shortHandle, sizeof(shortHandle));
+    const uint64_t parentHandle = 102;
+    writer->setAttribute(1, 100, parentLink, reinterpret_cast<const uint8_t*>(&parentHandle), sizeof(parentHandle));
+    const uint64_t childHandle = 101;
+    writer->setAttribute(1, 100, childLink, reinterpret_cast<const uint8_t*>(&childHandle), sizeof(childHandle));
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDomCapturingErrors(domState));
+    EXPECT_TRUE(invalidAttributePayloadErrorLogged());
+    OmniPvdObject* parent = findOmniPvdObject(
+        getInternalHandle(102, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    OmniPvdObject* child = findOmniPvdObject(
+        getInternalHandle(101, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    ASSERT_TRUE(parent != nullptr);
+    ASSERT_TRUE(child != nullptr);
+    EXPECT_EQ(child->mAncestor, parent);
+}
+
+TEST_F(PvdDomTest, ValidStoredIntegrationVersionAfterShortPayloadIsChecked) // NVBug 6906901
+{
+    const OmniPvdClassHandle metadataClass = writer->registerClass("PxOmniPvdMetaData");
+    const OmniPvdAttributeHandle major =
+        writer->registerAttribute(metadataClass, "ovdIntegrationVersionMajor", OmniPvdDataType::eUINT32, 1);
+    const OmniPvdClassHandle sceneClass = writer->registerClass("PxScene");
+    writer->createObject(1, metadataClass, 100, "metadata");
+    const uint8_t shortVersion = 1;
+    writer->setAttribute(1, 100, major, &shortVersion, sizeof(shortVersion));
+    const uint32_t unsupportedVersion = 99;
+    writer->setAttribute(1, 100, major, reinterpret_cast<const uint8_t*>(&unsupportedVersion), sizeof(unsupportedVersion));
+    writer->createObject(1, sceneClass, 101, "scene");
+
+    OmniPvdDOMState domState;
+    EXPECT_FALSE(parseDomCapturingErrors(domState));
+    EXPECT_TRUE(invalidAttributePayloadErrorLogged());
+    EXPECT_EQ(domState.mStreamOvdIntegVersionMajor, unsupportedVersion);
+    EXPECT_FALSE(domState.mOvdIntegVersionPassed);
+}
+
+TEST_F(PvdDomTest, ShortSceneActorAddDoesNotAttachStaleHandle) // NVBug 6906901
+{
+    const OmniPvdClassHandle sceneClass = writer->registerClass("PxScene");
+    const OmniPvdAttributeHandle actors =
+        writer->registerUniqueListAttribute(sceneClass, "actors", OmniPvdDataType::eOBJECT_HANDLE);
+    const OmniPvdAttributeHandle other = writer->registerAttribute(sceneClass, "other", OmniPvdDataType::eUINT64, 1);
+    const OmniPvdClassHandle actorClass = writer->registerClass("PxActor");
+    writer->createObject(1, sceneClass, 100, "scene");
+    writer->createObject(1, actorClass, 200, "actor");
+    const uint64_t actorHandle = 200;
+    // Prime the reusable reader buffer so an unchecked short read decodes a stale handle.
+    writer->setAttribute(1, 100, other, reinterpret_cast<const uint8_t*>(&actorHandle), sizeof(actorHandle));
+    writer->addToUniqueListAttribute(1, 100, actors, reinterpret_cast<const uint8_t*>(&actorHandle), 1);
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDomCapturingErrors(domState));
+    EXPECT_TRUE(invalidAttributePayloadErrorLogged());
+    OmniPvdObject* scene = findOmniPvdObject(
+        getInternalHandle(100, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    OmniPvdObject* actor = findOmniPvdObject(
+        getInternalHandle(200, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    ASSERT_TRUE(scene != nullptr && actor != nullptr);
+    EXPECT_NE(actor->mAncestor, scene);
+}
+
+TEST_F(PvdDomTest, ShortSceneActorRemoveDoesNotCloseStaleHandle) // NVBug 6906901
+{
+    const OmniPvdClassHandle sceneClass = writer->registerClass("PxScene");
+    const OmniPvdAttributeHandle actors =
+        writer->registerUniqueListAttribute(sceneClass, "actors", OmniPvdDataType::eOBJECT_HANDLE);
+    const OmniPvdClassHandle actorClass = writer->registerClass("PxActor");
+    writer->createObject(1, sceneClass, 100, "scene");
+    writer->createObject(1, actorClass, 200, "actor");
+    const uint64_t actorHandle = 200;
+    writer->startFrame(100, 3);
+    writer->addToUniqueListAttribute(1, 100, actors, reinterpret_cast<const uint8_t*>(&actorHandle), sizeof(actorHandle));
+    writer->stopFrame(100, 3);
+    writer->startFrame(100, 5);
+    // The short removal leaves seven bytes of the earlier handle in the reader buffer.
+    writer->removeFromUniqueListAttribute(1, 100, actors, reinterpret_cast<const uint8_t*>(&actorHandle), 1);
+    writer->stopFrame(100, 5);
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDomCapturingErrors(domState));
+    EXPECT_TRUE(invalidAttributePayloadErrorLogged());
+    OmniPvdObject* actor = findOmniPvdObject(
+        getInternalHandle(200, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    ASSERT_TRUE(actor != nullptr);
+    ASSERT_FALSE(actor->mLifeSpans.empty());
+    EXPECT_EQ(actor->mLifeSpans.back().mFrameStop, 0u);
+}
+
+TEST_F(PvdDomTest, ConstraintSceneReentryReopensJointLifespan)
+{
+    const OmniPvdClassHandle sceneClass = writer->registerClass("PxScene");
+    const OmniPvdAttributeHandle constraints = writer->registerUniqueListAttribute(sceneClass, "constraints", OmniPvdDataType::eOBJECT_HANDLE);
+    const OmniPvdClassHandle jointClass = writer->registerClass("PxDistanceJoint");
+    const OmniPvdAttributeHandle constraint = writer->registerAttribute(jointClass, "constraint", OmniPvdDataType::eOBJECT_HANDLE, 1);
+    writer->createObject(1, sceneClass, 100, "scene");
+    writer->createObject(1, jointClass, 300, "joint");
+    const uint64_t constraintHandle = 200;
+    writer->startFrame(100, 1);
+    writer->addToUniqueListAttribute(1, 100, constraints, reinterpret_cast<const uint8_t*>(&constraintHandle), sizeof(constraintHandle));
+    writer->setAttribute(1, 300, constraint, reinterpret_cast<const uint8_t*>(&constraintHandle), sizeof(constraintHandle));
+    writer->stopFrame(100, 1);
+    writer->startFrame(100, 3);
+    writer->removeFromUniqueListAttribute(1, 100, constraints, reinterpret_cast<const uint8_t*>(&constraintHandle), sizeof(constraintHandle));
+    writer->stopFrame(100, 3);
+    writer->startFrame(100, 5);
+    writer->addToUniqueListAttribute(1, 100, constraints, reinterpret_cast<const uint8_t*>(&constraintHandle), sizeof(constraintHandle));
+    writer->stopFrame(100, 5);
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDomCapturingErrors(domState));
+    OmniPvdObject* joint = findOmniPvdObject(getInternalHandle(300, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    ASSERT_TRUE(joint != nullptr);
+    ASSERT_EQ(joint->mLifeSpans.size(), 2u);
+    EXPECT_EQ(joint->mLifeSpans[0].mFrameStart, 1u);
+    EXPECT_EQ(joint->mLifeSpans[0].mFrameStop, 3u);
+    EXPECT_EQ(joint->mLifeSpans[1].mFrameStart, 5u);
+    EXPECT_EQ(joint->mLifeSpans[1].mFrameStop, 0u);
+}
+
+
+TEST_F(PvdDomTest, ShortShapeGeometryDoesNotAttachStaleHandle) // NVBug 6906901
+{
+    const OmniPvdClassHandle shapeClass = writer->registerClass("PxShape");
+    const OmniPvdAttributeHandle geometry =
+        writer->registerAttribute(shapeClass, "geom", OmniPvdDataType::eOBJECT_HANDLE, 1);
+    const OmniPvdAttributeHandle other = writer->registerAttribute(shapeClass, "other", OmniPvdDataType::eUINT64, 1);
+    const OmniPvdClassHandle geometryClass = writer->registerClass("PxSphereGeometry");
+    writer->createObject(1, shapeClass, 100, "shape");
+    writer->createObject(1, geometryClass, 200, "geometry");
+    const uint64_t geometryHandle = 200;
+    // Prime the reusable reader buffer so an unchecked short read decodes a stale handle.
+    writer->setAttribute(1, 100, other, reinterpret_cast<const uint8_t*>(&geometryHandle), sizeof(geometryHandle));
+    writer->setAttribute(1, 100, geometry, reinterpret_cast<const uint8_t*>(&geometryHandle), 1);
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDomCapturingErrors(domState));
+    EXPECT_TRUE(invalidAttributePayloadErrorLogged());
+    OmniPvdObject* shape = findOmniPvdObject(
+        getInternalHandle(100, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    OmniPvdObject* geom = findOmniPvdObject(
+        getInternalHandle(200, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    ASSERT_TRUE(shape != nullptr && geom != nullptr);
+    EXPECT_NE(geom->mAncestor, shape);
+}
+
+TEST_F(PvdDomTest, ShortJointConstraintDoesNotAttachStaleHandle) // NVBug 6906901
+{
+    const OmniPvdClassHandle sceneClass = writer->registerClass("PxScene");
+    const OmniPvdAttributeHandle constraints =
+        writer->registerUniqueListAttribute(sceneClass, "constraints", OmniPvdDataType::eOBJECT_HANDLE);
+    const OmniPvdClassHandle jointClass = writer->registerClass("PxFixedJoint");
+    const OmniPvdAttributeHandle constraint =
+        writer->registerAttribute(jointClass, "constraint", OmniPvdDataType::eOBJECT_HANDLE, 1);
+    const OmniPvdAttributeHandle other = writer->registerAttribute(jointClass, "other", OmniPvdDataType::eUINT64, 1);
+    writer->createObject(1, sceneClass, 100, "scene");
+    writer->createObject(1, jointClass, 200, "joint");
+    const uint64_t constraintHandle = 0x321;
+    const uint8_t shortHandle = 0x21;
+    writer->addToUniqueListAttribute(1, 100, constraints, reinterpret_cast<const uint8_t*>(&constraintHandle), sizeof(constraintHandle));
+    // The short payload retains the upper bytes of the seeded handle in the reader buffer.
+    writer->setAttribute(1, 200, other, reinterpret_cast<const uint8_t*>(&constraintHandle), sizeof(constraintHandle));
+    writer->setAttribute(1, 200, constraint, &shortHandle, sizeof(shortHandle));
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDomCapturingErrors(domState));
+    EXPECT_TRUE(invalidAttributePayloadErrorLogged());
+    OmniPvdObject* scene = findOmniPvdObject(
+        getInternalHandle(100, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    OmniPvdObject* joint = findOmniPvdObject(
+        getInternalHandle(200, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    ASSERT_TRUE(scene != nullptr && joint != nullptr);
+    EXPECT_EQ(scene->mSceneJoints, nullptr);
+    EXPECT_EQ(domState.mConstraintToJointMap.count(constraintHandle), 0u);
+}
+
+TEST_F(PvdDomTest, ShortSceneConstraintAddDoesNotAttachStaleHandle) // NVBug 6906901
+{
+    const OmniPvdClassHandle sceneClass = writer->registerClass("PxScene");
+    const OmniPvdAttributeHandle constraints =
+        writer->registerUniqueListAttribute(sceneClass, "constraints", OmniPvdDataType::eOBJECT_HANDLE);
+    const OmniPvdAttributeHandle other = writer->registerAttribute(sceneClass, "other", OmniPvdDataType::eUINT64, 1);
+    const OmniPvdClassHandle jointClass = writer->registerClass("PxFixedJoint");
+    const OmniPvdAttributeHandle constraint =
+        writer->registerAttribute(jointClass, "constraint", OmniPvdDataType::eOBJECT_HANDLE, 1);
+    writer->createObject(1, sceneClass, 100, "scene");
+    writer->createObject(1, jointClass, 200, "joint");
+    const uint64_t constraintHandle = 0x321;
+    const uint8_t shortHandle = 0x21;
+    writer->setAttribute(1, 200, constraint, reinterpret_cast<const uint8_t*>(&constraintHandle), sizeof(constraintHandle));
+    // The short payload retains the upper bytes of the seeded handle in the reader buffer.
+    writer->setAttribute(1, 100, other, reinterpret_cast<const uint8_t*>(&constraintHandle), sizeof(constraintHandle));
+    writer->addToUniqueListAttribute(1, 100, constraints, &shortHandle, sizeof(shortHandle));
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDomCapturingErrors(domState));
+    EXPECT_TRUE(invalidAttributePayloadErrorLogged());
+    OmniPvdObject* scene = findOmniPvdObject(
+        getInternalHandle(100, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    OmniPvdObject* joint = findOmniPvdObject(
+        getInternalHandle(200, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    ASSERT_TRUE(scene != nullptr && joint != nullptr);
+    EXPECT_EQ(scene->mSceneJoints, nullptr);
+    EXPECT_EQ(domState.mConstraintToSceneMap.count(constraintHandle), 0u);
+}
+
+TEST_F(PvdDomTest, ShortSceneConstraintRemoveDoesNotCloseStaleHandle) // NVBug 6906901
+{
+    const OmniPvdClassHandle sceneClass = writer->registerClass("PxScene");
+    const OmniPvdAttributeHandle constraints =
+        writer->registerUniqueListAttribute(sceneClass, "constraints", OmniPvdDataType::eOBJECT_HANDLE);
+    const OmniPvdAttributeHandle other = writer->registerAttribute(sceneClass, "other", OmniPvdDataType::eUINT64, 1);
+    const OmniPvdClassHandle jointClass = writer->registerClass("PxFixedJoint");
+    const OmniPvdAttributeHandle constraint =
+        writer->registerAttribute(jointClass, "constraint", OmniPvdDataType::eOBJECT_HANDLE, 1);
+    writer->createObject(1, sceneClass, 100, "scene");
+    writer->createObject(1, jointClass, 200, "joint");
+    const uint64_t constraintHandle = 0x321;
+    const uint8_t shortHandle = 0x21;
+    writer->setAttribute(1, 200, constraint, reinterpret_cast<const uint8_t*>(&constraintHandle), sizeof(constraintHandle));
+    writer->startFrame(100, 3);
+    writer->addToUniqueListAttribute(1, 100, constraints, reinterpret_cast<const uint8_t*>(&constraintHandle), sizeof(constraintHandle));
+    writer->stopFrame(100, 3);
+    writer->startFrame(100, 5);
+    // The short payload retains the upper bytes of the seeded handle in the reader buffer.
+    writer->setAttribute(1, 100, other, reinterpret_cast<const uint8_t*>(&constraintHandle), sizeof(constraintHandle));
+    writer->removeFromUniqueListAttribute(1, 100, constraints, &shortHandle, sizeof(shortHandle));
+    writer->stopFrame(100, 5);
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDomCapturingErrors(domState));
+    EXPECT_TRUE(invalidAttributePayloadErrorLogged());
+    OmniPvdObject* scene = findOmniPvdObject(
+        getInternalHandle(100, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    OmniPvdObject* joint = findOmniPvdObject(
+        getInternalHandle(200, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    ASSERT_TRUE(scene != nullptr && joint != nullptr);
+    ASSERT_NE(scene->mSceneJoints, nullptr);
+    EXPECT_EQ(joint->mAncestor, scene->mSceneJoints);
+    ASSERT_EQ(joint->mLifeSpans.size(), 1u);
+    EXPECT_EQ(joint->mLifeSpans.back().mFrameStart, 3u);
+    EXPECT_EQ(joint->mLifeSpans.back().mFrameStop, 0u);
+    ASSERT_EQ(domState.mConstraintToSceneMap.count(constraintHandle), 1u);
+    EXPECT_EQ(domState.mConstraintToSceneMap.at(constraintHandle), scene);
+}
 
 // ============================================================================
 // Test: DOM state initializes cleanly
@@ -104,6 +528,58 @@ TEST(PvdDomBasic, InitState)
     EXPECT_NE(state.mSceneRootClass, nullptr);
     EXPECT_NE(state.mSharedRootClass, nullptr);
     EXPECT_GT(state.mMinFrame, 0u); // initialized to a large number
+}
+
+TEST(PvdDomBasic, OwnedStorageCleanupIsInternal)
+{
+    EXPECT_FALSE(HasPublicOwnedStorageCleanup<OmniPvdDOMState>::value);
+}
+
+struct CountedSample : OmniPvdAttributeSample
+{
+    explicit CountedSample(int& count) : count(count) { ++count; }
+    ~CountedSample() override { --count; }
+    int& count;
+};
+
+TEST(PvdDocumentOwnership, ObjectDestroysSamplesAfterClassVectorCopy)
+{
+    int count = 0;
+    {
+        OmniPvdObject object;
+        OmniPvdClassInstance instance;
+        instance.mClassAttributeLists.push_back(new OmniPvdAttributeInstList());
+        instance.mClassAttributeLists.back()->addAttribute(new CountedSample(count));
+        object.mInheritedClassInstances.push_back(instance);
+        EXPECT_EQ(1, count);
+    }
+    EXPECT_EQ(0, count);
+}
+
+TEST_F(PvdDomTest, SharingAnAttachedShapeKeepsSiblingLinksConsistent)
+{
+    const OmniPvdContextHandle context = 1;
+    const OmniPvdClassHandle actorClass = writer->registerClass("PxRigidDynamic");
+    const OmniPvdAttributeHandle shapes = writer->registerUniqueListAttribute(actorClass, "shapes", OmniPvdDataType::eOBJECT_HANDLE);
+    const OmniPvdClassHandle shapeClass = writer->registerClass("PxShape");
+    const OmniPvdAttributeHandle exclusive = writer->registerAttribute(shapeClass, "isExclusive", OmniPvdDataType::eUINT8, 1);
+    writer->createObject(context, actorClass, 10, "");
+    writer->createObject(context, shapeClass, 20, "");
+    writer->createObject(context, shapeClass, 30, "");
+    const uint64_t first = 20, second = 30;
+    writer->addToUniqueListAttribute(context, 10, shapes, reinterpret_cast<const uint8_t*>(&first), sizeof(first));
+    const uint8_t shared = 0;
+    writer->setAttribute(context, 20, exclusive, &shared, sizeof(shared));
+    writer->addToUniqueListAttribute(context, 10, shapes, reinterpret_cast<const uint8_t*>(&second), sizeof(second));
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDom(domState));
+    OmniPvdObject* actor = findOmniPvdObject(getInternalHandle(10, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    OmniPvdObject* shape = findOmniPvdObject(getInternalHandle(30, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    ASSERT_NE(nullptr, actor);
+    ASSERT_NE(nullptr, shape);
+    EXPECT_EQ(shape, actor->mFirstChild);
+    EXPECT_EQ(nullptr, shape->mPrevSibling);
 }
 
 // ============================================================================
@@ -276,8 +752,22 @@ TEST_F(PvdDomTest, CachedAttributeLookupValidatesBoundsAndAttributeKind)
     OmniPvdAttributeHandle uniqueAttribute = writer->registerUniqueListAttribute(
         baseClass, "value", OmniPvdDataType::eUINT32);
     OmniPvdClassHandle derivedClass = writer->registerClass("CacheDerived", baseClass);
-    OmniPvdAttributeHandle regularAttribute = writer->registerAttribute(
-        derivedClass, "value", OmniPvdDataType::eUINT32, 1);
+    // Preserve a legacy inherited duplicate for the consumer's cached-lookup checks.
+    // The validating writer cannot emit it. Mirror the wire fields explicitly.
+    ASSERT_EQ(uniqueAttribute, 1u);
+    const OmniPvdAttributeHandle regularAttribute = uniqueAttribute + 1;
+    const uint8_t command = static_cast<uint8_t>(OmniPvdCommand::eREGISTER_ATTRIBUTE);
+    const uint16_t dataType = static_cast<uint16_t>(OmniPvdDataType::eUINT32);
+    const uint32_t elementCount = 1;
+    const uint16_t nameLength = 5;
+    OmniPvdWriteStream* rawStream = memStream->getWriteStream();
+    ASSERT_EQ(rawStream->writeBytes(&command, sizeof(command)), sizeof(command));
+    ASSERT_EQ(rawStream->writeBytes(reinterpret_cast<const uint8_t*>(&derivedClass), sizeof(derivedClass)), sizeof(derivedClass));
+    ASSERT_EQ(rawStream->writeBytes(reinterpret_cast<const uint8_t*>(&regularAttribute), sizeof(regularAttribute)), sizeof(regularAttribute));
+    ASSERT_EQ(rawStream->writeBytes(reinterpret_cast<const uint8_t*>(&dataType), sizeof(dataType)), sizeof(dataType));
+    ASSERT_EQ(rawStream->writeBytes(reinterpret_cast<const uint8_t*>(&elementCount), sizeof(elementCount)), sizeof(elementCount));
+    ASSERT_EQ(rawStream->writeBytes(reinterpret_cast<const uint8_t*>(&nameLength), sizeof(nameLength)), sizeof(nameLength));
+    ASSERT_EQ(rawStream->writeBytes(reinterpret_cast<const uint8_t*>("value"), nameLength), nameLength);
 
     writer->createObject(ctx, derivedClass, objectHandle, "cacheObject");
 
@@ -1478,30 +1968,10 @@ TEST_F(PvdDomTest, EmptyStreamFails)
 // ============================================================================
 TEST(PvdDomFile, ParsePhysXOvdFile)
 {
-    // Search several relative paths so the test works from different working dirs
-    const char* paths[] = {
-        "test/data/test_scene.ovd",                      // from pvddom root
-        "../test/data/test_scene.ovd",                   // from pvddom build dir
-        "pvddom/test/data/test_scene.ovd",               // from physx root
-        "../pvddom/test/data/test_scene.ovd",            // from physx/bin
-        "../../pvddom/test/data/test_scene.ovd",         // from physx/bin/platform
-    };
     OmniPvdDOMState domState;
-    bool ok = false;
-    for (size_t i = 0; i < sizeof(paths) / sizeof(paths[0]); ++i)
-    {
-        ok = buildPvdDomStateFromFile(paths[i], domState);
-        if (ok)
-        {
-            printf("  Found test_scene.ovd at: %s\n", paths[i]);
-            break;
-        }
-    }
-    if (!ok)
-    {
-        printf("  SKIPPED: test_scene.ovd not found in any search path\n");
-        return;
-    }
+    const char* path = PVDDOM_TEST_DATA_DIR "/test_scene.ovd";
+    ASSERT_TRUE(buildPvdDomStateFromFile(path, domState));
+    printf("  Found test_scene.ovd at: %s\n", path);
 
     // Should have classes registered
     EXPECT_GT(domState.mClassHandleToClassMap.size(), 0u);
@@ -1529,6 +1999,265 @@ TEST(PvdDomFile, ParsePhysXOvdFile)
     printf("  Frame range: %llu - %llu\n",
         (unsigned long long)domState.mMinFrame,
         (unsigned long long)domState.mMaxFrame);
+}
+
+namespace
+{
+std::vector<std::string> fileReaderLines;
+void OMNI_PVD_CALL captureFileReader(char* text) { fileReaderLines.emplace_back(text); }
+
+void expectDomValues(const OmniPvdDOMState& a, const OmniPvdDOMState& b)
+{
+    EXPECT_EQ(a.mMinFrame, b.mMinFrame);
+    EXPECT_EQ(a.mMaxFrame, b.mMaxFrame);
+    EXPECT_EQ(a.mExternalToInternalHandleMap, b.mExternalToInternalHandleMap);
+    ASSERT_EQ(a.mClassHandleToClassMap.size(), b.mClassHandleToClassMap.size());
+    for (const auto& entry : a.mClassHandleToClassMap)
+    {
+        const auto found = b.mClassHandleToClassMap.find(entry.first);
+        ASSERT_NE(b.mClassHandleToClassMap.end(), found);
+        const auto& x = *entry.second;
+        const auto& y = *found->second;
+        EXPECT_EQ(x.mClassName, y.mClassName);
+        ASSERT_EQ(x.mInheritanceChain.size(), y.mInheritanceChain.size());
+        for (size_t i = 0; i < x.mInheritanceChain.size(); ++i)
+            EXPECT_EQ(x.mInheritanceChain[i]->mOmniClassHandle, y.mInheritanceChain[i]->mOmniClassHandle);
+        ASSERT_EQ(x.mAttributeDefinitions.size(), y.mAttributeDefinitions.size());
+        for (size_t i = 0; i < x.mAttributeDefinitions.size(); ++i)
+        {
+            EXPECT_EQ(x.mAttributeDefinitions[i]->mAttributeName, y.mAttributeDefinitions[i]->mAttributeName);
+            EXPECT_EQ(x.mAttributeDefinitions[i]->mDataType, y.mAttributeDefinitions[i]->mDataType);
+            EXPECT_EQ(x.mAttributeDefinitions[i]->mNbrFields, y.mAttributeDefinitions[i]->mNbrFields);
+        }
+    }
+    ASSERT_EQ(a.mObjectHandleToObjectMap.size(), b.mObjectHandleToObjectMap.size());
+    for (const auto& entry : a.mObjectHandleToObjectMap)
+    {
+        const auto found = b.mObjectHandleToObjectMap.find(entry.first);
+        ASSERT_NE(b.mObjectHandleToObjectMap.end(), found);
+        const auto& x = *entry.second;
+        const auto& y = *found->second;
+        EXPECT_EQ(x.mObjectName, y.mObjectName);
+        EXPECT_EQ(x.mOmniPvdClass->mOmniClassHandle, y.mOmniPvdClass->mOmniClassHandle);
+        ASSERT_EQ(x.mInheritedClassInstances.size(), y.mInheritedClassInstances.size());
+        for (size_t i = 0; i < x.mInheritedClassInstances.size(); ++i)
+        {
+            const auto& xs = x.mInheritedClassInstances[i].mClassAttributeLists;
+            const auto& ys = y.mInheritedClassInstances[i].mClassAttributeLists;
+            ASSERT_EQ(xs.size(), ys.size());
+            for (size_t j = 0; j < xs.size(); ++j)
+            {
+                ASSERT_EQ(xs[j] == nullptr, ys[j] == nullptr);
+                if (!xs[j]) continue;
+                auto* left = xs[j]->mFirst;
+                auto* right = ys[j]->mFirst;
+                for (; left && right; left = left->mNextAttribute, right = right->mNextAttribute)
+                {
+                    EXPECT_EQ(left->mTimeStamp, right->mTimeStamp);
+                    EXPECT_EQ(left->mEndTimeStamp, right->mEndTimeStamp);
+                    if (!xs[j]->mAttributeDef->mIsUniqueList)
+                    {
+                        const auto* l = static_cast<OmniPvdAttributeSample*>(left);
+                        const auto* r = static_cast<OmniPvdAttributeSample*>(right);
+                        ASSERT_EQ(l->mDataLen, r->mDataLen);
+                        if (l->mDataLen) EXPECT_EQ(0, std::memcmp(l->mData, r->mData, l->mDataLen));
+                    }
+                    else
+                    {
+                        const auto& l = static_cast<OmniPvdUniqueList*>(left)->mElements;
+                        const auto& r = static_cast<OmniPvdUniqueList*>(right)->mElements;
+                        ASSERT_EQ(l.size(), r.size());
+                        auto ri = r.begin();
+                        for (auto li = l.begin(); li != l.end(); ++li, ++ri)
+                        {
+                            ASSERT_EQ((*li)->mDataLen, (*ri)->mDataLen);
+                            if ((*li)->mDataLen) EXPECT_EQ(0, std::memcmp((*li)->mData, (*ri)->mData, (*li)->mDataLen));
+                        }
+                    }
+                }
+                EXPECT_EQ(left == nullptr, right == nullptr);
+            }
+        }
+    }
+}
+
+class PvdDomDiagnostics : public testing::Test
+{
+protected:
+    Bytes bytes;
+    std::string path;
+    void SetUp() override
+    {
+        path = std::string("parser_diagnostics_") + testing::UnitTest::GetInstance()->current_test_info()->name() + ".ovd";
+        fileReaderLines.clear();
+        gPvdDomCapturedErrors.clear();
+        gPvdDomCapturedLines.clear();
+        pvdDomSetLogFunction(capturePvdDomLog);
+    }
+    void TearDown() override { pvdDomSetLogFunction(nullptr); std::remove(path.c_str()); }
+    bool writeFile()
+    {
+        FILE* file = std::fopen(path.c_str(), "wb");
+        if (!file) return false;
+        const size_t written = std::fwrite(bytes.data.data(), 1, bytes.data.size(), file);
+        std::fclose(file);
+        return written == bytes.data.size();
+    }
+    OmniPvdReaderDiagnostics options(bool verbose)
+    {
+        OmniPvdReaderDiagnostics result;
+        result.logFunction = captureFileReader;
+        result.verbose = verbose;
+        return result;
+    }
+};
+
+TEST_F(PvdDomDiagnostics, FileOptionsArePerLoad)
+{
+    bytes.cls(); bytes.attr(); bytes.create(); bytes.frame(17); bytes.set(); bytes.frame(18, true);
+    bytes.command(OmniPvdCommand::eRECORD_MESSAGE); bytes.put(uint64_t(1));
+    bytes.name("recorded message"); bytes.name("test.cpp");
+    bytes.put(uint32_t(42)); bytes.put(uint32_t(3)); bytes.put(uint32_t(1));
+    ASSERT_TRUE(writeFile());
+    using OldLoad = bool (*)(const char*, OmniPvdDOMState&);
+    OldLoad oldLoad = &buildPvdDomStateFromFile;
+    OmniPvdDOMState baseline, quiet, verbose, reloaded;
+    ASSERT_TRUE(oldLoad(path.c_str(), baseline));
+    const auto messages = gOmniPvdMessages;
+    ASSERT_TRUE(buildPvdDomStateFromFile(path.c_str(), quiet, options(false)));
+    EXPECT_TRUE(fileReaderLines.empty());
+    ASSERT_TRUE(buildPvdDomStateFromFile(path.c_str(), verbose, options(true)));
+    EXPECT_FALSE(fileReaderLines.empty());
+    expectDomValues(baseline, quiet);
+    expectDomValues(baseline, verbose);
+    ASSERT_EQ(1u, messages.size());
+    ASSERT_EQ(messages.size(), gOmniPvdMessages.size());
+    EXPECT_STREQ(messages[0].message, gOmniPvdMessages[0].message);
+    EXPECT_STREQ(messages[0].file, gOmniPvdMessages[0].file);
+    EXPECT_EQ(messages[0].line, gOmniPvdMessages[0].line);
+    EXPECT_EQ(messages[0].frameId, gOmniPvdMessages[0].frameId);
+    fileReaderLines.clear();
+    ASSERT_TRUE(oldLoad(path.c_str(), reloaded));
+    EXPECT_TRUE(fileReaderLines.empty());
+    expectDomValues(baseline, reloaded);
+
+    OmniPvdDOMState fixtureBaseline, fixtureVerbose;
+    const char* fixture = PVDDOM_TEST_DATA_DIR "/test_scene.ovd";
+    ASSERT_TRUE(oldLoad(fixture, fixtureBaseline));
+    ASSERT_TRUE(buildPvdDomStateFromFile(fixture, fixtureVerbose, options(true)));
+    expectDomValues(fixtureBaseline, fixtureVerbose);
+    EXPECT_TRUE(gPvdDomCapturedErrors.empty());
+}
+
+TEST_F(PvdDomDiagnostics, HeaderFailuresReachAllLineSink)
+{
+    const uint32_t versions[][3] = {{1, 0, 0}, {0, 5, 0}, {0, 4, 1}};
+    const char* reasons[] = {"[parser] major version too new\n", "[parser] minor version too new\n", "[parser] patch too new\n"};
+    for (unsigned field = 0; field < 3; ++field)
+    for (bool verbose : {false, true})
+    {
+        bytes.data.clear();
+        for (uint32_t value : versions[field]) bytes.put(value);
+        ASSERT_TRUE(writeFile());
+        fileReaderLines.clear(); gPvdDomCapturedErrors.clear(); gPvdDomCapturedLines.clear();
+        OmniPvdDOMState dom;
+        EXPECT_FALSE(buildPvdDomStateFromFile(path.c_str(), dom, options(verbose)));
+        const std::string version = "OmniPvdRuntimeReaderImpl::startReading majorVersion(" +
+            std::to_string(versions[field][0]) + "), minorVersion(" + std::to_string(versions[field][1]) +
+            "), patch(" + std::to_string(versions[field][2]) + ")";
+        EXPECT_EQ((std::vector<std::string>{version, reasons[field]}), fileReaderLines);
+        ASSERT_EQ(1u, gPvdDomCapturedErrors.size());
+        EXPECT_NE(std::string::npos, gPvdDomCapturedErrors[0].find("malformed or incompatible OVD header"));
+    }
+    for (size_t length : {0u, 1u, 5u, 9u})
+    for (bool verbose : {false, true})
+    {
+        bytes = Bytes(); bytes.data.resize(length);
+        ASSERT_TRUE(writeFile());
+        fileReaderLines.clear(); gPvdDomCapturedErrors.clear(); gPvdDomCapturedLines.clear();
+        OmniPvdDOMState dom;
+        EXPECT_FALSE(buildPvdDomStateFromFile(path.c_str(), dom, options(verbose)));
+        const std::vector<std::string> expected = length ?
+            std::vector<std::string>{"[parser] ERROR: failed to read complete field\n"} : std::vector<std::string>{};
+        EXPECT_EQ(expected, fileReaderLines);
+        EXPECT_EQ(1u, gPvdDomCapturedErrors.size());
+    }
+    for (bool verbose : {false, true})
+    {
+        fileReaderLines.clear();
+        OmniPvdDOMState missing;
+        EXPECT_FALSE(buildPvdDomStateFromFile("__missing_omnipvd_directory__/diagnostics.ovd", missing, options(verbose)));
+        EXPECT_TRUE(fileReaderLines.empty());
+    }
+}
+
+TEST_F(PvdDomDiagnostics, MidstreamFailuresPreserveLegacyResults)
+{
+    const char* readerErrors[] = {
+        "[parser] ERROR: unknown command 255\n", "[parser] ERROR: unsupported command eREGISTER_ENUM\n",
+        "[parser] ERROR: invalid attribute data type\n", "[parser] ERROR: zero attribute path depth\n",
+        "[parser] ERROR: attribute path depth 33 exceeds limit 32\n",
+        "[parser] ERROR: failed to read complete field\n", "[parser] ERROR: failed to read complete field\n", nullptr
+    };
+    for (unsigned failure = 0; failure < 8; ++failure)
+    {
+        SCOPED_TRACE(failure);
+        bytes = Bytes(); bytes.cls(); bytes.attr(); bytes.create(); bytes.set();
+        switch (failure)
+        {
+        case 0: bytes.put(uint8_t(255)); break;
+        case 1: bytes.command(OmniPvdCommand::eREGISTER_ENUM); break;
+        case 2: bytes.attr(2, "bad", 1, static_cast<OmniPvdDataType::Enum>(65535)); break;
+        case 3: bytes.set(4, 1, 10, 0); break;
+        case 4: bytes.set(4, 1, 10, 33); break;
+        case 5: bytes.command(OmniPvdCommand::eCREATE_OBJECT); break;
+        case 6: bytes.set(); bytes.data.pop_back(); break;
+        case 7: bytes.set(3); break;
+        }
+        ASSERT_TRUE(writeFile());
+        OmniPvdDOMState baseline;
+        gPvdDomCapturedErrors.clear(); gPvdDomCapturedLines.clear();
+        const bool referenceLoadResult = buildPvdDomStateFromFile(path.c_str(), baseline);
+        const auto baselineDomLines = gPvdDomCapturedLines;
+        std::vector<std::string> expected;
+        if (readerErrors[failure]) expected.emplace_back(readerErrors[failure]);
+        for (bool verbose : {false, true})
+        {
+            fileReaderLines.clear(); gPvdDomCapturedErrors.clear(); gPvdDomCapturedLines.clear();
+            OmniPvdDOMState candidate;
+            EXPECT_EQ(referenceLoadResult, buildPvdDomStateFromFile(path.c_str(), candidate, options(verbose)));
+            EXPECT_EQ(baselineDomLines, gPvdDomCapturedLines);
+            expectDomValues(baseline, candidate);
+            EXPECT_EQ(expected, verbose ? withoutReaderSuccessRecords(fileReaderLines) : fileReaderLines);
+        }
+    }
+}
+
+}
+
+TEST(PvdDomFile, GeneratedShapesHaveIdentityLocalPoses)
+{
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(buildPvdDomStateFromFile(PVDDOM_GENERATED_TEST_FILE, domState));
+    unsigned shapes = 0;
+    for (const auto& entry : domState.mObjectHandleToObjectMap)
+    {
+        OmniPvdObject* object = entry.second;
+        if (object->mOmniPvdClass->mClassName != "PxShape") continue;
+        SCOPED_TRACE(object->mOmniObjectName);
+        ++shapes;
+        const auto* sample = getLatestSampleAtFrame(object, "localPose", UINT64_MAX);
+        ASSERT_NE(nullptr, sample);
+        float position[3], quaternion[4];
+        ASSERT_TRUE(readTransform(sample, position, quaternion));
+        for (unsigned i = 0; i != 3; ++i)
+        {
+            EXPECT_FLOAT_EQ(0, position[i]);
+            EXPECT_FLOAT_EQ(0, quaternion[i]);
+        }
+        EXPECT_FLOAT_EQ(1, quaternion[3]);
+    }
+    EXPECT_EQ(3u, shapes);
 }
 
 TEST(PvdDomFile, MissingFileReportsOpenFailure)
@@ -1838,7 +2567,7 @@ TEST_F(PvdDomTest, QueryReadVec3AndTransform)
 
     writer->createObject(1, cls, 65000, "");
     float pos[3]   = { 1.f, 2.f, 3.f };
-    float xform[7] = { 10.f, 20.f, 30.f, 0.f, 0.f, 0.f, 1.f };
+    float xform[7] = { 0.f, 0.f, 0.f, 1.f, 10.f, 20.f, 30.f };
     writer->setAttribute(1, 65000, posAttr, reinterpret_cast<const uint8_t*>(pos),   sizeof(pos));
     writer->setAttribute(1, 65000, tAttr, reinterpret_cast<const uint8_t*>(xform), sizeof(xform));
 
@@ -1935,8 +2664,8 @@ TEST_F(PvdDomTest, QueryIntegrationDeepChainWithReferences)
         reinterpret_cast<const uint8_t*>(&shapeRef), sizeof(shapeRef));
 
     // Two frames of pose + sleep state.
-    float poseFrame1[7] = { 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 1.f };
-    float poseFrame2[7] = { 5.f, 0.f, 0.f, 0.f, 0.f, 0.f, 1.f };
+    float poseFrame1[7] = { 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f };
+    float poseFrame2[7] = { 0.f, 0.f, 0.f, 1.f, 5.f, 0.f, 0.f };
     uint8_t sleeping1 = 1;
     uint8_t sleeping2 = 0;
 

@@ -46,6 +46,7 @@ This repo contains:
 
 | Release | Compatibility |
 |---|---|
+| [0.8](https://github.com/NVIDIA-Omniverse/PhysX/tree/ovphysx-0.8.0) | PhysX SDK 5.13.0 |
 | [0.7](https://github.com/NVIDIA-Omniverse/PhysX/tree/ovphysx-0.7.0) | PhysX SDK 5.12.0 |
 | [0.6](https://github.com/NVIDIA-Omniverse/PhysX/tree/ovphysx-0.6.4) | PhysX SDK 5.11.0 |
 | [0.5](https://github.com/NVIDIA-Omniverse/PhysX/tree/ovphysx-0.5.11) | PhysX SDK 5.10.0 |
@@ -74,3 +75,19 @@ Additional simulation libraries:
 * Please use GitHub [Discussions](https://github.com/NVIDIA-Omniverse/PhysX/discussions/) for questions and comments.
 * GitHub [Issues](https://github.com/NVIDIA-Omniverse/PhysX/issues) should only be used for bug reports or documentation issues.
 * You can also ask questions in the NVIDIA Omniverse #physics [Discord Channel](https://discord.com/invite/XWQNJDNuaC).
+
+
+<!-- physics-component-licenses-begin -->
+## Component licenses
+
+These licenses apply to the listed components; other components retain their own licenses.
+
+- `ovphysx/` source: [Apache License 2.0](ovphysx/LICENSE.txt), with the bundled-component exceptions in [third-party notices](ovphysx/THIRD_PARTY_NOTICES.md).
+- `physx/` source: [Apache License 2.0](physx/LICENSE.md), with the bundled-component exceptions in [third-party notices](physx/THIRD_PARTY_NOTICES.md).
+- ovphysx binaries: [NVIDIA Omniverse agreements](ovphysx/licenses/LICENSE-binary.txt).
+- Omniverse Extensions dependencies: [NVIDIA agreements](ovphysx/tools/internal-licenses/Omniverse-Extensions-LICENSE.txt).
+- OpenUSD-derived code: [Tomorrow Open Source Technology License 1.0](ovphysx/tools/internal-licenses/OpenUSD-LICENSE.txt).
+- DLPack: [Apache License 2.0, upstream contributor attribution](ovphysx/tools/internal-licenses/dlpack-LICENSE.txt).
+- Repoman bootstrap tooling: [MIT](ovphysx/tools/internal-licenses/repoman-LICENSE.txt).
+- V-HACD code: [BSD 3-Clause](ovphysx/tools/internal-licenses/vhacd-LICENSE.txt).
+<!-- physics-component-licenses-end -->

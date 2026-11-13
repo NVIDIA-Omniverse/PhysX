@@ -1,0 +1,27 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxMeshMergeCollisionAPI",
+  "title": "PhysxMeshMergeCollisionAPI",
+  "summary": "Merges the meshes of its built-in collisionmeshes collection into one collision mesh for the collider it is applied to; no column of the API is read. The runtime checks its presence only in scene queries, which accept a prim with this API as a shape or mesh query input although it is not a Gprim or Mesh.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "Xformable"
+  ],
+  "requires": [
+    "PhysicsCollisionAPI"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "columns": [],
+  "interactions": [
+    {
+      "with": "CollectionAPI",
+      "rule": "Both walkers treat the API as a registered custom shape and build one merged mesh from the members of CollectionAPI:collisionmeshes on the same prim, with the collider's physics:approximation: members in path order, faces reversed to right-handed where the member is left-handed or its transform reflects, members with inconsistent topology skipped. A collider whose members supply no geometry emits no shape. Direct Gprim children of the collider are populated through collider_child_geometry and direct collection targets through physics_target; a member reached only by expanding another target needs the rendering domain to supply its geometry."
+    }
+  ]
+}

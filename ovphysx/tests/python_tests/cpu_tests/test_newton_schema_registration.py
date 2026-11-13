@@ -93,6 +93,7 @@ _CHILD_SCRIPT = textwrap.dedent(
 
     import numpy as np
     import ovstage
+    from ovphysx.population import physics_population_descs
     import ovphysx
     from schema_support import physx_schema_paths
     from ovphysx.types import ObjectScope, SimObjectType
@@ -180,8 +181,26 @@ _CHILD_SCRIPT = textwrap.dedent(
         ovstage.population.register_usd_schemas(roots)
 
     stage = ovstage.Stage("newton-schema-check")
-    ovstage.population.open_usd(stage, usd_path, ordinal=1, domains=ovstage.PopulationDomain.PHYSICS)
+    ovstage.population.open_usd_with_desc(stage, usd_path, ordinal=1, time=ovstage.population.DEFAULT_TIME, descs=physics_population_descs())
     stage.advance_write_floor(ordinal=1).wait()
+
+    if mode == "probe-error":
+        # Failure of the diagnostic's private population must not reject an
+        # otherwise valid attach or claim that missing schemas were established.
+        def fail_probe(*args, **kwargs):
+            print("PROBE_FAILED|injected population failure", flush=True)
+            raise RuntimeError("injected population failure")
+        ovstage.population.open_usd_from_string_with_desc = fail_probe
+
+    if mode.startswith("late-registered"):
+        root = copy_newton_schema() if mode == "late-registered-other-directory" else str(ovphysx.newton_schema_root())
+        try:
+            ovstage.population.register_usd_schemas([root])
+        except ovstage.OvstageError as exc:
+            assert "already built" in str(exc), str(exc)
+            print("LATE_REJECTED|" + str(exc).replace("\\n", " "), flush=True)
+        else:
+            raise AssertionError("late Newton registration was not rejected")
 
     if mode == "procedural-then-usd":
         with ovstage.PathDictionary(stage) as paths:
@@ -193,13 +212,14 @@ _CHILD_SCRIPT = textwrap.dedent(
                         read.wait()
                         for group in read.groups():
                             with group:
-                                for i in range(group.tensor_count):
-                                    values.extend(float(v) for v in np.ravel(np.array(group.array(i), copy=True)))
+                                for column in group.columns:
+                                    for i in range(column.tensor_count):
+                                        values.extend(float(v) for v in np.ravel(np.array(column.array(i), copy=True)))
         extra_present = values
 
     physx = ovphysx.PhysX(config=config)
     try:
-        if mode == "unregistered-error":
+        if mode in ("unregistered-error", "late-registered-error"):
             # A warning promoted to an error must propagate before the native attach:
             # the instance stays detached, so a retry (the check has latched) attaches.
             with warnings.catch_warnings():
@@ -207,10 +227,11 @@ _CHILD_SCRIPT = textwrap.dedent(
                 try:
                     physx.wait_task(physx.attach_ovstage(stage, read_ordinal=1))
                 except RuntimeWarning as exc:
+                    assert not physx.is_stage_attached(), "warning was raised after native attach"
                     print("RAISED|" + str(exc).replace("\\n", " "), flush=True)
                 else:
                     print("RAISED|<nothing>", flush=True)
-            physx.wait_task(physx.attach_ovstage(stage, read_ordinal=1))
+            attach_recording(physx, stage)
             print("RETRY_ATTACHED|ok", flush=True)
         else:
             attach_recording(physx, stage)
@@ -262,6 +283,8 @@ def _run_child(tmp_path: Path, mode: str):
         "raised": [line[len("RAISED|"):] for line in lines if line.startswith("RAISED|")],
         "retry": [line for line in lines if line.startswith("RETRY_ATTACHED|")],
         "extra": [json.loads(line[len("EXTRA|"):]) for line in lines if line.startswith("EXTRA|")],
+        "late_rejected": [line for line in lines if line.startswith("LATE_REJECTED|")],
+        "probe_failed": [line for line in lines if line.startswith("PROBE_FAILED|")],
     }
     values = [line for line in lines if line.startswith("VALUES|")]
     assert values, f"child produced no read-back:\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
@@ -297,10 +320,25 @@ def test_unregistered_newton_schema_warns_once_and_names_the_fix(tmp_path):
     assert out["value"] >= _FLT_MAX, out["value"]
 
 
-def test_warning_promoted_to_error_leaves_the_instance_detached(tmp_path):
-    out = _run_child(tmp_path, "unregistered-error")
+@pytest.mark.parametrize("mode", ["late-registered", "late-registered-other-directory"])
+def test_rejected_late_newton_registration_warns_once(tmp_path, mode):
+    """NVBug 6927028: failed late registration records the plugin but cannot repair USD definitions."""
+    out = _run_child(tmp_path, mode)
+    assert out["late_rejected"], "the application did not observe a late-registration error"
+    assert len(out["warns"]) == 1, out["warns"]
+    assert "was not registered with ovstage before the first USD schema read" in out["warns"][0]
+    assert "Restart the process" in out["warns"][0]
+    assert out["value"] >= _FLT_MAX, out["value"]
+
+
+@pytest.mark.parametrize("mode", ["unregistered-error", "late-registered-error"])
+def test_warning_promoted_to_error_leaves_the_instance_detached(tmp_path, mode):
+    out = _run_child(tmp_path, mode)
+    if mode == "late-registered-error":
+        assert out["late_rejected"], "the application did not observe a late-registration error"
     assert out["raised"] and "was not registered with ovstage" in out["raised"][0], out["raised"]
     assert out["retry"], "the retry after the raised warning did not attach"
+    assert not out["warns"], out["warns"]
     assert out["value"] >= _FLT_MAX, out["value"]
 
 
@@ -321,6 +359,16 @@ def test_registered_and_unregistered_cases_log_nothing(tmp_path):
     for mode in ("registered", "unregistered"):
         out = _run_child(tmp_path, mode)
         assert not out["logged"], (mode, out["logged"])
+
+
+def test_newton_probe_failure_logs_once_without_rejecting_attach(tmp_path):
+    out = _run_child(tmp_path, "probe-error")
+    assert len(out["probe_failed"]) == 1, out["probe_failed"]
+    assert not out["warns"], out["warns"]
+    assert len(out["logged"]) == 1, out["logged"]
+    assert "could not verify Newton USD schema availability" in out["logged"][0]
+    assert "injected population failure" in out["logged"][0]
+    assert out["value"] >= _FLT_MAX, out["value"]
 
 
 @pytest.mark.parametrize("mode", ["unregistered-optout", "unregistered-optout-string"])

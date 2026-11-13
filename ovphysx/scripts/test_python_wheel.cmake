@@ -143,6 +143,16 @@ foreach(PY_VER ${PYTHON_VERSIONS})
     endif()
 
     message(STATUS "Running portable documentation smoke test...")
+    # Install the decoder only after the runtime import passed with wheel dependencies alone.
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E env ${UV_ENV}
+            "${OVPHYSX_UV_COMMAND}" pip install --python ${_VENV_DIR}
+            -r "${PROJECT_ROOT}/scripts/documentation_requirements.txt"
+        RESULT_VARIABLE _DOCS_DEPS_RESULT
+    )
+    if(NOT _DOCS_DEPS_RESULT STREQUAL "0")
+        message(FATAL_ERROR "Failed to install documentation test dependencies for Python ${PY_VER}")
+    endif()
     execute_process(
         COMMAND ${CMAKE_COMMAND} -E env ${UV_ENV}
             "${OVPHYSX_UV_COMMAND}" run --python ${_VENV_DIR} --no-sync --
@@ -186,6 +196,22 @@ foreach(PY_VER ${PYTHON_VERSIONS})
             "(exit code: ${_SDK_DOCUMENTATION_RESULT})")
     else()
         message(STATUS "  [PASS] SDK portable documentation (Python ${PY_VER})")
+    endif()
+
+    # Companion stopped services need no GPU or customer USD. Exercise their
+    # real worker entry points with inherited loader paths removed.
+    if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux" AND ARCH_NAME STREQUAL "x86_64")
+        execute_process(
+            COMMAND ${CMAKE_COMMAND} -E env ${UV_ENV}
+                "${OVPHYSX_UV_COMMAND}" run --python ${_VENV_DIR} --no-sync --
+                python "${PROJECT_ROOT}/companion/tests_native/wheel_worker_smoke.py"
+            RESULT_VARIABLE _COMPANION_WORKER_RESULT
+        )
+        if(NOT _COMPANION_WORKER_RESULT STREQUAL "0")
+            message(FATAL_ERROR
+                "Companion wheel worker smoke failed for Python ${PY_VER} "
+                "(exit code: ${_COMPANION_WORKER_RESULT})")
+        endif()
     endif()
 
     message(STATUS "Running bundled OVPHYSX_LIB override smoke test...")

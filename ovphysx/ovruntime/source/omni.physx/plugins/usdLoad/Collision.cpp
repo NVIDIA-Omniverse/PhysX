@@ -33,6 +33,9 @@
 // @implements REQ-CUSTOM-LIFETIME-001
 // @covers AC-5
 
+// @implements REQ-PARSE-MIRROR-001
+// @covers AC-1 AC-2
+
 #include <omni/physics/parse/KnownTokens.h>
 
 #include <carb/Types.h>
@@ -124,7 +127,51 @@ BoundingBoxPhysxShapeDesc* computeBoundingBoxShape(const std::vector<carb::Float
     return boxDesc;
 }
 
-PhysxShapeDesc* scaleShapeDesc(const PhysxShapeDesc& inDesc, const carb::Float3& scale)
+static bool isSameSignScale(const carb::Float3& a, const carb::Float3& b)
+{
+    return a.x == b.x && a.y == b.y && a.z == b.z;
+}
+
+// A desc copied by scaleShapeDesc keeps the cooked data CRC of its source, and the mesh cache finds
+// the cooked mesh by that CRC. Once the sign scale of the copy differs, it would get the mesh cooked
+// for the source sign scale - for a mirroring scale that one is not mirrored (NvBugs 7004238).
+// This fills a request that computes the CRC for the copy's own cooking params instead, from the
+// same source mesh dispatchScannedShapeCooking computed the source CRC from. The source's mesh key
+// is reused, so the mesh is not hashed again. The CRC is cleared first, so if it can't be computed
+// the copy misses the mesh cache and cooks its own mesh.
+static bool fillScaledMeshCrcRequest(omni::physx::PhysxCookingComputeRequest& request,
+                                     SourceMeshGeometryScope& geomScope,
+                                     const AttachedStage& attachedStage,
+                                     omni::physics::parse::ObjectKey meshPrimKey,
+                                     const MeshKey& meshKey,
+                                     MeshKey& crc)
+{
+    crc = MeshKey();
+    if (meshKey == MeshKey())
+        return false;
+
+    // primStageId/primId are correlation keys only (REQ-COOK-SOURCE-001 AC-1).
+    request.primStageId = uint64_t(attachedStage.getStageId());
+    request.attachHandle = attachedStage.getAttachHandle();
+    request.primId = meshPrimKey.handle;
+    request.options.setFlag(omni::physx::PhysxCookingComputeRequest::Options::kComputeAsynchronously, false);
+    request.options.setFlag(omni::physx::PhysxCookingComputeRequest::Options::kComputeGPUCookingData, true);
+    request.options.setFlag(omni::physx::PhysxCookingComputeRequest::Options::kExecuteCookingOnGPU, false);
+    request.mode = omni::physx::PhysxCookingComputeRequest::eMODE_COMPUTE_CRC;
+    // The mesh view carries the unit scale and the orientation the CRC folds in.
+    if (!fillCookingMeshViewFromSource(request, geomScope, attachedStage, meshPrimKey, false))
+        return false;
+
+    request.meshKey = meshKey;
+    request.onFinished = [&crc](const omni::physx::PhysxCookingComputeResult& result)
+    {
+        if (result.result == omni::physx::PhysxCookingResult::eVALID)
+            crc = result.cookedDataCRC;
+    };
+    return true;
+}
+
+PhysxShapeDesc* scaleShapeDesc(const AttachedStage& attachedStage, const PhysxShapeDesc& inDesc, const carb::Float3& scale)
 {
     PhysxShapeDesc* desc = nullptr;
 
@@ -243,6 +290,17 @@ PhysxShapeDesc* scaleShapeDesc(const PhysxShapeDesc& inDesc, const carb::Float3&
 
         convexDesc.meshScale = fromPhysX(toPhysX(convexDesc.meshScale).multiply(s));
         convexDesc.convexCookingParams.signScale = omni::physx::usdparser::scaleToSignScale(convexDesc.meshScale);
+
+        const carb::Float3& inSignScale = ((const ConvexMeshPhysxShapeDesc&)inDesc).convexCookingParams.signScale;
+        omni::physx::PhysxCookingComputeRequest request;
+        SourceMeshGeometryScope geomScope;
+        if (!isSameSignScale(convexDesc.convexCookingParams.signScale, inSignScale) &&
+            fillScaledMeshCrcRequest(request, geomScope, attachedStage, convexDesc.sourceGprim, convexDesc.meshKey, convexDesc.crc))
+        {
+            IPhysxCookingService* cookingService = OmniPhysX::getInstance().getPhysXSetup().getCookingServiceInterface();
+            if (cookingService)
+                cookingService->requestConvexMeshCookedData(nullptr, request, convexDesc.convexCookingParams);
+        }
     }
     break;
     case eConvexMeshDecompositionShape:
@@ -253,6 +311,17 @@ PhysxShapeDesc* scaleShapeDesc(const PhysxShapeDesc& inDesc, const carb::Float3&
 
         convexDecDesc.meshScale = fromPhysX(toPhysX(convexDecDesc.meshScale).multiply(s));
         convexDecDesc.convexDecompositionCookingParams.signScale = omni::physx::usdparser::scaleToSignScale(convexDecDesc.meshScale);
+
+        const carb::Float3& inSignScale = ((const ConvexMeshDecompositionPhysxShapeDesc&)inDesc).convexDecompositionCookingParams.signScale;
+        omni::physx::PhysxCookingComputeRequest request;
+        SourceMeshGeometryScope geomScope;
+        if (!isSameSignScale(convexDecDesc.convexDecompositionCookingParams.signScale, inSignScale) &&
+            fillScaledMeshCrcRequest(request, geomScope, attachedStage, convexDecDesc.sourceGprim, convexDecDesc.meshKey, convexDecDesc.crc))
+        {
+            IPhysxCookingService* cookingService = OmniPhysX::getInstance().getPhysXSetup().getCookingServiceInterface();
+            if (cookingService)
+                cookingService->requestConvexMeshDecompositionCookedData(nullptr, request, convexDecDesc.convexDecompositionCookingParams);
+        }
     }
     break;
     case eTriangleMeshShape:

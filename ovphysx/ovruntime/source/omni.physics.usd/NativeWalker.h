@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-SIM-LOCALVELOCITY-001
+// @covers AC-8
+
 /**
  * Native USD prim walker for `scanStage`.
  *
@@ -38,7 +41,8 @@ class UsdSource;
 ScannedStage scanStageNative(PXR_NS::UsdStageWeakPtr stage,
                              omni::physics::schema::PrimIteratorBase& primIterator,
                              parse::IDescriptorAllocator& allocator,
-                             UsdSource* attachedSource = nullptr);
+                             UsdSource* attachedSource = nullptr,
+                             bool outputVelocitiesLocalSpaceDefault = false);
 
 // Resolve a prim's bound `UsdShadeMaterial` path for the "physics" purpose.
 // Mirrors `usdmaterialutils::getMaterialBinding` (common/) verbatim so the USD

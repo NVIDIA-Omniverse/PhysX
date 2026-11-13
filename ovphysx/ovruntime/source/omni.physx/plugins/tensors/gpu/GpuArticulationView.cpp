@@ -11,6 +11,9 @@
  * @implements REQ-READ-TENDON-001
  * @covers AC-4
  *
+ * @implements REQ-SIM-OVSTAGE-WRITEAPPLY-001
+ * @covers AC-21
+ *
  * @implements REQ-TENSOR-PATH-001
  * @covers AC-4
  *
@@ -36,7 +39,10 @@
  * @covers AC-1 AC-2
  *
  * @implements REQ-TENSOR-VIEW-001
- * @covers AC-7
+ * @covers AC-7 AC-16
+ *
+ * @implements REQ-READ-DEVICE-001
+ * @covers AC-12
  */
 
 #include "tensors/gpu/CudaKernels.h"
@@ -87,9 +93,9 @@ GpuArticulationView::GpuArticulationView(GpuSimulationView* sim, const std::vect
 
     PhysxCudaContextGuard ctxGuarg(mGpuSimData->mCudaContextManager);
 
-    if (!SHIM_CU_EVENT_CREATE(&mOvStageSelectionReadyEvent, CU_EVENT_DISABLE_TIMING))
+    if (!SHIM_CU_EVENT_CREATE(&mMassCenterStartEvent, CU_EVENT_DISABLE_TIMING))
     {
-        CARB_LOG_ERROR("Failed to create the ovstage articulation selection ready event");
+        CARB_LOG_ERROR("Failed to create the articulation mass center start event");
     }
 
     // physx arti indices
@@ -246,39 +252,27 @@ GpuArticulationView::~GpuArticulationView()
     {
         CudaContextGuard ctxGuard(mGpuSimData->mCtx);
 
-        // Drain ONCE, before any free below. Every ovstage gather this view launches runs on the
-        // null stream and returns without synchronizing, so a view destroyed in the same frame as
-        // its last read can free memory a kernel is still reading. cudaFree has historically
-        // synchronized implicitly; that is not a guarantee to rely on.
+        // Drain ONCE, before any free below. A gather this view launches on the null stream returns
+        // without synchronizing, so a view destroyed in the same frame as its last read can free memory
+        // a kernel is still reading. cudaFree has historically synchronized implicitly; that is not a
+        // guarantee to rely on.
         //
-        // Unconditional and hoisted, not per buffer. The drain used to sit inside the
-        // `mOvStageSelectionDev` branch, which covered one allocation and left the rest exposed --
-        // and the rest are not incidental: mLinkRecordsDev, mDofRecordsDev, mArtiGpuIndicesDev and
-        // the private gather scratch are all *inputs* to those same kernels.
-        // mLinkIncomingJointForceScratchDev is the sharpest case, because being privately owned is
-        // exactly why nothing else protects it: it is handed back through no shared-buffer protocol,
-        // so this drain is the only thing between the free and a live kernel.
-        //
-        // Same shape as GpuPointSetReadView::~GpuPointSetReadView, which drains once for the same
-        // reason.
+        // Unconditional and hoisted, not per buffer: mLinkRecordsDev, mDofRecordsDev and
+        // mArtiGpuIndicesDev are all *inputs* to those same kernels. Same shape as
+        // GpuPointSetReadView::~GpuPointSetReadView, which drains once for the same reason. A
+        // stream-ordered read or commit reads them on its caller's stream instead, which the drain
+        // does not cover: it is waited for as well.
         CHECK_CUDA(cudaStreamSynchronize(nullptr));
+        mGpuSimData->waitForTableReaders();
 
-        if (mOvStageSelectionDev)
+        if (mMassCenterStartEvent)
         {
-            CHECK_CUDA(cudaFree(mOvStageSelectionDev));
-        }
-        if (mOvStageSelectionReadyEvent)
-        {
-            CHECK_CU(getCudaShim()->eventDestroy(reinterpret_cast<uintptr_t>(mOvStageSelectionReadyEvent), nullptr));
+            CHECK_CU(getCudaShim()->eventDestroy(reinterpret_cast<uintptr_t>(mMassCenterStartEvent), nullptr));
         }
 
         CHECK_CUDA(cudaFree(mArtiGpuIndicesDev));
         CHECK_CUDA(cudaFree(mViewIndicesDev));
         CHECK_CUDA(cudaFree(mDofRecordsDev));
-        CHECK_CUDA(cudaFree(mOvStageDofRecordsDev));
-        CHECK_CUDA(cudaFree(mOvStageFixedTendonRecordsDev));
-        CHECK_CUDA(cudaFree(mOvStageSpatialTendonRecordsDev));
-        CHECK_CUDA(cudaFree(mOvStageLinkForceRecordsDev));
         CHECK_CUDA(cudaFree(mRootRecordsDev));
         CHECK_CUDA(cudaFree(mLinkRecordsDev));
         CHECK_CUDA(cudaFree(mFixedTendonRecordsDev));
@@ -290,15 +284,13 @@ GpuArticulationView::~GpuArticulationView()
             CHECK_CUDA(cudaFree(mMaskIndicesDev));
         if (mMaskAllocPolicy.mBuffer)
             CHECK_CUDA(cudaFree(mMaskAllocPolicy.mBuffer));
-        if (mLinkIncomingJointForceScratchDev)
-            CHECK_CUDA(cudaFree(mLinkIncomingJointForceScratchDev));
     }
 }
 
 bool GpuArticulationView::getLinkTransforms(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
 
     if (!dstTensor || !dstTensor->data)
     {
@@ -427,7 +419,7 @@ static bool getVelAcc(const TensorDesc* dstTensor,
 bool GpuArticulationView::getLinkVelocities(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     return getVelAcc(dstTensor,  mGpuSimData->mLinkOrRootLinearVelAccDev,  mGpuSimData->mLinkOrRootAngularVelAccDev, mViewIndicesDev,
                      mArtiGpuIndicesDev, PxArticulationGPUAPIReadType::Enum::eLINK_LINEAR_VELOCITY,
                      PxArticulationGPUAPIReadType::Enum::eLINK_ANGULAR_VELOCITY, getCount(), mMaxLinks, mDevice,
@@ -437,7 +429,7 @@ bool GpuArticulationView::getLinkVelocities(const TensorDesc* dstTensor) const
 bool GpuArticulationView::getLinkAccelerations(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     return getVelAcc(dstTensor,  mGpuSimData->mLinkOrRootLinearVelAccDev,  mGpuSimData->mLinkOrRootAngularVelAccDev, mViewIndicesDev,
                      mArtiGpuIndicesDev, PxArticulationGPUAPIReadType::Enum::eLINK_LINEAR_ACCELERATION,
                      PxArticulationGPUAPIReadType::Enum::eLINK_ANGULAR_ACCELERATION, getCount(), mMaxLinks, mDevice,
@@ -447,7 +439,7 @@ bool GpuArticulationView::getLinkAccelerations(const TensorDesc* dstTensor) cons
 bool GpuArticulationView::getRootTransforms(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
 
     if (!dstTensor || !dstTensor->data)
     {
@@ -501,7 +493,7 @@ bool GpuArticulationView::getRootTransforms(const TensorDesc* dstTensor) const
 bool GpuArticulationView::setRootTransforms(const TensorDesc* srcTensor, const TensorDesc* indexTensor)
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
 
     if (!srcTensor || !srcTensor->data)
     {
@@ -561,7 +553,7 @@ bool GpuArticulationView::setRootTransforms(const TensorDesc* srcTensor, const T
 bool GpuArticulationView::getRootVelocities(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
 
     if (!dstTensor || !dstTensor->data)
     {
@@ -635,315 +627,10 @@ bool GpuArticulationView::getRootVelocities(const TensorDesc* dstTensor) const
     return true;
 }
 
-bool GpuArticulationView::ensureOvStageSelection(const PxU32* rows,
-                                                 PxU32 count,
-                                                 uint64_t rowsToken,
-                                                 const PxArticulationGPUIndex*& gpuIndicesDev) const
-{
-    // Bounds are checked on the miss, not the hit: a hit means this exact list was validated when it
-    // was uploaded. That rests on the token contract in the header -- if a token were ever reused for
-    // a different list, this is where the check would be skipped.
-    const bool selectionChanged =
-        !mOvStageSelectionValid || mOvStageSelectionCount != count || mOvStageSelectionToken != rowsToken;
-    if (selectionChanged && !checkRecordIndices(rows, count, mEntries.size(), "ovstage articulation rows", __FUNCTION__))
-    {
-        return false;
-    }
-
-    if (count > mOvStageSelectionCapacity)
-    {
-        // Every consumer leaves its finish wait and gather on the null stream, so this one
-        // structural synchronization makes the old allocation safe to free.
-        if (mOvStageSelectionDev && !CHECK_CUDA(cudaStreamSynchronize(nullptr)))
-        {
-            return false;
-        }
-        if (mOvStageSelectionDev && !CHECK_CUDA(cudaFree(mOvStageSelectionDev)))
-        {
-            return false;
-        }
-        mOvStageSelectionDev = nullptr;
-        mOvStageGpuIndicesDev = nullptr;
-        mOvStageSelectionCapacity = 0;
-        mOvStageSelectionValid = false;
-
-        void* allocation = nullptr;
-        if (!CHECK_CUDA(cudaMalloc(&allocation, size_t(count) * sizeof(PxArticulationGPUIndex))))
-        {
-            CARB_LOG_ERROR("Failed to allocate ovstage articulation selection for %u rows", count);
-            return false;
-        }
-        mOvStageSelectionDev = allocation;
-        mOvStageGpuIndicesDev = static_cast<PxArticulationGPUIndex*>(allocation);
-        mOvStageSelectionCapacity = count;
-    }
-
-    if (selectionChanged)
-    {
-        // Synchronous, like GpuRigidBodyView::ovStageRowsDevice: an async copy would need its source
-        // kept alive until the upload retired, and buys nothing because this copy and every consumer
-        // of it are on the null stream. REQ-READ-DEVICE-001's "asynchronous" is about the RESULT
-        // path; this is host-to-device. Not a cold path: under kOvxActive the producer mints a fresh
-        // token every read, so this runs per read on that scope.
-        mOvStageSelectionHost.resize(count);
-        for (PxU32 i = 0; i < count; i++)
-        {
-            const PxU32 row = rows ? rows[i] : i;
-            mOvStageSelectionHost[i] = mArtiIndices[row];
-        }
-
-        if (!CHECK_CUDA(cudaMemcpy(mOvStageGpuIndicesDev, mOvStageSelectionHost.data(),
-                                   size_t(count) * sizeof(PxArticulationGPUIndex), cudaMemcpyHostToDevice)))
-        {
-            mOvStageSelectionValid = false;
-            return false;
-        }
-
-        mOvStageSelectionCount = count;
-        mOvStageSelectionToken = rowsToken;
-        mOvStageSelectionValid = true;
-    }
-
-    gpuIndicesDev = mOvStageGpuIndicesDev;
-    return true;
-}
-
-// Shared body for the two cached ovstage record uploads. Grows the buffer when the
-// byte size exceeds capacity and re-uploads only when the token or count changes, exactly like
-// ensureOvStageSelection above. No index validation: this is a behaviour-preserving move of the
-// reader's former per-read memAlloc + memcpyHtoD, which validated nothing either. Called with the
-// view's CUDA context already current -- the reader holds the scene's PxScopedCudaLock across the
-// build -- so it takes no guard of its own, matching ensureOvStageSelection.
-static const void* uploadOvStageRecordsCached(void*& dev, size_t& capBytes, uint32_t& storedCount,
-                                              uint64_t& storedToken, const void* records, PxU32 count,
-                                              size_t recordSize, uint64_t token, const char* label)
-{
-    if (!records || count == 0)
-        return nullptr;
-    const size_t bytes = size_t(count) * recordSize;
-    if (bytes > capBytes)
-    {
-        // Every consumer leaves its gather on the null stream, so one structural synchronisation
-        // makes the old allocation safe to free -- the same argument ensureOvStageSelection makes.
-        if (dev && !CHECK_CUDA(cudaStreamSynchronize(nullptr)))
-            return nullptr;
-        if (dev && !CHECK_CUDA(cudaFree(dev)))
-            return nullptr;
-        dev = nullptr;
-        capBytes = 0;
-        storedToken = 0;
-        if (!CHECK_CUDA(cudaMalloc(&dev, bytes)))
-        {
-            CARB_LOG_ERROR("Failed to allocate ovstage %s records (%zu bytes)", label, bytes);
-            dev = nullptr;
-            return nullptr;
-        }
-        capBytes = bytes;
-    }
-
-    // `token == 0` forces a re-upload: a fresh view holds storedToken 0, and the reader's own record
-    // cache is likewise gated on generation != 0, so the two agree on "not yet built".
-    const bool changed = !dev || storedToken != token || storedCount != count || token == 0;
-    if (changed)
-    {
-        if (!CHECK_CUDA(cudaMemcpy(dev, records, bytes, cudaMemcpyHostToDevice)))
-        {
-            storedToken = 0; // a failed upload must not be mistaken for a held copy
-            return nullptr;
-        }
-        storedToken = token;
-        storedCount = count;
-    }
-    return dev;
-}
-
-const void* GpuArticulationView::ovStageDofRecordsDevice(const void* records, PxU32 count, uint64_t token) const
-{
-    return uploadOvStageRecordsCached(mOvStageDofRecordsDev, mOvStageDofRecordsCapBytes, mOvStageDofRecordsCount,
-                                      mOvStageDofRecordsToken, records, count, sizeof(ArticulationDofOvStageRecord),
-                                      token, "DOF");
-}
-
-const void* GpuArticulationView::ovStageTendonRecordsDevice(const void* records, PxU32 count, uint64_t token,
-                                                           bool fixed) const
-{
-    // Fixed and spatial keep separate buffers: the record struct is identical and the counts can
-    // match, so sharing one buffer aliased the two on an equal-count read.
-    if (fixed)
-        return uploadOvStageRecordsCached(mOvStageFixedTendonRecordsDev, mOvStageFixedTendonRecordsCapBytes,
-                                          mOvStageFixedTendonRecordsCount, mOvStageFixedTendonRecordsToken, records,
-                                          count, sizeof(ArticulationTendonOvStageRecord), token, "fixed tendon");
-    return uploadOvStageRecordsCached(mOvStageSpatialTendonRecordsDev, mOvStageSpatialTendonRecordsCapBytes,
-                                      mOvStageSpatialTendonRecordsCount, mOvStageSpatialTendonRecordsToken, records,
-                                      count, sizeof(ArticulationTendonOvStageRecord), token, "spatial tendon");
-}
-const void* GpuArticulationView::ovStageLinkForceRecordsDevice(const void* records, PxU32 count, uint64_t token) const
-{
-    return uploadOvStageRecordsCached(mOvStageLinkForceRecordsDev, mOvStageLinkForceRecordsCapBytes,
-                                      mOvStageLinkForceRecordsCount, mOvStageLinkForceRecordsToken, records, count,
-                                      sizeof(ArticulationLinkOvStageRecord), token, "link force");
-}
-
-bool GpuArticulationView::recordOvStageReady(CUevent waitEvent) const
-{
-    if (!mOvStageSelectionReadyEvent)
-    {
-        CARB_LOG_ERROR("The ovstage articulation selection ready event is unavailable");
-        return false;
-    }
-    if (waitEvent &&
-        !CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(waitEvent), 0, nullptr)))
-    {
-        return false;
-    }
-    return CHECK_CU(
-        getCudaShim()->eventRecord(reinterpret_cast<uintptr_t>(mOvStageSelectionReadyEvent), uintptr_t(0), nullptr));
-}
-
 bool GpuArticulationView::waitForDirectGpuFinish(CUevent finishEvent, const char* label) const
 {
     return mGpuSimData->drainDirectGpuFinish(finishEvent, label);
 }
-
-// Every requested root-state column, with each DirectGPU fetch issued once. Three fetches serve the
-// four columns: eROOT_GLOBAL_POSE fills both pose columns, while linear and angular velocity are
-// distinct read types landing in distinct scratch buffers.
-//
-// Each fetch is followed immediately by the gathers that consume it, before the next fetch is
-// issued: the scratch buffers are SHARED (SharedDeviceBuffer::*, guarded by kernelDoneEvent /
-// recordKernelDone), so a fetch may not be held across another one.
-bool GpuArticulationView::getRootStateColumnsOvStage(
-    const RootStateColumn* columns, PxU32 numColumns, const PxU32* rows, PxU32 count, uint64_t rowsToken) const
-{
-    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
-    // A zero-column or zero-row request is nothing to emit, not a failure -- as on the CPU path.
-    if (numColumns == 0 || count == 0)
-        return true; // nothing to emit -- not a failure
-    if (!columns)
-    {
-        return false;
-    }
-
-    // An empty destination means an empty READ, not an empty column: every column in one call is
-    // sized off the same `count`, so one empty implies all empty. Decided ONCE here rather than with
-    // PASS_EMPTY_TENSOR in the loop below, which expands to a function-level `return (true)` and
-    // would skip validation of every later column and all three fetches. A only-PARTLY empty set
-    // falls through to that loop and is refused there.
-    bool allEmpty = true;
-    for (PxU32 c = 0; c < numColumns && allEmpty; ++c)
-    {
-        const TensorDesc* const dst = columns[c].dst;
-        allEmpty = dst && !dst->data && getTensorTotalSize(*dst) == 0;
-    }
-    if (allEmpty)
-    {
-        return true;
-    }
-
-    uint32_t sources = 0;
-    for (PxU32 c = 0; c < numColumns; ++c)
-    {
-        const TensorDesc* const dst = columns[c].dst;
-        const char* const label = rootStateLabel(columns[c].quantity);
-        if (!dst || !dst->data)
-        {
-            return false;
-        }
-        if (!checkTensorDevice(*dst, mDevice, label, __FUNCTION__) ||
-            !checkTensorFloat32(*dst, label, __FUNCTION__) ||
-            !checkTensorSizeExact(*dst, count * rootStateComponents(columns[c].quantity), label, __FUNCTION__))
-        {
-            return false;
-        }
-        sources |= rootStateSource(columns[c].quantity);
-    }
-
-    PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
-    const PxArticulationGPUIndex* gpuIndicesDev = nullptr;
-    if (!ensureOvStageSelection(rows, count, rowsToken, gpuIndicesDev))
-    {
-        return false;
-    }
-    PxScene* const scene = mGpuSimData->mScene;
-
-    // One source: fetch into its scratch, then gather each column that reads that scratch.
-    const auto fetchAndGather = [&](uint32_t source, PxArticulationGPUAPIReadType::Enum readType, void* scratch,
-                                    PxU32 buffer, PxU32 copyEvent, const char* label) -> bool
-    {
-        const CUevent priorKernel = mGpuSimData->kernelDoneEvent(buffer);
-        const CUevent finishEvent = mGpuSimData->mCopyEvents[copyEvent];
-        if (!priorKernel || !finishEvent || !recordOvStageReady(priorKernel))
-        {
-            CARB_LOG_ERROR("Missing synchronization event for %s", label);
-            return false;
-        }
-        if (!scene->getDirectGPUAPI().getArticulationData(
-                scratch, gpuIndicesDev, readType, count, mOvStageSelectionReadyEvent, finishEvent))
-        {
-            CARB_LOG_ERROR("Failed to fetch %s", label);
-            waitForDirectGpuFinish(finishEvent, label);
-            return false;
-        }
-        if (!waitForDirectGpuFinish(finishEvent, label))
-        {
-            return false;
-        }
-
-        bool gathered = true;
-        for (PxU32 c = 0; c < numColumns && gathered; ++c)
-        {
-            if (rootStateSource(columns[c].quantity) != source)
-                continue;
-            float* const dst = static_cast<float*>(columns[c].dst->data);
-            gathered = source == eRootSrcPose ?
-                           fetchArtiRootPoseColumnOvStage(dst, static_cast<::physx::PxTransform*>(scratch), count,
-                                                          columns[c].quantity == RootStateQuantity::eOrientation) :
-                           fetchArtiRootVelocityColumnOvStage(dst, static_cast<PxVec3*>(scratch), count);
-            if (!gathered)
-                CARB_LOG_ERROR("Failed to gather %s", rootStateLabel(columns[c].quantity));
-        }
-        // Recorded whether or not the gathers succeeded: the buffer was handed to a kernel either
-        // way, and skipping this on failure would let the next reader of this scratch overlap it.
-        mGpuSimData->recordKernelDone(buffer);
-        return gathered;
-    };
-
-    if ((sources & eRootSrcPose) &&
-        !fetchAndGather(eRootSrcPose, PxArticulationGPUAPIReadType::eROOT_GLOBAL_POSE,
-                        static_cast<void*>(mGpuSimData->mLinkOrRootTransformsDev),
-                        SharedDeviceBuffer::eLinkOrRootTransforms, CopyEvent::eArtiRootTransforms,
-                        "articulation root pose"))
-    {
-        return false;
-    }
-    if ((sources & eRootSrcLinearVel) &&
-        !fetchAndGather(eRootSrcLinearVel, PxArticulationGPUAPIReadType::eROOT_LINEAR_VELOCITY,
-                        static_cast<void*>(mGpuSimData->mLinkOrRootLinearVelAccDev),
-                        SharedDeviceBuffer::eLinkOrRootLinearVel, CopyEvent::eArtiRootLinVelocities,
-                        "articulation root linear velocity"))
-    {
-        return false;
-    }
-    if ((sources & eRootSrcAngularVel) &&
-        !fetchAndGather(eRootSrcAngularVel, PxArticulationGPUAPIReadType::eROOT_ANGULAR_VELOCITY,
-                        static_cast<void*>(mGpuSimData->mLinkOrRootAngularVelAccDev),
-                        SharedDeviceBuffer::eLinkOrRootAngularVel, CopyEvent::eArtiRootAngVelocities,
-                        "articulation root angular velocity"))
-    {
-        return false;
-    }
-    return true;
-}
-
-// ------------------------------------------------------------------------------------------------
-// Inverse dynamics columns (REQ-READ-INVDYN-001).
-//
-// Each is: resolve the cohort's PhysX indices, ask DirectGPU to compute for exactly those, then
-// de-stride the result into the caller's packed column. computeArticulationData writes result slot i
-// for gpuIndices[i], so a cohort's rows land packed at 0..count-1 in the scratch. What changes per
-// cohort is the packed width; the scratch stride stays the scene-wide maximum.
-// ------------------------------------------------------------------------------------------------
 
 // The inverse dynamics scratch is allocated whenever the scene holds at least one articulation
 // (GpuSimulationData: `if (numArtis > 0)`), zero-dof articulations included -- their matrices are
@@ -957,7 +644,7 @@ bool GpuArticulationView::checkInverseDynamicsScratch(
 {
     if (scratch)
         return true;
-    // WARN_ONCE keys on a static at this expansion site, so all nine callers share one line ever.
+    // WARN_ONCE keys on a static at this expansion site, so every caller shares one line ever.
     // Hence the wording: the message describes the scene, not just the column that asked first.
     CARB_LOG_WARN_ONCE(
         "%s: %s -- and every other inverse dynamics column -- is unavailable on this DirectGPU scene: the "
@@ -967,491 +654,688 @@ bool GpuArticulationView::checkInverseDynamicsScratch(
     return false;
 }
 
-bool GpuArticulationView::getJacobiansOvStage(const TensorDesc* dstTensor,
-                                              const PxU32* rows,
-                                              PxU32 count,
-                                              uint64_t rowsToken) const
+namespace
 {
-    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-    if (!dstTensor || !dstTensor->data)
-    {
-        return false;
-    }
+using ArtiRead = GpuArticulationView::OvStageArtiRead;
 
-    const char* label = "articulation jacobian";
-    PxU32 width = 0;
-    if (!checkTensorDevice(*dstTensor, mDevice, label, __FUNCTION__) ||
-        !checkTensorFloat32(*dstTensor, label, __FUNCTION__) ||
-        !checkInverseDynamicsColumn(*dstTensor, rows, count, InverseDynamicsColumn::eJacobian, width, label,
-                                    __FUNCTION__) ||
-        !checkTensorSizeExact(*dstTensor, count * width, label, __FUNCTION__))
-    {
-        return false;
-    }
-    if (count == 0)
-    {
-        return true;
-    }
+// The PhysX copy or compute one articulation read column needs, one bit each. The root pose serves both pose
+// columns; every other column has its own.
+enum ArtiReadSource : uint32_t
+{
+    kArtiReadPose = 1u << 0,
+    kArtiReadLinearVelocity = 1u << 1,
+    kArtiReadAngularVelocity = 1u << 2,
+    kArtiReadMassCenterWorld = 1u << 3,
+    kArtiReadMassCenterLocal = 1u << 4,
+    kArtiReadJacobian = 1u << 5,
+    kArtiReadMassMatrix = 1u << 6,
+    kArtiReadCoriolis = 1u << 7,
+    kArtiReadGravity = 1u << 8,
+    kArtiReadCentroidal = 1u << 9
+};
 
-    const PxU32 firstEntryIndex = rows ? rows[0] : 0u;
-    const PxU32 rootDofs = mEntries[firstEntryIndex].metatype->getFixedBase() ? 0u : 6u;
-    const PxU32 jacobianCols = rootDofs + mEntries[firstEntryIndex].numDofs;
-    const PxU32 dofRecordBase = firstEntryIndex * mMaxDofs;
-    const bool applyBodyOrderSign = mEntries[firstEntryIndex].metatype->hasReversedDofBodyOrder();
-
-    PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
-    const PxArticulationGPUIndex* gpuIndicesDev = nullptr;
-    if (!ensureOvStageSelection(rows, count, rowsToken, gpuIndicesDev) || !recordOvStageReady(nullptr))
+uint32_t artiReadSource(const ArtiRead kind)
+{
+    switch (kind)
     {
-        return false;
+    case ArtiRead::eRootPosition:
+    case ArtiRead::eRootOrientation:
+        return kArtiReadPose;
+    case ArtiRead::eRootLinearVelocity:
+        return kArtiReadLinearVelocity;
+    case ArtiRead::eRootAngularVelocity:
+        return kArtiReadAngularVelocity;
+    case ArtiRead::eMassCenterWorld:
+        return kArtiReadMassCenterWorld;
+    case ArtiRead::eMassCenterLocal:
+        return kArtiReadMassCenterLocal;
+    case ArtiRead::eJacobian:
+        return kArtiReadJacobian;
+    case ArtiRead::eMassMatrix:
+        return kArtiReadMassMatrix;
+    case ArtiRead::eCoriolisForce:
+        return kArtiReadCoriolis;
+    case ArtiRead::eGravityForce:
+        return kArtiReadGravity;
+    case ArtiRead::eCentroidalMomentum:
+        return kArtiReadCentroidal;
+    case ArtiRead::eNone:
+        break;
     }
-
-    if (!checkInverseDynamicsScratch(mGpuSimData->mJacobianDataDev, label, __FUNCTION__))
-    {
-        return false;
-    }
-    const CUevent finishEvent = mGpuSimData->mCopyEvents[CopyEvent::eArtiJacobians];
-    PxScene* const scene = mGpuSimData->mScene;
-    // The return is checked: a refused DirectGPU compute writes nothing and leaves the shared scratch
-    // holding the PREVIOUS read's values (ADR-0008 Decision 10), so discarding it would gather stale
-    // numbers and publish them as this read's answer. The ovstage error contract is atomic and needs
-    // the submission failure to reach it.
-    if (!scene->getDirectGPUAPI().computeArticulationData(
-            (void*)mGpuSimData->mJacobianDataDev, gpuIndicesDev,
-            PxArticulationGPUAPIComputeType::eDENSE_JACOBIANS, count, mOvStageSelectionReadyEvent,
-            finishEvent))
-    {
-        CARB_LOG_ERROR("Failed to compute %s", label);
-        waitForDirectGpuFinish(finishEvent, label);
-        return false;
-    }
-    if (!waitForDirectGpuFinish(finishEvent, label))
-    {
-        return false;
-    }
-
-    const bool fetched =
-        fetchArtiJacobian(static_cast<float*>(dstTensor->data), mGpuSimData->mJacobianDataDev, count * width, width,
-                          mGpuSimData->mJacobianMaxRows * mGpuSimData->mJacobianMaxCols, jacobianCols, rootDofs,
-                          dofRecordBase, mDofRecordsDev, applyBodyOrderSign);
-    mGpuSimData->recordKernelDone(SharedDeviceBuffer::eJacobianData);
-    if (!fetched)
-    {
-        CARB_LOG_ERROR("Failed to fetch %s", label);
-        return false;
-    }
-    // No host sync: the gather is stream-ordered on the null stream, the consumer waits on the
-    // per-context event the reader records after every column (REQ-READ-DEVICE-001, ADR-0008), and
-    // the next writer of this shared scratch is held off by recordKernelDone above.
-    return true;
+    return 0;
 }
 
-bool GpuArticulationView::getMassMatricesOvStage(const TensorDesc* dstTensor,
-                                                 const PxU32* rows,
-                                                 PxU32 count,
-                                                 uint64_t rowsToken) const
+// The inverse dynamics column a read column is, or eNone for root state and centre of mass.
+BaseArticulationView::InverseDynamicsColumn inverseDynamicsColumnOf(const ArtiRead kind)
 {
-    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-    if (!dstTensor || !dstTensor->data)
+    using Column = BaseArticulationView::InverseDynamicsColumn;
+    switch (kind)
     {
-        return false;
+    case ArtiRead::eJacobian:
+        return Column::eJacobian;
+    case ArtiRead::eMassMatrix:
+        return Column::eMassMatrix;
+    case ArtiRead::eCoriolisForce:
+        return Column::eCoriolisForce;
+    case ArtiRead::eGravityForce:
+        return Column::eGravityForce;
+    case ArtiRead::eCentroidalMomentum:
+        return Column::eCentroidalMomentum;
+    default:
+        return Column::eNone;
     }
-
-    const char* label = "articulation mass matrix";
-    PxU32 width = 0;
-    if (!checkTensorDevice(*dstTensor, mDevice, label, __FUNCTION__) ||
-        !checkTensorFloat32(*dstTensor, label, __FUNCTION__) ||
-        !checkInverseDynamicsColumn(*dstTensor, rows, count, InverseDynamicsColumn::eMassMatrix, width, label,
-                                    __FUNCTION__) ||
-        !checkTensorSizeExact(*dstTensor, count * width, label, __FUNCTION__))
-    {
-        return false;
-    }
-    if (count == 0)
-    {
-        return true;
-    }
-
-    const PxU32 firstEntryIndex = rows ? rows[0] : 0u;
-    const PxU32 rootDofs = mEntries[firstEntryIndex].metatype->getFixedBase() ? 0u : 6u;
-    const PxU32 generalizedCoords = rootDofs + mEntries[firstEntryIndex].numDofs;
-    const PxU32 dofRecordBase = firstEntryIndex * mMaxDofs;
-    const bool applyBodyOrderSign = mEntries[firstEntryIndex].metatype->hasReversedDofBodyOrder();
-
-    PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
-    const PxArticulationGPUIndex* gpuIndicesDev = nullptr;
-    if (!ensureOvStageSelection(rows, count, rowsToken, gpuIndicesDev) || !recordOvStageReady(nullptr))
-    {
-        return false;
-    }
-
-    if (!checkInverseDynamicsScratch(mGpuSimData->mMassMatrixDataDev, label, __FUNCTION__))
-    {
-        return false;
-    }
-    const CUevent finishEvent = mGpuSimData->mCopyEvents[CopyEvent::eArtiMassMatrices];
-    PxScene* const scene = mGpuSimData->mScene;
-    if (!scene->getDirectGPUAPI().computeArticulationData(
-            (void*)mGpuSimData->mMassMatrixDataDev, gpuIndicesDev,
-            PxArticulationGPUAPIComputeType::eMASS_MATRICES, count, mOvStageSelectionReadyEvent, finishEvent))
-    {
-        CARB_LOG_ERROR("Failed to compute %s", label);
-        waitForDirectGpuFinish(finishEvent, label);
-        return false;
-    }
-    if (!waitForDirectGpuFinish(finishEvent, label))
-    {
-        return false;
-    }
-
-    const PxU32 simMassMatrixSize = (mGpuSimData->mMaxDofs + 6) * (mGpuSimData->mMaxDofs + 6);
-    const bool fetched = fetchArtiMassMatrices(static_cast<float*>(dstTensor->data), mGpuSimData->mMassMatrixDataDev,
-                                               count * width, width, simMassMatrixSize, generalizedCoords, rootDofs,
-                                               dofRecordBase, mDofRecordsDev, applyBodyOrderSign);
-    mGpuSimData->recordKernelDone(SharedDeviceBuffer::eMassMatrixData);
-    if (!fetched)
-    {
-        CARB_LOG_ERROR("Failed to fetch %s", label);
-        return false;
-    }
-    // No host sync: the gather is stream-ordered on the null stream, the consumer waits on the
-    // per-context event the reader records after every column (REQ-READ-DEVICE-001, ADR-0008), and
-    // the next writer of this shared scratch is held off by recordKernelDone above.
-    return true;
 }
+} // namespace
 
-bool GpuArticulationView::getGeneralizedForceColumnOvStage(const TensorDesc* dstTensor,
-                                                           const PxU32* rows,
-                                                           PxU32 count,
-                                                           uint64_t rowsToken,
-                                                           bool gravity) const
+// The device scratch a read's sources need, in bit order after the GPU index list. computeArticulationData writes
+// result slot i for gpuIndices[i], so a cohort's rows land packed at 0..count-1, each at the scene-wide stride; the
+// centre of mass computes straight into its column.
+static size_t articulationReadScratchLayout(OvStageScratch& layout,
+                                            const uint32_t sources,
+                                            const PxU32 count,
+                                            const GpuSimulationData& sim,
+                                            void* staging[10])
 {
-    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-    if (!dstTensor || !dstTensor->data)
+    const size_t generalized = size_t(sim.mMaxDofs) + 6;
+    const auto take = [&](uint32_t bit, size_t floats, size_t index)
     {
-        return false;
-    }
-
-    const char* label = gravity ? "articulation gravity force" : "articulation coriolis force";
-    const InverseDynamicsColumn dc = gravity ? InverseDynamicsColumn::eGravityForce : InverseDynamicsColumn::eCoriolisForce;
-    PxU32 width = 0;
-    if (!checkTensorDevice(*dstTensor, mDevice, label, __FUNCTION__) ||
-        !checkTensorFloat32(*dstTensor, label, __FUNCTION__) ||
-        !checkInverseDynamicsColumn(*dstTensor, rows, count, dc, width, label, __FUNCTION__) ||
-        !checkTensorSizeExact(*dstTensor, count * width, label, __FUNCTION__) || count == 0)
-    {
-        return false;
-    }
-
-    // The sign block comes from the cohort's FIRST row, valid only because every row in a cohort
-    // shares a metatype and therefore the same per-dof parentage. checkInverseDynamicsColumn enforces that
-    // by comparing interned metatype pointers, not widths: two topologies can agree on generalized
-    // coordinate count yet differ in parentage.
-    const PxU32 firstEntryIndex = rows ? rows[0] : 0u;
-    const bool isFixedBase = mEntries[firstEntryIndex].metatype->getFixedBase();
-    const PxU32 rootDofs = isFixedBase ? 0u : 6u;
-    const PxU32 dofRecordBase = firstEntryIndex * mMaxDofs;
-
-    PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
-    const PxArticulationGPUIndex* gpuIndicesDev = nullptr;
-    if (!ensureOvStageSelection(rows, count, rowsToken, gpuIndicesDev) || !recordOvStageReady(nullptr))
-    {
-        return false;
-    }
-
-    if (!checkInverseDynamicsScratch(mGpuSimData->mCoriolisGravityDataDev, label, __FUNCTION__))
-    {
-        return false;
-    }
-    const CUevent finishEvent = mGpuSimData->mCopyEvents[gravity ? CopyEvent::eArtiGeneralizedGravity :
-                                                                  CopyEvent::eArtiCoriolisCentrifugal];
-    PxScene* const scene = mGpuSimData->mScene;
-    if (!scene->getDirectGPUAPI().computeArticulationData(
-            (void*)mGpuSimData->mCoriolisGravityDataDev, gpuIndicesDev,
-            gravity ? PxArticulationGPUAPIComputeType::eGRAVITY_COMPENSATION :
-                      PxArticulationGPUAPIComputeType::eCORIOLIS_AND_CENTRIFUGAL_COMPENSATION,
-            count, mOvStageSelectionReadyEvent, finishEvent))
-    {
-        CARB_LOG_ERROR("Failed to compute %s", label);
-        waitForDirectGpuFinish(finishEvent, label);
-        return false;
-    }
-    if (!waitForDirectGpuFinish(finishEvent, label))
-    {
-        return false;
-    }
-
-    // Not a dof count: the scene-wide dof maximum plus the floating base's six.
-    const PxU32 simGeneralizedCoords = mGpuSimData->mMaxDofs + 6;
-    const bool fetched = fetchArtiGeneralizedForceColumnOvStage(static_cast<float*>(dstTensor->data),
-                                                                mGpuSimData->mCoriolisGravityDataDev, count, width,
-                                                                rootDofs, simGeneralizedCoords, dofRecordBase, mDofRecordsDev);
-    mGpuSimData->recordKernelDone(SharedDeviceBuffer::eCoriolisGravityData);
-    if (!fetched)
-    {
-        CARB_LOG_ERROR("Failed to fetch %s", label);
-        return false;
-    }
-    // No host sync: the gather is stream-ordered on the null stream, the consumer waits on the
-    // per-context event the reader records after every column (REQ-READ-DEVICE-001, ADR-0008), and
-    // the next writer of this shared scratch is held off by recordKernelDone above.
-    return true;
-}
-
-bool GpuArticulationView::getCoriolisForcesOvStage(const TensorDesc* dstTensor,
-                                                   const PxU32* rows,
-                                                   PxU32 count,
-                                                   uint64_t rowsToken) const
-{
-    return getGeneralizedForceColumnOvStage(dstTensor, rows, count, rowsToken, false);
-}
-
-bool GpuArticulationView::getGravityForcesOvStage(const TensorDesc* dstTensor,
-                                                  const PxU32* rows,
-                                                  PxU32 count,
-                                                  uint64_t rowsToken) const
-{
-    return getGeneralizedForceColumnOvStage(dstTensor, rows, count, rowsToken, true);
-}
-
-bool GpuArticulationView::getCentroidalMomentaOvStage(const TensorDesc* dstTensor,
-                                                      const PxU32* rows,
-                                                      PxU32 count,
-                                                      uint64_t rowsToken) const
-{
-    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-    if (!dstTensor || !dstTensor->data)
-    {
-        return false;
-    }
-
-    const char* label = "articulation centroidal momentum";
-    PxU32 width = 0;
-    if (!checkTensorDevice(*dstTensor, mDevice, label, __FUNCTION__) ||
-        !checkTensorFloat32(*dstTensor, label, __FUNCTION__) ||
-        !checkInverseDynamicsColumn(*dstTensor, rows, count, InverseDynamicsColumn::eCentroidalMomentum, width, label,
-                                    __FUNCTION__) ||
-        !checkTensorSizeExact(*dstTensor, count * width, label, __FUNCTION__) || count == 0)
-    {
-        return false;
-    }
-
-    // Read off the cohort's first row: checkInverseDynamicsColumn rejects any row needing a different width,
-    // so every row here shares a metatype and therefore a dof count.
-    const PxU32 firstEntryIndex = rows ? rows[0] : 0u;
-
-    PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
-    const PxArticulationGPUIndex* gpuIndicesDev = nullptr;
-    if (!ensureOvStageSelection(rows, count, rowsToken, gpuIndicesDev))
-    {
-        return false;
-    }
-
-    if (!checkInverseDynamicsScratch(mGpuSimData->mCentroidalMomentumDataDev, label, __FUNCTION__))
-    {
-        return false;
-    }
-
-    // The centroidal matrix is defined against the mass matrix and the Coriolis term, so all three
-    // are computed into one scratch block, in that order. Each fill re-arms the start event, because
-    // the previous fill consumed it.
-    PxScene* const scene = mGpuSimData->mScene;
-    // Not a dof count: the scene-wide dof maximum plus the floating base's six.
-    const PxU32 simGeneralizedCoords = mGpuSimData->mMaxDofs + 6;
-    // `count`, not getCount(): the submissions below ask for this cohort's rows, so PhysX lays the
-    // scratch out for that many articulations. Sizing these offsets off the view instead reads past
-    // everything written -- zeros, not garbage, so the answer looks plausible.
-    const PxU32 simStartCoriolisForces = count * simGeneralizedCoords * simGeneralizedCoords;
-    const PxArticulationGPUAPIComputeType::Enum stages[3] = {
-        PxArticulationGPUAPIComputeType::eMASS_MATRICES,
-        PxArticulationGPUAPIComputeType::eCORIOLIS_AND_CENTRIFUGAL_COMPENSATION,
-        PxArticulationGPUAPIComputeType::eCENTROIDAL_MOMENTUM_MATRICES,
+        staging[index] = (sources & bit) ? static_cast<void*>(layout.take<float>(floats)) : nullptr;
     };
-    // CopyEvent's enum is unnamed, so its constants are plain ints in that scope.
-    const uint32_t stageEvents[3] = { CopyEvent::eArtiMassMatrices, CopyEvent::eArtiCoriolisCentrifugal,
-                                      CopyEvent::eArtiCentroidalMomentum };
-    for (int stage = 0; stage < 3; ++stage)
-    {
-        if (!recordOvStageReady(nullptr))
-        {
-            return false;
-        }
-        float* const target = (stage == 1) ? mGpuSimData->mCentroidalMomentumDataDev + simStartCoriolisForces :
-                                             mGpuSimData->mCentroidalMomentumDataDev;
-        const CUevent finishEvent = mGpuSimData->mCopyEvents[stageEvents[stage]];
-        // Each stage feeds the next -- the centroidal result is defined against the mass matrix and
-        // the Coriolis term -- so a refused stage would leave the one after it computing from stale
-        // scratch rather than merely omitting its own block.
-        if (!scene->getDirectGPUAPI().computeArticulationData((void*)target, gpuIndicesDev, stages[stage], count,
-                                                              mOvStageSelectionReadyEvent, finishEvent))
-        {
-            CARB_LOG_ERROR("Failed to compute %s", label);
-            waitForDirectGpuFinish(finishEvent, label);
-            return false;
-        }
-        if (!waitForDirectGpuFinish(finishEvent, label))
-        {
-            return false;
-        }
-    }
+    staging[0] = (sources & kArtiReadPose) ? static_cast<void*>(layout.take<PxTransform>(count)) : nullptr;
+    staging[1] = (sources & kArtiReadLinearVelocity) ? static_cast<void*>(layout.take<PxVec3>(count)) : nullptr;
+    staging[2] = (sources & kArtiReadAngularVelocity) ? static_cast<void*>(layout.take<PxVec3>(count)) : nullptr;
+    staging[3] = staging[4] = nullptr;
+    take(kArtiReadJacobian, size_t(count) * sim.mJacobianMaxRows * sim.mJacobianMaxCols, 5);
+    take(kArtiReadMassMatrix, size_t(count) * generalized * generalized, 6);
+    take(kArtiReadCoriolis, size_t(count) * generalized, 7);
+    take(kArtiReadGravity, size_t(count) * generalized, 8);
+    // The mass matrices, the Coriolis term, then the centroidal matrices and their bias forces: the centroidal
+    // compute reads the first two from where the first two computes left them.
+    take(kArtiReadCentroidal, size_t(count) * (generalized * generalized + generalized + 6 * generalized + 6), 9);
+    return layout.used();
+}
 
-    // The kernel's `maxDofs` is the PACKED dof count -- it strides the destination by (maxDofs + 7)
-    // and the source by (maxDofs + 6) -- so for a cohort it is that cohort's dofs, not the view
-    // maximum. The sim-side blocks describe one scratch holding the mass matrices, then the coriolis
-    // forces, then the centroidal matrices, then the bias forces, each sized for the SUBMITTED count;
-    // the centroidal matrices therefore start past the first two rather than at zero.
-    const PxU32 cohortDofs = mEntries[firstEntryIndex].numDofs;
-    const PxU32 dofRecordBase = firstEntryIndex * mMaxDofs;
-    const bool applyBodyOrderSign = mEntries[firstEntryIndex].metatype->hasReversedDofBodyOrder();
-    const PxU32 blockSize = width; // 6 * (cohortDofs + 7), this cohort's packed block
-    const PxU32 simCentroidalBlockSize = 6u * simGeneralizedCoords;
-    const PxU32 simMassMatrixBlockSize = simGeneralizedCoords * simGeneralizedCoords;
-    const PxU32 simCoriolisBlockSize = simGeneralizedCoords;
-    const PxU32 simStartCentroidalMomentumMatrix = (simMassMatrixBlockSize + simCoriolisBlockSize) * count;
-    const PxU32 startSimBiasForceBlock = simCentroidalBlockSize * count;
-    const bool fetched = fetchArtiCentroidalMomentumMatrices(
-        static_cast<float*>(dstTensor->data),
-        mGpuSimData->mCentroidalMomentumDataDev + simStartCentroidalMomentumMatrix, count * blockSize, cohortDofs,
-        blockSize, simCentroidalBlockSize, startSimBiasForceBlock, dofRecordBase, mDofRecordsDev, applyBodyOrderSign);
-    mGpuSimData->recordKernelDone(SharedDeviceBuffer::eCentroidalMomentumData);
-    if (!fetched)
-    {
-        CARB_LOG_ERROR("Failed to fetch %s", label);
+bool GpuArticulationView::planOvStageRead(const PxU32* rows,
+                                          const PxU32 count,
+                                          const uint64_t rowsToken,
+                                          const uint64_t rowSet,
+                                          const OvStageArtiReadColumn* columns,
+                                          const PxU32 columnCount,
+                                          OvStageArtiReadPlan& plan,
+                                          std::shared_ptr<const std::vector<uint8_t>>& head,
+                                          size_t& scratchBytes) const
+{
+    plan = OvStageArtiReadPlan();
+    head.reset();
+    scratchBytes = 0;
+    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
+    if (!rows || count == 0 || !columns || columnCount == 0)
         return false;
+    std::vector<uint64_t> signature{ count };
+    for (PxU32 c = 0; c < columnCount; ++c)
+        signature.push_back((uint64_t(columns[c].kind) << 32) | columns[c].width);
+    if (rowsToken)
+    {
+        if (const OvStageReadPlans<OvStageArtiReadPlan>::Entry* const kept =
+                mOvStageReadPlans.find(rowsToken, rowSet, signature))
+        {
+            plan = kept->plan;
+            head = kept->head;
+            scratchBytes = kept->scratchBytes;
+            return true;
+        }
     }
-    // No host sync: the gather is stream-ordered on the null stream, the consumer waits on the
-    // per-context event the reader records after every column (REQ-READ-DEVICE-001, ADR-0008), and
-    // the next writer of this shared scratch is held off by recordKernelDone above.
+    // Once per plan, on the host: the GPU index list below and the gathers index by these rows.
+    if (!checkRecordIndices(rows, count, mEntries.size(), "ovstage articulation rows", __FUNCTION__))
+        return false;
+    for (PxU32 c = 0; c < columnCount; ++c)
+    {
+        const uint32_t source = artiReadSource(columns[c].kind);
+        if (!source)
+            return false;
+        const BaseArticulationView::InverseDynamicsColumn dynamics = inverseDynamicsColumnOf(columns[c].kind);
+        if (dynamics != BaseArticulationView::InverseDynamicsColumn::eNone)
+        {
+            // Every row shares the first row's metatype, whose topology the gathers apply to all of them.
+            TensorDesc shape;
+            shape.numDims = 2;
+            shape.dims[0] = count;
+            shape.dims[1] = columns[c].width;
+            PxU32 width = 0;
+            if (!checkInverseDynamicsColumn(shape, rows, count, dynamics, width, "inverse dynamics read", __FUNCTION__))
+                return false;
+        }
+        else if (columns[c].width != (columns[c].kind == ArtiRead::eRootOrientation ? 4u : 3u))
+        {
+            return false;
+        }
+        plan.sources |= source;
+    }
+    plan.count = count;
+    plan.firstEntryIndex = rows[0];
+
+    OvStageScratch layout(nullptr);
+    layout.take<PxArticulationGPUIndex>(count);
+    std::vector<uint8_t> built(layout.used(), 0);
+    PxArticulationGPUIndex* const indices = reinterpret_cast<PxArticulationGPUIndex*>(built.data());
+    for (PxU32 i = 0; i < count; ++i)
+        indices[i] = mArtiIndices[rows[i]];
+    void* staging[10];
+    scratchBytes = articulationReadScratchLayout(layout, plan.sources, count, *mGpuSimData, staging);
+    head = std::make_shared<const std::vector<uint8_t>>(std::move(built));
+    if (rowsToken)
+        mOvStageReadPlans.keep(rowsToken, rowSet, signature, plan, head, scratchBytes);
     return true;
 }
 
-bool GpuArticulationView::getMassCentersOvStage(
-    const TensorDesc* dstTensor, const PxU32* rows, PxU32 count, uint64_t rowsToken, bool localFrame) const
+bool GpuArticulationView::readOvStageColumns(const OvStageDeviceReadArgs& args,
+                                             const OvStageArtiReadPlan& plan,
+                                             const OvStageArtiReadColumn* columns,
+                                             const PxU32 columnCount) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-    if (!dstTensor || !dstTensor->data)
-    {
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
+    if (!args.scratch || !args.fork || !args.join || plan.count == 0 || !columns)
         return false;
-    }
 
-    const char* label = localFrame ? "articulation local mass center" : "articulation world mass center";
-    if (!checkTensorDevice(*dstTensor, mDevice, label, __FUNCTION__) ||
-        !checkTensorFloat32(*dstTensor, label, __FUNCTION__) ||
-        !checkTensorSizeExact(*dstTensor, count * 3u, label, __FUNCTION__))
-    {
-        return false;
-    }
-
-    PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
-    const PxArticulationGPUIndex* gpuIndicesDev = nullptr;
-    if (!ensureOvStageSelection(rows, count, rowsToken, gpuIndicesDev))
-    {
-        return false;
-    }
-    // Zero first: the PhysX COM kernel accumulates into this buffer rather than writing it.
-    // computeArtiCOM (physx/source/gpuarticulation/src/CUDA/inverseDynamic.cu) atomically adds each
-    // link's mass into dst.x, reads it back as the total, then adds the mass-weighted positions into
-    // all three components, initialising none of them -- so a non-zero buffer divides by a corrupted
-    // total mass. PxDirectGPUAPI.h does not state the requirement; the kernel is the contract.
-    // Zeroed on the stream that records the start event, so it necessarily precedes the compute.
-    if (!CHECK_CUDA(cudaMemsetAsync(dstTensor->data, 0, size_t(count) * sizeof(PxVec3), nullptr)) ||
-        !recordOvStageReady(nullptr))
-    {
-        return false;
-    }
-
-    const CUevent finishEvent = mGpuSimData->mCopyEvents[CopyEvent::eArtiMassCenter];
-    if (!finishEvent)
-    {
-        CARB_LOG_ERROR("Missing synchronization event for %s", label);
-        return false;
-    }
     PxScene* const scene = mGpuSimData->mScene;
-    if (!scene->getDirectGPUAPI().computeArticulationData(
-            dstTensor->data, gpuIndicesDev,
-            localFrame ? PxArticulationGPUAPIComputeType::eARTICULATION_COMS_ROOT_FRAME :
-                         PxArticulationGPUAPIComputeType::eARTICULATION_COMS_WORLD_FRAME,
-            count, mOvStageSelectionReadyEvent, finishEvent))
-    {
-        CARB_LOG_ERROR("Failed to compute %s", label);
-        waitForDirectGpuFinish(finishEvent, label);
+    PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
+    const PxU32 count = plan.count;
+    OvStageScratch scratch(args.scratch);
+    const PxArticulationGPUIndex* const gpuIndicesDev = scratch.take<PxArticulationGPUIndex>(count);
+    void* staging[10];
+    articulationReadScratchLayout(scratch, plan.sources, count, *mGpuSimData, staging);
+    if (!args.scratchHolds(static_cast<char*>(args.scratch) + scratch.used(), "ovstage articulation read"))
         return false;
-    }
-    if (!waitForDirectGpuFinish(finishEvent, label))
-    {
-        return false;
-    }
 
+    // The PhysX copy or compute for one source, ordered on the read's stream. Its status IS checked: PhysX refuses
+    // these in states the caller cannot see and writes nothing when it does, and a gather would then publish
+    // whatever the scratch last held.
+    const auto copy = [&](void* data, PxArticulationGPUAPIReadType::Enum type, const char* label)
+    {
+        const bool issued = physxOnStream(args, [&](CUevent start, CUevent finish) {
+            return scene->getDirectGPUAPI().getArticulationData(data, gpuIndicesDev, type, count, start, finish);
+        });
+        if (!issued)
+            CARB_LOG_ERROR("ovstage articulation read: PxDirectGPUAPI refused the %s copy", label);
+        return issued;
+    };
+    const auto compute = [&](void* data, PxArticulationGPUAPIComputeType::Enum type, const char* label)
+    {
+        const bool issued = physxOnStream(args, [&](CUevent start, CUevent finish) {
+            return scene->getDirectGPUAPI().computeArticulationData(data, gpuIndicesDev, type, count, start, finish);
+        });
+        if (!issued)
+            CARB_LOG_ERROR("ovstage articulation read: PxDirectGPUAPI refused the %s compute", label);
+        return issued;
+    };
+
+    // The cohort's topology, read off its first row: the plan checked every row shares it.
+    const ArticulationEntry& entry = mEntries[plan.firstEntryIndex];
+    const PxU32 rootDofs = entry.metatype->getFixedBase() ? 0u : 6u;
+    const PxU32 dofRecordBase = plan.firstEntryIndex * mMaxDofs;
+    const bool applyBodyOrderSign = entry.metatype->hasReversedDofBodyOrder();
+    // Not a dof count: the scene-wide dof maximum plus the floating base's six.
+    const PxU32 simGeneralizedCoords = mGpuSimData->mMaxDofs + 6;
+
+    uint32_t copied = 0;
+    bool ok = true;
+    for (PxU32 c = 0; c < columnCount && ok; ++c)
+    {
+        float* const dst = columns[c].dst;
+        const PxU32 width = columns[c].width;
+        if (!dst)
+        {
+            ok = false;
+            break;
+        }
+        switch (columns[c].kind)
+        {
+        case ArtiRead::eRootPosition:
+        case ArtiRead::eRootOrientation:
+            if (!(copied & kArtiReadPose))
+                ok = copy(staging[0], PxArticulationGPUAPIReadType::eROOT_GLOBAL_POSE, "root pose");
+            copied |= kArtiReadPose;
+            ok = ok && fetchArtiRootPoseColumnOvStage(dst, static_cast<const PxTransform*>(staging[0]), count,
+                                                      columns[c].kind == ArtiRead::eRootOrientation, args.stream);
+            break;
+        case ArtiRead::eRootLinearVelocity:
+        case ArtiRead::eRootAngularVelocity:
+        {
+            const bool linear = columns[c].kind == ArtiRead::eRootLinearVelocity;
+            const uint32_t bit = linear ? kArtiReadLinearVelocity : kArtiReadAngularVelocity;
+            void* const source = staging[linear ? 1 : 2];
+            if (!(copied & bit))
+                ok = copy(source,
+                          linear ? PxArticulationGPUAPIReadType::eROOT_LINEAR_VELOCITY :
+                                   PxArticulationGPUAPIReadType::eROOT_ANGULAR_VELOCITY,
+                          linear ? "root linear velocity" : "root angular velocity");
+            copied |= bit;
+            ok = ok && fetchArtiRootVelocityColumnOvStage(dst, static_cast<const PxVec3*>(source), count, args.stream);
+            break;
+        }
+        case ArtiRead::eMassCenterWorld:
+        case ArtiRead::eMassCenterLocal:
+            // Zeroed first: PhysX's centre-of-mass kernel accumulates into its output rather than writing it -- it
+            // adds each link's mass into x, reads that back as the total and adds the mass-weighted positions --
+            // so a non-zero column divides by a corrupted total mass.
+            ok = CHECK_CUDA(cudaMemsetAsync(dst, 0, size_t(count) * sizeof(PxVec3), args.stream)) &&
+                 compute(dst,
+                         columns[c].kind == ArtiRead::eMassCenterLocal ?
+                             PxArticulationGPUAPIComputeType::eARTICULATION_COMS_ROOT_FRAME :
+                             PxArticulationGPUAPIComputeType::eARTICULATION_COMS_WORLD_FRAME,
+                         "centre of mass");
+            break;
+        case ArtiRead::eJacobian:
+            ok = compute(staging[5], PxArticulationGPUAPIComputeType::eDENSE_JACOBIANS, "jacobian") &&
+                 fetchArtiJacobian(dst, static_cast<const float*>(staging[5]), count * width, width,
+                                   mGpuSimData->mJacobianMaxRows * mGpuSimData->mJacobianMaxCols,
+                                   rootDofs + entry.numDofs, rootDofs, dofRecordBase, mDofRecordsDev,
+                                   applyBodyOrderSign, args.stream);
+            break;
+        case ArtiRead::eMassMatrix:
+            ok = compute(staging[6], PxArticulationGPUAPIComputeType::eMASS_MATRICES, "mass matrix") &&
+                 fetchArtiMassMatrices(dst, static_cast<const float*>(staging[6]), count * width, width,
+                                       simGeneralizedCoords * simGeneralizedCoords, rootDofs + entry.numDofs, rootDofs,
+                                       dofRecordBase, mDofRecordsDev, applyBodyOrderSign, args.stream);
+            break;
+        case ArtiRead::eCoriolisForce:
+        case ArtiRead::eGravityForce:
+        {
+            const bool gravity = columns[c].kind == ArtiRead::eGravityForce;
+            void* const source = staging[gravity ? 8 : 7];
+            ok = compute(source,
+                         gravity ? PxArticulationGPUAPIComputeType::eGRAVITY_COMPENSATION :
+                                   PxArticulationGPUAPIComputeType::eCORIOLIS_AND_CENTRIFUGAL_COMPENSATION,
+                         gravity ? "gravity compensation" : "coriolis compensation") &&
+                 fetchArtiGeneralizedForceColumnOvStage(dst, static_cast<const float*>(source), count, width, rootDofs,
+                                                        simGeneralizedCoords, dofRecordBase, mDofRecordsDev,
+                                                        args.stream);
+            break;
+        }
+        case ArtiRead::eCentroidalMomentum:
+        {
+            // The centroidal matrix is defined against the mass matrix and the Coriolis term, so all three are
+            // computed into one block, in that order; each stage feeds the next, so a refused one stops the read.
+            float* const block = static_cast<float*>(staging[9]);
+            const PxU32 massBlock = simGeneralizedCoords * simGeneralizedCoords;
+            ok = compute(block, PxArticulationGPUAPIComputeType::eMASS_MATRICES, "mass matrix") &&
+                 compute(block + size_t(count) * massBlock,
+                         PxArticulationGPUAPIComputeType::eCORIOLIS_AND_CENTRIFUGAL_COMPENSATION,
+                         "coriolis compensation") &&
+                 compute(block, PxArticulationGPUAPIComputeType::eCENTROIDAL_MOMENTUM_MATRICES, "centroidal momentum");
+            // The kernel's `maxDofs` is the cohort's PACKED dof count -- it strides the destination by
+            // (maxDofs + 7) and the source by (maxDofs + 6). The centroidal matrices start past the mass matrices
+            // and the Coriolis terms, and their bias forces past the centroidal matrices.
+            const PxU32 simCentroidalBlock = 6u * simGeneralizedCoords;
+            ok = ok && fetchArtiCentroidalMomentumMatrices(
+                           dst, block + size_t(count) * (massBlock + simGeneralizedCoords), count * width,
+                           entry.numDofs, width, simCentroidalBlock, simCentroidalBlock * count, dofRecordBase,
+                           mDofRecordsDev, applyBodyOrderSign, args.stream);
+            break;
+        }
+        case ArtiRead::eNone:
+            ok = false;
+            break;
+        }
+    }
+    // The gathers read this view's tables on `args.stream`; the host rewrites them only once it is done.
+    const bool noted = args.capturing || mGpuSimData->noteTableReader(args.stream);
+    return noted && ok;
+}
+
+namespace
+{
+using RecordRead = GpuArticulationView::OvStageRecordRead;
+
+// The PhysX copies and derived passes a record read column needs, one bit each.
+enum RecordReadSource : uint32_t
+{
+    kRecordReadDofPosition = 1u << 0,
+    kRecordReadDofVelocity = 1u << 1,
+    kRecordReadDofPositionTarget = 1u << 2,
+    kRecordReadDofVelocityTarget = 1u << 3,
+    kRecordReadDofActuationForce = 1u << 4,
+    // The link incoming joint force and the link poses it is resolved in, copied together.
+    kRecordReadLinkForce = 1u << 5,
+    // The dense passes over the view's links: forces projected onto each DOF, and forces in each joint frame.
+    kRecordReadDofProjection = 1u << 6,
+    kRecordReadLinkJointFrame = 1u << 7,
+    kRecordReadFixedTendon = 1u << 8,
+    kRecordReadSpatialTendon = 1u << 9
+};
+constexpr uint32_t kRecordReadSourceCount = 10;
+
+uint32_t recordReadSources(const RecordRead kind)
+{
+    switch (kind)
+    {
+    case RecordRead::eDofPosition:
+        return kRecordReadDofPosition;
+    case RecordRead::eDofVelocity:
+        return kRecordReadDofVelocity;
+    case RecordRead::eDofPositionTarget:
+        return kRecordReadDofPositionTarget;
+    case RecordRead::eDofVelocityTarget:
+        return kRecordReadDofVelocityTarget;
+    case RecordRead::eDofActuationForce:
+        return kRecordReadDofActuationForce;
+    case RecordRead::eDofProjectedForce:
+        return kRecordReadLinkForce | kRecordReadDofProjection;
+    case RecordRead::eLinkIncomingJointForce:
+        return kRecordReadLinkForce | kRecordReadLinkJointFrame;
+    case RecordRead::eFixedTendon:
+        return kRecordReadFixedTendon;
+    case RecordRead::eSpatialTendon:
+        return kRecordReadSpatialTendon;
+    case RecordRead::eNone:
+        break;
+    }
+    return 0;
+}
+
+// The record type a column's kind takes.
+size_t recordBytesOf(const RecordRead kind)
+{
+    switch (kind)
+    {
+    case RecordRead::eLinkIncomingJointForce:
+        return sizeof(ArticulationLinkOvStageRecord);
+    case RecordRead::eFixedTendon:
+    case RecordRead::eSpatialTendon:
+        return sizeof(ArticulationTendonOvStageRecord);
+    default:
+        return sizeof(ArticulationDofOvStageRecord);
+    }
+}
+
+// The DirectGPU read type and the unit/sign fold of a DOF scalar column.
+void dofReadOf(const RecordRead kind, PxArticulationGPUAPIReadType::Enum& type, DofScalePolicy& policy)
+{
+    // Position, velocity and their drive targets are a generalized coordinate and its derivatives: degrees on an
+    // angular axis and the body-order sign. The actuation force is an effort -- a newton-metre is not an angle --
+    // so it takes the sign alone.
+    policy = DofScalePolicy::eAngularSigned;
+    switch (kind)
+    {
+    case RecordRead::eDofVelocity:
+        type = PxArticulationGPUAPIReadType::eJOINT_VELOCITY;
+        return;
+    case RecordRead::eDofPositionTarget:
+        type = PxArticulationGPUAPIReadType::eJOINT_TARGET_POSITION;
+        return;
+    case RecordRead::eDofVelocityTarget:
+        type = PxArticulationGPUAPIReadType::eJOINT_TARGET_VELOCITY;
+        return;
+    case RecordRead::eDofActuationForce:
+        type = PxArticulationGPUAPIReadType::eJOINT_FORCE;
+        policy = DofScalePolicy::eSigned;
+        return;
+    default:
+        type = PxArticulationGPUAPIReadType::eJOINT_POSITION;
+        return;
+    }
+}
+} // namespace
+
+// The device scratch a record read needs after its records, in source-bit order. Every copy holds the `numArtis`
+// articulations it fetches, at the scene-wide strides PhysX lays its buffers out in; the dense passes hold them at the
+// view's own.
+static void recordReadScratchLayout(OvStageScratch& layout,
+                                    const uint32_t sources,
+                                    const PxU32 numArtis,
+                                    const PxU32 viewMaxDofs,
+                                    const PxU32 viewMaxLinks,
+                                    const GpuSimulationData& sim,
+                                    void* staging[kRecordReadSourceCount + 1])
+{
+    for (uint32_t bit = 0; bit < kRecordReadSourceCount + 1; ++bit)
+        staging[bit] = nullptr;
+    for (uint32_t bit = 0; bit < 5; ++bit)
+        if (sources & (1u << bit))
+            staging[bit] = layout.take<float>(size_t(numArtis) * sim.mMaxDofs);
+    if (sources & kRecordReadLinkForce)
+    {
+        staging[5] = layout.take<PhysxGpuSpatialForces>(size_t(numArtis) * sim.mMaxLinks);
+        staging[kRecordReadSourceCount] = layout.take<PxTransform>(size_t(numArtis) * sim.mMaxLinks);
+    }
+    if (sources & kRecordReadDofProjection)
+        staging[6] = layout.take<float>(size_t(numArtis) * viewMaxDofs);
+    if (sources & kRecordReadLinkJointFrame)
+        staging[7] = layout.take<PhysxGpuSpatialForces>(size_t(numArtis) * viewMaxLinks);
+    if (sources & kRecordReadFixedTendon)
+        staging[8] = layout.take<PxGpuFixedTendonData>(size_t(numArtis) * sim.mMaxFixedTendons);
+    if (sources & kRecordReadSpatialTendon)
+        staging[9] = layout.take<PxGpuSpatialTendonData>(size_t(numArtis) * sim.mMaxSpatialTendons);
+}
+
+bool GpuArticulationView::planOvStageRecordRead(const PxU32 numRecords,
+                                                const size_t recordBytes,
+                                                const OvStageRecordReadColumn* columns,
+                                                const PxU32 columnCount,
+                                                const PxU32* fetchRows,
+                                                const PxU32 fetchCount,
+                                                OvStageRecordReadPlan& plan,
+                                                std::vector<uint8_t>& fetchHead,
+                                                size_t& scratchBytes) const
+{
+    plan = OvStageRecordReadPlan();
+    fetchHead.clear();
+    scratchBytes = 0;
+    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
+    if (numRecords == 0 || !columns || columnCount == 0 || (!fetchRows) != (fetchCount == 0))
+        return false;
+    if (fetchRows && !checkRecordIndices(fetchRows, fetchCount, mEntries.size(), "ovstage articulation fetch rows",
+                                         __FUNCTION__))
+        return false;
+    for (PxU32 c = 0; c < columnCount; ++c)
+    {
+        const RecordRead kind = columns[c].kind;
+        const uint32_t sources = recordReadSources(kind);
+        if (!sources || recordBytesOf(kind) != recordBytes)
+            return false;
+        // A view with no slot for what a record names would gather out of bounds.
+        const bool links = kind == RecordRead::eLinkIncomingJointForce || kind == RecordRead::eDofProjectedForce;
+        const bool dofs = kind >= RecordRead::eDofPosition && kind <= RecordRead::eDofProjectedForce;
+        if ((links && (mMaxLinks == 0 || mGpuSimData->mMaxLinks == 0)) || (dofs && mMaxDofs == 0))
+        {
+            CARB_LOG_WARN("ovstage articulation read: the articulation view has no %s", links ? "links" : "DOF");
+            return false;
+        }
+        // A projected force, link force or tendon gathers through a pass over every articulation of the view.
+        if (fetchRows && !(kind >= RecordRead::eDofPosition && kind <= RecordRead::eDofActuationForce))
+            return false;
+        if (kind == RecordRead::eFixedTendon || kind == RecordRead::eSpatialTendon)
+        {
+            const bool fixed = kind == RecordRead::eFixedTendon;
+            const PxU32 maxTendons = fixed ? mGpuSimData->mMaxFixedTendons : mGpuSimData->mMaxSpatialTendons;
+            const PxU32 structFloats =
+                PxU32((fixed ? sizeof(PxGpuFixedTendonData) : sizeof(PxGpuSpatialTendonData)) / sizeof(float));
+            // The gather reads a property at its float offset within a tendon struct, so one that does not fit
+            // would read a neighbouring tendon's data.
+            const PxU32 prop = static_cast<PxU32>(columns[c].tendonProperty);
+            if (maxTendons == 0 || prop + tendonPropertyComponents(columns[c].tendonProperty) > structFloats)
+            {
+                CARB_LOG_ERROR("ovstage tendon read: the view has no %s tendon slot for property %u",
+                               fixed ? "fixed" : "spatial", prop);
+                return false;
+            }
+        }
+        plan.sources |= sources;
+    }
+    plan.numRecords = numRecords;
+    plan.numFetched = fetchCount;
+
+    OvStageScratch layout(nullptr);
+    layout.take<uint8_t>(size_t(numRecords) * recordBytes);
+    if (fetchRows)
+    {
+        layout.take<PxArticulationGPUIndex>(fetchCount);
+        fetchHead.resize(size_t(fetchCount) * sizeof(PxArticulationGPUIndex));
+        PxArticulationGPUIndex* const indices = reinterpret_cast<PxArticulationGPUIndex*>(fetchHead.data());
+        for (PxU32 i = 0; i < fetchCount; ++i)
+            indices[i] = mArtiIndices[fetchRows[i]];
+    }
+    void* staging[kRecordReadSourceCount + 1];
+    recordReadScratchLayout(layout, plan.sources, fetchRows ? fetchCount : getCount(), mMaxDofs, mMaxLinks,
+                            *mGpuSimData, staging);
+    scratchBytes = layout.used();
     return true;
 }
 
-// The four entry points the attribute table names, each a ONE-column case of the gather above.
-bool GpuArticulationView::getPositionsOvStage(const TensorDesc* dstTensor,
-                                              const PxU32* rows,
-                                              PxU32 count,
-                                              uint64_t rowsToken) const
+bool GpuArticulationView::readOvStageRecordColumns(const OvStageDeviceReadArgs& args,
+                                                   const OvStageRecordReadPlan& plan,
+                                                   const OvStageRecordReadColumn* columns,
+                                                   const PxU32 columnCount) const
 {
-    const RootStateColumn column{ RootStateQuantity::ePosition, dstTensor };
-    return getRootStateColumnsOvStage(&column, 1, rows, count, rowsToken);
-}
+    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
+    if (!args.scratch || !args.fork || !args.join || plan.numRecords == 0 || !columns || columnCount == 0)
+        return false;
 
-bool GpuArticulationView::getOrientationsOvStage(const TensorDesc* dstTensor,
-                                                 const PxU32* rows,
-                                                 PxU32 count,
-                                                 uint64_t rowsToken) const
-{
-    const RootStateColumn column{ RootStateQuantity::eOrientation, dstTensor };
-    return getRootStateColumnsOvStage(&column, 1, rows, count, rowsToken);
-}
+    PxScene* const scene = mGpuSimData->mScene;
+    PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
+    // The articulations each copy holds: the whole view, or the ones a DOF state read's records name, whose GPU
+    // indices follow the records. Only a whole-view read reaches the dense passes below (planOvStageRecordRead).
+    const PxU32 numArtis = plan.numFetched ? plan.numFetched : getCount();
+    const PxU32 numRecords = plan.numRecords;
+    OvStageScratch scratch(args.scratch);
+    const void* const recordsDev = scratch.take<uint8_t>(size_t(numRecords) * recordBytesOf(columns[0].kind));
+    const PxArticulationGPUIndex* const fetchIndices =
+        plan.numFetched ? scratch.take<PxArticulationGPUIndex>(plan.numFetched) : mArtiGpuIndicesDev;
+    void* staging[kRecordReadSourceCount + 1];
+    recordReadScratchLayout(scratch, plan.sources, numArtis, mMaxDofs, mMaxLinks, *mGpuSimData, staging);
+    if (!args.scratchHolds(static_cast<char*>(args.scratch) + scratch.used(), "ovstage articulation record read"))
+        return false;
 
-bool GpuArticulationView::getLinearVelocitiesOvStage(const TensorDesc* dstTensor,
-                                                     const PxU32* rows,
-                                                     PxU32 count,
-                                                     uint64_t rowsToken) const
-{
-    const RootStateColumn column{ RootStateQuantity::eLinearVelocity, dstTensor };
-    return getRootStateColumnsOvStage(&column, 1, rows, count, rowsToken);
-}
+    // One PhysX copy per source, made the first time a column needs it (`done`). Its status IS checked: a refused
+    // copy writes nothing, and a gather would then publish whatever the scratch last held.
+    uint32_t done = 0;
+    const auto copy = [&](void* data, PxArticulationGPUAPIReadType::Enum type)
+    {
+        const bool issued = physxOnStream(args, [&](CUevent start, CUevent finish) {
+            return scene->getDirectGPUAPI().getArticulationData(data, fetchIndices, type, numArtis, start, finish);
+        });
+        if (!issued)
+            CARB_LOG_ERROR("ovstage articulation read: PxDirectGPUAPI refused a copy of read type %d", int(type));
+        return issued;
+    };
+    const auto copyOnce = [&](uint32_t bit, void* data, PxArticulationGPUAPIReadType::Enum type)
+    {
+        if (!(done & bit) && copy(data, type))
+            done |= bit;
+        return (done & bit) != 0;
+    };
+    // The link incoming joint forces and the link poses they are resolved in.
+    const auto copyLinkForces = [&]()
+    {
+        if (!(done & kRecordReadLinkForce) &&
+            copy(staging[5], PxArticulationGPUAPIReadType::eLINK_INCOMING_JOINT_FORCE) &&
+            copy(staging[kRecordReadSourceCount], PxArticulationGPUAPIReadType::eLINK_GLOBAL_POSE))
+            done |= kRecordReadLinkForce;
+        return (done & kRecordReadLinkForce) != 0;
+    };
 
-bool GpuArticulationView::getAngularVelocitiesOvStage(const TensorDesc* dstTensor,
-                                                      const PxU32* rows,
-                                                      PxU32 count,
-                                                      uint64_t rowsToken) const
-{
-    const RootStateColumn column{ RootStateQuantity::eAngularVelocity, dstTensor };
-    return getRootStateColumnsOvStage(&column, 1, rows, count, rowsToken);
-}
-
-bool GpuArticulationView::getMassCentersWorldOvStage(const TensorDesc* dstTensor,
-                                                     const PxU32* rows,
-                                                     PxU32 count,
-                                                     uint64_t rowsToken) const
-{
-    return getMassCentersOvStage(dstTensor, rows, count, rowsToken, false);
-}
-
-bool GpuArticulationView::getMassCentersLocalOvStage(const TensorDesc* dstTensor,
-                                                     const PxU32* rows,
-                                                     PxU32 count,
-                                                     uint64_t rowsToken) const
-{
-    return getMassCentersOvStage(dstTensor, rows, count, rowsToken, true);
+    bool ok = true;
+    for (PxU32 c = 0; c < columnCount && ok; ++c)
+    {
+        const RecordRead kind = columns[c].kind;
+        float* const dst = columns[c].dst;
+        if (!dst)
+        {
+            ok = false;
+            break;
+        }
+        switch (kind)
+        {
+        case RecordRead::eDofPosition:
+        case RecordRead::eDofVelocity:
+        case RecordRead::eDofPositionTarget:
+        case RecordRead::eDofVelocityTarget:
+        case RecordRead::eDofActuationForce:
+        {
+            // The five DOF scalar kinds and their copies are in the same order.
+            const uint32_t index = static_cast<uint32_t>(kind) - static_cast<uint32_t>(RecordRead::eDofPosition);
+            PxArticulationGPUAPIReadType::Enum type;
+            DofScalePolicy policy;
+            dofReadOf(kind, type, policy);
+            ok = copyOnce(1u << index, staging[index], type) &&
+                 fetchArtiDofAttributeOvStage(dst, static_cast<const float*>(staging[index]), numRecords,
+                                              mGpuSimData->mMaxDofs, policy,
+                                              static_cast<const ArticulationDofOvStageRecord*>(recordsDev),
+                                              args.stream);
+            break;
+        }
+        case RecordRead::eDofProjectedForce:
+            ok = copyLinkForces();
+            // Zeroed before the dense pass, which writes only the DOFs of links that HAVE an inbound joint -- a
+            // fixed joint contributes none. Strided by the VIEW's maxDofs, which is what that pass counts in, and
+            // already in the joint frame and body order, so the gather applies no fold.
+            if (ok && !(done & kRecordReadDofProjection))
+            {
+                ok = CHECK_CUDA(cudaMemsetAsync(staging[6], 0, size_t(numArtis) * mMaxDofs * sizeof(float),
+                                                args.stream)) &&
+                     fetchDofProjectionForce(static_cast<float*>(staging[6]),
+                                             static_cast<const PhysxGpuSpatialForces*>(staging[5]),
+                                             static_cast<const PxTransform*>(staging[kRecordReadSourceCount]),
+                                             numArtis * mMaxLinks, mMaxLinks, mGpuSimData->mMaxLinks, mLinkRecordsDev,
+                                             args.stream);
+                done |= ok ? kRecordReadDofProjection : 0u;
+            }
+            ok = ok && fetchArtiDofAttributeOvStage(dst, static_cast<const float*>(staging[6]), numRecords, mMaxDofs,
+                                                    DofScalePolicy::eNone,
+                                                    static_cast<const ArticulationDofOvStageRecord*>(recordsDev),
+                                                    args.stream);
+            break;
+        case RecordRead::eLinkIncomingJointForce:
+            ok = copyLinkForces();
+            // The dense pass writes every one of the view's link slots, so it needs no zeroing; no record names a
+            // padding slot.
+            if (ok && !(done & kRecordReadLinkJointFrame))
+            {
+                ok = fetchArtiLinkIncomingJointForce(static_cast<PhysxGpuSpatialForces*>(staging[7]),
+                                                     static_cast<const PhysxGpuSpatialForces*>(staging[5]),
+                                                     static_cast<const PxTransform*>(staging[kRecordReadSourceCount]),
+                                                     numArtis * mMaxLinks, mMaxLinks, mGpuSimData->mMaxLinks,
+                                                     mLinkRecordsDev, args.stream);
+                done |= ok ? kRecordReadLinkJointFrame : 0u;
+            }
+            ok = ok && fetchArtiLinkVectorOvStage(dst, static_cast<const float*>(staging[7]), numRecords, mMaxLinks, 6u,
+                                                  static_cast<const ArticulationLinkOvStageRecord*>(recordsDev),
+                                                  args.stream);
+            break;
+        case RecordRead::eFixedTendon:
+        case RecordRead::eSpatialTendon:
+        {
+            const bool fixed = kind == RecordRead::eFixedTendon;
+            const uint32_t bit = fixed ? kRecordReadFixedTendon : kRecordReadSpatialTendon;
+            void* const source = staging[fixed ? 8 : 9];
+            const TendonProperty prop = columns[c].tendonProperty;
+            ok = copyOnce(bit, source,
+                          fixed ? PxArticulationGPUAPIReadType::eFIXED_TENDON :
+                                  PxArticulationGPUAPIReadType::eSPATIAL_TENDON) &&
+                 fetchArtiTendonPropertyOvStage(
+                     dst, static_cast<const float*>(source), numRecords,
+                     fixed ? mGpuSimData->mMaxFixedTendons : mGpuSimData->mMaxSpatialTendons,
+                     PxU32((fixed ? sizeof(PxGpuFixedTendonData) : sizeof(PxGpuSpatialTendonData)) / sizeof(float)),
+                     static_cast<PxU32>(prop), tendonPropertyComponents(prop),
+                     static_cast<const ArticulationTendonOvStageRecord*>(recordsDev), args.stream);
+            break;
+        }
+        case RecordRead::eNone:
+            ok = false;
+            break;
+        }
+    }
+    // The gathers read this view's tables on `args.stream`; the host rewrites them only once it is done.
+    const bool noted = args.capturing || mGpuSimData->noteTableReader(args.stream);
+    return noted && ok;
 }
 
 bool GpuArticulationView::setRootVelocities(const TensorDesc* srcTensor, const TensorDesc* indexTensor)
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
 
     if (!srcTensor || !srcTensor->data)
     {
@@ -1573,91 +1457,18 @@ bool GpuArticulationView::getDofAttribute(const char* attribName,
     return true;
 }
 
-bool GpuArticulationView::getDofAttributeOvStage(const char* attribName,
-                                                 const TensorDesc* dstTensor,
-                                                 const PxArticulationGPUAPIReadType::Enum attribFlag,
-                                                 const DofScalePolicy policy,
-                                                 const ArticulationDofOvStageRecord* recordsDev,
-                                                 PxU32 numOutputs,
-                                                 CUevent syncEvent) const
-{
-    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-    if (!dstTensor || !dstTensor->data)
-    {
-        return false;
-    }
-    if (numOutputs == 0)
-    {
-        return true; // nothing to emit -- not a failure
-    }
-    if (mMaxDofs == 0)
-    {
-        CARB_LOG_WARN("Articulation has no DOF");
-        return false; // caller asked for outputs but there are no DOFs -> record map is invalid
-    }
-    if (!recordsDev)
-    {
-        CARB_LOG_ERROR("%s: null ovstage DOF records", attribName);
-        return false;
-    }
-    if (!checkTensorDevice(*dstTensor, mDevice, attribName, __FUNCTION__) ||
-        !checkTensorFloat32(*dstTensor, attribName, __FUNCTION__) ||
-        !checkTensorSizeExact(*dstTensor, numOutputs, attribName, __FUNCTION__))
-    {
-        return false;
-    }
-
-    PhysxCudaContextGuard ctxGuarg(mGpuSimData->mCudaContextManager);
-
-    PxScene* scene = mGpuSimData->mScene;
-    PxU32 numArtis = getCount();
-
-    SYNCHRONIZE_CUDA();
-
-    // Fill ALL dofs of the view's articulations into the shared scratch (PhysX layout, stride
-    // mGpuSimData->mMaxDofs); the ovstage gather then picks/scales the (joint-prim, enabled-axis)
-    // subset it needs, so no intermediate dense [numArti x maxDofs] buffer.
-    // startEvent, not nullptr: this buffer is shared, and a gather from a PREVIOUS read of it may
-    // still be running on our stream -- without it PhysX overwrites the buffer underneath that
-    // gather, giving plausible wrong values and no crash (ADR-0008 Decision 7).
-    if (!mGpuSimData->awaitDirectGpuFetch(scene->getDirectGPUAPI().getArticulationData(
-                                              (void*)mGpuSimData->mDofScalarsDev, mArtiGpuIndicesDev, attribFlag, numArtis,
-                                              mGpuSimData->kernelDoneEvent(SharedDeviceBuffer::eDofScalars), syncEvent),
-                                          syncEvent, attribName))
-    {
-        return false;
-    }
-
-    SYNCHRONIZE_CUDA();
-
-    // The buffer stops being read here, so this is where the next DirectGPU call may take over.
-    if (!mGpuSimData->gatherThenRelease(SharedDeviceBuffer::eDofScalars, [&] {
-            return fetchArtiDofAttributeOvStage(static_cast<float*>(dstTensor->data), mGpuSimData->mDofScalarsDev,
-                                                numOutputs, mGpuSimData->mMaxDofs, policy, recordsDev);
-        }))
-    {
-        CARB_LOG_ERROR("Failed to fetch %s attribute", attribName);
-        return false;
-    }
-
-    // No host block: the ovstage read issues every column on the null stream and synchronizes once at
-    // the end (ADR-0008), and the streamWaitEvent above already orders the fill ahead of the gather.
-    return true;
-}
-
 bool GpuArticulationView::setDofAttributeOvStage(const char* const attribName,
                                                  const TensorDesc* const srcTensor,
                                                  const PxArticulationGPUAPIReadType::Enum readFlag,
                                                  const PxArticulationGPUAPIWriteType::Enum writeFlag,
                                                  const ArticulationDofOvStageRecord* const recordsDev,
                                                  const PxU32 numOutputs,
-                                                 const int copyEvent,
                                                  const int applyEvent,
-                                                 const DofScalePolicy policy)
+                                                 const DofScalePolicy policy,
+                                                 const OvStageDeviceWriteArgs& sessionDeviceArgs)
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     if (!srcTensor || !srcTensor->data)
         return false;
     if (numOutputs == 0)
@@ -1679,68 +1490,78 @@ bool GpuArticulationView::setDofAttributeOvStage(const char* const attribName,
         return false;
     }
 
+    const bool session = sessionDeviceArgs.sessionOwned();
+    const OvStageDeviceWriteArgs deviceArgs = session ? sessionDeviceArgs : drainDeviceWriteArgs(applyEvent);
     PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
     PxScene* scene = mGpuSimData->mScene;
     const PxU32 numArtis = getCount();
 
+    // A session's DOF block is its own. The drain uses the scene's shared DOF scratch, which it releases after
+    // the apply (ADR-0008 Decision 7).
+    float* dofScalars = mGpuSimData->mDofScalarsDev;
+    if (session)
+    {
+        OvStageScratch scratch(deviceArgs.scratch);
+        dofScalars = scratch.take<float>(size_t(numArtis) * mGpuSimData->mMaxDofs);
+        if (!deviceArgs.scratchHolds(dofScalars + size_t(numArtis) * mGpuSimData->mMaxDofs, attribName))
+            return false;
+    }
+
     // Read-modify-write. Status IS checked: PhysX refuses these calls in states the caller cannot
     // see and writes NOTHING when it does; the scratch is not zeroed, so an unchecked refusal would
     // overlay the caller's DOFs onto stale contents and publish that as joint state.
-    CUevent readEvent = mGpuSimData->mCopyEvents[copyEvent];
-    if (!scene->getDirectGPUAPI().getArticulationData((void*)mGpuSimData->mDofScalarsDev, mArtiGpuIndicesDev,
-                                                      readFlag, numArtis,
-                                                      mGpuSimData->kernelDoneEvent(SharedDeviceBuffer::eDofScalars),
-                                                      readEvent))
+    if (!physxOnStream(deviceArgs, [&](CUevent start, CUevent finish) {
+            return scene->getDirectGPUAPI().getArticulationData((void*)dofScalars, mArtiGpuIndicesDev, readFlag,
+                                                                numArtis, start, finish);
+        }))
     {
         CARB_LOG_ERROR("%s: PxDirectGPUAPI::getArticulationData refused the read that preserves the DOFs "
                        "this write does not address",
                        attribName);
         return false;
     }
-    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(readEvent), 0, nullptr));
 
-    if (!submitArtiDofAttributeOvStage(mGpuSimData->mDofScalarsDev, static_cast<const float*>(srcTensor->data),
-                                       numOutputs, mGpuSimData->mMaxDofs, recordsDev, policy))
+    // A DOF a masked commit does not select keeps the value just read.
+    if (!submitArtiDofAttributeOvStage(dofScalars, static_cast<const float*>(srcTensor->data), numOutputs,
+                                       mGpuSimData->mMaxDofs, recordsDev, policy, deviceArgs.stream, deviceArgs.mask))
     {
         CARB_LOG_ERROR("%s: ovstage DOF scatter failed", attribName);
         return false;
     }
 
-    // Ordered on the device, not by a host block: record our completion and hand it to PhysX as the
-    // start event, the convention the rest of this class already follows.
-    CHECK_CU(getCudaShim()->eventRecord(
-        reinterpret_cast<uintptr_t>(mGpuSimData->mApplyWaitEvents[applyEvent]), uintptr_t(0), nullptr));
-    scene->getDirectGPUAPI().setArticulationData((void*)mGpuSimData->mDofScalarsDev, mArtiGpuIndicesDev, writeFlag,
-                                                 numArtis, mGpuSimData->mApplyWaitEvents[applyEvent],
-                                                 mGpuSimData->mApplySignalEvents[applyEvent]);
-    // PhysX's apply above reads the buffer ASYNC (finishEvent = mApplySignalEvents); recordKernelDone
-    // only captures our scatter, so order our stream behind the apply before releasing -- otherwise the
-    // next producer, gated on kernelDoneEvent, would overwrite the buffer mid-apply (ADR-0008 D7, the
-    // reverse direction the host block used to cover).
-    CHECK_CU(getCudaShim()->streamWaitEvent(
-        uintptr_t(0), reinterpret_cast<uintptr_t>(mGpuSimData->mApplySignalEvents[applyEvent]), 0, nullptr));
-    mGpuSimData->recordKernelDone(SharedDeviceBuffer::eDofScalars);
+    // Ordered on the device. The write's stream waits for the apply too, so the next producer of the
+    // block cannot overwrite it mid-apply (ADR-0008 D7).
+    if (!physxOnStream(deviceArgs, [&](CUevent start, CUevent finish) {
+            return scene->getDirectGPUAPI().setArticulationData((void*)dofScalars, mArtiGpuIndicesDev, writeFlag,
+                                                                numArtis, start, finish);
+        }))
+    {
+        CARB_LOG_ERROR("%s: PxDirectGPUAPI::setArticulationData refused the write", attribName);
+        return false;
+    }
+    if (!session)
+        mGpuSimData->recordKernelDone(SharedDeviceBuffer::eDofScalars);
     return true;
 }
 
 bool GpuArticulationView::setDofPositionsOvStage(const TensorDesc* srcTensor,
                                                  const ArticulationDofOvStageRecord* recordsDev,
-                                                 const PxU32 numOutputs)
+                                                 const PxU32 numOutputs,
+                                                 const OvStageDeviceWriteArgs& deviceArgs)
 {
     return setDofAttributeOvStage("jointPosition", srcTensor, PxArticulationGPUAPIReadType::eJOINT_POSITION,
                                   PxArticulationGPUAPIWriteType::eJOINT_POSITION, recordsDev, numOutputs,
-                                  CopyEvent::eArtiDofPositions, ApplyEvent::eArtiDofPositions,
-                                  DofScalePolicy::eAngularSigned);
+                                  ApplyEvent::eArtiDofPositions, DofScalePolicy::eAngularSigned, deviceArgs);
 }
 
 bool GpuArticulationView::setDofVelocitiesOvStage(const TensorDesc* srcTensor,
                                                   const ArticulationDofOvStageRecord* recordsDev,
-                                                  const PxU32 numOutputs)
+                                                  const PxU32 numOutputs,
+                                                  const OvStageDeviceWriteArgs& deviceArgs)
 {
     return setDofAttributeOvStage("jointVelocity", srcTensor, PxArticulationGPUAPIReadType::eJOINT_VELOCITY,
                                   PxArticulationGPUAPIWriteType::eJOINT_VELOCITY, recordsDev, numOutputs,
-                                  CopyEvent::eArtiDofVelocities, ApplyEvent::eArtiDofVelocities,
-                                  DofScalePolicy::eAngularSigned);
+                                  ApplyEvent::eArtiDofVelocities, DofScalePolicy::eAngularSigned, deviceArgs);
 }
 
 // The three drive INPUTS (ADR-0012). Same machinery as the state pair above -- the difference that
@@ -1748,34 +1569,70 @@ bool GpuArticulationView::setDofVelocitiesOvStage(const TensorDesc* srcTensor,
 // the rad->deg fold the other four take.
 bool GpuArticulationView::setDofPositionTargetsOvStage(const TensorDesc* srcTensor,
                                                        const ArticulationDofOvStageRecord* recordsDev,
-                                                       const PxU32 numOutputs)
+                                                       const PxU32 numOutputs,
+                                                       const OvStageDeviceWriteArgs& deviceArgs)
 {
     return setDofAttributeOvStage("jointPositionTarget", srcTensor,
                                   PxArticulationGPUAPIReadType::eJOINT_TARGET_POSITION,
                                   PxArticulationGPUAPIWriteType::eJOINT_TARGET_POSITION, recordsDev, numOutputs,
-                                  CopyEvent::eArtiDofPositionTargets, ApplyEvent::eArtiDofPositionTargets,
-                                  DofScalePolicy::eAngularSigned);
+                                  ApplyEvent::eArtiDofPositionTargets, DofScalePolicy::eAngularSigned, deviceArgs);
 }
 
 bool GpuArticulationView::setDofVelocityTargetsOvStage(const TensorDesc* srcTensor,
                                                        const ArticulationDofOvStageRecord* recordsDev,
-                                                       const PxU32 numOutputs)
+                                                       const PxU32 numOutputs,
+                                                       const OvStageDeviceWriteArgs& deviceArgs)
 {
     return setDofAttributeOvStage("jointVelocityTarget", srcTensor,
                                   PxArticulationGPUAPIReadType::eJOINT_TARGET_VELOCITY,
                                   PxArticulationGPUAPIWriteType::eJOINT_TARGET_VELOCITY, recordsDev, numOutputs,
-                                  CopyEvent::eArtiDofVelocityTargets, ApplyEvent::eArtiDofVelocityTargets,
-                                  DofScalePolicy::eAngularSigned);
+                                  ApplyEvent::eArtiDofVelocityTargets, DofScalePolicy::eAngularSigned, deviceArgs);
 }
 
 bool GpuArticulationView::setDofActuationForcesOvStage(const TensorDesc* srcTensor,
                                                        const ArticulationDofOvStageRecord* recordsDev,
-                                                       const PxU32 numOutputs)
+                                                       const PxU32 numOutputs,
+                                                       const OvStageDeviceWriteArgs& deviceArgs)
 {
     return setDofAttributeOvStage("jointActuationForce", srcTensor, PxArticulationGPUAPIReadType::eJOINT_FORCE,
                                   PxArticulationGPUAPIWriteType::eJOINT_FORCE, recordsDev, numOutputs,
-                                  CopyEvent::eArtiDofActuationForces, ApplyEvent::eArtiDofForces,
-                                  DofScalePolicy::eSigned);
+                                  ApplyEvent::eArtiDofForces, DofScalePolicy::eSigned, deviceArgs);
+}
+
+OvStageDeviceWriteArgs GpuArticulationView::drainDeviceWriteArgs(const int applyEvent) const
+{
+    OvStageDeviceWriteArgs deviceArgs;
+    deviceArgs.fork = mGpuSimData->mApplyWaitEvents[applyEvent];
+    deviceArgs.join = mGpuSimData->mApplySignalEvents[applyEvent];
+    return deviceArgs;
+}
+
+size_t GpuArticulationView::ovStageWriteScratchBytes(const OvStageArtiWrite kind, const PxU32 numOutputs) const
+{
+    // The order the session setters carve their scratch in.
+    OvStageScratch layout(nullptr);
+    const size_t numArtis = getCount();
+    switch (kind)
+    {
+    case OvStageArtiWrite::eRootPose:
+        layout.take<PxU32>(numOutputs);
+        layout.take<PxTransform>(numArtis);
+        break;
+    case OvStageArtiWrite::eRootVelocity:
+        layout.take<PxU32>(numOutputs);
+        layout.take<PxVec3>(numArtis);
+        break;
+    case OvStageArtiWrite::eDof:
+        layout.take<float>(numArtis * (mGpuSimData ? mGpuSimData->mMaxDofs : 0u));
+        break;
+    case OvStageArtiWrite::eFixedTendon:
+        layout.take<PxGpuFixedTendonData>(numArtis * (mGpuSimData ? mGpuSimData->mMaxFixedTendons : 0u));
+        break;
+    case OvStageArtiWrite::eSpatialTendon:
+        layout.take<PxGpuSpatialTendonData>(numArtis * (mGpuSimData ? mGpuSimData->mMaxSpatialTendons : 0u));
+        break;
+    }
+    return layout.used();
 }
 
 const PxU32* GpuArticulationView::ovStageRowsDevice(const PxU32* rows, uint32_t count, uint64_t token) const
@@ -1811,7 +1668,7 @@ const PxU32* GpuArticulationView::ovStageRowsDevice(const PxU32* rows, uint32_t 
             mOvStageRowsToken = 0;
             return nullptr;
         }
-        if (!CHECK_CUDA(cudaMemcpy(mOvStageRowsDev, rows, count * sizeof(PxU32), cudaMemcpyHostToDevice)))
+        if (!uploadToDevice(mOvStageRowsDev, rows, count * sizeof(PxU32)))
         {
             mOvStageRowsToken = 0; // a failed upload must not be mistaken for a held copy
             return nullptr;
@@ -1828,10 +1685,11 @@ bool GpuArticulationView::setRootAttributeOvStage(const char* const attribName,
                                                   const PxU32 numOutputs,
                                                   const uint64_t rowsToken,
                                                   const bool angular,
-                                                  const bool pose)
+                                                  const bool pose,
+                                                  const OvStageDeviceWriteArgs& sessionDeviceArgs)
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     if (!srcTensor || !srcTensor->data || !rows)
         return false;
     if (numOutputs == 0)
@@ -1848,15 +1706,6 @@ bool GpuArticulationView::setRootAttributeOvStage(const char* const attribName,
         return false;
     }
 
-    PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
-
-    const PxU32* rowsDev = ovStageRowsDevice(rows, numOutputs, rowsToken);
-    if (!rowsDev)
-        return false;
-
-    PxScene* scene = mGpuSimData->mScene;
-    const PxU32 numArtis = getCount();
-
     // Which of the three root blocks this attribute lives in. Pose is one block PhysX reads and
     // writes whole; linear and angular velocity are separate write types with a block each, so
     // neither has to preserve the other.
@@ -1871,94 +1720,124 @@ bool GpuArticulationView::setRootAttributeOvStage(const char* const attribName,
     const PxU32 sharedBuf = pose    ? SharedDeviceBuffer::eLinkOrRootTransforms :
                             angular ? SharedDeviceBuffer::eLinkOrRootAngularVel :
                                       SharedDeviceBuffer::eLinkOrRootLinearVel;
-    const int copyEvent = pose    ? CopyEvent::eArtiRootTransforms :
-                          angular ? CopyEvent::eArtiRootAngVelocities :
-                                    CopyEvent::eArtiRootLinVelocities;
     const int applyEvent = pose    ? ApplyEvent::eArtiRootTransforms :
                            angular ? ApplyEvent::eArtiRootAngVelocities :
                                      ApplyEvent::eArtiRootLinVelocities;
-    void* const block = pose    ? static_cast<void*>(mGpuSimData->mLinkOrRootTransformsDev) :
-                        angular ? static_cast<void*>(mGpuSimData->mLinkOrRootAngularVelAccDev) :
-                                  static_cast<void*>(mGpuSimData->mLinkOrRootLinearVelAccDev);
+
+    const bool session = sessionDeviceArgs.sessionOwned();
+    const OvStageDeviceWriteArgs deviceArgs = session ? sessionDeviceArgs : drainDeviceWriteArgs(applyEvent);
+    PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
+    PxScene* scene = mGpuSimData->mScene;
+    const PxU32 numArtis = getCount();
+
+    // A session's row list (uploaded at open) and root block are its own. The drain uses the view's row
+    // copy and the scene's shared root block, which it releases after the apply (ADR-0008 Decision 7).
+    const PxU32* rowsDev = nullptr;
+    void* block = nullptr;
+    if (session)
+    {
+        OvStageScratch scratch(deviceArgs.scratch);
+        rowsDev = scratch.take<PxU32>(numOutputs);
+        block = pose ? static_cast<void*>(scratch.take<PxTransform>(numArtis)) :
+                       static_cast<void*>(scratch.take<PxVec3>(numArtis));
+        if (!deviceArgs.scratchHolds(
+                static_cast<char*>(block) + size_t(numArtis) * (pose ? sizeof(PxTransform) : sizeof(PxVec3)),
+                attribName))
+            return false;
+    }
+    else
+    {
+        rowsDev = ovStageRowsDevice(rows, numOutputs, rowsToken);
+        if (!rowsDev)
+            return false;
+        block = pose    ? static_cast<void*>(mGpuSimData->mLinkOrRootTransformsDev) :
+                angular ? static_cast<void*>(mGpuSimData->mLinkOrRootAngularVelAccDev) :
+                          static_cast<void*>(mGpuSimData->mLinkOrRootLinearVelAccDev);
+    }
 
     // Read-modify-write. Status IS checked: PhysX refuses these calls in states the caller cannot
     // see and writes NOTHING when it does; the block is not zeroed, so an unchecked refusal would
     // overlay the caller's values onto stale contents and publish that as root state.
-    CUevent readEvent = mGpuSimData->mCopyEvents[copyEvent];
-    if (!scene->getDirectGPUAPI().getArticulationData(block, mArtiGpuIndicesDev, readFlag, numArtis,
-                                                      mGpuSimData->kernelDoneEvent(sharedBuf), readEvent))
+    if (!physxOnStream(deviceArgs, [&](CUevent start, CUevent finish) {
+            return scene->getDirectGPUAPI().getArticulationData(block, mArtiGpuIndicesDev, readFlag, numArtis,
+                                                                start, finish);
+        }))
     {
         CARB_LOG_ERROR("%s: PxDirectGPUAPI::getArticulationData refused the read that preserves the root "
                        "state this write does not address",
                        attribName);
         return false;
     }
-    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(readEvent), 0, nullptr));
 
+    // An articulation a masked commit does not select keeps the state just read.
     const bool scattered =
         pose ? submitArtiRootPoseOvStage(static_cast<PxTransform*>(block),
                                           static_cast<const float*>(srcTensor->data), rowsDev, mRootRecordsDev,
-                                          numOutputs, angular) :
+                                          numOutputs, angular, deviceArgs.stream, deviceArgs.mask) :
                submitArtiRootVelocityOvStage(static_cast<PxVec3*>(block),
-                                              static_cast<const float*>(srcTensor->data), rowsDev, numOutputs);
+                                              static_cast<const float*>(srcTensor->data), rowsDev, numOutputs,
+                                              deviceArgs.stream, deviceArgs.mask);
     if (!scattered)
     {
         CARB_LOG_ERROR("%s: ovstage articulation root scatter failed", attribName);
         return false;
     }
 
-    // Ordered on the device, not by a host block: record our completion and hand it to PhysX as the
-    // start event, the convention the rest of this class follows.
-    CHECK_CU(getCudaShim()->eventRecord(
-        reinterpret_cast<uintptr_t>(mGpuSimData->mApplyWaitEvents[applyEvent]), uintptr_t(0), nullptr));
     // mArtiGpuIndicesDev, not a compacted list: the whole view is pushed, and the articulations this
-    // query did not match are written their own current values -- a no-op on their state, and the
-    // reason the RMW above covers the whole view rather than just the matched rows. A subset write
+    // query did not match, or its mask leaves out, are written their own current values. That is not a
+    // no-op: PhysX refreshes their kinematics, so their link accelerations and incoming joint forces read
+    // zero until the next step. It is the reason the RMW above covers the whole view rather than just the
+    // matched rows. A subset write
     // would need a compacted index list whose LENGTH comes off the host, which is the host block the
-    // read carries none of.
-    scene->getDirectGPUAPI().setArticulationData(block, mArtiGpuIndicesDev, writeFlag, numArtis,
-                                                 mGpuSimData->mApplyWaitEvents[applyEvent],
-                                                 mGpuSimData->mApplySignalEvents[applyEvent]);
-    // PhysX's apply above reads the block ASYNC (finishEvent = mApplySignalEvents); recordKernelDone
-    // only captures our scatter, so order our stream behind the apply before releasing -- otherwise the
-    // next producer, gated on kernelDoneEvent, would overwrite the block mid-apply (ADR-0008 D7, the
-    // reverse direction the host block used to cover).
-    CHECK_CU(getCudaShim()->streamWaitEvent(
-        uintptr_t(0), reinterpret_cast<uintptr_t>(mGpuSimData->mApplySignalEvents[applyEvent]), 0, nullptr));
-    mGpuSimData->recordKernelDone(sharedBuf);
+    // read carries none of. The write's stream waits for the apply, so the next producer of the block
+    // cannot overwrite it mid-apply.
+    if (!physxOnStream(deviceArgs, [&](CUevent start, CUevent finish) {
+            return scene->getDirectGPUAPI().setArticulationData(block, mArtiGpuIndicesDev, writeFlag, numArtis,
+                                                                start, finish);
+        }))
+    {
+        CARB_LOG_ERROR("%s: PxDirectGPUAPI::setArticulationData refused the write", attribName);
+        return false;
+    }
+    if (!session)
+        mGpuSimData->recordKernelDone(sharedBuf);
     return true;
 }
 
 bool GpuArticulationView::setRootPositionsOvStage(const TensorDesc* srcTensor,
                                                   const PxU32* rows,
                                                   const PxU32 numOutputs,
-                                                  const uint64_t rowsToken)
+                                                  const uint64_t rowsToken,
+                                                  const OvStageDeviceWriteArgs& deviceArgs)
 {
-    return setRootAttributeOvStage("position", srcTensor, rows, numOutputs, rowsToken, false, true);
+    return setRootAttributeOvStage("position", srcTensor, rows, numOutputs, rowsToken, false, true, deviceArgs);
 }
 
 bool GpuArticulationView::setRootOrientationsOvStage(const TensorDesc* srcTensor,
                                                      const PxU32* rows,
                                                      const PxU32 numOutputs,
-                                                     const uint64_t rowsToken)
+                                                     const uint64_t rowsToken,
+                                                     const OvStageDeviceWriteArgs& deviceArgs)
 {
-    return setRootAttributeOvStage("orientation", srcTensor, rows, numOutputs, rowsToken, true, true);
+    return setRootAttributeOvStage("orientation", srcTensor, rows, numOutputs, rowsToken, true, true, deviceArgs);
 }
 
 bool GpuArticulationView::setRootLinearVelocitiesOvStage(const TensorDesc* srcTensor,
                                                          const PxU32* rows,
                                                          const PxU32 numOutputs,
-                                                         const uint64_t rowsToken)
+                                                         const uint64_t rowsToken,
+                                                         const OvStageDeviceWriteArgs& deviceArgs)
 {
-    return setRootAttributeOvStage("linearVelocity", srcTensor, rows, numOutputs, rowsToken, false, false);
+    return setRootAttributeOvStage("linearVelocity", srcTensor, rows, numOutputs, rowsToken, false, false, deviceArgs);
 }
 
 bool GpuArticulationView::setRootAngularVelocitiesOvStage(const TensorDesc* srcTensor,
                                                           const PxU32* rows,
                                                           const PxU32 numOutputs,
-                                                          const uint64_t rowsToken)
+                                                          const uint64_t rowsToken,
+                                                          const OvStageDeviceWriteArgs& deviceArgs)
 {
-    return setRootAttributeOvStage("angularVelocity", srcTensor, rows, numOutputs, rowsToken, true, false);
+    return setRootAttributeOvStage("angularVelocity", srcTensor, rows, numOutputs, rowsToken, true, false, deviceArgs);
 }
 
 bool GpuArticulationView::setDofAttribute(const char* attribName,
@@ -2031,7 +1910,7 @@ bool GpuArticulationView::setDofAttribute(const char* attribName,
 bool GpuArticulationView::getDofPositions(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     PASS_EMPTY_TENSOR(dstTensor);
 
     return getDofAttribute("DOF position", dstTensor, PxArticulationGPUAPIReadType::Enum::eJOINT_POSITION,
@@ -2041,7 +1920,7 @@ bool GpuArticulationView::getDofPositions(const TensorDesc* dstTensor) const
 bool GpuArticulationView::setDofPositions(const TensorDesc* srcTensor, const TensorDesc* indexTensor)
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     PASS_EMPTY_TENSOR(srcTensor);
 
     return setDofAttribute("DOF position", srcTensor, indexTensor, PxArticulationGPUAPIWriteType::Enum::eJOINT_POSITION,
@@ -2052,392 +1931,11 @@ bool GpuArticulationView::setDofPositions(const TensorDesc* srcTensor, const Ten
 bool GpuArticulationView::getDofVelocities(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     PASS_EMPTY_TENSOR(dstTensor);
 
     return getDofAttribute("DOF velocity", dstTensor, PxArticulationGPUAPIReadType::Enum::eJOINT_VELOCITY,
                            mGpuSimData->mCopyEvents[CopyEvent::eArtiDofVelocities]);
-}
-
-bool GpuArticulationView::getDofPositionsOvStage(const ArticulationDofOvStageRecord* recordsDev,
-                                                 PxU32 numOutputs, const TensorDesc* dstTensor) const
-{
-    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-
-    return getDofAttributeOvStage("DOF position (ovstage)", dstTensor,
-                                  PxArticulationGPUAPIReadType::Enum::eJOINT_POSITION,
-                                  DofScalePolicy::eAngularSigned, recordsDev, numOutputs,
-                                  mGpuSimData->mCopyEvents[CopyEvent::eArtiDofPositions]);
-}
-
-bool GpuArticulationView::getDofVelocitiesOvStage(const ArticulationDofOvStageRecord* recordsDev,
-                                                  PxU32 numOutputs, const TensorDesc* dstTensor) const
-{
-    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-
-    return getDofAttributeOvStage("DOF velocity (ovstage)", dstTensor,
-                                  PxArticulationGPUAPIReadType::Enum::eJOINT_VELOCITY,
-                                  DofScalePolicy::eAngularSigned, recordsDev, numOutputs,
-                                  mGpuSimData->mCopyEvents[CopyEvent::eArtiDofVelocities]);
-}
-
-// The two drive TARGETS are the same generalized coordinate and its derivative as the two state
-// scalars above, so they take the same fold: degrees on an angular axis, and the body-order sign.
-bool GpuArticulationView::getDofPositionTargetsOvStage(const ArticulationDofOvStageRecord* recordsDev,
-                                                       PxU32 numOutputs, const TensorDesc* dstTensor) const
-{
-    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-
-    return getDofAttributeOvStage("DOF position target (ovstage)", dstTensor,
-                                  PxArticulationGPUAPIReadType::Enum::eJOINT_TARGET_POSITION,
-                                  DofScalePolicy::eAngularSigned, recordsDev, numOutputs,
-                                  mGpuSimData->mCopyEvents[CopyEvent::eArtiDofPositionTargets]);
-}
-
-bool GpuArticulationView::getDofVelocityTargetsOvStage(const ArticulationDofOvStageRecord* recordsDev,
-                                                       PxU32 numOutputs, const TensorDesc* dstTensor) const
-{
-    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-
-    return getDofAttributeOvStage("DOF velocity target (ovstage)", dstTensor,
-                                  PxArticulationGPUAPIReadType::Enum::eJOINT_TARGET_VELOCITY,
-                                  DofScalePolicy::eAngularSigned, recordsDev, numOutputs,
-                                  mGpuSimData->mCopyEvents[CopyEvent::eArtiDofVelocityTargets]);
-}
-
-// The actuation force takes the SIGN but not the degree fold: it is the generalized force on the
-// axis -- a newton on a prismatic axis, a newton-metre on a revolute one -- and neither is an angle.
-// Applying the position fold here would scale every torque by 57.295.
-bool GpuArticulationView::getDofActuationForcesOvStage(const ArticulationDofOvStageRecord* recordsDev,
-                                                       PxU32 numOutputs, const TensorDesc* dstTensor) const
-{
-    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-
-    return getDofAttributeOvStage("DOF actuation force (ovstage)", dstTensor,
-                                  PxArticulationGPUAPIReadType::Enum::eJOINT_FORCE, DofScalePolicy::eSigned,
-                                  recordsDev, numOutputs,
-                                  mGpuSimData->mCopyEvents[CopyEvent::eArtiDofActuationForces]);
-}
-
-bool GpuArticulationView::getDofProjectedForcesOvStage(const ArticulationDofOvStageRecord* recordsDev,
-                                                       PxU32 numOutputs, const TensorDesc* dstTensor) const
-{
-    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-
-    if (!dstTensor || !dstTensor->data)
-    {
-        return false;
-    }
-    if (numOutputs == 0)
-    {
-        return true; // nothing to emit -- not a failure
-    }
-    if (mMaxDofs == 0)
-    {
-        CARB_LOG_WARN("Articulation has no DOF");
-        return false; // caller asked for outputs but there are no DOFs -> record map is invalid
-    }
-    const char* label = "jointProjectedForce";
-    if (!recordsDev)
-    {
-        CARB_LOG_ERROR("%s: %s null ovstage DOF records", __FUNCTION__, label);
-        return false;
-    }
-    if (!checkTensorDevice(*dstTensor, mDevice, label, __FUNCTION__) ||
-        !checkTensorFloat32(*dstTensor, label, __FUNCTION__) ||
-        !checkTensorSizeExact(*dstTensor, numOutputs, label, __FUNCTION__))
-    {
-        return false;
-    }
-
-    PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
-
-    // Staged through the SHARED DOF buffer: it is sized for the scene while this needs the view's
-    // (getCount() x mMaxDofs), so it always fits, and it cannot alias what the projection reads (the
-    // link-shaped incoming-force and pose buffers). Staged at all because the projection SCATTERS --
-    // one thread per link writing that link's inbound DOFs -- so there is no per-output-row
-    // formulation that could write the caller's tensor directly.
-    const size_t denseFloats = size_t(getCount()) * mMaxDofs;
-    if (!mGpuSimData->mDofScalarsDev)
-    {
-        CARB_LOG_ERROR("%s: %s no shared DOF buffer", __FUNCTION__, label);
-        return false;
-    }
-    // Zeroed before the dense pass because that pass writes only the DOFs of links that HAVE an
-    // inbound joint -- a fixed joint contributes none -- and the buffer is shared, so an unwritten
-    // slot would otherwise hand back whatever the last read of it left there.
-    if (!CHECK_CUDA(cudaMemset(mGpuSimData->mDofScalarsDev, 0, denseFloats * sizeof(float))))
-    {
-        return false;
-    }
-
-    TensorDesc denseDesc;
-    denseDesc.device = mDevice;
-    denseDesc.dtype = omni::physics::tensors::TensorDataType::eFloat32;
-    denseDesc.numDims = 1;
-    denseDesc.dims[0] = static_cast<int64_t>(denseFloats);
-    denseDesc.data = mGpuSimData->mDofScalarsDev;
-    if (!getDofProjectedJointForces(&denseDesc))
-    {
-        return false;
-    }
-
-    // The dense row is strided by the VIEW's maxDofs (that is what its kernel's dofOffset counts in),
-    // not the scene's, so the gather is the same one the DOF-buffer attributes use with a different
-    // stride. No fold: the projection already resolved the joint frame and the body order.
-    // The shared buffer stops being read here, so this is where the next DirectGPU call may take over.
-    if (!mGpuSimData->gatherThenRelease(SharedDeviceBuffer::eDofScalars, [&] {
-            return fetchArtiDofAttributeOvStage(static_cast<float*>(dstTensor->data), mGpuSimData->mDofScalarsDev,
-                                                numOutputs, mMaxDofs, DofScalePolicy::eNone, recordsDev);
-        }))
-    {
-        CARB_LOG_ERROR("%s: failed to fetch %s", __FUNCTION__, label);
-        return false;
-    }
-    return true;
-}
-
-bool GpuArticulationView::getLinkIncomingJointForcesOvStage(const ArticulationLinkOvStageRecord* recordsDev,
-                                                            PxU32 numOutputs, const TensorDesc* dstTensor) const
-{
-    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-
-    if (!dstTensor || !dstTensor->data)
-    {
-        return false;
-    }
-    if (numOutputs == 0)
-    {
-        return true;
-    }
-    if (mMaxLinks == 0)
-    {
-        CARB_LOG_WARN("Articulation has no links");
-        return false;
-    }
-    const char* label = "linkIncomingJointForce";
-    if (!recordsDev)
-    {
-        CARB_LOG_ERROR("%s: %s null ovstage link records", __FUNCTION__, label);
-        return false;
-    }
-    if (!checkTensorDevice(*dstTensor, mDevice, label, __FUNCTION__) ||
-        !checkTensorFloat32(*dstTensor, label, __FUNCTION__) ||
-        !checkTensorSizeExact(*dstTensor, numOutputs * 6u, label, __FUNCTION__))
-    {
-        return false;
-    }
-
-    PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
-
-    // A dense staging row, then a gather, so this path calls the same dense getter the tensor API
-    // exposes; see mLinkIncomingJointForceScratchDev for why that outweighs the buffer it costs.
-    const size_t denseFloats = size_t(getCount()) * mMaxLinks * 6u;
-    if (!mLinkIncomingJointForceScratchDev)
-    {
-        prepareDeviceData((void**)&mLinkIncomingJointForceScratchDev, nullptr, denseFloats * sizeof(float),
-                          "mLinkIncomingJointForceScratchDev");
-        if (!mLinkIncomingJointForceScratchDev)
-        {
-            return false;
-        }
-    }
-    // NOT zeroed, unlike getDofProjectedForcesOvStage above: fetchArtiLinkIncomingJointForce writes
-    // every one of its getCount() * mMaxLinks slots, while the projection writes nothing for a fixed
-    // joint and skips a locked axis. (CpuArticulationView zeroes BOTH rows -- its dense link pass
-    // leaves padding untouched.) Padding here is written but meaningless; the read is safe only
-    // because no emitted record can name a padding slot. A column whose records can needs the memset.
-
-    TensorDesc denseDesc;
-    denseDesc.device = mDevice;
-    denseDesc.dtype = omni::physics::tensors::TensorDataType::eFloat32;
-    denseDesc.numDims = 1;
-    denseDesc.dims[0] = static_cast<int64_t>(denseFloats);
-    denseDesc.data = mLinkIncomingJointForceScratchDev;
-    if (!getLinkIncomingJointForce(&denseDesc))
-    {
-        return false;
-    }
-
-    if (!fetchArtiLinkVectorOvStage(static_cast<float*>(dstTensor->data), mLinkIncomingJointForceScratchDev, numOutputs,
-                                    mMaxLinks, 6u, recordsDev))
-    {
-        CARB_LOG_ERROR("%s: failed to fetch %s", __FUNCTION__, label);
-        return false;
-    }
-    // No recordKernelDone: the gather reads mLinkIncomingJointForceScratchDev, which this view owns
-    // privately, so there is no shared buffer to hand back. The dense getter that FILLED that scratch
-    // records its own shared buffers (ADR-0008 Decision 7) before returning.
-    return true;
-}
-
-bool GpuArticulationView::getTendonPropertyOvStage(const char* attribName,
-                                                   const TensorDesc* dstTensor,
-                                                   const PxArticulationGPUAPIReadType::Enum attribFlag,
-                                                   PxU32 buffer,
-                                                   void* scratchDev,
-                                                   PxU32 structFloats,
-                                                   PxU32 maxTendons,
-                                                   TendonProperty prop,
-                                                   const ArticulationTendonOvStageRecord* recordsDev,
-                                                   PxU32 numOutputs,
-                                                   CUevent syncEvent) const
-{
-    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-    if (!dstTensor || !dstTensor->data)
-    {
-        return false;
-    }
-    if (numOutputs == 0)
-    {
-        return true; // nothing to emit -- not a failure
-    }
-    if (maxTendons == 0 || !scratchDev)
-    {
-        // The caller enumerated tendons, so a scene with no tendon slot means the records name
-        // something this view cannot address.
-        CARB_LOG_WARN("%s: articulation view has no tendon storage", attribName);
-        return false;
-    }
-    if (!recordsDev)
-    {
-        CARB_LOG_ERROR("%s: null ovstage tendon records", attribName);
-        return false;
-    }
-    const PxU32 comp = tendonPropertyComponents(prop);
-    // Stated as a bounds check rather than as "spatial tendons have no limit": the gather resolves a
-    // source at fieldOffset..+comp within a structFloats-wide element, so ANY property that does not
-    // fit silently reads a neighbouring tendon's data. This guard covers whatever the table adds
-    // without needing to know which properties those are.
-    if (static_cast<PxU32>(prop) + comp > structFloats)
-    {
-        CARB_LOG_ERROR("%s: property at float %u+%u does not fit a %u-float tendon struct", attribName,
-                       static_cast<PxU32>(prop), comp, structFloats);
-        return false;
-    }
-    if (!checkTensorDevice(*dstTensor, mDevice, attribName, __FUNCTION__) ||
-        !checkTensorFloat32(*dstTensor, attribName, __FUNCTION__) ||
-        !checkTensorSizeExact(*dstTensor, numOutputs * comp, attribName, __FUNCTION__))
-    {
-        return false;
-    }
-
-    PhysxCudaContextGuard ctxGuarg(mGpuSimData->mCudaContextManager);
-
-    PxScene* scene = mGpuSimData->mScene;
-    PxU32 numArtis = getCount();
-
-    // Both SYNCHRONIZE_CUDA calls here and below are no-ops unless g_forceCudaDeviceSync is set; they
-    // exist so this gather can be bisected with that flag like every other one in the file.
-    SYNCHRONIZE_CUDA();
-
-    // One DirectGPU fill of the whole tendon block for the view, then a gather of the requested
-    // property. Several tendon attributes refill the same buffer once per attribute rather than
-    // sharing one fill, which keeps one entry point per attribute; tendon counts are far below DOF
-    // counts, so share the fill only if a tendon-heavy scene ever says otherwise.
-    //
-    // startEvent, not nullptr: the buffer is shared, and a gather from a previous read of it may
-    // still be running on our stream (ADR-0008 Decision 7).
-    if (!mGpuSimData->awaitDirectGpuFetch(
-            scene->getDirectGPUAPI().getArticulationData(
-                scratchDev, mArtiGpuIndicesDev, attribFlag, numArtis, mGpuSimData->kernelDoneEvent(buffer), syncEvent),
-            syncEvent, __FUNCTION__))
-    {
-        return false;
-    }
-
-    SYNCHRONIZE_CUDA();
-
-    // The buffer stops being read here, so this is where the next DirectGPU call may take over.
-    if (!mGpuSimData->gatherThenRelease(buffer, [&] {
-            return fetchArtiTendonPropertyOvStage(static_cast<float*>(dstTensor->data),
-                                                  static_cast<const float*>(scratchDev), numOutputs, maxTendons,
-                                                  structFloats, static_cast<PxU32>(prop), comp, recordsDev);
-        }))
-    {
-        CARB_LOG_ERROR("Failed to fetch %s attribute", attribName);
-        return false;
-    }
-
-    // No host block, for the same reason as the DOF ovstage path: the read synchronizes once at the
-    // end, and the streamWaitEvent above already orders the fill ahead of this gather (ADR-0008).
-    return true;
-}
-
-// One event per PROPERTY, shared by both tendon kinds -- eArtiTendonStiffnesses serves a fixed and a
-// spatial stiffness read alike, and the CopyEvent enum has no per-kind slots.
-//
-// The event only hands THIS fill's completion to our stream, and a read issues fill -> wait -> gather
-// in program order on one thread, so two fills are never in flight together. What keeps a fill off a
-// buffer another gather is still reading is the per-buffer kernelDoneEvent / recordKernelDone pair
-// (ADR-0008 Decision 7), which IS keyed by buffer.
-static PxU32 tendonCopyEvent(TendonProperty prop)
-{
-    switch (prop)
-    {
-    case TendonProperty::eStiffness:
-        return CopyEvent::eArtiTendonStiffnesses;
-    case TendonProperty::eDamping:
-        return CopyEvent::eArtiTendonDampings;
-    case TendonProperty::eLimitStiffness:
-        return CopyEvent::eArtiTendonLimitStiffnesses;
-    case TendonProperty::eLimit:
-        return CopyEvent::eArtiTendonLimits;
-    case TendonProperty::eRestLength:
-        return CopyEvent::eArtiTendonRestLengths;
-    case TendonProperty::eOffset:
-        return CopyEvent::eArtiTendonOffsets;
-    }
-    return CopyEvent::eArtiTendonStiffnesses;
-}
-
-bool GpuArticulationView::getFixedTendonPropertiesOvStage(const ArticulationTendonOvStageRecord* recordsDev,
-                                                          PxU32 numOutputs, TendonProperty prop,
-                                                          const TensorDesc* dstTensor) const
-{
-    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-
-    return getTendonPropertyOvStage("fixed tendon property (ovstage)", dstTensor,
-                                    PxArticulationGPUAPIReadType::Enum::eFIXED_TENDON,
-                                    SharedDeviceBuffer::eFixedTendonProperties,
-                                    (void*)mGpuSimData->mFixedTendonPropertiesDev,
-                                    sizeof(PxGpuFixedTendonData) / sizeof(float),
-                                    mGpuSimData->mMaxFixedTendons, prop, recordsDev, numOutputs,
-                                    mGpuSimData->mCopyEvents[tendonCopyEvent(prop)]);
-}
-
-bool GpuArticulationView::getSpatialTendonPropertiesOvStage(const ArticulationTendonOvStageRecord* recordsDev,
-                                                            PxU32 numOutputs, TendonProperty prop,
-                                                            const TensorDesc* dstTensor) const
-{
-    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-
-    return getTendonPropertyOvStage("spatial tendon property (ovstage)", dstTensor,
-                                    PxArticulationGPUAPIReadType::Enum::eSPATIAL_TENDON,
-                                    SharedDeviceBuffer::eSpatialTendonProperties,
-                                    (void*)mGpuSimData->mSpatialTendonPropertiesDev,
-                                    sizeof(PxGpuSpatialTendonData) / sizeof(float),
-                                    mGpuSimData->mMaxSpatialTendons, prop, recordsDev, numOutputs,
-                                    mGpuSimData->mCopyEvents[tendonCopyEvent(prop)]);
 }
 
 bool GpuArticulationView::setTendonPropertyOvStage(const char* const attribName,
@@ -2445,20 +1943,22 @@ bool GpuArticulationView::setTendonPropertyOvStage(const char* const attribName,
                                                   const PxArticulationGPUAPIReadType::Enum readFlag,
                                                   const PxArticulationGPUAPIWriteType::Enum writeFlag,
                                                   const PxU32 buffer,
-                                                  void* const scratchDev,
+                                                  void* const sharedScratchDev,
                                                   const PxU32 structFloats,
                                                   const PxU32 maxTendons,
                                                   const TendonProperty prop,
                                                   const ArticulationTendonOvStageRecord* const recordsDev,
-                                                  const PxU32 numOutputs)
+                                                  const PxU32 numOutputs,
+                                                  const OvStageDeviceWriteArgs& sessionDeviceArgs,
+                                                  const TendonFieldWrite mode)
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     if (!srcTensor || !srcTensor->data)
         return false;
     if (numOutputs == 0)
         return true; // nothing to publish -- not a failure
-    if (maxTendons == 0 || !scratchDev)
+    if (maxTendons == 0 || !sharedScratchDev)
     {
         CARB_LOG_WARN("%s: articulation view has no tendon storage", attribName);
         return false;
@@ -2479,65 +1979,80 @@ bool GpuArticulationView::setTendonPropertyOvStage(const char* const attribName,
                        static_cast<PxU32>(prop), comp, structFloats);
         return false;
     }
+    // A one-sided limit write addresses the pair but carries one value per row.
+    if (mode != TendonFieldWrite::eSet && prop != TendonProperty::eLimit)
+    {
+        CARB_LOG_ERROR("%s: a one-sided limit write needs the limit property", attribName);
+        return false;
+    }
+    const PxU32 srcComp = mode == TendonFieldWrite::eSet ? comp : 1u;
     if (!checkTensorDevice(*srcTensor, mDevice, attribName, __FUNCTION__) ||
         !checkTensorFloat32(*srcTensor, attribName, __FUNCTION__) ||
-        !checkTensorSizeExact(*srcTensor, numOutputs * comp, attribName, __FUNCTION__))
+        !checkTensorSizeExact(*srcTensor, numOutputs * srcComp, attribName, __FUNCTION__))
     {
         return false;
     }
 
+    const bool session = sessionDeviceArgs.sessionOwned();
+    const OvStageDeviceWriteArgs deviceArgs =
+        session ? sessionDeviceArgs : drainDeviceWriteArgs(ApplyEvent::eArtiTendonProperties);
     PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
     PxScene* scene = mGpuSimData->mScene;
     const PxU32 numArtis = getCount();
+    // A session's tendon block is its own; the drain uses the scene's shared one, which it releases after
+    // the apply (ADR-0008 Decision 7).
+    const size_t scratchFloats = size_t(numArtis) * maxTendons * structFloats;
+    void* const scratchDev =
+        session ? static_cast<void*>(OvStageScratch(deviceArgs.scratch).take<float>(scratchFloats)) : sharedScratchDev;
+    if (session && !deviceArgs.scratchHolds(static_cast<float*>(scratchDev) + scratchFloats, attribName))
+        return false;
 
     // Read-modify-write. Status IS checked: PhysX refuses these calls in states the caller cannot
     // see and writes NOTHING when it does; the scratch is not zeroed, so an unchecked refusal would
     // overlay the caller's values onto stale contents and publish that as tendon state.
-    CUevent readEvent = mGpuSimData->mCopyEvents[tendonCopyEvent(prop)];
-    if (!scene->getDirectGPUAPI().getArticulationData(scratchDev, mArtiGpuIndicesDev, readFlag, numArtis,
-                                                      mGpuSimData->kernelDoneEvent(buffer), readEvent))
+    if (!physxOnStream(deviceArgs, [&](CUevent start, CUevent finish) {
+            return scene->getDirectGPUAPI().getArticulationData(scratchDev, mArtiGpuIndicesDev, readFlag, numArtis,
+                                                                start, finish);
+        }))
     {
         CARB_LOG_ERROR("%s: PxDirectGPUAPI::getArticulationData refused the read that preserves the tendon "
                        "properties sharing a struct with this one",
                        attribName);
         return false;
     }
-    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(readEvent), 0, nullptr));
 
+    // A tendon a masked commit does not select keeps the struct just read.
     if (!submitArtiTendonPropertyOvStage(static_cast<float*>(scratchDev),
                                          static_cast<const float*>(srcTensor->data), numOutputs, maxTendons,
-                                         structFloats, static_cast<PxU32>(prop), comp, recordsDev))
+                                         structFloats, static_cast<PxU32>(prop), comp, recordsDev, deviceArgs.stream,
+                                         deviceArgs.mask, mode))
     {
         CARB_LOG_ERROR("%s: ovstage tendon scatter failed", attribName);
         return false;
     }
 
-    // Ordered on the device, not by a host block: record our completion and hand it to PhysX as the
-    // start event, the convention the rest of this class follows.
-    CHECK_CU(getCudaShim()->eventRecord(
-        reinterpret_cast<uintptr_t>(mGpuSimData->mApplyWaitEvents[ApplyEvent::eArtiTendonProperties]),
-        uintptr_t(0), nullptr));
     // mArtiGpuIndicesDev, not a compacted list: the whole view is pushed and the articulations this
     // query did not match are written their own current values, which is why the RMW above covers
-    // the whole view. A subset write would need an index list whose LENGTH comes off the host.
-    scene->getDirectGPUAPI().setArticulationData(
-        scratchDev, mArtiGpuIndicesDev, writeFlag, numArtis,
-        mGpuSimData->mApplyWaitEvents[ApplyEvent::eArtiTendonProperties],
-        mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiTendonProperties]);
-    // PhysX's apply above reads the buffer ASYNC (finishEvent = mApplySignalEvents); recordKernelDone
-    // only captures our scatter, so order our stream behind the apply before releasing -- otherwise the
-    // next producer, gated on kernelDoneEvent, would overwrite the buffer mid-apply (ADR-0008 D7, the
-    // reverse direction the host block used to cover).
-    CHECK_CU(getCudaShim()->streamWaitEvent(
-        uintptr_t(0),
-        reinterpret_cast<uintptr_t>(mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiTendonProperties]), 0, nullptr));
-    mGpuSimData->recordKernelDone(buffer);
+    // the whole view. A subset write would need an index list whose LENGTH comes off the host. The
+    // write's stream waits for the apply, so the next producer of the block cannot overwrite it mid-apply.
+    if (!physxOnStream(deviceArgs, [&](CUevent start, CUevent finish) {
+            return scene->getDirectGPUAPI().setArticulationData(scratchDev, mArtiGpuIndicesDev, writeFlag, numArtis,
+                                                                start, finish);
+        }))
+    {
+        CARB_LOG_ERROR("%s: PxDirectGPUAPI::setArticulationData refused the write", attribName);
+        return false;
+    }
+    if (!session)
+        mGpuSimData->recordKernelDone(buffer);
     return true;
 }
 
 bool GpuArticulationView::setFixedTendonPropertiesOvStage(const TensorDesc* srcTensor,
                                                           const ArticulationTendonOvStageRecord* recordsDev,
-                                                          const PxU32 numOutputs, const TendonProperty prop)
+                                                          const PxU32 numOutputs, const TendonProperty prop,
+                                                          const OvStageDeviceWriteArgs& deviceArgs,
+                                                          const TendonFieldWrite mode)
 {
     return setTendonPropertyOvStage("fixed tendon property (ovstage write)", srcTensor,
                                     PxArticulationGPUAPIReadType::Enum::eFIXED_TENDON,
@@ -2545,12 +2060,13 @@ bool GpuArticulationView::setFixedTendonPropertiesOvStage(const TensorDesc* srcT
                                     SharedDeviceBuffer::eFixedTendonProperties,
                                     (void*)mGpuSimData->mFixedTendonPropertiesDev,
                                     sizeof(PxGpuFixedTendonData) / sizeof(float),
-                                    mGpuSimData->mMaxFixedTendons, prop, recordsDev, numOutputs);
+                                    mGpuSimData->mMaxFixedTendons, prop, recordsDev, numOutputs, deviceArgs, mode);
 }
 
 bool GpuArticulationView::setSpatialTendonPropertiesOvStage(const TensorDesc* srcTensor,
                                                             const ArticulationTendonOvStageRecord* recordsDev,
-                                                            const PxU32 numOutputs, const TendonProperty prop)
+                                                            const PxU32 numOutputs, const TendonProperty prop,
+                                                            const OvStageDeviceWriteArgs& deviceArgs)
 {
     return setTendonPropertyOvStage("spatial tendon property (ovstage write)", srcTensor,
                                     PxArticulationGPUAPIReadType::Enum::eSPATIAL_TENDON,
@@ -2558,13 +2074,14 @@ bool GpuArticulationView::setSpatialTendonPropertiesOvStage(const TensorDesc* sr
                                     SharedDeviceBuffer::eSpatialTendonProperties,
                                     (void*)mGpuSimData->mSpatialTendonPropertiesDev,
                                     sizeof(PxGpuSpatialTendonData) / sizeof(float),
-                                    mGpuSimData->mMaxSpatialTendons, prop, recordsDev, numOutputs);
+                                    mGpuSimData->mMaxSpatialTendons, prop, recordsDev, numOutputs, deviceArgs,
+                                    TendonFieldWrite::eSet);
 }
 
 bool GpuArticulationView::setDofVelocities(const TensorDesc* srcTensor, const TensorDesc* indexTensor)
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     PASS_EMPTY_TENSOR(srcTensor);
 
     return setDofAttribute("DOF velocity", srcTensor, indexTensor, PxArticulationGPUAPIWriteType::Enum::eJOINT_VELOCITY,
@@ -2575,7 +2092,7 @@ bool GpuArticulationView::setDofVelocities(const TensorDesc* srcTensor, const Te
 bool GpuArticulationView::setDofActuationForces(const TensorDesc* srcTensor, const TensorDesc* indexTensor)
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     PASS_EMPTY_TENSOR(srcTensor);
     if (setDofAttribute("DOF actuation force", srcTensor, indexTensor, PxArticulationGPUAPIWriteType::Enum::eJOINT_FORCE,
                         mGpuSimData->mApplyWaitEvents[ApplyEvent::eArtiDofForces],
@@ -2594,7 +2111,7 @@ bool GpuArticulationView::setDofActuationForces(const TensorDesc* srcTensor, con
 bool GpuArticulationView::getDofPositionTargets(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     PASS_EMPTY_TENSOR(dstTensor);
 
     return getDofAttribute("DOF position target", dstTensor,
@@ -2605,7 +2122,7 @@ bool GpuArticulationView::getDofPositionTargets(const TensorDesc* dstTensor) con
 bool GpuArticulationView::setDofPositionTargets(const TensorDesc* srcTensor, const TensorDesc* indexTensor)
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     PASS_EMPTY_TENSOR(srcTensor);
 
     return setDofAttribute("DOF position target", srcTensor, indexTensor,
@@ -2617,7 +2134,7 @@ bool GpuArticulationView::setDofPositionTargets(const TensorDesc* srcTensor, con
 bool GpuArticulationView::getDofVelocityTargets(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     PASS_EMPTY_TENSOR(dstTensor);
 
     return getDofAttribute("DOF velocity target", dstTensor,
@@ -2628,7 +2145,7 @@ bool GpuArticulationView::getDofVelocityTargets(const TensorDesc* dstTensor) con
 bool GpuArticulationView::setDofVelocityTargets(const TensorDesc* srcTensor, const TensorDesc* indexTensor)
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     PASS_EMPTY_TENSOR(srcTensor);
 
     return setDofAttribute("DOF velocity target", srcTensor, indexTensor,
@@ -2640,7 +2157,7 @@ bool GpuArticulationView::setDofVelocityTargets(const TensorDesc* srcTensor, con
 bool GpuArticulationView::getDofActuationForces(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     PASS_EMPTY_TENSOR(dstTensor);
     // NOTE: for now it was decided to use the staging buffer to get the applied actuation forces.
     // because the PxArticulationGpuDataType::eJOINT_FORCE handles a write-only physX buffer.
@@ -2678,6 +2195,7 @@ bool GpuArticulationView::applyForcesAndTorquesAtPosition(const TensorDesc* srcF
                                                           const bool isGlobal)
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
 
     bool validForceTensor = false;
     bool validTorqueTensor = false;
@@ -2824,7 +2342,7 @@ bool GpuArticulationView::applyForcesAndTorquesAtPosition(const TensorDesc* srcF
 bool GpuArticulationView::getJacobians(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     PASS_EMPTY_TENSOR(dstTensor);
 
     if (!dstTensor || !dstTensor->data)
@@ -2891,7 +2409,7 @@ bool GpuArticulationView::getJacobians(const TensorDesc* dstTensor) const
 bool GpuArticulationView::getGeneralizedMassMatrices(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     PASS_EMPTY_TENSOR(dstTensor);
 
     const bool isFixedBase = mEntries[0].metatype->getFixedBase();
@@ -2966,7 +2484,7 @@ bool GpuArticulationView::getGeneralizedMassMatrices(const TensorDesc* dstTensor
 bool GpuArticulationView::getArticulationMassCenter(const TensorDesc* dstTensor, bool localFrame) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     PASS_EMPTY_TENSOR(dstTensor);
 
     if (!dstTensor || !dstTensor->data)
@@ -2993,11 +2511,12 @@ bool GpuArticulationView::getArticulationMassCenter(const TensorDesc* dstTensor,
         CARB_LOG_ERROR("Missing synchronization event for articulation mass centers");
         return false;
     }
-    // Zeroed for the reason spelled out in getMassCentersOvStage above: the PhysX COM kernel
-    // accumulates into its destination. Same stream as the start event, so the zeroing precedes the
-    // DirectGPU compute.
-    if (!CHECK_CUDA(cudaMemsetAsync(dstTensor->data, 0, size_t(getCount()) * sizeof(PxVec3), nullptr)) ||
-        !recordOvStageReady(nullptr))
+    // Zeroed for the reason spelled out in readOvStageColumns: the PhysX COM kernel accumulates into its
+    // destination. Same stream as the start event, so the zeroing precedes the DirectGPU compute.
+    if (!mMassCenterStartEvent ||
+        !CHECK_CUDA(cudaMemsetAsync(dstTensor->data, 0, size_t(getCount()) * sizeof(PxVec3), nullptr)) ||
+        !CHECK_CU(getCudaShim()->eventRecord(reinterpret_cast<uintptr_t>(mMassCenterStartEvent), uintptr_t(0),
+                                             nullptr)))
     {
         return false;
     }
@@ -3005,7 +2524,7 @@ bool GpuArticulationView::getArticulationMassCenter(const TensorDesc* dstTensor,
             (void*)(dstTensor->data), mArtiGpuIndicesDev,
             localFrame ? PxArticulationGPUAPIComputeType::eARTICULATION_COMS_ROOT_FRAME :
                          PxArticulationGPUAPIComputeType::eARTICULATION_COMS_WORLD_FRAME,
-            getCount(), mOvStageSelectionReadyEvent, copyEvent))
+            getCount(), mMassCenterStartEvent, copyEvent))
     {
         CARB_LOG_ERROR("Failed to compute articulation mass centers");
         waitForDirectGpuFinish(copyEvent, "articulation mass centers");
@@ -3036,7 +2555,7 @@ bool GpuArticulationView::getArticulationMassCenter(const TensorDesc* dstTensor,
 bool GpuArticulationView::getArticulationCentroidalMomentum(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     PASS_EMPTY_TENSOR(dstTensor);
 
 
@@ -3156,7 +2675,7 @@ bool GpuArticulationView::getArticulationCentroidalMomentum(const TensorDesc* ds
 bool GpuArticulationView::getCoriolisAndCentrifugalCompensationForces(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     PASS_EMPTY_TENSOR(dstTensor);
 
     if (!requireUniformBaseType(__FUNCTION__))
@@ -3227,7 +2746,7 @@ bool GpuArticulationView::getCoriolisAndCentrifugalCompensationForces(const Tens
 bool GpuArticulationView::getGravityCompensationForces(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     PASS_EMPTY_TENSOR(dstTensor);
 
     if (!requireUniformBaseType(__FUNCTION__))
@@ -3296,7 +2815,7 @@ bool GpuArticulationView::getGravityCompensationForces(const TensorDesc* dstTens
 bool GpuArticulationView::getLinkIncomingJointForce(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
 
     if (!dstTensor || !dstTensor->data)
     {
@@ -3378,7 +2897,7 @@ bool GpuArticulationView::getLinkIncomingJointForce(const TensorDesc* dstTensor)
 bool GpuArticulationView::getDofProjectedJointForces(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     PASS_EMPTY_TENSOR(dstTensor);
 
     if (!dstTensor || !dstTensor->data)
@@ -3459,7 +2978,7 @@ bool GpuArticulationView::getDofProjectedJointForces(const TensorDesc* dstTensor
 bool GpuArticulationView::getFixedTendonStiffnesses(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     PASS_EMPTY_TENSOR(dstTensor);
 
     if (!dstTensor || !dstTensor->data)
@@ -3509,7 +3028,7 @@ bool GpuArticulationView::getFixedTendonStiffnesses(const TensorDesc* dstTensor)
 bool GpuArticulationView::getFixedTendonDampings(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     PASS_EMPTY_TENSOR(dstTensor);
 
     if (!dstTensor || !dstTensor->data)
@@ -3559,7 +3078,7 @@ bool GpuArticulationView::getFixedTendonDampings(const TensorDesc* dstTensor) co
 bool GpuArticulationView::getFixedTendonLimitStiffnesses(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     PASS_EMPTY_TENSOR(dstTensor);
 
     if (!dstTensor || !dstTensor->data)
@@ -3609,7 +3128,7 @@ bool GpuArticulationView::getFixedTendonLimitStiffnesses(const TensorDesc* dstTe
 bool GpuArticulationView::getFixedTendonLimits(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     PASS_EMPTY_TENSOR(dstTensor);
 
     if (!dstTensor || !dstTensor->data)
@@ -3658,7 +3177,7 @@ bool GpuArticulationView::getFixedTendonLimits(const TensorDesc* dstTensor) cons
 bool GpuArticulationView::getFixedTendonfixedSpringRestLengths(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     PASS_EMPTY_TENSOR(dstTensor);
 
     if (!dstTensor || !dstTensor->data)
@@ -3708,7 +3227,7 @@ bool GpuArticulationView::getFixedTendonfixedSpringRestLengths(const TensorDesc*
 bool GpuArticulationView::getFixedTendonOffsets(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     PASS_EMPTY_TENSOR(dstTensor);
 
     if (!dstTensor || !dstTensor->data)
@@ -3757,7 +3276,7 @@ bool GpuArticulationView::getFixedTendonOffsets(const TensorDesc* dstTensor) con
 bool GpuArticulationView::getSpatialTendonStiffnesses(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     PASS_EMPTY_TENSOR(dstTensor);
 
     if (!dstTensor || !dstTensor->data)
@@ -3807,7 +3326,7 @@ bool GpuArticulationView::getSpatialTendonStiffnesses(const TensorDesc* dstTenso
 bool GpuArticulationView::getSpatialTendonDampings(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     PASS_EMPTY_TENSOR(dstTensor);
 
     if (!dstTensor || !dstTensor->data)
@@ -3857,7 +3376,7 @@ bool GpuArticulationView::getSpatialTendonDampings(const TensorDesc* dstTensor) 
 bool GpuArticulationView::getSpatialTendonLimitStiffnesses(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     PASS_EMPTY_TENSOR(dstTensor);
 
     if (!dstTensor || !dstTensor->data)
@@ -3907,7 +3426,7 @@ bool GpuArticulationView::getSpatialTendonLimitStiffnesses(const TensorDesc* dst
 bool GpuArticulationView::getSpatialTendonOffsets(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     PASS_EMPTY_TENSOR(dstTensor);
 
     if (!dstTensor || !dstTensor->data)
@@ -3963,7 +3482,7 @@ bool GpuArticulationView::setFixedTendonProperties(const TensorDesc* stiffnesses
                                                    const TensorDesc* indexTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     PASS_EMPTY_TENSOR(stiffnesses);
     PASS_EMPTY_TENSOR(dampings);
     PASS_EMPTY_TENSOR(limitStiffnesses);
@@ -4090,7 +3609,7 @@ bool GpuArticulationView::setSpatialTendonProperties(const TensorDesc* stiffness
                                                    const TensorDesc* indexTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
+    GPUAPI_CHECK_READY_ARTICULATIONS(mGpuSimData, true, false);
     PASS_EMPTY_TENSOR(stiffnesses);
     PASS_EMPTY_TENSOR(dampings);
     PASS_EMPTY_TENSOR(limitStiffnesses);

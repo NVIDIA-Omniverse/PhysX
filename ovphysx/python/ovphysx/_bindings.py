@@ -4,9 +4,12 @@
 # @implements REQ-CAPI-DETACH-001
 # @covers AC-3 AC-4 AC-6
 # @implements REQ-PYTHON-READ-001
-# @covers AC-4
+# @covers AC-4 AC-10
 # @implements REQ-PYTHON-FRAME-001
 # @covers AC-1
+# @implements REQ-PYTHON-OMNIPVD-CAPTURE-001
+# @covers AC-2 AC-3 AC-4
+
 # @implements REQ-CAPI-CONTACT-003
 # @covers AC-1 AC-2 AC-3
 #
@@ -14,7 +17,7 @@
 # @covers AC-3
 
 # @implements REQ-PYTHON-TASK-001
-# @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6
+# @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-11
 # @implements REQ-CAPI-OVD-NAMES-001
 # @covers AC-1 AC-2 AC-3 AC-4
 
@@ -32,6 +35,8 @@
 # @covers AC-5 AC-6 AC-7
 # @implements REQ-CAPI-SDF-001
 # @covers AC-4
+# @implements REQ-PACKAGING-BUILDNUM-001
+# @covers AC-7
 
 """Low-level ctypes bindings for the ovphysx library.
 
@@ -46,6 +51,7 @@ import os
 import sys
 from ctypes import (
     POINTER,
+    c_bool,
     c_char_p,
     c_double,
     c_float,
@@ -65,6 +71,33 @@ from typing import Callable
 _logger = logging.getLogger(__name__)
 _dll_directory_handles: list[object] = []
 _runtime_library_handles: list[object] = []
+
+
+class _NativeLibrary(ctypes.CDLL):
+    """Include package and native versions when a required API is unavailable."""
+
+    def __getattr__(self, name):
+        try:
+            return super().__getattr__(name)
+        except AttributeError as exc:
+            if not name.startswith("ovphysx_") or not self.__dict__.get("_binding_required_api", False):
+                raise
+            from . import __version__
+
+            # Use the base lookup so a missing version export cannot recurse.
+            try:
+                get_version = super().__getattr__("ovphysx_get_version_string")
+            except AttributeError:
+                native_version = "unavailable"
+            else:
+                get_version.restype = c_char_p
+                get_version.argtypes = []
+                native_version = (get_version() or b"").decode("utf-8", errors="replace") or "unavailable"
+            raise RuntimeError(
+                f"ovphysx native library '{self._name}' is missing required symbol '{name}'. "
+                f"Python: '{__version__}', native: '{native_version}'. "
+                "Reinstall the wheel or set OVPHYSX_LIB to the matching library."
+            ) from exc
 
 
 def _preload_windows_cpp_runtime() -> None:
@@ -302,7 +335,7 @@ def _load_library() -> ctypes.CDLL:
     if env_override:
         _logger.info("Loading library from OVPHYSX_LIB=%s (overriding bundled/default discovery)", env_override)
         try:
-            return ctypes.CDLL(env_override)
+            return _NativeLibrary(env_override)
         except OSError as e:
             raise OSError(f"Failed to load OVPHYSX_LIB='{env_override}': {e}") from e
 
@@ -312,7 +345,7 @@ def _load_library() -> ctypes.CDLL:
             # Keep ctypes' secure Windows defaults. They include the absolute
             # DLL's directory and the os.add_dll_directory() paths above.
             # winmode=0 would bypass those registered dependency directories.
-            return ctypes.CDLL(bundled)
+            return _NativeLibrary(bundled)
         except OSError as e:
             _logger.warning("Failed to load bundled library %s: %s; will try fallback paths", bundled, e)
 
@@ -321,7 +354,7 @@ def _load_library() -> ctypes.CDLL:
     # Default linker paths
     for name in _platform_lib_names():
         try:
-            return ctypes.CDLL(name)
+            return _NativeLibrary(name)
         except OSError as e:
             errors.append(f"{name}: {e}")
             continue
@@ -337,6 +370,10 @@ def _load_library() -> ctypes.CDLL:
 
 _lib = _load_library()
 _logger.debug("Loaded library: %s", _lib)
+# Only eager prototype declarations below require their symbols. Later optional
+# probes must retain ctypes' AttributeError/hasattr behavior. Keep all optional
+# hasattr/getattr probes below the _binding_required_api = False reset.
+_lib._binding_required_api = True
 
 
 class ovphysx_string_t(ctypes.Structure):
@@ -378,6 +415,19 @@ class ovphysx_omnipvd_destination_t(ctypes.Structure):
         ("tcp_address", ovphysx_string_t),
         ("tcp_port", c_uint32),
         ("tcp_timeout_ms", c_int32),
+    ]
+
+
+class ovphysx_omnipvd_recording_options_t(ctypes.Structure):
+    """Fixed session policy (matches ovphysx_omnipvd_recording_options_t)."""
+
+    _fields_ = [
+        ("record_secondary_data", c_bool),
+        ("scene_paths", POINTER(ovphysx_string_t)),
+        ("scene_count", c_uint32),
+        ("object_paths", POINTER(ovphysx_string_t)),
+        ("object_count", c_uint32),
+        ("wait_for_selection", c_bool),
     ]
 
 
@@ -586,10 +636,14 @@ class ovx_string_t(ctypes.Structure):
     ]
 
 
-class ovx_string_or_token_t(ctypes.Structure):
-    """ovx_string_or_token_t: an interned ``token`` OR a ``string`` name.
+OVX_INVALID_TOKEN = 0xFFFFFFFFFFFFFFFF  # ovstage's <ovx/types.h>; token 0 is the empty string
 
-    Pass ``token != 0`` for an interned attribute token, else a ``string`` name.
+
+class ovx_token_or_string_t(ctypes.Structure):
+    """ovx_token_or_string_t: an interned ``token`` OR a ``string`` name.
+
+    A non-NULL ``string.ptr`` selects the string and ignores ``token``. Otherwise ``token``
+    names the attribute: 0 is the empty string and 2**64 - 1 (OVX_INVALID_TOKEN) is invalid.
     """
 
     _fields_ = [
@@ -606,8 +660,8 @@ class ovstage_ordinal_range_t(ctypes.Structure):
     """
 
     _fields_ = [
-        ("start_ordinal", c_uint64),  # ovstage_ordinal_t
-        ("end_ordinal", c_uint64),
+        ("start_ordinal", c_int64),  # ovstage_ordinal_t (int64_t)
+        ("end_ordinal", c_int64),
         ("has_start_ordinal", ctypes.c_bool),
     ]
 
@@ -649,8 +703,28 @@ class ovstage_attribute_meta_t(ctypes.Structure):
     """ovstage_attribute_meta_t: write floor + layout generation."""
 
     _fields_ = [
-        ("attribute_write_floor_ordinal", c_uint64),
+        ("attribute_write_floor_ordinal", c_int64),  # ovstage_ordinal_t (int64_t)
         ("layout_generation", c_uint64),
+    ]
+
+
+class ovstage_read_column_t(ctypes.Structure):
+    """ovstage_read_column_t: one attribute column of a read group (ovstage's own type).
+
+    ``attribute`` is an interned token (resolve through the owning attached Stage
+    dictionary). ``data.tensors`` is a borrowed array of ``data.tensor_count`` DLTensors
+    with tuple width in each tensor's ``dtype.lanes``. Field order/types/padding must
+    match ovstage_api_types.h exactly.
+    """
+
+    _fields_ = [
+        ("attribute", c_uint64),  # ovx_token_t
+        ("ordinal", c_int64),  # ovstage_ordinal_t (int64_t)
+        ("is_delete", ctypes.c_bool),
+        ("is_array", ctypes.c_bool),
+        ("semantic", c_int32),  # ovstage_attribute_semantic_t
+        ("data", ovstage_data_t),
+        ("meta", ovstage_attribute_meta_t),
     ]
 
 
@@ -658,35 +732,29 @@ class ovstage_read_group_t(ctypes.Structure):
     """ovstage_read_group_t: one physics-output column group (ovstage's own type).
 
     The ovphysx output read returns these verbatim (producer-owned borrowed pointer
-    from :func:`ovphysx_fetch_read_next`). ``attribute`` and ``prims.list`` are
-    interned handles (resolve through the owning attached Stage dictionary). ``data.tensors``
-    is a borrowed array of ``data.tensor_count`` DLTensors with tuple width in each
-    tensor's ``dtype.lanes``. The group struct and ``prims.list`` stay valid until
-    ``read_group_id`` is released. Numeric tensor, prim-index-map, data-index-map,
-    mask, and event storage stays valid until the enclosing read session is released. Field
-    order/types/padding must match ovstage_api_types.h exactly.
+    from :func:`ovphysx_fetch_read_next`). Each carries one attribute column,
+    ``columns[0]`` (``column_count == 1``). ``prims.list`` is an interned handle (resolve
+    through the owning attached Stage dictionary). The group struct and ``prims.list`` stay
+    valid until ``read_group_id`` is released. The column, numeric tensor, prim-index-map,
+    data-index-map, mask, and event storage stays valid until the enclosing read session is
+    released. Field order/types/padding must match ovstage_api_types.h exactly.
     """
 
     _fields_ = [
         ("read_group_id", c_uint64),  # ovstage_read_group_id_t
-        ("attribute", c_uint64),  # ovx_token_t
-        ("ordinal", c_uint64),  # ovstage_ordinal_t
-        ("is_delete", ctypes.c_bool),
-        ("is_array", ctypes.c_bool),
-        ("semantic", c_int32),  # ovstage_attribute_semantic_t
         ("prims", ovstage_prim_group_t),
-        ("data", ovstage_data_t),
-        ("meta", ovstage_attribute_meta_t),
+        ("columns", POINTER(ovstage_read_column_t)),  # const ovstage_read_column_t*
+        ("column_count", c_size_t),
     ]
 
 
 class ovstage_map_group_t(ctypes.Structure):
     """ovstage_map_group_t: one WRITABLE group from the app -> physics write (ADR-0012).
 
-    The mirror of :class:`ovstage_read_group_t`, minus the fields a write cannot carry: no
-    ``read_group_id`` (a committed group is identified by its ADDRESS, which is why the
-    pointer from :func:`ovphysx_fetch_write_next` must be passed back to
-    :func:`ovphysx_commit_group` unchanged), and no ``attribute``. The enclosing fetched-write result supplies the original
+    The writable twin of :class:`ovstage_read_column_t` with its group's prims, minus the
+    fields a write cannot carry: no ``read_group_id`` (a committed group is identified by its
+    ADDRESS, which is why the pointer from :func:`ovphysx_fetch_write_next` must be passed
+    back to :func:`ovphysx_commit_group` unchanged), and no ``attribute``. The enclosing fetched-write result supplies the original
     attribute request index.
 
     ``data.tensors`` is a borrowed array of ``data.tensor_count`` DLTensors pointing at
@@ -753,17 +821,27 @@ _lib.ovphysx_create_instance.argtypes = [POINTER(c_uint64)]
 _lib.ovphysx_create_instance_with_args.restype = ovphysx_result_t
 _lib.ovphysx_create_instance_with_args.argtypes = [POINTER(ovphysx_create_args), POINTER(c_uint64)]
 
-_lib.ovphysx_set_cpu_mode.restype = ovphysx_result_t
-_lib.ovphysx_set_cpu_mode.argtypes = [ctypes.c_bool]
-
-_lib.ovphysx_get_cpu_mode.restype = ovphysx_result_t
-_lib.ovphysx_get_cpu_mode.argtypes = [POINTER(ctypes.c_bool)]
-
 _lib.ovphysx_destroy_instance.restype = ovphysx_result_t
 _lib.ovphysx_destroy_instance.argtypes = [c_uint64]
 
+# The pre-release start signature now includes options. Require its layout
+# export so an older two-argument library cannot silently ignore the selection.
+_lib.ovphysx_internal_omnipvd_recording_options_sizeof.argtypes = []
+_lib.ovphysx_internal_omnipvd_recording_options_sizeof.restype = c_size_t
+if _lib.ovphysx_internal_omnipvd_recording_options_sizeof() != ctypes.sizeof(ovphysx_omnipvd_recording_options_t):
+    raise RuntimeError("OmniPVD recording options ABI mismatch; set OVPHYSX_LIB to the matching library")
+
+# wait_for_selection can occupy old tail padding, so size alone is insufficient.
+_lib.ovphysx_internal_omnipvd_recording_options_offset.argtypes = [c_int]
+_lib.ovphysx_internal_omnipvd_recording_options_offset.restype = c_size_t
+if (_lib.ovphysx_internal_omnipvd_recording_options_offset(5) !=
+        ovphysx_omnipvd_recording_options_t.wait_for_selection.offset):
+    raise RuntimeError("OmniPVD recording options ABI mismatch; set OVPHYSX_LIB to the matching library")
+
+_lib.ovphysx_ovd_start_recording.argtypes = [
+    c_uint64, POINTER(ovphysx_omnipvd_destination_t), POINTER(ovphysx_omnipvd_recording_options_t)
+]
 _lib.ovphysx_ovd_start_recording.restype = ovphysx_result_t
-_lib.ovphysx_ovd_start_recording.argtypes = [c_uint64, POINTER(ovphysx_omnipvd_destination_t)]
 
 _lib.ovphysx_ovd_stop_recording.restype = ovphysx_result_t
 _lib.ovphysx_ovd_stop_recording.argtypes = [c_uint64]
@@ -778,14 +856,18 @@ _lib.ovphysx_step_sync.restype = ovphysx_result_t
 _lib.ovphysx_step_sync.argtypes = [c_uint64, c_float]
 
 _lib.ovphysx_update_articulations_kinematic.restype = ovphysx_enqueue_result_t
-_lib.ovphysx_update_articulations_kinematic.argtypes = [c_uint64, c_uint64, c_uint32]
+_lib.ovphysx_update_articulations_kinematic.argtypes = [c_uint64, c_uint64, c_uint32, ovstage_cuda_sync_t]
 
 _lib.ovphysx_evaluate_sdf_shapes.restype = ovphysx_enqueue_result_t
 _lib.ovphysx_evaluate_sdf_shapes.argtypes = [c_uint64, c_uint64, c_void_p, c_void_p, ovstage_cuda_sync_t]
 
+# Returns a const ovstage_population_desc_t*; ovphysx.population.physics_population_desc() is the Python form.
+_lib.ovphysx_get_physics_population_desc.restype = c_void_p
+_lib.ovphysx_get_physics_population_desc.argtypes = []
+
 _lib.ovphysx_attach_ovstage.restype = ovphysx_enqueue_result_t
 # stage is an opaque ovstage_instance_t*, passed as c_void_p.
-_lib.ovphysx_attach_ovstage.argtypes = [c_uint64, ctypes.c_void_p, c_uint64]
+_lib.ovphysx_attach_ovstage.argtypes = [c_uint64, ctypes.c_void_p, c_int64]
 
 _lib.ovphysx_update_from_ovstage.restype = ovphysx_enqueue_result_t
 _lib.ovphysx_update_from_ovstage.argtypes = [c_uint64, ovstage_ordinal_range_t]
@@ -812,9 +894,10 @@ _lib.ovphysx_query_contacts.argtypes = [
     c_uint64, POINTER(ovphysx_contact_sensor_selection_t), c_uint32, c_uint32,
     POINTER(c_uint64), POINTER(ovstage_query_result_t)]
 
-# attributes are ovx_string_or_token_t (string name or interned token per entry).
+# attributes are ovx_token_or_string_t (string name or interned token per entry).
 _lib.ovphysx_read.restype = ovphysx_enqueue_result_t
-_lib.ovphysx_read.argtypes = [c_uint64, c_uint64, POINTER(ovx_string_or_token_t), c_size_t, POINTER(c_uint64), POINTER(ovphysx_read_result_t)]
+_lib.ovphysx_read.argtypes = [c_uint64, c_uint64, POINTER(ovx_token_or_string_t), c_size_t, ovstage_cuda_sync_t,
+                              POINTER(c_uint64), POINTER(ovphysx_read_result_t)]
 
 # Producer-owned group: fetch returns a borrowed ovstage_read_group_t* (POINTER(POINTER(...))).
 _lib.ovphysx_fetch_read_next.restype = ovphysx_enqueue_result_t
@@ -822,7 +905,7 @@ _lib.ovphysx_fetch_read_next.argtypes = [c_uint64, c_uint64, POINTER(POINTER(ovs
 
 # App -> physics write: attributes retain their original request indices.
 _lib.ovphysx_write.restype = ovphysx_enqueue_result_t
-_lib.ovphysx_write.argtypes = [c_uint64, c_uint64, POINTER(ovx_string_or_token_t), c_size_t, POINTER(c_uint64), POINTER(ovphysx_write_result_t)]
+_lib.ovphysx_write.argtypes = [c_uint64, c_uint64, POINTER(ovx_token_or_string_t), c_size_t, POINTER(c_uint64), POINTER(ovphysx_write_result_t)]
 
 # Producer-owned group, and the pointer IS the commit identity: hand it back verbatim.
 _lib.ovphysx_fetch_write_next.restype = ovphysx_enqueue_result_t
@@ -831,13 +914,18 @@ _lib.ovphysx_fetch_write_next.argtypes = [c_uint64, c_uint64, POINTER(ovphysx_fe
 _lib.ovphysx_commit_group.restype = ovphysx_enqueue_result_t
 _lib.ovphysx_commit_group.argtypes = [c_uint64, c_uint64, POINTER(ovstage_map_group_t), ovstage_cuda_sync_t]
 
+_lib.ovphysx_commit_group_masked.restype = ovphysx_enqueue_result_t
+# row_mask is a DLTensor*, passed as c_void_p.
+_lib.ovphysx_commit_group_masked.argtypes = [c_uint64, c_uint64, POINTER(ovstage_map_group_t), c_void_p,
+                                             ovstage_cuda_sync_t]
+
 _lib.ovphysx_release_write.restype = ovphysx_enqueue_result_t
 _lib.ovphysx_release_write.argtypes = [c_uint64, c_uint64]
 
 # (object type, attribute) writability classification (REQ-INPUT-COVERAGE-001 AC-2). Global, not
 # per-instance: writability is a property of the write API, not of any live scene.
 _lib.ovphysx_writability.restype = ovphysx_result_t
-_lib.ovphysx_writability.argtypes = [c_int32, POINTER(ovx_string_or_token_t), POINTER(c_int32)]
+_lib.ovphysx_writability.argtypes = [c_int32, POINTER(ovx_token_or_string_t), POINTER(c_int32)]
 
 _lib.ovphysx_release_group.restype = ovphysx_enqueue_result_t
 _lib.ovphysx_release_group.argtypes = [c_uint64, c_uint64, c_uint64]
@@ -911,6 +999,9 @@ _lib.ovphysx_wait_task.argtypes = [c_uint64, ovphysx_enqueue_result_t, c_uint64,
 
 _lib.ovphysx_wait_all.restype = ovphysx_result_t
 _lib.ovphysx_wait_all.argtypes = [c_uint64, c_uint64, POINTER(ovphysx_wait_task_result_t)]
+
+_lib.ovphysx_query_task_status.restype = ovphysx_result_t
+_lib.ovphysx_query_task_status.argtypes = [c_uint64, ovphysx_enqueue_result_t, POINTER(c_int)]
 
 _lib.ovphysx_get_last_error.restype = ovphysx_string_t
 _lib.ovphysx_get_last_error.argtypes = []
@@ -1346,6 +1437,8 @@ _lib.ovphysx_evaluate_sdf.argtypes = [
 _lib.ovphysx_destroy_sdf_view.restype = ovphysx_result_t
 _lib.ovphysx_destroy_sdf_view.argtypes = [c_uint64, c_uint64]
 
+_lib._binding_required_api = False
+
 
 def writability(object_type: int, attribute: str) -> int:
     """Classification of writing `attribute` on `object_type`, as `ovphysx_writability_t`.
@@ -1358,8 +1451,8 @@ def writability(object_type: int, attribute: str) -> int:
     type does not accept comes back UNCLASSIFIED (0), which is a valid answer, not an error.
     """
     encoded = attribute.encode("utf-8")  # kept alive across the call: attr.string.ptr borrows it
-    attr = ovx_string_or_token_t()
-    attr.token = 0
+    attr = ovx_token_or_string_t()
+    attr.token = OVX_INVALID_TOKEN
     attr.string = ovx_string_t(encoded, len(encoded))
     out = c_int32(0)
     result = _lib.ovphysx_writability(c_int32(int(object_type)), ctypes.byref(attr), ctypes.byref(out))

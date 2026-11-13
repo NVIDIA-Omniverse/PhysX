@@ -87,6 +87,10 @@ namespace physx
 			// "useAtomics" tells the code to use atomic ORs to update the bitmap.
 							void					updateCached(const UpdateCachedParams& params, Cm::PinnableBitMap* shapeChangedMap, bool fromTask, bool useAtomics);
 
+			// Task-safe variant for shapes whose cached data may already be current: when the cached transform and flags
+			// equal the new ones, the bounds and the changed bit are left alone. Returns true when anything was written.
+							bool					updateCachedIfChanged(const UpdateCachedParams& params, Cm::PinnableBitMap* shapeChangedMap);
+
 			// PT: use this version when calling from a single thread. In particular the code is not thread-safe
 			// when shapeChangedMap is not null. If shapeChangedMap is null, the code might be safe to call from
 			// multiple threads but it could be suboptimal, as we will write to the same cache line from multiple
@@ -111,7 +115,7 @@ namespace physx
 
 			PX_FORCE_INLINE	void					internalAddToBroadPhase();
 			PX_FORCE_INLINE	bool					internalRemoveFromBroadPhase(bool wakeOnLostTouch = true);
-							void					initSubsystemsDependingOnElementID(PxU32 indexFrom);
+							void					initSubsystemsDependingOnElementID();
 							
 							ShapeCore*				mShapeCore;
 							PxU32					mSqBoundsId;

@@ -22,6 +22,9 @@
 // @implements REQ-ATTACH-RESOLVE-001
 // @covers AC-4
 
+// @implements REQ-CACHE-ATTACH-001
+// @covers AC-3
+
 /**
  * @implements REQ-SIM-MULTISCENE-001
  * @covers AC-1 AC-2
@@ -1457,6 +1460,25 @@ static uint32_t roundUpToNextPowerOfTwo(uint32_t value)
 }
 #endif
 
+bool attachmentMayUseGpu(const usdparser::AttachedStage& attachedStage)
+{
+#if USE_PHYSX_GPU
+    const int gpuPipelineOverride = attachedStage.getCachedSettings().gpuPipelineOverride;
+    const auto& foundation = omni::physx::foundation::getInterface();
+    return (gpuPipelineOverride > 0 || gpuPipelineOverride == -1) &&
+           !(foundation.isCpuMode && foundation.isCpuMode()) && OmniPhysX::getInstance().isCudaLibPresent();
+#else
+    return false;
+#endif
+}
+
+bool sceneRequestsGpu(const usdparser::AttachedStage& attachedStage, const PhysxSceneDesc& desc)
+{
+    const int gpuPipelineOverride = attachedStage.getCachedSettings().gpuPipelineOverride;
+    return attachmentMayUseGpu(attachedStage) &&
+           (gpuPipelineOverride > 0 || desc.enableGPUDynamics || desc.broadphaseType == eGPU);
+}
+
 static PxScene* createPhysicsScene(usdparser::AttachedStage& attachedStage, PhysXSetup& physxSetup, double metersPerUnit, const PhysxSceneDesc& physxSceneDesc,
     OmniFilterCallback* filterCallback, OmniContactReportCallback* reportCallback)
 {
@@ -1481,14 +1503,9 @@ static PxScene* createPhysicsScene(usdparser::AttachedStage& attachedStage, Phys
 #if USE_PHYSX_GPU
     carb::settings::ISettings* settings = carb::getCachedInterface<carb::settings::ISettings>();
     const bool suppressReadback = attachedStage.getCachedSettings().suppressReadback;
-    const int gpuPipelineOverride = attachedStage.getCachedSettings().gpuPipelineOverride;
-    const bool sceneWantsGpu = gpuPipelineOverride > 0 ||
-        (gpuPipelineOverride == -1 && (physxSceneDesc.enableGPUDynamics ||
-            physxSceneDesc.broadphaseType == eGPU));
-    const auto& foundation = omni::physx::foundation::getInterface();
-    const bool cpuMode = foundation.isCpuMode && foundation.isCpuMode();
-    sceneDesc.cudaContextManager = sceneWantsGpu && !cpuMode && omniPhysX.isCudaLibPresent() ?
-        physxSetup.acquireAttachmentCudaContext(attachedStage) : nullptr;
+    sceneDesc.cudaContextManager = sceneRequestsGpu(attachedStage, physxSceneDesc) ?
+                                       physxSetup.acquireAttachmentCudaContext(attachedStage) :
+                                       nullptr;
 
     if (attachedStage.getCachedSettings().gpuPipelineOverride == -1)
     {

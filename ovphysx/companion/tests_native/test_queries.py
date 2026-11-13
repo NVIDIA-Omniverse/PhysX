@@ -69,6 +69,7 @@ def test_sweep_overlap_primitives_bound_geometry_and_core(attached):
 
 def test_query_point_instances_and_backface_triangles(physics,tmp_path):
     import ovstage
+    from ovphysx.population import physics_population_descs
     path=tmp_path/'query-instances.usda'
     path.write_text('''#usda 1.0
 (metersPerUnit = 1
@@ -106,7 +107,7 @@ def Xform "World" {
 ''')
     stage=ovstage.Stage('query-instances')
     try:
-        ovstage.population.open_usd(stage,str(path),ordinal=1,domains=ovstage.PopulationDomain.ALL)
+        ovstage.population.open_usd_with_desc(stage,str(path),ordinal=1,time=ovstage.population.DEFAULT_TIME,descs=physics_population_descs(rendering=True))
         stage.advance_write_floor(ordinal=1).wait()
         with PreviewSession(physics,stage,read_ordinal=1) as preview,SceneQueries(preview) as query:
             preview.step(.01)
@@ -159,11 +160,13 @@ def test_query_invalid_inputs_and_abi_preserve_output(attached):
 
 def test_query_pending_owner_isolation_and_retirement(attached):
     import ovstage
+    from ovphysx.population import physics_population_descs
     from concurrent.futures import ThreadPoolExecutor
     stage=ovstage.Stage('query-peer')
     try:
-        ovstage.population.open_usd(stage,str(Path(__file__).resolve().parents[1]/'samples/scenes/two_boxes.usda'),ordinal=1,
-                                    domains=ovstage.PopulationDomain.ALL)
+        ovstage.population.open_usd_with_desc(stage,str(Path(__file__).resolve().parents[1]/'samples/scenes/two_boxes.usda'),ordinal=1,
+                                    time=ovstage.population.DEFAULT_TIME,
+                                    descs=physics_population_descs(rendering=True))
         stage.advance_write_floor(ordinal=1).wait()
         with ToolsSession(attached) as tools,SceneQueries(tools) as playback:
             with PreviewSession(attached,stage,read_ordinal=1) as preview,SceneQueries(preview) as query:

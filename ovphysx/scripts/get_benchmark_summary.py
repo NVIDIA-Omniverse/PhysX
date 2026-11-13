@@ -164,32 +164,50 @@ def resolve_macro_family_device(text, macro_name, bodies):
 LAB_ANYMAL_RE = re.compile(r"DEFINE_LAB_ANYMAL\s*\(\s*(\w+)\s*,\s*[\w:]+\s*,\s*(\d+)\s*\)")
 TENSOR_IO_RE = re.compile(r"DEFINE_TENSOR_IO\s*\(\s*(\w+)\s*,\s*[\w:]+\s*,\s*(\d+)\s*\)")
 
-# OutputRead.cpp defines thin wrapper macros, one per (base class, row family) pair, that all
-# bottom out in DEFINE_OUTPUT_READ_VARIANT(base, cls, op, N, device, gpu, hide). A hardcoded
-# wrapper-name -> op-token mapping would go stale whenever a wrapper is added or renamed, so every
-# "#define DEFINE_<X>(N, device, gpu, hide) ..." whose body calls DEFINE_OUTPUT_READ_VARIANT is
-# found and the op token (3rd argument) is read from that call.
-OUTPUT_READ_WRAPPER_DEF_RE = re.compile(
+# OutputRead.cpp and OutputWrite.cpp define thin wrapper macros, one per (base class, row family)
+# pair, that bottom out in DEFINE_OUTPUT_READ_VARIANT / DEFINE_OUTPUT_WRITE_VARIANT(base, cls, op, N,
+# device, gpu, hide), registering "<family>.<op>_<N>_<device>". A hardcoded wrapper-name -> op-token
+# mapping would go stale whenever a wrapper is added or renamed, so every
+# "#define DEFINE_<X>(N, device, gpu, hide) ..." whose body calls the variant macro is found and the
+# op token (3rd argument) is read from that call. A row can also call the variant macro directly with
+# a literal N, whose base may be a template (DeviceSourcedWriteT<WriteOnlyBase>).
+OUTPUT_VARIANT_FAMILIES = (
+    ("DEFINE_OUTPUT_READ_VARIANT", "OutputRead"),
+    ("DEFINE_OUTPUT_WRITE_VARIANT", "OutputWrite"),
+)
+OUTPUT_WRAPPER_DEF_RE = re.compile(
     r"#define\s+(DEFINE_\w+)\s*\(\s*N\s*,\s*device\s*,\s*gpu\s*,\s*hide\s*\)"
     r"(?P<body>(?:[^\n]*\\\n)*[^\n]*)",
 )
-OUTPUT_READ_VARIANT_CALL_RE = re.compile(
-    r"DEFINE_OUTPUT_READ_VARIANT\(\s*[\w:]+\s*,\s*[\w:]+\s*,\s*([\w:]+)\s*,\s*N\s*,\s*device\s*,\s*gpu\s*,\s*hide\s*\)"
-)
 
 
-def find_output_read_wrappers(text):
-    """Return {macro_name: op_token} for every DEFINE_OUTPUT_READ_VARIANT-based wrapper macro
-    defined in ``text``, discovered from the #define bodies rather than a hardcoded list."""
+def _variant_call_re(variant, n_pattern, device_pattern, hide_pattern):
+    """A call of `variant` capturing its op token, N, device and hide arguments."""
+    return re.compile(
+        re.escape(variant)
+        + r"\s*\(\s*[^,()]+?\s*,\s*[\w:]+\s*,\s*([\w:]+)\s*,\s*(" + n_pattern + r")\s*,\s*("
+        + device_pattern + r")\s*,\s*\w+\s*,\s*(" + hide_pattern + r")\s*\)"
+    )
+
+
+def find_output_variant_wrappers(text, variant):
+    """Return {macro_name: op_token} for every wrapper macro defined in ``text`` whose body calls
+    ``variant``, discovered from the #define bodies rather than a hardcoded list."""
+    call_re = _variant_call_re(variant, "N", "device", "hide")
     wrappers = {}
-    for m in OUTPUT_READ_WRAPPER_DEF_RE.finditer(text):
+    for m in OUTPUT_WRAPPER_DEF_RE.finditer(text):
         # Strip line-continuation backslashes so the call regex's \s* can span the (former) line
         # break without needing to special-case the backslash character itself.
         body = re.sub(r"\\\s*\n", "\n", m.group("body"))
-        call = OUTPUT_READ_VARIANT_CALL_RE.search(body)
+        call = call_re.search(body)
         if call:
             wrappers[m.group(1)] = call.group(1)
     return wrappers
+
+
+def find_output_read_wrappers(text):
+    """The DEFINE_OUTPUT_READ_VARIANT wrappers of ``text``; see find_output_variant_wrappers."""
+    return find_output_variant_wrappers(text, "DEFINE_OUTPUT_READ_VARIANT")
 
 # Fallback filename keyword -> category used only when a file is absent from the analysis.
 FALLBACK_RULES = [
@@ -237,17 +255,24 @@ def extract_rows(text):
         op_name, n = m.group(1), m.group(2)
         out.append((f"TensorIo.pose_{op_name}_{n}_cpu", False, False, False))
 
-    wrappers = find_output_read_wrappers(text)
-    if wrappers:
-        invocation_re = re.compile(
-            r"(" + "|".join(re.escape(name) for name in wrappers) + r")"
-            r"\s*\(\s*(\d+)\s*,\s*(\w+)\s*,\s*\w+\s*,\s*(true|false)\s*\)"
-        )
-        for m in invocation_re.finditer(text):
-            if _is_commented(text, m.start()):
+    for variant, family in OUTPUT_VARIANT_FAMILIES:
+        # (position, op, N, device, hide) for each wrapper invocation and each direct call, in
+        # source order.
+        calls = []
+        wrappers = find_output_variant_wrappers(text, variant)
+        if wrappers:
+            invocation_re = re.compile(
+                r"(" + "|".join(re.escape(name) for name in wrappers) + r")"
+                r"\s*\(\s*(\d+)\s*,\s*(\w+)\s*,\s*\w+\s*,\s*(true|false)\s*\)"
+            )
+            for m in invocation_re.finditer(text):
+                calls.append((m.start(), wrappers[m.group(1)], m.group(2), m.group(3), m.group(4)))
+        for m in _variant_call_re(variant, r"\d+", r"\w+", "true|false").finditer(text):
+            calls.append((m.start(), m.group(1), m.group(2), m.group(3), m.group(4)))
+        for start, op, n, device, hide in sorted(calls):
+            if _is_commented(text, start):
                 continue
-            macro, n, device, hide = m.group(1), m.group(2), m.group(3), m.group(4)
-            name = f"OutputRead.{wrappers[macro]}_{n}_{device}"
+            name = f"{family}.{op}_{n}_{device}"
             gpu, direct_gpu = resolve_device(name, None, bodies, text)
             out.append((name, hide == "true", gpu, direct_gpu))
 

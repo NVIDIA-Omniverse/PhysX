@@ -149,6 +149,10 @@
 // #define OMNI_PVD_GET_REGISTRATION_DATA(regData)
 // MyModulePvdObjectsDescriptor* regData = GetPvdObjectsDescForMyModule();
 //
+// #define OMNI_PVD_SHOULD_RECORD_CREATION(writer, regData, classID, objectRef) true
+// #define OMNI_PVD_SHOULD_RECORD_DESTRUCTION(writer, regData, classID, objectRef) true
+// #define OMNI_PVD_SHOULD_RECORD_VALUE(writer, regData, classID, attributeID, objectRef) true
+//
 // #include "CmOmniPvdAutoGenSetData.h"
 //
 // GetPvdWriterForMyModule() and GetPvdObjectsDescForMyModule() just stand for the logic the user needs

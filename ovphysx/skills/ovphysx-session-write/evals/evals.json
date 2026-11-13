@@ -87,11 +87,11 @@
     {
       "id": 8,
       "prompt": "In Python, put every standalone dynamic rigid body to sleep, then wake only a selected subset while leaving the others asleep and check their current sleep state. Does the same command work with CPU simulation, GPU with CPU readback, and DirectGPU?",
-      "expected_output": "Uses a context-managed PhysX.write_sync session on wake, fills every uint8 row with zero to sleep or nonzero to wake, and collects each commit with commit_sync (or wait() on commit). Narrows the wake write with prim_paths or pattern so unselected bodies stay asleep. Explains the mode and body restrictions, then hands the state read to ovphysx-output-read using isSleeping with ALL scope.",
+      "expected_output": "Uses a context-managed PhysX.write_sync session on wake, fills every uint8 row with zero to sleep or nonzero to wake, and collects each commit with commit_sync (or wait() on commit). Narrows the wake write with prim_paths or pattern, or commits it with a row mask that leaves the other bodies out, so unselected bodies stay asleep. Explains the mode and body restrictions, then hands the state read to ovphysx-output-read using isSleeping with ALL scope.",
       "files": [],
       "expectations": [
         "Uses PhysX.write_sync(SimObjectType.RIGID_BODY, [\"wake\"]), or a completed Query with PhysX.write(query, [\"wake\"]).wait(); fills every tensor row before commit_sync or commit(...).wait(); zero means sleep, not leave unchanged",
-        "Selects the subset with prim_paths native handles or pattern on write_sync or query using ALL scope (the default); selected sleeping bodies are included, unselected bodies are untouched, and no per-row leave-unchanged mask is claimed",
+        "Selects the subset with prim_paths native handles or pattern on write_sync or query using ALL scope (the default), or commits with a row mask that leaves the other bodies out; selected sleeping bodies are included and unselected bodies are untouched",
         "Explains that wake is a one-time command taking effect at commit and later simulation may change the state",
         "Supports CPU and GPU-with-CPU-readback scenes but refuses DirectGPU, even after stepping",
         "Explains that kinematic and simulation-disabled bodies are skipped, sleeping-disabled scenes ignore sleep commands, and articulation-link wake writes are refused",

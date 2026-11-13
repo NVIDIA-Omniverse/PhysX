@@ -3,10 +3,15 @@
 
 # @implements REQ-CAPI-BENCHMARK-007
 # @covers AC-1
+# @implements REQ-CAPI-BENCHMARK-008
+# @covers AC-1
+
+# @implements REQ-CAPI-BENCHMARK-009
+# @covers AC-1
 
 # Contract tests for verify_inventory.py. They pin the live producer contract.
 #
-# The inventory is pinned at eighteen rows: twelve CPU-canonical rows and six
+# The inventory is pinned at twenty-two rows: twelve CPU-canonical rows and ten
 # requested-GPU diagnostic rows across Authoring and WriteScaling.
 
 import json
@@ -506,15 +511,15 @@ class MainCliTests(unittest.TestCase):
 
 class ProducerInventoryFixtureTests(unittest.TestCase):
     """Pins the committed producer_inventory.json to the L1B scope:
-    sixteen Authoring rows plus two CPU WriteScaling rows."""
+    twenty Authoring rows plus two CPU WriteScaling rows."""
 
-    def test_fixture_has_eighteen_rows_twelve_cpu_six_gpu(self):
+    def test_fixture_has_twenty_two_rows_twelve_cpu_ten_gpu(self):
         rows = vi.load_inventory(str(PRODUCER_INVENTORY_PATH))
-        self.assertEqual(len(rows), 18)
+        self.assertEqual(len(rows), 22)
         cpu_rows = [r for r in rows if r.device == "cpu"]
         gpu_rows = [r for r in rows if r.device == "gpu"]
         self.assertEqual(len(cpu_rows), 12)
-        self.assertEqual(len(gpu_rows), 6)
+        self.assertEqual(len(gpu_rows), 10)
         write_scaling_names = {r.name for r in rows if r.name.startswith("WriteScaling.")}
         self.assertEqual(
             write_scaling_names,
@@ -529,11 +534,11 @@ class ProducerInventoryFixtureTests(unittest.TestCase):
         # filter 'Authoring.*:WriteScaling.*'. A row in neither family would
         # still be required by this inventory while being invisible to every
         # filtered --list and run meant to prove it, so the counts above alone
-        # are not enough. Sixteen Authoring rows, the two WriteScaling rows
+        # are not enough. Twenty Authoring rows, the two WriteScaling rows
         # pinned above, nothing else.
         rows = vi.load_inventory(str(PRODUCER_INVENTORY_PATH))
         non_write_scaling = [r.name for r in rows if not r.name.startswith("WriteScaling.")]
-        self.assertEqual(len(non_write_scaling), 16)
+        self.assertEqual(len(non_write_scaling), 20)
         for name in non_write_scaling:
             self.assertTrue(name.startswith("Authoring."), name)
 
@@ -609,14 +614,14 @@ class OwnedInventoryTests(unittest.TestCase):
 
 
 class OutputReadInventoryFixtureTests(unittest.TestCase):
-    """Pins the committed outputread_inventory.json to its matrix of 17 visible CPU rows and
-    21 hidden DirectGPU rows, every one owned."""
+    """Pins the committed outputread_inventory.json to its matrix of 19 visible CPU rows and
+    23 hidden DirectGPU rows, every one owned."""
 
     def test_fixture_shape(self):
         rows = vi.load_inventory(str(OUTPUT_READ_INVENTORY_PATH))
-        self.assertEqual(len(rows), 38)
-        self.assertEqual(len([r for r in rows if r.device == "cpu"]), 17)
-        self.assertEqual(len([r for r in rows if r.device == "gpu"]), 21)
+        self.assertEqual(len(rows), 42)
+        self.assertEqual(len([r for r in rows if r.device == "cpu"]), 19)
+        self.assertEqual(len([r for r in rows if r.device == "gpu"]), 23)
 
     def test_every_row_is_owned_and_purposed(self):
         with open(OUTPUT_READ_INVENTORY_PATH, encoding="utf-8") as handle:
@@ -641,6 +646,7 @@ class OutputReadInventoryFixtureTests(unittest.TestCase):
 HIGH_SCALE_INVENTORY_PATH = THIS_DIR / "high_scale_inventory.json"
 CONTACT_INVENTORY_PATH = THIS_DIR / "contact_report_inventory.json"
 WRITE_ONLY_INVENTORY_PATH = THIS_DIR / "write_only_inventory.json"
+QUERY_RETENTION_INVENTORY_PATH = THIS_DIR / "query_retention_inventory.json"
 
 
 class HighScaleInventoryFixtureTests(unittest.TestCase):
@@ -683,6 +689,7 @@ class HighScaleInventoryFixtureTests(unittest.TestCase):
                 vi.load_inventory(str(HIGH_SCALE_INVENTORY_PATH)),
                 vi.load_inventory(str(CONTACT_INVENTORY_PATH)),
                 vi.load_inventory(str(WRITE_ONLY_INVENTORY_PATH)),
+                vi.load_inventory(str(QUERY_RETENTION_INVENTORY_PATH)),
             ]
         )
 
@@ -766,6 +773,57 @@ class WriteOnlyInventoryTests(unittest.TestCase):
             self.assertEqual(row.device, "cpu")
             for pattern in ("Authoring.*", "WriteScaling.*", "WriteScalingHighN.*", "RuntimeSpawnScaling.*"):
                 self.assertFalse(fnmatch.fnmatchcase(row.name, pattern))
+
+
+class QueryRetentionInventoryTests(unittest.TestCase):
+    def test_two_hidden_cpu_rows_are_isolated_from_existing_families(self):
+        import fnmatch
+
+        rows = vi.load_inventory(str(QUERY_RETENTION_INVENTORY_PATH))
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(
+            {row.name for row in rows},
+            {"QueryRetention.runtime_write_spawn_cpu", "QueryRetention.velocity_ovstage_4096_cpu"},
+        )
+        for row in rows:
+            self.assertTrue(row.hidden)
+            self.assertEqual(row.device, "cpu")
+            for pattern in ("Authoring.*", "WriteScaling.*", "WriteScalingHighN.*",
+                            "RuntimeSpawnScaling.*", "WriteOnly.*", "OutputRead.*", "ContactReport.*"):
+                self.assertFalse(fnmatch.fnmatchcase(row.name, pattern), (row.name, pattern))
+
+    def test_retention_report_requires_both_rows_and_no_original_row(self):
+        names = [row.name for row in vi.load_inventory(str(QUERY_RETENTION_INVENTORY_PATH))]
+        report = "".join(f"{name} 123 (+/-4) 0\n" for name in names)
+        vi.verify_positive_rows(report, names)
+        with self.assertRaises(vi.InventoryMismatchError):
+            vi.verify_positive_rows(report.splitlines()[0] + "\n", names)
+        with self.assertRaises(vi.InventoryMismatchError):
+            vi.verify_positive_rows(report + "Authoring.runtime_write_spawn_cpu 456 (+/-4) 0\n", names)
+
+
+class BatchedWriteInventoryTests(unittest.TestCase):
+    def test_one_hidden_cpu_row_is_separate_and_collision_free(self):
+        import fnmatch
+
+        rows = vi.load_inventory(str(THIS_DIR / "batched_write_inventory.json"))
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0].name, "BatchedWrite.runtime_write_spawn_cpu")
+        self.assertEqual(rows[0].device, "cpu")
+        self.assertTrue(rows[0].hidden)
+        for pattern in ("Authoring.*", "WriteScaling.*", "QueryRetention.*", "WriteOnly.*",
+                        "WriteScalingHighN.*", "RuntimeSpawnScaling.*", "OutputRead.*", "ContactReport.*"):
+            self.assertFalse(fnmatch.fnmatchcase(rows[0].name, pattern))
+        inventories = [vi.load_inventory(str(path)) for path in THIS_DIR.glob("*_inventory.json")]
+        vi.validate_inventory_union(inventories)
+
+    def test_positive_report_requires_exact_batch_row(self):
+        name = "BatchedWrite.runtime_write_spawn_cpu"
+        vi.verify_positive_rows(f"{name} 123 (+/-4) 0\n", [name])
+        with self.assertRaises(vi.InventoryMismatchError):
+            vi.verify_positive_rows("", [name])
+        with self.assertRaises(vi.InventoryMismatchError):
+            vi.verify_positive_rows(f"{name} 123 (+/-4) 0\nQueryRetention.runtime_write_spawn_cpu 123 (+/-4) 0\n", [name])
 
 
 if __name__ == "__main__":

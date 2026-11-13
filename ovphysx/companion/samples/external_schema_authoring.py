@@ -40,7 +40,8 @@ def populate(path):
                             values = []
                             for group in read.groups():
                                 with group:
-                                    values.extend(group.array(0).reshape(-1).tolist())
+                                    for column in group.columns:
+                                        values.extend(column.array(0).reshape(-1).tolist())
                             if len(values) != 1:
                                 raise RuntimeError(f'Population lost external parameter {path}.{name}: {values}')
                             result[path+'.'+name] = values[0]

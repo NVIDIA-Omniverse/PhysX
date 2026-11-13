@@ -6,6 +6,11 @@
  * @covers AC-1 AC-2 AC-3 AC-4 AC-5
  */
 
+/**
+ * @implements REQ-CAPI-BENCHMARK-010
+ * @covers AC-1
+ */
+
 // DEPRECATED (tensor-binding-deprecation): the binding comparison lanes retire with the binding. Session lanes stay.
 
 // App -> physics write (ADR-0012) at scale, against the equivalent tensor binding.
@@ -19,6 +24,11 @@
 //   operation  querywrite    -> query + session + fill + commit + release: what a stateless
 //                               caller pays per frame.
 //              writeonly     -> session + fill + commit, query opened once and held across steps.
+//              writedevice   -> writeonly with the payload already in device memory, as a policy's output is: the
+//                               fill is one device copy over the group's column, and the write waits for its
+//                               commits' device work. DirectGPU only, facing tensorbinding with the same placement.
+//              writecaptured -> a writedevice fill and commit on the row's stream, captured once into a CUDA graph
+//                               with the session kept open, and replayed per sample.
 //              tensorbinding -> the same payload written through a binding already built.
 //
 //   objects    rb            -> rigid bodies, cubes20 scene (~164k bodies at 8192 envs).
@@ -40,6 +50,8 @@
 //                               route, a different code path rather than other rows.
 //              arti_dof      -> articulation joint DOFs, jointPosition: the per-axis ARRAY path,
 //                               which no rigid lane has an equivalent of.
+//              deformable_kinematic_target -> volume deformables' sim-mesh node targets, the
+//                               runtime-owned buffer PhysX adopts.
 //
 // WHAT IS TIMED, and why the fill is inside it. A write session hands the caller the destination
 // buffer, so filling it IS the caller's copy. There is no second one. The binding takes a
@@ -114,6 +126,28 @@ constexpr const char* kBodyPattern = "/World/envs/*/*";
 // articulation binding lanes use, so the two files bind the same set.
 constexpr const char* kArticulationPattern = "/World/envs/env_*/Robot";
 
+#if defined(OVPHYSX_BENCHMARK_HAS_CUDA)
+// One group's payload in device memory: its tensors' floats back to back, in the group's tensor order.
+struct DevicePayload
+{
+    void* data = nullptr;
+    size_t bytes = 0;
+
+    DevicePayload() = default;
+    DevicePayload(const DevicePayload&) = delete;
+    DevicePayload& operator=(const DevicePayload&) = delete;
+    DevicePayload(DevicePayload&& other) noexcept : data(other.data), bytes(other.bytes)
+    {
+        other.data = nullptr;
+    }
+    ~DevicePayload()
+    {
+        if (data)
+            (void)cudaFree(data);
+    }
+};
+#endif
+
 class OutputWriteBase : public BmBenchmark
 {
 public:
@@ -141,6 +175,13 @@ public:
         {
             throw std::runtime_error("OutputWrite failed to initialize OVPhysX");
         }
+#if !defined(OVPHYSX_BENCHMARK_HAS_CUDA)
+        if (deviceSourced())
+        {
+            throw std::runtime_error(
+                "OutputWrite device-sourced variants require a CUDAToolkit-enabled benchmark build");
+        }
+#endif
         return true;
     }
 
@@ -201,7 +242,7 @@ public:
 
         // Prepare valid input before any write, including warm-up. Readable columns
         // snapshot the stepped scene, after DirectGPU reads become available.
-        if (!preparePayload())
+        if (!preparePayload() || (deviceSourced() && !uploadPayload()))
             return;
 
         // The first session against a fresh scene builds the backend's superset view and its row
@@ -264,7 +305,8 @@ protected:
     // bookkeeping, because on this path the dominant cost has often been in one of those.
     struct Phases
     {
-        double query = 0, open = 0, fetch = 0, fill = 0, commit = 0, releaseWrite = 0, releaseQuery = 0;
+        // `wait`: a device-sourced row's wait for its commits' device work, which the binding's write blocks for.
+        double query = 0, open = 0, fetch = 0, fill = 0, commit = 0, releaseWrite = 0, wait = 0, releaseQuery = 0;
         uint32_t samples = 0;
     };
     Phases mPhases;
@@ -282,12 +324,12 @@ protected:
             return;
         const double n = double(mPhases.samples);
         const double total = mPhases.query + mPhases.open + mPhases.fetch + mPhases.fill + mPhases.commit +
-                             mPhases.releaseWrite + mPhases.releaseQuery;
+                             mPhases.releaseWrite + mPhases.wait + mPhases.releaseQuery;
         printFormatted("%s_%u_%s PHASES (ms/sample over %u): query=%.3f open=%.3f fetch=%.3f fill=%.3f "
-                       "commit=%.3f releaseWrite=%.3f releaseQuery=%.3f total=%.3f",
+                       "commit=%.3f releaseWrite=%.3f wait=%.3f releaseQuery=%.3f total=%.3f",
                        variantName(), mEnvCount, mGpu ? "gpu" : "cpu", mPhases.samples, mPhases.query / n,
                        mPhases.open / n, mPhases.fetch / n, mPhases.fill / n, mPhases.commit / n,
-                       mPhases.releaseWrite / n, mPhases.releaseQuery / n, total / n);
+                       mPhases.releaseWrite / n, mPhases.wait / n, mPhases.releaseQuery / n, total / n);
         mPhases = Phases{};
     }
 
@@ -361,14 +403,18 @@ protected:
     virtual std::string cloneTarget(uint32_t i) const { return "/World/envs/env" + std::to_string(i + 1); }
     virtual float cloneSpacing() const { return 4.0f; }
     virtual ovphysx_query_target_t objectType() const { return OVPHYSX_QUERY_TARGET_RIGID_BODY; }
+    // Whether the payload is already on the device, as a policy's output is: warm-up uploads it once, each fill is
+    // one device copy over the group's column, and the timed write waits for its commits' device work. The binding
+    // lanes write from device memory and block until done, so these rows face them with the same placement.
+    virtual bool deviceSourced() const { return false; }
 
     // The single attribute this session writes. A session may carry several attributes, but these
     // rows deliberately time a single-attribute session: the write's property lanes measure ONE
     // attribute where the read's measure four, so each row keeps reporting the per-session cost of
     // one attribute rather than a multi-attribute plan.
-    virtual ovx_string_or_token_t writeAttr() const
+    virtual ovx_token_or_string_t writeAttr() const
     {
-        return ovx_string_or_token_t{ 0, { OVPHYSX_ATTR_POSITION, sizeof(OVPHYSX_ATTR_POSITION) - 1 } };
+        return ovx_token_or_string_t{ 0, { OVPHYSX_ATTR_POSITION, sizeof(OVPHYSX_ATTR_POSITION) - 1 } };
     }
 
     bool openQuery(ovphysx_query_handle_t& query)
@@ -388,7 +434,7 @@ protected:
     // release the session, not the query.
     bool writeWithQuery(ovphysx_query_handle_t query)
     {
-        const ovx_string_or_token_t attr = writeAttr();
+        const ovx_token_or_string_t attr = writeAttr();
         ovphysx_write_handle_t write = 0;
         uint64_t floatCount = 0; // elements the session actually handed over, for the paired-lane check
         const double tOpen = nowMs();
@@ -482,6 +528,16 @@ protected:
         if (bmCompleteTask(physx()->handle(), ovphysx_release_write(physx()->handle(), write)).status != OVPHYSX_API_SUCCESS)
             drained = false;
         mPhases.releaseWrite += nowMs() - tRel;
+#if defined(OVPHYSX_BENCHMARK_HAS_CUDA)
+        if (deviceSourced())
+        {
+            // The commits ran on the legacy default stream ({0, 0} above).
+            const double tWait = nowMs();
+            if (cudaStreamSynchronize(nullptr) != cudaSuccess)
+                drained = false;
+            mPhases.wait += nowMs() - tWait;
+        }
+#endif
         ++mPhases.samples;
         if (!drained)
             return false;
@@ -554,17 +610,26 @@ protected:
     // Snapshot readable values once, before any writes. In particular, writing the same
     // position to every body collapses the scene into one contact pile. Owned snapshots
     // preserve separated poses and valid property values across the timed writes.
-    bool preparePayload()
+    virtual bool preparePayload()
     {
-        const ovx_string_or_token_t attr = writeAttr();
+        const ovx_token_or_string_t attr = writeAttr();
         const std::string name(attr.string.ptr, attr.string.length);
         if (name == OVPHYSX_ATTR_FORCE || name == OVPHYSX_ATTR_WRENCH)
             return true;
+        return readSnapshot(attr, mPayload);
+    }
+
+    // Reads `attr` over the row's object type and appends it to `out`: per group, each tensor's floats, copied to the
+    // host. False, having printed why, when the read fails or returns nothing.
+    bool readSnapshot(const ovx_token_or_string_t& attr, std::vector<std::vector<std::vector<float>>>& out)
+    {
+        const std::string name(attr.string.ptr, attr.string.length);
+        const size_t before = out.size();
         ovphysx_query_handle_t query = 0;
         if (!openQuery(query))
             return false;
         ovphysx_read_handle_t read = 0;
-        bool ok = bmCompleteTask(physx()->handle(), ovphysx_read(physx()->handle(), query, &attr, 1, &read, nullptr)).status == OVPHYSX_API_SUCCESS && read != 0;
+        bool ok = bmCompleteTask(physx()->handle(), ovphysx_read(physx()->handle(), query, &attr, 1, ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr)).status == OVPHYSX_API_SUCCESS && read != 0;
         if (ok)
         {
             const ovstage_read_group_t* group = nullptr;
@@ -573,27 +638,27 @@ protected:
                 const ovphysx_api_status_t status = bmCompleteTask(physx()->handle(), ovphysx_fetch_read_next(physx()->handle(), read, &group)).status;
                 if (status == OVPHYSX_API_SUCCESS && !group)
                     break;
-                if (status != OVPHYSX_API_SUCCESS || !group || !group->data.tensors)
+                if (status != OVPHYSX_API_SUCCESS || !group || !group->columns[0].data.tensors)
                 {
                     ok = false;
                     break;
                 }
 #if defined(OVPHYSX_BENCHMARK_HAS_CUDA)
-                if (group->data.cuda_sync.wait_event)
-                    ok = cudaEventSynchronize(reinterpret_cast<cudaEvent_t>(group->data.cuda_sync.wait_event)) ==
+                if (group->columns[0].data.cuda_sync.wait_event)
+                    ok = cudaEventSynchronize(reinterpret_cast<cudaEvent_t>(group->columns[0].data.cuda_sync.wait_event)) ==
                          cudaSuccess;
-                else if (group->data.cuda_sync.stream)
+                else if (group->columns[0].data.cuda_sync.stream)
                 {
-                    const cudaStream_t stream = group->data.cuda_sync.stream == 1 ?
+                    const cudaStream_t stream = group->columns[0].data.cuda_sync.stream == 1 ?
                                                     cudaStream_t{} :
-                                                    reinterpret_cast<cudaStream_t>(group->data.cuda_sync.stream);
+                                                    reinterpret_cast<cudaStream_t>(group->columns[0].data.cuda_sync.stream);
                     ok = cudaStreamSynchronize(stream) == cudaSuccess;
                 }
 #endif
                 std::vector<std::vector<float>> tensors;
-                for (uint32_t i = 0; ok && i < group->data.tensor_count; ++i)
+                for (uint32_t i = 0; ok && i < group->columns[0].data.tensor_count; ++i)
                 {
-                    const DLTensor& tensor = group->data.tensors[i];
+                    const DLTensor& tensor = group->columns[0].data.tensors[i];
                     const size_t floats = tensorFloats(tensor);
                     if (floats == 0)
                     {
@@ -612,7 +677,7 @@ protected:
                     else
                         ok = false;
                 }
-                mPayload.push_back(std::move(tensors));
+                out.push_back(std::move(tensors));
                 const ovstage_read_group_id_t id = group->read_group_id;
                 group = nullptr;
                 if (bmCompleteTask(physx()->handle(), ovphysx_release_group(physx()->handle(), read, id)).status != OVPHYSX_API_SUCCESS)
@@ -625,16 +690,19 @@ protected:
         }
         if (bmCompleteTask(physx()->handle(), ovphysx_release_query(physx()->handle(), query)).status != OVPHYSX_API_SUCCESS)
             ok = false;
-        if (!ok || mPayload.empty())
+        if (!ok || out.size() == before)
         {
-            printFormatted("OutputWrite: initial payload read failed for %s", name.c_str());
+            printFormatted("OutputWrite: read failed for %s", name.c_str());
             return false;
         }
         return true;
     }
 
+    // The payload the fills copy from: per group, each tensor's floats.
+    std::vector<std::vector<std::vector<float>>>& payload() { return mPayload; }
+
     // All current write columns are compact float32 tensors. Account for every
-    // dimension and every ARRAY tensor, including per-joint and per-shape data.
+    // dimension and every ARRAY tensor, including per-shape data.
     static size_t tensorFloats(const DLTensor& tensor)
     {
         if (!tensor.data || !tensor.shape || tensor.ndim < 1 || tensor.dtype.code != kDLFloat ||
@@ -650,6 +718,33 @@ protected:
         return elements * tensor.dtype.lanes;
     }
 
+    // A device-sourced row's payload, uploaded once per run: one buffer per group, holding what the group's tensors
+    // hold, back to back.
+    bool uploadPayload()
+    {
+#if defined(OVPHYSX_BENCHMARK_HAS_CUDA)
+        mDevicePayload.clear();
+        for (const std::vector<std::vector<float>>& group : mPayload)
+        {
+            std::vector<float> column;
+            for (const std::vector<float>& tensor : group)
+                column.insert(column.end(), tensor.begin(), tensor.end());
+            DevicePayload payload;
+            payload.bytes = column.size() * sizeof(float);
+            if (cudaMalloc(&payload.data, payload.bytes) != cudaSuccess ||
+                cudaMemcpy(payload.data, column.data(), payload.bytes, cudaMemcpyHostToDevice) != cudaSuccess)
+            {
+                printFormatted("OutputWrite: device payload upload failed");
+                return false;
+            }
+            mDevicePayload.push_back(std::move(payload));
+        }
+        return true;
+#else
+        return false;
+#endif
+    }
+
     // The copy into the session destination remains inside the measured region.
     bool fillGroup(const ovstage_map_group_t& group, uint32_t groupIndex)
     {
@@ -657,6 +752,33 @@ protected:
             return false;
         if (!mPayload.empty() && (groupIndex >= mPayload.size() || mPayload[groupIndex].size() != group.data.tensor_count))
             return false;
+#if defined(OVPHYSX_BENCHMARK_HAS_CUDA)
+        if (deviceSourced())
+        {
+            const DLTensor& first = group.data.tensors[0];
+            if (groupIndex >= mDevicePayload.size() || first.device.device_type != kDLCUDA)
+                return false;
+            char* const column = static_cast<char*>(first.data) + first.byte_offset;
+            // Checked while warming, out of the measured region: one copy covers the group only when its tensors are
+            // one column, each starting where the one before it ends.
+            if (mCountPayload)
+            {
+                size_t bytes = 0;
+                for (uint32_t i = 0; i < group.data.tensor_count; ++i)
+                {
+                    const DLTensor& tensor = group.data.tensors[i];
+                    if (tensor.device.device_type != kDLCUDA ||
+                        static_cast<char*>(tensor.data) + tensor.byte_offset != column + bytes)
+                        return false;
+                    bytes += tensorFloats(tensor) * sizeof(float);
+                }
+                if (bytes != mDevicePayload[groupIndex].bytes)
+                    return false;
+            }
+            return cudaMemcpy(column, mDevicePayload[groupIndex].data, mDevicePayload[groupIndex].bytes,
+                              cudaMemcpyDeviceToDevice) == cudaSuccess;
+        }
+#endif
         for (uint32_t i = 0; i < group.data.tensor_count; ++i)
         {
             const DLTensor& tensor = group.data.tensors[i];
@@ -728,6 +850,9 @@ protected:
 private:
     std::vector<std::vector<std::vector<float>>> mPayload;
     std::vector<float> mHostPayload; // staging for the device fill; grown once
+#if defined(OVPHYSX_BENCHMARK_HAS_CUDA)
+    std::vector<DevicePayload> mDevicePayload; // per group, for a device-sourced row
+#endif
     uint32_t mFailedWrites = 0;
     uint32_t mAttempts = 0;
     uint32_t mLastGroupCount = 0;
@@ -1051,9 +1176,9 @@ public:
     PropertyWriteBase(uint32_t envCount, bool gpu) : WriteOnlyBase(envCount, gpu) {}
 
 protected:
-    ovx_string_or_token_t writeAttr() const override
+    ovx_token_or_string_t writeAttr() const override
     {
-        return ovx_string_or_token_t{ 0, { OVPHYSX_ATTR_INERTIA, sizeof(OVPHYSX_ATTR_INERTIA) - 1 } };
+        return ovx_token_or_string_t{ 0, { OVPHYSX_ATTR_INERTIA, sizeof(OVPHYSX_ATTR_INERTIA) - 1 } };
     }
 };
 
@@ -1067,9 +1192,9 @@ public:
 protected:
     ovphysx_tensor_type_t bindingTensorType() const override { return OVPHYSX_TENSOR_RIGID_BODY_INERTIA_F32; }
     const char* bindingName() const override { return "inertia"; }
-    ovx_string_or_token_t writeAttr() const override
+    ovx_token_or_string_t writeAttr() const override
     {
-        return ovx_string_or_token_t{ 0, { OVPHYSX_ATTR_INERTIA, sizeof(OVPHYSX_ATTR_INERTIA) - 1 } };
+        return ovx_token_or_string_t{ 0, { OVPHYSX_ATTR_INERTIA, sizeof(OVPHYSX_ATTR_INERTIA) - 1 } };
     }
     uint32_t seedStride() const override { return 9; }
     // A positive diagonal: a singular or zero inertia is not a value PhysX accepts as a body's, and
@@ -1090,9 +1215,9 @@ protected:
     // `staticFriction` rather than `contactOffset`: it carries the material indirection
     // (getMaterials per shape, one hop more than a shape getter), which is the cost that makes a
     // per-shape write different from a per-body one.
-    ovx_string_or_token_t writeAttr() const override
+    ovx_token_or_string_t writeAttr() const override
     {
-        return ovx_string_or_token_t{ 0, { OVPHYSX_ATTR_STATIC_FRICTION, sizeof(OVPHYSX_ATTR_STATIC_FRICTION) - 1 } };
+        return ovx_token_or_string_t{ 0, { OVPHYSX_ATTR_STATIC_FRICTION, sizeof(OVPHYSX_ATTR_STATIC_FRICTION) - 1 } };
     }
     // Branches on mGpu as the base does, so a GPU registration cannot silently load the CPU scene.
     const char* sceneAsset() const override
@@ -1124,9 +1249,9 @@ public:
 
 protected:
     ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_ARTICULATION; }
-    ovx_string_or_token_t writeAttr() const override
+    ovx_token_or_string_t writeAttr() const override
     {
-        return ovx_string_or_token_t{
+        return ovx_token_or_string_t{
             0, { OVPHYSX_ATTR_ROOT_POSITION, sizeof(OVPHYSX_ATTR_ROOT_POSITION) - 1 }
         };
     }
@@ -1166,9 +1291,9 @@ protected:
     {
         return OVPHYSX_QUERY_TARGET_ARTICULATION;
     }
-    ovx_string_or_token_t writeAttr() const override
+    ovx_token_or_string_t writeAttr() const override
     {
-        return ovx_string_or_token_t{ 0, { OVPHYSX_ATTR_ROOT_POSITION, sizeof(OVPHYSX_ATTR_ROOT_POSITION) - 1 } };
+        return ovx_token_or_string_t{ 0, { OVPHYSX_ATTR_ROOT_POSITION, sizeof(OVPHYSX_ATTR_ROOT_POSITION) - 1 } };
     }
     // 7 floats with qw last, same as the rigid pose: seeding zeros would hand PhysX a degenerate
     // quaternion and change what the solver does between samples.
@@ -1187,9 +1312,9 @@ protected:
 };
 
 
-// Articulation joint DOFs, the per-axis ARRAY path, one tensor per joint rather than one stacking
-// every prim. No rigid lane has that shape, so this has nothing to be compared against on the
-// ovphysx side. The binding lane below is what gives it a facing number.
+// Articulation joint DOFs, one row per DOF through the joint record path. No rigid lane writes
+// through that path, so this has nothing to be compared against on the ovphysx side. The binding
+// lane below is what gives it a facing number.
 //
 class ArticulationDofWriteBase : public WriteOnlyBase
 {
@@ -1198,9 +1323,9 @@ public:
 
 protected:
     ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT; }
-    ovx_string_or_token_t writeAttr() const override
+    ovx_token_or_string_t writeAttr() const override
     {
-        return ovx_string_or_token_t{ 0,
+        return ovx_token_or_string_t{ 0,
                                       { OVPHYSX_ATTR_JOINT_POSITION, sizeof(OVPHYSX_ATTR_JOINT_POSITION) - 1 } };
     }
     const char* sceneAsset() const override
@@ -1234,9 +1359,9 @@ protected:
     {
         return OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT;
     }
-    ovx_string_or_token_t writeAttr() const override
+    ovx_token_or_string_t writeAttr() const override
     {
-        return ovx_string_or_token_t{ 0, { OVPHYSX_ATTR_JOINT_POSITION, sizeof(OVPHYSX_ATTR_JOINT_POSITION) - 1 } };
+        return ovx_token_or_string_t{ 0, { OVPHYSX_ATTR_JOINT_POSITION, sizeof(OVPHYSX_ATTR_JOINT_POSITION) - 1 } };
     }
     // A DOF position is one scalar with no validity constraint (no quaternion to keep normalized
     // and no matrix to keep non-singular), so a zeroed row is a legitimate value here, unlike the
@@ -1281,9 +1406,9 @@ protected:
     {
         return "/World/envs/env_" + std::to_string(i + 1);
     }
-    ovx_string_or_token_t writeAttr() const override
+    ovx_token_or_string_t writeAttr() const override
     {
-        return ovx_string_or_token_t{
+        return ovx_token_or_string_t{
             0, { OVPHYSX_ATTR_TENDON_STIFFNESS, sizeof(OVPHYSX_ATTR_TENDON_STIFFNESS) - 1 }
         };
     }
@@ -1376,9 +1501,9 @@ public:
     ForceWriteBase(uint32_t envCount, bool gpu) : WriteOnlyBase(envCount, gpu) {}
 
 protected:
-    ovx_string_or_token_t writeAttr() const override
+    ovx_token_or_string_t writeAttr() const override
     {
-        return ovx_string_or_token_t{ 0, { OVPHYSX_ATTR_FORCE, sizeof(OVPHYSX_ATTR_FORCE) - 1 } };
+        return ovx_token_or_string_t{ 0, { OVPHYSX_ATTR_FORCE, sizeof(OVPHYSX_ATTR_FORCE) - 1 } };
     }
 };
 
@@ -1390,9 +1515,9 @@ public:
     WrenchWriteBase(uint32_t envCount, bool gpu) : WriteOnlyBase(envCount, gpu) {}
 
 protected:
-    ovx_string_or_token_t writeAttr() const override
+    ovx_token_or_string_t writeAttr() const override
     {
-        return ovx_string_or_token_t{ 0, { OVPHYSX_ATTR_WRENCH, sizeof(OVPHYSX_ATTR_WRENCH) - 1 } };
+        return ovx_token_or_string_t{ 0, { OVPHYSX_ATTR_WRENCH, sizeof(OVPHYSX_ATTR_WRENCH) - 1 } };
     }
 };
 
@@ -1406,9 +1531,9 @@ public:
 
 protected:
     ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_ARTICULATION_LINK; }
-    ovx_string_or_token_t writeAttr() const override
+    ovx_token_or_string_t writeAttr() const override
     {
-        return ovx_string_or_token_t{ 0, { OVPHYSX_ATTR_WRENCH, sizeof(OVPHYSX_ATTR_WRENCH) - 1 } };
+        return ovx_token_or_string_t{ 0, { OVPHYSX_ATTR_WRENCH, sizeof(OVPHYSX_ATTR_WRENCH) - 1 } };
     }
     const char* sceneAsset() const override
     {
@@ -1430,9 +1555,9 @@ public:
     ForceBindingWriteBase(uint32_t envCount, bool gpu) : TensorBindingWriteBase(envCount, gpu) {}
 
 protected:
-    ovx_string_or_token_t writeAttr() const override
+    ovx_token_or_string_t writeAttr() const override
     {
-        return ovx_string_or_token_t{ 0, { OVPHYSX_ATTR_FORCE, sizeof(OVPHYSX_ATTR_FORCE) - 1 } };
+        return ovx_token_or_string_t{ 0, { OVPHYSX_ATTR_FORCE, sizeof(OVPHYSX_ATTR_FORCE) - 1 } };
     }
     ovphysx_tensor_type_t bindingTensorType() const override { return OVPHYSX_TENSOR_RIGID_BODY_FORCE_F32; }
     const char* bindingName() const override { return "force"; }
@@ -1448,9 +1573,9 @@ public:
     WrenchBindingWriteBase(uint32_t envCount, bool gpu) : TensorBindingWriteBase(envCount, gpu) {}
 
 protected:
-    ovx_string_or_token_t writeAttr() const override
+    ovx_token_or_string_t writeAttr() const override
     {
-        return ovx_string_or_token_t{ 0, { OVPHYSX_ATTR_WRENCH, sizeof(OVPHYSX_ATTR_WRENCH) - 1 } };
+        return ovx_token_or_string_t{ 0, { OVPHYSX_ATTR_WRENCH, sizeof(OVPHYSX_ATTR_WRENCH) - 1 } };
     }
     ovphysx_tensor_type_t bindingTensorType() const override { return OVPHYSX_TENSOR_RIGID_BODY_WRENCH_F32; }
     const char* bindingName() const override { return "wrench"; }
@@ -1465,9 +1590,9 @@ public:
 
 protected:
     ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_ARTICULATION_LINK; }
-    ovx_string_or_token_t writeAttr() const override
+    ovx_token_or_string_t writeAttr() const override
     {
-        return ovx_string_or_token_t{ 0, { OVPHYSX_ATTR_WRENCH, sizeof(OVPHYSX_ATTR_WRENCH) - 1 } };
+        return ovx_token_or_string_t{ 0, { OVPHYSX_ATTR_WRENCH, sizeof(OVPHYSX_ATTR_WRENCH) - 1 } };
     }
     const char* bindingPattern() const override { return kArticulationPattern; }
     ovphysx_tensor_type_t bindingTensorType() const override
@@ -1553,9 +1678,9 @@ public:
     }
 
 protected:
-    ovx_string_or_token_t writeAttr() const override
+    ovx_token_or_string_t writeAttr() const override
     {
-        return ovx_string_or_token_t{ 0, { OVPHYSX_ATTR_LINEAR_VELOCITY, sizeof(OVPHYSX_ATTR_LINEAR_VELOCITY) - 1 } };
+        return ovx_token_or_string_t{ 0, { OVPHYSX_ATTR_LINEAR_VELOCITY, sizeof(OVPHYSX_ATTR_LINEAR_VELOCITY) - 1 } };
     }
 };
 
@@ -1613,9 +1738,9 @@ public:
     ArticulationDofPropertyWriteBase(uint32_t envCount, bool gpu) : ArticulationDofWriteBase(envCount, gpu) {}
 
 protected:
-    ovx_string_or_token_t writeAttr() const override
+    ovx_token_or_string_t writeAttr() const override
     {
-        return ovx_string_or_token_t{ 0,
+        return ovx_token_or_string_t{ 0,
                                       { OVPHYSX_ATTR_JOINT_STIFFNESS, sizeof(OVPHYSX_ATTR_JOINT_STIFFNESS) - 1 } };
     }
 };
@@ -1659,9 +1784,9 @@ public:
 
 protected:
     ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_DEFORMABLE_MATERIAL; }
-    ovx_string_or_token_t writeAttr() const override
+    ovx_token_or_string_t writeAttr() const override
     {
-        return ovx_string_or_token_t{
+        return ovx_token_or_string_t{
             0, { OVPHYSX_ATTR_DEFORMABLE_YOUNGS_MODULUS, sizeof(OVPHYSX_ATTR_DEFORMABLE_YOUNGS_MODULUS) - 1 }
         };
     }
@@ -1684,9 +1809,9 @@ public:
 
 protected:
     ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_DEFORMABLE_VOLUME; }
-    ovx_string_or_token_t writeAttr() const override
+    ovx_token_or_string_t writeAttr() const override
     {
-        return ovx_string_or_token_t{ 0, { OVPHYSX_ATTR_POINTS, sizeof(OVPHYSX_ATTR_POINTS) - 1 } };
+        return ovx_token_or_string_t{ 0, { OVPHYSX_ATTR_POINTS, sizeof(OVPHYSX_ATTR_POINTS) - 1 } };
     }
 };
 
@@ -1707,11 +1832,393 @@ public:
 
 protected:
     ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_PARTICLE_SET; }
-    ovx_string_or_token_t writeAttr() const override
+    ovx_token_or_string_t writeAttr() const override
     {
-        return ovx_string_or_token_t{ 0, { OVPHYSX_ATTR_POINTS, sizeof(OVPHYSX_ATTR_POINTS) - 1 } };
+        return ovx_token_or_string_t{ 0, { OVPHYSX_ATTR_POINTS, sizeof(OVPHYSX_ATTR_POINTS) - 1 } };
     }
 };
+
+
+// Volume-deformable kinematic targets (ADR-0012): per sim-mesh node, f32 x 4, `w == 0` driving the node to its
+// `xyz`. The commit writes them into the per-body buffer PhysX adopts, and asks the device on the host whether the
+// write frees a driven node and which bodies it drives, so it waits for the device and cannot be captured. The three
+// rows over the same 128 volumes measure that:
+//
+//   writeonly_deformable_kinematic_target     -> a session opened, filled from the host, committed and released per
+//                                                sample.
+//   writedevice_deformable_kinematic_target   -> the same with the targets already on the device, as a policy's
+//                                                output is, and the commit's device work waited for.
+//   writecaptured_deformable_kinematic_target -> a device fill and commit on the row's stream, captured once into a
+//                                                CUDA graph and replayed per sample. Fails at setup while the commit
+//                                                cannot be captured.
+//
+// The payload drives every node where the `points` read found it: the kinematic-target read returns only bodies
+// already driven, so it cannot seed the first write. Each row reads the targets back after its samples and fails
+// unless they are the last ones written, so a commit or replay that writes nothing cannot pass for a fast one.
+class DeformableKinematicTargetWriteBase : public AuthoredEnvWriteSceneT<WriteOnlyBase>
+{
+public:
+    DeformableKinematicTargetWriteBase(uint32_t envCount, bool gpu)
+        : AuthoredEnvWriteSceneT<WriteOnlyBase>(envCount, gpu, "deformables")
+    {
+    }
+
+    void endRun() override
+    {
+        if (mSetupOk)
+        {
+            closeSession();
+            // A failed write is the cause to report, before the targets it left behind.
+            finishRun();
+            checkTargets();
+        }
+        WriteOnlyBase::endRun();
+    }
+
+protected:
+    ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_DEFORMABLE_VOLUME; }
+    ovx_token_or_string_t writeAttr() const override
+    {
+        return ovx_token_or_string_t{ 0, { OVPHYSX_ATTR_KINEMATIC_TARGET, sizeof(OVPHYSX_ATTR_KINEMATIC_TARGET) - 1 } };
+    }
+
+    bool preparePayload() override
+    {
+        const ovx_token_or_string_t points{ 0, { OVPHYSX_ATTR_POINTS, sizeof(OVPHYSX_ATTR_POINTS) - 1 } };
+        std::vector<std::vector<std::vector<float>>> read;
+        if (!readSnapshot(points, read))
+            return false;
+        std::vector<std::vector<std::vector<float>>>& targets = payload();
+        targets.clear();
+        for (const std::vector<std::vector<float>>& group : read)
+        {
+            targets.emplace_back();
+            for (const std::vector<float>& tensor : group)
+            {
+                if (tensor.size() % 3 != 0)
+                {
+                    printFormatted("OutputWrite: a deformable's points are not three floats per node");
+                    return false;
+                }
+                std::vector<float> nodes;
+                nodes.reserve(tensor.size() / 3 * 4);
+                for (size_t i = 0; i < tensor.size(); i += 3)
+                    nodes.insert(nodes.end(), { tensor[i], tensor[i + 1], tensor[i + 2], 0.0f });
+                targets.back().push_back(std::move(nodes));
+            }
+        }
+        return true;
+    }
+
+    // The targets the last sample wrote.
+    virtual const std::vector<std::vector<std::vector<float>>>& lastWritten() { return payload(); }
+    // Releases what the captured row keeps open across its samples, before the targets are read back.
+    virtual void closeSession() {}
+
+private:
+    void checkTargets()
+    {
+        std::vector<std::vector<std::vector<float>>> read;
+        const std::vector<std::vector<std::vector<float>>>& written = lastWritten();
+        std::string mismatch;
+        if (!readSnapshot(writeAttr(), read))
+            mismatch = "the targets could not be read back";
+        else if (read.size() != written.size())
+            mismatch = "the targets read back have " + std::to_string(read.size()) + " groups, the write had " +
+                       std::to_string(written.size());
+        for (size_t g = 0; g < read.size() && mismatch.empty(); ++g)
+        {
+            if (read[g].size() != written[g].size())
+            {
+                mismatch = "group " + std::to_string(g) + " has a different body count";
+                break;
+            }
+            for (size_t t = 0; t < read[g].size() && mismatch.empty(); ++t)
+            {
+                if (read[g][t].size() != written[g][t].size())
+                {
+                    mismatch = "body " + std::to_string(t) + " has a different node count";
+                    break;
+                }
+                for (size_t f = 0; f < read[g][t].size(); ++f)
+                {
+                    const float expected = written[g][t][f];
+                    if (std::fabs(read[g][t][f] - expected) > 1e-4f * std::fmax(1.0f, std::fabs(expected)))
+                    {
+                        mismatch = "body " + std::to_string(t) + " float " + std::to_string(f) + " reads " +
+                                   std::to_string(read[g][t][f]) + ", the last write was " + std::to_string(expected);
+                        break;
+                    }
+                }
+            }
+        }
+        if (!mismatch.empty() && recordRowFailure())
+            bmRecordFailure(registeredRow().c_str(), "the kinematic targets after the samples are not the last ones "
+                                                     "written: %s",
+                            mismatch.c_str());
+    }
+};
+
+#if defined(OVPHYSX_BENCHMARK_HAS_CUDA)
+// The captured row. A write group is committed once per session, but a replay runs the captured commit again, so the
+// session stays open for the run. The fill copies a device buffer holding the policy's output into the session's
+// column. The policy output alternates between the first payload and one raised by kTargetStep, set between samples
+// outside the timing, so every replay writes targets different from the last.
+class DeformableKinematicTargetCapturedWriteBase : public DeformableKinematicTargetWriteBase
+{
+public:
+    DeformableKinematicTargetCapturedWriteBase(uint32_t envCount, bool gpu)
+        : DeformableKinematicTargetWriteBase(envCount, gpu)
+    {
+    }
+    ~DeformableKinematicTargetCapturedWriteBase() override { releaseCuda(); }
+
+    void startRun() override
+    {
+        DeformableKinematicTargetWriteBase::startRun();
+        if (!mSetupOk)
+            return;
+        mSetupOk = false;
+        std::string failure;
+        if (!openSession(failure))
+        {
+            closeSession();
+            releaseCuda();
+            if (recordRowFailure())
+                bmRecordFailure(registeredRow().c_str(), "%s", failure.c_str());
+            return;
+        }
+        mSetupOk = true;
+    }
+
+    void preStep() override
+    {
+        DeformableKinematicTargetWriteBase::preStep();
+        if (!mSetupOk)
+            return;
+        mNext = 1 - mWritten;
+        // On the row's stream, and finished before the sample: a device-to-device cudaMemcpy may return before the
+        // copy lands, and nothing would order the replay after it.
+        for (Column& column : mColumns)
+            if (cudaMemcpyAsync(column.policy.data, column.targets[mNext].data, column.policy.bytes,
+                                cudaMemcpyDeviceToDevice, mStream) != cudaSuccess)
+                mPolicyFailed = true;
+        if (cudaStreamSynchronize(mStream) != cudaSuccess)
+            mPolicyFailed = true;
+    }
+
+    void endRun() override
+    {
+        DeformableKinematicTargetWriteBase::endRun();
+        releaseCuda();
+    }
+
+protected:
+    bool timedWrite() override
+    {
+        if (mPolicyFailed)
+            return false;
+        const double tLaunch = nowMs();
+        bool ok = cudaGraphLaunch(mExec, mStream) == cudaSuccess;
+        const double tWait = nowMs();
+        mPhases.commit += tWait - tLaunch;
+        // Every device use of the commit, on the row's stream or the legacy default stream, finishes in the sample.
+        ok = cudaStreamSynchronize(mStream) == cudaSuccess && cudaStreamSynchronize(nullptr) == cudaSuccess && ok;
+        mPhases.wait += nowMs() - tWait;
+        ++mPhases.samples;
+        mWritten = mNext;
+        return ok;
+    }
+
+    const std::vector<std::vector<std::vector<float>>>& lastWritten() override { return mHostTargets[mWritten]; }
+
+    void closeSession() override
+    {
+        if (mSession && bmCompleteTask(physx()->handle(), ovphysx_release_write(physx()->handle(), mSession)).status !=
+                            OVPHYSX_API_SUCCESS &&
+            recordRowFailure())
+            bmRecordFailure(registeredRow().c_str(), "write session release failed during teardown");
+        mSession = 0;
+        if (mSessionQuery &&
+            bmCompleteTask(physx()->handle(), ovphysx_release_query(physx()->handle(), mSessionQuery)).status !=
+                OVPHYSX_API_SUCCESS &&
+            recordRowFailure())
+            bmRecordFailure(registeredRow().c_str(), "query release failed during teardown");
+        mSessionQuery = 0;
+        mColumns.clear();
+    }
+
+private:
+    // Raised on every node's `z`, in the sim mesh's frame: a few millimetres, so the bodies barely move.
+    static constexpr float kTargetStep = 0.002f;
+
+    struct Column
+    {
+        const ovstage_map_group_t* group = nullptr;
+        void* start = nullptr;
+        DevicePayload targets[2];
+        DevicePayload policy;
+    };
+
+    bool commit(const Column& column)
+    {
+        return bmCompleteTask(physx()->handle(),
+                              ovphysx_commit_group(physx()->handle(), mSession, column.group,
+                                                   ovstage_cuda_sync_t{ reinterpret_cast<uintptr_t>(mStream), 0 }))
+                   .status == OVPHYSX_API_SUCCESS;
+    }
+
+    static bool upload(DevicePayload& payload, const std::vector<float>& host)
+    {
+        payload.bytes = host.size() * sizeof(float);
+        return cudaMalloc(&payload.data, payload.bytes) == cudaSuccess &&
+               cudaMemcpy(payload.data, host.data(), payload.bytes, cudaMemcpyHostToDevice) == cudaSuccess;
+    }
+
+    // Opens the session, uploads both target sets and the policy output, and captures the fill and commit. False with
+    // `failure` saying why.
+    bool openSession(std::string& failure)
+    {
+        mHostTargets[0] = payload();
+        mHostTargets[1] = payload();
+        for (std::vector<std::vector<float>>& group : mHostTargets[1])
+            for (std::vector<float>& nodes : group)
+                for (size_t i = 2; i < nodes.size(); i += 4)
+                    nodes[i] += kTargetStep;
+        if (cudaSetDevice(0) != cudaSuccess ||
+            cudaStreamCreateWithFlags(&mStream, cudaStreamNonBlocking) != cudaSuccess)
+        {
+            failure = "the row's CUDA stream could not be created";
+            return false;
+        }
+        const ovx_token_or_string_t attr = writeAttr();
+        if (!openQuery(mSessionQuery) ||
+            bmCompleteTask(physx()->handle(), ovphysx_write(physx()->handle(), mSessionQuery, &attr, 1, &mSession,
+                                                            nullptr))
+                    .status != OVPHYSX_API_SUCCESS ||
+            mSession == 0)
+        {
+            failure = "the kinematic-target write session could not be opened";
+            return false;
+        }
+        for (;;)
+        {
+            ovphysx_fetched_write_group_t fetched{};
+            if (bmCompleteTask(physx()->handle(), ovphysx_fetch_write_next(physx()->handle(), mSession, &fetched))
+                    .status != OVPHYSX_API_SUCCESS)
+            {
+                failure = "a kinematic-target write group could not be fetched";
+                return false;
+            }
+            if (!fetched.group)
+                break;
+            const size_t g = mColumns.size();
+            const ovstage_map_group_t& group = *fetched.group;
+            if (g >= mHostTargets[0].size() || group.data.tensor_count != mHostTargets[0][g].size())
+            {
+                failure = "the kinematic-target write does not cover the bodies the points read did";
+                return false;
+            }
+            // One copy fills the group only when its tensors are one column, each starting where the one before ends.
+            char* const start = static_cast<char*>(group.data.tensors[0].data) + group.data.tensors[0].byte_offset;
+            size_t bytes = 0;
+            for (uint32_t t = 0; t < group.data.tensor_count; ++t)
+            {
+                const DLTensor& tensor = group.data.tensors[t];
+                if (tensor.device.device_type != kDLCUDA ||
+                    static_cast<char*>(tensor.data) + tensor.byte_offset != start + bytes ||
+                    tensorFloats(tensor) != mHostTargets[0][g][t].size())
+                {
+                    failure = "a kinematic-target write group is not one device column the size of the bodies' nodes";
+                    return false;
+                }
+                bytes += tensorFloats(tensor) * sizeof(float);
+            }
+            mColumns.emplace_back();
+            Column& column = mColumns.back();
+            column.group = fetched.group;
+            column.start = start;
+            for (int set = 0; set < 2; ++set)
+            {
+                std::vector<float> floats;
+                for (const std::vector<float>& nodes : mHostTargets[set][g])
+                    floats.insert(floats.end(), nodes.begin(), nodes.end());
+                if (!upload(column.targets[set], floats) || (set == 0 && !upload(column.policy, floats)))
+                {
+                    failure = "the kinematic targets could not be uploaded";
+                    return false;
+                }
+            }
+            if (group.data.cuda_sync.wait_event &&
+                cudaStreamWaitEvent(mStream, reinterpret_cast<cudaEvent_t>(group.data.cuda_sync.wait_event), 0) !=
+                    cudaSuccess)
+            {
+                failure = "the row's stream could not wait for the session's column";
+                return false;
+            }
+        }
+        if (mColumns.size() != mHostTargets[0].size())
+        {
+            failure = "the kinematic-target write does not cover the bodies the points read did";
+            return false;
+        }
+        mWritten = mNext = 0;
+        if (cudaStreamBeginCapture(mStream, cudaStreamCaptureModeThreadLocal) != cudaSuccess)
+        {
+            failure = "the capture could not begin";
+            return false;
+        }
+        bool recorded = true;
+        for (const Column& column : mColumns)
+        {
+            recorded = recorded && cudaMemcpyAsync(column.start, column.policy.data, column.policy.bytes,
+                                                   cudaMemcpyDeviceToDevice, mStream) == cudaSuccess;
+            if (recorded && !commit(column))
+            {
+                failure = "the kinematic-target commit could not be captured into a CUDA graph";
+                recorded = false;
+            }
+        }
+        const cudaError_t ended = cudaStreamEndCapture(mStream, &mGraph);
+        if (!recorded || ended != cudaSuccess || !mGraph || cudaGraphInstantiate(&mExec, mGraph, 0) != cudaSuccess)
+        {
+            if (failure.empty())
+                failure = "the kinematic-target fill and commit could not be captured into a CUDA graph";
+            (void)cudaGetLastError();
+            return false;
+        }
+        return true;
+    }
+
+    void releaseCuda()
+    {
+        if (mStream)
+            (void)cudaStreamSynchronize(mStream);
+        if (mExec)
+            (void)cudaGraphExecDestroy(mExec);
+        if (mGraph)
+            (void)cudaGraphDestroy(mGraph);
+        if (mStream)
+            (void)cudaStreamDestroy(mStream);
+        mExec = nullptr;
+        mGraph = nullptr;
+        mStream = nullptr;
+        mColumns.clear();
+        mPolicyFailed = false;
+    }
+
+    ovphysx_query_handle_t mSessionQuery = 0;
+    ovphysx_write_handle_t mSession = 0;
+    std::vector<Column> mColumns;
+    std::vector<std::vector<std::vector<float>>> mHostTargets[2];
+    int mNext = 0;
+    int mWritten = 0;
+    bool mPolicyFailed = false;
+    cudaStream_t mStream = nullptr;
+    cudaGraph_t mGraph = nullptr;
+    cudaGraphExec_t mExec = nullptr;
+};
+#endif
 
 
 #define DEFINE_ARTI_DOF_WRITE(N, device, gpu, hide)                            \
@@ -1771,6 +2278,17 @@ protected:
 #define DEFINE_INSTANCER_VEL_WRITE(N, device, gpu, hide)                       \
     DEFINE_OUTPUT_WRITE_VARIANT(InstancerVelocityWriteBase, InstancerVelocityWrite, writeonly_rb_instancer_vel, N, device, gpu, hide)
 
+// A held-query row with its payload on the device (deviceSourced), facing the tensorbinding row over the same objects.
+template <typename WriteBase>
+class DeviceSourcedWriteT : public WriteBase
+{
+public:
+    DeviceSourcedWriteT(uint32_t envCount, bool gpu) : WriteBase(envCount, gpu) {}
+
+protected:
+    bool deviceSourced() const override { return true; }
+};
+
 DEFINE_QUERY_WRITE(1024, cpu, false, false)
 DEFINE_QUERY_WRITE(8192, cpu, false, false)
 DEFINE_QUERY_WRITE(1024, gpu, true, true)
@@ -1813,6 +2331,14 @@ DEFINE_ARTI_DOF_PROPERTY_WRITE(8192, cpu, false, false)
 
 DEFINE_ARTI_DOF_BINDING_WRITE(8192, cpu, false, false)
 DEFINE_ARTI_DOF_BINDING_WRITE(8192, gpu, true, true)
+
+// The writeonly rows above with the payload on the device, facing the tensorbinding rows: each side makes one device
+// copy of the payload and waits for its write's device work.
+DEFINE_OUTPUT_WRITE_VARIANT(DeviceSourcedWriteT<WriteOnlyBase>, DeviceWrite, writedevice_rb, 8192, gpu, true, true)
+DEFINE_OUTPUT_WRITE_VARIANT(DeviceSourcedWriteT<ArticulationRootWriteBase>, DeviceArticulationRootWrite,
+                            writedevice_arti_root, 8192, gpu, true, true)
+DEFINE_OUTPUT_WRITE_VARIANT(DeviceSourcedWriteT<ArticulationDofWriteBase>, DeviceArticulationDofWrite,
+                            writedevice_arti_dof, 8192, gpu, true, true)
 
 // Tendon session and binding lanes.
 DEFINE_FIXED_TENDON_WRITE(1024, cpu, false, false)
@@ -1866,6 +2392,15 @@ DEFINE_DEFORMABLE_STATE_WRITE(512, gpu, true, true)
 // 128 only. The 512-set asset aborts on a 16 GB card (one PxPBDParticleSystem per env, and their
 // grid buffers dominate), which is why the read's own ragged/flat particle lanes stop at 128 too.
 DEFINE_PARTICLE_WRITE(128, gpu, true, true)
+DEFINE_OUTPUT_WRITE_VARIANT(DeformableKinematicTargetWriteBase, DeformableKinematicTargetWrite,
+                            writeonly_deformable_kinematic_target, 128, gpu, true, true)
+DEFINE_OUTPUT_WRITE_VARIANT(DeviceSourcedWriteT<DeformableKinematicTargetWriteBase>,
+                            DeviceDeformableKinematicTargetWrite, writedevice_deformable_kinematic_target, 128, gpu,
+                            true, true)
+#if defined(OVPHYSX_BENCHMARK_HAS_CUDA)
+DEFINE_OUTPUT_WRITE_VARIANT(DeformableKinematicTargetCapturedWriteBase, DeformableKinematicTargetCapturedWrite,
+                            writecaptured_deformable_kinematic_target, 128, gpu, true, true)
+#endif
 
 #undef DEFINE_PARTICLE_WRITE
 #undef DEFINE_DEFORMABLE_STATE_WRITE

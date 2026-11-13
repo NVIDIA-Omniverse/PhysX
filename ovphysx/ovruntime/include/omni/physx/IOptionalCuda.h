@@ -76,6 +76,23 @@ struct IOptionalCuda
     bool(CARB_ABI* streamDestroy)(uintptr_t stream, int* outStatus);
     bool(CARB_ABI* streamSynchronize)(uintptr_t stream, int* outStatus);
     bool(CARB_ABI* streamWaitEvent)(uintptr_t stream, uintptr_t event, unsigned int flags, int* outStatus);
+
+    // -- Stream capture ----------------------------------------------------
+    // Whether `stream` is being captured into a CUDA graph. Work queued on a capturing stream is recorded
+    // rather than run, so the caller must not block on it, allocate or copy synchronously.
+    bool(CARB_ABI* streamIsCapturing)(uintptr_t stream, bool* outCapturing, int* outStatus);
+
+    // The context `stream` belongs to. A context-relative handle (the legacy or per-thread default stream)
+    // resolves against the calling thread's current context.
+    bool(CARB_ABI* streamGetCtx)(uintptr_t stream, uintptr_t* outCtx, int* outStatus);
+
+    // eventRecord with CUevent_record_flags: on a capturing stream, CU_EVENT_RECORD_EXTERNAL records the event at
+    // every replay of the graph, so work outside the graph can wait for the latest one.
+    bool(CARB_ABI* eventRecordWithFlags)(uintptr_t event, uintptr_t stream, unsigned int flags, int* outStatus);
+
+    // -- Driver --------------------------------------------------------------
+    // The CUDA version the driver supports, as cuDriverGetVersion reports it (12050 for CUDA 12.5).
+    bool(CARB_ABI* driverGetVersion)(int* outVersion, int* outStatus);
 };
 
 } // namespace physx

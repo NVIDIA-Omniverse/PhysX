@@ -5,23 +5,38 @@
 
 # Prim identity and transform
 
-Structural columns on every physics-domain prim: the type token, the applied-schema list, and the local transform. Prims are created implicitly by an upsert write through a path-list query. The path, parent and children built-ins are derived by ovstage from the written paths and must never be written.
+[Structural columns](prim.md#columns) on every physics-domain prim: the type token, the applied-schema list, and the local transform. Prims are created implicitly by an upsert write through a path-list query. The path, parent and children built-ins are derived by [ovstage](glossary.md#ovstage) from the written paths and must never be written.
 
-- **Scope:** prim
+- **Scope:** [prim](glossary.md#prim)
 
 ## What USD population writes
 
-A prim gets a row when its type or an applied schema is in the producer's physics set (PhysicsScene, joints, PhysicsRigidBodyAPI, PhysicsCollisionAPI, PhysicsMaterialAPI, articulation, deformable, particle, vehicle and Newton schemas), when it is a collider GeomSubset, when it authors a physics material binding, when it is a PointInstancer reaching a physics prototype, or when it is a one-hop Boundable target of a published relationship. EVERY ANCESTOR of such a prim also gets a row, carrying only the type token, the schema list if any, and the transform columns if Xformable.
+A prim gets a row when its type or an applied schema is in the producer's physics set (PhysicsScene, joints, PhysicsRigidBodyAPI, PhysicsCollisionAPI, PhysicsMaterialAPI, articulation, deformable, particle, vehicle and Newton schemas), when it is a collider GeomSubset, when it authors a physics material binding, when it is a [PointInstancer](glossary.md#pointinstancer) reaching a physics prototype, or when it is a one-hop [Boundable](glossary.md#boundable) target of a published relationship. EVERY ANCESTOR of such a prim also gets a row, carrying only the type token, the schema list if any, and the transform columns if [Xformable](glossary.md#xformable).
 
 ## Columns
 
 | Column | Type | Required | Producer writes | If absent |
 |---|---|---|---|---|
-| `usd-prim-type` | uint64 | yes | token id of the type name, or of __ovstage_population_untyped__ for a typeless prim | The prim is not classified. Type-enumerated components (PhysicsScene, shapes) never see it; schema-enumerated components (rigid body) still do, so a body without a type has no shape. |
-| `usd-schemas` | uint64 array | no | token ids of every applied schema, sorted by id; the column is omitted when the prim applies none | No API schema is read. Every api_schema component is enumerated or gated by a CONTAINS predicate on this list; a column of an API that is not listed is inert even if written. The producer omits the column entirely on a prim with no applied schemas. |
-| `omni:xform` | float64[16], MATRIX | no | the prim's composed LOCAL transform (all xformOps folded into one matrix) | The consumer falls back to xformOp:transform, then the xformOp:* stack, then identity. The producer never writes xformOp:* columns, so on a producer-populated stage this column is the local transform. |
-| `omni:resetXformStack` | bool8 | no | the USD resetXformStack flag, false included | Parent transforms compose normally. |
-| `omni:fabric:worldMatrix` | float64[16], MATRIX | no | on a PHYSICS-only populate: the LOCAL matrix as a seed, later replaced by ovstage_compute_hierarchy; on a populate that includes RENDERING: not written by population at all | The consumer composes the world transform from the local matrices of the prim and its ancestors, stopping at omni:resetXformStack or the root. |
+| [`usd-prim-type`](prim.md#columns) | uint64 | yes | [token id](glossary.md#token-id) of the type name, or of __ovstage_population_untyped__ for a typeless prim | The prim is not classified. Type-enumerated components (PhysicsScene, shapes) never see it; schema-enumerated components (rigid body) still do, so a body without a type has no shape. |
+| [`usd-schemas`](prim.md#columns) | uint64 array | no | token ids of every applied schema, sorted by id; the column is omitted when the prim applies none | No API schema is read. Every api_schema component is enumerated or gated by a CONTAINS predicate on this list; a column of an API that is not listed is inert even if written. The producer omits the column entirely on a prim with no applied schemas. |
+| `omni:xform` | float64[16], MATRIX | no | the prim's composed LOCAL transform (all xformOps folded into one matrix) | The consumer falls back to xformOp:transform, then the fixed-order xformOp ops (see xformOp:translate), then identity. omni:fabric:localMatrix, when present, is read before this column. The producer never writes xformOp:* columns, so on a producer-populated stage this column is the local transform. |
+| `omni:resetXformStack` | bool8 | no | the [USD](glossary.md#usd) resetXformStack flag, false included | Parent transforms compose normally. |
+| `omni:fabric:worldMatrix` | float64[16], MATRIX | no | without RENDERING populated: the LOCAL matrix as a seed, created once; the hierarchy computation replaces it with the composed world matrix, run by ovstage_compute_hierarchy and by every write-floor advance that covers the column, so a sealed ordinal holds the composed value; with RENDERING populated: not written by population at all | The consumer composes the world transform from the local matrices of the prim and its ancestors, stopping at omni:resetXformStack or the root. |
+| `usd-metadata:typeName` | uint64, TOKEN_ID | no | token id of the prim's authored USD type name | usd-prim-type is the prim's type. Once any prim on the Stage carries the column, the parser reads it first for every prim and falls back to usd-prim-type where it is absent. |
+| `omni:fabric:localMatrix` | float64[16], MATRIX | no | not written | omni:xform is read instead. |
+| `xformOp:transform` | float64[16], MATRIX | no | not written | The individual xformOp columns are composed instead (see xformOp:translate). |
+| `xformOp:scale` | float32[3] | no | not written | Unit scale. |
+| `xformOp:orient` | float32[4], QUATERNION | no | not written | Identity rotation. |
+| `xformOp:rotateX` | float32 | no | not written | No rotation about X. |
+| `xformOp:rotateY` | float32 | no | not written | No rotation about Y. |
+| `xformOp:rotateZ` | float32 | no | not written | No rotation about Z. |
+| `xformOp:rotateXYZ` | float32[3] | no | not written | No rotation. |
+| `xformOp:rotateXZY` | float32[3] | no | not written | No rotation. |
+| `xformOp:rotateYXZ` | float32[3] | no | not written | No rotation. |
+| `xformOp:rotateYZX` | float32[3] | no | not written | No rotation. |
+| `xformOp:rotateZXY` | float32[3] | no | not written | No rotation. |
+| `xformOp:rotateZYX` | float32[3] | no | not written | No rotation. |
+| `xformOp:translate` | float64[3] | no | not written | No translation. |
 
 ## Notes
 

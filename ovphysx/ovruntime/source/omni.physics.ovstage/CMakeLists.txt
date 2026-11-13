@@ -21,6 +21,7 @@ set(PARSE_OVSTAGE_HEADERS
 source_group(include FILES ${PARSE_OVSTAGE_HEADERS})
 
 set(PARSE_OVSTAGE_SOURCE
+    ${CMAKE_CURRENT_SOURCE_DIR}/StageFingerprint.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/OvstageSource.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/OvstageChangeFeed.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/OvstageWalker.cpp

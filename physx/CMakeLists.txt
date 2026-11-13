@@ -9,9 +9,6 @@ cmake_minimum_required(VERSION 3.21)
 
 set(PHYSX_PRESET "" CACHE STRING "PhysX build preset (e.g., vc17win64, linux-gcc, vc17win64-cpu-only)")
 
-# GPU options must be set before project() to determine CUDA language requirement
-option(PX_GENERATE_GPU_PROJECTS "Generate GPU projects" ON)
-
 # Apply preset switches (PX_GENERATE_GPU_PROJECTS, etc.) BEFORE project() so that
 # cpu-only presets can disable CUDA without requiring a separate command-line flag.
 # Parameters (CMAKE_INSTALL_PREFIX) are applied in phase 2 after project().
@@ -19,6 +16,14 @@ if(PHYSX_PRESET)
   include("${CMAKE_CURRENT_LIST_DIR}/buildtools/cmake/PhysXPresets.cmake")
   physx_apply_preset_switches(${PHYSX_PRESET})
 endif()
+
+# GPU options must be set before project() to determine the CUDA language requirement.
+#
+# Rule: every option a preset can set is declared AFTER physx_apply_preset_switches().
+# The preset seeds the cache without FORCE so that an explicit -D flag keeps precedence;
+# an option() declared before it would create the cache entry first and silently turn
+# the preset's value into a no-op (a cpu-only preset then still enabled CUDA).
+option(PX_GENERATE_GPU_PROJECTS "Generate GPU projects" ON)
 
 # Detect top-level before project() - PROJECT_IS_TOP_LEVEL is only available
 # after project() is called, so we check manually here.
@@ -146,6 +151,7 @@ option(PX_GENERATE_GPU_PROJECTS_ONLY "Generate ONLY GPU projects" OFF)
 option(PX_GENERATE_STATIC_LIBRARIES "Build static PhysX libs" OFF)
 option(PX_GENERATE_GPU_STATIC_LIBRARIES "Build static PhysXGpu" OFF)
 option(PX_BUILDSNIPPETS "Generate the snippets" OFF)
+option(PX_BUILDUNITTESTS "Build the public SDK unit tests" OFF)
 option(PX_BUILDPVDRUNTIME "Generate the OmniPVD project" OFF)
 option(PX_CMAKE_SUPPRESS_REGENERATION "Disable zero_check projects" OFF)
 
@@ -422,7 +428,9 @@ if(PX_GENERATE_GPU_PROJECTS)
   if(WIN32)
     # Prevent the duplicate "_64" on windows platforms by clearing the auto-appended postfixes
     if(TARGET PhysXGpu)
+      math(EXPR _PX_GPU_BITNESS "${CMAKE_SIZEOF_VOID_P} * 8")
       set_target_properties(PhysXGpu PROPERTIES
+        OUTPUT_NAME "PhysXGpu_${_PX_GPU_BITNESS}"
         DEBUG_POSTFIX   ""
         RELEASE_POSTFIX ""
         PROFILE_POSTFIX ""
@@ -461,6 +469,14 @@ endif()
 if(PX_BUILDSNIPPETS)
   message(STATUS "Adding Snippets...")
   add_subdirectory(${PHYSX_ROOT_DIR}/snippets/compiler/cmake ${CMAKE_CURRENT_BINARY_DIR}/sdk_snippets_bin)
+endif()
+
+if(PX_BUILDUNITTESTS)
+  if(NOT EXISTS "${PHYSX_ROOT_DIR}/test/public/CMakeLists.txt")
+    message(FATAL_ERROR "This source distribution does not include the public unit tests.")
+  endif()
+  enable_testing()
+  add_subdirectory(test/public public_ut)
 endif()
 
 # Link against PhysX libraries if available

@@ -22,6 +22,7 @@
 
 #include <omni/physics/parse/Handles.h>
 
+#include <unordered_map>
 #include <vector>
 
 namespace physx { class PxScene; }
@@ -78,6 +79,30 @@ public:
     InternalDatabase& operator=(const InternalDatabase&) = delete;
     uint64_t recordEpoch() const { return mRecordEpoch->load(std::memory_order_relaxed); }
 
+    // Update-local creation journal of appended records. Record indices remain
+    // valid across vector growth. Nested scopes contribute to their parent; no
+    // journal survives its owner's admission.
+    class CreationJournal
+    {
+    public:
+        explicit CreationJournal(InternalDatabase& database) : mDatabase(database), mPrevious(database.mCreationJournal)
+        {
+            database.mCreationJournal = this;
+        }
+        ~CreationJournal()
+        {
+            mDatabase.mCreationJournal = mPrevious;
+        }
+        CreationJournal(const CreationJournal&) = delete;
+        CreationJournal& operator=(const CreationJournal&) = delete;
+        std::vector<size_t> records;
+
+    private:
+        friend class InternalDatabase;
+        InternalDatabase& mDatabase;
+        CreationJournal* mPrevious;
+    };
+
     usdparser::ObjectId addRecord(PhysXType type, void* ptr, void* internalPtr, omni::physics::parse::ObjectKey key);
     usdparser::ObjectId addRecordAtIndex(
         size_t index, PhysXType type, void* ptr, void* internalPtr, omni::physics::parse::ObjectKey key);
@@ -89,6 +114,11 @@ public:
     Record* getFullRecord(PhysXType& type, usdparser::ObjectId);
     void* getInternalTypedRecord(PhysXType type, usdparser::ObjectId) const;
     bool checkRecordType(PhysXType type, usdparser::ObjectId) const;
+    // Whether a live record carries key. Each call first indexes by key the records
+    // written since the previous call, so it looks only at the records ever written
+    // with key. Neither add path touches the index: the replicator fills record
+    // slots from parallel workers.
+    bool hasLiveRecord(omni::physics::parse::ObjectKey key) const;
     std::vector<Record>& getRecords()
     {
         return mRecords;
@@ -103,6 +133,12 @@ private:
     std::atomic<uint64_t> mLocalEpoch{1};
     std::atomic<uint64_t>* mRecordEpoch;
     std::vector<Record> mRecords;
+    CreationJournal* mCreationJournal = nullptr;
+    // The index of every record below mIndexedRecords that had a valid key when
+    // hasLiveRecord indexed it. Removal leaves its entries; the next lookup of the
+    // key checks each record and drops the entries of removed ones.
+    mutable std::unordered_multimap<omni::physics::parse::ObjectKey, size_t, omni::physics::parse::ObjectKey::Hash> mIndicesByKey;
+    mutable size_t mIndexedRecords = 0;
 };
 } // namespace internal
 } // namespace physx

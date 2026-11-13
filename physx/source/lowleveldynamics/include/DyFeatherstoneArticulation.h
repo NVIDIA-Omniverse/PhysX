@@ -228,7 +228,7 @@ namespace Dy
 		~ArticulationData();
 
 		PX_FORCE_INLINE	void						init();
-						void						resizeLinkData(const PxU32 linkCount);
+						void						resizeLinkData(const PxU32 linkCount, bool allocateTgsExternalForcesCPU);
 						void						resizeJointData(const PxU32 dofs);
 		
 		PX_FORCE_INLINE PxReal*						getJointAccelerations()									{ return mJointAcceleration;		}
@@ -642,8 +642,6 @@ namespace Dy
 
 		bool		willStoreStaticConstraint() { return DY_STATIC_CONTACTS_IN_INTERNAL_SOLVER; }
 
-		void		setRootLinearVelocity(const PxVec3& velocity);
-		void		setRootAngularVelocity(const PxVec3& velocity);
 		void		teleportRootLink();
 
 		void		getImpulseResponse(
@@ -1333,7 +1331,7 @@ namespace Dy
 			PX_FORCE_INLINE ArticulationCore*	getCore()						{ return mSolverDescCore;		}
 			PX_FORCE_INLINE PxU16				getIterationCounts()	const	{ return mSolverDescCore->solverIterationCounts;	}
 
-			void	setupLinks(PxU32 nbLinks, Dy::ArticulationLink* links);
+			void	setupLinks(PxU32 nbLinks, Dy::ArticulationLink* links, bool allocateTgsExternalForcesCPU);
 			void	initPathToRoot();
 			
 		static void getImpulseSelfResponse(const ArticulationLink* links,

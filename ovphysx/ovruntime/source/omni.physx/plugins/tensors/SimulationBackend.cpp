@@ -12,7 +12,7 @@
  * @covers AC-3 AC-7
  *
  * @implements REQ-TENSOR-VIEW-001
- * @covers AC-6 AC-8 AC-9 AC-11
+ * @covers AC-6 AC-8 AC-9 AC-11 AC-13 AC-14 AC-16
  *
  * @implements REQ-TENSOR-ATTACH-001
  * @covers AC-1
@@ -150,6 +150,17 @@ void SimulationBackend::onSceneDestroyed(const PxScene* scene)
             ++it;
         }
     }
+    for (auto it = mRdDisableByScene.begin(); it != mRdDisableByScene.end();)
+    {
+        if (it->first.scene == scene)
+        {
+            it = mRdDisableByScene.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
 
     // The CPU side has no scene to match on (CpuSimulationData holds none), so it is reclaimed by
     // resetStage on the attach axis rather than here.
@@ -260,7 +271,7 @@ bool SimulationBackend::updateArticulationsKinematic(AttachHandle attachHandle)
     // FK refresh is DirectGPU-only, exactly as the former GpuSimulationView path was; a no-op elsewhere.
     // Deliberately NO createSimulationView here: the op needs only the scene and its CUDA context. A
     // per-call createSimulationView does NOT rebuild the GPU simulation data -- ensureGpuSimDataLocked
-    // reuses the cached buffers whenever gpuSimDataShapeMatches (the steady state) -- but it still pays,
+    // reuses the cached buffers while the shape and record epoch match (the steady state) -- but it still pays,
     // every call, the cache-validation topology walk plus the view object's construction, its
     // registration in mViewsByAttach, and its later removal. That is the overhead this path avoids.
     if (scene->getFlags().isSet(PxSceneFlag::eENABLE_DIRECT_GPU_API))
@@ -280,13 +291,11 @@ bool SimulationBackend::updateArticulationsKinematic(AttachHandle attachHandle)
     return true;
 }
 
-// Topology the simulation data is sized and indexed by. Recomputed on every cache hit and compared
-// against what the entry was built with -- see SceneCacheEntry.
-// Must mirror GpuSimulationData::init() exactly, including its 0xffffffff inbound-dof guard: a
-// divergence here either never matches (the cache silently never hits) or matches when the buffers
-// were sized differently (the crash this validation exists to prevent).
-// TODO: this walk runs on every cache lookup, i.e. every read; profile it on an articulation-heavy
-// scene. Rigid-only scenes early-out after two O(1) counts.
+// Topology the simulation data is sized and indexed by, compared against what a cache entry was built with
+// whenever sceneCacheEntryValid's fast path does not apply (see SceneCacheEntry). The articulation strides come
+// from articulationStrides, the function GpuSimulationData::init sizes its buffers with, so the two cannot
+// diverge: a divergence would either never match (the cache silently never hits) or match when the buffers were
+// sized differently (the crash this validation exists to prevent).
 void SimulationBackend::sceneTopology(::physx::PxScene* scene, SceneTopology& t)
 {
     t = SceneTopology{};
@@ -294,23 +303,7 @@ void SimulationBackend::sceneTopology(::physx::PxScene* scene, SceneTopology& t)
     t.numArtis = scene->getNbArticulations();
     if (t.numArtis == 0)
         return;
-
-    std::vector<PxArticulationReducedCoordinate*> artis(t.numArtis);
-    scene->getArticulations(artis.data(), t.numArtis);
-    for (PxArticulationReducedCoordinate* arti : artis)
-    {
-        if (!arti)
-            continue;
-        // getDofs() is the joint DOF total, excluding a floating base's six -- no per-link walk needed.
-        const PxU32 numLinks = arti->getNbLinks();
-        const PxU32 numDofs = arti->getDofs(); // 0xffffffff if the articulation is not in a scene
-
-        t.maxLinks = PxMax(t.maxLinks, numLinks);
-        if (numDofs != 0xffffffff)
-            t.maxDofs = PxMax(t.maxDofs, numDofs);
-        t.maxFixedTendons = PxMax(t.maxFixedTendons, arti->getNbFixedTendons());
-        t.maxSpatialTendons = PxMax(t.maxSpatialTendons, arti->getNbSpatialTendons());
-    }
+    articulationStrides(scene, t.maxLinks, t.maxDofs, t.maxFixedTendons, t.maxSpatialTendons);
 }
 
 bool SimulationBackend::gpuSimDataShapeMatches(const GpuSimulationData& data, ::physx::PxScene* scene)
@@ -348,19 +341,27 @@ GpuSimulationDataPtr SimulationBackend::ensureGpuSimDataLocked(AttachHandle atta
     // Keyed by attach AND scene, so an attach holding several scenes keeps one entry per scene:
     // keying on attach alone made two scenes alternate through a single entry and rebuilt every
     // device buffer on each read. The entry is dropped when the scene it describes grew.
+    // Also dropped when a record was created or removed since it was built: a replacement can restore
+    // every count while the actor and articulation maps still describe the objects it replaced.
     const SceneKey key{ attachHandle, scene };
     const std::unordered_map<SceneKey, GpuSimulationDataPtr, SceneKeyHash>::iterator it =
         mGpuSimDataByScene.find(key);
     if (it != mGpuSimDataByScene.end())
     {
-        if (it->second && gpuSimDataShapeMatches(*it->second, scene))
+        if (it->second && it->second->mRecordEpoch == internal::recordLifetimeEpoch(scene) &&
+            gpuSimDataShapeMatches(*it->second, scene))
             return it->second;
         // Dropping the map's reference does not free the data under a view that still holds one;
         // that view keeps the buffers it was built against until it releases.
         mGpuSimDataByScene.erase(it);
     }
 
-    GpuSimulationDataPtr data = std::make_shared<GpuSimulationData>(*this, attachHandle);
+    // Shared with the copies older views still hold, so a disable through either side reaches the other.
+    // Given before init(), whose census then writes into the shared state.
+    std::shared_ptr<GpuRdDisableState>& rdDisableState = mRdDisableByScene[key];
+    if (!rdDisableState)
+        rdDisableState = std::make_shared<GpuRdDisableState>();
+    GpuSimulationDataPtr data = std::make_shared<GpuSimulationData>(*this, attachHandle, rdDisableState);
     if (!data->init(scene))
         return nullptr; // nothing was inserted, so there is nothing to roll back
     mGpuSimDataByScene[key] = data;
@@ -391,17 +392,30 @@ bool SimulationBackend::sceneCacheEntryValid(const SceneCacheEntry& entry, ::phy
     if (entry.supersetView && !entry.supersetView->getValid())
         return false;
 
+    // The superset view's destruction check sees only objects it holds, and an added static changes no
+    // count. The GPU data's maps describe the records of the epoch it was built under, so a moved epoch rebuilds.
+    const uint64_t recordEpoch = internal::recordLifetimeEpoch(scene);
+    if (entry.gpuData && entry.gpuData->mRecordEpoch != recordEpoch)
+        return false;
+
     // The simulation data has no resize path: every buffer is sized in init() from these, and
     // mActor2RdIndexMap is built from the actor set they describe. A recycled PxScene* shows up
     // here as a topology mismatch -- a rigid-only entry reused for a scene with articulations
     // leaves mLinkOrRootTransformsDev unallocated.
     //
-    // Skipped while the database still reports the epoch this topology was measured under: nothing
-    // enters or leaves the scene without creating or removing a record, so an unchanged epoch means
-    // an unchanged actor and articulation set. The O(articulations) walk otherwise runs on EVERY
-    // acquire. The epoch is the one fact that comes from outside the snapshot -- a cached structural
-    // property (homogeneity, prim paths, metatype set) describes the scene as it WAS.
-    if (entry.dbEpoch != 0 && entry.dbEpoch == internal::recordLifetimeEpoch(scene))
+    // Skipped while the database still reports the epoch this topology was measured under -- one
+    // create or remove bumps it -- so the O(articulations) walk, and with it the raise to PhysX's
+    // DirectGPU strides, is elided here; the two O(1) scene counts are not. PhysX's strides only grow when
+    // it simulates an articulation larger than any before, which a record was created for (moving the
+    // epoch); an articulation added to the PxScene outside the records is not supported.
+    // The first simulate is the gap the epoch misses: it
+    // inserts an articulation into its PxScene (getNbArticulations 0 -> N) with no record event, so an
+    // entry built before it -- e.g. by a pre-step write's instancer-view acquire -- would otherwise be
+    // reused with null articulation device buffers and null-deref a post-step articulation read.
+    // Re-checking the counts here rebuilds it once the step has inserted the articulations.
+    if (entry.dbEpoch != 0 && entry.dbEpoch == recordEpoch &&
+        entry.topology.numRds == scene->getNbActors(PxActorTypeFlag::eRIGID_DYNAMIC) &&
+        entry.topology.numArtis == scene->getNbArticulations())
         return true;
 
     SceneTopology now;
@@ -650,6 +664,23 @@ GpuSimulationView* SimulationBackend::acquireSceneView(PxScene* scene, uint64_t*
     return result;
 }
 
+GpuSimulationView* SimulationBackend::currentSceneView(PxScene* scene, uint64_t* outGeneration)
+{
+    if (outGeneration)
+        *outGeneration = 0;
+    if (!scene || !scene->getFlags().isSet(PxSceneFlag::eENABLE_DIRECT_GPU_API))
+        return nullptr;
+
+    std::lock_guard<std::mutex> lock(mStageDataMutex);
+    const std::unordered_map<SceneKey, SceneCacheEntry, SceneKeyHash>::const_iterator it =
+        mSceneCache.find(SceneKey{ attachOwning(scene), scene });
+    if (it == mSceneCache.end() || !it->second.supersetView || !sceneCacheEntryValid(it->second, scene))
+        return nullptr;
+    if (outGeneration)
+        *outGeneration = it->second.generation;
+    return static_cast<GpuSimulationView*>(it->second.supersetView);
+}
+
 bool SimulationBackend::sceneMayHaveDisabledRigidDynamics(PxScene* scene)
 {
     if (!scene)
@@ -693,6 +724,7 @@ void SimulationBackend::reset()
 
         mCpuSimDataByAttach.clear();
         mGpuSimDataByScene.clear();
+        mRdDisableByScene.clear();
 
         for (auto& [handle, views] : mViewsByAttach)
             for (auto* view : views)
@@ -750,6 +782,19 @@ void SimulationBackend::resetStage(AttachHandle attachHandle)
             if (it->first.attach == attachHandle)
             {
                 it = mGpuSimDataByScene.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+        for (std::unordered_map<SceneKey, std::shared_ptr<GpuRdDisableState>, SceneKeyHash>::iterator it =
+                 mRdDisableByScene.begin();
+             it != mRdDisableByScene.end();)
+        {
+            if (it->first.attach == attachHandle)
+            {
+                it = mRdDisableByScene.erase(it);
             }
             else
             {

@@ -33,6 +33,7 @@
 // attachment/filter prims. Without any stage the payload lives in the generated-data cache only.
 
 #include "PhysXAttachment.h"
+#include "RuntimeExecution.h"
 #include "PhysXTetFinder.h"
 #include "PhysXTriFinder.h"
 
@@ -101,6 +102,25 @@ namespace omni
 {
 namespace physx
 {
+bool setupAutoDeformableAttachment(AttachHandle attach, omni::physics::parse::ObjectKey key)
+{
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return false;
+    auto owner = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    return owner && setupAutoDeformableAttachment(*owner, key);
+}
+
+bool updateAutoDeformableAttachment(AttachHandle attach, omni::physics::parse::ObjectKey key)
+{
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return false;
+    auto owner = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    bool attachmentDataRecomputed = false;
+    return owner && updateAutoDeformableAttachment(*owner, key, attachmentDataRecomputed);
+}
+
 namespace
 {
 
@@ -544,7 +564,7 @@ void getColliders(usdparser::AttachedStage& attachedStage, std::vector<omni::phy
         return;
     omni::physics::parse::KnownTokens tok;
     tok.intern(*src);
-    const omni::physics::parse::TokenId deformableBodyTok = tok.omniphysicsDeformableBodyAPI;
+    const omni::physics::parse::TokenId deformableBodyTok = tok.omniPhysicsDeformableBodyAPI;
     const omni::physics::parse::TokenId collisionTok = tok.physicsCollisionAPI;
 
     // Active subtree, descending through instance proxies (matches the
@@ -629,7 +649,8 @@ bool getVtxXformAttachment(usdparser::AttachedStage& attachedStage,
     tok.intern(*src);
     // Only the FIRST VtxXformAttachment child is considered (match or not).
     bool done = false, result = false;
-    forEachAutoAttachmentChild(attachedStage, autoAttachmentKey, eAttachmentVtxXform, tok.OmniPhysicsVtxXformAttachment,
+    forEachAutoAttachmentChild(attachedStage, autoAttachmentKey, eAttachmentVtxXform,
+        tok.omniPhysicsVtxXformAttachmentType,
         [&](omni::physics::parse::ObjectKey childKey, omni::physics::parse::ObjectKey src0, omni::physics::parse::ObjectKey src1)
         {
             if (done)
@@ -654,7 +675,8 @@ bool getVtxTetAttachment(usdparser::AttachedStage& attachedStage,
     // All VtxTetAttachment children are scanned, updating attachmentKey
     // each time; returns true on the first whose targets match.
     bool result = false;
-    forEachAutoAttachmentChild(attachedStage, autoAttachmentKey, eAttachmentVtxTet, tok.OmniPhysicsVtxTetAttachment,
+    forEachAutoAttachmentChild(attachedStage, autoAttachmentKey, eAttachmentVtxTet,
+        tok.omniPhysicsVtxTetAttachmentType,
         [&](omni::physics::parse::ObjectKey childKey, omni::physics::parse::ObjectKey src0, omni::physics::parse::ObjectKey src1)
         {
             if (result)
@@ -677,7 +699,8 @@ bool getElementCollisionFilters(usdparser::AttachedStage& attachedStage,
     omni::physics::parse::KnownTokens tok;
     tok.intern(*src);
     std::vector<omni::physics::parse::ObjectKey> srcKeys0, srcKeys1;
-    forEachAutoAttachmentChild(attachedStage, autoAttachmentKey, eDeformableCollisionFilter, tok.OmniPhysicsElementCollisionFilter,
+    forEachAutoAttachmentChild(attachedStage, autoAttachmentKey, eDeformableCollisionFilter,
+        tok.omniPhysicsElementCollisionFilterType,
         [&](omni::physics::parse::ObjectKey childKey, omni::physics::parse::ObjectKey src0, omni::physics::parse::ObjectKey src1)
         {
             filterKeys.push_back(childKey);
@@ -711,7 +734,8 @@ bool getElementCollisionFilter(usdparser::AttachedStage& attachedStage,
     tok.intern(*src);
     // Only the FIRST filter child is considered; no child at all is not a mismatch.
     bool done = false, result = true;
-    forEachAutoAttachmentChild(attachedStage, autoAttachmentKey, eDeformableCollisionFilter, tok.OmniPhysicsElementCollisionFilter,
+    forEachAutoAttachmentChild(attachedStage, autoAttachmentKey, eDeformableCollisionFilter,
+        tok.omniPhysicsElementCollisionFilterType,
         [&](omni::physics::parse::ObjectKey childKey, omni::physics::parse::ObjectKey src0, omni::physics::parse::ObjectKey src1)
         {
             if (done)
@@ -2415,7 +2439,7 @@ bool parseAttachables(usdparser::AttachedStage& attachedStage,
     if (src)
         tok.intern(*src);
     const omni::physics::parse::TokenId deformableBodyTok =
-        src ? tok.omniphysicsDeformableBodyAPI : omni::physics::parse::TokenId{};
+        src ? tok.omniPhysicsDeformableBodyAPI : omni::physics::parse::TokenId{};
     for (uint32_t t = 0; t < 2; ++t)
     {
         if (attachableKeys[t].valid())
@@ -2520,7 +2544,7 @@ bool parseAutoAttachmentInputs(usdparser::AttachedStage& attachedStage,
         return false;
     omni::physics::parse::KnownTokens tok;
     tok.intern(*src);
-    if (!src->hasSchema(autoAttachmentKey, tok.PhysxAutoDeformableAttachmentAPI))
+    if (!src->hasSchema(autoAttachmentKey, tok.physxAutoDeformableAttachmentAPI))
         return false;
 
     CookingDataAsync* cookingDataAsync = omni::physx::OmniPhysX::getInstance().getPhysXSetup().getCookingDataAsync();
@@ -2858,7 +2882,7 @@ bool updateAutoDeformableAttachment(usdparser::AttachedStage& attachedStage, omn
         return false;
     omni::physics::parse::KnownTokens tok;
     tok.intern(*src);
-    if (!src->hasSchema(autoAttachmentKey, tok.PhysxAutoDeformableAttachmentAPI))
+    if (!src->hasSchema(autoAttachmentKey, tok.physxAutoDeformableAttachmentAPI))
         return false;
 
     PhysxAutoAttachmentDesc autoAttachmentDesc;

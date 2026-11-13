@@ -76,13 +76,13 @@ DeformableBodyParse parseDeformableBody(ParseContext& ctx, ObjectKey key)
 
     IPhysicsSource& src = ctx.source();
 
-    if (src.hasSchema(key, tok.omniphysicsDeformableBodyAPI))
+    if (src.hasSchema(key, tok.omniPhysicsDeformableBodyAPI))
     {
         out.bodyEnabled = readBoolAttr(src, key, tok.omniphysicsDeformableBodyEnabled, false);
         out.mass        = readFloatAttr(src, key, tok.omniphysicsMass, 0.0f);
     }
 
-    if (src.hasSchema(key, tok.omniphysicsBodyAPI))
+    if (src.hasSchema(key, tok.omniPhysicsBodyAPI))
     {
         out.kinematicBody = readBoolAttr(src, key, tok.omniphysicsKinematicEnabled, false);
         out.startsAsleep  = readBoolAttr(src, key, tok.omniphysicsStartsAsleep, false);

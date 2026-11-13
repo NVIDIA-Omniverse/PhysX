@@ -70,7 +70,7 @@ namespace Dy
 		PX_FREE(mPathToRootElements);
 	}
 
-	void ArticulationData::resizeLinkData(const PxU32 linkCount)
+	void ArticulationData::resizeLinkData(const PxU32 linkCount, bool allocateTgsExternalForcesCPU)
 	{
 		const PxU32 oldSize = mLinkCapacity;
 		mLinkCapacity = linkCount;
@@ -83,7 +83,10 @@ namespace Dy
 		mMotionAccelerationsInternal = PX_ALLOCATE(Cm::SpatialVectorF, linkCount, "mMotionAccelerationsInternal");
 		mCoriolisVectors = PX_ALLOCATE(Cm::SpatialVectorF, linkCount, "mCoriolisVectors");
 		mZAForces = PX_ALLOCATE(Cm::SpatialVectorF, linkCount, "mZAForces");
-		PX_FREE(mTgsExternalForces);
+		if (allocateTgsExternalForcesCPU)
+		{
+			mTgsExternalForces = PX_ALLOCATE(Cm::SpatialVectorF, linkCount, "mTgsExternalForces");
+		}
 		mZAInternalForces = PX_ALLOCATE(Cm::SpatialVectorF, linkCount, "mZAInternalForces");
 		mNbStatic1DConstraints = PX_ALLOCATE(PxU32, linkCount, "mNbStatic1DConstraints");
 		mStatic1DConstraintStartIndex = PX_ALLOCATE(PxU32, linkCount, "mStatic1DConstraintStartIndex");
@@ -207,10 +210,10 @@ namespace Dy
 	{
 	}
 
-	void FeatherstoneArticulation::setupLinks(PxU32 nbLinks, Dy::ArticulationLink* links)
+	void FeatherstoneArticulation::setupLinks(PxU32 nbLinks, Dy::ArticulationLink* links, bool allocateTgsExternalForcesCPU)
 	{
 		if (nbLinks != mArticulationData.mLinkCount)
-			mArticulationData.resizeLinkData(nbLinks);
+			mArticulationData.resizeLinkData(nbLinks, allocateTgsExternalForcesCPU);
 
 		mArticulationData.mLinks				= links;
 		mArticulationData.mLinkCount			= nbLinks;
@@ -3646,7 +3649,8 @@ static PX_FORCE_INLINE void fillArticConstraint(ArticulationInternalConstraint* 
 			const PxsBodyCore& core0 = *links[0].bodyCore;
 			rootLinkVel = fixBase ? Cm::SpatialVectorF::Zero() : Cm::SpatialVectorF(core0.angularVelocity, core0.linearVelocity);
 			linkMotionVelocitiesW[0] = rootLinkVel;
-			linkMotionAccelerationsW[0] = fixBase ? Cm::SpatialVectorF::Zero() : linkMotionAccelerationsW[0];
+			if(fixBase)
+				linkMotionAccelerationsW[0] = Cm::SpatialVectorF::Zero();
 			linkCoriolisVectorsW[0] = Cm::SpatialVectorF::Zero();
 		}
 
@@ -3656,12 +3660,13 @@ static PX_FORCE_INLINE void fillArticConstraint(ArticulationInternalConstraint* 
 		{
 			for (PxU32 linkID = 1; linkID < linkCount; ++linkID)
 			{
-				const ArticulationLink& link = links[linkID];
+				const ArticulationJointCore& joint = *links[linkID].inboundJoint;
 				const ArticulationJointCoreData& jointDatum = jointCoreData[linkID];
 				const PxReal* jVelocity = &jointDofVelocities[jointDatum.jointOffset];
 				for (PxU32 ind = 0; ind < jointDatum.nbDof; ++ind)
 				{
-					const PxReal maxJVelocity = link.inboundJoint->maxJointVelocity[ind];
+					// The limits are stored per axis, and dofIds maps each dof of the joint to its axis.
+					const PxReal maxJVelocity = joint.maxJointVelocity[joint.dofIds[ind]];
 					const PxReal jVel = jVelocity[ind];
 					ratio = (jVel != 0.0f) ? PxMin(ratio, maxJVelocity / PxAbs(jVel)) : ratio;
 				}
@@ -3864,12 +3869,13 @@ static PX_FORCE_INLINE void fillArticConstraint(ArticulationInternalConstraint* 
 		{
 			for (PxU32 linkID = 1; linkID < linkCount; ++linkID)
 			{
-				const ArticulationLink& link = links[linkID];
+				const ArticulationJointCore& joint = *links[linkID].inboundJoint;
 				ArticulationJointCoreData& jointDatum = data.getJointData(linkID);
 				PxReal* jVelocity = &jointVelocities[jointDatum.jointOffset];
 				for (PxU32 ind = 0; ind < jointDatum.nbDof; ++ind)
 				{
-					const PxReal maxJVelocity = link.inboundJoint->maxJointVelocity[ind];
+					// The limits are stored per axis, and dofIds maps each dof of the joint to its axis.
+					const PxReal maxJVelocity = joint.maxJointVelocity[joint.dofIds[ind]];
 					PxReal absJvel = PxAbs(jVelocity[ind]);
 					ratio = ratio * absJvel > maxJVelocity ? (maxJVelocity / absJvel) : ratio;
 				}
@@ -4945,22 +4951,6 @@ static PX_FORCE_INLINE void fillArticConstraint(ArticulationInternalConstraint* 
 				mStatic1DConstraints.pushBack(desc);
 		}
 		return DY_STATIC_CONTACTS_IN_INTERNAL_SOLVER;
-	}
-
-	void FeatherstoneArticulation::setRootLinearVelocity(const PxVec3& velocity)
-	{
-		const ArticulationLink& rLink = mArticulationData.getLink(0);
-		rLink.bodyCore->linearVelocity = velocity;
-		mGPUDirtyFlags |= ArticulationDirtyFlag::eDIRTY_ROOT_VELOCITIES;
-		computeLinkVelocities(mArticulationData);
-	}
-
-	void FeatherstoneArticulation::setRootAngularVelocity(const PxVec3& velocity)
-	{
-		const ArticulationLink& rLink = mArticulationData.getLink(0);
-		rLink.bodyCore->angularVelocity = velocity;
-		mGPUDirtyFlags |= ArticulationDirtyFlag::eDIRTY_ROOT_VELOCITIES;
-		computeLinkVelocities(mArticulationData);
 	}
 
 	//This method is for user update the root link transform so we need to

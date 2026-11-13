@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "OmniPvdLibraryFunctions.h"
+#include <new>
 #include "OmniPvdReaderImpl.h"
 #include "OmniPvdWriterImpl.h"
 #include "OmniPvdFileReadStreamImpl.h"
@@ -21,6 +22,25 @@ OMNI_PVD_API void OMNI_PVD_CALL destroyOmniPvdReader(OmniPvdReader& reader)
 {
 	OmniPvdReaderImpl* impl = (OmniPvdReaderImpl*)(&reader);
 	delete impl;
+}
+
+OMNI_PVD_API OmniPvdReader* OMNI_PVD_CALL createOmniPvdReaderWithLimits(uint32_t maxAttributeBytes)
+{
+    return new (std::nothrow) OmniPvdReaderImpl(maxAttributeBytes, 32);
+}
+
+OMNI_PVD_API OmniPvdReaderStatus OMNI_PVD_CALL getOmniPvdReaderStatus(const OmniPvdReader& reader)
+{
+    const OmniPvdReaderImpl& impl = static_cast<const OmniPvdReaderImpl&>(reader);
+    return { impl.mStatus, impl.mCmdAttributeHandleDepth };
+}
+
+OMNI_PVD_API void OMNI_PVD_CALL setOmniPvdReaderDiagnostics(
+    OmniPvdReader& reader, const OmniPvdReaderDiagnostics& diagnostics)
+{
+    OmniPvdReaderImpl& impl = static_cast<OmniPvdReaderImpl&>(reader);
+    impl.setLogFunction(diagnostics.logFunction);
+    impl.mVerbose = diagnostics.verbose;
 }
 
 OMNI_PVD_API OmniPvdWriter* OMNI_PVD_CALL createOmniPvdWriter()

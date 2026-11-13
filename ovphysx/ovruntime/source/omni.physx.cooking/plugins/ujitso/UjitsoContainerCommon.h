@@ -1,6 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-ATTACH-SERVICES-001
+ * @covers AC-3
+ */
+
 #pragma once
 
 #include <memory>
@@ -183,6 +188,10 @@ public:
     {
         // update the result pointer to the request to point at the local copy
         m_result.request = &m_request;
+
+        // A container only reads the request's inputs. Drop the caller's completion callback, so it
+        // does not keep what the callback captured alive for as long as UJITSO holds the container.
+        m_request.onFinished = nullptr;
     }
 
     virtual ~PhysicsInputContainerBase() = default;

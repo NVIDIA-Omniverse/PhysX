@@ -10,6 +10,9 @@
 #include "OmniPvdCommands.h"
 #include "OmniPvdDefinesInternal.h"
 #include "OmniPvdLog.h"
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 class OmniPvdWriterImpl : public OmniPvdWriter {
 public:
@@ -102,6 +105,13 @@ public:
 	int mLastAttributeHandle;
 
 	uint32_t mStatusFlags;
+
+private:
+	bool isClassAncestor(OmniPvdClassHandle ancestor, OmniPvdClassHandle descendant) const;
+	bool registerAttributeName(OmniPvdClassHandle owner, const char* name, int length);
+	// Index 0 is the invalid-handle sentinel. Parents were already minted when recorded.
+	std::vector<OmniPvdClassHandle> mClassParents;
+	std::unordered_map<std::string, std::vector<OmniPvdClassHandle>> mAttributeOwners;
 };
 
 #endif

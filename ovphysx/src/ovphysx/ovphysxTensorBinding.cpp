@@ -30,6 +30,18 @@
  *
  * @implements REQ-CAPI-OBJECTTYPE-001
  * @covers AC-2 AC-3 AC-4
+ *
+ * @implements REQ-CAPI-LANE-001
+ * @covers AC-1 AC-3
+ *
+ * @implements REQ-CAPI-REENTRY-001
+ * @covers AC-2
+ *
+ * @implements REQ-CAPI-ASYNC-003
+ * @covers AC-5
+ *
+ * @implements REQ-CAPI-ARTICULATION-NAMES-001
+ * @covers AC-1 AC-2 AC-3 AC-4
  */
 
 #include "ovphysx/ovphysx.h"
@@ -59,6 +71,7 @@ using ovphysx::internal::dlToTensorDesc;
 using ovphysx::internal::dlConvertErrorMessage;
 using ovphysx::internal::getTensorApi;
 
+#include <cassert>
 #include <cstdint>
 #include <cstring>
 #include <limits>
@@ -1676,7 +1689,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_create_tensor_binding(
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "must provide pattern or prim_paths");
     }
 
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     // Ensure physics is attached and the initial scene parse has completed.
     // Without this, TensorAPI can't discover any physics prims.
@@ -1788,7 +1803,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_destroy_tensor_binding(
     ovphysx_tensor_binding_handle_t binding_handle)
 {
     OVPHYSX_API_PROFILE_ZONE(destroy_tensor_binding);
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
     InstanceData* instance = get_instance_ptr(handle);
@@ -1807,6 +1824,24 @@ OVPHYSX_API ovphysx_result_t ovphysx_destroy_tensor_binding(
     return success();
 }
 
+// The whole-articulation inverse-dynamics tensors share one Jacobian/mass-matrix shape across the
+// view, so getBindingSpec fails for them on a heterogeneous or empty view even though the tensor
+// type is supported. Name that reason, as the metadata path does, rather than reporting
+// "unsupported tensor type" (which also reaches genuinely unsupported types).
+static const char* bindingSpecFailureMessage(ovphysx_tensor_type_t tensorType)
+{
+    switch (tensorType)
+    {
+        case OVPHYSX_TENSOR_ARTICULATION_JACOBIAN_F32:
+        case OVPHYSX_TENSOR_ARTICULATION_MASS_MATRIX_F32:
+        case OVPHYSX_TENSOR_ARTICULATION_CORIOLIS_AND_CENTRIFUGAL_FORCE_F32:
+        case OVPHYSX_TENSOR_ARTICULATION_GRAVITY_FORCE_F32:
+            return "heterogeneous or empty articulation view; shape unavailable (group articulations by complete layout)";
+        default:
+            return "unsupported tensor type";
+    }
+}
+
 OVPHYSX_API ovphysx_result_t ovphysx_get_tensor_binding_spec(
     ovphysx_instance_handle_t handle,
     ovphysx_tensor_binding_handle_t binding_handle,
@@ -1816,7 +1851,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_get_tensor_binding_spec(
     if (!out_spec)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "out_spec is NULL");
 
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
     InstanceData* instance = get_instance_ptr(handle);
@@ -1842,7 +1879,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_get_tensor_binding_spec(
                                "; recreate binding");
         }
         if (!getBindingSpec(binding, ndim, shape))
-            return set_error(OVPHYSX_API_ERROR, "unsupported tensor type");
+            return set_error(OVPHYSX_API_ERROR, bindingSpecFailureMessage(binding.tensorType));
         dtype = getBindingDtype(binding.tensorType);
     }
 
@@ -1863,7 +1900,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_get_tensor_binding_native_device(
     if (!out_device)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "out_device is NULL");
 
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
     InstanceData* instance = get_instance_ptr(handle);
@@ -1900,12 +1939,18 @@ OVPHYSX_API ovphysx_result_t ovphysx_get_tensor_binding_native_device(
 
 } // extern "C" (temporarily close for internal C++ helper)
 
+// Runs under the caller's instance lane, which already finished earlier work, and
+// never takes it again: the warmup step runs to completion on the calling thread
+// inside that hold, with no task record.
 ovphysx_result_t ovphysx_warmup_if_needed(ovphysx_instance_handle_t handle, bool is_explicit_call)
 {
     std::shared_lock<std::shared_mutex> check_lock(g_instances_mutex);
     InstanceData* instance = get_instance_ptr(handle);
     if (!instance)
         return set_error(OVPHYSX_API_ERROR, "invalid handle");
+    assert(!instance->executor || instance->executor->heldByCurrent());
+    // Destroy waits for the lane, so the instance outlives the map lock released below.
+    InstanceData& owner = *instance;
 
     // Keyed on the attach, not the stage: a stage id of 0 cannot tell a stageless
     // attach from no attach at all, so a fresh attach would inherit the previous
@@ -1935,14 +1980,13 @@ ovphysx_result_t ovphysx_warmup_if_needed(ovphysx_instance_handle_t handle, bool
     constexpr float kWarmupDt = 1.0e-9f;  // 1 nanosecond - effectively zero
     // DirectGPU requires a complete simulate()+fetchResults() warm start before
     // tensor bindings read or write GPU simulation buffers. This stays synchronous
-    // and independent of the op_index/async plumbing.
-    const ovphysx_api_status_t simulate_status = omni_sdk_physx_simulate_instance(handle, kWarmupDt, 0.0f);
-    // Use the same completion path as public steps, including runtime diagnostics.
-    const ovphysx_api_status_t finish_status = omni_sdk_physx_finish_warmup(handle);
-    if (simulate_status != OVPHYSX_API_SUCCESS)
-        return {simulate_status};
-    if (finish_status != OVPHYSX_API_SUCCESS)
-        return {finish_status};
+    // on the calling thread and creates no task. It shares the step job's
+    // simulate and fetch path, including runtime diagnostics.
+    bool dispatched = false;
+    const ovphysx_api_status_t step_status =
+        omni_sdk_physx_simulate_instance(owner, handle, kWarmupDt, 0.0f, dispatched);
+    if (step_status != OVPHYSX_API_SUCCESS)
+        return {step_status};
 
     // Re-acquire lock and set flag
     std::shared_lock<std::shared_mutex> set_lock(g_instances_mutex);
@@ -1962,7 +2006,9 @@ extern "C" {
 OVPHYSX_API ovphysx_result_t ovphysx_warmup(ovphysx_instance_handle_t handle)
 {
     OVPHYSX_API_PROFILE_ZONE(warmup);
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
     return ovphysx_warmup_if_needed(handle, /*is_explicit_call=*/true);
 }
 
@@ -1981,7 +2027,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_tensor_binding(
     if (processValidation.status != OVPHYSX_API_SUCCESS)
         return processValidation;
 
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     // Auto-warmup if needed (requires one simulation step before tensor reads)
     {
@@ -3033,7 +3081,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_write_tensor_binding(
     if (processValidation.status != OVPHYSX_API_SUCCESS)
         return processValidation;
 
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     // Auto-warmup if needed (requires one simulation step before tensor reads)
     {
@@ -3082,7 +3132,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_write_tensor_binding_masked(
     if (mask_tensor->ndim != 1)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "mask_tensor must be 1D");
 
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     // Auto-warmup if needed (requires one simulation step before tensor reads)
     {
@@ -3595,7 +3647,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_rigid_body_view_wake_up(
     const DLTensor* indices)
 {
     OVPHYSX_API_PROFILE_ZONE(rigid_body_view_wake_up);
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
     InstanceData* instance = get_instance_ptr(handle);
@@ -3650,7 +3704,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_rigid_body_view_sleep(
     const DLTensor* indices)
 {
     OVPHYSX_API_PROFILE_ZONE(rigid_body_view_sleep);
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
     InstanceData* instance = get_instance_ptr(handle);
@@ -3714,7 +3770,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_get_object_type(
 
     const std::string pathStr = toStdString(prim_path);
 
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     // createSimulationView returns an invalid view until the initial scene parse
     // has run, which callers reaching this from on_start would otherwise hit.
@@ -3777,7 +3835,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_get_articulation_metadata(
     if (!out_metadata)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "out_metadata is NULL");
 
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
     InstanceData* instance = get_instance_ptr(handle);
@@ -3814,6 +3874,38 @@ OVPHYSX_API ovphysx_result_t ovphysx_get_articulation_metadata(
     return success();
 }
 
+} // extern "C" (temporarily close for internal C++ helper)
+
+namespace
+{
+
+template <typename StringAt>
+ovphysx_result_t fillStringArray(
+    ovphysx_string_t* outStrings,
+    uint32_t capacity,
+    uint32_t demand,
+    uint32_t* outCount,
+    const char* what,
+    const char* units,
+    StringAt stringAt)
+{
+    const uint32_t toWrite = (demand < capacity) ? demand : capacity;
+    for (uint32_t i = 0; i < toWrite; ++i)
+        outStrings[i] = ovphysx_cstr(stringAt(i));
+
+    *outCount = demand;
+    if (demand <= capacity)
+        return success();
+    return set_error(
+        OVPHYSX_API_BUFFER_TOO_SMALL,
+        std::string(what) + " buffer too small: " + std::to_string(demand) + " " + units +
+            " required but capacity is " + std::to_string(capacity));
+}
+
+} // namespace
+
+extern "C" {
+
 OVPHYSX_API ovphysx_result_t ovphysx_articulation_get_dof_names(
     ovphysx_instance_handle_t handle,
     ovphysx_tensor_binding_handle_t binding_handle,
@@ -3825,7 +3917,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_articulation_get_dof_names(
     if (!out_names || !out_count)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "out_names or out_count is NULL");
 
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
     InstanceData* instance = get_instance_ptr(handle);
@@ -3853,14 +3947,14 @@ OVPHYSX_API ovphysx_result_t ovphysx_articulation_get_dof_names(
         return set_error(OVPHYSX_API_ERROR, "heterogeneous or empty view; metadata unavailable");
 
     const uint32_t count = metatype->getDofCount();
-    const uint32_t toWrite = (count < max_names) ? count : max_names;
-    for (uint32_t i = 0; i < toWrite; ++i)
-    {
-        const char* name = metatype->getDofName(i);
-        out_names[i] = ovphysx_cstr(name);
-    }
-    *out_count = toWrite;
-    return success();
+    return fillStringArray(
+        out_names,
+        max_names,
+        count,
+        out_count,
+        "DOF name",
+        "names",
+        [metatype](uint32_t i) -> const char* { return metatype->getDofName(i); });
 }
 
 OVPHYSX_API ovphysx_result_t ovphysx_articulation_get_body_names(
@@ -3874,7 +3968,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_articulation_get_body_names(
     if (!out_names || !out_count)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "out_names or out_count is NULL");
 
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
     InstanceData* instance = get_instance_ptr(handle);
@@ -3902,14 +3998,14 @@ OVPHYSX_API ovphysx_result_t ovphysx_articulation_get_body_names(
         return set_error(OVPHYSX_API_ERROR, "heterogeneous or empty view; metadata unavailable");
 
     const uint32_t count = metatype->getLinkCount();
-    const uint32_t toWrite = (count < max_names) ? count : max_names;
-    for (uint32_t i = 0; i < toWrite; ++i)
-    {
-        const char* name = metatype->getLinkName(i);
-        out_names[i] = ovphysx_cstr(name);
-    }
-    *out_count = toWrite;
-    return success();
+    return fillStringArray(
+        out_names,
+        max_names,
+        count,
+        out_count,
+        "Body name",
+        "names",
+        [metatype](uint32_t i) -> const char* { return metatype->getLinkName(i); });
 }
 
 OVPHYSX_API ovphysx_result_t ovphysx_articulation_get_joint_names(
@@ -3923,7 +4019,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_articulation_get_joint_names(
     if (!out_names || !out_count)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "out_names or out_count is NULL");
 
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
     InstanceData* instance = get_instance_ptr(handle);
@@ -3951,14 +4049,14 @@ OVPHYSX_API ovphysx_result_t ovphysx_articulation_get_joint_names(
         return set_error(OVPHYSX_API_ERROR, "heterogeneous or empty view; metadata unavailable");
 
     const uint32_t count = metatype->getJointCount();
-    const uint32_t toWrite = (count < max_names) ? count : max_names;
-    for (uint32_t i = 0; i < toWrite; ++i)
-    {
-        const char* name = metatype->getJointName(i);
-        out_names[i] = ovphysx_cstr(name);
-    }
-    *out_count = toWrite;
-    return success();
+    return fillStringArray(
+        out_names,
+        max_names,
+        count,
+        out_count,
+        "Joint name",
+        "names",
+        [metatype](uint32_t i) -> const char* { return metatype->getJointName(i); });
 }
 
 OVPHYSX_API ovphysx_result_t ovphysx_tensor_binding_get_prim_paths(
@@ -3972,7 +4070,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_tensor_binding_get_prim_paths(
     if (!out_paths || !out_count)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "out_paths or out_count is NULL");
 
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
     InstanceData* instance = get_instance_ptr(handle);
@@ -4055,13 +4155,14 @@ OVPHYSX_API ovphysx_result_t ovphysx_tensor_binding_get_prim_paths(
         return set_error(OVPHYSX_API_ERROR, "binding does not expose prim path metadata");
     }
 
-    const uint32_t toWrite = (count < max_paths) ? count : max_paths;
-    for (uint32_t i = 0; i < toWrite; ++i)
-    {
-        out_paths[i] = ovphysx_cstr((*cache)[i].c_str());
-    }
-    *out_count = toWrite;
-    return success();
+    return fillStringArray(
+        out_paths,
+        max_paths,
+        count,
+        out_count,
+        "Tensor binding prim path",
+        "paths",
+        [cache](uint32_t i) -> const char* { return (*cache)[i].c_str(); });
 }
 
 } // extern "C"

@@ -1,0 +1,137 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxPhysicsDistanceJointAPI",
+  "title": "PhysxPhysicsDistanceJointAPI",
+  "summary": "Spring behaviour of a distance joint: enable flag, stiffness and damping of the spring that acts when the distance leaves [minDistance, maxDistance]. Read only on a PhysicsDistanceJoint prim; inert on every other joint type.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "PhysicsJoint"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "producer_scope": "All three declared attributes are published at their resolved values (false, 0, 0 when unauthored). No rewrite.",
+  "columns": [
+    {
+      "name": "physxPhysicsDistanceJoint:springEnabled",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": false,
+      "verify": {
+        "target": "joint",
+        "expr": "static_cast<::physx::PxDistanceJoint*>(joint)->getDistanceJointFlags().isSet(::physx::PxDistanceJointFlag::eSPRING_ENABLED)",
+        "kind": "bool",
+        "sample": true
+      },
+      "parser_default": false,
+      "absent": "Hard distance constraint; the spring stiffness and damping columns are then not applied (PhysxLimitAPI:distance stiffness/damping remain in effect).",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseJoint.cpp",
+        "include/omni/physics/parse/Descriptors.h"
+      ]
+    },
+    {
+      "name": "physxPhysicsDistanceJoint:springStiffness",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "verify": {
+        "target": "joint",
+        "expr": "static_cast<::physx::PxDistanceJoint*>(joint)->getStiffness()",
+        "kind": "float",
+        "sample": 100.0,
+        "notes": "Observable only when springEnabled is true in the same variant; the sample set authors both. With the spring disabled the getter returns PhysxLimitAPI:distance stiffness (0 without that API), which equals the absent value."
+      },
+      "parser_default": 0.0,
+      "absent": "No spring force.",
+      "raw_fallback_diverges": false,
+      "units": "force/length",
+      "conversion": "none",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseJoint.cpp",
+        "include/omni/physics/parse/Descriptors.h"
+      ]
+    },
+    {
+      "name": "physxPhysicsDistanceJoint:springDamping",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "verify": {
+        "target": "joint",
+        "expr": "static_cast<::physx::PxDistanceJoint*>(joint)->getDamping()",
+        "kind": "float",
+        "sample": 10.0,
+        "notes": "See springStiffness."
+      },
+      "parser_default": 0.0,
+      "absent": "No spring damping.",
+      "raw_fallback_diverges": false,
+      "units": "force*s/length",
+      "conversion": "none",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseJoint.cpp",
+        "include/omni/physics/parse/Descriptors.h"
+      ]
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysicsDistanceJoint",
+      "rule": "Read only in the distance-joint branch of the parser, gated by usd-schemas CONTAINS PhysxPhysicsDistanceJointAPI. On any other joint type the columns are ignored."
+    },
+    {
+      "with": "PhysxLimitAPI",
+      "rule": "The runtime first applies PhysxLimitAPI:distance stiffness/damping to the PxDistanceJoint, then overwrites both with the spring values when springEnabled is true."
+    }
+  ],
+  "findings": [
+    {
+      "column": "physxPhysicsDistanceJoint:springEnabled",
+      "severity": "note",
+      "side": "consumer",
+      "summary": "The stage-wide presence flag for this API is computed by the walker but never consulted by the parser, which goes straight to the per-prim schema probe. Dead performance gate, no correctness effect.",
+      "tracking": "follow-up to file"
+    }
+  ]
+}

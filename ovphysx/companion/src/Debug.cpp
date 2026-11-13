@@ -4,7 +4,7 @@
 // @implements REQ-COMP-DEBUG-001
 // @covers AC-1 AC-4
 // @implements REQ-CAPI-COMPANION-001
-// @covers AC-1
+// @covers AC-1 AC-3
 #include "ovphysx_companion/debug.h"
 #include "internal/sdk/CompanionRuntime.hpp"
 #include <omni/physx/NativeDebug.h>
@@ -36,6 +36,8 @@ Status configure(uint64_t attachment, const ovphysx_companion_debug_config_t* in
         return OVPHYSX_COMPANION_INVALID_ARGUMENT;
     CompanionOperationGuard guard(companionRuntime());
     if (!guard) return OVPHYSX_COMPANION_BUSY;
+    CompanionOwnerLane owner;
+    if (!owner.tryAcquireForAttachment(attachment)) return OVPHYSX_COMPANION_BUSY;
     DebugConfig config;
     config.parameters=input->parameters; config.scale=input->scale;
     config.enabled=input->enabled!=0; config.culling=input->culling!=0;
@@ -47,6 +49,8 @@ Status capture(uint64_t attachment, uint64_t limit, uint64_t* output) noexcept {
     try {
         CompanionOperationGuard guard(companionRuntime());
         if (!guard) return OVPHYSX_COMPANION_BUSY;
+        CompanionOwnerLane owner;
+        if (!owner.tryAcquireForAttachment(attachment)) return OVPHYSX_COMPANION_BUSY;
         std::shared_ptr<omni::physx::native::DebugFrame> frame=std::make_shared<DebugFrame>();
         const Status status=convert(captureDebug(attachment,limit,*frame));
         if (status!=OVPHYSX_COMPANION_OK) return status;

@@ -2,17 +2,22 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # @implements REQ-CAPI-OVSTAGE-SCHEMA-001
-# @covers AC-6
+# @covers AC-2, AC-6
 
 """A devschema build must drive native and Python consumers with its local data."""
 
 import hashlib
+import http.client
 import importlib.util
+import io
 import os
 from pathlib import Path
 import shutil
+import ssl
 import subprocess
 import sys
+import types
+import urllib.error
 from zipfile import ZipFile
 
 import pytest
@@ -60,7 +65,7 @@ def _native_driver(tmp_path, local=None, build_dir="_build"):
     build.mkdir(parents=True)
     if build_dir != "_build":
         default_build = project / "_build"
-        default_build.mkdir()
+        default_build.mkdir(exist_ok=True)
         (default_build / "ovphysx_dev_schema.stamp").write_text("stale-default-provider", encoding="utf-8")
     if local is not None:
         (build / "ovphysx_dev_schema.stamp").write_text(local.as_posix() + "\n", encoding="utf-8")
@@ -89,7 +94,7 @@ file(WRITE "{pythonpath.as_posix()}" "$ENV{{PYTHONPATH}}")
     return result, output, pythonpath
 
 
-@pytest.mark.parametrize("build_dir", ["_build", "custom build"])
+@pytest.mark.parametrize("build_dir", ["_build", "_build/custom build"])
 def test_native_and_python_drivers_select_local_schema_data(tmp_path, build_dir):
     local = tmp_path / "local provider"
     _provider(local)
@@ -108,7 +113,7 @@ def test_native_and_python_drivers_select_local_schema_data(tmp_path, build_dir)
     assert Path(probe.stdout.strip()) == local
 
 
-@pytest.mark.parametrize("build_dir", ["_build", "custom build"])
+@pytest.mark.parametrize("build_dir", ["_build", "_build/custom build"])
 def test_missing_local_provider_does_not_fall_back_to_published_data(tmp_path, build_dir):
     result, _, _ = _native_driver(tmp_path, tmp_path / "missing local provider", build_dir)
     assert result.returncode != 0
@@ -116,7 +121,7 @@ def test_missing_local_provider_does_not_fall_back_to_published_data(tmp_path, b
     assert not (tmp_path / "published-fetch-ran").exists()
 
 
-@pytest.mark.parametrize("build_dir", ["_build", "custom build"])
+@pytest.mark.parametrize("build_dir", ["_build", "_build/custom build"])
 def test_non_devschema_driver_keeps_published_provider(tmp_path, build_dir):
     result, output, _ = _native_driver(tmp_path, build_dir=build_dir)
     assert result.returncode == 0, result.stdout + result.stderr
@@ -124,7 +129,7 @@ def test_non_devschema_driver_keeps_published_provider(tmp_path, build_dir):
     assert (tmp_path / "published-fetch-ran").is_file()
 
 
-@pytest.mark.parametrize("build_dir", ["_build", "custom build", "absolute"])
+@pytest.mark.parametrize("build_dir", ["_build", "_build/custom build", "absolute"])
 def test_focused_pytest_wrapper_uses_local_provider(tmp_path, monkeypatch, build_dir):
     spec = importlib.util.spec_from_file_location("devschema_pytest_runner", ROOT / "scripts/run_uv_pytest.py")
     runner = importlib.util.module_from_spec(spec)
@@ -134,13 +139,13 @@ def test_focused_pytest_wrapper_uses_local_provider(tmp_path, monkeypatch, build
     tests.mkdir(parents=True)
     (tests / "pyproject.toml").write_text("", encoding="utf-8")
     if build_dir == "absolute":
-        build_dir = str(tmp_path / "absolute build")
+        build_dir = str(project / "_build/absolute build")
     monkeypatch.setenv("OVPHYSX_BUILD_DIR", build_dir)
     local = project / build_dir / "test-deps/local provider"
     _provider(local)
     (project / build_dir / "ovphysx_dev_schema.stamp").write_text(local.as_posix(), encoding="utf-8")
     if build_dir != "_build":
-        (project / "_build").mkdir()
+        (project / "_build").mkdir(exist_ok=True)
         (project / "_build/ovphysx_dev_schema.stamp").write_text("stale-default-provider", encoding="utf-8")
     monkeypatch.setattr(runner, "__file__", str(project / "scripts/run_uv_pytest.py"))
     monkeypatch.setattr(sys, "argv", ["run_uv_pytest.py", str(tests), "test_lifecycle.py"])
@@ -148,23 +153,26 @@ def test_focused_pytest_wrapper_uses_local_provider(tmp_path, monkeypatch, build
     monkeypatch.setattr(runner.subprocess, "call", lambda cmd, **kwargs: calls.append((cmd, kwargs)) or 0)
     assert runner.main() == 0
     cmd, kwargs = calls.pop()
-    assert "--locked" in cmd
+    assert "--no-sync" in cmd
+    assert calls[0][0] == ["uv", "sync", "--locked", "--no-install-project"]
     assert Path(kwargs["env"]["PYTHONPATH"].split(os.pathsep)[0]) == local
     assert Path(kwargs["env"]["PHYSX_USD_SCHEMAS_ROOT"]) == local
 
 
 @pytest.mark.parametrize("source", ["default", "argument", "environment", "argument-over-environment"])
 def test_cmake_build_directory_selection(tmp_path, monkeypatch, source):
-    build = tmp_path / "custom build"
+    project = tmp_path / "project"
+    project.mkdir()
+    build = project / "_build/custom build"
     monkeypatch.delenv("OVPHYSX_BUILD_DIR", raising=False)
     if "environment" in source:
-        monkeypatch.setenv("OVPHYSX_BUILD_DIR", str(build if source == "environment" else tmp_path / "wrong build"))
+        monkeypatch.setenv("OVPHYSX_BUILD_DIR", str(build if source == "environment" else project / "_build/wrong build"))
     output = tmp_path / "build-path.txt"
     script = tmp_path / "build-path.cmake"
     # Path selection needs no host-tool discovery from the full build setup.
     script.write_text(f'''
 cmake_minimum_required(VERSION 3.18)
-set(PROJECT_ROOT "{ROOT.as_posix()}")
+set(PROJECT_ROOT "{project.as_posix()}")
 include("{ROOT.as_posix()}/scripts/build_directory.cmake")
 file(WRITE "{output.as_posix()}" "${{BUILD_PATH}}")
 ''', encoding="utf-8")
@@ -172,7 +180,7 @@ file(WRITE "{output.as_posix()}" "${{BUILD_PATH}}")
     result = subprocess.run([shutil.which("cmake"), *args, "-P", str(script)],
                             capture_output=True, text=True, timeout=30)
     assert result.returncode == 0, result.stdout + result.stderr
-    assert Path(output.read_text()) == (ROOT / "_build" if source == "default" else build)
+    assert Path(output.read_text()) == (project / "_build" if source == "default" else build)
 
 
 def test_rebuilding_same_version_refreshes_the_external_provider(tmp_path):
@@ -217,8 +225,8 @@ with ZipFile(root / "_dist/physx_usd_schemas-26.1.0-py3-none-any.whl", "w") as w
         generated = root / "_build/schema/share/usd/plugins" / module / "resources/generatedSchema.usda"
         wheel.writestr(prefix + "generatedSchema.usda", generated.read_bytes())
 ''', encoding="utf-8")
-    build = tmp_path / "ovphysx-build"
-    build.mkdir()
+    build = project / "_build"
+    build.mkdir(parents=True)
     stamp = build / "ovphysx_dev_schema.stamp"
     script = tmp_path / "build-provider.cmake"
     build_script = (ROOT / "scripts/build.cmake").read_text(encoding="utf-8")
@@ -295,3 +303,230 @@ def test_provider_install_and_cache_reuse_beyond_max_path(tmp_path, monkeypatch,
         assert resource.read_text() == "#usda 1.0\n# local edit\n"
     wheel.unlink()
     assert installer.install(destination, wheel=wheel, sha256=digest) == destination
+
+
+class _Clock:
+    def __init__(self):
+        self.now = 0.0
+        self.sleeps = []
+
+    def monotonic(self):
+        return self.now
+
+    def sleep(self, seconds):
+        assert seconds > 0
+        self.sleeps.append(seconds)
+        self.now += seconds
+
+
+@pytest.fixture
+def retry_clock(monkeypatch, installer):
+    clock = _Clock()
+    # Only the installer's view of time moves; the real clock keeps pytest honest.
+    monkeypatch.setattr(installer, "time", types.SimpleNamespace(monotonic=clock.monotonic, sleep=clock.sleep))
+    return clock
+
+
+class _Response:
+    def __init__(self, body):
+        self._body = body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        return False
+
+    def read(self):
+        return self._body
+
+
+def _http_error(installer, code):
+    return urllib.error.HTTPError(installer.URL, code, "error", {}, io.BytesIO())
+
+
+def test_schema_download_retry_window_covers_the_configured_seconds(installer, retry_clock, monkeypatch):
+    attempts = []
+    failure = _http_error(installer, 503)
+
+    def unavailable(url, timeout):
+        attempts.append((retry_clock.now, timeout))
+        raise failure
+
+    monkeypatch.setattr(installer.urllib.request, "urlopen", unavailable)
+    with pytest.raises(urllib.error.HTTPError) as exc:
+        installer._download(retry_timeout=300)
+    assert exc.value is failure
+    assert [when for when, _ in attempts] == [0, 60, 120, 180, 240]
+    assert all(0 < timeout <= min(60, 300 - when) for when, timeout in attempts)
+    assert retry_clock.sleeps == [60] * 5 and retry_clock.now == 300
+
+
+@pytest.mark.parametrize("make_error", [
+    lambda installer: _http_error(installer, 500),
+    lambda installer: _http_error(installer, 503),
+    lambda installer: _http_error(installer, 404),
+    lambda installer: _http_error(installer, 408),
+    lambda installer: _http_error(installer, 429),
+    lambda installer: urllib.error.URLError(TimeoutError()),
+    lambda installer: TimeoutError(),
+    lambda installer: ConnectionResetError(),
+    lambda installer: http.client.IncompleteRead(b"part"),
+    lambda installer: ssl.SSLEOFError(),
+])
+def test_schema_download_recovers_from_every_transient_failure(installer, retry_clock, monkeypatch, make_error):
+    calls = []
+
+    def flaky(url, timeout):
+        calls.append(url)
+        if len(calls) < 3:
+            raise make_error(installer)
+        return _Response(b"payload")
+
+    monkeypatch.setattr(installer.urllib.request, "urlopen", flaky)
+    assert installer._download(retry_timeout=600) == b"payload"
+    assert calls == [installer.URL] * 3
+    assert retry_clock.sleeps == [60] * 2
+
+
+def test_schema_download_window_that_is_not_a_multiple_of_the_delay(installer, retry_clock, monkeypatch):
+    attempts = []
+
+    def unavailable(url, timeout):
+        attempts.append((retry_clock.now, timeout))
+        raise _http_error(installer, 503)
+
+    monkeypatch.setattr(installer.urllib.request, "urlopen", unavailable)
+    with pytest.raises(urllib.error.HTTPError):
+        installer._download(retry_timeout=90)
+    # The second attempt gets only the 30 s left, and the last wait is shortened to the deadline.
+    assert attempts == [(0, 60), (60, 30)]
+    assert retry_clock.sleeps == [60, 30]
+
+
+def test_schema_download_is_a_single_attempt_by_default(installer, retry_clock, monkeypatch):
+    attempts = []
+    failure = _http_error(installer, 503)
+
+    def unavailable(url, timeout):
+        attempts.append(timeout)
+        raise failure
+
+    monkeypatch.setattr(installer.urllib.request, "urlopen", unavailable)
+    with pytest.raises(urllib.error.HTTPError) as exc:
+        installer._download()
+    assert exc.value is failure
+    assert attempts == [60] and retry_clock.sleeps == []
+
+
+@pytest.mark.parametrize("make_error", [
+    lambda installer: _http_error(installer, 403),
+    lambda installer: _http_error(installer, 401),
+    lambda installer: urllib.error.URLError(ssl.SSLCertVerificationError()),
+    lambda installer: urllib.error.URLError(FileNotFoundError()),
+])
+def test_schema_download_fails_at_once_on_errors_a_retry_cannot_fix(installer, retry_clock, monkeypatch, make_error):
+    attempts = []
+
+    def refused(url, timeout):
+        attempts.append(timeout)
+        raise make_error(installer)
+
+    monkeypatch.setattr(installer.urllib.request, "urlopen", refused)
+    with pytest.raises(urllib.error.URLError):
+        installer._download(retry_timeout=300)
+    assert len(attempts) == 1 and retry_clock.sleeps == []
+
+
+def test_install_retries_the_download_then_verifies_the_digest(tmp_path, installer, retry_clock, monkeypatch):
+    wheel, digest = _provider_wheel(tmp_path)
+    body = wheel.read_bytes()
+    monkeypatch.setattr(installer, "SHA256", digest)
+    calls = []
+
+    def flaky(url, timeout):
+        calls.append(url)
+        if len(calls) < 3:
+            raise _http_error(installer, 503)
+        return _Response(body)
+
+    monkeypatch.setattr(installer.urllib.request, "urlopen", flaky)
+    destination = installer.install(tmp_path / "provider", sha256=digest, retry_timeout=600)
+    assert len(calls) == 3 and retry_clock.sleeps == [60, 60]
+    assert (destination / "physx_usd_schemas-26.1.0.dist-info/METADATA").is_file()
+
+
+def test_install_never_retries_a_digest_mismatch(tmp_path, installer, retry_clock, monkeypatch):
+    calls = []
+
+    def wrong_bytes(url, timeout):
+        calls.append(url)
+        return _Response(b"not the locked wheel")
+
+    monkeypatch.setattr(installer.urllib.request, "urlopen", wrong_bytes)
+    with pytest.raises(RuntimeError, match="SHA-256 mismatch"):
+        installer.install(tmp_path / "provider", retry_timeout=600)
+    assert len(calls) == 1 and retry_clock.sleeps == []
+
+
+def _run_installer(tmp_path, arguments, environment):
+    script = ROOT / "tests/c_samples/common/fetch_physx_schemas.py"
+    env = {key: value for key, value in os.environ.items() if key != "OVSTAGE_FETCH_RETRY_TIMEOUT"}
+    env.update(environment)
+    return subprocess.run([sys.executable, str(script), *arguments], capture_output=True, text=True,
+                          env=env, timeout=60)
+
+
+@pytest.mark.parametrize("environment, arguments", [
+    ({"OVSTAGE_FETCH_RETRY_TIMEOUT": "invalid"}, []),
+    ({"OVSTAGE_FETCH_RETRY_TIMEOUT": "-1"}, []),
+    ({}, ["--retry-timeout", "-1"]),
+    ({}, ["--retry-timeout", "invalid"]),
+])
+def test_schema_installer_rejects_an_invalid_retry_window_before_downloading(tmp_path, environment, arguments):
+    result = _run_installer(tmp_path, ["--dest", str(tmp_path / "provider"), *arguments], environment)
+    assert result.returncode == 2, result.stdout + result.stderr
+    assert not (tmp_path / "provider").exists()
+
+
+@pytest.mark.parametrize("environment, arguments", [
+    ({"OVSTAGE_FETCH_RETRY_TIMEOUT": "300"}, []),
+    ({"OVSTAGE_FETCH_RETRY_TIMEOUT": ""}, []),  # an empty variable is the same as an unset one
+    ({}, ["--retry-timeout", "300"]),
+    ({"OVSTAGE_FETCH_RETRY_TIMEOUT": "invalid"}, ["--retry-timeout", "0"]),
+])
+def test_schema_installer_accepts_the_retry_window_from_the_environment_or_the_argument(
+        tmp_path, environment, arguments):
+    wheel, digest = _provider_wheel(tmp_path)
+    result = _run_installer(
+        tmp_path, ["--dest", str(tmp_path / "provider"), "--wheel", str(wheel), "--sha256", digest, *arguments],
+        environment)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert (tmp_path / "provider/physx_usd_schemas-26.1.0.dist-info/METADATA").is_file()
+
+
+@pytest.mark.parametrize("environment, argument, expected", [
+    (None, None, 0),
+    ("1800", None, 1800),
+    (None, "1800", 1800),
+    ("1800", "0", 0),
+    ("", None, 0),
+])
+def test_schema_installer_forwards_the_retry_window_to_the_download(
+        tmp_path, installer, monkeypatch, environment, argument, expected):
+    monkeypatch.delenv("OVSTAGE_FETCH_RETRY_TIMEOUT", raising=False)
+    if environment is not None:
+        monkeypatch.setenv("OVSTAGE_FETCH_RETRY_TIMEOUT", environment)
+    seen = []
+
+    def download(retry_timeout=0):
+        seen.append(retry_timeout)
+        raise RuntimeError("download reached")
+
+    monkeypatch.setattr(installer, "_download", download)
+    arguments = ["--dest", str(tmp_path / "provider")]
+    if argument is not None:
+        arguments += ["--retry-timeout", argument]
+    with pytest.raises(RuntimeError, match="download reached"):
+        installer.main(arguments)
+    assert seen == [expected]

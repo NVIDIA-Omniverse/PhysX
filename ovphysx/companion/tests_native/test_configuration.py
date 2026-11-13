@@ -19,12 +19,13 @@ from ovphysx_companion.native import ToolsSession,CompanionError,Status
 @pytest.fixture
 def stages(physics):
     import ovstage
+    from ovphysx.population import physics_population_descs
     result=[]
     try:
         for name in ('settings-B','settings-C'):
             stage=ovstage.Stage(name);result.append(stage)
-            ovstage.population.open_usd(stage,str(Path(__file__).resolve().parents[1]/'samples/scenes/two_boxes.usda'),
-                ordinal=1,domains=ovstage.PopulationDomain.ALL)
+            ovstage.population.open_usd_with_desc(stage,str(Path(__file__).resolve().parents[1]/'samples/scenes/two_boxes.usda'),
+                ordinal=1,time=ovstage.population.DEFAULT_TIME,descs=physics_population_descs(rendering=True))
             stage.advance_write_floor(ordinal=1).wait()
         yield result
     finally:
@@ -144,6 +145,24 @@ def test_configuration_ovd_recording_capability_default_and_core_delegation():
     env['PYTHONPATH']=os.pathsep.join(filter(None,[str(Path(ovphysx_companion.__file__).parents[1]),env.get('PYTHONPATH')]))
     result=subprocess.run([sys.executable,'-c',script],env=env,capture_output=True,text=True,timeout=60)
     assert result.returncode==0,result.stdout+result.stderr
+
+
+def test_configuration_compiled_stage_cache_live_core_delegation(physics):
+    from ovphysx import CompiledStageCacheMode,GlobalConfigKey,get_global_config,set_global_config
+    setting=CATALOG['process.compiled_stage_cache']
+    assert setting.scope==Scope.PROCESS and setting.phase=='live'
+    before=get_global('compiled_stage_cache')
+    try:
+        # A live instance does not freeze the key; each later attach reads it.
+        set_global('compiled_stage_cache',CompiledStageCacheMode.READ_ONLY)
+        assert get_global_config(GlobalConfigKey.COMPILED_STAGE_CACHE)==CompiledStageCacheMode.READ_ONLY
+        set_global_config(GlobalConfigKey.COMPILED_STAGE_CACHE,int(CompiledStageCacheMode.DISABLED))
+        assert get_global('compiled_stage_cache')==CompiledStageCacheMode.DISABLED
+        for invalid in (-1,4):
+            with pytest.raises(ValueError):set_global('compiled_stage_cache',invalid)
+            assert get_global('compiled_stage_cache')==CompiledStageCacheMode.DISABLED
+    finally:
+        set_global('compiled_stage_cache',before)
 
 
 def test_settings_preview_sample():

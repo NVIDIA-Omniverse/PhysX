@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <ovstage/ovstage.h>
+#include "ReadGroupUtils.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -43,7 +43,7 @@ struct ReadColumn
     }
 };
 
-inline bool readColumn(const ovstage_read_group_t& group, ReadColumn& out)
+inline bool readColumn(const ReadGroupColumn& group, ReadColumn& out)
 {
     if (group.is_delete || group.is_array || group.prims.count == 0 ||
         group.data.tensor_count != 1 || !group.data.tensors ||

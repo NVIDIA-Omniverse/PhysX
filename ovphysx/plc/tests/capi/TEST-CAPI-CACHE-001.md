@@ -14,7 +14,11 @@ between native instance destruction and SDK shutdown, then after process exit.
 
 ## Given
 
-- A CPU-only Python subprocess with an isolated temporary directory and no configured cache.
+- A CPU-only Python subprocess with an isolated temporary directory (`TMPDIR`/`TMP`/`TEMP`, plus
+  `SystemTemp` on Windows for a SYSTEM caller) and no configured cache.
+  The subprocess reads the private directory back through `COOKED_COLLIDER_CACHE_DIRECTORY`;
+  it does not recompute the OS temp root, which the SDK and Python can resolve differently
+  (a Windows SYSTEM process is placed under `C:\Windows\SystemTemp`).
 - A loaded mesh scene with completed collision cooking.
 - A witness around `ovphysx_destroy_instance` that runs before Python calls SDK shutdown.
 

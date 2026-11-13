@@ -1,0 +1,676 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxRigidBodyAPI",
+  "title": "PhysxRigidBodyAPI",
+  "summary": "PhysX tuning for a dynamic rigid body. Read only when the prim also carries PhysicsRigidBodyAPI with rigidBodyEnabled true. Three columns have units-scaled parser defaults that the raw schema fallback does not reproduce.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "Xformable"
+  ],
+  "requires": [
+    "PhysicsRigidBodyAPI"
+  ],
+  "multi_apply": false,
+  "uses": [
+    "stage_units"
+  ],
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "producer_scope": "Every declared attribute is published at its resolved value. Five columns are rewritten when unauthored, and CREATED on any prim with PhysicsRigidBodyAPI even when this API is not applied: sleepThreshold, stabilizationThreshold, maxDepenetrationVelocity (units-scaled), maxLinearVelocity (1e16) and maxContactImpulse (FLT_MAX). The producer's values equal the consumer's absent-column defaults, so on a producer-populated stage the raw schema fallbacks never reach the consumer.",
+  "columns": [
+    {
+      "name": "physxRigidBody:linearDamping",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "verify": {
+        "target": "body",
+        "expr": "body->getLinearDamping()",
+        "kind": "float",
+        "sample": 0.3
+      },
+      "parser_default": 0.0,
+      "absent": "0.",
+      "raw_fallback_diverges": false,
+      "units": "1/s",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseBody.cpp"
+      ]
+    },
+    {
+      "name": "physxRigidBody:angularDamping",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.05,
+      "verify": {
+        "target": "body",
+        "expr": "body->getAngularDamping()",
+        "kind": "float",
+        "sample": 0.4
+      },
+      "parser_default": 0.05,
+      "absent": "0.05.",
+      "raw_fallback_diverges": false,
+      "units": "1/s",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseBody.cpp"
+      ]
+    },
+    {
+      "name": "physxRigidBody:maxLinearVelocity",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "inf",
+      "producer": {
+        "writes": 1e+16,
+        "via": "derive",
+        "on": {
+          "applied": [
+            "PhysicsRigidBodyAPI"
+          ]
+        },
+        "when": "unauthored",
+        "creates_column": true
+      },
+      "verify": {
+        "target": "body",
+        "expr": "body->getMaxLinearVelocity()",
+        "kind": "float",
+        "sample": 12.0
+      },
+      "parser_default": 1e+16,
+      "absent": "1e16, effectively unlimited. inf is clamped to the same value.",
+      "raw_fallback_diverges": false,
+      "units": "length/s",
+      "clamp": [
+        0,
+        1e+16
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseBody.cpp"
+      ]
+    },
+    {
+      "name": "physxRigidBody:maxAngularVelocity",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 5729.58,
+      "verify": {
+        "target": "body",
+        "expr": "body->getMaxAngularVelocity()",
+        "kind": "float",
+        "map": "v * 0.017453292519943295",
+        "sample": 720.0
+      },
+      "parser_default": 5729.58,
+      "absent": "100 rad/s (5729.58 deg/s). Authored values are clamped to 1e16 deg/s and converted; negative values are ignored.",
+      "raw_fallback_diverges": false,
+      "units": "deg/s",
+      "conversion": "deg_to_rad",
+      "clamp": [
+        0,
+        1e+16
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseBody.cpp"
+      ]
+    },
+    {
+      "name": "physxRigidBody:sleepThreshold",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 5e-05,
+      "producer": {
+        "writes": "5e-5 * (10 / metersPerUnit) ** 2",
+        "via": "derive",
+        "on": {
+          "applied": [
+            "PhysicsRigidBodyAPI"
+          ]
+        },
+        "when": "unauthored",
+        "creates_column": true
+      },
+      "verify": {
+        "target": "body",
+        "expr": "body->getSleepThreshold()",
+        "kind": "float",
+        "sample": 0.25
+      },
+      "parser_default": "5e-5 * (10 / metersPerUnit) ** 2",
+      "absent": "Units-scaled default: 5e-3 on a meter stage, 50 on a centimeter stage. Writing the raw schema fallback 5e-5 on a centimeter stage makes the body sleep 10^6 times too eagerly.",
+      "raw_fallback_diverges": true,
+      "units": "length^2/s^2",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseBody.cpp"
+      ]
+    },
+    {
+      "name": "physxRigidBody:stabilizationThreshold",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 1e-05,
+      "producer": {
+        "writes": "1e-5 * (10 / metersPerUnit) ** 2",
+        "via": "derive",
+        "on": {
+          "applied": [
+            "PhysicsRigidBodyAPI"
+          ]
+        },
+        "when": "unauthored",
+        "creates_column": true
+      },
+      "verify": {
+        "target": "body",
+        "expr": "body->getStabilizationThreshold()",
+        "kind": "float",
+        "sample": 0.125
+      },
+      "parser_default": "1e-5 * (10 / metersPerUnit) ** 2",
+      "absent": "Units-scaled default: 1e-3 on a meter stage, 10 on a centimeter stage.",
+      "raw_fallback_diverges": true,
+      "units": "length^2/s^2",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseBody.cpp"
+      ]
+    },
+    {
+      "name": "physxRigidBody:maxDepenetrationVelocity",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 3.0,
+      "producer": {
+        "writes": "3 / metersPerUnit",
+        "via": "derive",
+        "on": {
+          "applied": [
+            "PhysicsRigidBodyAPI"
+          ]
+        },
+        "when": "unauthored",
+        "creates_column": true
+      },
+      "verify": {
+        "target": "body",
+        "expr": "body->getMaxDepenetrationVelocity()",
+        "kind": "float",
+        "sample": 7.0
+      },
+      "parser_default": "3 / metersPerUnit",
+      "absent": "Units-scaled default: 3 on a meter stage, 300 on a centimeter stage.",
+      "raw_fallback_diverges": true,
+      "units": "length/s",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseBody.cpp"
+      ]
+    },
+    {
+      "name": "physxRigidBody:contactSlopCoefficient",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "verify": {
+        "target": "body",
+        "expr": "body->getContactSlopCoefficient()",
+        "kind": "float",
+        "sample": 0.01
+      },
+      "parser_default": 0.0,
+      "absent": "0.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseBody.cpp"
+      ]
+    },
+    {
+      "name": "physxRigidBody:maxContactImpulse",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "inf",
+      "producer": {
+        "writes": "FLT_MAX",
+        "via": "derive",
+        "on": {
+          "applied": [
+            "PhysicsRigidBodyAPI"
+          ]
+        },
+        "when": "unauthored",
+        "creates_column": true
+      },
+      "verify": {
+        "target": "body",
+        "expr": "body->getMaxContactImpulse()",
+        "kind": "float",
+        "sample": 1000.0
+      },
+      "parser_default": "FLT_MAX",
+      "absent": "Unlimited.",
+      "raw_fallback_diverges": false,
+      "units": "mass*length/s",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseBody.cpp"
+      ]
+    },
+    {
+      "name": "physxRigidBody:cfmScale",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.025,
+      "parser_default": 0.025,
+      "absent": "0.025.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "clamp": [
+        0,
+        1
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseBody.cpp"
+      ]
+    },
+    {
+      "name": "physxRigidBody:solverPositionIterationCount",
+      "usd_type": "int",
+      "origin": "schema",
+      "kind": "attribute",
+      "dtype": {
+        "code": "int",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 16,
+      "verify": {
+        "target": "body",
+        "expr": "harness::positionIterations(body)",
+        "kind": "int",
+        "sample": 8
+      },
+      "parser_default": 16,
+      "absent": "16.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "clamp": [
+        1,
+        255
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseBody.cpp"
+      ]
+    },
+    {
+      "name": "physxRigidBody:solverVelocityIterationCount",
+      "usd_type": "int",
+      "origin": "schema",
+      "kind": "attribute",
+      "dtype": {
+        "code": "int",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 1,
+      "verify": {
+        "target": "body",
+        "expr": "harness::velocityIterations(body)",
+        "kind": "int",
+        "sample": 2
+      },
+      "parser_default": 1,
+      "absent": "1.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "clamp": [
+        0,
+        255
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseBody.cpp"
+      ]
+    },
+    {
+      "name": "physxRigidBody:enableCCD",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": false,
+      "verify": {
+        "target": "body",
+        "expr": "body->getRigidBodyFlags().isSet(physx::PxRigidBodyFlag::eENABLE_CCD)",
+        "kind": "bool",
+        "sample": true
+      },
+      "parser_default": false,
+      "absent": "Off.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseBody.cpp"
+      ]
+    },
+    {
+      "name": "physxRigidBody:enableSpeculativeCCD",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": false,
+      "verify": {
+        "target": "body",
+        "expr": "body->getRigidBodyFlags().isSet(physx::PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD)",
+        "kind": "bool",
+        "sample": true
+      },
+      "parser_default": false,
+      "absent": "Off.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseBody.cpp"
+      ]
+    },
+    {
+      "name": "physxRigidBody:disableGravity",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": false,
+      "verify": {
+        "target": "actor",
+        "expr": "actor->getActorFlags().isSet(physx::PxActorFlag::eDISABLE_GRAVITY)",
+        "kind": "bool",
+        "sample": true
+      },
+      "parser_default": false,
+      "absent": "Gravity applies.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseBody.cpp"
+      ]
+    },
+    {
+      "name": "physxRigidBody:retainAccelerations",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": false,
+      "verify": {
+        "target": "body",
+        "expr": "body->getRigidBodyFlags().isSet(physx::PxRigidBodyFlag::eRETAIN_ACCELERATIONS)",
+        "kind": "bool",
+        "sample": true
+      },
+      "parser_default": false,
+      "absent": "Off.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseBody.cpp"
+      ]
+    },
+    {
+      "name": "physxRigidBody:enableGyroscopicForces",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": true,
+      "verify": {
+        "target": "body",
+        "expr": "body->getRigidBodyFlags().isSet(physx::PxRigidBodyFlag::eENABLE_GYROSCOPIC_FORCES)",
+        "kind": "bool",
+        "sample": false
+      },
+      "parser_default": true,
+      "absent": "On.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseBody.cpp"
+      ]
+    },
+    {
+      "name": "physxRigidBody:solveContact",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": true,
+      "parser_default": true,
+      "absent": "On.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseBody.cpp"
+      ]
+    },
+    {
+      "name": "physxRigidBody:lockedPosAxis",
+      "usd_type": "int",
+      "origin": "schema",
+      "kind": "attribute",
+      "dtype": {
+        "code": "int",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0,
+      "verify": {
+        "target": "body",
+        "expr": "static_cast<int>(static_cast<uint32_t>(body->getRigidDynamicLockFlags())) & 7",
+        "kind": "int",
+        "sample": 5,
+        "notes": "USD bitmask x=1, y=2, z=4 maps onto PxRigidDynamicLockFlag::eLOCK_LINEAR_X..Z in the same order."
+      },
+      "parser_default": 0,
+      "absent": "No locked translation axes. Bitmask x=1, y=2, z=4.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "clamp": [
+        0,
+        7
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseBody.cpp"
+      ]
+    },
+    {
+      "name": "physxRigidBody:lockedRotAxis",
+      "usd_type": "int",
+      "origin": "schema",
+      "kind": "attribute",
+      "dtype": {
+        "code": "int",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0,
+      "verify": {
+        "target": "body",
+        "expr": "(static_cast<int>(static_cast<uint32_t>(body->getRigidDynamicLockFlags())) >> 3) & 7",
+        "kind": "int",
+        "sample": 3
+      },
+      "parser_default": 0,
+      "absent": "No locked rotation axes. Bitmask x=1, y=2, z=4.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "clamp": [
+        0,
+        7
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseBody.cpp"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "column": "physxRigidBody:sleepThreshold",
+      "severity": "fragile",
+      "summary": "The authored-bit gate that protects units-scaled defaults is a no-op on ovstage (every attribute counts as authored there), so the default is passed through the clamp. Every current default lies inside its clamp range; a future default outside it would be clipped on ovstage only. Same for stabilizationThreshold and maxDepenetrationVelocity.",
+      "tracking": "ADR-0020 open questions"
+    }
+  ]
+}

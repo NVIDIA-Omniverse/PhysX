@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# @implements REQ-PACKAGING-BUILDNUM-001
+# @covers AC-7
+
 """Tests for internal _bindings module.
 
 Covers low-level ctypes bindings, library loading helpers, and the invalid-handle
@@ -11,7 +14,9 @@ is handled by test_types_sync.py and test_module_exports.py.
 """
 
 import os
+import subprocess
 import sys
+import textwrap
 from types import SimpleNamespace
 
 import pytest
@@ -129,7 +134,7 @@ def test_load_library_preserves_wheel_dependencies_for_bundled_override(monkeypa
     monkeypatch.setattr(_bindings, "_preload_windows_cpp_runtime", lambda: None)
     monkeypatch.setattr(_bindings, "_add_dll_directory", lambda _path: None)
     monkeypatch.setattr(_bindings, "_prefer_ovstage_runtime_dir", lambda _path: None)
-    monkeypatch.setattr(_bindings.ctypes, "CDLL", lambda _path: loaded_library)
+    monkeypatch.setattr(_bindings, "_NativeLibrary", lambda _path: loaded_library)
 
     assert _bindings._load_library() is loaded_library
     assert preload_calls == [True]
@@ -155,7 +160,7 @@ def test_load_library_keeps_external_override_isolated(monkeypatch, tmp_path):
     monkeypatch.setattr(_bindings, "_add_dll_directory", lambda _path: None)
     monkeypatch.setattr(_bindings, "_prefer_ovstage_runtime_dir", preferred_runtime_dirs.append)
     monkeypatch.setattr(_bindings, "_ovstage_bin_dir", lambda _pkg_dir: ovstage_bin)
-    monkeypatch.setattr(_bindings.ctypes, "CDLL", lambda _path: loaded_library)
+    monkeypatch.setattr(_bindings, "_NativeLibrary", lambda _path: loaded_library)
 
     assert _bindings._load_library() is loaded_library
     assert preload_calls == []
@@ -164,3 +169,81 @@ def test_load_library_keeps_external_override_isolated(monkeypatch, tmp_path):
     if sys.platform == "win32":
         expected_dirs.append(ovstage_bin)
     assert preferred_runtime_dirs == expected_dirs
+
+
+@pytest.mark.parametrize("missing_symbol,native_version", [
+    ("ovphysx_create_instance_with_args", "0.6.4.72118723"),
+    ("ovphysx_set_log_level", "matching"),
+    ("ovphysx_internal_omnipvd_recording_options_sizeof", "matching"),
+    ("ovphysx_get_version_string", None),
+])
+def test_missing_native_symbol_reports_versions(missing_symbol, native_version):
+    """A fresh bootstrap must diagnose unavailable APIs before creating an instance."""
+    code = textwrap.dedent(f"""
+        import ctypes
+        import ovphysx
+
+        native_version = {native_version!r}
+        if native_version == "matching":
+            native_version = ovphysx.__version__
+        original_lookup = ctypes.CDLL.__getattr__
+        selected_libraries = []
+
+        def lookup(library, name):
+            if name == {missing_symbol!r}:
+                selected_libraries.append(library._name)
+                raise AttributeError("missing " + name)
+            if name == "ovphysx_get_version_string":
+                return lambda: native_version.encode()
+            return original_lookup(library, name)
+
+        ctypes.CDLL.__getattr__ = lookup
+        try:
+            from ovphysx import PhysX
+        except RuntimeError as exc:
+            message = str(exc)
+            assert {missing_symbol!r} in message, message
+            assert "library '" + selected_libraries[0] + "'" in message, message
+            assert "Python: '" + ovphysx.__version__ + "'" in message, message
+            assert "native: '" + (native_version or "unavailable") + "'" in message, message
+            assert "set OVPHYSX_LIB to the matching library" in message, message
+            assert isinstance(exc.__cause__, AttributeError)
+        else:
+            raise AssertionError("Missing native symbol did not stop bootstrap")
+    """)
+    result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=60)
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+@pytest.mark.parametrize("name", ["__missing_attribute__", "ovphysx_query_shared_dictionary"])
+def test_missing_optional_attribute_keeps_attribute_error(name):
+    from ovphysx import _bindings
+
+    with pytest.raises(AttributeError):
+        getattr(_bindings._lib, name)
+    assert not hasattr(_bindings._lib, name)
+
+
+# @implements REQ-PYTHON-OMNIPVD-CAPTURE-001
+# @covers AC-4
+def test_recording_options_reject_old_layout_with_same_size():
+    """An older options struct can have the same size but no wait field."""
+    code = textwrap.dedent("""
+        import ctypes
+        original_lookup = ctypes.CDLL.__getattr__
+
+        def lookup(library, name):
+            if name == "ovphysx_internal_omnipvd_recording_options_offset":
+                return lambda field: ctypes.c_size_t(-1).value
+            return original_lookup(library, name)
+
+        ctypes.CDLL.__getattr__ = lookup
+        try:
+            from ovphysx import PhysX
+        except RuntimeError as exc:
+            assert "recording options ABI mismatch" in str(exc), str(exc)
+        else:
+            raise AssertionError("Old recording options layout did not stop bootstrap")
+    """)
+    result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=60)
+    assert result.returncode == 0, result.stdout + result.stderr

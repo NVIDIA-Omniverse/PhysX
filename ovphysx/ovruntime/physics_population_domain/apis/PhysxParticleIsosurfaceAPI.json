@@ -1,0 +1,274 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxParticleIsosurfaceAPI",
+  "title": "PhysxParticleIsosurfaceAPI",
+  "summary": "Isosurface extraction post-processing on a particle system: a triangle mesh around the fluid particles for rendering, without effect on the dynamics. The system parse reads the enable flag only when the API is listed, and the post-process re-parses the API for the extractor settings, auto-computing sizes from the system's resolved fluidRestOffset.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "PhysxParticleSystem"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "columns": [
+    {
+      "name": "physxParticleIsosurface:isosurfaceEnabled",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": true,
+      "parser_default": false,
+      "absent": "false: no isosurface (the stage is not enabled at creation, and an extractor, if any, is disabled). USD's fallback is true, so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/particles/PhysXParticlePost.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceParticle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXParticlePropertiesUpdate.cpp"
+      ],
+      "notes": "Read twice: by the system parse (it selects the post-process stage when the system is created) and by the isosurface parse, which enables or disables the isosurface extractor. On change the property update enables or disables the stage without checking that the API is listed."
+    },
+    {
+      "name": "physxParticleIsosurface:maxVertices",
+      "usd_type": "uniform int",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "int",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 1048576,
+      "parser_default": 0,
+      "absent": "0 is passed as the vertex capacity of the PhysX isosurface extractor. USD's fallback is 1048576, so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/particles/PhysXParticlePost.cpp"
+      ],
+      "notes": "Used only while the isosurface stage is enabled. No property update is registered for this column: the extractor is recreated, and picks up the capacities, only when maxSubgrids or gridSpacing changed by the time the post-process refreshes it."
+    },
+    {
+      "name": "physxParticleIsosurface:maxTriangles",
+      "usd_type": "uniform int",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "int",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 2097152,
+      "parser_default": 0,
+      "absent": "0 is passed as the triangle capacity of the PhysX isosurface extractor. USD's fallback is 2097152, so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/particles/PhysXParticlePost.cpp"
+      ],
+      "notes": "Used only while the isosurface stage is enabled. No property update is registered for this column: the extractor is recreated, and picks up the capacities, only when maxSubgrids or gridSpacing changed by the time the post-process refreshes it."
+    },
+    {
+      "name": "physxParticleIsosurface:maxSubgrids",
+      "usd_type": "uniform int",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "int",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 2048,
+      "parser_default": 0,
+      "absent": "0 is passed as the sparse grid's maximum subgrid count. USD's fallback is 2048, so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/particles/PhysXParticlePost.cpp"
+      ],
+      "notes": "Used only while the isosurface stage is enabled. No property update is registered for this column: the extractor is recreated, and picks up the capacities, only when maxSubgrids or gridSpacing changed by the time the post-process refreshes it."
+    },
+    {
+      "name": "physxParticleIsosurface:gridSpacing",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "-inf",
+      "parser_default": 0.0,
+      "absent": "Read as 0, which is not the auto sentinel: a spacing not larger than 0.9 x the system's resolved fluidRestOffset is raised to it, so an absent column yields 0.9 x fluidRestOffset (0 when fluidRestOffset is absent too).",
+      "raw_fallback_diverges": true,
+      "sentinel": "A negative value (USD fallback -inf) means auto: 1.5 x the system's resolved fluidRestOffset.",
+      "units": "length",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/particles/PhysXParticlePost.cpp"
+      ],
+      "notes": "Used only while the isosurface stage is enabled. A changed spacing recreates the extractor when the post-process refreshes it."
+    },
+    {
+      "name": "physxParticleIsosurface:surfaceDistance",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "-inf",
+      "parser_default": 0.0,
+      "absent": "Read as 0, which is not the auto sentinel: the isosurface passes through the particle centers. A value above 2.5 x the resolved gridSpacing is clamped to it.",
+      "raw_fallback_diverges": true,
+      "sentinel": "A negative value (USD fallback -inf) means auto: 1.6 x the system's resolved fluidRestOffset.",
+      "units": "length",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/particles/PhysXParticlePost.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXParticlePropertiesUpdate.cpp"
+      ],
+      "notes": "Used only while the isosurface stage is enabled; re-read whenever the post-process refreshes its isosurface extractor. The property-update handler for this column reads the value but applies nothing (its body is commented out)."
+    },
+    {
+      "name": "physxParticleIsosurface:gridFilteringPasses",
+      "usd_type": "string",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "uint",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": true
+      },
+      "required": false,
+      "raw_fallback": "GSRS",
+      "parser_default": "no passes",
+      "absent": "No grid filtering passes. The runtime decodes no string column of an ovstage Stage, so there this column reads as absent even when written; on other sources each S, G or R adds a smooth, grow or reduce pass, consecutive repeats collapse, other characters are ignored and more than 32 passes fall back to GSRS.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/particles/PhysXParticlePost.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXParticlePropertiesUpdate.cpp"
+      ],
+      "notes": "USD string, stored by ovstage as a byte string. Used only while the isosurface stage is enabled; re-read whenever the post-process refreshes its isosurface extractor. The property-update handler for this column reads the value but applies nothing (its body is commented out)."
+    },
+    {
+      "name": "physxParticleIsosurface:gridSmoothingRadius",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "-inf",
+      "parser_default": 0.0,
+      "absent": "Read as 0, which is not the auto sentinel: no grid smoothing radius.",
+      "raw_fallback_diverges": true,
+      "sentinel": "A negative value (USD fallback -inf) means auto: 2 x the system's resolved fluidRestOffset.",
+      "units": "length",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/particles/PhysXParticlePost.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXParticlePropertiesUpdate.cpp"
+      ],
+      "notes": "The schema documents the radius as dimensionless, but the auto value is a length and it is passed unscaled as the PxIsosurfaceParams grid smoothing radius. Used only while the isosurface stage is enabled; re-read whenever the post-process refreshes its isosurface extractor. The property-update handler for this column reads the value but applies nothing (its body is commented out)."
+    },
+    {
+      "name": "physxParticleIsosurface:numMeshSmoothingPasses",
+      "usd_type": "int",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "int",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 4,
+      "parser_default": 0,
+      "absent": "0 smoothing passes on the extracted mesh. USD's fallback is 4, so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/particles/PhysXParticlePost.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXParticlePropertiesUpdate.cpp"
+      ],
+      "notes": "Used only while the isosurface stage is enabled; re-read whenever the post-process refreshes its isosurface extractor. The property-update handler for this column reads the value but applies nothing (its body is commented out)."
+    },
+    {
+      "name": "physxParticleIsosurface:numMeshNormalSmoothingPasses",
+      "usd_type": "int",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "int",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 4,
+      "parser_default": 0,
+      "absent": "0 normal smoothing passes on the extracted mesh. USD's fallback is 4, so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/particles/PhysXParticlePost.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXParticlePropertiesUpdate.cpp"
+      ],
+      "notes": "Used only while the isosurface stage is enabled; re-read whenever the post-process refreshes its isosurface extractor. The property-update handler for this column reads the value but applies nothing (its body is commented out)."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysxParticleSystem",
+      "rule": "The enable flag is read in the system parse when this API is listed on the system, and every auto value derives from the system's resolved fluidRestOffset, which is 0 when that column is absent. Applying or removing the API at runtime turns the stage on or off."
+    }
+  ]
+}

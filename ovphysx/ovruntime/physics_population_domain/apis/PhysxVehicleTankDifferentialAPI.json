@@ -1,0 +1,34 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxVehicleTankDifferentialAPI",
+  "title": "PhysxVehicleTankDifferentialAPI",
+  "summary": "Differential of a wheeled tank vehicle, applied on the vehicle prim: which wheels form each track and which thrust control drives it, on top of the multi-wheel differential columns. Outside the differential parse the runtime only checks that the vehicle prim lists it (or PhysxVehicleMultiWheelDifferentialAPI), to attach the parsed differential to the vehicle.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "Xformable"
+  ],
+  "requires": [
+    "PhysxVehicleAPI"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "columns": [],
+  "interactions": [
+    {
+      "with": "PhysxVehicleMultiWheelDifferentialAPI",
+      "rule": "The schema makes the multi-wheel differential a built-in of this API. The walkers parse a prim that lists this API as a tank differential only, reading the multi-wheel differential columns as part of it."
+    },
+    {
+      "with": "PhysxVehicleTankControllerAPI",
+      "rule": "A tank controller requires this differential and a standard drive; the runtime also checks every wheelIndicesInTrackOrder entry against the wheel count."
+    }
+  ],
+  "notes": [
+    "The parser reads and validates physxVehicleTankDifferential:numberOfWheelsPerTrack, thrustIndexPerTrack, trackToWheelIndices and wheelIndicesInTrackOrder plus the physxVehicleMultiWheelDifferential columns, and the runtime applies their live changes. They are not described yet."
+  ]
+}

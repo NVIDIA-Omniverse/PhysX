@@ -9,6 +9,7 @@
 | `ci/physx/fetchcontent_tests.yml` | Full CI matrix: Linux/Windows/ARM64, CPU/GPU, shared/static, CMake 3.21+3.28, install+find_package |
 | `ci/helpers/fetchcontent_test_template.cmake` | Subdirectory simulation test template |
 | `ci/helpers/find_package_test_template.cmake` | Post-install `find_package` validation template |
+| `ci/helpers/check_physx_gpu_cache.cmake` | Run after every configure: asserts the job's expected `PX_GENERATE_GPU_PROJECTS` / CUDA state (and static-libraries choice) from `CMakeCache.txt` |
 | `physx/CMakeLists.txt` | Root FetchContent entry point (what CI tests exercise) |
 | `physx/documentation/fetchcontent/examples/fetchcontent/` | Example app validated by CI |
 
@@ -20,6 +21,7 @@
 4. **GPU static + PhysX static excluded** — This combination causes duplicate symbol linker errors; CI enforces `PX_GENERATE_GPU_STATIC_LIBRARIES=OFF` when `PX_GENERATE_STATIC_LIBRARIES=ON`
 5. **Install + find_package validation** — A dedicated job builds, installs, then consumes PhysX via `find_package(PhysX)` to verify the full export/config workflow end-to-end. The consumer simulates a falling box and cooks a convex mesh at runtime, so the installed cooking entry points exported by PhysXCommon are exercised as well
 6. **Windows GPU tests disabled** — No Windows CI runners with CUDA toolkit available; GPU validation relies on Linux runners
+7. **CPU-only jobs use the cpu-only presets** — They configure with `-DPHYSX_PRESET=<platform>-cpu-only` and no explicit GPU flag, so the documented public CPU-only path is what gets tested. Each job declares `EXPECT_GPU` / `EXPECT_STATIC` and `ci/helpers/check_physx_gpu_cache.cmake` checks the configured cache after every configure, so a preset that silently leaves CUDA on fails the job even on an image that ships the CUDA toolkit. The x86_64 CPU jobs pass `-DPX_GENERATE_STATIC_LIBRARIES=OFF` against presets that say static, which also proves that a command-line `-D` wins over the preset
 
 ## CI Pipeline Integration
 

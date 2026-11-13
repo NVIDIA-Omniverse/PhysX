@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-IO-CONTRACT-001
+// @covers AC-5
+
 /**
  * @implements REQ-INPUT-COVERAGE-001
  * @covers AC-2
@@ -93,7 +96,7 @@ TEST_F(WritabilityParityTest, ClassifierMatchesRuntimeOnAnEmptyStage)
         for (const std::string& name : names)
         {
             SCOPED_TRACE(::testing::Message() << "type=" << type << " attribute=" << name);
-            const ovx_string_or_token_t attribute{OVX_INVALID_TOKEN, {name.data(), name.size()}};
+            const ovx_token_or_string_t attribute{OVX_INVALID_TOKEN, {name.data(), name.size()}};
             ovphysx_writability_t classification = OVPHYSX_WRITABILITY_UNCLASSIFIED;
             ASSERT_EQ(ovphysx_writability(objectType, &attribute, &classification).status,
                       OVPHYSX_API_SUCCESS);
@@ -101,19 +104,24 @@ TEST_F(WritabilityParityTest, ClassifierMatchesRuntimeOnAnEmptyStage)
             ovphysx_read_handle_t read = 0;
             ovphysx_read_result_t readResult{};
             const ovphysx_result_t readTask = test_utils::complete_task(m_handle,
-                ovphysx_read(m_handle, query, &attribute, 1, &read, &readResult));
+                ovphysx_read(m_handle, query, &attribute, 1, ovstage_cuda_sync_t{ 0, 0 }, &read, &readResult));
             // Debug render is one instance row, not an empty prim set. A name it does not
-            // accept fails the read instead of opening a session with an omission bit.
+            // accept fails the read instead of opening a session with an omission bit. The
+            // failed session keeps the handle the call returned; releasing it is a no-op.
             if (objectType == OVPHYSX_QUERY_TARGET_DEBUG_RENDER &&
                 classification == OVPHYSX_WRITABILITY_UNCLASSIFIED)
             {
                 EXPECT_EQ(readTask.status, OVPHYSX_API_ERROR);
-                EXPECT_EQ(read, 0u);
+                EXPECT_NE(read, 0u);
+                EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_release_read(m_handle, read)).status,
+                          OVPHYSX_API_SUCCESS);
                 ovphysx_write_handle_t rejected = 0;
                 EXPECT_EQ(test_utils::complete_task(m_handle,
                     ovphysx_write(m_handle, query, &attribute, 1, &rejected, nullptr)).status,
                     OVPHYSX_API_ERROR);
-                EXPECT_EQ(rejected, 0u);
+                EXPECT_NE(rejected, 0u);
+                EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_release_write(m_handle, rejected)).status,
+                          OVPHYSX_API_SUCCESS);
                 continue;
             }
             ASSERT_EQ(readTask.status, OVPHYSX_API_SUCCESS);
@@ -160,7 +168,9 @@ TEST_F(WritabilityParityTest, ClassifierMatchesRuntimeOnAnEmptyStage)
             else
             {
                 EXPECT_EQ(result.status, OVPHYSX_API_ERROR);
-                EXPECT_EQ(write, 0u);
+                EXPECT_NE(write, 0u);
+                EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_release_write(m_handle, write)).status,
+                          OVPHYSX_API_SUCCESS);
             }
             if (classification == OVPHYSX_WRITABILITY_CONDITIONAL)
             {

@@ -15,7 +15,7 @@
 //                               falling). readonly_settled reads SCOPE_ALL (every body), readonly_active
 //                               reads SCOPE_ACTIVE (only the falling, non-kinematic fraction). Same
 //                               scene, so their ratio is what fetching a subset saves -- the "fetch
-//                               only the requested rows" win (TASK-16).
+//                               only the requested rows" win.
 //              tensorbinding -> read into preallocated tensors, view already built.
 //              tensorcreate  -> view creation: create + spec + destroy.
 //
@@ -24,8 +24,12 @@
 //                               per body, matching the binding's pose [N, 7] + velocity [N, 6].
 //              arti_link     -> articulation links, cartpole scene, the same four attributes as
 //                               the rigid lane so the rows are comparable.
-//              arti_dof      -> articulation joints, jointPosition/jointVelocity: the per-axis
-//                               array path, which has no rigid equivalent.
+//              arti_dof      -> articulation joints, jointPosition/jointVelocity: one row per DOF
+//                               through the joint record path, which has no rigid equivalent.
+//              arti_one_joint -> the same read selected to one joint of one environment: what a
+//                               selected read pays for the articulation it reads in a scene of N.
+//              arti_one_joint_per_env -> the same read selected to one joint in every environment:
+//                               the selection touches every articulation, so it fetches the whole view.
 //              arti_root     -> whole articulations, cartpole scene: ONE row per articulation
 //                               rather than one per link, reading the same four attributes.
 //              arti_inverse_dynamics -> the whole-articulation INVERSE DYNAMICS columns, jacobian and mass matrix,
@@ -99,6 +103,7 @@
 
 #include <algorithm> // std::min / std::max for the per-group tensor extents
 #include <cmath>
+#include <cstring>
 #include <stdexcept>
 #include <string>
 #include <deque>
@@ -123,9 +128,9 @@ const char* const kArticulationPattern = "/World/envs/env_*/Robot";
 // The joint-state attribute set, shared by the read lane and the binding lane facing it so both
 // describe the same columns. Static storage: handed to ovphysx_read by pointer, so it outlives
 // the call.
-const ovx_string_or_token_t* jointReadAttrs(size_t& count)
+const ovx_token_or_string_t* jointReadAttrs(size_t& count)
 {
-    static const ovx_string_or_token_t attrs[] = {
+    static const ovx_token_or_string_t attrs[] = {
         { 0, { OVPHYSX_ATTR_JOINT_POSITION, sizeof(OVPHYSX_ATTR_JOINT_POSITION) - 1 } },
         { 0, { OVPHYSX_ATTR_JOINT_VELOCITY, sizeof(OVPHYSX_ATTR_JOINT_VELOCITY) - 1 } },
     };
@@ -134,9 +139,9 @@ const ovx_string_or_token_t* jointReadAttrs(size_t& count)
 }
 
 // The vehicle-wheel attribute set: the two the read serves for kOvxVehicleWheel.
-const ovx_string_or_token_t* vehicleReadAttrs(size_t& count)
+const ovx_token_or_string_t* vehicleReadAttrs(size_t& count)
 {
-    static const ovx_string_or_token_t attrs[] = {
+    static const ovx_token_or_string_t attrs[] = {
         { 0, { OVPHYSX_ATTR_POSITION, sizeof(OVPHYSX_ATTR_POSITION) - 1 } },
         { 0, { OVPHYSX_ATTR_ORIENTATION, sizeof(OVPHYSX_ATTR_ORIENTATION) - 1 } },
     };
@@ -150,9 +155,9 @@ const ovx_string_or_token_t* vehicleReadAttrs(size_t& count)
 // Keep it to these two: the lane is the baseline both APIs are compared on. The body's host-only
 // columns (`restPoints`, `simElementIndices`, `collisionElementIndices`) have no binding counterpart
 // to face, and the material ones belong to their own object type (REQ-READ-MATERIAL-001).
-const ovx_string_or_token_t* deformableReadAttrs(size_t& count)
+const ovx_token_or_string_t* deformableReadAttrs(size_t& count)
 {
-    static const ovx_string_or_token_t attrs[] = {
+    static const ovx_token_or_string_t attrs[] = {
         { 0, { OVPHYSX_ATTR_POINTS, sizeof(OVPHYSX_ATTR_POINTS) - 1 } },
         { 0, { OVPHYSX_ATTR_VELOCITIES, sizeof(OVPHYSX_ATTR_VELOCITIES) - 1 } },
     };
@@ -163,9 +168,9 @@ const ovx_string_or_token_t* deformableReadAttrs(size_t& count)
 // The particle attribute set: `points` and `velocities`, the only two the read serves for
 // kOvxParticleSet. The binding serves no particle tensors, so this family has no partner lane to
 // face.
-const ovx_string_or_token_t* particleReadAttrs(size_t& count)
+const ovx_token_or_string_t* particleReadAttrs(size_t& count)
 {
-    static const ovx_string_or_token_t attrs[] = {
+    static const ovx_token_or_string_t attrs[] = {
         { 0, { OVPHYSX_ATTR_POINTS, sizeof(OVPHYSX_ATTR_POINTS) - 1 } },
         { 0, { OVPHYSX_ATTR_VELOCITIES, sizeof(OVPHYSX_ATTR_VELOCITIES) - 1 } },
     };
@@ -177,9 +182,9 @@ const ovx_string_or_token_t* particleReadAttrs(size_t& count)
 // tokens are this type's own: its row is keyed by the articulation-root API prim, which need not be
 // the root link, so the bare names would mean something else here (REQ-READ-ATTRS-001 AC-11).
 // Both arti_root lanes need it, since the binding control reads it during warm-up.
-const ovx_string_or_token_t* articulationRootReadAttrs(size_t& count)
+const ovx_token_or_string_t* articulationRootReadAttrs(size_t& count)
 {
-    static const ovx_string_or_token_t attrs[] = {
+    static const ovx_token_or_string_t attrs[] = {
         { 0, { OVPHYSX_ATTR_ROOT_POSITION, sizeof(OVPHYSX_ATTR_ROOT_POSITION) - 1 } },
         { 0, { OVPHYSX_ATTR_ROOT_ORIENTATION, sizeof(OVPHYSX_ATTR_ROOT_ORIENTATION) - 1 } },
         { 0, { OVPHYSX_ATTR_ROOT_LINEAR_VELOCITY, sizeof(OVPHYSX_ATTR_ROOT_LINEAR_VELOCITY) - 1 } },
@@ -197,9 +202,9 @@ const ovx_string_or_token_t* articulationRootReadAttrs(size_t& count)
 // binds two tensors per lane, and these are the two that matter: on cartpole the jacobian is 24 of
 // the 32 floats a row carries and the mass matrix another 4, so coriolis and gravity are 4 floats
 // between them. They are covered by the tests, not by a lane whose only job is the comparison.
-const ovx_string_or_token_t* articulationInverseDynamicsReadAttrs(size_t& count)
+const ovx_token_or_string_t* articulationInverseDynamicsReadAttrs(size_t& count)
 {
-    static const ovx_string_or_token_t attrs[] = {
+    static const ovx_token_or_string_t attrs[] = {
         { 0, { OVPHYSX_ATTR_JACOBIAN, sizeof(OVPHYSX_ATTR_JACOBIAN) - 1 } },
         { 0, { OVPHYSX_ATTR_MASS_MATRIX, sizeof(OVPHYSX_ATTR_MASS_MATRIX) - 1 } },
     };
@@ -214,16 +219,16 @@ const ovx_string_or_token_t* articulationInverseDynamicsReadAttrs(size_t& count)
 // group-consumption pattern this lane measures.
 bool waitForGroup(const ovstage_read_group_t& group)
 {
-    if (group.data.cuda_sync.wait_event != 0)
+    if (group.columns[0].data.cuda_sync.wait_event != 0)
     {
-        return cudaEventSynchronize(reinterpret_cast<cudaEvent_t>(group.data.cuda_sync.wait_event)) == cudaSuccess;
+        return cudaEventSynchronize(reinterpret_cast<cudaEvent_t>(group.columns[0].data.cuda_sync.wait_event)) == cudaSuccess;
     }
-    if (group.data.cuda_sync.stream != 0)
+    if (group.columns[0].data.cuda_sync.stream != 0)
     {
         // 1 means the default stream, anything higher is a real cudaStream_t.
-        const cudaStream_t stream = group.data.cuda_sync.stream == 1 ?
+        const cudaStream_t stream = group.columns[0].data.cuda_sync.stream == 1 ?
                                         cudaStream_t{} :
-                                        reinterpret_cast<cudaStream_t>(group.data.cuda_sync.stream);
+                                        reinterpret_cast<cudaStream_t>(group.columns[0].data.cuda_sync.stream);
         return cudaStreamSynchronize(stream) == cudaSuccess;
     }
     return true;
@@ -507,12 +512,14 @@ protected:
     virtual float cloneSpacing() const { return 4.0f; }
     virtual ovphysx_query_target_t objectType() const { return OVPHYSX_QUERY_TARGET_RIGID_BODY; }
     virtual ovphysx_object_scope_t queryScope() const { return OVPHYSX_SCOPE_ALL; }
+    // A path pattern narrowing the query to a selection, or nullptr for the whole (type, scope) set.
+    virtual const char* selectionPattern() const { return nullptr; }
 
     // The attribute set the read requests. Static storage per override: the array is handed to
     // ovphysx_read by pointer and must outlive the call.
-    virtual const ovx_string_or_token_t* readAttrs(size_t& count) const
+    virtual const ovx_token_or_string_t* readAttrs(size_t& count) const
     {
-        static const ovx_string_or_token_t attrs[] = {
+        static const ovx_token_or_string_t attrs[] = {
             { 0, { OVPHYSX_ATTR_POSITION, sizeof(OVPHYSX_ATTR_POSITION) - 1 } },
             { 0, { OVPHYSX_ATTR_ORIENTATION, sizeof(OVPHYSX_ATTR_ORIENTATION) - 1 } },
             { 0, { OVPHYSX_ATTR_LINEAR_VELOCITY, sizeof(OVPHYSX_ATTR_LINEAR_VELOCITY) - 1 } },
@@ -526,9 +533,14 @@ protected:
     bool openQuery(ovphysx_query_handle_t& query)
     {
         query = 0;
-        if (bmCompleteTask(physx()->handle(), ovphysx_query(physx()->handle(), objectType(), queryScope(), &query, nullptr)).status !=
-                OVPHYSX_API_SUCCESS ||
-            query == 0)
+        const char* const pattern = selectionPattern();
+        ovphysx_query_selection_t selection{};
+        if (pattern)
+            selection.pattern = { pattern, std::strlen(pattern) };
+        const ovphysx_enqueue_result_t opened =
+            pattern ? ovphysx_query_selection(physx()->handle(), objectType(), &selection, &query, nullptr) :
+                      ovphysx_query(physx()->handle(), objectType(), queryScope(), &query, nullptr);
+        if (bmCompleteTask(physx()->handle(), opened).status != OVPHYSX_API_SUCCESS || query == 0)
         {
             printFormatted("OutputRead: ovphysx_query failed");
             return false;
@@ -540,10 +552,10 @@ protected:
     bool readWithQuery(ovphysx_query_handle_t query)
     {
         size_t attrCount = 0;
-        const ovx_string_or_token_t* attrs = readAttrs(attrCount);
+        const ovx_token_or_string_t* attrs = readAttrs(attrCount);
 
         ovphysx_read_handle_t read = 0;
-        if (bmCompleteTask(physx()->handle(), ovphysx_read(physx()->handle(), query, attrs, attrCount, &read, nullptr)).status != OVPHYSX_API_SUCCESS ||
+        if (bmCompleteTask(physx()->handle(), ovphysx_read(physx()->handle(), query, attrs, attrCount, ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr)).status != OVPHYSX_API_SUCCESS ||
             read == 0)
         {
             printFormatted("OutputRead: ovphysx_read failed");
@@ -578,29 +590,29 @@ protected:
             }
             // One group per emitted attribute, each stacking EVERY prim along shape[0], so the
             // body count is ONE group's rows, not the sum across groups.
-            if (groups == 0 && group->data.tensors && group->data.tensor_count > 0 &&
-                group->data.tensors[0].shape)
+            if (groups == 0 && group->columns[0].data.tensors && group->columns[0].data.tensor_count > 0 &&
+                group->columns[0].data.tensors[0].shape)
             {
-                rows = group->data.tensors[0].shape[0];
+                rows = group->columns[0].data.tensors[0].shape[0];
             }
             // ARRAY groups only: a FIXED group carries one tensor by definition, so folding it in
             // would drive the minimum to 1 for every mixed read. For an array group the count IS
             // the prim count, which is the only thing tying a lane whose envs are authored rather
             // than cloned to the scene it actually loaded.
-            if (group->is_array && group->data.tensors)
+            if (group->columns[0].is_array && group->columns[0].data.tensors)
             {
-                arrayTensorsMin = (std::min)(arrayTensorsMin, group->data.tensor_count);
-                arrayTensorsMax = (std::max)(arrayTensorsMax, group->data.tensor_count);
+                arrayTensorsMin = (std::min)(arrayTensorsMin, group->columns[0].data.tensor_count);
+                arrayTensorsMax = (std::max)(arrayTensorsMax, group->columns[0].data.tensor_count);
                 ++arrayGroups;
             }
             // Setup only. The payload is invariant across the reads of a lane (same objects, same
             // attributes), so counting it once during warm-up is enough, and readOnce() is the
             // default timedRead(): anything left in here is charged to EVERY lane's measurement.
-            if (mCountPayload && group->data.tensors)
+            if (mCountPayload && group->columns[0].data.tensors)
             {
-                for (uint32_t tensorIdx = 0; tensorIdx < group->data.tensor_count; ++tensorIdx)
+                for (uint32_t tensorIdx = 0; tensorIdx < group->columns[0].data.tensor_count; ++tensorIdx)
                 {
-                    const DLTensor& tensor = group->data.tensors[tensorIdx];
+                    const DLTensor& tensor = group->columns[0].data.tensors[tensorIdx];
                     if (tensor.dtype.code != kDLFloat || tensor.dtype.bits != 32 || !tensor.shape)
                         continue;
                     uint64_t elements = tensor.dtype.lanes;
@@ -755,13 +767,11 @@ private:
 // and measure the API in the mode that defeats it. The binding stamps kDLCUDA on the sim's device
 // (ADR-0008) when mGpu is set.
 //
-// The output read (OutputReadBase::readWithQuery(), above) is NOT device-resident on a DirectGPU
-// scene: ovphysx_read()/ovphysx_fetch_read_next() hand back host-backed ovstage_read_group_t data
-// regardless of scene residency, so only the tensor-binding destination moves to device memory. The
-// two GPU rows are therefore not like-for-like on residency. Read the CPU/GPU deltas on each row
-// independently rather than comparing the read and binding rows to each other as a residency ratio.
+// The output read (OutputReadBase::readWithQuery(), above) is device-resident on a DirectGPU scene too:
+// the columns these rows read come back as kDLCUDA tensors on the sim's device (REQ-READ-DEVICE-001
+// AC-1). The two GPU rows therefore compare like for like on residency.
 //
-// What still differs beyond residency is how each becomes readable. The output read publishes a
+// What differs is how each becomes readable. The output read publishes a
 // session completion event and this harness waits on every returned group. The binding's read()
 // calls are followed by waitAll(). Both lanes therefore measure completed work rather than
 // comparing one submission with one completion.
@@ -1097,7 +1107,7 @@ private:
     ovphysx_query_handle_t mQuery = 0;
 };
 
-// TASK-16 subset scope: OVPHYSX_SCOPE_ACTIVE returns only the bodies in the active set (awake,
+// Subset scope: OVPHYSX_SCOPE_ACTIVE returns only the bodies in the active set (awake,
 // non-kinematic), so the DirectGPU read fetches only those rows rather than the whole-scene superset.
 // Paired with the settled scene below, where a fixed fraction of each env is active, this is the lane
 // that shows "fetch only the requested rows". On a DirectGPU scene the active set is cached on the
@@ -1243,8 +1253,8 @@ private:
 // Two families, because the two object types take different paths through the read:
 //   * artilink -> ARTICULATION_LINK, the SAME four pose/velocity attributes as the rigid lane, so a
 //     per-row comparison against queryread means something.
-//   * artidof  -> ARTICULATION_JOINT, jointPosition/jointVelocity, the per-axis array path, which
-//     has no rigid equivalent to compare against at all.
+//   * artidof  -> ARTICULATION_JOINT, jointPosition/jointVelocity, one row per DOF through the joint
+//     record path, which has no rigid equivalent to compare against at all.
 //
 // The GPU/CPU split needs two assets for the same reason the cubes pair does: cartpole_probe.usda
 // authors enableGPUDynamics + GPU broadphase, so a CPU lane running it would measure the GPU
@@ -1335,7 +1345,7 @@ protected:
 
     // Same reason as the link lane above: the inherited read has to describe this lane's objects.
     ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT; }
-    const ovx_string_or_token_t* readAttrs(size_t& count) const override { return jointReadAttrs(count); }
+    const ovx_token_or_string_t* readAttrs(size_t& count) const override { return jointReadAttrs(count); }
 };
 
 
@@ -1361,7 +1371,63 @@ public:
 
 protected:
     ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT; }
-    const ovx_string_or_token_t* readAttrs(size_t& count) const override { return jointReadAttrs(count); }
+    const ovx_token_or_string_t* readAttrs(size_t& count) const override { return jointReadAttrs(count); }
+};
+
+
+// The same held joint read narrowed to one joint of one environment: what a selected read pays for the
+// articulation it reads, in a scene of N. On DirectGPU it fetches only that articulation's DOF state.
+class ArticulationOneJointReadOnlyBase : public ArticulationDofReadOnlyBase
+{
+public:
+    ArticulationOneJointReadOnlyBase(uint32_t envCount, bool gpu) : ArticulationDofReadOnlyBase(envCount, gpu) {}
+
+    void startRun() override
+    {
+        ArticulationDofReadOnlyBase::startRun();
+        if (!mSetupOk)
+            return;
+        // The revolute joint's position and velocity: two groups of one float each.
+        if (lastGroupCount() != 2u || lastFloatCount() != 2u)
+        {
+            printFormatted("OutputRead one joint: expected groups=2 floats=2, got groups=%u floats=%llu -- run will "
+                           "report no timings",
+                           lastGroupCount(), static_cast<unsigned long long>(lastFloatCount()));
+            mSetupOk = false;
+        }
+    }
+
+protected:
+    const char* selectionPattern() const override { return "/World/envs/env_0/Robot/cart_to_pole"; }
+};
+
+
+// The same read selected to the pole joint of every environment: a selection over every articulation, which
+// packs its records but fetches the whole view.
+class ArticulationJointPerEnvReadOnlyBase : public ArticulationDofReadOnlyBase
+{
+public:
+    ArticulationJointPerEnvReadOnlyBase(uint32_t envCount, bool gpu) : ArticulationDofReadOnlyBase(envCount, gpu) {}
+
+    void startRun() override
+    {
+        ArticulationDofReadOnlyBase::startRun();
+        if (!mSetupOk)
+            return;
+        // Every environment's revolute joint, position and velocity: two groups of one float per environment.
+        const uint64_t expectedFloats = 2u * (uint64_t(mEnvCount) + 1u);
+        if (lastGroupCount() != 2u || lastFloatCount() != expectedFloats)
+        {
+            printFormatted("OutputRead joint per env: expected groups=2 floats=%llu, got groups=%u floats=%llu -- run "
+                           "will report no timings",
+                           static_cast<unsigned long long>(expectedFloats), lastGroupCount(),
+                           static_cast<unsigned long long>(lastFloatCount()));
+            mSetupOk = false;
+        }
+    }
+
+protected:
+    const char* selectionPattern() const override { return "/World/envs/env_*/Robot/cart_to_pole"; }
 };
 
 
@@ -1396,7 +1462,7 @@ public:
 
 protected:
     ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_ARTICULATION; }
-    const ovx_string_or_token_t* readAttrs(size_t& count) const override { return articulationRootReadAttrs(count); }
+    const ovx_token_or_string_t* readAttrs(size_t& count) const override { return articulationRootReadAttrs(count); }
 };
 
 
@@ -1421,7 +1487,7 @@ protected:
     // Set for the READ side this class inherits and warms up with, exactly as the link and dof
     // binding lanes do: leaving the rigid default would resolve nothing on this type and report
     // groups=0 rows=0.
-    const ovx_string_or_token_t* readAttrs(size_t& count) const override { return articulationRootReadAttrs(count); }
+    const ovx_token_or_string_t* readAttrs(size_t& count) const override { return articulationRootReadAttrs(count); }
     bool validateBindingLayout() const override
     {
         const int64_t expectedRows = static_cast<int64_t>(mEnvCount) + 1;
@@ -1469,7 +1535,7 @@ protected:
     const char* sceneAsset() const override { return "/../benchmarks/data/vehicle_probe.usda"; }
     bool clonesEnvs() const override { return false; } // the asset already holds every vehicle
     ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_VEHICLE_WHEEL; }
-    const ovx_string_or_token_t* readAttrs(size_t& count) const override { return vehicleReadAttrs(count); }
+    const ovx_token_or_string_t* readAttrs(size_t& count) const override { return vehicleReadAttrs(count); }
 
     // The row count is the only thing tying this lane's name to the asset it loaded. Nothing else
     // does: clonesEnvs() is false, so mEnvCount never reaches the scene, and for this family it is a
@@ -1627,7 +1693,7 @@ public:
 
 protected:
     ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_DEFORMABLE_VOLUME; }
-    const ovx_string_or_token_t* readAttrs(size_t& count) const override { return deformableReadAttrs(count); }
+    const ovx_token_or_string_t* readAttrs(size_t& count) const override { return deformableReadAttrs(count); }
 };
 
 
@@ -1638,7 +1704,7 @@ public:
 
 protected:
     ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_DEFORMABLE_SURFACE; }
-    const ovx_string_or_token_t* readAttrs(size_t& count) const override { return deformableReadAttrs(count); }
+    const ovx_token_or_string_t* readAttrs(size_t& count) const override { return deformableReadAttrs(count); }
 };
 
 
@@ -1669,7 +1735,7 @@ protected:
     // Also set for the inherited READ side, as every other binding lane does: the base prints the
     // line showing both APIs cover the same set, so it has to request this lane's columns.
     ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_DEFORMABLE_VOLUME; }
-    const ovx_string_or_token_t* readAttrs(size_t& count) const override { return deformableReadAttrs(count); }
+    const ovx_token_or_string_t* readAttrs(size_t& count) const override { return deformableReadAttrs(count); }
 };
 
 
@@ -1695,7 +1761,7 @@ protected:
     const char* secondName() const override { return "surface sim velocity"; }
 
     ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_DEFORMABLE_SURFACE; }
-    const ovx_string_or_token_t* readAttrs(size_t& count) const override { return deformableReadAttrs(count); }
+    const ovx_token_or_string_t* readAttrs(size_t& count) const override { return deformableReadAttrs(count); }
 };
 
 
@@ -1725,7 +1791,7 @@ public:
 
 protected:
     ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_PARTICLE_SET; }
-    const ovx_string_or_token_t* readAttrs(size_t& count) const override { return particleReadAttrs(count); }
+    const ovx_token_or_string_t* readAttrs(size_t& count) const override { return particleReadAttrs(count); }
 };
 
 
@@ -1776,6 +1842,12 @@ protected:
 #define DEFINE_ARTI_DOF_READ_ONLY(N, device, gpu, hide)                      \
     DEFINE_OUTPUT_READ_VARIANT(ArticulationDofReadOnlyBase, ArticulationDofReadOnly, readonly_arti_dof, N, device, gpu, hide)
 
+#define DEFINE_ARTI_ONE_JOINT_READ_ONLY(N, device, gpu, hide)                \
+    DEFINE_OUTPUT_READ_VARIANT(ArticulationOneJointReadOnlyBase, ArticulationOneJointReadOnly, readonly_arti_one_joint, N, device, gpu, hide)
+
+#define DEFINE_ARTI_JOINT_PER_ENV_READ_ONLY(N, device, gpu, hide)            \
+    DEFINE_OUTPUT_READ_VARIANT(ArticulationJointPerEnvReadOnlyBase, ArticulationJointPerEnvReadOnly, readonly_arti_one_joint_per_env, N, device, gpu, hide)
+
 // The inverse dynamics read on the homogeneous fleet: every cartpole shares a metatype, so this is ONE
 // cohort and one group per attribute. That is the shape a real workload has, and the number that
 // must not regress.
@@ -1788,7 +1860,7 @@ public:
 
 protected:
     ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_ARTICULATION; }
-    const ovx_string_or_token_t* readAttrs(size_t& count) const override
+    const ovx_token_or_string_t* readAttrs(size_t& count) const override
     {
         return articulationInverseDynamicsReadAttrs(count);
     }
@@ -1824,7 +1896,7 @@ protected:
     const char* sceneAsset() const override { return "/../benchmarks/data/articulation_pileup.usda"; }
     bool clonesEnvs() const override { return false; } // the asset already holds every articulation
     ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_ARTICULATION; }
-    const ovx_string_or_token_t* readAttrs(size_t& count) const override
+    const ovx_token_or_string_t* readAttrs(size_t& count) const override
     {
         return articulationInverseDynamicsReadAttrs(count);
     }
@@ -1874,7 +1946,7 @@ protected:
     ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_ARTICULATION; }
 
     // Set for the READ side this class inherits and warms up with, as the other binding lanes do.
-    const ovx_string_or_token_t* readAttrs(size_t& count) const override
+    const ovx_token_or_string_t* readAttrs(size_t& count) const override
     {
         return articulationInverseDynamicsReadAttrs(count);
     }
@@ -1929,7 +2001,7 @@ DEFINE_QUERY_READ(8192, gpu, true, true)
 DEFINE_READ_ONLY(8192, cpu, false, false)
 DEFINE_READ_ONLY(8192, gpu, true, true)
 
-// TASK-16: subset (active-scope) lanes -- the before/after for "fetch only the requested rows".
+// Subset (active-scope) lanes -- the before/after for "fetch only the requested rows".
 DEFINE_READ_ONLY_SETTLED(8192, cpu, false, false)
 DEFINE_READ_ONLY_SETTLED(8192, gpu, true, true)
 
@@ -1952,6 +2024,10 @@ DEFINE_ARTI_LINK_BINDING(8192, gpu, true, true)
 
 DEFINE_ARTI_DOF_READ_ONLY(8192, cpu, false, false)
 DEFINE_ARTI_DOF_READ_ONLY(8192, gpu, true, true)
+DEFINE_ARTI_ONE_JOINT_READ_ONLY(8192, cpu, false, false)
+DEFINE_ARTI_ONE_JOINT_READ_ONLY(8192, gpu, true, true)
+DEFINE_ARTI_JOINT_PER_ENV_READ_ONLY(8192, cpu, false, false)
+DEFINE_ARTI_JOINT_PER_ENV_READ_ONLY(8192, gpu, true, true)
 DEFINE_ARTI_DOF_BINDING(8192, cpu, false, false)
 DEFINE_ARTI_DOF_BINDING(8192, gpu, true, true)
 

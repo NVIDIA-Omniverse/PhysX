@@ -43,7 +43,7 @@ endif()
 #
 # Adds CUDA source files to a target, handling the platform difference:
 #   Linux:   adds .cu files as native CMake CUDA-language sources and sets
-#            CUDA_SEPARABLE_COMPILATION + -Xcompiler=-fPIC.
+#            whole-program device compilation + -Xcompiler=-fPIC.
 #   Windows: compiles each .cu via direct nvcc invocation (add_custom_command),
 #            bypassing the VS CUDA toolkit integration, then links the resulting
 #            .obj files into the target.
@@ -121,7 +121,14 @@ function(ovruntime_target_add_cuda_sources _target)
         endforeach()
     else()
         target_sources(${_target} PRIVATE ${ARG_SOURCES})
-        set_target_properties(${_target} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+        # Match PhysX SDK and the Windows nvcc path: each translation unit
+        # contains its kernels and device helpers, so no device link is needed.
+        # Whole-program compilation keeps SASS and PTX together in executable
+        # fatbins instead of relying on the relocatable-PTX JIT-link fallback.
+        set_target_properties(${_target} PROPERTIES
+            CUDA_SEPARABLE_COMPILATION OFF
+            CUDA_RESOLVE_DEVICE_SYMBOLS OFF
+        )
         target_compile_options(${_target} PRIVATE
             $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=-fPIC>
         )

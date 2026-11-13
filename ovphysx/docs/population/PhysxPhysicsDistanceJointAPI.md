@@ -5,10 +5,10 @@
 
 # PhysxPhysicsDistanceJointAPI
 
-Spring behaviour of a distance joint: enable flag, stiffness and damping of the spring that acts when the distance leaves [minDistance, maxDistance]. Read only on a PhysicsDistanceJoint prim; inert on every other joint type.
+Spring behaviour of a distance joint: enable flag, stiffness and damping of the spring that acts when the distance leaves [minDistance, maxDistance]. Read only on a PhysicsDistanceJoint [prim](glossary.md#prim); inert on every other joint type.
 
-- **Applies to:** `PhysicsJoint`
-- **Read only when listed in `usd-schemas`.**
+- **Applies to:** [`PhysicsJoint`](glossary.md#physicsjoint)
+- **Read only when listed in [`usd-schemas`](prim.md#columns).**
 
 ## What USD population writes
 
@@ -16,7 +16,7 @@ All three declared attributes are published at their resolved values (false, 0, 
 
 ## Columns
 
-*Raw fallback* is the USD schema value. *Producer writes* is what ovstage population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
+*Raw fallback* is the [USD](glossary.md#usd) schema value. *Producer writes* is what [ovstage](glossary.md#ovstage) population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
 
 | Column | Type | Units | Raw fallback | Producer writes | Parser default | If absent |
 |---|---|---|---|---|---|---|
@@ -27,8 +27,8 @@ All three declared attributes are published at their resolved values (false, 0, 
 ## Interactions
 
 - **[`PhysicsDistanceJoint`](PhysicsDistanceJoint.md):** Read only in the distance-joint branch of the parser, gated by usd-schemas CONTAINS PhysxPhysicsDistanceJointAPI. On any other joint type the columns are ignored.
-- **[`PhysxLimitAPI`](PhysxLimitAPI.md):** The runtime first applies PhysxLimitAPI:distance stiffness/damping to the PxDistanceJoint, then overwrites both with the spring values when springEnabled is true.
+- **[`PhysxLimitAPI`](PhysxLimitAPI.md):** The runtime first applies PhysxLimitAPI:distance stiffness/damping to the [PxDistanceJoint](glossary.md#pxdistancejoint), then overwrites both with the spring values when springEnabled is true.
 
 ## Known divergences
 
-- **note** (consumer) `physxPhysicsDistanceJoint:springEnabled`: The stage-wide presence flag present.physxDistanceJoint is computed by the walker but never consulted by the parser, which goes straight to the per-prim hasSchema probe. Dead performance gate, no correctness effect.
+- **note** (consumer) `physxPhysicsDistanceJoint:springEnabled`: The stage-wide presence flag for this API is computed by the walker but never consulted by the parser, which goes straight to the per-prim schema probe. Dead performance gate, no correctness effect.

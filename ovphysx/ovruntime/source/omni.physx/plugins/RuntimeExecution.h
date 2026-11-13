@@ -5,7 +5,7 @@
 // @covers AC-1
 
 // @implements REQ-ATTACH-EXECUTION-001
-// @covers AC-3 AC-4
+// @covers AC-3 AC-4 AC-6
 #pragma once
 
 #include <omni/physics/AttachHandle.h>
@@ -34,6 +34,12 @@ std::atomic<uint32_t>& runtimeOperationCount();
 void initializeRuntimeCallbacks();
 void shutdownRuntimeCallbacks();
 uint32_t getRuntimeCallbackDepth();
+// Callback depth != 0 for the calling thread or Carbonite task, without blocking. Safe
+// before startup and after shutdown: it never looks up the tasking interface then.
+bool runtimeCallbackActive() noexcept;
+// The same when the caller already knows its carb.tasking task context (zero on a
+// native thread).
+bool runtimeCallbackActive(uint64_t taskContext) noexcept;
 AttachHandle preStepCallbackOwner();
 const usdparser::AttachedStage* customCreationOwner();
 struct RuntimeCallbackState
@@ -65,6 +71,13 @@ class RuntimeExecutionScope
 {
 public:
     explicit RuntimeExecutionScope(AttachHandle attach, bool allowPendingOwner = false, bool preStepForce = false);
+    // Unattached output owns host data and uses the output cache/state locks. It
+    // must not compete with peer attachment publication for configuration admission.
+    // Attached output retains the same owner admission and callback rejection.
+    static RuntimeExecutionScope output(AttachHandle attach, bool allowPendingOwner = false)
+    {
+        return RuntimeExecutionScope(attach, allowPendingOwner, false, true);
+    }
     ~RuntimeExecutionScope();
     RuntimeExecutionScope(const RuntimeExecutionScope&) = delete;
     RuntimeExecutionScope& operator=(const RuntimeExecutionScope&) = delete;
@@ -87,6 +100,7 @@ public:
             mState->pendingOwner = omni::physics::kNoAttach;
     }
 private:
+    RuntimeExecutionScope(AttachHandle attach, bool allowPendingOwner, bool preStepForce, bool output);
     std::shared_ptr<usdparser::AttachedStage> mOwner;
     RuntimeExecutionState mInvalidOwnerState;
     RuntimeExecutionState* mState = nullptr;
@@ -108,10 +122,6 @@ public:
 private:
     std::shared_lock<std::shared_mutex> mLock;
 };
-
-// Called while holding configuration admission, which excludes attachment
-// publication and native retirement, including property-query temporary owners.
-bool admitIdleRecordingOwners(std::vector<std::unique_ptr<RuntimeExecutionScope>>& owners);
 
 // Internal retirement primitive, called after the owner is fully drained and
 // destroyed under the lifecycle caller's external serialization.

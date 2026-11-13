@@ -18,7 +18,7 @@ import os
 import numpy as np
 import ovstage
 from ovphysx.types import SimObjectType
-from session_helpers import read_column, write_column, write_is_refused, write_uniform
+from session_helpers import read_column, read_row_shapes, write_column, write_is_refused, write_uniform
 from test_utils import attach_usd_with_ovstage
 
 
@@ -85,13 +85,13 @@ def _by_articulation(paths):
     return {root: [path for path in paths if path.startswith(root + "/")] for root in roots}
 
 
-def _dof_joint_paths(sdk, stage):
-    """{articulation path -> joint prim path of each DOF}, from the session's per-DOF dofJointPath column.
+def _articulation_paths(sdk, stage, attribute):
+    """Map articulation paths to the prim paths in an identity column.
 
     Read raw rather than through read_column: the handles are uint64, which a float64 row cannot carry exactly.
     """
     out = {}
-    with sdk.read_sync(SimObjectType.ARTICULATION, ["dofJointPath"]) as result:
+    with sdk.read_sync(SimObjectType.ARTICULATION, [attribute]) as result:
         with ovstage.PathDictionary(stage) as dictionary:
             for group in result.groups:
                 assert group.index_map is None
@@ -100,7 +100,9 @@ def _dof_joint_paths(sdk, stage):
                 for row in range(group.prim_count):
                     root = dictionary.path_to_string(roots[group.prim_offset + row])
                     # Rows are padded to the widest articulation with null handles.
-                    out[root] = [dictionary.path_to_string(int(handle)) for handle in handles[row] if handle]
+                    out[root] = [
+                        dictionary.path_to_string(ovstage.PrimPath(int(handle))) for handle in handles[row] if handle
+                    ]
     return out
 
 
@@ -390,14 +392,14 @@ class TestArticulationMetadata:
 
     def test_dof_names_count(self, physx_sdk_cpu):
         stage = _load_and_warm(physx_sdk_cpu)
-        joints_per_dof = _dof_joint_paths(physx_sdk_cpu, stage)
+        joints_per_dof = _articulation_paths(physx_sdk_cpu, stage, "dofJointPath")
         assert len(joints_per_dof) == EXPECTED_N
         for path, joints in joints_per_dof.items():
             assert len(joints) == EXPECTED_D, f"{path}: Expected {EXPECTED_D} DOFs, got {len(joints)}"
 
     def test_dof_names_are_strings(self, physx_sdk_cpu):
         stage = _load_and_warm(physx_sdk_cpu)
-        for joints in _dof_joint_paths(physx_sdk_cpu, stage).values():
+        for joints in _articulation_paths(physx_sdk_cpu, stage, "dofJointPath").values():
             for joint in joints:
                 assert isinstance(joint, str) and len(joint) > 0, f"DOF joint must be a non-empty path, got {joint!r}"
 
@@ -424,11 +426,29 @@ class TestArticulationMetadata:
     def test_dof_names_unique(self, physx_sdk_cpu):
         # A DOF is named by its joint prim and its axis on that joint.
         stage = _load_and_warm(physx_sdk_cpu)
-        joints_per_dof = _dof_joint_paths(physx_sdk_cpu, stage)
+        joints_per_dof = _articulation_paths(physx_sdk_cpu, stage, "dofJointPath")
         axes = read_column(physx_sdk_cpu, stage, SimObjectType.ARTICULATION, "dofAxisIndex")
+        kinds = read_column(physx_sdk_cpu, stage, SimObjectType.ARTICULATION, "dofAxisKind")
+        types = read_column(physx_sdk_cpu, stage, SimObjectType.ARTICULATION, "dofJointType")
+        assert len(joints_per_dof) == EXPECTED_N
         for path, joints in joints_per_dof.items():
+            assert len(joints) == EXPECTED_D
             dofs = list(zip(joints, axes[path][: len(joints)]))
             assert len(dofs) == len(set(dofs)), f"{path}: DOFs must be unique"
+            kind_row = np.asarray(kinds[path][: len(joints)])
+            assert kind_row.shape[0] == len(joints)
+            # The fixture's Y-axis revolutes still use PhysX joint-frame TWIST (0).
+            np.testing.assert_array_equal(kind_row, np.zeros(EXPECTED_D), err_msg=path)
+            # Explicit angular limits make these unwrapped revolutes (3).
+            np.testing.assert_array_equal(types[path], np.full(EXPECTED_D, 3), err_msg=path)
+
+    def test_link_paths(self, physx_sdk_cpu):
+        stage = _load_and_warm(physx_sdk_cpu)
+        links_per_root = _articulation_paths(physx_sdk_cpu, stage, "linkPath")
+        assert links_per_root == {
+            root: [f"{root}/articulationLink{i}" for i in range(EXPECTED_L)]
+            for root in ("/World/articulation", "/World/articulation2")
+        }
 
     def test_body_names_unique(self, physx_sdk_cpu):
         for path, links in self._member_paths(physx_sdk_cpu, SimObjectType.ARTICULATION_LINK, "mass").items():
@@ -440,7 +460,7 @@ class TestInverseDynamicsTensors:
     gravity compensation, and link incoming joint force.
 
     IMPORTANT: All tests step the simulation first because Jacobian/mass-matrix
-    shapes are computed lazily after the first sim step. The session flattens each
+    shapes are computed lazily after the first sim step. read_column flattens each
     articulation's matrix row-major into one row.
     """
 
@@ -461,8 +481,9 @@ class TestInverseDynamicsTensors:
 
     def test_jacobian_dimensions_fixed_base(self, physx_sdk_cpu):
         stage = _load_and_step(physx_sdk_cpu)
-        shapes = self._read(physx_sdk_cpu, stage, "jacobianShape")
+        shapes = read_row_shapes(physx_sdk_cpu, stage, SimObjectType.ARTICULATION, "jacobian")
         jacobians = self._read(physx_sdk_cpu, stage, "jacobian")
+        assert shapes.keys() == jacobians.keys()
         for path, (rows, cols) in shapes.items():
             assert rows == (EXPECTED_L - 1) * 6, f"{path}: fixed-base Jacobian rows should be (L-1)*6, got {rows}"
             assert cols == EXPECTED_D, f"{path}: fixed-base Jacobian cols should equal DOF count, got {cols}"
@@ -483,6 +504,9 @@ class TestInverseDynamicsTensors:
             assert matrix.shape == (EXPECTED_D, EXPECTED_D), (
                 f"{path}: fixed-base mass matrix dim should equal D={EXPECTED_D}, got {matrix.shape}"
             )
+        # The group itself carries [N, M, M], with no flattening to undo.
+        shapes = read_row_shapes(physx_sdk_cpu, stage, SimObjectType.ARTICULATION, "massMatrix")
+        assert set(shapes.values()) == {(EXPECTED_D, EXPECTED_D)}
 
     def test_mass_matrix_symmetry(self, physx_sdk_cpu):
         stage = _load_and_step(physx_sdk_cpu)

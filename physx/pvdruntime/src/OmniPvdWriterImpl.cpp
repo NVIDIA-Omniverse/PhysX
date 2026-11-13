@@ -25,6 +25,38 @@ void OmniPvdWriterImpl::resetParams()
 	mIsFirstWrite = true;
 	mWriteStreamReady = false;
 	mStatusFlags = 0; // That or set all flag bits off
+	mClassParents.assign(1, 0);
+	mAttributeOwners.clear();
+}
+
+bool OmniPvdWriterImpl::isClassAncestor(OmniPvdClassHandle ancestor, OmniPvdClassHandle descendant) const
+{
+	while (descendant)
+	{
+		if (ancestor == descendant)
+			return true;
+		descendant = mClassParents[descendant];
+	}
+	return false;
+}
+
+bool OmniPvdWriterImpl::registerAttributeName(OmniPvdClassHandle owner, const char* name, int length)
+{
+	// Preserve malformed-handle serialization without retaining names for future owners.
+	if (!owner || owner >= mClassParents.size())
+		return true;
+	std::vector<OmniPvdClassHandle>& owners = mAttributeOwners[std::string(name, length)];
+	for (OmniPvdClassHandle previousOwner : owners)
+	{
+		if (isClassAncestor(previousOwner, owner) || isClassAncestor(owner, previousOwner))
+		{
+			mLog.outputLine("duplicate attribute '%.*s' for class %lu", length, name, static_cast<unsigned long>(owner));
+			return false;
+		}
+	}
+	// A ready registration consumes a handle even when its subsequent writes short-count.
+	owners.push_back(owner);
+	return true;
 }
 
 void OMNI_PVD_CALL OmniPvdWriterImpl::setLogFunction(OmniPvdLogFunction logFunction)
@@ -78,6 +110,8 @@ void OMNI_PVD_CALL OmniPvdWriterImpl::setWriteStream(OmniPvdWriteStream& stream)
 	mLastClassHandle = 0;
 	mLastAttributeHandle = 0;
 	mStatusFlags = 0;
+	mClassParents.assign(1, 0);
+	mAttributeOwners.clear();
 }
 
 OmniPvdWriteStream* OMNI_PVD_CALL OmniPvdWriterImpl::getWriteStream()
@@ -95,9 +129,12 @@ OmniPvdClassHandle OMNI_PVD_CALL OmniPvdWriterImpl::registerClass(const char* cl
 		int classNameLen = (int)strnlen(className, OMNI_PVD_MAX_STRING_LENGTH);
 		writeCommand(OmniPvdCommand::eREGISTER_CLASS);
 		mLastClassHandle++;
+		// Only an already-minted parent participates in duplicate-name checks. Keep the
+		// original baseClass on the wire, including forward/self/invalid references.
+		mClassParents.push_back(baseClass > 0 && baseClass < static_cast<OmniPvdClassHandle>(mLastClassHandle) ? baseClass : 0);
 		writeWithStatus((const uint8_t*)&mLastClassHandle, sizeof(OmniPvdClassHandle));
 		writeWithStatus((const uint8_t*)&baseClass, sizeof(OmniPvdClassHandle));
-		writeWithStatus((const uint8_t*)&classNameLen, sizeof(uint16_t));
+		writeWithStatus((const uint8_t*)&classNameLen, sizeof(OmniPvdStringLengthStorageType));
 		writeWithStatus((const uint8_t*)className, classNameLen);
 		return mLastClassHandle;
 	} else {
@@ -110,16 +147,17 @@ OmniPvdAttributeHandle OMNI_PVD_CALL OmniPvdWriterImpl::registerAttribute(OmniPv
 	setVersionHelper();
 	if (mWriteStreamReady) {
 
-		mLog.outputLine("OmniPvdWriterImpl::registerAttribute classHandle(%llu), attributeName(%s), attributeDataType(%d), nbrFields(%llu)", static_cast<unsigned long long>(classHandle), attributeName, static_cast<int>(attributeDataType), static_cast<unsigned long long>(nbElements));
-
 		int attribNameLen = (int)strnlen(attributeName, OMNI_PVD_MAX_STRING_LENGTH);
+		if (!registerAttributeName(classHandle, attributeName, attribNameLen))
+			return OMNI_PVD_INVALID_HANDLE;
+		mLog.outputLine("OmniPvdWriterImpl::registerAttribute classHandle(%llu), attributeName(%s), attributeDataType(%d), nbrFields(%llu)", static_cast<unsigned long long>(classHandle), attributeName, static_cast<int>(attributeDataType), static_cast<unsigned long long>(nbElements));
 		writeCommand(OmniPvdCommand::eREGISTER_ATTRIBUTE);
 		mLastAttributeHandle++;
 		writeWithStatus((const uint8_t*)&classHandle, sizeof(OmniPvdClassHandle));
 		writeWithStatus((const uint8_t*)&mLastAttributeHandle, sizeof(OmniPvdAttributeHandle));
 		writeDataType(attributeDataType);
-		writeWithStatus((const uint8_t*)&nbElements, sizeof(uint32_t));
-		writeWithStatus((const uint8_t*)&attribNameLen, sizeof(uint16_t));
+		writeWithStatus((const uint8_t*)&nbElements, sizeof(OmniPvdAttributeElementCountStorageType));
+		writeWithStatus((const uint8_t*)&attribNameLen, sizeof(OmniPvdStringLengthStorageType));
 		writeWithStatus((const uint8_t*)attributeName, attribNameLen);
 		return mLastAttributeHandle;
 	}
@@ -133,16 +171,17 @@ OmniPvdAttributeHandle OMNI_PVD_CALL OmniPvdWriterImpl::registerFlagsAttribute(O
 	setVersionHelper();
 	if (mWriteStreamReady) {
 
-		mLog.outputLine("OmniPvdWriterImpl::registerFlagsAttribute classHandle(%llu), enumClassHandle(%llu), attributeName(%s)", static_cast<unsigned long long>(classHandle), static_cast<unsigned long long>(enumClassHandle), attributeName);
-
 		int attribNameLen = (int)strnlen(attributeName, OMNI_PVD_MAX_STRING_LENGTH);
+		if (!registerAttributeName(classHandle, attributeName, attribNameLen))
+			return OMNI_PVD_INVALID_HANDLE;
+		mLog.outputLine("OmniPvdWriterImpl::registerFlagsAttribute classHandle(%llu), enumClassHandle(%llu), attributeName(%s)", static_cast<unsigned long long>(classHandle), static_cast<unsigned long long>(enumClassHandle), attributeName);
 		writeCommand(OmniPvdCommand::eREGISTER_ATTRIBUTE);
 		mLastAttributeHandle++;
 		writeWithStatus((const uint8_t*)&classHandle, sizeof(OmniPvdClassHandle));
 		writeWithStatus((const uint8_t*)&mLastAttributeHandle, sizeof(OmniPvdAttributeHandle));
 		writeDataType(OmniPvdDataType::eFLAGS_WORD);
 		writeWithStatus((const uint8_t*)&enumClassHandle, sizeof(OmniPvdClassHandle));
-		writeWithStatus((const uint8_t*)&attribNameLen, sizeof(uint16_t));
+		writeWithStatus((const uint8_t*)&attribNameLen, sizeof(OmniPvdStringLengthStorageType));
 		writeWithStatus((const uint8_t*)attributeName, attribNameLen);
 		return mLastAttributeHandle;
 	}
@@ -156,13 +195,15 @@ OmniPvdAttributeHandle OMNI_PVD_CALL OmniPvdWriterImpl::registerEnumValue(OmniPv
 	setVersionHelper();
 	if (mWriteStreamReady) {
 		int attribNameLen = (int)strnlen(attributeName, OMNI_PVD_MAX_STRING_LENGTH);
+		if (!registerAttributeName(classHandle, attributeName, attribNameLen))
+			return OMNI_PVD_INVALID_HANDLE;
 		writeCommand(OmniPvdCommand::eREGISTER_ATTRIBUTE);
 		mLastAttributeHandle++;
 		writeWithStatus((const uint8_t*)&classHandle, sizeof(OmniPvdClassHandle));
 		writeWithStatus((const uint8_t*)&mLastAttributeHandle, sizeof(OmniPvdAttributeHandle));
 		writeDataType(OmniPvdDataType::eENUM_VALUE);
 		writeWithStatus((const uint8_t*)&value, sizeof(OmniPvdEnumValueType));
-		writeWithStatus((const uint8_t*)&attribNameLen, sizeof(uint16_t));
+		writeWithStatus((const uint8_t*)&attribNameLen, sizeof(OmniPvdStringLengthStorageType));
 		writeWithStatus((const uint8_t*)attributeName, attribNameLen);
 		return mLastAttributeHandle;
 	}
@@ -177,12 +218,14 @@ OmniPvdAttributeHandle OMNI_PVD_CALL OmniPvdWriterImpl::registerClassAttribute(O
 	if (mWriteStreamReady)
 	{
 		int attribNameLen = (int)strnlen(attributeName, OMNI_PVD_MAX_STRING_LENGTH);
+		if (!registerAttributeName(classHandle, attributeName, attribNameLen))
+			return OMNI_PVD_INVALID_HANDLE;
 		writeCommand(OmniPvdCommand::eREGISTER_CLASS_ATTRIBUTE);
 		mLastAttributeHandle++;
 		writeWithStatus((const uint8_t*)&classHandle, sizeof(OmniPvdClassHandle));
 		writeWithStatus((const uint8_t*)&mLastAttributeHandle, sizeof(OmniPvdAttributeHandle));
 		writeWithStatus((const uint8_t*)&classAttributeHandle, sizeof(OmniPvdClassHandle));
-		writeWithStatus((const uint8_t*)&attribNameLen, sizeof(uint16_t));
+		writeWithStatus((const uint8_t*)&attribNameLen, sizeof(OmniPvdStringLengthStorageType));
 		writeWithStatus((const uint8_t*)attributeName, attribNameLen);
 		return mLastAttributeHandle;
 	}
@@ -197,12 +240,14 @@ OmniPvdAttributeHandle OMNI_PVD_CALL OmniPvdWriterImpl::registerUniqueListAttrib
 	if (mWriteStreamReady)
 	{
 		int attribNameLen = (int)strnlen(attributeName, OMNI_PVD_MAX_STRING_LENGTH);
+		if (!registerAttributeName(classHandle, attributeName, attribNameLen))
+			return OMNI_PVD_INVALID_HANDLE;
 		writeCommand(OmniPvdCommand::eREGISTER_UNIQUE_LIST_ATTRIBUTE);
 		mLastAttributeHandle++;
 		writeWithStatus((const uint8_t*)&classHandle, sizeof(OmniPvdClassHandle));
 		writeWithStatus((const uint8_t*)&mLastAttributeHandle, sizeof(OmniPvdAttributeHandle));
 		writeDataType(attributeDataType);
-		writeWithStatus((const uint8_t*)&attribNameLen, sizeof(uint16_t));
+		writeWithStatus((const uint8_t*)&attribNameLen, sizeof(OmniPvdStringLengthStorageType));
 		writeWithStatus((const uint8_t*)attributeName, attribNameLen);
 		return mLastAttributeHandle;
 	}
@@ -220,13 +265,13 @@ void OMNI_PVD_CALL OmniPvdWriterImpl::setAttribute(OmniPvdContextHandle contextH
 		writeCommand(OmniPvdCommand::eSET_ATTRIBUTE);
 		writeWithStatus((const uint8_t*)&contextHandle, sizeof(OmniPvdContextHandle));
 		writeWithStatus((const uint8_t*)&objectHandle, sizeof(OmniPvdObjectHandle));
-		writeWithStatus((const uint8_t*)&nbAttributeHandles, sizeof(uint8_t));
+		writeWithStatus((const uint8_t*)&nbAttributeHandles, sizeof(OmniPvdAttributeHandleDepthStorageType));
 		for (int i = 0; i < nbAttributeHandles; i++)
 		{
 			writeWithStatus((const uint8_t*)attributeHandles, sizeof(OmniPvdAttributeHandle));
 			attributeHandles++;
 		}
-		writeWithStatus((const uint8_t*)&nbrBytes, sizeof(uint32_t));
+		writeWithStatus((const uint8_t*)&nbrBytes, sizeof(OmniPvdAttributeDataLengthStorageType));
 		writeWithStatus((const uint8_t*)data, nbrBytes);
 	}
 }
@@ -239,13 +284,13 @@ void OMNI_PVD_CALL OmniPvdWriterImpl::addToUniqueListAttribute(OmniPvdContextHan
 		writeCommand(OmniPvdCommand::eADD_TO_UNIQUE_LIST_ATTRIBUTE);
 		writeWithStatus((const uint8_t*)&contextHandle, sizeof(OmniPvdContextHandle));
 		writeWithStatus((const uint8_t*)&objectHandle, sizeof(OmniPvdObjectHandle));
-		writeWithStatus((const uint8_t*)&nbAttributeHandles, sizeof(uint8_t));
+		writeWithStatus((const uint8_t*)&nbAttributeHandles, sizeof(OmniPvdAttributeHandleDepthStorageType));
 		for (int i = 0; i < nbAttributeHandles; i++)
 		{
 			writeWithStatus((const uint8_t*)attributeHandles, sizeof(OmniPvdAttributeHandle));
 			attributeHandles++;
 		}
-		writeWithStatus((const uint8_t*)&nbrBytes, sizeof(uint32_t));
+		writeWithStatus((const uint8_t*)&nbrBytes, sizeof(OmniPvdAttributeDataLengthStorageType));
 		writeWithStatus((const uint8_t*)data, nbrBytes);
 	}
 }
@@ -258,13 +303,13 @@ void OMNI_PVD_CALL OmniPvdWriterImpl::removeFromUniqueListAttribute(OmniPvdConte
 		writeCommand(OmniPvdCommand::eREMOVE_FROM_UNIQUE_LIST_ATTRIBUTE);
 		writeWithStatus((const uint8_t*)&contextHandle, sizeof(OmniPvdContextHandle));
 		writeWithStatus((const uint8_t*)&objectHandle, sizeof(OmniPvdObjectHandle));
-		writeWithStatus((const uint8_t*)&nbAttributeHandles, sizeof(uint8_t));
+		writeWithStatus((const uint8_t*)&nbAttributeHandles, sizeof(OmniPvdAttributeHandleDepthStorageType));
 		for (int i = 0; i < nbAttributeHandles; i++)
 		{
 			writeWithStatus((const uint8_t*)attributeHandles, sizeof(OmniPvdAttributeHandle));
 			attributeHandles++;
 		}
-		writeWithStatus((const uint8_t*)&nbrBytes, sizeof(uint32_t));
+		writeWithStatus((const uint8_t*)&nbrBytes, sizeof(OmniPvdAttributeDataLengthStorageType));
 		writeWithStatus((const uint8_t*)data, nbrBytes);
 	}
 }
@@ -282,12 +327,12 @@ void OMNI_PVD_CALL OmniPvdWriterImpl::createObject(OmniPvdContextHandle contextH
 		if (objectName)
 		{
 			objectNameLen = (int)strnlen(objectName, OMNI_PVD_MAX_STRING_LENGTH);
-			writeWithStatus((const uint8_t*)&objectNameLen, sizeof(uint16_t));
+			writeWithStatus((const uint8_t*)&objectNameLen, sizeof(OmniPvdStringLengthStorageType));
 			writeWithStatus((const uint8_t*)objectName, objectNameLen);
 		}
 		else
 		{
-			writeWithStatus((const uint8_t*)&objectNameLen, sizeof(uint16_t));
+			writeWithStatus((const uint8_t*)&objectNameLen, sizeof(OmniPvdStringLengthStorageType));
 		}
 	}
 }
@@ -310,7 +355,7 @@ void OMNI_PVD_CALL OmniPvdWriterImpl::startFrame(OmniPvdContextHandle contextHan
 	{
 		writeCommand(OmniPvdCommand::eSTART_FRAME);
 		writeWithStatus((const uint8_t*)&contextHandle, sizeof(OmniPvdContextHandle));
-		writeWithStatus((const uint8_t*)&timeStamp, sizeof(uint64_t));
+		writeWithStatus((const uint8_t*)&timeStamp, sizeof(OmniPvdFrameTimestampStorageType));
 	}
 }
 
@@ -321,7 +366,7 @@ void OMNI_PVD_CALL OmniPvdWriterImpl::stopFrame(OmniPvdContextHandle contextHand
 	{
 		writeCommand(OmniPvdCommand::eSTOP_FRAME);
 		writeWithStatus((const uint8_t*)&contextHandle, sizeof(OmniPvdContextHandle));
-		writeWithStatus((const uint8_t*)&timeStamp, sizeof(uint64_t));
+		writeWithStatus((const uint8_t*)&timeStamp, sizeof(OmniPvdFrameTimestampStorageType));
 	}
 }
 
@@ -338,12 +383,12 @@ void OMNI_PVD_CALL OmniPvdWriterImpl::recordMessage(OmniPvdContextHandle context
 		if (message)
 		{
 			messageLength = (int)strnlen(message, OMNI_PVD_MAX_STRING_LENGTH);
-			writeWithStatus((const uint8_t*)&messageLength, sizeof(uint16_t));
+			writeWithStatus((const uint8_t*)&messageLength, sizeof(OmniPvdStringLengthStorageType));
 			writeWithStatus((const uint8_t*)message, messageLength);
 		}
 		else
 		{
-			writeWithStatus((const uint8_t*)&messageLength, sizeof(uint16_t));
+			writeWithStatus((const uint8_t*)&messageLength, sizeof(OmniPvdStringLengthStorageType));
 		}
 
 		int filenameLength = 0;
@@ -351,16 +396,16 @@ void OMNI_PVD_CALL OmniPvdWriterImpl::recordMessage(OmniPvdContextHandle context
 		if (file)
 		{
 			filenameLength = (int)strnlen(file, OMNI_PVD_MAX_STRING_LENGTH);
-			writeWithStatus((const uint8_t*)&filenameLength, sizeof(uint16_t));
+			writeWithStatus((const uint8_t*)&filenameLength, sizeof(OmniPvdStringLengthStorageType));
 			writeWithStatus((const uint8_t*)file, filenameLength);
 		}
 		else
 		{
-			writeWithStatus((const uint8_t*)&filenameLength, sizeof(uint16_t));
+			writeWithStatus((const uint8_t*)&filenameLength, sizeof(OmniPvdStringLengthStorageType));
 		}
 
-		writeWithStatus((const uint8_t*)&line, sizeof(uint32_t));
-		writeWithStatus((const uint8_t*)&type, sizeof(uint32_t));
+		writeWithStatus((const uint8_t*)&line, sizeof(OmniPvdMessageLineStorageType));
+		writeWithStatus((const uint8_t*)&type, sizeof(OmniPvdMessageTypeStorageType));
 		writeWithStatus((const uint8_t*)&handle, sizeof(OmniPvdClassHandle));
 	}
 }

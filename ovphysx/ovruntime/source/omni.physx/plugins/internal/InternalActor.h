@@ -12,6 +12,13 @@
  * @covers AC-1
  */
 
+/** @implements REQ-CACHE-ATTACH-001
+ * @covers AC-14
+ */
+
+// @implements REQ-LOAD-JOINTLIMIT-001
+// @covers AC-9
+
 #pragma once
 
 // InternalActor's own constructor is ObjectKey-native and pulls no pxr headers in this header;
@@ -23,6 +30,7 @@
 #include <common/foundation/Allocator.h>
 
 #include <omni/physics/parse/Handles.h>
+#include <unordered_map>
 
 #include <utils/SplinesCurve.h>
 
@@ -30,6 +38,8 @@
 #include <foundation/PxMat44.h>
 
 #include <cstdint>
+#include <limits>
+#include <optional>
 
 namespace physx
 {
@@ -96,18 +106,26 @@ struct MirrorActor
     InternalScene* internalScene;
 };
 
+// Whether a prim's children are nested under an enabled rigid body, with no resetXformStack in
+// between, keyed by that prim. The answer depends only on ancestors, so a caller that creates
+// many actors from one unchanging source read can share it between siblings.
+using NestedBodyMemo = std::unordered_map<omni::physics::parse::ObjectKey, bool, omni::physics::parse::ObjectKey::Hash>;
+
 class InternalActor : public Allocateable
 {
 public:
-    // No SdfPath/UsdPrim parameter: the constructor re-derives a UsdPrim internally only for
-    // its two USD-authoring-only sub-features (point-instancer initial-transform capture for
-    // restore-on-stop, and a nested-rigid-body/resetXformStack scan), both gated on
-    // `as->getStage()`. A stageless attach skips them.
+    // No SdfPath/UsdPrim parameter: the constructor reads what it needs through the
+    // attachment's IPhysicsSource, for a USD stage, a stageless ovstage attach and a
+    // compiled-cache restore alike. An instanced actor captures its prototype transform and
+    // its point instancer's initial transforms for restore-on-stop; any other actor scans
+    // its ancestors for an enabled rigid body it is nested under, with no resetXformStack
+    // in between. `nestedBodies`, when given, memoizes that scan per parent prim.
     InternalActor(PhysXScene* ps,
                   bool dynamicActor,
                   const usdparser::ObjectInstance* instance,
                   bool localSpaceVelocities,
-                  omni::physics::parse::ObjectKey key);
+                  omni::physics::parse::ObjectKey key,
+                  NestedBodyMemo* nestedBodies = nullptr);
     virtual ~InternalActor();
 
     // Source-agnostic handle for this actor's prim, used to route transform
@@ -131,6 +149,27 @@ public:
 
     omni::physics::parse::ObjectKey mSourceGPrimKey;
 
+    // How an ordinary load placed this dynamic body, which a compiled-cache hit replays
+    // (see cache/AttachmentRecords.cpp): it created the body at mInsertionPose and added it to
+    // its scene with the center of mass at the actor origin, and its mass update then passed
+    // mAppliedCenterOfMass to PhysX. PhysX normalizes both rotations, on creation as in its pose
+    // setter. It keeps each shape's world transform from the insertion until the body moves;
+    // the first step reads it.
+    std::optional<::physx::PxTransform> mInsertionPose;
+    ::physx::PxTransform mAppliedCenterOfMass = ::physx::PxTransform(::physx::PxIdentity);
+    // The center of mass PhysX stored for mAppliedCenterOfMass, as the body reported it. The
+    // runtime cannot normalize that rotation again bit for bit: the SDK builds without
+    // floating-point contraction, and the runtime may fuse multiply-adds, as GCC does on aarch64.
+    ::physx::PxTransform mNormalizedCenterOfMass = ::physx::PxTransform(::physx::PxIdentity);
+
+    bool surfaceVelocityEnabled() const
+    {
+        return mSurfaceVelocityEnabled;
+    }
+    bool contactSolveEnabled() const
+    {
+        return mSolveContactEnabled;
+    }
     void enableSurfaceVelocity(bool enable, ::physx::PxRigidActor& actor);
     void enableSplineSurfaceVelocity(bool enable,
                                      ::physx::PxRigidActor& actor,
@@ -167,7 +206,7 @@ public:
     ::physx::PxVec3 mSurfaceAngularVelocity = ::physx::PxVec3(::physx::PxZero);
     ::physx::PxTransform mSurfaceAngularVelocityPivot = ::physx::PxTransform(::physx::PxIdentity);
 
-    float mSplinesSurfaceVelocityMagnitude;
+    float mSplinesSurfaceVelocityMagnitude = 0.0f;
     SplinesCurve* mSplinesCurve;
     ::physx::PxTransform mSplineLocalSpace = ::physx::PxTransform(::physx::PxIdentity);
 
@@ -186,6 +225,14 @@ private:
     bool mSolveContactEnabled;
 };
 
+// The authored low and high bound of one joint limit pair as last delivered by a live update, NaN
+// until one is (InternalJoint::mLiveLimits, REQ-LOAD-JOINTLIMIT-001 AC-9).
+struct JointLiveLimitBounds
+{
+    float low = std::numeric_limits<float>::quiet_NaN();
+    float high = std::numeric_limits<float>::quiet_NaN();
+};
+
 class InternalLink : public InternalActor
 {
 public:
@@ -196,6 +243,11 @@ public:
     {
     }
     bool hasInboundJointWithStateAPI;
+    // The live limit bounds of the inbound joint while its InternalJoint is rebuilt around the same
+    // PhysX joint, for example after a mimic joint API is applied to the joint prim. Handed to the
+    // new InternalJoint, so the bounds delivered before the rebuild still pair with later changes
+    // (REQ-LOAD-JOINTLIMIT-001 AC-9).
+    JointLiveLimitBounds mInboundJointLiveLimits[6];
 };
 
 class InternalCct : public InternalActor

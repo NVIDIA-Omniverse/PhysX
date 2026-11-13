@@ -14,7 +14,7 @@
 # @implements REQ-CAPI-OBJECTTYPE-001
 # @covers AC-1
 # @implements REQ-PYTHON-TASK-001
-# @covers AC-8
+# @covers AC-8 AC-11
 # @implements REQ-CAPI-CONFIG-001
 # @covers AC-1 AC-8
 # @implements REQ-CAPI-READ-CONTACT-002
@@ -23,6 +23,8 @@
 # @covers AC-15
 # @implements REQ-CAPI-SDF-001
 # @covers AC-4
+# @implements REQ-CAPI-COMPILED-CACHE-001
+# @covers AC-1
 
 """Pure-Python type definitions for ovphysx.
 
@@ -46,7 +48,10 @@ mechanically verifiable.
 """
 
 from enum import IntEnum, IntFlag
-from typing import NamedTuple, Sequence, Union
+from typing import TYPE_CHECKING, NamedTuple, Sequence, Union
+
+if TYPE_CHECKING:
+    import ovstage
 
 
 class TensorType(IntEnum):
@@ -142,8 +147,8 @@ class TensorType(IntEnum):
     ARTICULATION_SPATIAL_TENDON_OFFSET = 93           # [N, T]   length offset
 
     # -- Shape-level properties (2D/3D, read/write).
-    #    S = max collision shapes per body/link.  Bodies with fewer shapes
-    #    have zero-padded trailing entries. --
+    #    S = max collision shapes per rigid body, or per articulation summed over all its
+    #    links.  Bodies with fewer shapes have zero-padded trailing entries. --
     RIGID_BODY_SHAPE_FRICTION_AND_RESTITUTION = 100    # [N, S, 3] (static_friction, dynamic_friction, restitution)
     RIGID_BODY_CONTACT_OFFSET = 101                   # [N, S]    contact offset per shape
     RIGID_BODY_REST_OFFSET = 102                      # [N, S]    rest offset per shape
@@ -233,6 +238,21 @@ class ApiStatus(IntEnum):
     INVALID_STATE = 9       # operation is not valid in the instance's current lifecycle state
 
 
+class TaskStatus(IntEnum):
+    """State of an issued task, as reported by :meth:`ovphysx.PhysX.task_status`.
+
+    Mirrors ``ovphysx_task_status_t``. The query never collects: SUCCEEDED and
+    FAILED stay observable until a wait collects the task, which then reports
+    NOT_FOUND.
+    """
+
+    NOT_FOUND = 0   # never issued, or its outcome was already collected
+    PENDING = 1     # accepted and queued; its work has not started
+    RUNNING = 2     # its work started and has not finished
+    SUCCEEDED = 3   # finished successfully; outcome not yet collected
+    FAILED = 4      # finished with a failure; outcome not yet collected
+
+
 class ObjectType(IntEnum):
     """TensorAPI object classification. Mirrors ``ovphysx_object_type_t`` in the legacy C header.
 
@@ -293,6 +313,7 @@ class SimObjectType(IntEnum):
     PHYSICS = 22
     DEBUG_RENDER = 23
     SDF_SHAPE = 24
+    DEFORMABLE_SKIN_MESH = 25
 
 
 class ObjectScope(IntEnum):
@@ -325,8 +346,8 @@ class ContactSelection(NamedTuple):
     with CPU readback. On DirectGPU its sensor row remains but reads zero force.
     """
 
-    sensors: Union[str, Sequence[int]]
-    filters: Sequence[Union[str, Sequence[int]]] = ()
+    sensors: Union[str, Sequence["ovstage.PrimPath | int"]]
+    filters: Sequence[Union[str, Sequence["ovstage.PrimPath | int"]]] = ()
 
 
 class ArticulationKinematicFlag(IntFlag):
@@ -352,6 +373,8 @@ class GlobalConfigKey(IntEnum):
     LOG_LEVEL = 0x0000000A
     DEFAULT_LOG_OUTPUT = 0x0000000B
     OVD_RECORDING_CAPABLE = 0x0000000C
+    ASYNC_EXECUTION = 0x0000000D
+    COMPILED_STAGE_CACHE = 0x0000000E
 
 
 class ConfigKey(IntEnum):
@@ -398,6 +421,44 @@ class ProfilerBackend(IntEnum):
     NONE = 0
     NVTX = 1
     TRACE = 2
+
+
+class CompiledStageCacheMode(IntEnum):
+    """Compiled ovstage cache mode. Mirrors ovphysx_compiled_stage_cache_mode_t.
+
+    The value of :attr:`GlobalConfigKey.COMPILED_STAGE_CACHE`. Experimental.
+    Each later :meth:`PhysX.attach_ovstage` reads it, so it can change at any
+    time. The cache stores compiled attach results, and physics subtrees that a
+    later :meth:`PhysX.update_from_ovstage` adds, in the cooked-collider
+    (UJITSO) datastore, keyed by the physics inputs and the runtime build.
+    Changed inputs miss and load normally; the developer guide's Compiled Stage
+    Cache section describes what happens when a stored result fails.
+
+    ``AUTOMATIC`` (default) selects ``READ_WRITE`` while cooked colliders persist
+    in a directory :attr:`GlobalConfigKey.COOKED_COLLIDER_CACHE_DIRECTORY`
+    configured, that the datastore was built from and that, on Linux, is private
+    to the user (not a symlink, owned by the user and closed to group and others,
+    with every directory above it owned by the user or root and writable by no one
+    else unless sticky, as ``/tmp`` is), and ``DISABLED`` otherwise; it logs why at
+    ``LogLevel.INFO`` when a configured directory fails either condition. The
+    process-private fallback directory is deleted at shutdown, so storing there
+    would only help within one process. ``READ_WRITE`` uses the configured
+    directory either way; without one it stores into that process-private
+    directory, and reuse ends at shutdown. When no local datastore is usable,
+    the attach loads normally and reports unavailable. Each attach logs its
+    cache outcome at ``LogLevel.INFO``.
+
+    Stored results are deserialized in place, as cooked colliders are; see
+    :attr:`PhysXConfig.cooked_collider_cache_dir` for who may write the directory.
+    Attaches that assign replicator environment ids for :meth:`PhysX.clone` are
+    cached too: a restored stage carries the environment ids that loading it
+    normally assigns.
+    """
+
+    AUTOMATIC = 0
+    DISABLED = 1
+    READ_ONLY = 2
+    READ_WRITE = 3
 
 
 class BindingPrimMode(IntEnum):

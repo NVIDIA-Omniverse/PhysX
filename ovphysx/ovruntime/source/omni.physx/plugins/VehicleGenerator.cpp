@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-OMNIPVD-CAPTURE-001
+// @covers AC-3
+
 // @implements REQ-ATTACH-RESOLVE-001
 // @covers AC-6
 // @implements REQ-PARSE-VEH-DRIVETRAIN-001
@@ -22,6 +25,14 @@ namespace omni
 {
 namespace physx
 {
+
+static bool isVehicleCaptured(const ::physx::PxActor& actor)
+{
+    ::physx::PxOmniPvd* omniPvd = OmniPhysX::getInstance().getPhysXSetup().getOmniPvd();
+    return omniPvd && omniPvd->isSampling() &&
+           OmniPhysX::getInstance().getPhysXSetup().isOmniPvdSecondaryDataEnabled() &&
+           omniPvd->isObjectRecorded(actor);
+}
 
 static_assert(::physx::PxVehicleLimits::eMAX_NB_AXLES == ::physx::PxVehicleLimits::eMAX_NB_WHEELS, "");
 // It should be possible to support cases where each wheel is controlled individually and thus
@@ -1002,7 +1013,7 @@ static TVehicle* createInternal(::physx::PxRigidDynamic& vehicleActor,
             wheelIndexToDataMap, frame, gravityMagnitude);
         vehicle->setComponentSequence();
 
-        if (allocatorForPvd)
+        if (allocatorForPvd && isVehicleCaptured(vehicleActor))
         {
             vehicle->createPvdObjectHandles(*allocatorForPvd);
         }
@@ -1215,7 +1226,7 @@ void PhysXActorVehicleBase::simulateEnd(const float dt, const ::physx::PxVehicle
     ::physx::PxVehiclePhysXActorEndComponent* actorEndComp = static_cast<::physx::PxVehiclePhysXActorEndComponent*>(this);
     actorEndComp->update(dt, context);
 
-    if (mPvdObjectHandles)
+    if (mPvdObjectHandles && isVehicleCaptured(*mPhysxActor.rigidBody))
     {
         const ::physx::PxVehiclePhysXSimulationContext& sourceContext =
             static_cast<const ::physx::PxVehiclePhysXSimulationContext&>(context);

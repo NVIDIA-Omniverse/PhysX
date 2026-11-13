@@ -4,6 +4,9 @@
 /**
  * @implements REQ-CAPI-THREADING-001
  * @covers AC-1 AC-2 AC-3 AC-4 AC-5
+ *
+ * @implements REQ-CAPI-CONFIG-001
+ * @covers AC-5 AC-7 AC-11
  */
 
 // Worker-pool sizing is decided once per process, when the first instance
@@ -16,11 +19,15 @@
 #include <gtest/gtest.h>
 
 #include "ovphysxTestHelpers.h"
+#include "ovphysx_test_utils.h"
 
 #include <tbb/global_control.h>
 
 #include <algorithm>
+#include <atomic>
 #include <cstdint>
+#include <string>
+#include <thread>
 
 namespace
 {
@@ -49,6 +56,19 @@ ovphysx_config_entry_t carboniteIntEntry(const char* path, const char* value)
     return ovphysx_config_entry_carbonite(
         ovphysx_string_t{ path, std::char_traits<char>::length(path) },
         ovphysx_string_t{ value, std::char_traits<char>::length(value) });
+}
+
+void recordThread(void* user)
+{
+    *static_cast<std::thread::id*>(user) = std::this_thread::get_id();
+}
+
+// Counts the warnings that an instance runs synchronously on a one-thread pool.
+void countSynchronousWarnings(ovphysx_log_level_t, ovphysx_string_t message, ovphysx_string_t, double, void* user)
+{
+    const std::string text = message.ptr ? std::string(message.ptr, message.length) : std::string();
+    if (text.find("asynchronous execution disabled for this pool size (1 threads)") != std::string::npos)
+        ++*static_cast<std::atomic<int>*>(user);
 }
 
 } // namespace
@@ -143,6 +163,81 @@ TEST(WorkerPoolOverrideTest, ExplicitCountsStartThePoolsAndLaterChangesAreReject
     EXPECT_EQ(ovphysx_shutdown().status, OVPHYSX_API_SUCCESS);
 }
 
+// REQ-CAPI-CONFIG-001 AC-11: legacy entries set before the first instance are
+// applied by that create, before plugins start the pool, and are not replayed
+// by a later create.
+TEST(WorkerPoolQueuedEntryTest, PreCreateEntriesApplyOnceBeforePluginsLoad)
+{
+    ASSERT_EQ(ovphysx_initialize().status, OVPHYSX_API_SUCCESS);
+    bool readback = false;
+    ASSERT_EQ(ovphysx_test_get_settings_bool("/physics/suppressReadback", &readback).status, OVPHYSX_API_ERROR)
+        << "Carbonite must not be running yet, or the entries below bypass the queue";
+
+    const ovphysx_config_entry_t readbackOn = ovphysx_config_entry_carbonite(
+        OVPHYSX_LITERAL("/physics/suppressReadback"), OVPHYSX_LITERAL("true"));
+    const ovphysx_config_entry_t readbackOff = ovphysx_config_entry_carbonite(
+        OVPHYSX_LITERAL("/physics/suppressReadback"), OVPHYSX_LITERAL("false"));
+    {
+        // The queue owns its copies; the caller's strings end with this scope.
+        const std::string path = kTaskingThreadCountPath;
+        const std::string value = "3";
+        ASSERT_EQ(ovphysx_set_global_config_entry(carboniteIntEntry(path.c_str(), value.c_str())).status,
+                  OVPHYSX_API_SUCCESS);
+    }
+    ovphysx_config_entry_t invalidType{};
+    invalidType.key_type = OVPHYSX_CONFIG_KEY_TYPE_COUNT;
+    const ovphysx_config_entry_t invalidEntries[] = {
+        invalidType,
+        ovphysx_config_entry_bool(OVPHYSX_CONFIG_BOOL_COUNT, true),
+        ovphysx_config_entry_int32(OVPHYSX_CONFIG_INT32_COUNT, 1),
+        ovphysx_config_entry_float(OVPHYSX_CONFIG_FLOAT_COUNT, 1.0f),
+        ovphysx_config_entry_string(OVPHYSX_CONFIG_STRING_COUNT, OVPHYSX_LITERAL("value")),
+        ovphysx_config_entry_carbonite(OVPHYSX_LITERAL("/test/key\0suffix"), OVPHYSX_LITERAL("true")),
+        ovphysx_config_entry_carbonite(OVPHYSX_LITERAL("/test/key"), OVPHYSX_LITERAL("true\0suffix")),
+    };
+    // Rejected entries must not poison creation or discard the valid queue.
+    for (const ovphysx_config_entry_t& invalidEntry : invalidEntries)
+        EXPECT_EQ(ovphysx_set_global_config_entry(invalidEntry).status, OVPHYSX_API_INVALID_ARGUMENT);
+    ASSERT_EQ(ovphysx_set_global_config_entry(readbackOn).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_set_global_config_entry(ovphysx_config_entry_carbonite(
+                  OVPHYSX_LITERAL("/physics/cudaDevice"), OVPHYSX_LITERAL("0"))).status,
+              OVPHYSX_API_INVALID_ARGUMENT);
+    EXPECT_EQ(ovphysx_set_global_config_entry(ovphysx_config_entry_num_threads(-1)).status,
+              OVPHYSX_API_INVALID_ARGUMENT);
+
+    bool contactProcessingDisabled = false;
+    ASSERT_EQ(ovphysx_set_global_config_entry(ovphysx_config_entry_disable_contact_processing(true)).status,
+              OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_get_global_config_bool(OVPHYSX_CONFIG_DISABLE_CONTACT_PROCESSING,
+                                            &contactProcessingDisabled).status,
+              OVPHYSX_API_SUCCESS);
+    EXPECT_FALSE(contactProcessingDisabled) << "queued entries are not effective until create";
+
+    ovphysx_instance_handle_t first = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_instance(&first).status, OVPHYSX_API_SUCCESS);
+
+    ASSERT_EQ(ovphysx_get_global_config_bool(OVPHYSX_CONFIG_DISABLE_CONTACT_PROCESSING,
+                                            &contactProcessingDisabled).status,
+              OVPHYSX_API_SUCCESS);
+    EXPECT_TRUE(contactProcessingDisabled);
+
+    WorkerPoolCounts counts;
+    ASSERT_TRUE(readWorkerPoolCounts(counts));
+    EXPECT_EQ(counts.taskingThreads, 3u) << "the queued entry must reach carb.tasking before it starts";
+    ASSERT_EQ(ovphysx_test_get_settings_bool("/physics/suppressReadback", &readback).status, OVPHYSX_API_SUCCESS);
+    EXPECT_TRUE(readback);
+
+    ASSERT_EQ(ovphysx_set_global_config_entry(readbackOff).status, OVPHYSX_API_SUCCESS);
+    ovphysx_instance_handle_t second = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_instance(&second).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_test_get_settings_bool("/physics/suppressReadback", &readback).status, OVPHYSX_API_SUCCESS);
+    EXPECT_FALSE(readback) << "a later create must not replay a queued entry";
+
+    EXPECT_EQ(ovphysx_destroy_instance(second).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_destroy_instance(first).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_shutdown().status, OVPHYSX_API_SUCCESS);
+}
+
 // Invalid startup values must be rejected before any process-wide setting is
 // changed, so a caller can recover with a default construction.
 TEST(WorkerPoolInvalidTest, RejectedCountsDoNotPoisonLaterConstruction)
@@ -167,6 +262,52 @@ TEST(WorkerPoolInvalidTest, RejectedCountsDoNotPoisonLaterConstruction)
     ASSERT_TRUE(readWorkerPoolCounts(counts));
     EXPECT_EQ(counts.taskingSetting, 0);
     EXPECT_EQ(counts.tbbSetting, 0);
+
+    EXPECT_EQ(ovphysx_destroy_instance(handle).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_shutdown().status, OVPHYSX_API_SUCCESS);
+}
+
+// A carb.tasking pool of one thread leaves no room for asynchronous execution: an
+// instance created while OVPHYSX_GLOBAL_CONFIG_ASYNC_EXECUTION is true gets no worker
+// thread, runs each call on the calling thread before it returns, and one warning names
+// the pool size. The setting itself stays true.
+TEST(WorkerPoolOneThreadTest, InstancesRunSynchronously)
+{
+    ASSERT_EQ(ovphysx_initialize().status, OVPHYSX_API_SUCCESS);
+    // On, whatever OVPHYSX_TEST_EXECUTION chose for this process.
+    ASSERT_EQ(ovphysx_set_global_config(OVPHYSX_GLOBAL_CONFIG_ASYNC_EXECUTION, ovphysx_config_value_bool(true)).status,
+              OVPHYSX_API_SUCCESS);
+    std::atomic<int> warnings{ 0 };
+    ASSERT_EQ(ovphysx_set_log_callback(OVPHYSX_LOG_WARNING, nullptr, &countSynchronousWarnings, &warnings).status,
+              OVPHYSX_API_SUCCESS);
+
+    const ovphysx_config_entry_t oneThread = carboniteIntEntry(kTaskingThreadCountPath, "1");
+    ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
+    args.config_entries = &oneThread;
+    args.config_entry_count = 1;
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_instance_with_args(&args, &handle).status, OVPHYSX_API_SUCCESS);
+
+    WorkerPoolCounts counts;
+    ASSERT_TRUE(readWorkerPoolCounts(counts));
+    EXPECT_EQ(counts.taskingThreads, 1u);
+    ovphysx_config_value_t asyncExecution{};
+    ASSERT_EQ(ovphysx_get_global_config(OVPHYSX_GLOBAL_CONFIG_ASYNC_EXECUTION, &asyncExecution).status,
+              OVPHYSX_API_SUCCESS);
+    EXPECT_TRUE(asyncExecution.value.bool_value);
+
+    std::thread::id ranOn;
+    const ovphysx_enqueue_result_t job =
+        ovphysx_submit_test_callback_job_for_test_internal(handle, &recordThread, &ranOn);
+    ASSERT_EQ(job.status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ranOn, std::this_thread::get_id()) << "the job ran on the calling thread before the call returned";
+    ovphysx_task_status_t status = OVPHYSX_TASK_STATUS_PENDING;
+    ASSERT_EQ(ovphysx_query_task_status(handle, job, &status).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(status, OVPHYSX_TASK_STATUS_SUCCEEDED);
+
+    EXPECT_EQ(ovphysx_flush_log(OVPHYSX_TIMEOUT_INFINITE).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(warnings.load(), 1);
+    ovphysx_set_log_callback(OVPHYSX_LOG_DEFAULT, nullptr, nullptr, nullptr);
 
     EXPECT_EQ(ovphysx_destroy_instance(handle).status, OVPHYSX_API_SUCCESS);
     EXPECT_EQ(ovphysx_shutdown().status, OVPHYSX_API_SUCCESS);

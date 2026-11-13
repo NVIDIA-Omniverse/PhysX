@@ -5,10 +5,10 @@
 
 # PhysicsArticulationRootAPI
 
-Marks the root of a reduced-coordinate articulation. Declares no attributes: the schema token itself is the whole signal, and the consumer derives the root link, the fixed-base flag and the set of articulated bodies and joints from the joint graph under the prim. PhysX tuning lives on PhysxArticulationAPI.
+Marks the root of a reduced-coordinate articulation. Declares no attributes: the schema token itself is the whole signal, and the consumer derives the root link, the fixed-base flag and the set of articulated bodies and joints from the joint graph under the [prim](glossary.md#prim). [PhysX](glossary.md#physx) tuning lives on PhysxArticulationAPI.
 
-- **Applies to:** `Xformable`, `PhysicsJoint`
-- **Read only when listed in `usd-schemas`.**
+- **Applies to:** [`Xformable`](glossary.md#xformable), [`PhysicsJoint`](glossary.md#physicsjoint)
+- **Read only when listed in [`usd-schemas`](prim.md#columns).**
 - **Uses blocks:** [`prim`](prim.md)
 
 ## What USD population writes
@@ -19,9 +19,10 @@ The prim gets a row with PhysicsArticulationRootAPI in usd-schemas whenever the 
 
 - **[`prim`](prim.md):** Enumerated by schema membership (usd-schemas CONTAINS PhysicsArticulationRootAPI), so the probe is the usd-schemas column itself; a root on a bare Xform is recovered. The API on an enabled dynamic non-kinematic rigid body makes that body the user-defined root with no election. On a static or disabled body it is ignored with a warning ('ArticulationRootAPI definition on non rigid body is not allowed'); on a kinematic body likewise ('on a kinematic rigid body not allowed'). On an Xform or any other prim the root is elected by weight over the namespace subtree.
 - **[`PhysicsJoint`](PhysicsJoint.md):** The API on a joint prim with body0 or body1 absent (joint to world) makes that joint the root and the valid body the base link; on a joint with both bodies valid it falls through to election. During election a joint with one side absent or not an accepted link (static, disabled or kinematic body) and excludeFromArticulation false adds weight 100000 to its link and records itself as that link's root joint.
-- **[`PhysxArticulationAPI`](PhysxArticulationAPI.md):** fixBase is true exactly when the elected root key is itself a joint prim, which happens when a joint-to-world anchor wins the election; the runtime then sets PxArticulationFlag::eFIX_BASE. Without such a joint the root is re-elected through the nested-articulation and centre-of-graph fallbacks and the articulation floats. Observable as articulation->getArticulationFlags().isSet(::physx::PxArticulationFlag::eFIX_BASE).
+- **[`PhysxArticulationAPI`](PhysxArticulationAPI.md):** The articulation has a fixed base exactly when the elected root key is itself a joint prim, which happens when a joint-to-world anchor wins the election; the runtime then sets PxArticulationFlag::eFIX_BASE. Without such a joint the root is re-elected through the nested-articulation and centre-of-graph fallbacks and the articulation floats. Observable as PxArticulationFlag::eFIX_BASE set in the PhysX articulation's flags.
 - **[`PhysicsRigidBodyAPI`](PhysicsRigidBodyAPI.md):** Only enabled, dynamic, non-kinematic bodies are accepted as links; every other body under the root counts as world for the purpose of anchoring.
-- **[`PhysicsFilteredPairsAPI`](PhysicsFilteredPairsAPI.md):** physics:filteredPairs on the root prim becomes the articulation-level filtered collision list (sourceFilteredCollisions).
+- **[`PhysicsFilteredPairsAPI`](PhysicsFilteredPairsAPI.md):** physics:filteredPairs on the root prim becomes the articulation-level filtered collision list.
+- **[`NewtonArticulationRootAPI`](NewtonArticulationRootAPI.md):** Read on every articulation root without checking usd-schemas, when PhysxArticulationAPI is not applied or carries no physxArticulation:enabledSelfCollisions.
 
 ## Known divergences
 
@@ -29,8 +30,8 @@ The prim gets a row with PhysicsArticulationRootAPI in usd-schemas whenever the 
 
 ## Notes
 
-- Per root the consumer runs setToDefault(ArticulationFields, units), parseArticulation (PhysxArticulationAPI overrides), parseFilteredPairs and then the shared buildArticulations graph pass that the USD walker also runs.
-- applies_to lists PhysicsJoint next to Xformable because the USD schema declares no apiSchemaCanOnlyApplyTo for this API and documents the fixed-base pattern with the API on the root joint itself (usdPhysics schema.usda); the consumer registers the PxArticulationReducedCoordinate on the prim carrying the API (ArticulationGraph.cpp emitArticulationDesc articulationPrim), so the contract tests read the articulation there.
+- Per root the consumer applies the units-aware articulation defaults, then the PhysxArticulationAPI overrides and the root's filtered pairs, and then runs the shared articulation graph pass that the [USD](glossary.md#usd) walker also runs.
+- applies_to lists PhysicsJoint next to Xformable because the UsdPhysics schema does not restrict the prim types this API applies to and documents the fixed-base pattern with the API on the root joint itself; the consumer registers the PxArticulationReducedCoordinate on the prim carrying the API, so the contract tests read the articulation there.
 - physxArticulation:articulationEnabled false on the same prim skips the root entirely: no descriptor is emitted (see PhysxArticulationAPI).
 - PhysxArticulationForceSensorAPI is not parsed anywhere in the runtime and is explicitly out of scope for this contract.
 - Articulation joint types created from the joint prims under the root: Fixed -> eFIX; Revolute -> eREVOLUTE_UNWRAPPED (limited) or eREVOLUTE (free) on eTWIST; Prismatic -> ePRISMATIC on eX; Spherical -> eSPHERICAL with eTWIST free and symmetric eSWING1/eSWING2 limits; D6 -> eSPHERICAL with all three rotational axes free. Distance, gear and rack joints are never articulation joints.

@@ -1,0 +1,25 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "GeomInstanceAPI",
+  "title": "GeomInstanceAPI",
+  "summary": "Native-instancing tag on an instance root. ovstage population writes it into usd-schemas of every instance root, whose usd-prim-type becomes XformInstance (or ScopeInstance) while the authored type moves to usd-metadata:typeName.",
+  "status": "draft",
+  "compiled_cache": true,
+  "authoring": false,
+  "applies_to": [
+    "Xformable",
+    "Imageable",
+    "Typed"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": false,
+    "row": false
+  },
+  "producer_scope": "Written by ovstage population on every instance root, in every domain.",
+  "columns": [],
+  "notes": [
+    "No USD schema applies this name and it declares no column; the parser keys native instancing on the ovstage instancing queries (instance and prototype roots), not on attributes."
+  ]
+}

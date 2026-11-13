@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # @implements REQ-COMP-QUERY-001
-# @covers AC-1 AC-2 AC-4
+# @covers AC-1 AC-2 AC-4 AC-5
 """Bounded exact-owner queries with copied, generation-qualified hit identities."""
 import ctypes as C
 from dataclasses import dataclass
@@ -93,7 +93,8 @@ class QueryResult:
 class SceneQueries(ObjectAccess):
     """Queries and Inspector reads on a selected ToolsSession or PreviewSession.
 
-    Requires completed CPU owner state. No implicit wait or simulation and no USD.
+    Requires completed owner state. Queries run on CPU and GPU-dynamics scenes;
+    DirectGPU scenes are unavailable. No implicit wait or simulation and no USD.
     ANY stops at existence; CLOSEST scans every selected scene for nearest hit;
     ALL orders by distance then object/face identity and retains nearest capacity.
     total counts all matches (ANY: zero/one); truncated reports capacity loss.

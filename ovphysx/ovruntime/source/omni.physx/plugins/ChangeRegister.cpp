@@ -164,7 +164,7 @@ static bool jointRequirementCheck(AttachedStage& attachedStage, omni::physics::p
     if (src)
     {
         const omni::physics::parse::KnownTokens& tok = attachedStage.getKnownTokens();
-        if (src->isA(primKey, tok.physicsJoint))
+        if (src->isA(primKey, tok.physicsJointType))
             return true;
     }
 
@@ -209,7 +209,7 @@ static bool jointEnableDisableRequirementCheck(AttachedStage& attachedStage, omn
     if (!src)
         return false;
     const omni::physics::parse::KnownTokens& tok = attachedStage.getKnownTokens();
-    if (!src->isA(primKey, tok.physicsJoint))
+    if (!src->isA(primKey, tok.physicsJointType))
         return false;
 
     bool val;
@@ -435,7 +435,7 @@ static bool physxFixedTendonRequirementCheck(AttachedStage& attachedStage, omni:
     if (!src)
         return false;
     const omni::physics::parse::KnownTokens& tok = attachedStage.getKnownTokens();
-    return src->isA(primKey, tok.physicsJoint) && src->hasSchema(primKey, tok.physxTendonAxisRootAPI);
+    return src->isA(primKey, tok.physicsJointType) && src->hasSchema(primKey, tok.physxTendonAxisRootAPI);
 }
 
 static bool physxTendonAxisRequirementCheck(AttachedStage& attachedStage, omni::physics::parse::ObjectKey primKey, omni::physics::parse::TokenId propName)
@@ -444,7 +444,7 @@ static bool physxTendonAxisRequirementCheck(AttachedStage& attachedStage, omni::
     if (!src)
         return false;
     const omni::physics::parse::KnownTokens& tok = attachedStage.getKnownTokens();
-    return src->isA(primKey, tok.physicsJoint) && src->hasSchema(primKey, tok.physxTendonAxisAPI);
+    return src->isA(primKey, tok.physicsJointType) && src->hasSchema(primKey, tok.physxTendonAxisAPI);
 }
 
 template<SchemaAPIFlag::Enum tSchemaFlag>
@@ -501,8 +501,8 @@ void registerSceneTimeSampledChanges(AttachedStage& attachedStage, omni::physics
     if (!src)
         return;
     const omni::physics::parse::KnownTokens& tok = attachedStage.getKnownTokens();
-    testTimeSampledAttribute(attachedStage, scenePrimKey, tok.gravityMagnitude, updateGravityMagnitude);
-    testTimeSampledAttribute(attachedStage, scenePrimKey, tok.gravityDirection, updateGravityDirection);
+    testTimeSampledAttribute(attachedStage, scenePrimKey, tok.physicsGravityMagnitude, updateGravityMagnitude);
+    testTimeSampledAttribute(attachedStage, scenePrimKey, tok.physicsGravityDirection, updateGravityDirection);
 }
 
 static void addToStageSpecificAttributeMap(AttachedStage& attachedStage, std::string attributeName, OnPrimRequirementKeyCheckFn checkFn,

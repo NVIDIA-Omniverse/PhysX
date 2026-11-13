@@ -2,20 +2,54 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // @implements REQ-CAPI-COMPANION-001
-// @covers AC-1 AC-5
+// @covers AC-1 AC-3 AC-5
 // @implements REQ-COMP-INTERACTION-001
 // @covers AC-1 AC-4
 // @implements REQ-COMP-NATIVE-ABI-001
 // @covers AC-1
+// @implements REQ-CAPI-OMNIPVD-LATE-001
+// @covers AC-11
 #include <ovphysx_companion/native_access.h>
 #include <ovphysx/ovphysx_attributes.h>
 #include "global_test_environment.h"
+#include "ovphysxTestHelpers.h"
+#include <atomic>
+#include <chrono>
 #include <cstring>
+#include <thread>
 #include "../../companion/samples/native/read_only.h"
 namespace sdk=ovphysx::companion::native;
 namespace
 {
 class CompanionAccess:public PhysXTestFixture {};
+// Holds an instance worker, so jobs queued on it stay queued, until released.
+struct WorkerHold
+{
+    explicit WorkerHold(ovphysx_instance_handle_t h):handle(h),held(ovphysx_set_worker_hold_for_test_internal(h,true)) {}
+    ~WorkerHold() {release();}
+    void release() {if(held)ovphysx_set_worker_hold_for_test_internal(handle,false);held=false;}
+    ovphysx_instance_handle_t handle;
+    bool held;
+};
+// What a native-access visitor saw of a step another thread submitted during the lease.
+struct LeaseStepProbe
+{
+    ovphysx_instance_handle_t core=0;
+    int called=0;
+    ovphysx_enqueue_result_t step{};
+    ovphysx_api_status_t statusQuery=OVPHYSX_API_ERROR;
+    ovphysx_task_status_t duringLease=OVPHYSX_TASK_STATUS_NOT_FOUND;
+};
+bool submitStepDuringLease(const sdk::ObjectLease&,void* raw) noexcept
+{
+    LeaseStepProbe & probe=*static_cast<LeaseStepProbe*>(raw);++probe.called;
+    std::thread submitter([&probe] {probe.step=ovphysx_step(probe.core,1.0f/60);});
+    submitter.join();
+    // The worker cannot start the step while this lease holds the lane.
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    probe.statusQuery=ovphysx_query_task_status(probe.core,probe.step,&probe.duringLease).status;
+    return true;
+}
 struct Probe
 {
     ovphysx_instance_handle_t core;
@@ -24,6 +58,8 @@ struct Probe
     float mass=0;
     ovphysx_api_status_t waitStatus=OVPHYSX_API_SUCCESS;
     ovphysx_enqueue_result_t detach{};
+    ovphysx_api_status_t recordingStatus=OVPHYSX_API_SUCCESS;
+    bool recording=true;
     ovphysx_companion_status_t recursiveStatus=OVPHYSX_COMPANION_OK;
     bool outputPreserved=false;
 };
@@ -36,6 +72,7 @@ bool inspect(const sdk::ObjectLease& lease,void* raw) noexcept
     ovphysx_wait_task_result_t wait{};
     probe.waitStatus=ovphysx_wait_all(probe.core,0,&wait).status;
     ovphysx_destroy_wait_task_result(&wait);
+    probe.recordingStatus=ovphysx_ovd_is_recording(probe.core,&probe.recording).status;
     ovphysx_companion_body_t output;std::memset(&output,0xa5,sizeof(output));
     unsigned char before[sizeof(output)];std::memcpy(before,&output,sizeof(output));
     const ovphysx_companion_object_t & ref=lease.identity();
@@ -73,7 +110,7 @@ TEST_F(CompanionAccess, TypedBorrowRejectsRecursiveWaitAndStaleRecord)
     ovphysx_query_handle_t query = 0;
     ASSERT_TRUE(waitForTaskSuccess(m_handle,
         ovphysx_query(m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &query, nullptr)));
-    const ovx_string_or_token_t velocity{0, {OVPHYSX_ATTR_LINEAR_VELOCITY, std::strlen(OVPHYSX_ATTR_LINEAR_VELOCITY)}};
+    const ovx_token_or_string_t velocity{0, {OVPHYSX_ATTR_LINEAR_VELOCITY, std::strlen(OVPHYSX_ATTR_LINEAR_VELOCITY)}};
     ovphysx_write_handle_t write = 0;
     ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_write(m_handle, query, &velocity, 1, &write, nullptr)));
     ovphysx_fetched_write_group_t fetched{};
@@ -116,6 +153,8 @@ TEST_F(CompanionAccess, TypedBorrowRejectsRecursiveWaitAndStaleRecord)
     ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_commit_group(m_handle, write, fetched.group, {})));
     ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_write(m_handle, write)));
     ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_query(m_handle, query)));
+    EXPECT_EQ(probe.recordingStatus,OVPHYSX_API_SUCCESS);
+    EXPECT_FALSE(probe.recording);
     EXPECT_EQ(probe.recursiveStatus,OVPHYSX_COMPANION_BUSY);EXPECT_TRUE(probe.outputPreserved);
     ovphysx_wait_task_result_t wait{};
     EXPECT_EQ(ovphysx_wait_all(m_handle,0,&wait).status,OVPHYSX_API_SUCCESS);
@@ -126,4 +165,76 @@ TEST_F(CompanionAccess, TypedBorrowRejectsRecursiveWaitAndStaleRecord)
     ++ref.generation;
     EXPECT_EQ(api.visit(&ref,sizeof(ref),sdk::AccessKind::Dynamic,inspect,&probe),OVPHYSX_COMPANION_STALE);
     EXPECT_EQ(probe.called,1);
+}
+// A borrowed-session call and an inspection of the owner's attachment never wait for
+// the owner's queued work: they answer BUSY at once while a job is queued, and succeed
+// once the worker finished it.
+TEST_F(CompanionAccess, SessionCallAnswersBusyWhileOwnerHasWork)
+{
+    if (!ovphysxInstancesHaveWorkers())
+        GTEST_SKIP() << kNoWorkerThread;
+    ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle,"tests/data/boxes_falling_on_groundplane.usda"));
+    ASSERT_EQ(ovphysx_step_sync(m_handle,1.0f/60).status,OVPHYSX_API_SUCCESS);
+    ovphysx_companion_api_t base{};
+    ASSERT_EQ(ovphysx_companion_acquire(1,sizeof(base),&base),OVPHYSX_COMPANION_OK);
+    uint64_t session=0;
+    ASSERT_EQ(base.open_session(m_handle,&session),OVPHYSX_COMPANION_OK);
+    struct Close {ovphysx_companion_api_t& api;uint64_t session;~Close(){api.close_session(session);}} close{base,session};
+    ovphysx_companion_identity_t owner{};ASSERT_EQ(base.get_identity(session,&owner),OVPHYSX_COMPANION_OK);
+    ovphysx_companion_inspection_api_t inspection{};
+    ASSERT_EQ(ovphysx_companion_inspection_acquire(1,sizeof(inspection),&inspection),OVPHYSX_COMPANION_OK);
+    ovphysx_companion_scene_statistics_t statistics{};
+    ASSERT_EQ(base.scene_statistics(session,"/World/physicsScene",sizeof(statistics),&statistics),OVPHYSX_COMPANION_OK);
+    ovphysx_companion_object_t ref{};
+    ASSERT_EQ(inspection.resolve(owner.attachment,"/World/Cube1",1,UINT32_MAX,sizeof(ref),&ref),OVPHYSX_COMPANION_OK);
+
+    ovphysx_enqueue_result_t job{};
+    {
+        WorkerHold hold(m_handle);
+        ASSERT_TRUE(hold.held);
+        job=ovphysx_submit_test_job_for_test_internal(m_handle,nullptr,0);
+        ASSERT_EQ(job.status,OVPHYSX_API_SUCCESS);
+        const auto before=std::chrono::steady_clock::now();
+        EXPECT_EQ(base.scene_statistics(session,"/World/physicsScene",sizeof(statistics),&statistics),OVPHYSX_COMPANION_BUSY);
+        ovphysx_companion_body_t body{};
+        EXPECT_EQ(inspection.read(&ref,sizeof(ref),&body,sizeof(body)),OVPHYSX_COMPANION_BUSY);
+        EXPECT_LT(std::chrono::steady_clock::now()-before,std::chrono::seconds(1)) << "BUSY must not wait for the worker";
+        ovphysx_task_status_t status=OVPHYSX_TASK_STATUS_NOT_FOUND;
+        EXPECT_EQ(ovphysx_query_task_status(m_handle,job,&status).status,OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(status,OVPHYSX_TASK_STATUS_PENDING);
+    }
+    EXPECT_TRUE(waitForTaskSuccess(m_handle,job));
+    EXPECT_EQ(base.scene_statistics(session,"/World/physicsScene",sizeof(statistics),&statistics),OVPHYSX_COMPANION_OK);
+    ovphysx_companion_body_t body{};
+    EXPECT_EQ(inspection.read(&ref,sizeof(ref),&body,sizeof(body)),OVPHYSX_COMPANION_OK);
+}
+// A native-access lease holds the owner's lane: a step another thread submits during it
+// is queued instead of entering the runtime the lease is reading, stays pending until the
+// lease ends, and then runs and succeeds.
+TEST_F(CompanionAccess, NativeAccessLeaseDelaysQueuedStep)
+{
+    if (!ovphysxInstancesHaveWorkers())
+        GTEST_SKIP() << kNoWorkerThread;
+    ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle,"tests/data/boxes_falling_on_groundplane.usda"));
+    ASSERT_EQ(ovphysx_step_sync(m_handle,1.0f/60).status,OVPHYSX_API_SUCCESS);
+    ovphysx_companion_api_t base{};
+    ASSERT_EQ(ovphysx_companion_acquire(1,sizeof(base),&base),OVPHYSX_COMPANION_OK);
+    uint64_t session=0;
+    ASSERT_EQ(base.open_session(m_handle,&session),OVPHYSX_COMPANION_OK);
+    struct Close {ovphysx_companion_api_t& api;uint64_t session;~Close(){api.close_session(session);}} close{base,session};
+    ovphysx_companion_identity_t owner{};ASSERT_EQ(base.get_identity(session,&owner),OVPHYSX_COMPANION_OK);
+    ovphysx_companion_inspection_api_t inspection{};
+    ASSERT_EQ(ovphysx_companion_inspection_acquire(1,sizeof(inspection),&inspection),OVPHYSX_COMPANION_OK);
+    ovphysx_companion_object_t ref{};
+    ASSERT_EQ(inspection.resolve(owner.attachment,"/World/Cube1",1,UINT32_MAX,sizeof(ref),&ref),OVPHYSX_COMPANION_OK);
+    sdk::NativeAccessApi api{};const sdk::Compatibility compatibility;
+    ASSERT_EQ(ovphysx_companion_native_access_acquire(&compatibility,sizeof(compatibility),sizeof(api),&api),OVPHYSX_COMPANION_OK);
+
+    LeaseStepProbe probe;probe.core=m_handle;
+    EXPECT_EQ(api.visit(&ref,sizeof(ref),sdk::AccessKind::Dynamic,submitStepDuringLease,&probe),OVPHYSX_COMPANION_OK);
+    EXPECT_EQ(probe.called,1);
+    ASSERT_EQ(probe.step.status,OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(probe.statusQuery,OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(probe.duringLease,OVPHYSX_TASK_STATUS_PENDING) << "the step started inside the lease";
+    EXPECT_TRUE(waitForTaskSuccess(m_handle,probe.step)) << "the step met the lease inside the runtime";
 }

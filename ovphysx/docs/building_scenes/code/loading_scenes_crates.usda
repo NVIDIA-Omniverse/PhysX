@@ -1,0 +1,55 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    kilogramsPerUnit = 1
+    upAxis = "Z"
+)
+
+# Three 0.5 m crates on the ground: two side by side and one on top.
+def Xform "World"
+{
+    def PhysicsScene "PhysicsScene"
+    {
+    }
+
+    def Plane "Ground" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "Z"
+    }
+
+    def Xform "Crates"
+    {
+        def Cube "CrateA" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            double size = 0.5
+            double3 xformOp:translate = (-0.3, 0, 0.25)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Cube "CrateB" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            double size = 0.5
+            double3 xformOp:translate = (0.3, 0, 0.25)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Cube "CrateC" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            double size = 0.5
+            double3 xformOp:translate = (0, 0, 0.75)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+    }
+}
+
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0

@@ -329,6 +329,9 @@ PxDeformableVolumeMesh* PxDeformableVolumeExt::createDeformableVolumeMeshNoVoxel
 PxDeformableVolume* PxDeformableVolumeExt::createDeformableVolumeFromMesh(PxDeformableVolumeMesh* deformableVolumeMesh, const PxTransform& transform, const PxDeformableVolumeMaterial& material, PxCudaContextManager& cudaContextManager,
 	PxReal density, PxReal scale)
 {
+	if (!deformableVolumeMesh)
+		return NULL;
+
 	PxDeformableVolume* deformableVolume = PxGetPhysics().createDeformableVolume(cudaContextManager);
 	if (deformableVolume)
 	{
@@ -341,6 +344,7 @@ PxDeformableVolume* PxDeformableVolumeExt::createDeformableVolumeFromMesh(PxDefo
 		if (shape)
 		{
 			deformableVolume->attachShape(*shape);
+			shape->release();
 		}
 		deformableVolume->attachSimulationMesh(*deformableVolumeMesh->getSimulationMesh(), *deformableVolumeMesh->getDeformableVolumeAuxData());
 
@@ -350,6 +354,11 @@ PxDeformableVolume* PxDeformableVolumeExt::createDeformableVolumeFromMesh(PxDefo
 		PxVec4* restPositionPinned;
 
 		PxDeformableVolumeExt::allocateAndInitializeHostMirror(*deformableVolume, &cudaContextManager, simPositionInvMassPinned, simVelocityPinned, collPositionInvMassPinned, restPositionPinned);
+		if (!simPositionInvMassPinned)
+		{
+			deformableVolume->release();
+			return NULL;
+		}
 
 		const PxReal maxInvMassRatio = 50.f;
 
@@ -417,8 +426,14 @@ PxDeformableVolume* PxDeformableVolumeExt::createDeformableVolumeBox(const PxTra
 	params.midphaseDesc = PxMeshMidPhase::eBVH34;
 
 	PxDeformableVolumeMesh* deformableVolumeMesh = createDeformableVolumeMesh(params, surfaceMesh, numVoxelsAlongLongestAABBAxis, PxGetPhysics().getPhysicsInsertionCallback());
+	if (!deformableVolumeMesh)
+		return NULL;
 
-	return createDeformableVolumeFromMesh(deformableVolumeMesh, transform, material, cudaContextManager, density, scale);
+	PxDeformableVolume* deformableVolume = createDeformableVolumeFromMesh(deformableVolumeMesh, transform, material, cudaContextManager, density, scale);
+	// The shape holds the collision mesh, and the deformable volume holds the simulation mesh and auxiliary data,
+	// so the mesh itself is no longer needed.
+	deformableVolumeMesh->release();
+	return deformableVolume;
 }
 
 void PxDeformableVolumeExt::allocateAndInitializeHostMirror(PxDeformableVolume& deformableVolume, PxCudaContextManager* cudaContextManager, PxVec4*& simPositionInvMassPinned, PxVec4*& simVelocityPinned, PxVec4*& collPositionInvMassPinned, PxVec4*& restPositionPinned)
@@ -436,7 +451,22 @@ void PxDeformableVolumeExt::allocateAndInitializeHostMirror(PxDeformableVolume& 
 	restPositionPinned = PX_EXT_PINNED_MEMORY_ALLOC(PxVec4, *cudaContextManager, nbCollVerts);
 #else
 	PX_UNUSED(cudaContextManager);
+	simPositionInvMassPinned = NULL;
+	simVelocityPinned = NULL;
+	collPositionInvMassPinned = NULL;
+	restPositionPinned = NULL;
 #endif
+
+	if (!simPositionInvMassPinned || !simVelocityPinned || !collPositionInvMassPinned || !restPositionPinned)
+	{
+#if PX_SUPPORT_GPU_PHYSX
+		PX_EXT_PINNED_MEMORY_FREE(*cudaContextManager, simPositionInvMassPinned)
+		PX_EXT_PINNED_MEMORY_FREE(*cudaContextManager, simVelocityPinned)
+		PX_EXT_PINNED_MEMORY_FREE(*cudaContextManager, collPositionInvMassPinned)
+		PX_EXT_PINNED_MEMORY_FREE(*cudaContextManager, restPositionPinned)
+#endif
+		return;
+	}
 
 	// write positionInvMass into CPU part.
 	const PxVec3* positions = deformableVolume.getCollisionMesh()->getVertices();

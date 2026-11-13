@@ -40,3 +40,7 @@ Five customer-USD cases cover cancellation, preflight, metric conversion, failed
 
 Qualification: Linux x86_64 CPU and customer USD 26.8. No GPU/device execution
 or same-process legacy-provider coexistence is claimed.
+
+`test_invalid_ordinal_does_not_latch_or_enter_the_host_loop` rejects an update
+outside positive int64 bounds before native execution; the coordinator stays
+unpaused, has no failure, resumes and completes a valid next tick (AC-2).

@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-CAPI-WRITE-001
+ * @covers AC-13
+ *
  * @implements REQ-CAPI-LOG-001
  * @covers AC-7
  */
@@ -53,6 +56,15 @@ static_assert(static_cast<int32_t>(omni::physx::kOvxCommitFailureNotLive) == kOv
               "OvxCommitFailure::NotLive and its sidecar mirror disagree");
 static_assert(static_cast<int32_t>(omni::physx::kOvxCommitFailurePublish) == kOvphysxCommitFailurePublish,
               "OvxCommitFailure::Publish and its sidecar mirror disagree");
+static_assert(static_cast<int32_t>(omni::physx::kOvxCommitFailureBusy) == kOvphysxCommitFailureBusy,
+              "OvxCommitFailure::Busy and its sidecar mirror disagree");
+// Check the numeric value of each known mirrored member against its runtime counterpart; a new
+// OvxCommitFailure value still needs its mirror and consumer mapping added here.
+static_assert(static_cast<int32_t>(omni::physx::kOvxCommitFailureNone) == kOvphysxCommitFailureNone,
+              "OvxCommitFailure::None and its sidecar mirror disagree");
+static_assert(static_cast<int32_t>(omni::physx::kOvxCommitFailureInvalidArgument) ==
+                  kOvphysxCommitFailureInvalidArgument,
+              "OvxCommitFailure::InvalidArgument and its sidecar mirror disagree");
 
 namespace {
 
@@ -219,6 +231,8 @@ bool loadInternalSidecar() {
         g_sidecarWriteAttribute.store(nullptr, std::memory_order_release);
         g_sidecarFetchWriteNext.store(nullptr, std::memory_order_release);
         g_sidecarCommitGroup.store(nullptr, std::memory_order_release);
+        g_sidecarCommitGroupMasked.store(nullptr, std::memory_order_release);
+        g_sidecarValidateCommit.store(nullptr, std::memory_order_release);
         g_sidecarReleaseWrite.store(nullptr, std::memory_order_release);
         g_sidecarSubscribeObjectChanges.store(nullptr, std::memory_order_release);
         g_sidecarUnsubscribeObjectChanges.store(nullptr, std::memory_order_release);
@@ -367,6 +381,22 @@ bool loadInternalSidecar() {
                       "the app-to-physics write (ovphysx_write) will be unavailable.");
     }
 
+    // The masked commit and the commit check (ADR-0052), injected by their own setter so the write setter's ABI is
+    // unchanged.
+    using SetOvxMaskedCommitAccessorFn = void (*)(void*, void*);
+    SetOvxMaskedCommitAccessorFn setOvxMaskedCommitAccessor =
+        (SetOvxMaskedCommitAccessorFn)doSidecarSym(handle, "ovphysx_internal_set_ovx_masked_commit_accessor");
+    if (setOvxMaskedCommitAccessor)
+    {
+        setOvxMaskedCommitAccessor(reinterpret_cast<void*>(&omni::physx::ovxCommitGroupMasked),
+                                   reinterpret_cast<void*>(&omni::physx::ovxValidateCommit));
+    }
+    else
+    {
+        CARB_LOG_WARN("Internal sidecar: ovphysx_internal_set_ovx_masked_commit_accessor not found; "
+                      "the masked commit (ovphysx_commit_group_masked) will be unavailable.");
+    }
+
     // Physics output read (ADR-0007). Optional: warn-and-continue so an older
     // sidecar still loads. The public read API reports "not loaded" if missing.
     {
@@ -411,6 +441,23 @@ bool loadInternalSidecar() {
         g_sidecarFetchWriteNext.store(fetchWriteNext, std::memory_order_release);
         g_sidecarCommitGroup.store(commitGroup, std::memory_order_release);
         g_sidecarReleaseWrite.store(releaseWrite, std::memory_order_release);
+        auto commitGroupMasked =
+            (OvphysxSidecarCommitGroupMaskedFn)doSidecarSym(handle, "ovphysx_internal_commit_group_masked");
+        if (!commitGroupMasked)
+        {
+            CARB_LOG_WARN("Internal sidecar loaded but 'ovphysx_internal_commit_group_masked' not found - "
+                          "ovphysx_commit_group_masked will be unavailable. Sidecar may be outdated.");
+        }
+        g_sidecarCommitGroupMasked.store(commitGroupMasked, std::memory_order_release);
+        auto validateCommit =
+            (OvphysxSidecarValidateCommitFn)doSidecarSym(handle, "ovphysx_internal_validate_commit");
+        if (!validateCommit)
+        {
+            CARB_LOG_WARN("Internal sidecar loaded but 'ovphysx_internal_validate_commit' not found - a commit "
+                          "refused for its mask or for a capturing stream fails its task instead of being refused "
+                          "at admission. Sidecar may be outdated.");
+        }
+        g_sidecarValidateCommit.store(validateCommit, std::memory_order_release);
     }
 
     auto subscribeObjectChanges = (OvphysxSidecarSubscribeObjectChangesFn)doSidecarSym(handle, "ovphysx_internal_subscribe_object_changes");

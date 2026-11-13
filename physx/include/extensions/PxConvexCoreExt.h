@@ -27,9 +27,9 @@ public:
 
 	/**
 	\brief Compute mass properties of the convex core geometry.
-	\param convex The convex geometry.
+	\param[in] convex The convex geometry.
 	\param[out] density1Mass The mass of the geometry assuming unit density.
-	\param[out] inertiaTensor The inertia tensor of the geometry.
+	\param[out] inertiaTensor The inertia tensor about the geometry's local origin.
 	\param[out] centerOfMass The center of mass of the geometry.
 	*/
 	static void computeMassInfo(const PxConvexCoreGeometry& convex, PxReal& density1Mass, PxMat33& inertiaTensor, PxVec3& centerOfMass);

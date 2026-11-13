@@ -30,7 +30,8 @@ include("${SCRIPT_DIR}/dev_schema_provider.cmake")
 
 set(INSTALL_DIR "${PROJECT_ROOT}/_install")
 set(BENCHMARK_DIR "${PROJECT_ROOT}/tests/python_benchmarks")
-set(RESULTS_DIR "${PROJECT_ROOT}/_build/benchmark_results/python")
+set(RESULTS_DIR "${BUILD_PATH}/benchmark_results/python")
+ovphysx_require_build_path("${RESULTS_DIR}")
 file(MAKE_DIRECTORY "${RESULTS_DIR}")
 
 if(NOT EXISTS "${BENCHMARK_DIR}")
@@ -52,7 +53,8 @@ if(NOT OVPHYSX_UV_COMMAND)
 endif()
 
 # Create the venv with packman Python, the same recipe as test_python_runtime.cmake.
-set(VENV_DIR "${BENCHMARK_DIR}/.venv")
+set(VENV_DIR "${BUILD_PATH}/venv/python_benchmarks")
+ovphysx_require_build_path("${VENV_DIR}")
 if(EXISTS "${VENV_DIR}")
     file(REMOVE_RECURSE "${VENV_DIR}")
 endif()
@@ -77,12 +79,19 @@ if("$ENV{BENCHMARK_CPU}" STREQUAL "0" OR "$ENV{BENCHMARK_CPU}" STREQUAL "false")
     set(RUN_CPU FALSE)
 endif()
 
-set(UV_CACHE_DIR_PATH "${PROJECT_ROOT}/_build/.uv_cache")
+set(UV_CACHE_DIR_PATH "${BUILD_PATH}/.uv_cache")
+foreach(_CACHE_PATH IN ITEMS "${UV_CACHE_DIR_PATH}" "${BUILD_PATH}/pycache"
+                             "${BUILD_PATH}/pytest_cache/python_benchmarks")
+    ovphysx_require_build_path("${_CACHE_PATH}")
+endforeach()
 file(MAKE_DIRECTORY "${UV_CACHE_DIR_PATH}")
 include("${CMAKE_CURRENT_LIST_DIR}/ovstage_index.cmake")
 ovphysx_ovstage_index_env(OVSTAGE_INDEX_ENV PROJECT tests/python_benchmarks)
 set(BASE_UV_ENV
     "UV_CACHE_DIR=${UV_CACHE_DIR_PATH}"
+    "UV_PROJECT_ENVIRONMENT=${VENV_DIR}"
+    "PYTHONPYCACHEPREFIX=${BUILD_PATH}/pycache"
+    "PYTEST_ADDOPTS=$ENV{PYTEST_ADDOPTS} -o cache_dir=\"${BUILD_PATH}/pytest_cache/python_benchmarks\""
     "UV_NO_CONFIG=1"
     ${OVSTAGE_INDEX_ENV}
     "UV_HTTP_TIMEOUT=300"
@@ -126,9 +135,21 @@ if(NOT EXISTS "${OVSTAGE_RUNTIME_FILE}")
     message(FATAL_ERROR "ovstage runtime not found at ${OVSTAGE_RUNTIME_FILE}")
 endif()
 
+execute_process(
+    COMMAND ${CMAKE_COMMAND} -E env ${BASE_UV_ENV}
+        "${OVPHYSX_UV_COMMAND}" sync --no-install-project
+    WORKING_DIRECTORY "${BENCHMARK_DIR}"
+    RESULT_VARIABLE _SYNC_RESULT
+)
+if(NOT _SYNC_RESULT EQUAL 0)
+    message(FATAL_ERROR "Failed to sync Python benchmark dependencies")
+endif()
+
 function(run_python_bench_pass _LABEL _DEVICE)
     set(_JSON "${RESULTS_DIR}/${_LABEL}.json")
     set(_LOG "${RESULTS_DIR}/${_LABEL}.log")
+    ovphysx_require_build_path("${_JSON}")
+    ovphysx_require_build_path("${_LOG}")
     file(REMOVE "${_LOG}")
 
     set(_PYTEST_ARGS
@@ -158,7 +179,7 @@ function(run_python_bench_pass _LABEL _DEVICE)
     message(STATUS "--- python ${_LABEL} pass ---")
     execute_process(
         COMMAND ${CMAKE_COMMAND} -E env ${_PASS_ENV}
-                "${OVPHYSX_UV_COMMAND}" run pytest ${_PYTEST_ARGS}
+                "${OVPHYSX_UV_COMMAND}" run --no-sync pytest ${_PYTEST_ARGS}
         WORKING_DIRECTORY "${BENCHMARK_DIR}"
         TIMEOUT 1800
         RESULT_VARIABLE _RC

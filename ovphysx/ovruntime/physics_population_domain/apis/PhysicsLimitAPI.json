@@ -1,0 +1,116 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysicsLimitAPI",
+  "title": "PhysicsLimitAPI",
+  "summary": "Per-axis limit of a D6 joint (a prim typed exactly PhysicsJoint), applied as PhysicsLimitAPI:<inst>. Read only on the D6: the typed joints carry their limits in their own columns. Presence of an instance makes the axis limited (or locked when low > high); absence of the instance leaves the axis free.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "PhysicsJoint"
+  ],
+  "multi_apply": true,
+  "instances": [
+    "transX",
+    "transY",
+    "transZ",
+    "rotX",
+    "rotY",
+    "rotZ",
+    "distance"
+  ],
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "producer_scope": "Both declared attributes of every applied instance are published at their resolved values (-inf and inf when unauthored). No rewrite.",
+  "columns": [
+    {
+      "name": "limit:<inst>:physics:low",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "-inf",
+      "verify": {
+        "target": "joint",
+        "expr": "harness::d6LimitLow(joint, inst)",
+        "kind": "float",
+        "map": "harness::isRotational(inst) ? v * 0.017453292519943295 : v",
+        "sample": -20.0,
+        "check_absent": false,
+        "notes": "transX/Y/Z: getLinearLimit(axis).lower; rotX: getTwistLimit().lower; rotY/rotZ: getPyramidSwingLimit().yAngleMin/zAngleMin. distance: no PhysX counterpart (the runtime only warns when low > 0), the helper returns NaN and the check is skipped. Absent columns leave the axis free and PhysX keeps its own default, so the absent value is not observable."
+      },
+      "parser_default": "-inf",
+      "absent": "No lower bound. With the instance applied and both bounds absent the consumer seeds the schema fallbacks -inf/inf and leaves the axis free, as on a USD-populated stage.",
+      "raw_fallback_diverges": false,
+      "sentinel": "-inf, or any value <= -0.5e38, means no lower bound; both bounds sentinel leaves the axis FREE. low > high locks the axis.",
+      "units": "rot axes: deg; trans axes and distance: length",
+      "conversion": "deg_to_rad",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageJointBatch.h",
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physics.parse/ParseJoint.cpp"
+      ],
+      "notes": "conversion deg_to_rad applies to rotX/rotY/rotZ only; transX/transY/transZ and distance are stored unconverted."
+    },
+    {
+      "name": "limit:<inst>:physics:high",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "inf",
+      "verify": {
+        "target": "joint",
+        "expr": "harness::d6LimitHigh(joint, inst)",
+        "kind": "float",
+        "map": "harness::isRotational(inst) ? v * 0.017453292519943295 : v",
+        "sample": 35.0,
+        "check_absent": false,
+        "notes": "transX/Y/Z: getLinearLimit(axis).upper; rotX: getTwistLimit().upper; rotY/rotZ: getPyramidSwingLimit().yAngleMax/zAngleMax; distance: getDistanceLimit().value. Not observable when absent; see low."
+      },
+      "parser_default": "inf",
+      "absent": "No upper bound. The consumer seeds the schema fallback inf; see low.",
+      "raw_fallback_diverges": false,
+      "sentinel": "inf, or any value >= 0.5e38, means no upper bound.",
+      "units": "rot axes: deg; trans axes and distance: length",
+      "conversion": "deg_to_rad",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageJointBatch.h",
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physics.parse/ParseJoint.cpp"
+      ],
+      "notes": "conversion deg_to_rad applies to rotX/rotY/rotZ only."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysicsJoint",
+      "rule": "Only a prim typed exactly PhysicsJoint reads these instances; the gate is usd-schemas CONTAINS PhysicsLimitAPI:<inst> per instance. Instance order in the descriptor follows the fixed list transX, transY, transZ, rotX, rotY, rotZ, distance."
+    },
+    {
+      "with": "PhysxLimitAPI",
+      "rule": "PhysxLimitAPI:<same inst> supplies restitution, bounceThreshold, stiffness and damping for the limit created here."
+    }
+  ],
+  "notes": [
+    "Per-joint-type instance matrix: Fixed none; Revolute none (uses physics:lowerLimit/upperLimit); Prismatic none (same); Spherical none (uses physics:coneAngle0Limit/coneAngle1Limit); Distance none (uses physics:minDistance/maxDistance); D6 (PhysicsJoint) transX transY transZ rotX rotY rotZ distance; Gear, Rack, Custom none.",
+    "Standalone D6 mapping: transX/Y/Z -> PxD6Axis::eX/eY/eZ linear limit (an open -inf/inf bound of a one-sided limit is clamped to the PhysX unlimited default +-PX_MAX_F32/3, so the authored bound still applies); rotX -> eTWIST twist limit; rotY/rotZ -> eSWING1/eSWING2 through one shared PxJointLimitPyramid (its y-angle bounds from rotY, its z-angle bounds from rotZ; the pyramid's restitution, bounceThreshold, stiffness and damping come from whichever of the two instances was processed last; every pyramid angle is clamped just inside +-pi, so a one-sided swing limit keeps its authored bound and its open -inf/inf bound becomes ~+-pi); distance -> the D6 distance limit at the high bound, and every still-free linear axis becomes eLIMITED. A minimum distance on a D6 is not supported (warning).",
+    "Articulation D6 joints ignore the translational and distance entries; only rotX/rotY/rotZ exist, as eTWIST/eSWING1/eSWING2 of an eSPHERICAL joint: an enabled limit makes the axis eLIMITED with both bounds clamped to +-pi, so a one-sided limit keeps its authored bound."
+  ]
+}

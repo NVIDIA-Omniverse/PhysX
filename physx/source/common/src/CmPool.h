@@ -183,6 +183,13 @@ public:
 		mFreeList[mFreeCount++] = element;
 	}
 
+	// Same as put() for callers that know the index, which saves reading the element.
+	PX_INLINE void putByIndex(PxU32 index)
+	{
+		mUseBitmap.reset(index);
+		mFreeList[mFreeCount++] = findByIndexFast(index);
+	}
+
 	/*
 		WARNING: Unlike findByIndexFast below, this method is NOT safe to use if another thread 
 		is concurrently updating the pool (e.g. through put/get/extend/getIterator), since the

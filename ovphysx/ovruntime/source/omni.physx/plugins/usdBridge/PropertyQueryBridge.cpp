@@ -40,7 +40,7 @@
 //     the mechanism parseRigidBodyNative uses with its transient native scanStage result.
 //   - Path/ObjectKey resolution routes through IPhysicsSource::sourceKeyToString/findByPath
 //     and AttachedStage::keyFor/textFor.
-//   - The public SdfPath-bits fields (IPhysxPropertyQuery request primPath / response usdPath
+//   - The public SdfPath-bits fields (omni::physx::queryPrim request primPath / response usdPath
 //     / ArticulationLink rigidBody+joint) are the deliberately-retained legacy asInt(SdfPath)
 //     encoding; they cross the seam through IUsdReparse::legacyPathBitsToString (decode) and
 //     stringToLegacyPathBits (encode).
@@ -116,7 +116,7 @@ struct BaseRequest
     uint64_t stageId = 0;
     uint64_t primPathId = 0; // legacy asInt(SdfPath) bits carried by the public interface
     std::string primPath;    // primPathId decoded to a path string (seam legacyPathBitsToString)
-    IPhysxPropertyQueryCallback callbacks;
+    PhysxPropertyQueryCallbacks callbacks;
     virtual ~BaseRequest()
     {
     }
@@ -186,7 +186,7 @@ struct PhysXPropertyQueryManagerImpl
     void queryPrim(uint64_t stageId,
                    uint64_t primPathId,
                    PhysxPropertyQueryMode::Enum queryMode,
-                   const IPhysxPropertyQueryCallback& callbacks);
+                   const PhysxPropertyQueryCallbacks& callbacks);
     void updateQueuedRequests();
     void cancelAllPendingRequests(PhysxPropertyQueryResult::Enum errorCode);
     void cancelStageRequests(uint64_t stageId, PhysxPropertyQueryResult::Enum errorCode);
@@ -993,7 +993,7 @@ void PhysXPropertyQueryManagerImpl::executeQueryRigidBody(RigidBodyRequest& requ
 void PhysXPropertyQueryManagerImpl::queryPrim(uint64_t stageId,
                                           uint64_t primPathId,
                                           PhysxPropertyQueryMode::Enum queryMode,
-                                          const IPhysxPropertyQueryCallback& callbacks)
+                                          const PhysxPropertyQueryCallbacks& callbacks)
 {
     parse::IUsdReparse* reparse = reparseBackend();
     // Decode the incoming legacy asInt(SdfPath) bits once into a path string every downstream
@@ -1075,7 +1075,7 @@ bool PhysXPropertyQueryManager::ensureImpl()
 void PhysXPropertyQueryManager::queryPrim(uint64_t stageId,
                                           uint64_t primPathId,
                                           PhysxPropertyQueryMode::Enum queryMode,
-                                          const IPhysxPropertyQueryCallback& callbacks)
+                                          const PhysxPropertyQueryCallbacks& callbacks)
 {
     // The seam can also be removed after mImpl latched (test loader), so gate on it directly.
     if (parse::usdReparse() && ensureImpl())
@@ -1131,7 +1131,7 @@ void PhysXPropertyQueryManager::cancelAllPendingRequests(PhysxPropertyQueryResul
 void queryPrim(uint64_t stageId,
                uint64_t primKey,
                PhysxPropertyQueryMode::Enum queryMode,
-               const IPhysxPropertyQueryCallback& callbacks)
+               const PhysxPropertyQueryCallbacks& callbacks)
 {
     RuntimeExecutionScope execution(kNoAttach);
     if (!execution)

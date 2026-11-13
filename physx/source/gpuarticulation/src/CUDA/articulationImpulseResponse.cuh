@@ -304,7 +304,8 @@ static __device__ void averageLinkImpulsesAndPropagate2(uint2* PX_RESTRICT isSla
 	}
 
 	// Traverse up from last to front...
-	for (PxI32 j = wordSize-1, bitOffset = (wordSize-1)*64; j >= 0; j--, bitOffset -= 64)
+	bool reachedCommonNode = false;
+	for (PxI32 j = wordSize-1, bitOffset = (wordSize-1)*64; j >= 0 && !reachedCommonNode; j--, bitOffset -= 64)
 	{
 		PxU64 word = pathToRootPerPartition[j].bitField[threadIndexInWarp];
 		if (word != 0)
@@ -316,8 +317,14 @@ static __device__ void averageLinkImpulsesAndPropagate2(uint2* PX_RESTRICT isSla
 				const PxU32 index = bitIndex + bitOffset;
 
 				if (index == commonNode)
-					break; //We reached the common node so terminate the traversal
+				{
+					// Lower words contain only ancestors of the common node.
+					reachedCommonNode = true;
+					break;
+				}
 
+				// The common node may be the root, but it is handled above. The root has no parent to propagate to.
+				assert(index != 0);
 				word &= (~(1ull << bitIndex)); //Clear this bit
 
 				PxgArticulationBlockLinkData& linkData = artiLinks[index];

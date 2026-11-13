@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-CUDA-CAPTURE-001
+// @covers AC-1 AC-2
+
 
 // Internal CUDA driver shim -- runtime-loaded, no link to libcuda.
 // Exposes functions that match the IOptionalCuda function-table signatures.
@@ -44,6 +47,17 @@ bool setDevice(int ordinal);
 CUresult cuCtxGetCurrent_(CUcontext* ctx);
 CUresult cuCtxSetCurrent_(CUcontext ctx);
 CUresult cuDeviceGetCount_(int* count);
+
+// Exchanges the calling thread's stream-capture mode (cuThreadExchangeStreamCaptureMode).
+// ovphysx runs its queued instance work in CU_STREAM_CAPTURE_MODE_RELAXED (a worker sets it
+// once, a waiting thread for each job it runs), so CUDA does not refuse the work's
+// potentially unsafe calls (allocations, synchronous copies) while another thread captures a
+// graph in global mode; a refused call would also invalidate that capture. Work on the
+// legacy default stream still invalidates a capture of a blocking stream in its context:
+// ovphysx callers collect pending work before beginning a capture. Returns
+// CUDA_ERROR_NOT_INITIALIZED without a usable driver and CUDA_ERROR_NOT_SUPPORTED when the
+// driver lacks the entry point.
+CUresult cuThreadExchangeStreamCaptureMode_(CUstreamCaptureMode* mode);
 
 } // namespace cudaShim
 } // namespace physx

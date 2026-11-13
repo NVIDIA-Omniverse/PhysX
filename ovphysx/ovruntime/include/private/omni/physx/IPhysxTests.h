@@ -101,7 +101,7 @@ struct IPhysxUnitTests
 
     // Note: this is the same underlying implementer as IPhysxPrivate::getPhysXPtrInstanced (see
     // ADR-0019); it is retyped here purely to keep both ABI declarations matching that single
-    // implementer's signature, not as a scope decision for IPhysxUnitTests/IPhysxBenchmarks (which
+    // implementer's signature, not as a scope decision for unit-test/benchmark helpers (which
     // stay SdfPath-typed -- test-only code is explicitly out of ADR-0019's scope).
     uint32_t(CARB_ABI* getPhysXPtrInstanced)(omni::physics::AttachHandle attach, omni::physics::parse::ObjectKey key, void** data, uint32_t dataSize, PhysXType type);
 
@@ -140,50 +140,7 @@ struct PhysicsProfileStats
     float ms; // milliseconds
 };
 
-
 typedef void (*ProfileStatsNotificationFn)(const std::vector<PhysicsProfileStats>& profileStats, void* userData);
-
-struct IPhysxBenchmarks
-{
-    RuntimeResult(CARB_ABI* update)(AttachHandle attach, float elapsedSecs, float currentTime);
-
-    RuntimeResult(CARB_ABI* updateUsd)(AttachHandle attach);
-
-    long int(CARB_ABI* createEmptyStage)();
-
-    long(CARB_ABI* loadTargetStage)(const char* path, AttachHandle& attach);
-
-    bool(CARB_ABI* loadTargetStage_Id)(long id, AttachHandle& attach);
-
-    void(CARB_ABI* setThreadCount)(uint32_t threadCount);
-
-    void(CARB_ABI* overwriteGPUSetting)(bool enableGpu);
-
-    void(CARB_ABI* enablePVDProfile)(bool enableProfile);
-
-    void(CARB_ABI* enableProfile)(bool enableProfile);
-
-    void(CARB_ABI* getProfileStats)(std::vector<PhysicsProfileStats>& stats);
-
-    /// Subscribe to physics simulation profile stats event.
-    ///
-    /// \note Subscription cannot be changed in the onEvent callback
-    /// \note That if subscription is used the getProfileStats will not return any
-    /// results as after the subscription send the results are cleared.
-    ///
-    /// \param onEvent The callback function to be called with the profile data.
-    /// \param userData The userData to be passed back in the callback function.
-    /// \return Subscription Id for release, kInvalidSubscriptionId is returned if the opetation failed
-    SubscriptionId(CARB_ABI* subscribeProfileStatsEvents)(ProfileStatsNotificationFn onEvent, void* userData);
-
-    /// Unsubscribes to simulation events.
-    ///
-    /// \note Subscription cannot be changed in the onEvent callback
-    ///
-    /// subscriptionId SubscriptionId obtained via @ref subscribeProfileStatsEvents.
-    void(CARB_ABI* unsubscribeProfileStatsEvents)(SubscriptionId subscriptionId);
-};
-
 
 } // namespace physx
 } // namespace omni

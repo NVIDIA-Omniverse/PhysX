@@ -1,0 +1,89 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysicsCollisionAPI",
+  "title": "PhysicsCollisionAPI",
+  "summary": "Makes a Gprim a collision shape. Enumerated by usd-schemas CONTAINS PhysicsCollisionAPI. The shape geometry comes from the prim_type component (Cube, Capsule, Mesh, ...); this API only switches collision on and binds the shape to a scene.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "Gprim"
+  ],
+  "multi_apply": false,
+  "uses": [
+    "prim"
+  ],
+  "population": {
+    "physics": true,
+    "row": true,
+    "geometry_role": true,
+    "material_consumer": true
+  },
+  "producer_scope": "Applying this API is what makes the producer publish the prim's geometry attributes (see each Gprim component) and resolve its physics material binding. Its own two properties are published as resolved value and authored relationship respectively.",
+  "columns": [
+    {
+      "name": "physics:collisionEnabled",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": true,
+      "verify": {
+        "target": "shape",
+        "expr": "shape->getFlags().isSet(physx::PxShapeFlag::eSIMULATION_SHAPE)",
+        "kind": "bool",
+        "notes": "No sample: a disabled collider may not produce a shape at all."
+      },
+      "parser_default": true,
+      "absent": "Shape collides.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageWalker.cpp"
+      ]
+    },
+    {
+      "name": "physics:simulationOwner",
+      "usd_type": "rel",
+      "origin": "schema",
+      "kind": "relationship",
+      "semantic": "RELATIONSHIP_PATH_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": true
+      },
+      "required": false,
+      "absent": "Shape follows its body's scene, or the default scene when standalone.",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageWalker.cpp"
+      ],
+      "notes": "Unlike the body, a shape is never dropped for unresolved owners on the ovstage path."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "prim",
+      "rule": "The decomposed world scale of this prim is baked into the shape geometry (see each prim_type's derived values). A shape under a rigid body gets its local pose from this prim's transform relative to the body prim."
+    },
+    {
+      "with": "MaterialBindingAPI",
+      "rule": "Without a material binding the shape has no material slot and uses the scene default material."
+    },
+    {
+      "with": "PhysicsRigidBodyAPI",
+      "rule": "A collider with no rigid body ancestor or self is a static shape."
+    },
+    {
+      "with": "NewtonCollisionAPI",
+      "rule": "Read for every collider without checking usd-schemas; each applies only when the matching physxCollision offset is absent."
+    }
+  ]
+}

@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-CACHE-ATTACH-001
+ * @covers AC-9
+ */
+
 /**
  * @implements REQ-PARSE-BACKEND-001
  * @covers AC-2 AC-6
@@ -66,7 +70,7 @@ static_assert(offsetof(OvstageAttach, usdStageId) == 16, "OvstageAttach::usdStag
 // Create the ovstage parse backend. The returned backend interprets
 // `AttachTarget::nativeStage` as a `const OvstageAttach*`. The write sink is
 // null by design; configured sources create a pull-based change feed.
-std::unique_ptr<omni::physics::parse::IParseBackend> makeOvstageParseBackend();
+std::unique_ptr<omni::physics::parse::IParseBackend> makeOvstageParseBackend(bool deferInitialChangeFeedBaseline = false);
 
 } // namespace ovstage
 } // namespace physics

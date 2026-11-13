@@ -5,11 +5,11 @@
 
 # PhysxCollisionAPI
 
-PhysX contact tuning for a collision shape. Offsets use a value sentinel instead of the authored bit because ovstage reports every column as authored.
+[PhysX](glossary.md#physx) contact tuning for a collision shape. Offsets use a value sentinel instead of the authored bit because [ovstage](glossary.md#ovstage) reports every column as authored.
 
-- **Applies to:** `Gprim`
+- **Applies to:** [`Gprim`](glossary.md#gprim)
 - **Requires on the same prim:** [`PhysicsCollisionAPI`](PhysicsCollisionAPI.md)
-- **Read only when listed in `usd-schemas`.**
+- **Read only when listed in [`usd-schemas`](prim.md#columns).**
 
 ## What USD population writes
 
@@ -17,11 +17,11 @@ Every declared attribute is published at its resolved value. The only derivation
 
 ## Columns
 
-*Raw fallback* is the USD schema value. *Producer writes* is what ovstage population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
+*Raw fallback* is the [USD](glossary.md#usd) schema value. *Producer writes* is what ovstage population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
 
 | Column | Type | Units | Raw fallback | Producer writes | Parser default | If absent |
 |---|---|---|---|---|---|---|
-| `physxCollision:contactOffset` | float32 | length | `-inf` | when unauthored: 0.02 / metersPerUnit on a Plane collider only; every other shape keeps -inf | -1.0 | -1, meaning the PhysX layer computes the offset from shape size. Writing the raw fallback -inf is equivalent to omitting the column. |
+| `physxCollision:contactOffset` | float32 | length | `-inf` | when unauthored: `0.02 / metersPerUnit` (on type Plane and collider) (column created even without the API) | -1.0 | -1, meaning the PhysX layer computes the offset from shape size. Writing the raw fallback -inf is equivalent to omitting the column. |
 | `physxCollision:restOffset` | float32 | length | `-inf` | resolved USD value (authored, else raw fallback) | 0.0 | 0 for a collider, 0.02 / metersPerUnit for a deformable body. An authored rest offset is preserved when contact offset is automatic. With a concrete contact offset, colliders require restOffset < contactOffset; deformable bodies accept restOffset <= contactOffset, with equality diagnosed and the contact offset increased during shape creation. |
 | `physxCollision:torsionalPatchRadius` | float32 | length | 0.0 | resolved USD value (authored, else raw fallback) | 0.0 | 0. |
 | `physxCollision:minTorsionalPatchRadius` | float32 | length | 0.0 | resolved USD value (authored, else raw fallback) | 0.0 | 0. |

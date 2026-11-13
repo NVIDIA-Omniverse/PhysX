@@ -151,7 +151,9 @@ static bool computeMassAndInertia(Ext::InertiaTensorComputer& inertiaComp, bool 
 
 		case PxGeometryType::eCONVEXCORE:
 			{
-				PxMassProperties mp(shapes[i]->getGeometry());
+				const PxConvexCoreGeometry& g = static_cast<const PxConvexCoreGeometry&>(geom);
+				PxMassProperties mp;
+				PxConvexCoreExt::computeMassInfo(g, mp.mass, mp.inertiaTensor, mp.centerOfMass);
 				it = Ext::InertiaTensorComputer(mp.inertiaTensor, mp.centerOfMass, mp.mass);
 				it.transform(shapes[i]->getLocalPose());
 			}
@@ -181,7 +183,9 @@ static bool computeMassAndInertia(Ext::InertiaTensorComputer& inertiaComp, bool 
 			break;
 		case PxGeometryType::eCUSTOM:
 			{
-				PxMassProperties mp(shapes[i]->getGeometry());
+				const PxCustomGeometry& g = static_cast<const PxCustomGeometry&>(geom);
+				PxMassProperties mp;
+				g.callbacks->computeMassProperties(g, mp);
 				it = Ext::InertiaTensorComputer(mp.inertiaTensor, mp.centerOfMass, mp.mass);
 				it.transform(shapes[i]->getLocalPose());
 			}

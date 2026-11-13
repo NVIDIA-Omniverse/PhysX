@@ -167,6 +167,11 @@ public:
         }
     }
 
+    const UnresolvedContactPairsMap& getUnresolvedContactPairsMap() const
+    {
+        return mUnresolvedContactPairsMap;
+    }
+
     ContactPairsMap& getContactPairsMap()
     {
         return mContactPairsMap;

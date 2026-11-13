@@ -4,6 +4,9 @@
 /**
  * @implements REQ-READ-TENDON-001
  * @covers AC-2, AC-3
+ *
+ * @implements REQ-SIM-OVSTAGE-WRITEAPPLY-001
+ * @covers AC-21
  */
 
 #pragma once
@@ -60,6 +63,16 @@ inline uint32_t tendonPropertyComponents(TendonProperty prop)
 {
     return prop == TendonProperty::eLimit ? 2u : 1u;
 }
+
+// How a written value lands in its property. The ovstage drain writes one side of a fixed tendon's limit at a
+// time and moves the other only when the two would cross, as the parse path's limit updaters do with the current
+// pair; the pair lives on the device, hence a mode the scatter applies rather than a host-side merge.
+enum class TendonFieldWrite : uint32_t
+{
+    eSet,         // the property's components = the values
+    eLowPushHigh, // eLimit, one value per row: low = v, high = max(high, v)
+    eHighPushLow  // eLimit, one value per row: high = v, low = min(low, v)
+};
 
 } // namespace tensors
 } // namespace physx

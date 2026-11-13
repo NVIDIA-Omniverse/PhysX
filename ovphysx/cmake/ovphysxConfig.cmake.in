@@ -29,7 +29,7 @@ get_filename_component(OVPHYSX_PACKAGE_PREFIX "${ovphysx_LIB_DIR}/.." ABSOLUTE)
 # Set up variables that consuming projects might need
 get_target_property(ovphysx_INCLUDE_DIRS ovphysx::ovphysx INTERFACE_INCLUDE_DIRECTORIES)
 
-# PhysX SDK headers for physx pointer interop (headers only, no linking needed)
+# PhysX SDK headers for pointer interop; this does not link PhysX SDK libraries.
 set(ovphysx_PHYSX_INCLUDE_DIR "${OVPHYSX_PACKAGE_PREFIX}/include/physx")
 
 # The full pin identifies the bootstrapped download; native package configs
@@ -79,6 +79,52 @@ if(_ovphysx_ovstage_population_h)
             "Download OVStage ${ovphysx_OVSTAGE_VERSION} and point CMAKE_PREFIX_PATH at it.")
     endif()
 endif()
+
+# Capability gate: ovphysx headers and samples use the strong ovx handles
+# (ovx_token_t{raw_id}) and their C helpers such as ovx_token_is_valid(). OVStage
+# 0.4.0 builds from before that change also advertise CMake version 0.4.0, so a
+# supplied package of that kind would only fail later, when ovphysx headers compile.
+find_file(_ovphysx_ovstage_string_types_h ovx/string_types.h
+    PATHS ${_ovphysx_ovstage_incdirs} ${ovstage_INCLUDE_DIRS} NO_DEFAULT_PATH)
+if(_ovphysx_ovstage_string_types_h)
+    file(READ "${_ovphysx_ovstage_string_types_h}" _ovphysx_ovstage_string_types_src)
+    if(NOT _ovphysx_ovstage_string_types_src MATCHES "ovx_token_is_valid")
+        message(FATAL_ERROR
+            "The resolved ovstage package predates the strong ovx handles (ovx_token_is_valid()) "
+            "that ovphysx headers and samples use. "
+            "Download OVStage ${ovphysx_OVSTAGE_VERSION} and point CMAKE_PREFIX_PATH at it.")
+    endif()
+endif()
+
+# Same-minor OVStage packages may predate population descriptions or signed ordinals.
+# Fail closed even when a required header is missing, before consuming public headers.
+foreach(_ovphysx_capability IN ITEMS
+        "ovstage/ovstage_population.h|ovstage_population_open_usd_from_file_with_desc"
+        "ovstage/ovstage_population_expression.h|ovstage_population_expression_resolved_bound_material"
+        "ovstage/ovstage_population_predicate.h|ovstage_population_prim_predicate_is_targeted_by"
+        "ovstage/ovstage_api/ovstage_api_types.h|OVSTAGE_ORDINAL_MAX")
+    string(REPLACE "|" ";" _ovphysx_capability_parts "${_ovphysx_capability}")
+    list(GET _ovphysx_capability_parts 0 _ovphysx_header)
+    list(GET _ovphysx_capability_parts 1 _ovphysx_symbol)
+    unset(_ovphysx_capability_path CACHE)
+    find_file(_ovphysx_capability_path "${_ovphysx_header}"
+        PATHS ${_ovphysx_ovstage_incdirs} ${ovstage_INCLUDE_DIRS} NO_DEFAULT_PATH)
+    set(_ovphysx_capability_source "")
+    if(_ovphysx_capability_path)
+        file(READ "${_ovphysx_capability_path}" _ovphysx_capability_source)
+    endif()
+    if(NOT _ovphysx_capability_source MATCHES "${_ovphysx_symbol}")
+        message(FATAL_ERROR
+            "The resolved ovstage package lacks ${_ovphysx_symbol} in ${_ovphysx_header}. "
+            "ovphysx requires population descriptions and signed ordinal bounds. "
+            "Download OVStage ${ovphysx_OVSTAGE_VERSION} and point CMAKE_PREFIX_PATH at it.")
+    endif()
+    if(_ovphysx_symbol STREQUAL "OVSTAGE_ORDINAL_MAX" AND
+       NOT _ovphysx_capability_source MATCHES "typedef[ \t\r\n]+int64_t[ \t\r\n]+ovstage_ordinal_t")
+        message(FATAL_ERROR "The resolved ovstage package must use signed int64_t ordinals. "
+            "Download OVStage ${ovphysx_OVSTAGE_VERSION} and point CMAKE_PREFIX_PATH at it.")
+    endif()
+endforeach()
 
 set_property(TARGET ovphysx::ovphysx APPEND PROPERTY
     INTERFACE_LINK_LIBRARIES ovstage::ovstage

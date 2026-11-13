@@ -4,6 +4,9 @@
 /**
  * @implements REQ-PUBLICAPI-001
  * @covers AC-27 AC-29
+ *
+ * @implements REQ-PARSE-VEH-CONTROLLER-001
+ * @covers AC-1 AC-2
  */
 
 #include "Vehicle.h"
@@ -37,14 +40,16 @@ static bool srcGet(const AttachedStage& as, omni::physics::parse::ObjectKey key,
 }
 
 // Source-read mirror of SafeGetAuthoredAttribute (authored-only).
+// A failed read is not a value. getValue leaves the output untouched, and
+// VehicleControllerDesc's deprecated floats are not initialized, so the caller
+// must take the absent-attribute path instead of warning on or storing that float.
 template <typename T>
 static bool srcGetAuthored(const AttachedStage& as, omni::physics::parse::ObjectKey key, omni::physics::parse::TokenId attr, T& out)
 {
     const omni::physics::parse::IPhysicsSource* src = as.getSource();
     if (!src || !src->hasAuthoredAttribute(key, attr))
         return false;
-    omni::physx::internal::getValue(as, key, attr, omni::physics::parse::ReadTime::defaultTime(), out);
-    return true;
+    return omni::physx::internal::getValue(as, key, attr, omni::physics::parse::ReadTime::defaultTime(), out);
 }
 
 template <typename T>
@@ -131,6 +136,19 @@ bool parseWheelController(AttachedStage& as, omni::physics::parse::ObjectKey key
 
 static constexpr uint32_t maxForwardGearCount = GearsDesc::maxNumberOfGears - 2;  // without reverse and neutral
 
+// A resolved 0 is the schema fallback and the same command as an unauthored
+// attribute. Ovstage reports every published value as authored (ADR-0020), so
+// warn only when the value is an actual input the user can migrate.
+static void warnDeprecatedControllerInput(const char* primName, const char* attrName, float value, const char* replacement)
+{
+    if (value != 0.0f)
+    {
+        CARB_LOG_WARN("Usd Physics: vehicle controller \"%s\": attribute \"%s\" is deprecated. "
+            "Please use %s instead.\n",
+            primName, attrName, replacement);
+    }
+}
+
 static bool parseVehicleController(AttachedStage& as, omni::physics::parse::ObjectKey key, VehicleControllerDesc& out)
 {
     // Diagnostics-only identity (ADR-0018): textFor avoids building a real SdfPath just to
@@ -165,9 +183,7 @@ static bool parseVehicleController(AttachedStage& as, omni::physics::parse::Obje
 
     if (srcGetAuthored(as, key, tok.physxVehicleControllerBrake, out.brake))
     {
-        CARB_LOG_WARN("Usd Physics: vehicle controller \"%s\": attribute \"brake\" is deprecated. "
-            "Please use brake0 or brake1 instead.\n",
-            primName);
+        warnDeprecatedControllerInput(primName, "brake", out.brake, "brake0 or brake1");
 
         if (!checkParamInRange(out.brake, 0.0f, 1.0f + FLT_EPSILON, "brake", primName))
             return false;
@@ -177,9 +193,7 @@ static bool parseVehicleController(AttachedStage& as, omni::physics::parse::Obje
 
     if (srcGetAuthored(as, key, tok.physxVehicleControllerHandbrake, out.handbrake))
     {
-        CARB_LOG_WARN("Usd Physics: vehicle controller \"%s\": attribute \"handbrake\" is deprecated. "
-            "Please use brake0 or brake1 instead.\n",
-            primName);
+        warnDeprecatedControllerInput(primName, "handbrake", out.handbrake, "brake0 or brake1");
 
         if (!checkParamInRange(out.handbrake, 0.0f, 1.0f + FLT_EPSILON, "handbrake", primName))
             return false;
@@ -197,9 +211,7 @@ static bool parseVehicleController(AttachedStage& as, omni::physics::parse::Obje
 
     if (srcGetAuthored(as, key, tok.physxVehicleControllerSteerLeft, out.steerLeft))
     {
-        CARB_LOG_WARN("Usd Physics: vehicle controller \"%s\": attribute \"steerLeft\" is deprecated. "
-            "Please use steer instead.\n",
-            primName);
+        warnDeprecatedControllerInput(primName, "steerLeft", out.steerLeft, "steer");
 
         if (!checkParamInRange(out.steerLeft, 0.0f, 1.0f + FLT_EPSILON, "steerLeft", primName))
             return false;
@@ -209,9 +221,7 @@ static bool parseVehicleController(AttachedStage& as, omni::physics::parse::Obje
 
     if (srcGetAuthored(as, key, tok.physxVehicleControllerSteerRight, out.steerRight))
     {
-        CARB_LOG_WARN("Usd Physics: vehicle controller \"%s\": attribute \"steerRight\" is deprecated. "
-            "Please use steer instead.\n",
-            primName);
+        warnDeprecatedControllerInput(primName, "steerRight", out.steerRight, "steer");
 
         if (!checkParamInRange(out.steerRight, 0.0f, 1.0f + FLT_EPSILON, "steerRight", primName))
             return false;

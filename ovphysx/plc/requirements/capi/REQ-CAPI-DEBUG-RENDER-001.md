@@ -12,6 +12,8 @@ owner: ovphysx
 
 Debug rendering is an `OVPHYSX_QUERY_TARGET_DEBUG_RENDER` query on one ovphysx instance.
 The target is the instance, not a prim. Settings are writable and readable.
+One write session names exactly one attribute. Any other count fails at open
+and leaves stored settings unchanged. The opened write tensor holds the stored value.
 Point, line, and triangle geometry is read-only. A read copies primitives only
 from PhysX scenes whose attach handle equals the instance's attach handle.
 An attach handle of 0 matches no scene, so the geometry columns are empty.
@@ -25,8 +27,8 @@ Position and color for one primitive type come from the same read. Index `i`
 is the same primitive in both columns. An empty column (`shape[0] == 0`) means
 no geometry. Settings are one row. `scope` is a list of uint64 path tokens;
 length 0 draws every object, and the write buffer holds at most 4096 tokens.
-A parameter value of 0 turns that parameter off. A `cullingBox` read with leading shape 0 means no box is set. A `cullingBox` write is float32 shape `[7]`: element 0 equal to 0 clears the box, and element 0 equal to 1 stores the next six finite floats when min <= max. A `scope` write is uint64 shape `[4097]`: element 0 is the count, at most 4096, and elements 1..count are the tokens. An unknown read attribute fails the read and names that attribute. With a stage attached, each returned group's attribute token resolves through that stage's path dictionary. With no stage the token is 0, and a token-only attribute cannot be resolved. The optional query summary is empty, because this target is not a prim set. With no stage, attribute tokens are 0. With a stage attached, attribute tokens resolve through that stage's path dictionary. Each name is published as a
-const `ovx_string_or_token_t` (`OVPHYSX_NAME_DEBUG_*`). Callers pass that
+A parameter value of 0 turns that parameter off. A `cullingBox` read with leading shape 0 means no box is set. A `cullingBox` write is float32 shape `[7]`: element 0 equal to 0 clears the box, and element 0 equal to 1 stores the next six finite floats when min <= max. A `scope` write is uint64 shape `[4097]`: element 0 is the count, at most 4096, and elements 1..count are the tokens. An unknown read attribute fails the read and names that attribute. With a stage attached, each returned group's attribute token resolves through that stage's path dictionary. With no stage the token is `OVX_INVALID_TOKEN`, and a token-only attribute cannot be resolved. The optional query summary is empty, because this target is not a prim set. With no stage, attribute tokens are `OVX_INVALID_TOKEN`. With a stage attached, attribute tokens resolve through that stage's path dictionary. Each name is published as a
+const `ovx_token_or_string_t` (`OVPHYSX_NAME_DEBUG_*`). Callers pass that
 object's address.
 
 ## Acceptance Criteria
@@ -39,7 +41,8 @@ object's address.
 - AC-6: `scope` round-trips the tokens written. A zero token is rejected as a task error and does not replace the stored scope. Count 0 clears it. A count above 4096 is rejected as a task error.
 - AC-7: A `cullingBox` read with no box set has leading shape 0. Committing element 0 as 0 clears a previously stored box, including the box on that attach's PhysX scenes. Committing element 0 as 1 with six finite floats and min <= max stores the box, and a later read returns that row.
 - AC-9: A read that names an unknown attribute fails and does not return the remaining columns in shifted positions. A string read and a token read of the same debug-render attribute return the same column, and the group's attribute token resolves to that name when a stage is attached.
-- AC-8: A debug-render query's optional summary is empty. With no stage, attribute tokens are 0. With a stage attached, attribute tokens resolve through that stage's path dictionary.
+- AC-8: A debug-render query's optional summary is empty. A write that requests the optional write summary opens and reports one row with one group and a total prim count of 0. With no stage, attribute tokens are `OVX_INVALID_TOKEN`. With a stage attached, attribute tokens resolve through that stage's path dictionary.
+- AC-10: A debug-render write names exactly one attribute. Any other count fails at open as a task error, publishes no group, and leaves stored settings unchanged. The tensor opened for that attribute holds the stored value.
 
 ## Known limitations
 
@@ -55,7 +58,7 @@ object's address.
 - ovphysx/include/ovphysx/ovphysx_attributes.h (`OVPHYSX_ATTR_DEBUG_*`)
 - ovphysx/ovruntime/source/omni.physx/plugins/DebugRenderSession.cpp (per-instance settings)
 - ovphysx/ovruntime/source/omni.physx/plugins/OvxPhysicsWrite.cpp (commit, including a rejected value)
-- ovphysx/src/ovphysx/ovphysxDebugRenderSession.cpp (published name constants)
+- ovphysx/src/ovphysx/ovphysxAttributeNames.cpp (published name constants)
 - ovphysx/src/ovphysx/ovphysxPhysXInterop.cpp (query, read, write, commit, release dispatch)
 - ovphysx/tests/c_unittests/test_debug_render.cpp
 

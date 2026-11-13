@@ -12,7 +12,8 @@ owner: ovphysx
 
 The C++ benchmark suite provides a frozen set of synthetic, in-process L1B
 producer-path measurements. These rows start at public population, OVStage, or
-tensor calls and stop after the associated physics step. They do not include a
+tensor calls and stop after the associated physics step (the scaled ovstage
+device-drain rows isolate the drain and take no step). They do not include a
 container, gRPC, serialization, transport, client scheduling, or an application
 loop and therefore are not end-to-end customer measurements.
 
@@ -33,14 +34,15 @@ The dedicated CPU contract contains the following twelve rows:
 | `WriteScaling.velocity_ovstage_4096_cpu` | primary KPI | one 4,096-body velocity OVStage write, scoped floor, update, and step |
 | `WriteScaling.velocity_tensor_4096_cpu` | comparator | one persistent 4,096-body velocity tensor write and step |
 
-The six matching `Authoring.*_gpu` population-add, runtime-write-spawn,
-population-churn, and teleport rows are retained only as requested-GPU
-diagnostics. All eighteen rows are hidden.
+The ten matching `Authoring.*_gpu` requested-GPU rows (population-add,
+runtime-write-spawn, population-churn, teleport, and the ovstage device-drain
+rows, incl. the 4,096 / 16,384 / 65,536-body scaled drains) are retained only as
+requested-GPU diagnostics. All twenty-two rows are hidden.
 
 ## Acceptance Criteria
 
 - AC-1: The pinned producer inventory contains exactly the twelve CPU rows and
-  six requested-GPU rows described above. Every row is registered hidden and
+  ten requested-GPU rows described above. Every row is registered hidden and
   is absent from normal wildcard execution unless `--hidden` is explicit. The
   CMake driver propagates `BENCHMARK_HIDDEN=1` to every enabled pass, rejects an
   empty pass selection, and accepts `BENCHMARK_EXPECT_ROWS=N` only for exactly
@@ -100,7 +102,7 @@ diagnostics. All eighteen rows are hidden.
   and GPU contact-capacity warnings, either of which fails the requested-GPU
   row. Silence in that window is only negative fallback and capacity evidence
   because ovphysx exposes no realized-device query. This pass/fail rule applies
-  to all six hidden GPU diagnostics without changing their frozen names or the
+  to all ten hidden GPU diagnostics without changing their frozen names or the
   CPU KPI contract. All Authoring rows call the current `ovphysx_warmup()` API
   after attachment.
 

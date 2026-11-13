@@ -1,0 +1,252 @@
+{
+  "schema_version": 1,
+  "units": {
+    "dimensionless": {
+      "display": "dimensionless"
+    },
+    "not_applicable": {
+      "display": "not applicable"
+    },
+    "length": {
+      "display": "distance"
+    },
+    "mass": {
+      "display": "mass"
+    },
+    "inverse_mass": {
+      "display": "1 / mass"
+    },
+    "time": {
+      "display": "sec"
+    },
+    "velocity": {
+      "display": "distance / sec"
+    },
+    "acceleration": {
+      "display": "distance / sec^2"
+    },
+    "angle": {
+      "display": "rad"
+    },
+    "angular_velocity": {
+      "display": "rad / sec"
+    },
+    "angular_acceleration": {
+      "display": "rad / sec^2"
+    },
+    "force": {
+      "display": "mass * distance / sec^2"
+    },
+    "torque": {
+      "display": "mass * distance^2 / sec^2"
+    },
+    "impulse": {
+      "display": "mass * distance / sec"
+    },
+    "inertia": {
+      "display": "mass * distance^2"
+    },
+    "inverse_inertia": {
+      "display": "1 / (mass * distance^2)"
+    },
+    "pressure": {
+      "display": "mass / (distance * sec^2)"
+    },
+    "linear_stiffness": {
+      "display": "mass / sec^2"
+    },
+    "linear_damping": {
+      "display": "mass / sec"
+    },
+    "joint_coordinate": {
+      "display": "deg for angular axes; distance for linear axes",
+      "variants": {
+        "angular": "deg",
+        "linear": "distance"
+      },
+      "description": "Angular joint columns use degrees in both reads and writes; linear columns use distance."
+    },
+    "joint_rate": {
+      "display": "deg / sec for angular axes; distance / sec for linear axes",
+      "variants": {
+        "angular": "deg / sec",
+        "linear": "distance / sec"
+      },
+      "description": "Angular joint columns use degrees in both reads and writes; linear columns use distance."
+    },
+    "joint_effort": {
+      "display": "mass * distance^2 / sec^2 for angular axes; mass * distance / sec^2 for linear axes",
+      "variants": {
+        "angular": "mass * distance^2 / sec^2",
+        "linear": "mass * distance / sec^2"
+      },
+      "description": "Generalized effort is torque on rotational axes and force on translational axes; it receives no degree conversion."
+    },
+    "joint_stiffness": {
+      "display": "mass * distance^2 / (sec^2 * deg) (angular force drive); mass / sec^2 (linear force drive); rad / (deg * sec^2) (angular acceleration drive); 1 / sec^2 (linear acceleration drive)",
+      "variants": {
+        "angular_force_drive": "mass * distance^2 / (sec^2 * deg)",
+        "linear_force_drive": "mass / sec^2",
+        "angular_acceleration_drive": "rad / (deg * sec^2)",
+        "linear_acceleration_drive": "1 / sec^2"
+      },
+      "description": "The SDK gain is per rad or per rad/sec. The runtime converts the denominator to deg for angular columns, including acceleration drives; it does not convert the output acceleration numerator. Angular joint columns use degrees in both reads and writes; linear columns use distance."
+    },
+    "joint_damping": {
+      "display": "mass * distance^2 / (sec * deg) (angular force drive); mass / sec (linear force drive); rad / (deg * sec) (angular acceleration drive); 1 / sec (linear acceleration drive)",
+      "variants": {
+        "angular_force_drive": "mass * distance^2 / (sec * deg)",
+        "linear_force_drive": "mass / sec",
+        "angular_acceleration_drive": "rad / (deg * sec)",
+        "linear_acceleration_drive": "1 / sec"
+      },
+      "description": "The SDK gain is per rad or per rad/sec. The runtime converts the denominator to deg for angular columns, including acceleration drives; it does not convert the output acceleration numerator. Angular joint columns use degrees in both reads and writes; linear columns use distance."
+    },
+    "joint_armature": {
+      "display": "mass * distance^2 for angular axes; mass for linear axes",
+      "variants": {
+        "angular": "mass * distance^2",
+        "linear": "mass"
+      }
+    },
+    "effort_per_rate": {
+      "display": "mass * distance^2 / (sec * deg) for angular axes; mass / sec for linear axes",
+      "variants": {
+        "angular": "mass * distance^2 / (sec * deg)",
+        "linear": "mass / sec"
+      },
+      "description": "Angular joint columns use degrees in both reads and writes; linear columns use distance."
+    },
+    "rate_per_effort": {
+      "display": "deg * sec / (mass * distance^2) for angular axes; sec / mass for linear axes",
+      "variants": {
+        "angular": "deg * sec / (mass * distance^2)",
+        "linear": "sec / mass"
+      },
+      "description": "Angular joint columns use degrees in both reads and writes; linear columns use distance."
+    },
+    "jacobian": {
+      "display": "row velocity / column generalized velocity: dimensionless, distance / rad, or rad / distance",
+      "variants": {
+        "linear_row_linear_column": "dimensionless",
+        "linear_row_angular_column": "distance / rad",
+        "angular_row_linear_column": "rad / distance",
+        "angular_row_angular_column": "dimensionless"
+      },
+      "description": "Maps generalized velocities to link linear and angular velocities. Angular columns use rad/sec, including floating-base rotation; linear columns use distance/sec. No degree conversion."
+    },
+    "mass_matrix": {
+      "display": "row generalized effort / column generalized acceleration: mass, mass * distance, or mass * distance^2 (rad treated as dimensionless)",
+      "variants": {
+        "linear_row_linear_column": "mass",
+        "linear_row_angular_column": "mass * distance",
+        "angular_row_linear_column": "mass * distance",
+        "angular_row_angular_column": "mass * distance^2"
+      },
+      "description": "Maps generalized accelerations to force/torque. Angular accelerations use rad/sec^2, with radians dimensionless in the mechanical mass/inertia units. No degree conversion."
+    },
+    "centroidal_momentum_matrix": {
+      "display": "matrix: mass, mass * distance, or mass * distance^2; final bias column: mass * distance / sec^2 (linear rows), mass * distance^2 / sec^2 (angular rows)",
+      "variants": {
+        "linear_row_linear_column": "mass",
+        "linear_row_angular_column": "mass * distance",
+        "angular_row_linear_column": "mass * distance",
+        "angular_row_angular_column": "mass * distance^2",
+        "linear_row_bias": "mass * distance / sec^2",
+        "angular_row_bias": "mass * distance^2 / sec^2"
+      },
+      "description": "The matrix maps generalized velocities to linear/angular momentum; its final column is a bias force/torque for the momentum derivative, not momentum. Angular velocities use rad/sec, with radians dimensionless in the mechanical mass/inertia units. No degree conversion."
+    },
+    "tendon_coordinate": {
+      "display": "deg for unit authored-gearing angular fixed tendons; distance for unit authored-gearing linear fixed tendons; coefficient-defined for mixed axes",
+      "variants": {
+        "unit_authored_gearing_angular": "deg",
+        "unit_authored_gearing_linear": "distance"
+      },
+      "description": "Fixed-tendon length is offset + sum(SDK coefficient * SDK joint position). For revolute axes, parsing and gearing updates multiply authored gearing by rad-to-deg, so unit authored gearing yields degrees. Mixed axes or dimensionful gearing determine their own common coordinate unit."
+    },
+    "tendon_stiffness": {
+      "display": "mass * distance^2 / (sec^2 * deg) for unit authored-gearing angular fixed tendons; mass / sec^2 for unit authored-gearing linear fixed tendons",
+      "variants": {
+        "unit_authored_gearing_angular": "mass * distance^2 / (sec^2 * deg)",
+        "unit_authored_gearing_linear": "mass / sec^2"
+      },
+      "description": "For arbitrary fixed-tendon coefficients, joint effort = stiffness * coordinate error * reciprocalCoefficient. Both position and force coefficients determine the unit; mixed-axis configurations require their declared coefficient units. The angular variant assumes unit authored gearing and unit force coefficient; the SDK gearing includes rad-to-deg."
+    },
+    "tendon_damping": {
+      "display": "mass * distance^2 / (sec * deg) for unit authored-gearing angular fixed tendons; mass / sec for unit authored-gearing linear fixed tendons",
+      "variants": {
+        "unit_authored_gearing_angular": "mass * distance^2 / (sec * deg)",
+        "unit_authored_gearing_linear": "mass / sec"
+      },
+      "description": "For arbitrary fixed-tendon coefficients, joint effort = damping * tendon coordinate rate * reciprocalCoefficient. Both position and force coefficients determine the unit; mixed-axis configurations require their declared coefficient units. The angular variant assumes unit authored gearing and unit force coefficient; the SDK gearing includes rad-to-deg."
+    },
+    "wrench": {
+      "display": "force xyz: mass * distance / sec^2; torque xyz: mass * distance^2 / sec^2; application point xyz: distance",
+      "components": [
+        "force",
+        "force",
+        "force",
+        "torque",
+        "torque",
+        "torque",
+        "length",
+        "length",
+        "length"
+      ]
+    },
+    "ground_plane": {
+      "display": "normal xyz: dimensionless; plane distance: distance",
+      "components": [
+        "dimensionless",
+        "dimensionless",
+        "dimensionless",
+        "length"
+      ]
+    },
+    "kinematic_target": {
+      "display": "position xyz: distance; active flag w: dimensionless",
+      "components": [
+        "length",
+        "length",
+        "length",
+        "dimensionless"
+      ]
+    },
+    "elasticity_damping": {
+      "display": "sec for volume materials; 1 / sec for surface materials",
+      "variants": {
+        "volume": "sec",
+        "surface": "1 / sec"
+      }
+    },
+    "bending_damping": {
+      "display": "1 / sec",
+      "description": "Surface material bending damping."
+    },
+    "spatial_force": {
+      "display": "force xyz: mass * distance / sec^2; torque xyz: mass * distance^2 / sec^2",
+      "components": [
+        "force",
+        "force",
+        "force",
+        "torque",
+        "torque",
+        "torque"
+      ]
+    },
+    "culling_box_write": {
+      "display": "enable flag: dimensionless; min/max xyz: distance",
+      "components": [
+        "dimensionless",
+        "length",
+        "length",
+        "length",
+        "length",
+        "length",
+        "length"
+      ],
+      "description": "Seven scalar elements: enable (0 to clear, 1 to store), min x/y/z, max x/y/z. Readback contains only the six distance values."
+    }
+  }
+}

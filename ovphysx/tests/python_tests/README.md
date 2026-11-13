@@ -15,7 +15,12 @@ On Windows:
 run_pytest.bat -q
 ```
 
-The wrapper runs `uv run --locked pytest` to prevent lockfile changes.
+The wrapper runs `uv sync --locked --no-install-project`, then
+`uv run --no-sync pytest`, to use the pinned dependencies without changing the
+lockfile. Its environment lives in `ovphysx/_build/venv/python_tests/` by default;
+uv, pytest, and Python bytecode caches also stay under `_build/`. Setting
+`OVPHYSX_BUILD_DIR` selects a build variant beneath `_build/` and places its test
+environment and caches there.
 
 Bare `uv run pytest` can re-resolve dependencies and update the lockfile.
 

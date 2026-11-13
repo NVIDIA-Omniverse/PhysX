@@ -36,7 +36,7 @@ write tests verify its observable behavior through this surface.
   `ovphysx_fetch_write_next(handle, write, out_group)`,
   `ovphysx_commit_group(handle, write, group, write_done_sync)`, and
   `ovphysx_release_write(handle, write)`. One session plans every requested
-  `ovx_string_or_token_t` attribute (string name or interned token); request validation,
+  `ovx_token_or_string_t` attribute (string name or interned token); request validation,
   the optional summary and group identity are
   [REQ-CAPI-SESSION-001](REQ-CAPI-SESSION-001.md). It adds **no query surface**:
   `ovphysx_query`, `ovphysx_query_selection` and `ovphysx_release_query` are reused, and
@@ -55,7 +55,9 @@ write tests verify its observable behavior through this surface.
   descriptor the caller reads, describing buffers the caller fills through
   `data.tensors[i].data`. No field of the struct is the caller's to assign.
   `prims.list` / `prims.offset` / `prims.count` / `prims.index_map` carry the read's
-  meanings and `data` holds the writable tensors. `meta.layout_generation` is currently
+  meanings and `data` holds the writable tensors; a joint group has one row per DOF, as
+  the joint read does ([REQ-READ-CORE-001](../../../ovruntime/plc/requirements/output/REQ-READ-CORE-001.md)
+  AC-11). `meta.layout_generation` is currently
   zero and is not an invalidation signal; rebuild queries and cached setup after a known
   structural change. Tensor shape, dtype, and device are dictated by the implementation,
   not chosen by the caller. The map group has no attribute field, so the fetched
@@ -84,11 +86,18 @@ write tests verify its observable behavior through this surface.
 - AC-5: **Synchronization.** `ovphysx_commit_group` takes
   `ovstage_cuda_sync_t write_done_sync` `{stream, wait_event}` — the type ovstage's
   `unmap_group` / `unmap_attribute` take and the mirror of the read's
-  `data.cuda_sync`. Physics waits on a supplied `wait_event` before consuming the
-  data. `{stream, 0}` — queued work with no event — still requires draining that stream;
-  only `{0, 0}` asserts nothing is outstanding. There is no bare `cuda_event` parameter
-  anywhere in this contract. Before admission, the C API drains earlier simulation
-  on the instance, including a step started after the write session was opened.
+  `data.cuda_sync`. Physics consumes the data only after everything queued on `stream`
+  and after `wait_event`; only `{0, 0}` asserts nothing is outstanding. A DirectGPU device
+  group is ordered on the device, like a CUDA library call on `stream`, with no host wait,
+  so the commit can be captured into a CUDA graph and replayed while its session stays
+  open. A `stream` of another CUDA context than the scene's is waited for on the host
+  instead. Every other group waits on the host. See the
+  [device and synchronization contract](../../../docs/read_write/device.md).
+  There is no bare `cuda_event` parameter anywhere in this contract. Commit
+  execution follows earlier instance work, including a step submitted after the
+  write session was opened. Masked, producer-handoff and device-session commits
+  run on the caller after acquiring the lane; only an unmasked host commit with
+  no handoff may queue, under REQ-CAPI-ASYNC-002 AC-12.
 
 - AC-5a: **A first write is never auto-warmed; refusal is DirectGPU-only.** The ovstage
   write never calls `ovphysx_warmup_if_needed` (the tensor-binding write does — see
@@ -96,7 +105,9 @@ write tests verify its observable behavior through this surface.
   stepped:
   - **CPU** and **GPU with readback** (no `/physics/suppressReadback`): a pre-step write
     **commits and is applied**. The host scatter has somewhere to land.
-  - **DirectGPU** (`eENABLE_DIRECT_GPU_API` / `suppressReadback`): commit is **refused**.
+  - **DirectGPU** (`eENABLE_DIRECT_GPU_API` / `suppressReadback`): device-resident
+    state commits are **refused**. Host-side properties such as link mass remain
+    writable before the first step.
     The DirectGPU superset view it scatters into does not exist until the first step
     (ADR-0008 Decision 10's DirectGPU sizing). The runtime log names
     `setVelocityColumnOvStage` (and siblings) as requiring a prior step.
@@ -168,8 +179,11 @@ write tests verify its observable behavior through this surface.
   attachments concurrently. Each instance holds at most one ovstage attach; several
   may be attached at once. A write session must not be driven from two threads. It
   may run while another instance steps its own attachment. Process-wide limits still
-  apply: one hard CPU-only mode, one SDK tolerance scale, and a recording transition
-  that needs every attached instance idle.
+  apply: one hard CPU-only mode, one SDK tolerance scale, and one recording session.
+  The recording safe point synchronously drains pending operations without collecting
+  task results. Ordinary attach/detach jobs use shared lifecycle admission only
+  while they execute; recording transitions use the process-wide safe point in
+  REQ-CAPI-OMNIPVD-LATE-001 AC-11.
 
 - AC-11: **Deprecation of the whole tensor-binding surface.** The named binding entry
   points — `ovphysx_create_tensor_binding`, `ovphysx_destroy_tensor_binding`,
@@ -190,10 +204,11 @@ write tests verify its observable behavior through this surface.
   **prim-path identity** for `ovphysx_articulation_get_{dof,body,joint}_names` — link and joint names are
   the leaf name of the `kOvxArticulationLink` / `kOvxArticulationJoint` prim served by `ovphysx_read`,
   and per-DOF identity is the whole-articulation `dofJointPath` / `dofAxisIndex` read attributes, which
-  additionally make an inverse-dynamics matrix column joinable to its joint and axis. The joint-name
-  successor covers only DOF-bearing joints: a fully-locked (zero-DOF) joint has no joint read group or
-  descriptor entry, so its name — which the deprecated getter returned — is not yet recoverable through
-  the read API, a residual noted against blocker 1 in the deprecation plan. Every other deprecated
+  additionally make an inverse-dynamics matrix column joinable to its joint and axis. Fixed
+  (zero-DOF) joint identities are available from the prim list of an `ARTICULATION_JOINT`
+  `physxPointer` read, without dereferencing pointers; only their DOF-state rows and descriptor
+  entries are absent. Group prim order does not establish the legacy per-articulation name order.
+  Jacobian rows map through `linkPath` (REQ-READ-ATTRS-001 AC-24). Every other deprecated
   helper points at a landed successor. A
   helper being unreachable without the deprecated binding makes it part of the surface that
   is removed with it. Compatibility behavior is retained for the approved deprecation period;
@@ -218,28 +233,31 @@ write tests verify its observable behavior through this surface.
   A sidecar failure with no runtime classification reports an unknown outcome.
   Python preserves the same cause before cleanup can replace thread-local errors.
   The runtime's optional `OvxCommitFailure` output carries the distinction that
-  its boolean result cannot express.
+  its boolean result cannot express. The sidecar mirror preserves `Busy` as a
+  distinct failure reporting runtime contention and no publication. Compile-time
+  checks compare the numeric values of the known mirrored enum members with their
+  runtime counterparts.
 
-- AC-14: **Removal blockers are closed, except the deferred masked write.** The whole
+- AC-14: **Removal requires consumer-equivalent replacements.** The whole
   tensor-binding surface can be *removed* only once its consumers have a non-binding
   replacement. **Path/pattern selection on the read is no longer a gap** (formerly (a)):
   `ovphysx_query_selection` adds an explicit prim-handle-list / glob selection to the query that
   narrows both read and write ([REQ-CAPI-SELECT-001](REQ-CAPI-SELECT-001.md), ADR-0025), the 1:1
-  successor to a tensor binding's prim subset — the static path-set fully subsumes the indexed write;
-  only the deprecated masked write's data-derived per-row mask is deferred as a separate item. The
+  successor to a tensor binding's prim subset — the static path-set fully subsumes the indexed write,
+  and `ovphysx_commit_group_masked` (AC-16) is the successor to the masked write's data-derived
+  per-row mask. The
   **binding-coupled kinematic update is also no longer a gap**: the primary
   `ovphysx_update_articulations_kinematic` now uses query membership, accepts POSITION / VELOCITY flags,
   and executes on CPU and GPU (with DirectGPU's native all-component refresh), so the former
   binding-coupled FK blocker is closed. The binding-coupled **names** helpers
   `ovphysx_articulation_get_{dof,body,joint}_names`, `ovphysx_get_articulation_metadata`'s topology
-  metadata, and `ovphysx_rigid_body_view_wake_up` / `_sleep`'s sleep control are also no longer gaps:
-  they now have successors (respectively, prim-path identity plus the `dofJointPath` / `dofAxisIndex`
-  DOF-column descriptor, for DOF-bearing joints — a fully-locked zero-DOF joint's name is a documented
-  limitation (AC-11); the whole-articulation `dofCount` / `linkCount` / `jointCount` /
+  metadata, and `ovphysx_rigid_body_view_wake_up` / `_sleep`'s sleep control have non-binding successors
+  (respectively, prim-path identity plus the `dofJointPath` / `dofAxisIndex`
+  DOF-column descriptor, with fixed-joint identities available through `physxPointer` group prims
+  (AC-11); the whole-articulation `dofCount` / `linkCount` / `jointCount` /
   `fixedTendonCount` / `spatialTendonCount` / `isFixedBase` read attributes; and the `wake` write
-  attribute — AC-11). With selection, kinematic update, names, metadata, and sleep all served by
-  non-binding successors, the removal blockers this criterion enumerated are closed; only the deferred
-  data-derived masked write remains as a separate follow-up.
+  attribute — AC-11). Name discovery alone does not establish the per-articulation ownership and
+  solver ordering consumers need; those mappings must be verified before removal.
 
 - AC-15: **Character controllers use the generic surface.**
   `OVPHYSX_QUERY_TARGET_CHARACTER_CONTROLLER` / `SimObjectType.CHARACTER_CONTROLLER` is value 12.
@@ -253,8 +271,55 @@ write tests verify its observable behavior through this surface.
   runtime tables. Movement happens at the write, so the parse-only `simulate(0)` before
   the first public step does not move a controller.
 
+- AC-16: **A masked commit.** `ovphysx_commit_group_masked(handle, write, group, row_mask,
+  write_done_sync)` commits only the rows `row_mask` selects: a contiguous 1-D bool or
+  uint8 tensor with one entry per row of the group (one per DOF for a joint group), on the
+  group's device or in host memory
+  for a host-resident group, nonzero selecting the row.
+  An unselected row keeps its value, except a rigid or link `force` or `wrench`
+  row, which applies none. A null mask, one that is not 1-D bool or uint8, or one whose
+  length, layout or device does not match the group rejects admission with
+  `OVPHYSX_API_INVALID_ARGUMENT` and leaves the group live, so Python's commit raises
+  without spending it; so does any mask on a character controller, vehicle or particle
+  group, kinds the deprecated masked write never served. A DirectGPU group reads the mask on
+  the device: it stays valid until the work queued on the commit's stream has run, and
+  while a graph that captured the commit may be replayed. Otherwise the call behaves as
+  `ovphysx_commit_group`, synchronization included. Python's `WriteSession.commit` and
+  `commit_sync` take the mask as `mask=`.
+
+- AC-17: **A write step can be captured into a CUDA graph.** On a stream of the scene's CUDA
+  context -- an instance created on an explicit CUDA device runs physics in that device's
+  primary context, the one Warp and PyTorch use -- the commit of a DirectGPU device group,
+  masked or not, and `ovphysx_update_articulations_kinematic` over a held query queue only
+  device work, so a CUDA graph captured from that stream replays them, after the caller's
+  fill, while the write session stays open. Each replay writes what the column
+  and the mask hold when it runs, a point
+  instancer's local values in the frame it had when the write was opened. Python's
+  `WriteSession.commit(..., mask=...)` and `update_articulations_kinematic(query=...)` add no
+  host synchronization of their own. Python's fetch makes Warp's current stream wait for a
+  reused column's previous commit; a fill on another stream that first waits for Warp's is
+  ordered after that commit too. On a capturing stream of another CUDA context, the
+  commit and the refresh are refused before anything is queued on it. A group applied on
+  the host is refused at admission on any capturing stream, before anything is read
+  (`OVPHYSX_API_INVALID_ARGUMENT`; Python raises), and stays live to commit outside the
+  capture. So is any commit given the legacy default stream -- stream `1`, or stream `0`
+  for a group in device memory -- while a blocking stream of its context is being
+  captured, since CUDA would invalidate that capture.
+  Releasing a session that holds a captured commit waits for the replays launched before
+  the release.
+  - `ovphysx_update_articulations_kinematic(handle, query, flags, cuda_sync)` takes the
+    caller's `ovstage_cuda_sync_t` and is ordered on it like a DirectGPU commit; its task
+    completes at GPU submission. It never warms the scene up: a DirectGPU scene that has not
+    stepped is refused, as a commit is. The C++ wrapper defaults the sync to `{0, 0}`.
+
 ## Test References
 
+- [TEST-CAPI-WRITE-002](../../tests/capi/TEST-CAPI-WRITE-002.md) — the masked commit and the stream-ordered DirectGPU
+  commit through the public C and Python surfaces (AC-5, AC-16).
+- [TEST-CAPI-WRITE-003](../../tests/capi/TEST-CAPI-WRITE-003.md) — a write step captured into a CUDA graph through
+  the public Python API with Warp, a reused column filled on another stream, its refusal on
+  another CUDA context, and a host group refused inside a capture and committed after it
+  (AC-17).
 - [TEST-CAPI-WRITE-001](../../tests/capi/TEST-CAPI-WRITE-001.md) — the write-session entry points are implemented and
   covered by the write-session tests. AC-11's deprecation markers are landed on
   the tensor-binding surface (C header `OVPHYSX_DEPRECATED_MSG`, the C++
@@ -266,7 +331,7 @@ write tests verify its observable behavior through this surface.
 
 ## Code References
 
-- ovphysx/include/ovphysx/ovphysx.h (`ovphysx_write`, `ovphysx_fetch_write_next`, `ovphysx_commit_group`, `ovphysx_release_write`; deprecation markers on the superseded entry points)
+- ovphysx/include/ovphysx/ovphysx.h (`ovphysx_write`, `ovphysx_fetch_write_next`, `ovphysx_commit_group`, `ovphysx_commit_group_masked`, `ovphysx_release_write`; deprecation markers on the superseded entry points)
 - ovphysx/include/ovphysx/ovphysx_types.h (`ovphysx_write_handle_t`, `ovphysx_fetched_write_group_t`; writability classification)
 - ovphysx/src/ovphysx/ (write session implementation + C-first validation)
 - ovphysx/python/ovphysx/api.py (`PhysX.write`, `PhysX.write_sync`, `WriteSession`, `WriteGroup`)

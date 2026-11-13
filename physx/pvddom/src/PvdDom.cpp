@@ -8,6 +8,7 @@
 #include "PvdDomParserConfig.h"
 
 #include "PvdDomUtils.h"
+#include <memory>
 
 OmniPvdAttributeDef::OmniPvdAttributeDef()
 {
@@ -148,9 +149,10 @@ void OmniPvdUniqueList::addElement(const uint8_t *data, uint32_t dataLen)
     if (it == mElements.end())
     {
         // Add this element
-        OmniPvdUniqueListElement *elem = new OmniPvdUniqueListElement();
+        std::unique_ptr<OmniPvdUniqueListElement> elem(new OmniPvdUniqueListElement());
         elem->set(data, dataLen);
-        mElements.emplace_back(elem);
+        mElements.emplace_back(elem.get());
+        elem.release();
     }
 }
 // Remove any element that has the same data
@@ -211,6 +213,11 @@ OmniPvdObject::OmniPvdObject()
     mLastChild = nullptr;
     mPrevSibling = nullptr;
     mNextSibling = nullptr;
+    mSkipMembershipTraversal = false;
+    mFirstMembershipChild = nullptr;
+    mLastMembershipChild = nullptr;
+    mPrevMembershipSibling = nullptr;
+    mNextMembershipSibling = nullptr;
 
     mIsReferenced = false;
 
@@ -220,6 +227,15 @@ OmniPvdObject::OmniPvdObject()
     mActortype = 0;
     mActortypeSet = false;
     mReopenable = false;
+    mWasDestroyed = false;
+}
+
+OmniPvdObject::~OmniPvdObject()
+{
+    // Class-instance vectors are copied during construction. The object owns their lists.
+    for (const OmniPvdClassInstance& instance : mInheritedClassInstances)
+        for (OmniPvdAttributeInstList* list : instance.mClassAttributeLists)
+            delete list;
 }
 
 void OmniPvdObject::appendChild(OmniPvdObject* child)
@@ -243,6 +259,14 @@ void OmniPvdObject::appendChild(OmniPvdObject* child)
     mLastChild = child;
     child->mAncestor = this;
     child->mNextSibling = nullptr;
+    if (!child->mSkipMembershipTraversal)
+    {
+        child->mPrevMembershipSibling = mLastMembershipChild;
+        child->mNextMembershipSibling = nullptr;
+        if (mLastMembershipChild) mLastMembershipChild->mNextMembershipSibling = child;
+        else mFirstMembershipChild = child;
+        mLastMembershipChild = child;
+    }
 }
 
 void OmniPvdObject::insertChildFirst(OmniPvdObject* child)
@@ -268,6 +292,14 @@ void OmniPvdObject::insertChildFirst(OmniPvdObject* child)
     mFirstChild = child;
     child->mAncestor = this;
     child->mPrevSibling = nullptr;
+    if (!child->mSkipMembershipTraversal)
+    {
+        child->mPrevMembershipSibling = nullptr;
+        child->mNextMembershipSibling = mFirstMembershipChild;
+        if (mFirstMembershipChild) mFirstMembershipChild->mPrevMembershipSibling = child;
+        else mLastMembershipChild = child;
+        mFirstMembershipChild = child;
+    }
 }
 
 void OmniPvdObject::removeChild(OmniPvdObject* child)
@@ -298,8 +330,20 @@ void OmniPvdObject::removeChild(OmniPvdObject* child)
         mLastChild = nullptr;
     }
 
+    if (!child->mSkipMembershipTraversal)
+    {
+        if (child->mPrevMembershipSibling)
+            child->mPrevMembershipSibling->mNextMembershipSibling = child->mNextMembershipSibling;
+        else mFirstMembershipChild = child->mNextMembershipSibling;
+        if (child->mNextMembershipSibling)
+            child->mNextMembershipSibling->mPrevMembershipSibling = child->mPrevMembershipSibling;
+        else mLastMembershipChild = child->mPrevMembershipSibling;
+    }
+
     child->mPrevSibling = nullptr;
     child->mNextSibling = nullptr;
+    child->mPrevMembershipSibling = nullptr;
+    child->mNextMembershipSibling = nullptr;
     child->mAncestor = nullptr;
 }
 
@@ -314,7 +358,12 @@ OmniPvdObject* OmniPvdObject::getChild(const std::string& name) {
 
 OmniPvdDOMState::OmniPvdDOMState()
 {
+#if defined(PVDDOM_INSPECTION_ENABLED)
+    try { initPvdDomState(*this); }
+    catch (...) { releaseOwnedStorage(); throw; }
+#else
     initPvdDomState(*this);
+#endif
 }
 
 template<typename Map>
@@ -339,6 +388,11 @@ void deletePointerContainer(Map& map)
 }
 
 OmniPvdDOMState::~OmniPvdDOMState()
+{
+    releaseOwnedStorage();
+}
+
+void OmniPvdDOMState::releaseOwnedStorage()
 {
     // TODO : do automatically
     // Cleanup on isle 12!

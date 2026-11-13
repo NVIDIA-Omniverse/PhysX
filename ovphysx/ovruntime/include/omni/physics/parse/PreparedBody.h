@@ -96,21 +96,26 @@ void readDynamicBodyAttributes(const Reader& src, ObjectKey key, const KnownToke
     }
     if (input.physxSurfaceVelocityAPI)
     {
-        input.physxSurfaceVelocityEnabled = prepareAttribute<bool>(src, key, tok.physxSurfaceVelocityEnabled);
-        input.physxSurfaceVelocityLocalSpace = prepareAttribute<bool>(src, key, tok.physxSurfaceVelocityLocalSpace);
-        input.physxSurfaceVelocity = prepareAttribute<carb::Float3>(src, key, tok.physxSurfaceVelocity);
-        input.physxSurfaceAngularVelocity = prepareAttribute<carb::Float3>(src, key, tok.physxSurfaceAngularVelocity);
+        input.physxSurfaceVelocityEnabled =
+            prepareAttribute<bool>(src, key, tok.physxSurfaceVelocitySurfaceVelocityEnabled);
+        input.physxSurfaceVelocityLocalSpace =
+            prepareAttribute<bool>(src, key, tok.physxSurfaceVelocitySurfaceVelocityLocalSpace);
+        input.physxSurfaceVelocity = prepareAttribute<carb::Float3>(src, key, tok.physxSurfaceVelocitySurfaceVelocity);
+        input.physxSurfaceAngularVelocity =
+            prepareAttribute<carb::Float3>(src, key, tok.physxSurfaceVelocitySurfaceAngularVelocity);
     }
     if (input.physxSplinesSurfaceVelocityAPI)
     {
-        input.physxSplinesSurfaceVelocityEnabled = prepareAttribute<bool>(src, key, tok.physxSplinesSurfaceVelocityEnabled);
-        input.physxSplinesSurfaceVelocityMagnitude = prepareAttribute<float>(src, key, tok.physxSplinesSurfaceVelocityMagnitude);
+        input.physxSplinesSurfaceVelocityEnabled =
+            prepareAttribute<bool>(src, key, tok.physxSplinesSurfaceVelocitySurfaceVelocityEnabled);
+        input.physxSplinesSurfaceVelocityMagnitude =
+            prepareAttribute<float>(src, key, tok.physxSplinesSurfaceVelocitySurfaceVelocityMagnitude);
     }
 }
 
 inline std::array<TokenId, 31> dynamicBodyAttributeTokens(const KnownTokens& tok)
 {
-    return { tok.physicsKinematicEnabled, tok.physicsStartsAsleep, tok.physicsVelocity, tok.physicsAngularVelocity, tok.metadataLocalSpaceVelocities, tok.physxRigidBodyLinearDamping, tok.physxRigidBodyAngularDamping, tok.physxRigidBodyMaxLinearVelocity, tok.physxRigidBodySleepThreshold, tok.physxRigidBodyStabilizationThreshold, tok.physxRigidBodyMaxDepenetrationVelocity, tok.physxRigidBodyContactSlopCoefficient, tok.physxRigidBodyMaxContactImpulse, tok.physxRigidBodyCfmScale, tok.physxRigidBodySolverPositionIterationCount, tok.physxRigidBodySolverVelocityIterationCount, tok.physxRigidBodyEnableCCD, tok.physxRigidBodyEnableSpeculativeCCD, tok.physxRigidBodyDisableGravity, tok.physxRigidBodyRetainAccelerations, tok.physxRigidBodyEnableGyroscopicForces, tok.physxRigidBodySolveContact, tok.physxRigidBodyLockedPosAxis, tok.physxRigidBodyLockedRotAxis, tok.physxRigidBodyMaxAngularVelocity, tok.physxSurfaceVelocityEnabled, tok.physxSurfaceVelocityLocalSpace, tok.physxSurfaceVelocity, tok.physxSurfaceAngularVelocity, tok.physxSplinesSurfaceVelocityEnabled, tok.physxSplinesSurfaceVelocityMagnitude };
+    return { tok.physicsKinematicEnabled, tok.physicsStartsAsleep, tok.physicsVelocity, tok.physicsAngularVelocity, tok.metadataLocalSpaceVelocities, tok.physxRigidBodyLinearDamping, tok.physxRigidBodyAngularDamping, tok.physxRigidBodyMaxLinearVelocity, tok.physxRigidBodySleepThreshold, tok.physxRigidBodyStabilizationThreshold, tok.physxRigidBodyMaxDepenetrationVelocity, tok.physxRigidBodyContactSlopCoefficient, tok.physxRigidBodyMaxContactImpulse, tok.physxRigidBodyCfmScale, tok.physxRigidBodySolverPositionIterationCount, tok.physxRigidBodySolverVelocityIterationCount, tok.physxRigidBodyEnableCCD, tok.physxRigidBodyEnableSpeculativeCCD, tok.physxRigidBodyDisableGravity, tok.physxRigidBodyRetainAccelerations, tok.physxRigidBodyEnableGyroscopicForces, tok.physxRigidBodySolveContact, tok.physxRigidBodyLockedPosAxis, tok.physxRigidBodyLockedRotAxis, tok.physxRigidBodyMaxAngularVelocity, tok.physxSurfaceVelocitySurfaceVelocityEnabled, tok.physxSurfaceVelocitySurfaceVelocityLocalSpace, tok.physxSurfaceVelocitySurfaceVelocity, tok.physxSurfaceVelocitySurfaceAngularVelocity, tok.physxSplinesSurfaceVelocitySurfaceVelocityEnabled, tok.physxSplinesSurfaceVelocitySurfaceVelocityMagnitude };
 }
 
 PreparedDynamicBody prepareDynamicBody(ParseContext& context, ObjectKey key);

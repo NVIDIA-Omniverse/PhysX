@@ -904,16 +904,16 @@ class TestContactBinding:
     def test_contact_binding_filter_pattern_matching_unpopulated_visual_prim_fails(self, physx_sdk_cpu):
         """A filter pattern naming a prim omitted from population matches nothing.
 
-        PHYSICS-only population omits the visual CollisionMesh, while keeping
+        Physics-only population omits the visual CollisionMesh, while keeping
         the CollisionPlane collider. Contact filters resolve source ObjectKeys,
-        so ALL population would include the visual path even though it has no
-        physics object. Keep this missing-filter test on the narrower domain;
+        so population with RENDERING would include the visual path even though it
+        has no physics object. Keep this missing-filter test physics-only;
         the scene's parents have identity transforms.
         """
         load_usd_with_ovstage(
             physx_sdk_cpu,
             data_path("boxes_falling_on_groundplane.usda"),
-            domains=ovstage.PopulationDomain.PHYSICS,
+            rendering=False,
         )
         physx_sdk_cpu.wait_all()
         with pytest.raises(RuntimeError, match="no sensor entries were produced"):

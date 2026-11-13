@@ -5,6 +5,9 @@
 // @covers AC-1 AC-2
 
 /**
+ * @implements REQ-READ-CCT-001
+ * @covers AC-3
+ *
  * @implements REQ-TENSOR-WRENCH-001
  * @covers AC-1 AC-2 AC-3
  *
@@ -21,7 +24,7 @@
  * @covers AC-3 AC-4 AC-9
  *
  * @implements REQ-READ-ATTRS-001
- * @covers AC-15, AC-17, AC-21
+ * @covers AC-15, AC-17, AC-21, AC-30
  *
  * @implements REQ-READ-CONTACT-001
  * @covers AC-11
@@ -44,12 +47,21 @@
  * @implements REQ-TENSOR-CONTACT-002
  * @covers AC-2 AC-3
  *
+ * @implements REQ-READ-SKIN-001
+ * @covers AC-2
  * @implements REQ-READ-SDF-001
  * @covers AC-3
+ *
+ * @implements REQ-TENSOR-CONTACT-005
+ * @covers AC-3
+ *
+ * @implements REQ-SIM-OVSTAGE-WRITEAPPLY-001
+ * @covers AC-7 AC-14 AC-20 AC-21
  */
 
 #include "tensors/gpu/CudaKernels.h"
 #include "tensors/gpu/GpuSimulationData.h"
+#include "tensors/gpu/GpuPointSetReadView.h"
 #include "tensors/ArticulationDofOvStageRecord.h"
 #include "tensors/ArticulationLinkOvStageRecord.h"
 #include "tensors/ArticulationTendonOvStageRecord.h"
@@ -194,6 +206,25 @@ static bool launchOk(bool checkedStatus)
     if (!checkedStatus)
         cudaStreamSynchronize(nullptr);
     return checkedStatus;
+}
+
+// launchOk for a launch on `stream`. A stream being captured is not drained: synchronizing it would
+// invalidate the capture, and the failed launch has already invalidated it anyway.
+static bool drainOnLaunchFailure(bool checkedStatus, cudaStream_t stream)
+{
+    if (!checkedStatus)
+    {
+        cudaStreamCaptureStatus capture = cudaStreamCaptureStatusNone;
+        if (cudaStreamIsCapturing(stream, &capture) == cudaSuccess && capture == cudaStreamCaptureStatusNone)
+            cudaStreamSynchronize(stream);
+    }
+    return checkedStatus;
+}
+
+// A row selected by a masked commit (ADR-0052): one byte per row, nonzero selects it. No mask selects all.
+__device__ static inline bool isRowCommitted(const uint8_t* mask, PxU32 row)
+{
+    return !mask || mask[row] != 0;
 }
 
 __global__ static void makeArtiLinksDirtyKernel(ArticulationGpuFlags *artiLinksDirtyFlags,
@@ -420,14 +451,15 @@ __global__ static void fetchArtiRootPoseColumnOvStageKernel(float* dst,
     }
 }
 
-bool fetchArtiRootPoseColumnOvStage(float* dst, const PxTransform* src, PxU32 count, bool orientation)
+bool fetchArtiRootPoseColumnOvStage(float* dst, const PxTransform* src, PxU32 count, bool orientation,
+                                    cudaStream_t stream)
 {
     if (count == 0)
     {
         return true;
     }
-    fetchArtiRootPoseColumnOvStageKernel<<<(count + 1023) / 1024, 1024>>>(dst, src, count, orientation);
-    return launchOk(CHECK_CUDA(cudaGetLastError()));
+    fetchArtiRootPoseColumnOvStageKernel<<<(count + 1023) / 1024, 1024, 0, stream>>>(dst, src, count, orientation);
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
 }
 
 __global__ static void fetchArtiRootVelocityColumnOvStageKernel(float* dst, const PxVec3* src, const PxU32 count)
@@ -442,14 +474,14 @@ __global__ static void fetchArtiRootVelocityColumnOvStageKernel(float* dst, cons
     }
 }
 
-bool fetchArtiRootVelocityColumnOvStage(float* dst, const PxVec3* src, PxU32 count)
+bool fetchArtiRootVelocityColumnOvStage(float* dst, const PxVec3* src, PxU32 count, cudaStream_t stream)
 {
     if (count == 0)
     {
         return true;
     }
-    fetchArtiRootVelocityColumnOvStageKernel<<<(count + 1023) / 1024, 1024>>>(dst, src, count);
-    return launchOk(CHECK_CUDA(cudaGetLastError()));
+    fetchArtiRootVelocityColumnOvStageKernel<<<(count + 1023) / 1024, 1024, 0, stream>>>(dst, src, count);
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
 }
 
 // Standalone subspace-origin subtraction: computeArticulationData writes the destination itself, so
@@ -606,12 +638,12 @@ bool fetchArtiMassMatrices(float* dst,
                            const PxU32 rootDofs,
                            const PxU32 dofRecordBase,
                            const GpuArticulationDofRecord* dofRecords,
-                           bool applyBodyOrderSign)
+                           bool applyBodyOrderSign, cudaStream_t stream)
 {
-    fetchArtiMassMatricesKernel<<<(numElements + 1023) / 1024, 1024>>>(
+    fetchArtiMassMatricesKernel<<<(numElements + 1023) / 1024, 1024, 0, stream>>>(
         dst, src, numElements, massMatrixSize, simMassMatrixSize, generalizedCoords, rootDofs, dofRecordBase,
         dofRecords, applyBodyOrderSign);
-    return launchOk(CHECK_CUDA(cudaGetLastError()));
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
 }
 
 __global__ static void fetchArtiDofAttributeGravityAndCoriolisKernel(float* dst,
@@ -682,16 +714,16 @@ bool fetchArtiGeneralizedForceColumnOvStage(float* dst,
                                             const PxU32 rootDofs,
                                             const PxU32 simMaxDofs,
                                             const PxU32 dofRecordBase,
-                                            const GpuArticulationDofRecord* dofRecords)
+                                            const GpuArticulationDofRecord* dofRecords, cudaStream_t stream)
 {
     const PxU32 total = count * width;
     if (total == 0)
     {
         return true;
     }
-    fetchArtiGeneralizedForceColumnOvStageKernel<<<(total + 1023) / 1024, 1024>>>(
+    fetchArtiGeneralizedForceColumnOvStageKernel<<<(total + 1023) / 1024, 1024, 0, stream>>>(
         dst, src, total, width, rootDofs, simMaxDofs, dofRecordBase, dofRecords);
-    return launchOk(CHECK_CUDA(cudaGetLastError()));
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
 }
 
 bool fetchArtiDofAttributeGravityAndCoriolis(float* dst,
@@ -755,16 +787,16 @@ bool fetchArtiCentroidalMomentumMatrices(float* dst,
                                          const PxU32 startSimBiasForceBlock,
                                          const PxU32 dofRecordBase,
                                          const GpuArticulationDofRecord* dofRecords,
-                                         bool applyBodyOrderSign)
+                                         bool applyBodyOrderSign, cudaStream_t stream)
 {
     // Note:
     // cenMomBlockSize =  (maxDofs + 7) * 6;
     // simCenMomBlockSize =  (mMaxDofs + 6) * 6;
     // numElem = numArti * cenMomBlockSize;
-    fetchArtiCentroidalMomentumMatricesKernel<<<(numElem + 1023) / 1024, 1024>>>(
+    fetchArtiCentroidalMomentumMatricesKernel<<<(numElem + 1023) / 1024, 1024, 0, stream>>>(
         dst, src, numElem, maxDofs, cenMomBlockSize, simCenMomBlockSize, startSimBiasForceBlock, dofRecordBase,
         dofRecords, applyBodyOrderSign);
-    return launchOk(CHECK_CUDA(cudaGetLastError()));
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
 }
 
 __global__ static void fetchArtiJacobianKernel(float* dst,
@@ -803,12 +835,12 @@ bool fetchArtiJacobian(float* dst,
                        const PxU32 rootDofs,
                        const PxU32 dofRecordBase,
                        const GpuArticulationDofRecord* dofRecords,
-                       bool applyBodyOrderSign)
+                       bool applyBodyOrderSign, cudaStream_t stream)
 {
-    fetchArtiJacobianKernel<<<(numElements + 1023) / 1024, 1024>>>(
+    fetchArtiJacobianKernel<<<(numElements + 1023) / 1024, 1024, 0, stream>>>(
         dst, src, numElements, jacobianSize, simJacobianSize, jacobianCols, rootDofs, dofRecordBase, dofRecords,
         applyBodyOrderSign);
-    return launchOk(CHECK_CUDA(cudaGetLastError()));
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
 }
 
 //
@@ -863,13 +895,223 @@ __global__ static void fetchArtiDofAttributeOvStageKernel(float* dst,
 
 bool fetchArtiDofAttributeOvStage(float* dst, const float* src, const PxU32 numOutputs,
                                   const PxU32 simMaxDofs, const DofScalePolicy policy,
-                                  const ArticulationDofOvStageRecord* records)
+                                  const ArticulationDofOvStageRecord* records, cudaStream_t stream)
 {
     if (numOutputs == 0)
         return true;
-    fetchArtiDofAttributeOvStageKernel<<<(numOutputs + 1023) / 1024, 1024>>>(dst, src, numOutputs, simMaxDofs,
-                                                                             policy, records);
+    fetchArtiDofAttributeOvStageKernel<<<(numOutputs + 1023) / 1024, 1024, 0, stream>>>(
+        dst, src, numOutputs, simMaxDofs, policy, records);
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
+}
+
+// Multiply a contiguous float column by a constant on the device: dst[i] = k * src[i]. The ovstage
+// device drain uses it to apply the deg->rad scale to an angular-velocity column device-to-device, so
+// a column authored in degrees reaches PhysX in engine-native radians with no host round trip.
+__global__ static void scaleFloatColumnOvStageKernel(float* dst, const float* src, const PxU32 count, const float k)
+{
+    const PxU32 i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < count)
+        dst[i] = k * src[i];
+}
+
+bool scaleFloatColumnOvStage(float* dst, const float* src, const PxU32 count, const float k, cudaStream_t stream)
+{
+    if (count == 0)
+        return true;
+    scaleFloatColumnOvStageKernel<<<(count + 1023) / 1024, 1024, 0, stream>>>(dst, src, count, k);
+    // Drain the ACTUAL launch stream, not just the default (drainOnLaunchFailure): launchOk waits only on the
+    // default stream, so a prior non-sticky error on another stream could falsely fail a valid launch still
+    // queued here, whose dst then mutates after the caller saw the failure.
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
+}
+
+// Scatter a joint DOF column from change/key order (src[i]) into the session's DOF-order column
+// (dst[dstIdx[i]]), folding a wrapped-revolute drive position target into [-360, 360] on the flagged rows so
+// the device joint drain matches the host path (InternalJoint::setArticulationDrivePositionTarget). dst is
+// pre-zeroed by planJointGroup; the batch covers every single-DOF joint, so every dst row is written here.
+__global__ static void scatterDofColumnOvStageKernel(float* dst, const float* src, const PxU32* dstIdx,
+                                                     const PxU32 count)
+{
+    const PxU32 i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= count)
+        return;
+    // The DOF offset is the low 31 bits; the top bit flags a wrapped-revolute drive target to fold.
+    const PxU32 packed = dstIdx[i];
+    const bool doWrap = (packed & kScatterDofWrapBit) != 0;
+    const PxU32 idx = packed & ~kScatterDofWrapBit;
+    float v = src[i];
+    if (doWrap && (v >= 360.0f || v <= -360.0f))
+        v = fmodf(v, 360.0f);
+    dst[idx] = v;
+}
+
+bool scatterDofColumnOvStage(float* dst, const float* src, const PxU32* dstIdx, const PxU32 count,
+                             cudaStream_t stream)
+{
+    if (count == 0)
+        return true;
+    scatterDofColumnOvStageKernel<<<(count + 1023) / 1024, 1024, 0, stream>>>(dst, src, dstIdx, count);
+    // Drain the ACTUAL launch stream, not just the default (see scaleFloatColumnOvStage above).
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
+}
+
+// Decompose a column-major world transform (double[16], one row per prim) into a position (float[3]) and a
+// quaternion (float[4], xyzw). The ovstage device pose drain uses it to convert authored world transforms
+// into the pos/orientation the DirectGPU setters take, device-to-device with no host round trip.
+//
+// The math mirrors the host decomposeMatrix (common/foundation/MatrixTools.cpp): a non-finite translation
+// yields the identity pose; otherwise translation is m[12..14] and the rotation is the
+// Gram-Schmidt-orthonormalized 3x3 basis (columns X=m[0..2], Y=m[4..6], Z=m[8..10], so positive scale is
+// stripped), with an improper (mirrored, det<0) basis flipped proper before the same branch-by-largest-
+// diagonal (Shepperd) extraction -- exactly as the host does, which absorbs the reflection into a negative
+// scale the pose setter drops. The host's Newton polar refinement runs too; it changes only a degenerate basis,
+// since for a TRS transform (orthogonal columns, no shear) Gram-Schmidt already yields the exact rotation.
+// `T` is the stored element type (double, or float widened to double on each read, as the host decode does).
+template <typename T>
+__global__ static void decomposeWorldMatrixOvStageKernel(const T* mat, const PxU32* srcRow, float* pos, float* quat,
+                                                         const PxU32 rows)
+{
+    const PxU32 i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= rows)
+        return;
+    // srcRow gathers from a shared (index-mapped) column: output row i reads storage row srcRow[i].
+    // Null srcRow is the dense case (storage row i).
+    const PxU32 sr = srcRow ? srcRow[i] : i;
+    const T* m = mat + static_cast<size_t>(sr) * 16;
+
+    // Non-finite translation yields the identity pose, matching the host decomposeMatrix: a NaN in the
+    // authored transform must land as identity rather than reaching the GPU setter as a NaN pose.
+    if (!isfinite(m[12]) || !isfinite(m[13]) || !isfinite(m[14]))
+    {
+        pos[i * 3 + 0] = 0.0f; pos[i * 3 + 1] = 0.0f; pos[i * 3 + 2] = 0.0f;
+        quat[i * 4 + 0] = 0.0f; quat[i * 4 + 1] = 0.0f; quat[i * 4 + 2] = 0.0f; quat[i * 4 + 3] = 1.0f;
+        return;
+    }
+
+    pos[i * 3 + 0] = static_cast<float>(m[12]);
+    pos[i * 3 + 1] = static_cast<float>(m[13]);
+    pos[i * 3 + 2] = static_cast<float>(m[14]);
+
+    // Basis columns of the column-major matrix.
+    double x0 = m[0], x1 = m[1], x2 = m[2];
+    double y0 = m[4], y1 = m[5], y2 = m[6];
+    double z0 = m[8], z1 = m[9], z2 = m[10];
+
+    // Gram-Schmidt: normalize X; project X out of Y and normalize; project X and Y out of Z and normalize. Each
+    // normalize guard matches the host safeNormalize (MatrixTools.cpp): L > 1e-12 AND isfinite(L). The finiteness
+    // check matters -- an infinite basis column gives L = inf, which passes L > 1e-12 but makes 1/L = 0 and the
+    // scaled column NaN; the host substitutes the fallback world axis instead, so the device must too (AC-20).
+    double l = sqrt(x0 * x0 + x1 * x1 + x2 * x2);
+    if (l > 1.0e-12 && isfinite(l)) { const double s = 1.0 / l; x0 *= s; x1 *= s; x2 *= s; }
+    else { x0 = 1.0; x1 = 0.0; x2 = 0.0; }
+    double d = x0 * y0 + x1 * y1 + x2 * y2;
+    y0 -= d * x0; y1 -= d * x1; y2 -= d * x2;
+    l = sqrt(y0 * y0 + y1 * y1 + y2 * y2);
+    if (l > 1.0e-12 && isfinite(l)) { const double s = 1.0 / l; y0 *= s; y1 *= s; y2 *= s; }
+    else { y0 = 0.0; y1 = 1.0; y2 = 0.0; }
+    const double dx = x0 * z0 + x1 * z1 + x2 * z2;
+    const double dy = y0 * z0 + y1 * z1 + y2 * z2;
+    z0 -= dx * x0 + dy * y0; z1 -= dx * x1 + dy * y1; z2 -= dx * x2 + dy * y2;
+    l = sqrt(z0 * z0 + z1 * z1 + z2 * z2);
+    if (l > 1.0e-12 && isfinite(l)) { const double s = 1.0 / l; z0 *= s; z1 *= s; z2 *= s; }
+    else { z0 = 0.0; z1 = 0.0; z2 = 1.0; }
+
+    // Newton polar refinement (matching the host decomposeMatrix's Phase 2). From a Gram-Schmidt seed it is a
+    // no-op for a well-conditioned basis, but for a DEGENERATE one -- a zero / below-threshold scale axis, where
+    // Gram-Schmidt substituted a world axis -- it pulls the basis to the nearest orthogonal matrix, so the device
+    // decompose matches the host for those too (the AC-20 host-parity contract). R <- 0.5 * (R + R^-T) per pass;
+    // (x*, y*, z*) are columns X, Y, Z. Same 16-iteration cap and 1e-12 convergence tolerance as the host.
+    for (int iter = 0; iter < 16; ++iter)
+    {
+        const double rdet = x0 * (y1 * z2 - y2 * z1) - y0 * (x1 * z2 - x2 * z1) + z0 * (x1 * y2 - x2 * y1);
+        if (!isfinite(rdet) || fabs(rdet) < 1.0e-20)
+            break;
+        const double invD = 1.0 / rdet;
+        // Columns of R^-T = cofactor columns of R / det(R).
+        const double i00 = (y1 * z2 - y2 * z1) * invD, i01 = (y2 * z0 - y0 * z2) * invD, i02 = (y0 * z1 - y1 * z0) * invD;
+        const double i10 = (z1 * x2 - z2 * x1) * invD, i11 = (z2 * x0 - z0 * x2) * invD, i12 = (z0 * x1 - z1 * x0) * invD;
+        const double i20 = (x1 * y2 - x2 * y1) * invD, i21 = (x2 * y0 - x0 * y2) * invD, i22 = (x0 * y1 - x1 * y0) * invD;
+        const double ax0 = 0.5 * (x0 + i00), ax1 = 0.5 * (x1 + i01), ax2 = 0.5 * (x2 + i02);
+        const double ay0 = 0.5 * (y0 + i10), ay1 = 0.5 * (y1 + i11), ay2 = 0.5 * (y2 + i12);
+        const double az0 = 0.5 * (z0 + i20), az1 = 0.5 * (z1 + i21), az2 = 0.5 * (z2 + i22);
+        double maxDelta = 0.0;
+        maxDelta = fmax(maxDelta, fmax(fabs(x0 - ax0), fmax(fabs(x1 - ax1), fabs(x2 - ax2))));
+        maxDelta = fmax(maxDelta, fmax(fabs(y0 - ay0), fmax(fabs(y1 - ay1), fabs(y2 - ay2))));
+        maxDelta = fmax(maxDelta, fmax(fabs(z0 - az0), fmax(fabs(z1 - az1), fabs(z2 - az2))));
+        x0 = ax0; x1 = ax1; x2 = ax2;
+        y0 = ay0; y1 = ay1; y2 = ay2;
+        z0 = az0; z1 = az1; z2 = az2;
+        if (maxDelta < 1.0e-12)
+            break;
+    }
+
+    // Reflection: an improper (det < 0) basis -- an authored mirror, a negative scale on an odd number of
+    // axes -- would make the Shepperd extraction below read out the wrong rotation (a pure mirror would
+    // decompose to identity instead of the host's 180deg flip). Negate all three columns to flip it proper,
+    // matching the host decomposeMatrix's det<0 branch (which absorbs the reflection into a fully negative
+    // scale; the pose setter carries orientation only, so the scale is dropped either way).
+    const double det = x0 * (y1 * z2 - y2 * z1) + x1 * (y2 * z0 - y0 * z2) + x2 * (y0 * z1 - y1 * z0);
+    if (det < 0.0)
+    {
+        x0 = -x0; x1 = -x1; x2 = -x2;
+        y0 = -y0; y1 = -y1; y2 = -y2;
+        z0 = -z0; z1 = -z1; z2 = -z2;
+    }
+
+    // Shepperd extraction. n[r][c] = R[c][r]: rows read across the orthonormal basis columns X,Y,Z.
+    const double n00 = x0, n01 = y0, n02 = z0;
+    const double n10 = x1, n11 = y1, n12 = z1;
+    const double n20 = x2, n21 = y2, n22 = z2;
+    double qx, qy, qz, qw;
+    const double trace = n00 + n11 + n22;
+    if (trace > 0.0)
+    {
+        const double s = sqrt(trace + 1.0) * 2.0;
+        qw = 0.25 * s; qx = (n21 - n12) / s; qy = (n02 - n20) / s; qz = (n10 - n01) / s;
+    }
+    else if (n00 > n11 && n00 > n22)
+    {
+        const double s = sqrt(1.0 + n00 - n11 - n22) * 2.0;
+        qw = (n21 - n12) / s; qx = 0.25 * s; qy = (n01 + n10) / s; qz = (n02 + n20) / s;
+    }
+    else if (n11 > n22)
+    {
+        const double s = sqrt(1.0 + n11 - n00 - n22) * 2.0;
+        qw = (n02 - n20) / s; qx = (n01 + n10) / s; qy = 0.25 * s; qz = (n12 + n21) / s;
+    }
+    else
+    {
+        const double s = sqrt(1.0 + n22 - n00 - n11) * 2.0;
+        qw = (n10 - n01) / s; qx = (n02 + n20) / s; qy = (n12 + n21) / s; qz = 0.25 * s;
+    }
+    const double mag = sqrt(qx * qx + qy * qy + qz * qz + qw * qw);
+    if (mag > 1.0e-12) { const double s = 1.0 / mag; qx *= s; qy *= s; qz *= s; qw *= s; }
+    else { qx = 0.0; qy = 0.0; qz = 0.0; qw = 1.0; }
+
+    quat[i * 4 + 0] = static_cast<float>(qx);
+    quat[i * 4 + 1] = static_cast<float>(qy);
+    quat[i * 4 + 2] = static_cast<float>(qz);
+    quat[i * 4 + 3] = static_cast<float>(qw);
+}
+
+template <typename T>
+static bool launchDecomposeWorldMatrixOvStage(const T* mat, const PxU32* srcRow, float* pos, float* quat,
+                                              const PxU32 rows)
+{
+    if (rows == 0)
+        return true;
+    decomposeWorldMatrixOvStageKernel<T><<<(rows + 255) / 256, 256>>>(mat, srcRow, pos, quat, rows);
     return launchOk(CHECK_CUDA(cudaGetLastError()));
+}
+
+bool decomposeWorldMatrixOvStage(const double* mat, const PxU32* srcRow, float* pos, float* quat, const PxU32 rows)
+{
+    return launchDecomposeWorldMatrixOvStage(mat, srcRow, pos, quat, rows);
+}
+
+bool decomposeWorldMatrixOvStage(const float* mat, const PxU32* srcRow, float* pos, float* quat, const PxU32 rows)
+{
+    return launchDecomposeWorldMatrixOvStage(mat, srcRow, pos, quat, rows);
 }
 
 // The tendon counterpart, one kernel for every attribute on both tendon kinds: the source structs are
@@ -897,38 +1139,44 @@ __global__ static void fetchArtiTendonPropertyOvStageKernel(float* dst,
 bool fetchArtiTendonPropertyOvStage(float* dst, const float* src, const PxU32 numOutputs,
                                     const PxU32 simMaxTendons, const PxU32 structFloats,
                                     const PxU32 fieldOffset, const PxU32 comp,
-                                    const ArticulationTendonOvStageRecord* records)
+                                    const ArticulationTendonOvStageRecord* records, cudaStream_t stream)
 {
     if (numOutputs == 0)
         return true;
-    fetchArtiTendonPropertyOvStageKernel<<<(numOutputs + 1023) / 1024, 1024>>>(
+    fetchArtiTendonPropertyOvStageKernel<<<(numOutputs + 1023) / 1024, 1024, 0, stream>>>(
         dst, src, numOutputs, simMaxTendons, structFloats, fieldOffset, comp, records);
-    return launchOk(CHECK_CUDA(cudaGetLastError()));
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
 }
 
-// ovstage rigid/link column extract: pull one strided sub-vector per row from the bulk
-// [n x rowStride] DirectGPU read into a compact [n x comp] output column, one launch per attribute.
-
-
-// Resolve one record to its source pose. Returns false when the body has no GPU slot (a disabled
-// rigid dynamic), which the callers translate into a zeroed row for the host patch to overwrite.
-__device__ __forceinline__ static bool resolveRbPose(const GpuRigidBodyRecord& r,
-                                                     const PxTransform* actorData,
-                                                     const PxTransform* linkTransforms,
-                                                     const PxU32 simMaxLinks,
-                                                     PxTransform& out)
+// Where one record's state sits in the fetched source: a rigid dynamic's slot in the rigid-dynamic block, or a link's
+// in the [articulation x simMaxLinks] link block. A whole-view fetch holds every body at its view slot. A packed fetch
+// (ADR-0055) holds only the read's rows: a rigid dynamic at its output slot `i` (`packedRd`), and a link's
+// articulation at `artiSlot[i]`. False when the body has no GPU slot (a disabled rigid dynamic), which the callers
+// write as a zeroed row, or when its slot lies past the `numFetched` rigid dynamics or articulations fetched: a graph
+// replayed after a body was enabled reads a live index against the count fetched at its capture.
+__device__ __forceinline__ static bool rbSourceSlot(const GpuRigidBodyRecord& r,
+                                                    const PxU32 i,
+                                                    const bool packedRd,
+                                                    const PxU32* artiSlot,
+                                                    const PxU32 simMaxLinks,
+                                                    const PxU32 numFetched,
+                                                    bool& isLink,
+                                                    PxU32& slot)
 {
     if (r.tensorRdIdx != 0xffffffff)
     {
-        out = actorData[r.tensorRdIdx];
-        return true;
+        isLink = false;
+        slot = packedRd ? i : r.tensorRdIdx;
+        return slot < numFetched;
     }
     // Both fields must be valid: a disabled rigid dynamic has every index at the sentinel, and the
-    // compound tensorArtiIdx * simMaxLinks + linkIdx would otherwise wrap to a live row (OMPE-94459).
+    // compound articulation * simMaxLinks + linkIdx would otherwise wrap to a live row.
     if (r.tensorArtiIdx != 0xffffffff && r.linkIdx != 0xffffffff)
     {
-        out = linkTransforms[r.tensorArtiIdx * simMaxLinks + r.linkIdx];
-        return true;
+        isLink = true;
+        const PxU32 articulation = artiSlot ? artiSlot[i] : r.tensorArtiIdx;
+        slot = articulation * simMaxLinks + r.linkIdx;
+        return articulation < numFetched;
     }
     return false;
 }
@@ -940,7 +1188,10 @@ __global__ static void fetchRbPoseColumnOvStageKernel(float* dst,
                                                       const PxU32* outRecordIdx,
                                                       const PxU32 numOutputs,
                                                       const PxU32 simMaxLinks,
-                                                      const bool wantOrientation)
+                                                      const bool wantOrientation,
+                                                      const bool packedRd,
+                                                      const PxU32* artiSlot,
+                                                      const PxU32 numFetched)
 {
     const PxU32 i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < numOutputs)
@@ -948,11 +1199,16 @@ __global__ static void fetchRbPoseColumnOvStageKernel(float* dst,
         const PxU32 recIdx = outRecordIdx ? outRecordIdx[i] : i;
         const GpuRigidBodyRecord& r = records[recIdx];
 
-        PxTransform pose;
-        const bool resolved = resolveRbPose(r, actorData, linkTransforms, simMaxLinks, pose);
+        bool isLink = false;
+        PxU32 slot = 0;
+        const bool resolved = rbSourceSlot(r, i, packedRd, artiSlot, simMaxLinks, numFetched, isLink, slot);
+        PxTransform pose(PxIdentity);
+        if (resolved)
+            pose = isLink ? linkTransforms[slot] : actorData[slot];
 
         if (wantOrientation)
         {
+            pose.q = r.orientationFixup * pose.q;
             float* o = dst + static_cast<size_t>(i) * 4;
             o[0] = resolved ? pose.q.x : 0.0f;
             o[1] = resolved ? pose.q.y : 0.0f;
@@ -977,13 +1233,18 @@ bool fetchRbPoseColumnOvStage(float* dst,
                               const PxU32* outRecordIdx,
                               const PxU32 numOutputs,
                               const PxU32 simMaxLinks,
-                              const bool wantOrientation)
+                              const bool wantOrientation,
+                              cudaStream_t stream,
+                              const bool packedRd,
+                              const PxU32* artiSlot,
+                              const PxU32 numFetched)
 {
     if (numOutputs == 0)
         return true;
-    fetchRbPoseColumnOvStageKernel<<<(numOutputs + 1023) / 1024, 1024>>>(
-        dst, actorData, linkTransforms, records, outRecordIdx, numOutputs, simMaxLinks, wantOrientation);
-    return launchOk(CHECK_CUDA(cudaGetLastError()));
+    fetchRbPoseColumnOvStageKernel<<<(numOutputs + 1023) / 1024, 1024, 0, stream>>>(
+        dst, actorData, linkTransforms, records, outRecordIdx, numOutputs, simMaxLinks, wantOrientation, packedRd,
+        artiSlot, numFetched);
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
 }
 
 __global__ static void fetchRbVelocityColumnOvStageKernel(float* dst,
@@ -992,7 +1253,10 @@ __global__ static void fetchRbVelocityColumnOvStageKernel(float* dst,
                                                           const GpuRigidBodyRecord* records,
                                                           const PxU32* outRecordIdx,
                                                           const PxU32 numOutputs,
-                                                          const PxU32 simMaxLinks)
+                                                          const PxU32 simMaxLinks,
+                                                          const bool packedRd,
+                                                          const PxU32* artiSlot,
+                                                          const PxU32 numFetched)
 {
     const PxU32 i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < numOutputs)
@@ -1000,11 +1264,11 @@ __global__ static void fetchRbVelocityColumnOvStageKernel(float* dst,
         const PxU32 recIdx = outRecordIdx ? outRecordIdx[i] : i;
         const GpuRigidBodyRecord& r = records[recIdx];
 
+        bool isLink = false;
+        PxU32 slot = 0;
         PxVec3 v(0.0f);
-        if (r.tensorRdIdx != 0xffffffff)
-            v = rdData[r.tensorRdIdx];
-        else if (r.tensorArtiIdx != 0xffffffff && r.linkIdx != 0xffffffff)
-            v = linkData[r.tensorArtiIdx * simMaxLinks + r.linkIdx];
+        if (rbSourceSlot(r, i, packedRd, artiSlot, simMaxLinks, numFetched, isLink, slot))
+            v = isLink ? linkData[slot] : rdData[slot];
 
         float* o = dst + static_cast<size_t>(i) * 3;
         o[0] = v.x;
@@ -1019,13 +1283,46 @@ bool fetchRbVelocityColumnOvStage(float* dst,
                                   const GpuRigidBodyRecord* records,
                                   const PxU32* outRecordIdx,
                                   const PxU32 numOutputs,
-                                  const PxU32 simMaxLinks)
+                                  const PxU32 simMaxLinks,
+                                  cudaStream_t stream,
+                                  const bool packedRd,
+                                  const PxU32* artiSlot,
+                                  const PxU32 numFetched)
 {
     if (numOutputs == 0)
         return true;
-    fetchRbVelocityColumnOvStageKernel<<<(numOutputs + 1023) / 1024, 1024>>>(
-        dst, rdData, linkData, records, outRecordIdx, numOutputs, simMaxLinks);
-    return launchOk(CHECK_CUDA(cudaGetLastError()));
+    fetchRbVelocityColumnOvStageKernel<<<(numOutputs + 1023) / 1024, 1024, 0, stream>>>(
+        dst, rdData, linkData, records, outRecordIdx, numOutputs, simMaxLinks, packedRd, artiSlot, numFetched);
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
+}
+
+__global__ static void fetchRbWorldScaleColumnOvStageKernel(float* dst,
+                                                            const PxVec3* scales,
+                                                            const PxU32* outRecordIdx,
+                                                            const PxU32 numOutputs)
+{
+    const PxU32 i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < numOutputs)
+    {
+        const PxVec3 s = scales[outRecordIdx ? outRecordIdx[i] : i];
+        float* o = dst + static_cast<size_t>(i) * 3;
+        o[0] = s.x;
+        o[1] = s.y;
+        o[2] = s.z;
+    }
+}
+
+bool fetchRbWorldScaleColumnOvStage(float* dst,
+                                    const PxVec3* scales,
+                                    const PxU32* outRecordIdx,
+                                    const PxU32 numOutputs,
+                                    cudaStream_t stream)
+{
+    if (numOutputs == 0)
+        return true;
+    fetchRbWorldScaleColumnOvStageKernel<<<(numOutputs + 1023) / 1024, 1024, 0, stream>>>(dst, scales, outRecordIdx,
+                                                                                         numOutputs);
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
 }
 
 // ovstage point-instancer columns. The destination is SCATTERED: one group per instancer holding its
@@ -1043,7 +1340,9 @@ __global__ static void submitInstancerPoseColumnOvStageKernel(PxTransform* packe
                                                               const InstancerAffine* instancerForwards,
                                                               const PxU32 numOutputs,
                                                               const PxU32 instancerIdx,
-                                                              const bool wantOrientation)
+                                                              const bool wantOrientation,
+                                                              const uint8_t* mask,
+                                                              const PxTransform* currentByOutput)
 {
     const PxU32 i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= numOutputs)
@@ -1059,8 +1358,14 @@ __global__ static void submitInstancerPoseColumnOvStageKernel(PxTransform* packe
 
     // Read-modify-write: recover the half this column does not carry from the body's CURRENT pose.
     // A session carries one attribute but a pose needs both halves -- the same reason the standalone
-    // pose path pre-reads, reached again here.
-    const PxTransform pose = actorData[rb.tensorRdIdx];
+    // pose path pre-reads, reached again here. A session commit pre-reads exactly its own bodies, by
+    // output slot; the drain reads the scene-wide buffer.
+    const PxTransform pose = currentByOutput ? currentByOutput[i] : actorData[rb.tensorRdIdx];
+    if (!isRowCommitted(mask, r.slot))
+    {
+        packedPose[i] = pose; // an unselected instance is written its current pose
+        return;
+    }
     const double worldQuat[4] = { double(pose.q.x), double(pose.q.y), double(pose.q.z), double(pose.q.w) };
     const double worldPos[3] = { double(pose.p.x), double(pose.p.y), double(pose.p.z) };
     double localPos[3];
@@ -1098,7 +1403,8 @@ bool submitInstancerPoseColumnOvStage(PxTransform* packedPose, const float* src,
                                       const GpuPointInstancerRecord* records,
                                       const InstancerAffine* instancerInverses,
                                       const InstancerAffine* instancerForwards, const PxU32 numOutputs,
-                                      const PxU32 instancerIdx, const bool wantOrientation)
+                                      const PxU32 instancerIdx, const bool wantOrientation, cudaStream_t stream,
+                                      const uint8_t* mask, const PxTransform* currentByOutput)
 {
     if (numOutputs == 0)
         return true;
@@ -1106,19 +1412,21 @@ bool submitInstancerPoseColumnOvStage(PxTransform* packedPose, const float* src,
     // live, and a 1024-thread block caps a thread at 64 registers, past which the launch fails
     // outright with "too many resources requested". See fetchInstancerPoseColumnOvStage; check
     // `nvcc -Xptxas -v` before changing.
-    submitInstancerPoseColumnOvStageKernel<<<(numOutputs + 255) / 256, 256>>>(
+    submitInstancerPoseColumnOvStageKernel<<<(numOutputs + 255) / 256, 256, 0, stream>>>(
         packedPose, src, actorData, rbRecords, records, instancerInverses, instancerForwards, numOutputs,
-        instancerIdx, wantOrientation);
-    return launchOk(CHECK_CUDA(cudaGetLastError()));
+        instancerIdx, wantOrientation, mask, currentByOutput);
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
 }
 
 __global__ static void submitInstancerVelocityColumnOvStageKernel(PxVec3* packedVel,
                                                                   const float* src,
                                                                   const GpuPointInstancerRecord* records,
-                                                                  const PxU32 numOutputs)
+                                                                  const PxU32 numOutputs,
+                                                                  const uint8_t* mask)
 {
     const PxU32 i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= numOutputs)
+    // An unselected instance keeps the current velocity a masked commit pre-read into the block.
+    if (i >= numOutputs || !isRowCommitted(mask, records[i].slot))
         return;
     // No reframe: world space in both directions.
     const float* o = src + static_cast<size_t>(records[i].slot) * 3;
@@ -1126,14 +1434,15 @@ __global__ static void submitInstancerVelocityColumnOvStageKernel(PxVec3* packed
 }
 
 bool submitInstancerVelocityColumnOvStage(PxVec3* packedVel, const float* src,
-                                          const GpuPointInstancerRecord* records, const PxU32 numOutputs)
+                                          const GpuPointInstancerRecord* records, const PxU32 numOutputs,
+                                          cudaStream_t stream, const uint8_t* mask)
 {
     if (numOutputs == 0)
         return true;
     // 256 to match the pose kernel above; a plain gather like this one would run happily at 1024.
-    submitInstancerVelocityColumnOvStageKernel<<<(numOutputs + 255) / 256, 256>>>(packedVel, src, records,
-                                                                                     numOutputs);
-    return launchOk(CHECK_CUDA(cudaGetLastError()));
+    submitInstancerVelocityColumnOvStageKernel<<<(numOutputs + 255) / 256, 256, 0, stream>>>(
+        packedVel, src, records, numOutputs, mask);
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
 }
 
 __global__ static void fetchInstancerPoseColumnOvStageKernel(float* dst,
@@ -1192,16 +1501,16 @@ bool fetchInstancerPoseColumnOvStage(float* dst,
                                      const InstancerAffine* instancerInverses,
                                      const PxU32* offsets,
                                      const PxU32 numInstances,
-                                     const bool wantOrientation)
+                                     const bool wantOrientation, cudaStream_t stream)
 {
     if (numInstances == 0)
         return true;
     // 256, not the 1024 used elsewhere in this file: the reframe keeps several InstancerAffine (12
     // doubles each) live at once, and a 1024-thread block caps a thread at 64 registers, past which the
     // launch fails outright with "too many resources requested". Check `nvcc -Xptxas -v` before changing.
-    fetchInstancerPoseColumnOvStageKernel<<<(numInstances + 255) / 256, 256>>>(
+    fetchInstancerPoseColumnOvStageKernel<<<(numInstances + 255) / 256, 256, 0, stream>>>(
         dst, actorData, rbRecords, records, instancerInverses, offsets, numInstances, wantOrientation);
-    return launchOk(CHECK_CUDA(cudaGetLastError()));
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
 }
 
 __global__ static void fetchInstancerVelocityColumnOvStageKernel(float* dst,
@@ -1232,14 +1541,14 @@ bool fetchInstancerVelocityColumnOvStage(float* dst,
                                          const GpuRigidBodyRecord* rbRecords,
                                          const GpuPointInstancerRecord* records,
                                          const PxU32* offsets,
-                                         const PxU32 numInstances)
+                                         const PxU32 numInstances, cudaStream_t stream)
 {
     if (numInstances == 0)
         return true;
     // 256 to match the pose kernel above; a plain gather like this one would run happily at 1024.
-    fetchInstancerVelocityColumnOvStageKernel<<<(numInstances + 255) / 256, 256>>>(
+    fetchInstancerVelocityColumnOvStageKernel<<<(numInstances + 255) / 256, 256, 0, stream>>>(
         dst, rdData, rbRecords, records, offsets, numInstances);
-    return launchOk(CHECK_CUDA(cudaGetLastError()));
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
 }
 
 // One thread per (set, point) of a RECTANGULAR numSets x maxPointsPerSet grid, so a thread whose
@@ -1250,6 +1559,10 @@ bool fetchInstancerVelocityColumnOvStage(float* dst,
 // It costs no idle MEMORY, which is the part that would matter: the destination is compact. No write
 // address derives from `maxPointsPerSet` -- `dstOffsetFloats` carries the layout, whatever the view
 // chose. The extent itself is bounded by the view at construction.
+//
+// Templated on the source element rather than a runtime stride: PxVec4 keeps its aligned 16-byte load,
+// and PxVec3 (the skinned-vertex buffer) gets its own instantiation instead of a per-thread branch.
+template <typename TSrc>
 __global__ static void fetchPointSetColumnOvStageKernel(float* dst,
                                                         const GpuPointSetReadRecord* records,
                                                         const PointSetTransform* transforms,
@@ -1268,12 +1581,13 @@ __global__ static void fetchPointSetColumnOvStageKernel(float* dst,
     if (point >= r.numPoints || !r.src)
         return;
 
-    const PxVec4 s = r.src[point];
+    const TSrc s = static_cast<const TSrc*>(r.src)[point];
     float* o = dst + r.dstOffsetFloats + size_t(point) * 3;
 
     if (reframe)
     {
-        // .w is inverse mass, not a coordinate -- dropping it here IS the vec4->vec3 compaction.
+        // On a PxVec4 source .w is inverse mass, not a coordinate, and dropping it here is the compaction
+        // to packed xyz. A PxVec3 source has no fourth lane and passes through whole.
         const float p[3] = { s.x, s.y, s.z };
         pointSetTransformPoint(transforms[set], p, o);
     }
@@ -1290,7 +1604,9 @@ bool fetchPointSetColumnOvStage(float* dst,
                                 const PointSetTransform* transforms,
                                 const PxU32 numSets,
                                 const PxU32 maxPointsPerSet,
-                                const bool reframe)
+                                const bool reframe,
+                                const PointSetSourceLayout layout,
+                                cudaStream_t stream)
 {
     if (numSets == 0 || maxPointsPerSet == 0)
         return true;
@@ -1307,20 +1623,27 @@ bool fetchPointSetColumnOvStage(float* dst,
     // arithmetic must not depend on that to be safe. threads is non-zero -- the early-out above
     // returns unless some set has points.
     const PxU32 blocks = 1u + (threads - 1u) / 256u;
-    fetchPointSetColumnOvStageKernel<<<blocks, 256>>>(dst, records, transforms, numSets, maxPointsPerSet, reframe);
-    return launchOk(CHECK_CUDA(cudaGetLastError()));
+    if (layout == PointSetSourceLayout::eVec3)
+        fetchPointSetColumnOvStageKernel<PxVec3><<<blocks, 256, 0, stream>>>(
+            dst, records, transforms, numSets, maxPointsPerSet, reframe);
+    else
+        fetchPointSetColumnOvStageKernel<PxVec4><<<blocks, 256, 0, stream>>>(
+            dst, records, transforms, numSets, maxPointsPerSet, reframe);
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
 }
 
-// The inverse of fetchArtiDofAttributeOvStageKernel. Note the DIVISION -- see CudaKernels.h.
+// The inverse of fetchArtiDofAttributeOvStageKernel: it multiplies by the inverse scale -- see CudaKernels.h.
 __global__ static void submitArtiDofAttributeOvStageKernel(float* dofScalars,
                                                            const float* src,
                                                            const PxU32 numOutputs,
                                                            const PxU32 simMaxDofs,
                                                            const ArticulationDofOvStageRecord* records,
-                                                           const DofScalePolicy policy)
+                                                           const DofScalePolicy policy,
+                                                           const uint8_t* mask)
 {
     PxU32 i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < numOutputs)
+    // One mask entry per output: a joint group has one row per DOF (ADR-0059).
+    if (i < numOutputs && isRowCommitted(mask, i))
     {
         const ArticulationDofOvStageRecord r = records[i];
         const PxU32 dstIdx = r.viewArtiIdx * simMaxDofs + r.physxDofIdx;
@@ -1343,13 +1666,15 @@ bool submitArtiDofAttributeOvStage(float* dofScalars,
                                    const PxU32 numOutputs,
                                    const PxU32 simMaxDofs,
                                    const ArticulationDofOvStageRecord* records,
-                                   const DofScalePolicy policy)
+                                   const DofScalePolicy policy,
+                                   cudaStream_t stream,
+                                   const uint8_t* mask)
 {
     if (numOutputs == 0)
         return true;
-    submitArtiDofAttributeOvStageKernel<<<(numOutputs + 1023) / 1024, 1024>>>(dofScalars, src, numOutputs,
-                                                                             simMaxDofs, records, policy);
-    return launchOk(CHECK_CUDA(cudaGetLastError()));
+    submitArtiDofAttributeOvStageKernel<<<(numOutputs + 1023) / 1024, 1024, 0, stream>>>(
+        dofScalars, src, numOutputs, simMaxDofs, records, policy, mask);
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
 }
 
 __global__ static void submitPointSetColumnOvStageKernel(PxVec4* dst,
@@ -1397,55 +1722,67 @@ bool submitPointSetColumnOvStage(PxVec4* const dst,
     return launchOk(CHECK_CUDA(cudaGetLastError()));
 }
 
-// Kinematic-target scatter: a vec4-per-node column (xyz target + w active-flag) into the runtime-owned
-// PxVec4 buffer PhysX adopts. Same reframe as the point-set scatter above (the target lives in the same
-// sim-mesh frame as points), but the FOURTH lane is SET from the source flag rather than preserved -- for
-// a kinematic-target buffer w selects whether the node is driven (0) or free (non-zero), it is not invmass.
-__global__ static void submitKinematicTargetColumnOvStageKernel(PxVec4* dst,
-                                                                const float* src,
-                                                                const PointSetTransform xf,
-                                                                const PxU32 numNodes,
-                                                                const bool reframe,
-                                                                int* anyActiveOut)
+// A volume's kinematic-target buffer as its setup leaves it: every node free (w = 1) at its current position, so the
+// buffer changes nothing until a commit pins a node.
+__global__ static void initKinematicTargetBufferOvStageKernel(PxVec4* dst,
+                                                              const PxVec4* positions,
+                                                              const PxU32 numNodes)
 {
     const PxU32 i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= numNodes)
-        return;
-
-    const float p[3] = { src[i * 4 + 0], src[i * 4 + 1], src[i * 4 + 2] };
-    float o[3];
-    if (reframe)
-    {
-        pointSetTransformPoint(xf, p, o);
-    }
-    else
-    {
-        o[0] = p[0];
-        o[1] = p[1];
-        o[2] = p[2];
-    }
-    const float flag = src[i * 4 + 3];
-    dst[i] = PxVec4(o[0], o[1], o[2], flag);
-    // w == 0 marks a node as an ACTIVE kinematic target (PhysX convention). The commit uses this to
-    // decide whether the body is still driven or should be torn down (an all-inactive write).
-    if (anyActiveOut && flag == 0.0f)
-        atomicMax(anyActiveOut, 1);
+    if (i < numNodes)
+        dst[i] = PxVec4(positions[i].x, positions[i].y, positions[i].z, 1.0f);
 }
 
-// `anyActiveOut` (optional, device int, pre-zeroed) is set to 1 if any written node is active (w==0),
-// so the caller can tear a body down when a write leaves every node free.
-bool submitKinematicTargetColumnOvStage(PxVec4* const dst,
-                                        const float* const src,
-                                        const PointSetTransform& localToWorld,
-                                        const PxU32 numNodes,
-                                        const bool reframe,
-                                        int* const anyActiveOut)
+bool initKinematicTargetBufferOvStage(PxVec4* const dst, const PxVec4* const positions, const PxU32 numNodes)
 {
     if (numNodes == 0)
         return true;
-    submitKinematicTargetColumnOvStageKernel<<<(numNodes + 255) / 256, 256>>>(dst, src, localToWorld, numNodes,
-                                                                             reframe, anyActiveOut);
+    initKinematicTargetBufferOvStageKernel<<<(numNodes + 255) / 256, 256>>>(dst, positions, numNodes);
     return launchOk(CHECK_CUDA(cudaGetLastError()));
+}
+
+// The kinematic-target commit: every body of the group in one launch, a row of blocks per body. A node pinned
+// (w == 0) that the write marks free keeps its target and is counted, since PhysX never frees a pinned node.
+__global__ static void submitKinematicTargetsOvStageKernel(const KinematicTargetBodyRecord* bodies,
+                                                           const PxU32 numBodies,
+                                                           const float* column,
+                                                           const uint8_t* mask,
+                                                           unsigned long long* keptPinned)
+{
+    for (PxU32 b = blockIdx.y; b < numBodies; b += gridDim.y)
+    {
+        const KinematicTargetBodyRecord& body = bodies[b];
+        if (!body.dst || !isRowCommitted(mask, b))
+            continue;
+        for (PxU32 n = blockIdx.x * blockDim.x + threadIdx.x; n < body.nodeCount; n += gridDim.x * blockDim.x)
+        {
+            const float* const src = column + body.floatOffset + size_t(n) * 4;
+            const float w = src[3];
+            if (w != 0.0f && body.dst[n].w == 0.0f)
+            {
+                atomicAdd(keptPinned, 1ull);
+                continue;
+            }
+            float o[3];
+            pointSetTransformPoint(body.columnToBuffer, src, o);
+            body.dst[n] = PxVec4(o[0], o[1], o[2], w);
+        }
+    }
+}
+
+bool submitKinematicTargetsOvStage(const KinematicTargetBodyRecord* const bodies,
+                                   const PxU32 numBodies,
+                                   const PxU32 maxNodes,
+                                   const float* const column,
+                                   const uint8_t* const mask,
+                                   unsigned long long* const keptPinned,
+                                   cudaStream_t stream)
+{
+    if (numBodies == 0 || maxNodes == 0)
+        return true;
+    const dim3 grid(PxMin((maxNodes + 255u) / 256u, 1024u), PxMin(numBodies, 65535u));
+    submitKinematicTargetsOvStageKernel<<<grid, 256, 0, stream>>>(bodies, numBodies, column, mask, keptPinned);
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
 }
 
 // Kinematic-target gather: read one body's runtime-owned PxVec4 buffer into a four-float-per-node column
@@ -1484,43 +1821,13 @@ bool fetchKinematicTargetColumnOvStage(float* const dst,
                                        const PxVec4* const src,
                                        const PointSetTransform& worldToLocal,
                                        const PxU32 numNodes,
-                                       const bool reframe)
+                                       const bool reframe, cudaStream_t stream)
 {
     if (numNodes == 0)
         return true;
-    fetchKinematicTargetColumnOvStageKernel<<<(numNodes + 255) / 256, 256>>>(dst, src, worldToLocal, numNodes,
-                                                                           reframe);
-    return launchOk(CHECK_CUDA(cudaGetLastError()));
-}
-
-// Detect a forbidden kinematic->free transition. For each node, flag if it is CURRENTLY driven (the live
-// target buffer's w == 0) but the incoming column marks it free (w != 0). Read-only on `current` and
-// `newColumn` -- nothing is mutated, so the caller can refuse before the scatter touches the live buffer
-// PhysX re-reads. `violationOut` (device int, pre-zeroed) is raised to 1 if any such node exists. Enforces
-// the monotonic rule: a node may go free->driven at any time, but never driven->free (PhysX does not
-// restore the inverse mass it zeroed to pin a driven node).
-__global__ static void detectKinematicUnpinColumnOvStageKernel(const PxVec4* current,
-                                                               const float* newColumn,
-                                                               const PxU32 numNodes,
-                                                               int* violationOut)
-{
-    const PxU32 i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= numNodes)
-        return;
-    if (current[i].w == 0.0f && newColumn[i * 4 + 3] != 0.0f)
-        atomicMax(violationOut, 1);
-}
-
-bool detectKinematicUnpinColumnOvStage(const PxVec4* const current,
-                                       const float* const newColumn,
-                                       const PxU32 numNodes,
-                                       int* const violationOut)
-{
-    if (numNodes == 0)
-        return true;
-    detectKinematicUnpinColumnOvStageKernel<<<(numNodes + 255) / 256, 256>>>(current, newColumn, numNodes,
-                                                                            violationOut);
-    return launchOk(CHECK_CUDA(cudaGetLastError()));
+    fetchKinematicTargetColumnOvStageKernel<<<(numNodes + 255) / 256, 256, 0, stream>>>(
+        dst, src, worldToLocal, numNodes, reframe);
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
 }
 
 // The packed write pair. See CudaKernels.h for why this replaces flags-and-compaction: that path
@@ -1548,13 +1855,14 @@ bool submitRbPackedIndicesOvStage(PxRigidDynamicGPUIndex* dstIdx,
                                  const PxRigidDynamicGPUIndex* rdGpuIndices,
                                  const GpuRigidBodyRecord* records,
                                  const PxU32* outRecordIdx,
-                                 const PxU32 numOutputs)
+                                 const PxU32 numOutputs,
+                                 cudaStream_t stream)
 {
     if (numOutputs == 0)
         return true;
-    submitRbPackedIndicesOvStageKernel<<<(numOutputs + 1023) / 1024, 1024>>>(
+    submitRbPackedIndicesOvStageKernel<<<(numOutputs + 1023) / 1024, 1024, 0, stream>>>(
         dstIdx, rdGpuIndices, records, outRecordIdx, numOutputs);
-    return launchOk(CHECK_CUDA(cudaGetLastError()));
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
 }
 
 __global__ static void submitRbPackedPoseOvStageKernel(PxTransform* packedPose,
@@ -1562,10 +1870,12 @@ __global__ static void submitRbPackedPoseOvStageKernel(PxTransform* packedPose,
                                                         const GpuRigidBodyRecord* records,
                                                         const PxU32* outRecordIdx,
                                                         const PxU32 numOutputs,
-                                                        const bool wantOrientation)
+                                                        const bool wantOrientation,
+                                                        const uint8_t* mask)
 {
     const PxU32 i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < numOutputs)
+    // An unselected row keeps the current pose the caller pre-read into the block.
+    if (i < numOutputs && isRowCommitted(mask, i))
     {
         if (wantOrientation)
         {
@@ -1588,13 +1898,51 @@ bool submitRbPackedPoseOvStage(PxTransform* packedPose,
                                 const GpuRigidBodyRecord* records,
                                 const PxU32* outRecordIdx,
                                 const PxU32 numOutputs,
-                                const bool wantOrientation)
+                                const bool wantOrientation,
+                                cudaStream_t stream,
+                                const uint8_t* mask)
 {
     if (numOutputs == 0)
         return true;
-    submitRbPackedPoseOvStageKernel<<<(numOutputs + 1023) / 1024, 1024>>>(
-        packedPose, src, records, outRecordIdx, numOutputs, wantOrientation);
-    return launchOk(CHECK_CUDA(cudaGetLastError()));
+    submitRbPackedPoseOvStageKernel<<<(numOutputs + 1023) / 1024, 1024, 0, stream>>>(
+        packedPose, src, records, outRecordIdx, numOutputs, wantOrientation, mask);
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
+}
+
+// Overlay a selected row's vec3 onto `dst`; an unselected row keeps `dst` or, for a quantity PhysX cannot
+// read back (a force or a torque), becomes zero.
+__global__ static void overlayVec3ColumnOvStageKernel(PxVec3* dst,
+                                                      const float* src,
+                                                      const uint8_t* mask,
+                                                      const PxU32 numOutputs,
+                                                      const bool zeroUnselected)
+{
+    const PxU32 i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= numOutputs)
+        return;
+    if (isRowCommitted(mask, i))
+    {
+        const float* o = src + static_cast<size_t>(i) * 3;
+        dst[i] = PxVec3(o[0], o[1], o[2]);
+    }
+    else if (zeroUnselected)
+    {
+        dst[i] = PxVec3(0.0f);
+    }
+}
+
+bool overlayVec3ColumnOvStage(PxVec3* dst,
+                              const float* src,
+                              const uint8_t* mask,
+                              const PxU32 numOutputs,
+                              const bool zeroUnselected,
+                              cudaStream_t stream)
+{
+    if (numOutputs == 0)
+        return true;
+    overlayVec3ColumnOvStageKernel<<<(numOutputs + 1023) / 1024, 1024, 0, stream>>>(dst, src, mask, numOutputs,
+                                                                                   zeroUnselected);
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
 }
 
 __global__ static void submitLinkWrenchOvStageKernel(PxVec3* linkForces,
@@ -1607,10 +1955,12 @@ __global__ static void submitLinkWrenchOvStageKernel(PxVec3* linkForces,
                                                      const PxU32* rowCompactArti,
                                                      const PxU32 numOutputs,
                                                      const PxU32 simMaxLinks,
-                                                     const PxU32 comps)
+                                                     const PxU32 comps,
+                                                     const uint8_t* mask)
 {
     const PxU32 i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < numOutputs)
+    // An unselected link keeps the zero its cleared block already holds.
+    if (i < numOutputs && isRowCommitted(mask, i))
     {
         const PxU32 rec = rows[i];
         const GpuRigidBodyRecord& r = records[rec];
@@ -1638,14 +1988,15 @@ __global__ static void submitLinkWrenchOvStageKernel(PxVec3* linkForces,
 bool submitLinkWrenchOvStage(PxVec3* linkForces, PxVec3* linkTorques, const float* src,
                               const PxTransform* linkTransforms, const PxVec3* comsByRecord,
                               const GpuRigidBodyRecord* records, const PxU32* rows, const PxU32* rowCompactArti,
-                              const PxU32 numOutputs, const PxU32 simMaxLinks, const PxU32 comps)
+                              const PxU32 numOutputs, const PxU32 simMaxLinks, const PxU32 comps,
+                              cudaStream_t stream, const uint8_t* mask)
 {
     if (numOutputs == 0)
         return true;
-    submitLinkWrenchOvStageKernel<<<(numOutputs + 1023) / 1024, 1024>>>(
+    submitLinkWrenchOvStageKernel<<<(numOutputs + 1023) / 1024, 1024, 0, stream>>>(
         linkForces, linkTorques, src, linkTransforms, comsByRecord, records, rows, rowCompactArti, numOutputs,
-        simMaxLinks, comps);
-    return launchOk(CHECK_CUDA(cudaGetLastError()));
+        simMaxLinks, comps, mask);
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
 }
 
 __global__ static void submitRbWrenchOvStageKernel(PxVec3* outForces,
@@ -1654,10 +2005,17 @@ __global__ static void submitRbWrenchOvStageKernel(PxVec3* outForces,
                                                    const PxTransform* poses,
                                                    const PxVec3* comsByRecord,
                                                    const PxU32* rows,
-                                                   const PxU32 numOutputs)
+                                                   const PxU32 numOutputs,
+                                                   const uint8_t* mask)
 {
     const PxU32 i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < numOutputs)
+    if (i < numOutputs && !isRowCommitted(mask, i))
+    {
+        // PhysX cannot read an applied wrench back, so an unselected row applies none.
+        outForces[i] = PxVec3(0.0f);
+        outTorques[i] = PxVec3(0.0f);
+    }
+    else if (i < numOutputs)
     {
         const float* w = src + static_cast<size_t>(i) * 9;
         const PxVec3 force(w[0], w[1], w[2]);
@@ -1675,13 +2033,14 @@ __global__ static void submitRbWrenchOvStageKernel(PxVec3* outForces,
 }
 
 bool submitRbWrenchOvStage(PxVec3* outForces, PxVec3* outTorques, const float* src, const PxTransform* poses,
-                            const PxVec3* comsByRecord, const PxU32* rows, const PxU32 numOutputs)
+                            const PxVec3* comsByRecord, const PxU32* rows, const PxU32 numOutputs,
+                            cudaStream_t stream, const uint8_t* mask)
 {
     if (numOutputs == 0)
         return true;
-    submitRbWrenchOvStageKernel<<<(numOutputs + 1023) / 1024, 1024>>>(outForces, outTorques, src, poses,
-                                                                      comsByRecord, rows, numOutputs);
-    return launchOk(CHECK_CUDA(cudaGetLastError()));
+    submitRbWrenchOvStageKernel<<<(numOutputs + 1023) / 1024, 1024, 0, stream>>>(
+        outForces, outTorques, src, poses, comsByRecord, rows, numOutputs, mask);
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
 }
 
 __global__ static void submitArtiRootPoseOvStageKernel(PxTransform* rootBlock,
@@ -1689,10 +2048,12 @@ __global__ static void submitArtiRootPoseOvStageKernel(PxTransform* rootBlock,
                                                         const PxU32* rows,
                                                         const GpuArticulationRootRecord* rootRecords,
                                                         const PxU32 numOutputs,
-                                                        const bool wantOrientation)
+                                                        const bool wantOrientation,
+                                                        const uint8_t* mask)
 {
     const PxU32 i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < numOutputs)
+    // An unselected articulation keeps the current root state pre-read into the block.
+    if (i < numOutputs && isRowCommitted(mask, i))
     {
         const PxU32 row = rows[i];
         if (wantOrientation)
@@ -1715,34 +2076,39 @@ bool submitArtiRootPoseOvStage(PxTransform* rootBlock,
                                 const PxU32* rows,
                                 const GpuArticulationRootRecord* rootRecords,
                                 const PxU32 numOutputs,
-                                const bool wantOrientation)
+                                const bool wantOrientation,
+                                cudaStream_t stream,
+                                const uint8_t* mask)
 {
     if (numOutputs == 0)
         return true;
-    submitArtiRootPoseOvStageKernel<<<(numOutputs + 1023) / 1024, 1024>>>(
-        rootBlock, src, rows, rootRecords, numOutputs, wantOrientation);
-    return launchOk(CHECK_CUDA(cudaGetLastError()));
+    submitArtiRootPoseOvStageKernel<<<(numOutputs + 1023) / 1024, 1024, 0, stream>>>(
+        rootBlock, src, rows, rootRecords, numOutputs, wantOrientation, mask);
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
 }
 
 __global__ static void submitArtiRootVelocityOvStageKernel(PxVec3* velBlock,
                                                             const float* src,
                                                             const PxU32* rows,
-                                                            const PxU32 numOutputs)
+                                                            const PxU32 numOutputs,
+                                                            const uint8_t* mask)
 {
     const PxU32 i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < numOutputs)
+    if (i < numOutputs && isRowCommitted(mask, i))
     {
         const float* o = src + static_cast<size_t>(i) * 3;
         velBlock[rows[i]] = PxVec3(o[0], o[1], o[2]);
     }
 }
 
-bool submitArtiRootVelocityOvStage(PxVec3* velBlock, const float* src, const PxU32* rows, const PxU32 numOutputs)
+bool submitArtiRootVelocityOvStage(PxVec3* velBlock, const float* src, const PxU32* rows, const PxU32 numOutputs,
+                                   cudaStream_t stream, const uint8_t* mask)
 {
     if (numOutputs == 0)
         return true;
-    submitArtiRootVelocityOvStageKernel<<<(numOutputs + 1023) / 1024, 1024>>>(velBlock, src, rows, numOutputs);
-    return launchOk(CHECK_CUDA(cudaGetLastError()));
+    submitArtiRootVelocityOvStageKernel<<<(numOutputs + 1023) / 1024, 1024, 0, stream>>>(velBlock, src, rows,
+                                                                                        numOutputs, mask);
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
 }
 
 __global__ static void submitArtiTendonPropertyOvStageKernel(float* tendonStructs,
@@ -1752,28 +2118,44 @@ __global__ static void submitArtiTendonPropertyOvStageKernel(float* tendonStruct
                                                              const PxU32 structFloats,
                                                              const PxU32 fieldOffset,
                                                              const PxU32 comp,
-                                                             const ArticulationTendonOvStageRecord* records)
+                                                             const ArticulationTendonOvStageRecord* records,
+                                                             const uint8_t* mask,
+                                                             const TendonFieldWrite mode)
 {
     const PxU32 i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < numOutputs)
+    if (i < numOutputs && isRowCommitted(mask, i))
     {
         const ArticulationTendonOvStageRecord r = records[i];
         const PxU32 base = (r.viewArtiIdx * simMaxTendons + r.tendonIdx) * structFloats + fieldOffset;
-        for (PxU32 c = 0; c < comp; ++c)
-            tendonStructs[base + c] = src[i * comp + c];
+        switch (mode)
+        {
+        case TendonFieldWrite::eSet:
+            for (PxU32 c = 0; c < comp; ++c)
+                tendonStructs[base + c] = src[i * comp + c];
+            break;
+        case TendonFieldWrite::eLowPushHigh:
+            tendonStructs[base] = src[i];
+            tendonStructs[base + 1] = fmaxf(tendonStructs[base + 1], src[i]);
+            break;
+        case TendonFieldWrite::eHighPushLow:
+            tendonStructs[base] = fminf(tendonStructs[base], src[i]);
+            tendonStructs[base + 1] = src[i];
+            break;
+        }
     }
 }
 
 bool submitArtiTendonPropertyOvStage(float* tendonStructs, const float* src, const PxU32 numOutputs,
                                      const PxU32 simMaxTendons, const PxU32 structFloats,
                                      const PxU32 fieldOffset, const PxU32 comp,
-                                     const ArticulationTendonOvStageRecord* records)
+                                     const ArticulationTendonOvStageRecord* records, cudaStream_t stream,
+                                     const uint8_t* mask, const TendonFieldWrite mode)
 {
     if (numOutputs == 0)
         return true;
-    submitArtiTendonPropertyOvStageKernel<<<(numOutputs + 1023) / 1024, 1024>>>(
-        tendonStructs, src, numOutputs, simMaxTendons, structFloats, fieldOffset, comp, records);
-    return launchOk(CHECK_CUDA(cudaGetLastError()));
+    submitArtiTendonPropertyOvStageKernel<<<(numOutputs + 1023) / 1024, 1024, 0, stream>>>(
+        tendonStructs, src, numOutputs, simMaxTendons, structFloats, fieldOffset, comp, records, mask, mode);
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
 }
 
 __global__ static void submitArtiDofAttributeKernel(float* dst,
@@ -2262,11 +2644,12 @@ __global__ static void fetchArtiLinkIncomingJointForceKernel(PhysxGpuSpatialForc
 
 bool fetchArtiLinkIncomingJointForce(PhysxGpuSpatialForces *dst, const PhysxGpuSpatialForces *src,
                                      const PxTransform *linkTransforms, const PxU32 numLinks, const PxU32 maxLinks,
-                                     const PxU32 simMaxLinks, const GpuArticulationLinkRecord *linkRecords)
+                                     const PxU32 simMaxLinks, const GpuArticulationLinkRecord *linkRecords,
+                                     cudaStream_t stream)
 {
-    fetchArtiLinkIncomingJointForceKernel<<<(numLinks + 1023) / 1024, 1024>>>(dst, src, linkTransforms, numLinks,
-                                                                              maxLinks, simMaxLinks, linkRecords);
-    return launchOk(CHECK_CUDA(cudaGetLastError()));
+    fetchArtiLinkIncomingJointForceKernel<<<(numLinks + 1023) / 1024, 1024, 0, stream>>>(
+        dst, src, linkTransforms, numLinks, maxLinks, simMaxLinks, linkRecords);
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
 }
 
 // ovstage counterpart of the dense fetch above, for a fixed-width vector attribute: reorders its rows
@@ -2291,13 +2674,13 @@ __global__ static void fetchArtiLinkVectorOvStageKernel(float* dst,
 }
 
 bool fetchArtiLinkVectorOvStage(float* dst, const float* src, const PxU32 numOutputs, const PxU32 maxLinks,
-                                const PxU32 comp, const ArticulationLinkOvStageRecord* records)
+                                const PxU32 comp, const ArticulationLinkOvStageRecord* records, cudaStream_t stream)
 {
     if (numOutputs == 0)
         return true;
-    fetchArtiLinkVectorOvStageKernel<<<(numOutputs + 1023) / 1024, 1024>>>(dst, src, numOutputs, maxLinks, comp,
-                                                                           records);
-    return launchOk(CHECK_CUDA(cudaGetLastError()));
+    fetchArtiLinkVectorOvStageKernel<<<(numOutputs + 1023) / 1024, 1024, 0, stream>>>(
+        dst, src, numOutputs, maxLinks, comp, records);
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
 }
 
 __global__ static void compactContactSensorRowsOvStageKernel(float* dst,
@@ -2415,11 +2798,11 @@ __global__ static void fetchDofProjectionForceKernel(float* dst,
 
 bool fetchDofProjectionForce(float *dst, const PhysxGpuSpatialForces *src, const PxTransform *linkTransforms,
                              const PxU32 numLinks, const PxU32 maxLinks, const PxU32 simMaxLinks,
-                             const GpuArticulationLinkRecord *linkRecords)
+                             const GpuArticulationLinkRecord *linkRecords, cudaStream_t stream)
 {
-    fetchDofProjectionForceKernel<<<(numLinks + 1023) / 1024, 1024>>>(dst, src, linkTransforms, numLinks, maxLinks,
-                                                                      simMaxLinks, linkRecords);
-    return launchOk(CHECK_CUDA(cudaGetLastError()));
+    fetchDofProjectionForceKernel<<<(numLinks + 1023) / 1024, 1024, 0, stream>>>(
+        dst, src, linkTransforms, numLinks, maxLinks, simMaxLinks, linkRecords);
+    return drainOnLaunchFailure(CHECK_CUDA(cudaGetLastError()), stream);
 }
 
 //
@@ -2822,21 +3205,27 @@ bool submitRbForces(PxVec3* dstActorForces,
 constexpr static PxU32 INVALID_IDX = 0xffffffff;
 
 __device__ __forceinline__ static PxU32 getRigidContactReferentIndex(const PxNodeIndex& nodeIndex,
-                                                                     PxU32 maxLinks,
-                                                                     const PxU32* nodeIdx2ArtiGpuIdx,
-                                                                     const PxU32* rdContactIndices,
-                                                                     const PxU32* linkContactIndices)
+                                                                     const RigidContactReferentTables& referents)
 {
     if (nodeIndex.isArticulation())
     {
-        PxU32 artiIdx = nodeIdx2ArtiGpuIdx[nodeIndex.index()];
-        PxU32 linkIdx = artiIdx * maxLinks + nodeIndex.articulationLinkId();
-        return linkContactIndices[linkIdx];
+        if (nodeIndex.index() >= referents.nodeIdx2ArtiGpuIdxCount)
+        {
+            return INVALID_IDX;
+        }
+        PxU32 artiIdx = referents.nodeIdx2ArtiGpuIdx[nodeIndex.index()];
+        PxU32 linkId = nodeIndex.articulationLinkId();
+        if (artiIdx == INVALID_IDX || linkId >= referents.maxLinks)
+        {
+            return INVALID_IDX;
+        }
+        PxU64 linkIdx = PxU64(artiIdx) * referents.maxLinks + linkId;
+        return linkIdx < referents.linkContactIndexCount ? referents.linkContactIndices[linkIdx] : INVALID_IDX;
     }
     else if (nodeIndex.isValid())
     {
         PxU32 rdIdx = nodeIndex.index();
-        return rdContactIndices[rdIdx];
+        return rdIdx < referents.rdContactIndexCount ? referents.rdContactIndices[rdIdx] : INVALID_IDX;
     }
 
     // TODO: check shape id
@@ -2880,11 +3269,8 @@ template <ForceComponent component>
 __global__ static void fetchNetRigidContactForcesKernel(PxVec3* netForces,
                                                         const PxGpuContactPair* contactPairs,
                                                         PxU32 numContactPairs,
-                                                        PxU32 maxLinks,
-                                                        float timeStepInv,
-                                                        const PxU32* nodeIdx2ArtiGpuIdx,
-                                                        const PxU32* rdContactIndices,
-                                                        const PxU32* linkContactIndices)
+                                                        RigidContactReferentTables referents,
+                                                        float timeStepInv)
 {
     PxU32 i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < numContactPairs)
@@ -2892,10 +3278,8 @@ __global__ static void fetchNetRigidContactForcesKernel(PxVec3* netForces,
         const PxGpuContactPair& cp = contactPairs[i];
 
         // referent indices
-        PxU32 refIdx0 = getRigidContactReferentIndex(
-            cp.nodeIndex0, maxLinks, nodeIdx2ArtiGpuIdx, rdContactIndices, linkContactIndices);
-        PxU32 refIdx1 = getRigidContactReferentIndex(
-            cp.nodeIndex1, maxLinks, nodeIdx2ArtiGpuIdx, rdContactIndices, linkContactIndices);
+        PxU32 refIdx0 = getRigidContactReferentIndex(cp.nodeIndex0, referents);
+        PxU32 refIdx1 = getRigidContactReferentIndex(cp.nodeIndex1, referents);
 
         // printf("~!~!~! refIdx0: %u\n", refIdx0);
         // printf("~!~!~! refIdx1: %u\n", refIdx1);
@@ -2929,23 +3313,18 @@ __global__ static void fetchNetRigidContactForcesKernel(PxVec3* netForces,
 bool fetchNetRigidContactForces(PxVec3* netForces,
                                 const PxGpuContactPair* contactPairs,
                                 PxU32 numContactPairs,
-                                PxU32 maxLinks,
+                                const RigidContactReferentTables& referents,
                                 float timeStepInv,
-                                const PxU32* nodeIdx2ArtiGpuIdx,
-                                const PxU32* rdContactIndices,
-                                const PxU32* linkContactIndices,
                                 ForceComponent component)
 {
     if (numContactPairs > 0)
     {
         if (component == ForceComponent::eFriction)
             fetchNetRigidContactForcesKernel<ForceComponent::eFriction><<<(numContactPairs + 1023) / 1024, 1024>>>(
-                netForces, contactPairs, numContactPairs, maxLinks, timeStepInv, nodeIdx2ArtiGpuIdx,
-                rdContactIndices, linkContactIndices);
+                netForces, contactPairs, numContactPairs, referents, timeStepInv);
         else
             fetchNetRigidContactForcesKernel<ForceComponent::eNormal><<<(numContactPairs + 1023) / 1024, 1024>>>(
-                netForces, contactPairs, numContactPairs, maxLinks, timeStepInv, nodeIdx2ArtiGpuIdx,
-                rdContactIndices, linkContactIndices);
+                netForces, contactPairs, numContactPairs, referents, timeStepInv);
     }
     return launchOk(CHECK_CUDA(cudaGetLastError()));
 }
@@ -3026,11 +3405,8 @@ __global__ static void fetchRigidContactForceMatrixKernel(PxVec3* forceMatrix,
                                                           const PxGpuContactPair* contactPairs,
                                                           PxU32 numContactPairs,
                                                           PxU32 numFilters,
-                                                          PxU32 maxLinks,
+                                                          RigidContactReferentTables referents,
                                                           float timeStepInv,
-                                                          const PxU32* nodeIdx2ArtiGpuIdx,
-                                                          const PxU32* rdContactIndices,
-                                                          const PxU32* linkContactIndices,
                                                           const GpuRigidContactFilterIdPair* filterLookup)
 {
     PxU32 i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -3039,10 +3415,8 @@ __global__ static void fetchRigidContactForceMatrixKernel(PxVec3* forceMatrix,
         const PxGpuContactPair& cp = contactPairs[i];
 
         // referent indices
-        PxU32 refIdx0 = getRigidContactReferentIndex(
-            cp.nodeIndex0, maxLinks, nodeIdx2ArtiGpuIdx, rdContactIndices, linkContactIndices);
-        PxU32 refIdx1 = getRigidContactReferentIndex(
-            cp.nodeIndex1, maxLinks, nodeIdx2ArtiGpuIdx, rdContactIndices, linkContactIndices);
+        PxU32 refIdx0 = getRigidContactReferentIndex(cp.nodeIndex0, referents);
+        PxU32 refIdx1 = getRigidContactReferentIndex(cp.nodeIndex1, referents);
 
         // check if we are interested in either of these objects
         if (refIdx0 != INVALID_IDX || refIdx1 != INVALID_IDX)
@@ -3090,11 +3464,8 @@ bool fetchRigidContactForceMatrix(PxVec3* forceMatrix,
                                   const PxGpuContactPair* contactPairs,
                                   PxU32 numContactPairs,
                                   PxU32 numFilters,
-                                  PxU32 maxLinks,
+                                  const RigidContactReferentTables& referents,
                                   float timeStepInv,
-                                  const PxU32* nodeIdx2ArtiGpuIdx,
-                                  const PxU32* rdContactIndices,
-                                  const PxU32* linkContactIndices,
                                   const GpuRigidContactFilterIdPair* filterLookup,
                                   ForceComponent component)
 {
@@ -3102,12 +3473,10 @@ bool fetchRigidContactForceMatrix(PxVec3* forceMatrix,
     {
         if (component == ForceComponent::eFriction)
             fetchRigidContactForceMatrixKernel<ForceComponent::eFriction><<<(numContactPairs + 1023) / 1024, 1024>>>(
-                forceMatrix, contactPairs, numContactPairs, numFilters, maxLinks, timeStepInv, nodeIdx2ArtiGpuIdx,
-                rdContactIndices, linkContactIndices, filterLookup);
+                forceMatrix, contactPairs, numContactPairs, numFilters, referents, timeStepInv, filterLookup);
         else
             fetchRigidContactForceMatrixKernel<ForceComponent::eNormal><<<(numContactPairs + 1023) / 1024, 1024>>>(
-                forceMatrix, contactPairs, numContactPairs, numFilters, maxLinks, timeStepInv, nodeIdx2ArtiGpuIdx,
-                rdContactIndices, linkContactIndices, filterLookup);
+                forceMatrix, contactPairs, numContactPairs, numFilters, referents, timeStepInv, filterLookup);
     }
     return launchOk(CHECK_CUDA(cudaGetLastError()));
 }
@@ -3142,11 +3511,8 @@ __global__ static void fetchRigidFrictionDataKernel(PxVec3* forceBuffer,
                                                     PxU32 numContactPairs,
                                                     PxU32 numFilters,
                                                     PxU32 maxDataPoints,
-                                                    PxU32 maxLinks,
+                                                    RigidContactReferentTables referents,
                                                     float timeStepInv,
-                                                    const PxU32* nodeIdx2ArtiGpuIdx,
-                                                    const PxU32* rdContactIndices,
-                                                    const PxU32* linkContactIndices,
                                                     const GpuRigidContactFilterIdPair* filterLookup)
 {
     PxU32 c = blockIdx.x * blockDim.x + threadIdx.x;
@@ -3155,10 +3521,8 @@ __global__ static void fetchRigidFrictionDataKernel(PxVec3* forceBuffer,
         const PxGpuContactPair& cp = contactPairs[c];
 
         // referent indices
-        PxU32 refIdx0 = getRigidContactReferentIndex(
-            cp.nodeIndex0, maxLinks, nodeIdx2ArtiGpuIdx, rdContactIndices, linkContactIndices);
-        PxU32 refIdx1 = getRigidContactReferentIndex(
-            cp.nodeIndex1, maxLinks, nodeIdx2ArtiGpuIdx, rdContactIndices, linkContactIndices);
+        PxU32 refIdx0 = getRigidContactReferentIndex(cp.nodeIndex0, referents);
+        PxU32 refIdx1 = getRigidContactReferentIndex(cp.nodeIndex1, referents);
 
         // check if we are interested in either of these objects
         if (refIdx0 != INVALID_IDX || refIdx1 != INVALID_IDX)
@@ -3201,18 +3565,14 @@ bool fetchRigidFrictionData(PxVec3* forceBuffer,
                             PxU32 numContactPairs,
                             PxU32 numFilters,
                             PxU32 maxDataPoints,
-                            PxU32 maxLinks,
+                            const RigidContactReferentTables& referents,
                             float timeStepInv,
-                            const PxU32* nodeIdx2ArtiGpuIdx,
-                            const PxU32* rdContactIndices,
-                            const PxU32* linkContactIndices,
                             const GpuRigidContactFilterIdPair* filterLookup)
 {
     if (numContactPairs > 0)
         fetchRigidFrictionDataKernel<<<(numContactPairs + 1023) / 1024, 1024>>>(
             forceBuffer, pointBuffer, countMatrix, startIndicesMatrix, contactPairs, numContactPairs, numFilters,
-            maxDataPoints, maxLinks, timeStepInv, nodeIdx2ArtiGpuIdx, rdContactIndices,
-            linkContactIndices, filterLookup);
+            maxDataPoints, referents, timeStepInv, filterLookup);
     return launchOk(CHECK_CUDA(cudaGetLastError()));
 }
 
@@ -3221,10 +3581,7 @@ __global__ static void fetchFrictionCountKernel(
     const PxGpuContactPair* contactPairs,
     PxU32 numContactPairs,
     PxU32 numFilters,
-    PxU32 maxLinks,
-    const PxU32* nodeIdx2ArtiGpuIdx,
-    const PxU32* rdContactIndices,
-    const PxU32* linkContactIndices,
+    RigidContactReferentTables referents,
     const GpuRigidContactFilterIdPair* filterLookup)
 {
     PxU32 c = blockIdx.x * blockDim.x + threadIdx.x;
@@ -3232,12 +3589,8 @@ __global__ static void fetchFrictionCountKernel(
         const PxGpuContactPair& cp = contactPairs[c];
 
         // referent indices
-        PxU32 refIdx0 = getRigidContactReferentIndex(
-            cp.nodeIndex0, maxLinks, nodeIdx2ArtiGpuIdx, rdContactIndices,
-            linkContactIndices);
-        PxU32 refIdx1 = getRigidContactReferentIndex(
-            cp.nodeIndex1, maxLinks, nodeIdx2ArtiGpuIdx, rdContactIndices,
-            linkContactIndices);
+        PxU32 refIdx0 = getRigidContactReferentIndex(cp.nodeIndex0, referents);
+        PxU32 refIdx1 = getRigidContactReferentIndex(cp.nodeIndex1, referents);
 
         // check if we are interested in either of these objects
         if (refIdx0 != INVALID_IDX || refIdx1 != INVALID_IDX) {
@@ -3270,16 +3623,12 @@ bool fetchFrictionCount(PxU32* countMatrix,
     const PxGpuContactPair* contactPairs,
     PxU32 numContactPairs,
     PxU32 numFilters,
-    PxU32 maxLinks,
-    const PxU32* nodeIdx2ArtiGpuIdx,
-    const PxU32* rdContactIndices,
-    const PxU32* linkContactIndices,
+    const RigidContactReferentTables& referents,
     const GpuRigidContactFilterIdPair* filterLookup)
 {
     if (numContactPairs > 0)
         fetchFrictionCountKernel<<<(numContactPairs + 1023) / 1024, 1024>>>(
-            countMatrix, contactPairs, numContactPairs, numFilters, maxLinks,
-            nodeIdx2ArtiGpuIdx, rdContactIndices, linkContactIndices, filterLookup);
+            countMatrix, contactPairs, numContactPairs, numFilters, referents, filterLookup);
     return launchOk(CHECK_CUDA(cudaGetLastError()));
 }
 
@@ -3293,11 +3642,8 @@ __global__ static void fetchRigidContactDataKernel(PxReal* forceBuffer,
                                                    PxU32 numContactPairs,
                                                    PxU32 numFilters,
                                                    PxU32 maxDataPoints,
-                                                   PxU32 maxLinks,
+                                                   RigidContactReferentTables referents,
                                                    float timeStepInv,
-                                                   const PxU32* nodeIdx2ArtiGpuIdx,
-                                                   const PxU32* rdContactIndices,
-                                                   const PxU32* linkContactIndices,
                                                    const GpuRigidContactFilterIdPair* filterLookup)
 {
     PxU32 c = blockIdx.x * blockDim.x + threadIdx.x;
@@ -3306,10 +3652,8 @@ __global__ static void fetchRigidContactDataKernel(PxReal* forceBuffer,
         const PxGpuContactPair& cp = contactPairs[c];
 
         // referent indices
-        PxU32 refIdx0 = getRigidContactReferentIndex(
-            cp.nodeIndex0, maxLinks, nodeIdx2ArtiGpuIdx, rdContactIndices, linkContactIndices);
-        PxU32 refIdx1 = getRigidContactReferentIndex(
-            cp.nodeIndex1, maxLinks, nodeIdx2ArtiGpuIdx, rdContactIndices, linkContactIndices);
+        PxU32 refIdx0 = getRigidContactReferentIndex(cp.nodeIndex0, referents);
+        PxU32 refIdx1 = getRigidContactReferentIndex(cp.nodeIndex1, referents);
 
         // check if we are interested in either of these objects
         if (refIdx0 != INVALID_IDX || refIdx1 != INVALID_IDX)
@@ -3375,18 +3719,14 @@ bool fetchRigidContactData(PxReal* forceBuffer,
                            PxU32 numContactPairs,
                            PxU32 numFilters,
                            PxU32 maxDataPoints,
-                           PxU32 maxLinks,
+                           const RigidContactReferentTables& referents,
                            float timeStepInv,
-                           const PxU32* nodeIdx2ArtiGpuIdx,
-                           const PxU32* rdContactIndices,
-                           const PxU32* linkContactIndices,
                            const GpuRigidContactFilterIdPair* filterLookup)
 {
     if (numContactPairs > 0)
         fetchRigidContactDataKernel<<<(numContactPairs + 1023) / 1024, 1024>>>(
             forceBuffer, pointBuffer, normalBuffer, separationBuffer, countMatrix, startIndicesMatrix, contactPairs,
-            numContactPairs, numFilters, maxDataPoints, maxLinks, timeStepInv, nodeIdx2ArtiGpuIdx, rdContactIndices,
-            linkContactIndices, filterLookup);
+            numContactPairs, numFilters, maxDataPoints, referents, timeStepInv, filterLookup);
     return launchOk(CHECK_CUDA(cudaGetLastError()));
 }
 
@@ -3395,10 +3735,7 @@ __global__ static void fetchRigidContactCountKernel(PxU32* countMatrix,
                                                     const PxGpuContactPair* contactPairs,
                                                     PxU32 numContactPairs,
                                                     PxU32 numFilters,
-                                                    PxU32 maxLinks,
-                                                    const PxU32* nodeIdx2ArtiGpuIdx,
-                                                    const PxU32* rdContactIndices,
-                                                    const PxU32* linkContactIndices,
+                                                    RigidContactReferentTables referents,
                                                     const GpuRigidContactFilterIdPair* filterLookup)
 {
     PxU32 c = blockIdx.x * blockDim.x + threadIdx.x;
@@ -3407,10 +3744,8 @@ __global__ static void fetchRigidContactCountKernel(PxU32* countMatrix,
         const PxGpuContactPair& cp = contactPairs[c];
 
         // referent indices
-        PxU32 refIdx0 = getRigidContactReferentIndex(
-            cp.nodeIndex0, maxLinks, nodeIdx2ArtiGpuIdx, rdContactIndices, linkContactIndices);
-        PxU32 refIdx1 = getRigidContactReferentIndex(
-            cp.nodeIndex1, maxLinks, nodeIdx2ArtiGpuIdx, rdContactIndices, linkContactIndices);
+        PxU32 refIdx0 = getRigidContactReferentIndex(cp.nodeIndex0, referents);
+        PxU32 refIdx1 = getRigidContactReferentIndex(cp.nodeIndex1, referents);
 
         // check if we are interested in either of these objects
         if (refIdx0 != INVALID_IDX || refIdx1 != INVALID_IDX)
@@ -3450,16 +3785,12 @@ bool fetchRigidContactCount(PxU32* countMatrix,
                             const PxGpuContactPair* contactPairs,
                             PxU32 numContactPairs,
                             PxU32 numFilters,
-                            PxU32 maxLinks,
-                            const PxU32* nodeIdx2ArtiGpuIdx,
-                            const PxU32* rdContactIndices,
-                            const PxU32* linkContactIndices,
+                            const RigidContactReferentTables& referents,
                             const GpuRigidContactFilterIdPair* filterLookup)
 {
     if (numContactPairs > 0)
         fetchRigidContactCountKernel<<<(numContactPairs + 1023) / 1024, 1024>>>(
-            countMatrix, contactPairs, numContactPairs, numFilters, maxLinks, nodeIdx2ArtiGpuIdx, rdContactIndices,
-            linkContactIndices, filterLookup);
+            countMatrix, contactPairs, numContactPairs, numFilters, referents, filterLookup);
     return launchOk(CHECK_CUDA(cudaGetLastError()));
 }
 
@@ -3467,10 +3798,7 @@ bool fetchRigidContactCount(PxU32* countMatrix,
 __global__ static void fetchRawRigidContactCountKernel(PxU32* countBuffer,
                                                        const PxGpuContactPair* contactPairs,
                                                        PxU32 numContactPairs,
-                                                       PxU32 maxLinks,
-                                                       const PxU32* nodeIdx2ArtiGpuIdx,
-                                                       const PxU32* rdContactIndices,
-                                                       const PxU32* linkContactIndices)
+                                                       RigidContactReferentTables referents)
 {
     PxU32 c = blockIdx.x * blockDim.x + threadIdx.x;
     if (c < numContactPairs)
@@ -3478,10 +3806,8 @@ __global__ static void fetchRawRigidContactCountKernel(PxU32* countBuffer,
         const PxGpuContactPair& cp = contactPairs[c];
 
         // Get sensor indices for both bodies
-        PxU32 refIdx0 = getRigidContactReferentIndex(
-            cp.nodeIndex0, maxLinks, nodeIdx2ArtiGpuIdx, rdContactIndices, linkContactIndices);
-        PxU32 refIdx1 = getRigidContactReferentIndex(
-            cp.nodeIndex1, maxLinks, nodeIdx2ArtiGpuIdx, rdContactIndices, linkContactIndices);
+        PxU32 refIdx0 = getRigidContactReferentIndex(cp.nodeIndex0, referents);
+        PxU32 refIdx1 = getRigidContactReferentIndex(cp.nodeIndex1, referents);
 
         if (refIdx0 != INVALID_IDX || refIdx1 != INVALID_IDX)
         {
@@ -3506,15 +3832,11 @@ __global__ static void fetchRawRigidContactCountKernel(PxU32* countBuffer,
 bool fetchRawRigidContactCount(PxU32* countBuffer,
                                const PxGpuContactPair* contactPairs,
                                PxU32 numContactPairs,
-                               PxU32 maxLinks,
-                               const PxU32* nodeIdx2ArtiGpuIdx,
-                               const PxU32* rdContactIndices,
-                               const PxU32* linkContactIndices)
+                               const RigidContactReferentTables& referents)
 {
     if (numContactPairs > 0)
         fetchRawRigidContactCountKernel<<<(numContactPairs + 1023) / 1024, 1024>>>(
-            countBuffer, contactPairs, numContactPairs, maxLinks, nodeIdx2ArtiGpuIdx, rdContactIndices,
-            linkContactIndices);
+            countBuffer, contactPairs, numContactPairs, referents);
     return launchOk(CHECK_CUDA(cudaGetLastError()));
 }
 
@@ -3529,11 +3851,8 @@ __global__ static void fetchRawRigidContactDataKernel(PxReal* forceBuffer,
                                                       const PxGpuContactPair* contactPairs,
                                                       PxU32 numContactPairs,
                                                       PxU32 numDataPoints,
-                                                      PxU32 maxLinks,
+                                                      RigidContactReferentTables referents,
                                                       float timeStepInv,
-                                                      const PxU32* nodeIdx2ArtiGpuIdx,
-                                                      const PxU32* rdContactIndices,
-                                                      const PxU32* linkContactIndices,
                                                       const GpuActorPathIdPair* actorPathLookup,
                                                       PxU32 numActorPathPairs)
 {
@@ -3542,10 +3861,8 @@ __global__ static void fetchRawRigidContactDataKernel(PxReal* forceBuffer,
     {
         const PxGpuContactPair& cp = contactPairs[c];
 
-        PxU32 refIdx0 = getRigidContactReferentIndex(
-            cp.nodeIndex0, maxLinks, nodeIdx2ArtiGpuIdx, rdContactIndices, linkContactIndices);
-        PxU32 refIdx1 = getRigidContactReferentIndex(
-            cp.nodeIndex1, maxLinks, nodeIdx2ArtiGpuIdx, rdContactIndices, linkContactIndices);
+        PxU32 refIdx0 = getRigidContactReferentIndex(cp.nodeIndex0, referents);
+        PxU32 refIdx1 = getRigidContactReferentIndex(cp.nodeIndex1, referents);
 
         if (refIdx0 != INVALID_IDX || refIdx1 != INVALID_IDX)
         {
@@ -3606,19 +3923,16 @@ bool fetchRawRigidContactData(PxReal* forceBuffer,
                               const PxGpuContactPair* contactPairs,
                               PxU32 numContactPairs,
                               PxU32 numDataPoints,
-                              PxU32 maxLinks,
+                              const RigidContactReferentTables& referents,
                               float timeStepInv,
-                              const PxU32* nodeIdx2ArtiGpuIdx,
-                              const PxU32* rdContactIndices,
-                              const PxU32* linkContactIndices,
                               const GpuActorPathIdPair* actorPathLookup,
                               PxU32 numActorPathPairs)
 {
     if (numContactPairs > 0)
         fetchRawRigidContactDataKernel<<<(numContactPairs + 1023) / 1024, 1024>>>(
             forceBuffer, pointBuffer, normalBuffer, separationBuffer, actorIdBuffer,
-            countBuffer, startIndicesBuffer, contactPairs, numContactPairs, numDataPoints, maxLinks, timeStepInv,
-            nodeIdx2ArtiGpuIdx, rdContactIndices, linkContactIndices, actorPathLookup, numActorPathPairs);
+            countBuffer, startIndicesBuffer, contactPairs, numContactPairs, numDataPoints, referents, timeStepInv,
+            actorPathLookup, numActorPathPairs);
     return launchOk(CHECK_CUDA(cudaGetLastError()));
 }
 

@@ -1,0 +1,40 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+# DirectGPU counterpart of ovstage_output_bodies.usda: one GPU scene, so the
+# mirrored and nested world scales are served from the device scale copy.
+def Xform "World"
+{
+    def PhysicsScene "physicsScene" (apiSchemas = ["PhysxSceneAPI"])
+    {
+        vector3f physics:gravityDirection = (0, 0, -1)
+        float physics:gravityMagnitude = 9.81
+        bool physxScene:enableGPUDynamics = true
+        uniform token physxScene:broadphaseType = "GPU"
+    }
+    def Cube "Mirrored" (apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"])
+    {
+        float physics:mass = 1
+        double3 xformOp:translate = (-10, 0, 20)
+        quatf xformOp:orient = (0.9238795, 0, 0, 0.3826834)
+        float3 xformOp:scale = (-2, 3, 4)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+    }
+    def Xform "Parent"
+    {
+        double3 xformOp:translate = (10, 0, 20)
+        float3 xformOp:scale = (2, 3, 4)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        def Cube "Body" (apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"])
+        {
+            float physics:mass = 1
+            double3 xformOp:translate = (1, 0, 0)
+            float3 xformOp:scale = (0.5, 2, 0.25)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+    }
+}

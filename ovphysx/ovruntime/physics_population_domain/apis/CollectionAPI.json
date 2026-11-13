@@ -1,0 +1,74 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "CollectionAPI",
+  "title": "CollectionAPI",
+  "summary": "USD collections, applied as CollectionAPI:<name>. The parser resolves a collection to the includes targets expanded through their descendants, minus the excludes subtrees. It does so for the colliders collection of a PhysicsCollisionGroup and the quasistaticactors collection of PhysxSceneQuasistaticAPI.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "Xformable",
+    "Imageable",
+    "Typed"
+  ],
+  "multi_apply": true,
+  "population": {
+    "physics": false,
+    "row": false
+  },
+  "producer_scope": "Authored includes and excludes relationships are published like any relationship. ovstage also lists the bare name CollectionAPI next to every CollectionAPI:<name> entry.",
+  "columns": [
+    {
+      "name": "collection:<inst>:includes",
+      "usd_type": "rel",
+      "origin": "schema",
+      "kind": "relationship",
+      "semantic": "RELATIONSHIP_PATH_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": true
+      },
+      "required": false,
+      "absent": "Empty collection.",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageSource.cpp"
+      ],
+      "notes": "Every target contributes itself and all its descendants."
+    },
+    {
+      "name": "collection:<inst>:excludes",
+      "usd_type": "rel",
+      "origin": "schema",
+      "kind": "relationship",
+      "semantic": "RELATIONSHIP_PATH_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": true
+      },
+      "required": false,
+      "absent": "Nothing is pruned.",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageSource.cpp"
+      ],
+      "notes": "Every target removes itself and all its descendants from the expanded includes."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysicsCollisionGroup",
+      "rule": "Reads the colliders instance; that component lists collection:colliders:includes and :excludes as its own columns."
+    },
+    {
+      "with": "PhysxSceneQuasistaticAPI",
+      "rule": "Reads the quasistaticactors instance on the scene, only when that API is applied; the compiled cache does not support that API, so a Stage using it bypasses the cache."
+    }
+  ],
+  "notes": [
+    "expansionRule, includeRoot and membershipExpression are not read: includes always expand to all descendants.",
+    "Instance names are arbitrary, so the compiled cache declares every collection:* column."
+  ]
+}

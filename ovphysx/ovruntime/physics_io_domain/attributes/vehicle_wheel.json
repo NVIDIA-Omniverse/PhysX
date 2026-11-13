@@ -1,0 +1,655 @@
+{
+  "$schema": "../contract.schema.json",
+  "schema_version": 1,
+  "attributes": [
+    {
+      "id": "drive_torque",
+      "name": "driveTorque",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE_WHEEL",
+          "description": "persistent drive torque",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "torque",
+          "writability": "WRITE_ONLY",
+          "read": false,
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle",
+              "raw_wheel"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": [],
+            "applicability": "Raw-wheel vehicles without a managed drive.",
+            "value_constraints": {
+              "finite": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "brake_torque",
+      "name": "brakeTorque",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE_WHEEL",
+          "description": "persistent brake torque",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "torque",
+          "writability": "WRITE_ONLY",
+          "read": false,
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle",
+              "raw_wheel"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": [],
+            "applicability": "Raw-wheel vehicles without a managed drive.",
+            "value_constraints": {
+              "finite": true,
+              "minimum": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "steer_angle",
+      "name": "steerAngle",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE_WHEEL",
+          "description": "persistent steering command",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "angle",
+          "writability": "WRITE_ONLY",
+          "read": false,
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle",
+              "raw_wheel"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": [],
+            "applicability": "Raw-wheel vehicles without a managed drive.",
+            "value_constraints": {
+              "finite": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "rotation_speed",
+      "name": "rotationSpeed",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE_WHEEL",
+          "description": "wheel angular speed",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "angular_velocity",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "rotation_angle",
+      "name": "rotationAngle",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE_WHEEL",
+          "description": "wheel rotation angle",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "angle",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "wheel_steer_angle",
+      "name": "wheelSteerAngle",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE_WHEEL",
+          "description": "actual wheel steering angle",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "angle",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "suspension_jounce",
+      "name": "suspensionJounce",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE_WHEEL",
+          "description": "suspension compression",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "length",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "suspension_force",
+      "name": "suspensionForce",
+      "public": true,
+      "semantic": "VECTOR",
+      "uses": [
+        {
+          "target": "VEHICLE_WHEEL",
+          "description": "suspension force",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "force",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "tire_friction",
+      "name": "tireFriction",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE_WHEEL",
+          "description": "effective tire friction",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "tire_longitudinal_direction",
+      "name": "tireLongitudinalDirection",
+      "public": true,
+      "semantic": "VECTOR",
+      "uses": [
+        {
+          "target": "VEHICLE_WHEEL",
+          "description": "tire's longitudinal direction",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "dimensionless",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "tire_lateral_direction",
+      "name": "tireLateralDirection",
+      "public": true,
+      "semantic": "VECTOR",
+      "uses": [
+        {
+          "target": "VEHICLE_WHEEL",
+          "description": "tire's lateral direction",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "dimensionless",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "tire_longitudinal_slip",
+      "name": "tireLongitudinalSlip",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE_WHEEL",
+          "description": "longitudinal slip",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "tire_lateral_slip",
+      "name": "tireLateralSlip",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE_WHEEL",
+          "description": "lateral slip",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "angle",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "tire_force",
+      "name": "tireForce",
+      "public": true,
+      "semantic": "VECTOR",
+      "uses": [
+        {
+          "target": "VEHICLE_WHEEL",
+          "description": "tire force",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "force",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "is_on_ground",
+      "name": "isOnGround",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE_WHEEL",
+          "description": "validity of the current ground-contact sample",
+          "dtype": "u8",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "ground_plane",
+      "name": "groundPlane",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE_WHEEL",
+          "description": "contact plane `(nx, ny, nz, d)`, `n dot p + d = 0`",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "ground_plane",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 4,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ]
+          },
+          "write": false,
+          "notes": "World plane nx*x + ny*y + nz*z + d = 0; validity is isOnGround. Invalid contact data is zero-filled."
+        }
+      ]
+    },
+    {
+      "id": "ground_hit_position",
+      "name": "groundHitPosition",
+      "public": true,
+      "semantic": "POINT",
+      "uses": [
+        {
+          "target": "VEHICLE_WHEEL",
+          "description": "contact hit position",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "length",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "ground_actor_path",
+      "name": "groundActorPath",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE_WHEEL",
+          "description": "ground actor prim identity",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "ground_shape_path",
+      "name": "groundShapePath",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE_WHEEL",
+          "description": "ground shape prim identity",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "ground_material_path",
+      "name": "groundMaterialPath",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE_WHEEL",
+          "description": "ground material prim identity",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ]
+          },
+          "write": false
+        }
+      ]
+    }
+  ]
+}

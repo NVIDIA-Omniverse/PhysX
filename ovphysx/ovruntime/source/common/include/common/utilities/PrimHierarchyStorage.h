@@ -77,6 +77,10 @@ public:
         return static_cast<bool>(mExists);
     }
 
+    void reserveAdditional(size_t count)
+    {
+        mStorageMap.reserve(mStorageMap.size() + count);
+    }
     void addPrim(const std::string& primPath);
     void addPrimSubtree(const std::string& primPath, const std::string& topPrim);
     void removePrim(const std::string& primPath); // removes prim and its childs

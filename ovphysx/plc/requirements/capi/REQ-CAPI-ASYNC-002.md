@@ -11,8 +11,9 @@ owner: ovphysx
 ## Description
 
 Query, read, write and articulation operations use the task completion contract.
-They initially execute inline; accepted work can therefore already be finished
-when its receipt is returned. Submission does not promise nonblocking execution.
+Short calls execute on the caller when the instance is idle and otherwise queue
+behind its earlier work. Calls using caller CUDA streams stay on the caller.
+Accepted work may finish before return or later; the receipt reports admission.
 Session creation results are outputs of the creating task
 ([REQ-CAPI-SESSION-001](REQ-CAPI-SESSION-001.md)).
 
@@ -28,13 +29,12 @@ Session creation results are outputs of the creating task
   caller-owned tensors and their producer handoff (REQ-CAPI-SDF-001). There is no separate query-metadata or
   query-dictionary accessor; optional creation results are task outputs.
   `ovphysx_writability` remains an instance-free immediate helper outside this contract.
-- **AC-2: Admission and storage.** Validate instance, arguments, known resource
-  ownership and required interfaces before admission. Reserve identity and
-  failure storage before side effects, including lazy attach and warmup.
-  Clear output slots, including optional result slots, before validation. Callers keep
-  input arrays/strings and output slots alive through task completion and inspect
-  outputs after waiting. A creator that fails leaves zero outputs, so dependent work
-  cannot be submitted against an unpublished handle.
+- **AC-2: Admission and storage.** Validate instance, arguments and known handle
+  ownership before admission. Reserve identity and failure storage before side
+  effects, including lazy attach and warmup. Clear output slots before validation.
+  Accepted creators publish their handle before returning; summaries and fetched
+  groups are outputs of successful execution. Callers keep those output slots
+  alive through completion. Copied inputs follow AC-10; failed creators follow AC-13.
 - **AC-3: Errors.** Rejection returns zero identity and an immediate error;
   accepted execution failures retain successful admission and are reported by
   waits. Every accepted operation, including an idempotent release, has a real
@@ -52,12 +52,12 @@ Session creation results are outputs of the creating task
   Rejected release retains caller ownership. Detach releases write sessions
   before their scene/context disappears; pinned read snapshots retain their
   existing lifetime across detach. Instance teardown releases all remaining sessions.
-- **AC-6: Ordering.** Query/read/write creation, commit, articulation update and
-  SDF evaluation finish required prior simulation before admission. A mid-session step is
-  finished before the next live-scene mutation or snapshot. Internal drains
-  preserve earlier uncollected failures without rejecting otherwise-valid work.
-  Fetch keeps its same-instance pending-simulation drain; neither fetch nor release
-  imposes a global simulation barrier or drains another instance.
+- **AC-6: Ordering.** Session operations execute after earlier work on their
+  instance, including simulation finalization, without collecting its outcomes.
+  Queued submissions do not wait for that work; calling-thread operations acquire
+  the instance lane first. A mid-session step finishes before the next live-scene
+  mutation or snapshot. Neither fetch nor release imposes a global barrier or
+  drains another instance.
   Output session operations and cached-query validation from runtime or application
   log callbacks return `INVALID_STATE` before draining simulation or entering the
   output backend. Log-callback rejection is local to the calling thread; other
@@ -82,14 +82,64 @@ Session creation results are outputs of the creating task
   DirectGPU's native refresh may update both components for either supported
   nonzero mask. Zero flags are a successful no-op after query validation.
 
+- **AC-9: Short-call scheduling.** Query creation, read creation with an empty
+  CUDA handoff, write creation, group fetches, host releases and eligible host
+  commits run on the caller when idle; otherwise they queue in instance order
+  without waiting for earlier work. A query that performs initial scene parsing
+  follows the same rule.
+- **AC-10: Input copies and outputs.** Queued selected/contact queries copy their
+  selectors; queued reads/writes copy attribute arrays and string bytes before
+  returning, and queued reads copy the CUDA handoff by value. A non-NULL string
+  takes precedence and is copied; an entry with a NULL string keeps its token
+  (ovstage's `ovx_token_or_string_t` contract). Fetch and summary output slots remain
+  borrowed until completion. A queued host commit retains the original group
+  pointer; the caller keeps its data alive until completion.
+- **AC-11: Stable errors.** Invalid arguments, invalid/foreign/released handles,
+  callback reentry, a stopped executor and exhausted admission resources reject
+  without a task. State determined by preceding work instead fails the accepted
+  task: missing attachment/backend, failed input producer, closed write session
+  or failed lifecycle generation. Inline and queued execution use the same
+  API/task-specific failure text.
+- **AC-12: Caller-stream operations.** A read with a nonempty CUDA handoff,
+  articulation update, SDF evaluation, masked commits, commits with a producer
+  stream/event, and commits for sessions that exposed device groups execute on
+  the caller after earlier instance work. Reads with an empty handoff and
+  unmasked host commits with an empty handoff are eligible for queueing. Runtime
+  refusal of a caller-thread commit (including a bad mask or capture misuse)
+  rejects before spending its group. Write releases, including those for
+  sessions that exposed device groups, follow AC-9 scheduling.
+- **AC-13: Handles at submission.** Accepted creators return a nonzero,
+  non-reused opaque handle immediately. Later same-instance calls may use it
+  without first waiting for creation. A failed creator leaves a failed handle;
+  consumers fail their own tasks naming the producer, and release safely retires
+  it. Foreign handles are rejected even while creation is pending. Accepted
+  release prevents later use immediately; earlier admitted calls retain their
+  place before that release. Exhausted handle space rejects creation.
+- **AC-14: Attachment generations.** Calls bind to the attachment generation
+  selected by prior accepted attach/detach submissions. If a lifecycle task
+  fails, dependent calls fail until that failure is collected and new calls
+  can bind to the surviving attachment. Status queries do not recover a failed
+  generation, and collecting a failure does not retarget already-submitted work.
+- **AC-15: Closed writes.** Detach retires backend write sessions opened before
+  it while retaining their known handles. Consumers of such handles fail their
+  tasks consistently whether detach already ran or is queued. Release retires
+  the closed handle; writes submitted later are not prematurely retired.
+- **AC-16: Execution-mode coverage.** Private test hooks can force short calls
+  through the queue even when idle, and can create workerless instances. These
+  modes preserve public results, ordering and failure ownership. Test runners
+  select the mode; the library does not read the test environment variable.
+
 ## Known limitations
 
-Submission currently executes inline. CPU and existing blocking GPU paths keep
-their blocking behavior; this requirement introduces no worker queue or scheduler.
+Short calls on idle instances and caller-stream operations can block. Callers
+collect pending tasks before beginning CUDA graph capture. Host task completion
+is not CUDA device completion.
 
 ## Test References
 
 - [TEST-CAPI-ASYNC-002](../../tests/capi/TEST-CAPI-ASYNC-002.md)
+- [TEST-CAPI-ASYNC-006](../../tests/capi/TEST-CAPI-ASYNC-006.md)
+- [TEST-CAPI-ASYNC-007](../../tests/capi/TEST-CAPI-ASYNC-007.md)
 
 ## Code References
 

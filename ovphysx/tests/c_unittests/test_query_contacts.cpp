@@ -112,9 +112,11 @@ TEST_F(QueryContactsTest, UnpairableFilterFailsTheTaskWithTheRuntimeMessage)
         complete_task(m_handle, ovphysx_query_contacts(m_handle, &selection, 1, 1, &query, &summary));
     EXPECT_EQ(failed.status, OVPHYSX_API_ERROR);
     EXPECT_NE(last_task_error().find("one object per sensor"), std::string::npos) << last_task_error();
-    EXPECT_EQ(query, 0u);
+    // The failed query keeps the handle the call returned; releasing it is a no-op.
+    EXPECT_NE(query, 0u);
     EXPECT_EQ(summary.total_prim_count, 0u);
     EXPECT_EQ(summary.attributes, nullptr);
+    EXPECT_EQ(complete_task(m_handle, ovphysx_release_query(m_handle, query)).status, OVPHYSX_API_SUCCESS);
 
     // One shared filter pairs: the query opens and releases.
     const ovphysx_query_selection_t ground = glob("/World/BigBase");
@@ -124,7 +126,7 @@ TEST_F(QueryContactsTest, UnpairableFilterFailsTheTaskWithTheRuntimeMessage)
     EXPECT_NE(query, 0u);
     EXPECT_GT(summary.attribute_count, 0u);
     EXPECT_NE(summary.attributes, nullptr);
-    EXPECT_EQ(summary.query_result_id, 0u);
-    EXPECT_EQ(summary.all_handle, 0u);
+    EXPECT_EQ(summary.query_result_id.raw_id, 0u);
+    EXPECT_EQ(summary.all_handle.raw_id, 0u);
     EXPECT_EQ(complete_task(m_handle, ovphysx_release_query(m_handle, query)).status, OVPHYSX_API_SUCCESS);
 }

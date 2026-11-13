@@ -5,7 +5,7 @@
 
 # Dynamic rigid body on a Cylinder
 
-Convenience composition: one Cylinder prim that is both the body and its only collider (a PxConvexCoreGeometry with the default runtime settings). Owns no columns; everything comes from the listed components.
+Convenience composition: one Cylinder [prim](glossary.md#prim) that is both the body and its only collider (a PxConvexCoreGeometry with the default runtime settings). Owns no columns; everything comes from the listed components.
 
 - **Type:** [`Cylinder`](Cylinder.md)
 - **Required APIs:** [`PhysicsRigidBodyAPI`](PhysicsRigidBodyAPI.md), [`PhysicsCollisionAPI`](PhysicsCollisionAPI.md)

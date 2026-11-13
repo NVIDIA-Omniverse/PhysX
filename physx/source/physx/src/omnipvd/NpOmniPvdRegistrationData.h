@@ -21,6 +21,7 @@
 #include "PxMaterial.h"  // for PxMaterialFlags, PxCombineMode
 #include "PxRigidBody.h"  // for PxRigidBodyFlags
 #include "PxRigidDynamic.h"  // for PxRigidDynamicLockFlags
+#include "PxArticulationReducedCoordinate.h"  // for PxSpatialForce
 #include "PxShape.h"  // for PxShapeFlags
 #include "solver/PxSolverDefs.h"  // for PxArticulationMotion
 #include "geometry/PxCustomGeometry.h"  // for PxCustomGeometry::Callbacks
@@ -34,6 +35,14 @@
 
 namespace physx
 {
+
+// The public PxSpatialForce has alignment padding. The wire reaction is six packed floats.
+struct OmniPvdJointReaction
+{
+	PxVec3 force;
+	PxVec3 torque;
+};
+PX_COMPILE_TIME_ASSERT(sizeof(OmniPvdJointReaction) == 6 * sizeof(PxReal));
 
 class PxAggregate;
 class PxArticulationJointReducedCoordinate;

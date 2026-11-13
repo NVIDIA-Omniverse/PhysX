@@ -1,0 +1,21 @@
+#usda 1.0
+(
+    metersPerUnit = 1
+    upAxis = "Z"
+    subLayers = [
+        @./two_articulations.usda@
+    ]
+)
+
+# One articulation link with a non-unit world scale, so a link's stored
+# worldScale differs from the identity the other links carry.
+over "World"
+{
+    over "articulation"
+    {
+        over "articulationLink0"
+        {
+            float3 xformOp:scale = (2, 2, 2)
+        }
+    }
+}

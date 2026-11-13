@@ -212,6 +212,7 @@ namespace physx
 #if PX_SUPPORT_OMNI_PVD
 		PxHashMap<PxU32, PxU32>									mRemapToNodeMap;
 #endif
+		PxBitMap												mPendingArticulationUploads;
 		PxArray<PxU32>											mDeferredFreeNodeIDs;
 
 		Cm::BlockArray<PxgStaticConstraints, 1024>				mStaticConstraints;

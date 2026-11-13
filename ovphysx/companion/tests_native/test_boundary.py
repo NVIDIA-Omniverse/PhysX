@@ -26,6 +26,7 @@ from pathlib import Path
 assert importlib.util.find_spec('ovphysx_companion') is None
 if sys.argv[1]=='True':sys.path.insert(0,sys.argv[2])
 import ovphysx,ovstage
+from ovphysx.population import physics_population_descs
 from ovphysx import PhysX
 from ovphysx.types import SimObjectType,ObjectScope
 schemas=json.loads(sys.argv[4])
@@ -34,7 +35,7 @@ ovstage.population.register_usd_schemas(schemas)
 PhysX.set_cpu_mode(True)
 p=PhysX();s=ovstage.Stage('core-boundary')
 try:
-    ovstage.population.open_usd(s,sys.argv[3],ordinal=1,domains=ovstage.PopulationDomain.ALL)
+    ovstage.population.open_usd_with_desc(s,sys.argv[3],ordinal=1,time=ovstage.population.DEFAULT_TIME,descs=physics_population_descs(rendering=True))
     s.advance_write_floor(ordinal=1).wait();p.wait_task(p.attach_ovstage(s,read_ordinal=1))
     p.wait_task(p.step(.01))
     with p.read_sync(SimObjectType.RIGID_BODY,['position'],scope=ObjectScope.ALL) as result:

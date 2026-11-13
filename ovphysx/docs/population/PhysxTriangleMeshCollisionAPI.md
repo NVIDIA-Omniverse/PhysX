@@ -5,11 +5,11 @@
 
 # PhysxTriangleMeshCollisionAPI
 
-Triangle mesh cooking parameter (weld tolerance) for a Mesh collider with physics:approximation none or sdf. Cooking input only; nothing here is verified.
+Triangle mesh cooking parameter (weld tolerance) for a [Mesh](glossary.md#mesh) collider with physics:approximation none or sdf. Cooking input only; nothing here is verified.
 
-- **Applies to:** `Gprim`
+- **Applies to:** [`Gprim`](glossary.md#gprim)
 - **Requires on the same prim:** [`PhysicsCollisionAPI`](PhysicsCollisionAPI.md)
-- **Read only when listed in `usd-schemas`.**
+- **Read only when listed in [`usd-schemas`](prim.md#columns).**
 
 ## What USD population writes
 
@@ -17,15 +17,15 @@ Every declared attribute of an applied collision API is published at its resolve
 
 ## Columns
 
-*Raw fallback* is the USD schema value. *Producer writes* is what ovstage population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
+*Raw fallback* is the [USD](glossary.md#usd) schema value. *Producer writes* is what [ovstage](glossary.md#ovstage) population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
 
 | Column | Type | Units | Raw fallback | Producer writes | Parser default | If absent |
 |---|---|---|---|---|---|---|
-| `physxTriangleMeshCollision:weldTolerance` | float32 | length | `-inf` | resolved USD value (authored, else raw fallback) | `-FLT_MAX` | -FLT_MAX from the TriangleMeshCookingParams constructor: no vertex welding. A published -inf (the raw fallback) is also negative and has the same effect. A NaN is rewritten to -FLT_MAX unconditionally. In the cooking task a positive value is used as the weld distance and exactly 0 selects an automatic tolerance. |
+| `physxTriangleMeshCollision:weldTolerance` | float32 | length | `-inf` | resolved USD value (authored, else raw fallback) | `-FLT_MAX` | -FLT_MAX, the triangle mesh cooking default: no vertex welding. A published -inf (the raw fallback) is also negative and has the same effect. A NaN is rewritten to -FLT_MAX unconditionally. In the cooking task a positive value is used as the weld distance and exactly 0 selects an automatic tolerance. |
 
 ## Interactions
 
-- **[`PhysicsMeshCollisionAPI`](PhysicsMeshCollisionAPI.md):** Read by parseTriangleMeshCookingExt for descriptor kinds none and sdf. No usd-schemas gate: the column is read whenever it exists on the collider.
+- **[`PhysicsMeshCollisionAPI`](PhysicsMeshCollisionAPI.md):** Read for descriptor kinds none and sdf. No usd-schemas gate: the column is read whenever it exists on the collider.
 
 ## Notes
 

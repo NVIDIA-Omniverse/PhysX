@@ -220,3 +220,6 @@ Refer to the [Tensor Bindings (deprecated)](../tutorials/tensor_bindings.md) ref
 mesh points and velocities are also available through the ovstage
 [output read](../ovstage_integration.md) API (object types
 `DEFORMABLE_VOLUME` and `DEFORMABLE_SURFACE`, attributes `points` / `velocities`).
+
+The skinned render meshes of a body are readable as `DEFORMABLE_SKIN_MESH` (`points` only); refer to
+[Readable data](../read_write/readable.md#deformable-skin-meshes).

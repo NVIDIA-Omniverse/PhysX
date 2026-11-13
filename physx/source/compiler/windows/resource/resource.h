@@ -30,7 +30,8 @@
 #define RC_COMPANY_NAME_STR "NVIDIA Corporation"
 #define RC_LEGAL_COPYRIGHT_STR "Copyright (C) 2026 NVIDIA Corporation"
 
-#if defined(_WIN64)
+// rc.exe does not predefine _WIN64; CMake supplies WIN64 for 64-bit targets.
+#if defined(_WIN64) || defined(WIN64)
 	#define RC_PTR_STR "64"
 #elif defined(_WIN32)
 	#define RC_PTR_STR "32"

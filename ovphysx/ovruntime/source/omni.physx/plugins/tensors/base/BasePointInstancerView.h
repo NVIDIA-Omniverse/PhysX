@@ -21,6 +21,7 @@ namespace physx
 namespace tensors
 {
 class BaseSimulationView;
+struct OvStageDeviceWriteArgs;
 
 // Deliberately not an ISimulationView-style public interface: the ovstage read is the only consumer
 // and it holds the concrete type. REQ-READ-INSTANCER-001 records the shape an interface would take.
@@ -57,22 +58,14 @@ public:
         eLocalOrientation, // 4 floats per slot, xyzw, instancer frame
         eLinearVelocity,  // 3 floats per slot, world frame
         eAngularVelocity, // 3 floats per slot, world frame
-        // World frame like velocity, and shares its plumbing: same device scratch (mRd*VelAccDev),
-        // same gather kernel, only the PxRigidDynamicGPUAPIReadType differs. PhysX returns ZERO unless
-        // the scene carries PxSceneFlag::eENABLE_BODY_ACCELERATIONS, which PhysXScene sets on every
-        // scene it creates -- a silent zero, not an error, if that changes.
+        // World frame like velocity, and shares its gather kernel; only the PxRigidDynamicGPUAPIReadType
+        // differs. PhysX returns ZERO unless the scene carries PxSceneFlag::eENABLE_BODY_ACCELERATIONS,
+        // which PhysXScene sets on every scene it creates -- a silent zero, not an error, if that changes.
         eLinearAcceleration,  // 3 floats per slot, world frame
         eAngularAcceleration, // 3 floats per slot, world frame
     };
 
-    // `dst` is device memory on the GPU view and host memory on the CPU one, matching where that
-    // view's columns live. Slots with no instance are left as the caller zero-filled them.
-    virtual bool getInstancerColumnsOvStage(InstancerColumn column,
-                                            void* dst,
-                                            const ::physx::PxU32* offsets,
-                                            ::physx::PxU32 numInstancers) const = 0;
-
-    // The write direction (ADR-0012). ONE instancer per call, unlike the bulk getter
+    // The write direction (ADR-0012). ONE instancer per call, unlike the column reads
     // above, and that asymmetry is deliberate: a read fills every column in one pass, while a write
     // hands each instancer's array to the caller as its own group and commits them INDEPENDENTLY and
     // in any order. A bulk setter would have no moment at which all of them are filled.
@@ -89,10 +82,16 @@ public:
     // A SCALED INSTANCER round-trips only up to its scale, for eLocalPosition / eLocalOrientation:
     // the local pair carries position and rotation, USD keeps `scales` as its own array, and no
     // inverse can restore what the forward direction discarded. See TestInstancerReframe.
+    //
+    // `hostMask`, on the CPU view, is a masked commit's selection (ADR-0052): one byte per instance slot,
+    // an unselected instance left as it is. `deviceArgs` is how a GPU session write runs (its stream, device
+    // mask and scratch); null for the ovstage drain. Each view ignores the other's.
     virtual bool setInstancerColumnOvStage(InstancerColumn column,
                                            ::physx::PxU32 instancerIndex,
                                            const void* src,
-                                           ::physx::PxU32 arrayLength) = 0;
+                                           ::physx::PxU32 arrayLength,
+                                           const uint8_t* hostMask,
+                                           const OvStageDeviceWriteArgs* deviceArgs) = 0;
 
     // How many instancers this view holds, so a caller can bound `instancerIndex`.
     ::physx::PxU32 getInstancerCount() const

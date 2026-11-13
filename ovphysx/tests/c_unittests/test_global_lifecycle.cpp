@@ -13,6 +13,9 @@
  *
  * @implements REQ-CAPI-CONFIG-001
  * @covers AC-4
+ *
+ * @implements REQ-CAPI-REENTRY-001
+ * @covers AC-2 AC-3
  */
 
 #include <gtest/gtest.h>
@@ -495,25 +498,26 @@ TEST(GlobalLifecycle, LiveHandleShutdownEndsCallbackDelivery)
 
 namespace
 {
-struct ShutdownDestroyState
+struct ShutdownLookupState
 {
     std::mutex mutex;
     std::condition_variable cv;
     ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
-    ovphysx_result_t destroyResult = { OVPHYSX_API_ERROR };
+    ovphysx_result_t lookupResult = { OVPHYSX_API_ERROR };
+    ovphysx_result_t destroyResult = { OVPHYSX_API_SUCCESS };
     bool entered = false;
-    bool destroyRequested = false;
-    bool destroyFinished = false;
+    bool lookupRequested = false;
+    bool lookupFinished = false;
 };
 
-void shutdownDestroyCallback(
+void shutdownLookupCallback(
     ovphysx_log_level_t,
     ovphysx_string_t,
     ovphysx_string_t,
     double,
     void* userData)
 {
-    ShutdownDestroyState* state = static_cast<ShutdownDestroyState*>(userData);
+    ShutdownLookupState* state = static_cast<ShutdownLookupState*>(userData);
     {
         std::unique_lock<std::mutex> lock(state->mutex);
         if (state->entered)
@@ -521,33 +525,41 @@ void shutdownDestroyCallback(
         state->entered = true;
         state->cv.notify_all();
         if (!state->cv.wait_for(
-                lock, std::chrono::seconds(5), [state] { return state->destroyRequested; }))
+                lock, std::chrono::seconds(5), [state] { return state->lookupRequested; }))
         {
             return;
         }
     }
 
-    const ovphysx_result_t result = ovphysx_destroy_instance(state->handle);
+    // This lookup takes the instance registry lock but runs no engine work, so it
+    // is allowed inside the callback while shutdown drains callbacks.
+    bool attached = true;
+    const ovphysx_result_t lookup = ovphysx_is_stage_attached(state->handle, nullptr, &attached);
+    // Destruction waits for the instance's work, so it is refused inside a callback.
+    const ovphysx_result_t destroy = ovphysx_destroy_instance(state->handle);
     {
         std::lock_guard<std::mutex> lock(state->mutex);
-        state->destroyResult = result;
-        state->destroyFinished = true;
+        state->lookupResult = lookup;
+        state->destroyResult = destroy;
+        state->lookupFinished = true;
     }
     state->cv.notify_all();
 }
 
 }
 
+// @implements REQ-CAPI-OMNIPVD-LATE-001
+// @covers AC-11
 TEST(GlobalLifecycle, LiveInstanceShutdownDrainDoesNotHoldInstanceMapLock)
 {
     expectSuccess(ovphysx_initialize());
-    ShutdownDestroyState state;
+    ShutdownLookupState state;
     expectSuccess(ovphysx_create_instance(&state.handle));
     ASSERT_NE(state.handle, OVPHYSX_INVALID_HANDLE);
     expectSuccess(ovphysx_set_log_level(OVPHYSX_LOG_VERBOSE));
     const ScopedLogCallbackDisable callbackGuard;
     expectSuccess(ovphysx_set_log_callback(
-        OVPHYSX_LOG_VERBOSE, nullptr, shutdownDestroyCallback, &state));
+        OVPHYSX_LOG_VERBOSE, nullptr, shutdownLookupCallback, &state));
 
     std::thread producer([] { ovphysx_log_emit_test_messages(); });
     bool entered = false;
@@ -556,7 +568,7 @@ TEST(GlobalLifecycle, LiveInstanceShutdownDrainDoesNotHoldInstanceMapLock)
         entered = state.cv.wait_for(
             lock, std::chrono::seconds(5), [&state] { return state.entered; });
         if (!entered)
-            state.destroyRequested = true;
+            state.lookupRequested = true;
     }
     if (!entered)
     {
@@ -581,24 +593,37 @@ TEST(GlobalLifecycle, LiveInstanceShutdownDrainDoesNotHoldInstanceMapLock)
     shutdownStartedFuture.wait();
     EXPECT_EQ(shutdown.wait_for(std::chrono::milliseconds(100)), std::future_status::timeout);
 
+    // A missing handle returns before teardown or logging, but destroy first
+    // acquires exclusive instance-map access. Metadata alone only probes shared
+    // access and cannot detect a shared map lock held across callback drain.
+    std::future<ovphysx_result_t> invalidDestroy = std::async(
+        std::launch::async, [] { return ovphysx_destroy_instance(UINT64_MAX); });
+    const bool mapUnlocked = invalidDestroy.wait_for(std::chrono::seconds(2)) == std::future_status::ready;
+    EXPECT_TRUE(mapUnlocked);
+
     {
         std::lock_guard<std::mutex> lock(state.mutex);
-        state.destroyRequested = true;
+        state.lookupRequested = true;
     }
     state.cv.notify_all();
 
     {
         std::unique_lock<std::mutex> lock(state.mutex);
         EXPECT_TRUE(state.cv.wait_for(
-            lock, std::chrono::seconds(5), [&state] { return state.destroyFinished; }));
+            lock, std::chrono::seconds(5), [&state] { return state.lookupFinished; }));
     }
     producer.join();
     ASSERT_EQ(shutdown.wait_for(std::chrono::seconds(5)), std::future_status::ready);
     EXPECT_EQ(shutdown.get().status, OVPHYSX_API_SUCCESS);
-    EXPECT_EQ(state.destroyResult.status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(invalidDestroy.get().status, OVPHYSX_API_ERROR);
+    EXPECT_EQ(state.lookupResult.status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(state.destroyResult.status, OVPHYSX_API_INVALID_STATE);
     expectSuccess(ovphysx_set_log_level(OVPHYSX_LOG_WARNING));
 
-    // Balance the runtime reference released by the callback-side destroy.
+    // The refused destroy left the instance alive; destroy it from the test thread.
+    expectSuccess(ovphysx_destroy_instance(state.handle));
+
+    // Balance the runtime reference released by that destroy.
     expectSuccess(ovphysx_initialize());
     expectSuccess(ovphysx_shutdown());
 }

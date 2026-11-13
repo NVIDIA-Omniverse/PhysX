@@ -34,14 +34,16 @@ def inspect_selection(owner):
 
 def main():
     import ovphysx,ovstage
+    from ovphysx.population import physics_population_descs
     from ovphysx_companion.preview import PreviewSession
     from ovphysx_companion.schemas import physx_schema_paths
     ovstage.population.register_usd_schemas([str(p) for p in physx_schema_paths()])
     ovphysx.PhysX.set_cpu_mode(True)
     physics=ovphysx.PhysX();stage=ovstage.Stage('inspector-tools')
     try:
-        ovstage.population.open_usd(stage,str(Path(__file__).parent/'scenes/inspection.usda'),ordinal=1,
-                                    domains=ovstage.PopulationDomain.ALL)
+        ovstage.population.open_usd_with_desc(stage,str(Path(__file__).parent/'scenes/inspection.usda'),ordinal=1,
+                                    time=ovstage.population.DEFAULT_TIME,
+                                    descs=physics_population_descs(rendering=True))
         stage.advance_write_floor(ordinal=1).wait()
         with PreviewSession(physics,stage,read_ordinal=1) as preview:
             for _ in range(30):preview.step(1/120)

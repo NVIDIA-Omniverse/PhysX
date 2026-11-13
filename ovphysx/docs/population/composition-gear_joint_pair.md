@@ -5,7 +5,7 @@
 
 # Two hinged rigid-body Cubes coupled by a gear joint
 
-Multi-prim test composition: two Cube rigid bodies (B translated +3 in x), each hinged to the world by its own PhysicsRevoluteJoint, and a PhysxPhysicsGearJoint between the bodies that references the two hinges and couples their angular velocities. Only the gear prim is verified: it is a native PxGearJoint at runtime, so the PhysicsJoint base columns are observed on it together with physics:gearRatio. Owns no columns and generates no helper.
+Multi-prim test composition: two Cube rigid bodies (B translated +3 in x), each hinged to the world by its own PhysicsRevoluteJoint, and a PhysxPhysicsGearJoint between the bodies that references the two hinges and couples their angular velocities. Only the gear [prim](glossary.md#prim) is verified: it is a native PxGearJoint at runtime, so the [PhysicsJoint](glossary.md#physicsjoint) base columns are observed on it together with physics:gearRatio. Owns no columns and generates no helper.
 
 - **Form:** multi-prim; no helper, the contract test builds each prim with `PrimBatch`.
 

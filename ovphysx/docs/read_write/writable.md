@@ -3,6 +3,9 @@
 
 # Writable data
 
+See the [detailed I/O attribute reference](attributes/index.md) for exact request names,
+layouts, conditional units and per-attribute restrictions.
+
 The inventory of every quantity writable through the write API, per object type. Read-only quantities
 are covered in [Readable data](readable.md); this page lists only what a write accepts.
 
@@ -50,8 +53,9 @@ summary reports planned groups, not writability.
   before the next step. Character-controller `move` updates its controller at commit, but the
   backing actor's rigid-body pose is updated on the next step. The `write_done_sync` you pass
   (`cuda_stream=` / `cuda_wait_event=` in
-  Python) orders the commit after **your fill's** CUDA stream/event; see
-  [CUDA synchronization](device.md#cuda-synchronization). The write runtime separately synchronizes
+  Python) orders the commit after **your fill's** CUDA stream/event. A DirectGPU device group is
+  ordered on the device, so its commit does not block the host; every other group waits for your
+  fill on the host. See [CUDA synchronization](device.md#cuda-synchronization). The write runtime separately synchronizes
   commit with an outstanding PhysX step. Keep session and step calls serialized and
   complete a mid-session step before further scene-dependent accesses; this internal
   synchronization does not collect the step's outcome.
@@ -62,6 +66,8 @@ summary reports planned groups, not writability.
 - **What the sim overwrites.** *State* (poses, velocities, root state, joint DOF state, point sets)
   is recomputed by the next solver step. *Inputs, targets, and properties* (drive targets, all joint
   and tendon properties, materials, mass/inertia/COM, flags) persist across steps until re-written.
+  This does not protect a live value from a pending OVStage parse recomputation; see
+  [Mixing OVStage mass edits and session writes](#mixing-ovstage-mass-edits-and-session-writes).
   *Rigid external forces* (`force`, `wrench`) are the only write-only controls the solver consumes
   and clears each step. *Vehicle wheel commands* (`driveTorque`, `brakeTorque`, `steerAngle`) are
   also write-only but **persist until re-written** — the solver reads them every step without
@@ -69,6 +75,23 @@ summary reports planned groups, not writability.
   Whole-vehicle controls also persist. `resetToRestState` instead runs once at commit and is never
   retained as a per-step command.
   Character controller `move` is applied once at commit and is not replayed; see its section below.
+- **Wake on write (sleeping articulations).** On CPU and GPU-with-readback scenes, a write wakes a
+  sleeping articulation when it sets state or commands the mechanism, following PhysX's setters:
+  `rootPosition`, `rootOrientation`, `rootLinearVelocity`, `rootAngularVelocity`, `jointPosition`,
+  `jointVelocity`, `jointActuationForce`, `jointPositionTarget`, `jointVelocityTarget` and
+  `tendonOffset` (the offset actuates the tendon by shifting its length, which changes its steady
+  state). **Does not wake:** the drive gains and tuning properties — `jointStiffness`,
+  `jointDamping`, `tendonStiffness`, `tendonDamping`, `tendonLimitStiffness`, `tendonRestLength`,
+  `tendonLimit`, and the other joint/tendon properties above. These commit and read back truthfully on
+  the tendons and joints that accept them — `tendonLimit` and `tendonRestLength` exist only on fixed
+  tendons and are refused by name on a spatial tendon (see the Fixed / spatial tendons section) — but
+  the articulation stays asleep, so a property change that *would* alter its settled
+  state (for example `tendonRestLength`, or `jointStiffness` when the joint/tendon settled under load)
+  does not take visible effect until the articulation is awake. There is no whole-articulation wake command —
+  the rigid-body `wake` attribute is refused on an articulation link (a link cannot wake
+  independently) — so wake it with one of the waking writes above; re-sending the current
+  `jointPositionTarget` or `rootPosition` is enough. This is by design (inherited from PhysX), not a
+  dropped write. A DirectGPU scene has no sleeping, so none of this applies there.
 - **Persistence is runtime-only.** Every write publishes into live PhysX simulation state. **No
   write is authored back into the ovstage / USD source representation.** (A read gathers from the
   same live state, which is why a written value round-trips through a read.) Propagating results back
@@ -79,13 +102,30 @@ summary reports planned groups, not writability.
   publishes nothing. Each fetched group names its attribute through `attribute_index`, the
   position in that array (see [Session results](index.md#session-results)). Commits run in the
   order the caller issues them, whatever the fetch order; independent attributes are not promised
-  to commute.
-- **No fill mask.** A commit publishes the whole mapped group — every
-  object the query selects. To write a subset of prims, open the query with a prim-set selection
-  (explicit prim handles or a path pattern); the write then maps only the selected prims. See
-  [Selecting a subset of prims](index.md#selecting-a-subset-of-prims). There is no per-row mask
-  inside a group. Neither `ALL` nor `ACTIVE` scope is a kinematic-body filter.
-  Rows are re-resolved at every commit, never cached across sessions or steps.
+  to commute. `DEBUG_RENDER` does not take several attributes: each of its write sessions names
+  exactly one (see [Debug render](#debug-render)).
+- **Row masks.** A commit publishes the whole mapped group — every object the query selects. To
+  write only some of its rows, commit with a row mask: `ovphysx_commit_group_masked` in C,
+  `session.commit(group, mask=...)` in Python. The mask is a contiguous 1-D bool or uint8 tensor with
+  one entry per group row, on the group's CUDA device, or in host memory for a host group; a nonzero
+  entry selects the row. A row is one tensor of a deformable group, and otherwise one entry of the
+  tensor's leading dimension: one DOF of a joint or joint-property group, so a mask selects single
+  axes; for a point instancer, one slot of its instance array, holes included. An unselected row keeps its value, except that an unselected
+  `force` or `wrench` row applies no force from this commit. On a DirectGPU scene a `force` or
+  `wrench` commit sets the forces of every row of its group, so it also clears what an earlier
+  commit in the same step applied to its unselected rows: of two commits with disjoint masks, only
+  the second one's forces apply. Elsewhere forces add up within a step. On a DirectGPU scene an
+  articulation root, joint or tendon commit writes every articulation of its group back, unselected
+  ones with their current values: until the next step those read zero link accelerations and incoming
+  joint forces, and a root whose centre of mass is offset can drift slightly with each such commit. A
+  selected query's write does the same to the articulations outside its selection. A malformed mask
+  is refused at commit and leaves the group live, as is a mask on a character controller, vehicle or
+  particle group. A DirectGPU group reads the mask on the device: keep it valid until the work
+  queued on the commit's stream has run, and for as long as a graph that captured the commit may be
+  replayed. To write a fixed subset of prims, open the query with a
+  [prim-set selection](index.md#selecting-a-subset-of-prims) (explicit prim handles or a path
+  pattern) instead; the write then maps only the selected prims. Neither `ALL` nor `ACTIVE` scope is
+  a kinematic-body filter. Rows are resolved for one write session and never reused by another.
 - **Committing a live group consumes it.** After an accepted commit of a live group
   owned by this session -- `ovphysx_commit_group` in C, `session.commit(group)` in
   Python -- the mapped buffers belong to physics (dereferencing the C pointers, or touching the
@@ -95,22 +135,57 @@ summary reports planned groups, not writability.
   external consumers of their buffers before these transitions.
 - **Read the failure reason.** Python raises `RuntimeError` for a rejected submission and
   `TaskError` (a `RuntimeError`) with the write's diagnostic when an operation is waited.
+  Before it submits, `session.commit` validates ownership in Python: a group owned by another
+  session, or any object that is not one of this session's fetched groups (`session.groups`),
+  raises `ValueError`,
+  and a group this session already committed raises `RuntimeError`. Both are raised
+  synchronously at the call, with no Operation or Task to wait, as they are caught before
+  native admission.
   In C, admission rejection uses `ovphysx_get_last_error()` on the calling thread;
   accepted execution failures are reported by the wait and
   `ovphysx_get_last_task_error()`. Read the cause before destroying its wait result.
   A rejected submission retains the group. Once execution accepts this session's
-  live group for publication, it is spent even if publication fails. An unknown,
-  foreign or already-spent group reports a task failure without consuming another
-  valid group.
+  live group for publication, it is spent even if publication fails. In C, where there is no
+  such object-identity precheck, an unknown, foreign or already-spent non-null native group
+  pointer is admitted and reports a task failure without consuming another valid group.
   Previously committed groups remain applied, and the failing group may also be
   partially applied. There is no rollback or applied/rejected row count; a failure
   guarantees zero writes only when its diagnostic says so.
+
+## Mixing OVStage mass edits and session writes
+
+Session commits and OVStage edits have different application times. A completed
+`update_from_ovstage()` for an authored rigid mass-frame edit queues a combined
+mass, inertia, and center-of-mass recomputation from the stage for the next step.
+It does not make that recomputation observable immediately. A session commit
+before that step updates live PhysX state, but does not cancel the queued work
+or change its authored inputs. The next step can therefore replace the session
+value even when the session commit was the later call. There is no global
+"latest call wins" rule across these two routes.
+
+For example, starting with mass 3, draining an OVStage `physics:mass = 6` edit
+leaves the live mass at 3. Committing session `mass = 9` then makes a read return
+9. The next step applies the queued recomputation and a read returns 6.
+
+To retain a session override after that recomputation, seal and drain the
+OVStage edit, complete a simulation step, and then commit the session override.
+Further steps preserve the mass override until another write or a stage-driven
+recomputation replaces it. The intervening step advances the simulation using
+the stage-derived mass; it is not a flush-only operation. If that step must use
+the desired mass, author the desired final mass in OVStage before draining
+instead of relying on a session override before the step. A session mass write
+does not itself rescale inertia; set the required inertia/COM as well when
+overriding the mass frame.
+
+See [OVStage edit timing](../ovstage_integration.md#deferred-mass-edits-and-session-overrides)
+for the call sequence. Other drain coverage and device restrictions remain as
+listed in [Known limitations](limitations.md).
 
 ## Rigid bodies
 
 Rigid bodies (`RIGID_BODY`): all rigid **state** and **authored inputs** are writable; derived
 quantities (`linearAcceleration`, `angularAcceleration`, `inverseMass`, `inverseInertia`,
-`shapeCount`) and the reported `isSleeping` state are read-only.
+`shapeCount`), the reported `isSleeping` state and the creation-time `worldScale` are read-only.
 
 On CPU and GPU-with-readback scenes, PhysX rejects `linearVelocity` and
 `angularVelocity` setters on standalone kinematic bodies. Commit reports the SDK
@@ -166,11 +241,11 @@ orientation are one transform, so writing one preserves the other.
 
 `wake` is a **write-only command**. Read [`isSleeping`](readable.md#rigid-bodies) separately to
 observe the current state; it does not echo the command. Nonzero wakes the addressed rigid
-dynamics, zero sleeps them, per prim in one commit. It is a **one-time command over the whole mapped
+dynamics, zero sleeps them, per prim in one commit. It is a **one-time command over the mapped
 group**: every row is driven, so a zero row *actively sleeps* that body and there is no
-leave-unchanged value or per-row mask. Use a [prim-set selection](index.md#selecting-a-subset-of-prims)
-to map only the bodies you mean to toggle, including sleeping bodies; unselected bodies stay
-untouched. It is **CONDITIONAL**, refused **only on a DirectGPU scene**
+leave-unchanged value. To leave a body untouched, leave it out of the commit's
+[row mask](#write-timing-ordering-and-persistence), or out of the query with a
+[prim-set selection](index.md#selecting-a-subset-of-prims), which can include sleeping bodies. It is **CONDITIONAL**, refused **only on a DirectGPU scene**
 (`eENABLE_DIRECT_GPU_API`), because DirectGPU requires `eDISABLE_SLEEPING`. The command is
 supported on CPU scenes and GPU scenes with CPU readback. Non-dynamic, kinematic, and disabled
 bodies are skipped rather than driven,
@@ -190,10 +265,10 @@ default material prim when one is authored, or `0` otherwise.
 
 Articulation links (`ARTICULATION_LINK`) share the rigid body's writable **properties**, with these
 exceptions: pose and velocity are read-only (a link moves through its articulation's root pose plus
-joint state); `disableSimulation` is read-only (a link cannot be excluded from its articulation's
-simulation individually); the `kinematicTarget*` names are refused (a link cannot be a kinematic
-target); and `wake` is refused (a link cannot wake independently — the whole articulation wakes as a
-unit). The table below is exactly the writable set.
+joint state); `worldScale` is read-only as on a rigid body; `disableSimulation` is read-only (a
+link cannot be excluded from its articulation's simulation individually); the `kinematicTarget*`
+names are refused (a link cannot be a kinematic target); and `wake` is refused (a link cannot wake
+independently — the whole articulation wakes as a unit). The table below is exactly the writable set.
 
 | Attribute | Meaning | dtype × lanes | Frame | Units |
 | --- | --- | --- | --- | --- |
@@ -220,10 +295,12 @@ write to apply them together. Writes to links of *different* articulations are p
 
 ## Articulation joints — DOFs
 
-Articulation joints (`ARTICULATION_JOINT`) write an array group, one tensor per joint prim with **one
-row per unlocked axis** in `PxArticulationAxis` order — one value per row (`dtype.lanes` is 1), two
-for `jointLimit`. The unit fold is applied once by the setter. Rotational axes are in **degrees** (as
-USD-authored).
+Articulation joints (`ARTICULATION_JOINT`) write a fixed group with **one row per unlocked axis**, as
+the read emits it: one tensor, a joint's rows consecutive in `PxArticulationAxis` order, and each row's
+prim-list entry naming its joint — one value per row (`dtype.lanes` is 1), two for `jointLimit`. Fill
+it as one array. The unit fold is applied once by the setter. Rotational axes are in **degrees** (as
+USD-authored). `ovphysx_create_joint_arrays_from_map_group` (`<ovphysx/ovphysx_utils.h>`) and
+`ovphysx.utils.split_joint_group` give one writable view per joint over the same column.
 
 State and control:
 
@@ -258,7 +335,9 @@ writes nothing (PhysX forbids making an axis limited while its articulation is i
 `±FLT_MAX` (free) sentinel is a legal no-op. After writing `jointPosition`, call
 `ovphysx_update_articulations_kinematic` (C) / `update_articulations_kinematic()` (Python) to refresh
 dependent link transforms. Wait for the C task before consuming those transforms;
-Python waits internally. The update supports CPU and GPU scenes and acts on the
+Python waits internally. On a DirectGPU scene, pass the stream you committed on, so
+the refresh is ordered after the write on the device (see
+[Articulation kinematic update](../api.md#articulation-kinematic-update)). The update supports CPU and GPU scenes and acts on the
 selected articulations (see [Known limitations](limitations.md)).
 
 ## Whole articulations
@@ -346,21 +425,55 @@ raw-wheel vehicle's attachments explicitly when a scene also contains managed ve
 refused on a DirectGPU scene (`eENABLE_DIRECT_GPU_API`), because
 `PxController::move` updates the proxy through `setKinematicTarget` and that CPU
 target is not uploaded. Pose is the controller prim's `RIGID_BODY` position and
-orientation: the backing actor's global pose. That orientation includes the
-capsule-axis rotation and is not the fixup-corrected orientation written back to
-the prim.
+orientation: the backing actor's global position and the controller prim's world
+orientation, with the capsule-axis correction applied as in native prim write-back.
 
 | Attribute | Meaning | dtype × lanes | Frame / values |
 |---|---|---|---|
 | `move` | world-space displacement applied once at commit | f32 × 3 | world |
 
 Each successful commit calls `PxController::move` once with that displacement,
-minimum distance 0, the scene timestep, and the default filters, including a zero
-vector so a controller standing on a moving kinematic platform follows that
-platform. A later step does not replay it. Two commits before one step each apply.
+minimum distance 0, the scene timestep, and the default filters. A finite zero
+vector is passed through too. A later step does not replay it. Two commits before
+one step each apply.
 Non-finite values fail before any controller is updated.
 There is no teleport, local frame, or gravity control on this type. Collision
 flags are not exposed.
+
+### Riding a moving platform
+
+The application must include gravity or a downward grounding displacement in its
+`move` writes. Scene gravity is not automatically added to a character-controller
+move. A zero displacement can carry the controller with a previously touched
+platform, but repeated zero moves do **not** guarantee sustained following: the
+supporting contact can be lost. A controller given no move commits does not update
+its position to follow the platform either.
+
+After settling the controller onto a kinematic platform, advance the platform
+with a kinematic target, step the scene, and commit the controller's movement,
+including its downward component, on every frame. For example, for a grounded
+`/World/Rider` in a metre-scale, Y-up CPU scene running at 60 Hz, the following
+commit after each platform step maintains contact while a level platform moves
+horizontally at 1 m/s:
+
+```python
+import numpy as np
+from ovphysx.types import SimObjectType
+
+# Run after each platform target and physx.step_sync(1.0 / 60.0).
+with physx.write_sync(
+    SimObjectType.CHARACTER_CONTROLLER, "move", pattern="/World/Rider"
+) as session:
+    for group in session.groups:
+        group.tensors[0].assign(np.array([[0.0, -0.01, 0.0]], dtype=np.float32))
+        session.commit_sync(group)
+```
+
+The downward `0.01` is a displacement in scene length units, not a gravity setting;
+choose it from the application's movement/gravity policy for its scale and
+timestep. Add any desired lateral motion to the same vector. The rigid-body pose
+read reflects the move after the next simulation step, including one final step
+when checking the last move of a run.
 
 ## Deformable volumes / surfaces
 
@@ -368,11 +481,13 @@ Deformable volumes / surfaces (`DEFORMABLE_VOLUME`, `DEFORMABLE_SURFACE`) are **
 device-resident**. `restPoints` and the connectivity indices are read-only. `kinematicTarget` (volume
 only) drives sim-mesh nodes to a target through a **runtime-owned per-body buffer** whose lifetime
 outlives any single write — so, unlike a freed-at-release write column, the solver keeps reading valid
-memory. It is **CONDITIONAL**: refused on a volume already made kinematic another way
-(`eKINEMATIC` / `kinematicBody`, or a tensor-binding view's `ePARTIALLY_KINEMATIC`), and driving is
-**monotonic** — a write cannot return an already-driven node to free (no un-pinning). Per node, the
-`.w` lane selects whether it is driven, with **inverted** polarity: `w == 0` drives the node to its
-`xyz` target, `w != 0` leaves it free.
+memory. Opening the write sets up every body it covers, every node free; the `kinematicTarget` read then
+lists those bodies. It is **CONDITIONAL**: refused on a volume already made kinematic another way
+(`eKINEMATIC` / `kinematicBody`, or a tensor-binding view's `ePARTIALLY_KINEMATIC`), and pinning is
+**monotonic** — a node a write marks free while it is pinned stays pinned at its last target, the commit
+writes every other node and succeeds, and an error is logged later. Per node, the `.w` lane selects whether
+it is pinned, with **inverted** polarity: `w == 0` drives the node to its `xyz` target, `w != 0` leaves it
+free. On a DirectGPU scene the commit waits for nothing on the host and can be captured in a CUDA graph.
 
 | Attribute | Meaning | dtype × lanes | Frame |
 | --- | --- | --- | --- |
@@ -424,7 +539,29 @@ Bending/thickness fields apply to surface materials only (a volume material take
 
 Debug render (`DEBUG_RENDER`) settings are writable without an attached stage. Geometry columns
 (`pointPosition` / `pointColor`, `linePosition` / `lineColor`, `trianglePosition` / `triangleColor`)
-are read-only. A commit pushes the instance's full settings onto scenes of this attach; a parameter
+are read-only. A write session names exactly one attribute. Any other count fails at open, before
+the Python context body runs: it publishes no group and commits nothing. `enabled` and `scale` are
+two sessions. Requesting `["enabled", "scale"]` in one session raises `TaskError`.
+
+The opened tensor holds the current value, so committing it unchanged keeps that value. Fill the
+tensor before committing to set a new one:
+
+```python
+import numpy as np
+from ovphysx.types import SimObjectType
+
+with physx.write_sync(SimObjectType.DEBUG_RENDER, ["enabled"]) as session:
+    for group in session.groups:
+        group.tensors[0].assign(np.array([1], dtype=np.uint8))
+        session.commit_sync(group)
+
+with physx.write_sync(SimObjectType.DEBUG_RENDER, ["scale"]) as session:
+    for group in session.groups:
+        group.tensors[0].assign(np.array([2.0], dtype=np.float32))
+        session.commit_sync(group)
+```
+
+A commit pushes the instance's full settings onto scenes of this attach; a parameter
 value of 0 turns that parameter off. A `scope` write is uint64 shape `[4097]`: element 0
 is the count (at most 4096) and elements 1..count are the path tokens. Count 0 draws
 everything. A `cullingBox` write is float32 shape `[7]`: element 0 is 1 to store the next

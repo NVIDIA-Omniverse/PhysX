@@ -1,0 +1,57 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+# IsaacLab's Humanoid on a ground plane in a GPU dynamics scene. One robot, /World/envs/env_0/Robot, which the
+# Lab.humanoid_8192_* rows clone into 8192 environments. humanoid.usda is a copy of the nv_humanoid asset the ovruntime
+# unit tests use (16 bodies, a floating base rooted at the torso, 21 DOFs), without its collision groups: the cloner
+# cannot replicate them, and they filter nothing, since every group filters only one holding no body's collider. The
+# contact capacities hold 8192 robots lying on the ground.
+def Xform "World"
+{
+    def PhysicsScene "physicsScene" (
+        prepend apiSchemas = ["PhysxSceneAPI"]
+    )
+    {
+        vector3f physics:gravityDirection = (0, 0, -1)
+        float physics:gravityMagnitude = 9.81
+        uint physxScene:timeStepsPerSecond = 120
+        bool physxScene:enableGPUDynamics = true
+        uniform token physxScene:broadphaseType = "GPU"
+        uniform token physxScene:solverType = "TGS"
+        uint physxScene:gpuMaxRigidContactCount = 4194304
+        uint physxScene:gpuMaxRigidPatchCount = 524288
+        uint physxScene:gpuFoundLostPairsCapacity = 2097152
+        uint physxScene:gpuFoundLostAggregatePairsCapacity = 2097152
+        uint physxScene:gpuTotalAggregatePairsCapacity = 2097152
+    }
+
+    def Plane "GroundPlane" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "Z"
+        uniform token purpose = "guide"
+    }
+
+    def Scope "envs"
+    {
+        def Xform "env_0"
+        {
+            double3 xformOp:translate = (0, 0, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            # IsaacLab's start height: the torso is the asset's origin.
+            def Xform "Robot" (
+                prepend references = @./humanoid.usda@</nv_humanoid>
+            )
+            {
+                double3 xformOp:translate = (0, 0, 1.34)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+        }
+    }
+}

@@ -4,7 +4,7 @@
 // @implements REQ-COMP-QUERY-001
 // @covers AC-2 AC-3 AC-4
 // @implements REQ-CAPI-COMPANION-001
-// @covers AC-1
+// @covers AC-1 AC-3
 #include "ovphysx_companion/inspection.h"
 #include "internal/sdk/CompanionRuntime.hpp"
 #include <omni/physx/NativeInspection.h>
@@ -100,6 +100,7 @@ ovphysx_companion_status_t resolve(uint64_t attach,const char* path,uint32_t kin
 {
     if (!output || size!=sizeof(*output)) return OVPHYSX_COMPANION_INVALID_ARGUMENT;
     CompanionOperationGuard guard(companionRuntime());if(!guard)return OVPHYSX_COMPANION_BUSY;
+    CompanionOwnerLane owner;if(!owner.tryAcquireForAttachment(attach))return OVPHYSX_COMPANION_BUSY;
     ObjectReference value;
     const ovphysx_companion_status_t result=status(resolveObject(attach,path,ObjectKind(kind),instance,value));
     if (result==OVPHYSX_COMPANION_OK) *output=convert(value);
@@ -118,6 +119,7 @@ ovphysx_companion_status_t read(const ovphysx_companion_object_t* reference,uint
 {
     if (!reference || refSize!=sizeof(*reference) || !output) return OVPHYSX_COMPANION_INVALID_ARGUMENT;
     CompanionOperationGuard guard(companionRuntime());if(!guard)return OVPHYSX_COMPANION_BUSY;
+    CompanionOwnerLane owner;if(!owner.tryAcquireForAttachment(reference->attachment))return OVPHYSX_COMPANION_BUSY;
     omni::physx::native::ObjectReference const ref=convert(*reference);
     switch(ObjectKind(ref.kind)) {
     case ObjectKind::Body: static_assert(sizeof(BodyInspection)==sizeof(ovphysx_companion_body_t));
@@ -137,6 +139,7 @@ ovphysx_companion_status_t articulation(const ovphysx_companion_object_t* ref,ui
     if (!ref || refSize!=sizeof(*ref) || !output || size!=sizeof(*output) || !requiredLinks || !requiredDofs ||
         (linkCapacity && !links) || (dofCapacity && !dofs)) return OVPHYSX_COMPANION_INVALID_ARGUMENT;
     CompanionOperationGuard guard(companionRuntime());if(!guard)return OVPHYSX_COMPANION_BUSY;
+    CompanionOwnerLane owner;if(!owner.tryAcquireForAttachment(ref->attachment))return OVPHYSX_COMPANION_BUSY;
     ArticulationInspection value;
     const ovphysx_companion_status_t result=status(inspectArticulation(convert(*ref),value));
     if(result!=OVPHYSX_COMPANION_OK)return result;
@@ -159,6 +162,7 @@ ovphysx_companion_status_t path(const ovphysx_companion_object_t* ref,uint32_t r
 {
     if(!ref || refSize!=sizeof(*ref) || !required || (capacity && !output))return OVPHYSX_COMPANION_INVALID_ARGUMENT;
     CompanionOperationGuard guard(companionRuntime());if(!guard)return OVPHYSX_COMPANION_BUSY;
+    CompanionOwnerLane owner;if(!owner.tryAcquireForAttachment(ref->attachment))return OVPHYSX_COMPANION_BUSY;
     std::string value;const ovphysx_companion_status_t result=status(objectPath(convert(*ref),value));
     if(result!=OVPHYSX_COMPANION_OK)return result;
     if(value.size()>=UINT32_MAX)return OVPHYSX_COMPANION_ERROR;

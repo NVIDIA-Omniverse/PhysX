@@ -1,0 +1,765 @@
+{
+  "schema_version": 1,
+  "source": "source/omni.physx/plugins/DebugRenderSession.cpp",
+  "tables": [
+    {
+      "name": "kDebugAttributes",
+      "row_type": "Attr",
+      "target": "DEBUG_RENDER",
+      "direction": "read",
+      "fields": [
+        "name",
+        "nameLength",
+        "kind",
+        "param",
+        "access"
+      ],
+      "rows": [
+        {
+          "attribute": "debug_enabled",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Enabled"
+            },
+            "param": {
+              "cpp": "-1"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_scale",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Scale"
+            },
+            "param": {
+              "cpp": "-1"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_world_axes",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Param"
+            },
+            "param": {
+              "cpp": "eWorldAxes"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_body_axes",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Param"
+            },
+            "param": {
+              "cpp": "eBodyAxes"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_body_mass_axes",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Param"
+            },
+            "param": {
+              "cpp": "eBodyMassAxes"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_body_linear_velocity",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Param"
+            },
+            "param": {
+              "cpp": "eBodyLinearVelocity"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_body_angular_velocity",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Param"
+            },
+            "param": {
+              "cpp": "eBodyAngularVelocity"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_contact_point",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Param"
+            },
+            "param": {
+              "cpp": "eContactPoint"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_contact_normal",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Param"
+            },
+            "param": {
+              "cpp": "eContactNormal"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_contact_error",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Param"
+            },
+            "param": {
+              "cpp": "eContactError"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_contact_impulse",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Param"
+            },
+            "param": {
+              "cpp": "eContactImpulse"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_friction_point",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Param"
+            },
+            "param": {
+              "cpp": "eFrictionPoint"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_friction_normal",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Param"
+            },
+            "param": {
+              "cpp": "eFrictionNormal"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_friction_impulse",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Param"
+            },
+            "param": {
+              "cpp": "eFrictionImpulse"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_actor_axes",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Param"
+            },
+            "param": {
+              "cpp": "eActorAxes"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_collision_aabbs",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Param"
+            },
+            "param": {
+              "cpp": "eCollisionAABBs"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_collision_shapes",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Param"
+            },
+            "param": {
+              "cpp": "eCollisionShapes"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_collision_axes",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Param"
+            },
+            "param": {
+              "cpp": "eCollisionAxes"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_collision_compounds",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Param"
+            },
+            "param": {
+              "cpp": "eCollisionCompounds"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_collision_face_normals",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Param"
+            },
+            "param": {
+              "cpp": "eCollisionFaceNormals"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_collision_edges",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Param"
+            },
+            "param": {
+              "cpp": "eCollisionEdges"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_collision_static_pruner",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Param"
+            },
+            "param": {
+              "cpp": "eCollisionStaticPruner"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_collision_dynamic_pruner",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Param"
+            },
+            "param": {
+              "cpp": "eCollisionDynamicPruner"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_joint_local_frames",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Param"
+            },
+            "param": {
+              "cpp": "eJointLocalFrames"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_joint_limits",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Param"
+            },
+            "param": {
+              "cpp": "eJointLimits"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_cull_box",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Param"
+            },
+            "param": {
+              "cpp": "eCullBox"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_mbp_regions",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Param"
+            },
+            "param": {
+              "cpp": "eMBPRegions"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_simulation_mesh",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Param"
+            },
+            "param": {
+              "cpp": "eSimulationMesh"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_sdf",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Param"
+            },
+            "param": {
+              "cpp": "eSDF"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_culling_box",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::CullingBox"
+            },
+            "param": {
+              "cpp": "-1"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_scope",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::Scope"
+            },
+            "param": {
+              "cpp": "-1"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_point_position",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::PointPosition"
+            },
+            "param": {
+              "cpp": "-1"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_point_color",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::PointColor"
+            },
+            "param": {
+              "cpp": "-1"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_line_position",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::LinePosition"
+            },
+            "param": {
+              "cpp": "-1"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_line_color",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::LineColor"
+            },
+            "param": {
+              "cpp": "-1"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_triangle_position",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::TrianglePosition"
+            },
+            "param": {
+              "cpp": "-1"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        },
+        {
+          "attribute": "debug_triangle_color",
+          "values": {
+            "name": {
+              "metadata": "name"
+            },
+            "nameLength": {
+              "metadata": "length"
+            },
+            "kind": {
+              "cpp": "Kind::TriangleColor"
+            },
+            "param": {
+              "cpp": "-1"
+            },
+            "access": {
+              "metadata": "writability"
+            }
+          }
+        }
+      ],
+      "required_fields": 5,
+      "targets": [
+        "DEBUG_RENDER"
+      ]
+    }
+  ]
+}

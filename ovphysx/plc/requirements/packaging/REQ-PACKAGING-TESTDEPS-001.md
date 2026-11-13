@@ -11,10 +11,11 @@ owner: ovphysx
 ## Description
 
 Python tests and benchmarks install OVStage from a named index with wheel hashes
-in their uv locks. CMake drivers supply the index configuration explicitly when
-`UV_NO_CONFIG=1` is set. Unlocked sample, wheel, and no-GPU installs use only the
-OVStage package page alongside PyPI, because `uv pip` does not honor project
-source mappings.
+in their uv locks. CMake drivers disable uv's configuration files (`UV_NO_CONFIG=1`)
+and supply PyPI as the default index. A project run takes OVStage from the project's
+own explicit index. Unlocked sample, wheel, and no-GPU installs use only the OVStage
+package page alongside PyPI, because `uv pip` does not honor project source mappings.
+uv's retry count is left to the environment, as the OVStage fetcher's retry window is.
 
 ## Acceptance Criteria
 
@@ -26,9 +27,16 @@ source mappings.
   lock, so it resolves ovstage from the index on the index's own integrity -- the same
   position an end user is in.
 
-- AC-2: **Resolution works with `UV_NO_CONFIG=1`.** Locked projects receive both
-  PyPI and the configured OVStage index. Unlocked installs receive PyPI and only
-  the OVStage package page, so unrelated internal packages cannot shadow PyPI.
+- AC-2: **Resolution works with `UV_NO_CONFIG=1`.** Locked projects resolve ovstage
+  and physx-usd-schemas through their own explicit `[[tool.uv.index]]` and
+  `[tool.uv.sources]`, which uv honors with configuration files disabled. The
+  environment supplies PyPI as the only default index and no extra index, and clears
+  `UV_INDEX` as well, which a runner image may export. Unlocked installs receive PyPI
+  and only the OVStage package page, so unrelated internal packages cannot shadow PyPI.
+  The whole index is never exported as an extra index: uv asks every extra index about
+  every package it resolves, build-system requirements included, so a 5xx from it would
+  fail packages it never hosted. No driver sets an index variable or `UV_HTTP_RETRIES`
+  itself; CI opts into retries through the environment.
 
 - AC-3: **The ovstage index has exactly one source of truth per project.** The URL lives in
   each project's `pyproject.toml` as a `[[tool.uv.index]]` named `ovstage`; the drivers read
@@ -58,7 +66,7 @@ source mappings.
 - `ovphysx/scripts/validate_python_test_uv_lock.py` — lock shape and hash enforcement,
   and the tree scan that finds every lock recording ovstage (AC-1, AC-5)
 - `ovphysx/scripts/ovstage_index.cmake` — reads the index from the project being
-  configured and emits the appropriate uv source variables (AC-2, AC-3)
+  configured, requires it to be named, and emits the appropriate uv source variables (AC-2, AC-3)
 - `ovphysx/scripts/test_python_runtime.cmake`, `test_benchmarks_python.cmake`,
   `test_python_samples.cmake`, `test_python_wheel.cmake`,
   `ci/ovphysx-nogpu/run_python_smoke.cmake` — the resolving entrypoints (AC-2)

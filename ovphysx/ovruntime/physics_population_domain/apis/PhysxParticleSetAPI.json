@@ -1,0 +1,100 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxParticleSetAPI",
+  "title": "PhysxParticleSetAPI",
+  "summary": "Turns a PointBased (Points, Mesh, ...) or PointInstancer prim into a set of PBD particles simulated by the particle system that physxParticle:particleSystem names. The set is seeded from physxParticle:simulationPoints when present, otherwise from points (positions on a PointInstancer), with velocities from velocities.",
+  "status": "draft",
+  "authoring": false,
+  "enumeration": {
+    "by": "schema",
+    "probe": "physxParticle:particleSystem"
+  },
+  "applies_to": [
+    "PointBased",
+    "PointInstancer"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true,
+    "geometry_role": true
+  },
+  "columns": [
+    {
+      "name": "physxParticle:fluid",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": true,
+      "parser_default": false,
+      "absent": "false: a solid (granular) set. Its phase lacks eParticlePhaseFluid, a particle mass from a density uses the system's solidRestOffset, and a sampler targeting it samples at 2 x solidRestOffset. USD's fallback is true (fluid), so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceParticle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXParticlePropertiesUpdate.cpp"
+      ],
+      "notes": "On change the property update sets or clears the fluid flag on every particle phase of the set."
+    },
+    {
+      "name": "physxParticle:simulationPoints",
+      "usd_type": "point3f[]",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "POINT",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 3,
+        "is_array": true
+      },
+      "required": false,
+      "absent": "The particles are seeded from points (positions on a PointInstancer). On an ovstage Stage every column counts as authored, so the parser always attempts the read; an absent or empty column means no simulation points. A non-empty column whose length differs from the points makes the runtime reject the set.",
+      "units": "length",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/usdLoad/Particles.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceParticle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXParticlePropertiesUpdate.cpp",
+        "source/omni.physx/plugins/ChangeRegister.cpp"
+      ],
+      "notes": "Also written by the runtime: with particle smoothing it receives the simulated positions while points (positions on a PointInstancer) get the smoothed ones. On change the property update re-seeds the positions from this column and resizes the set. Because the column always reports authored on ovstage, the runtime skips the points and positions change handler of every particle set there."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysxParticleAPI",
+      "rule": "physxParticle:particleSystem, particleEnabled, selfCollision and particleGroup are read here without checking that PhysxParticleAPI is listed."
+    },
+    {
+      "with": "PhysxParticleSystem",
+      "rule": "The set copies the scene and the resolved solidRestOffset and fluidRestOffset of the system that physxParticle:particleSystem names."
+    },
+    {
+      "with": "PhysicsMassAPI",
+      "rule": "physics:mass and physics:density are read on the set whenever present, without checking PhysicsMassAPI. A mass > 0 is split evenly over the points; otherwise each particle weighs 8 x restOffset^3 x density (fluid or solid rest offset of the system, volume floored at FLT_EPSILON), with the density from physics:density, else the system's PBD material, else the units-scaled default density."
+    },
+    {
+      "with": "Points",
+      "rule": "Geometry: points and velocities on a PointBased prim, positions and velocities on a PointInstancer."
+    },
+    {
+      "with": "PhysxDiffuseParticlesAPI",
+      "rule": "Diffuse particle settings are read in this API's parse when the prim also lists PhysxDiffuseParticlesAPI."
+    }
+  ],
+  "notes": [
+    "The runtime also reads physxParticle:maxParticles (not declared by the PhysX schema; absent means the point count); it is not described here.",
+    "The runtime rejects a set with the warning 'PhysxSchemaPhysxParticleSetAPI parsing failed' when velocities or physxParticle:simulationPoints is non-empty with a length different from the points, or physxParticle:maxParticles is smaller than the point count."
+  ]
+}

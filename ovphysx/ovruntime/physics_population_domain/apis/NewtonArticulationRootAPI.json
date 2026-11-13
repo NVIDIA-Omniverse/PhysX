@@ -1,0 +1,52 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "NewtonArticulationRootAPI",
+  "title": "NewtonArticulationRootAPI (self-collision fallback)",
+  "summary": "Newton self-collision switch, read on every articulation root when PhysxArticulationAPI carries no enabledSelfCollisions.",
+  "status": "draft",
+  "compiled_cache": "reads",
+  "usd_schemas_gate": false,
+  "applies_to": [
+    "Xformable",
+    "PhysicsJoint"
+  ],
+  "requires": [
+    "PhysicsArticulationRootAPI"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "producer_scope": "Published like any applied API when the Newton schema is registered for population; without the registration its attributes are lost (see the ovphysx Newton schema notes).",
+  "columns": [
+    {
+      "name": "newton:selfCollisionEnabled",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": true,
+      "parser_default": true,
+      "absent": "true, unless PhysxArticulationAPI physxArticulation:enabledSelfCollisions is present.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseArticulation.cpp"
+      ],
+      "notes": "Newton schema attribute (newton-usd-schemas, not shipped with ovphysx). Read on every articulation root when PhysxArticulationAPI is not applied or carries no enabledSelfCollisions, without checking usd-schemas."
+    }
+  ],
+  "notes": [
+    "The parser reads these columns without checking that NewtonArticulationRootAPI is listed in usd-schemas. The compiled cache reads them but does not support the API: a prim that lists NewtonArticulationRootAPI makes the cache bypass.",
+    "Newton's schema makes PhysicsArticulationRootAPI built-ins of this API, and USD population lists built-ins among a prim's applied schemas. The builder writes only what the caller applies, so it requires them on the same prim instead of writing a prim the walker would not recognize."
+  ]
+}

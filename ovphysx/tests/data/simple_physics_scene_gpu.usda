@@ -1,0 +1,31 @@
+#usda 1.0
+# @implements REQ-PACKAGING-SAMPLE-UNITS-001
+# @covers AC-1
+(
+    defaultPrim = "World"
+    doc = "simple_physics_scene with an explicit GPU (DirectGPU) solver/broadphase configuration, for the ovstage device-drain benchmark. Mirrors simple_physics_scene_cpu.usda but selects the GPU pipeline (enableGPUDynamics + GPU broadphase) so the ovstage device-drain path can be exercised on device. The body layout comes from the shared simple_physics_scene.usda sublayer (Cube1, Cube2, Sphere1 dynamics). The lane queries exactly those three dynamic bodies and authors physics:velocity + physics:angularVelocity on all of them each drain, device-resident: the device read serves a column on device only when every change key resolves to a body and the drain rewrites every row (a non-body key or a partial rewrite comes back unresolved / index-mapped and drains on the host), so this dense, bodies-only pattern is what keeps the drain on the zero-copy device path. The lane seals SCOPE_INCLUDE over the two written floors -- only the columns it wrote -- the realistic per-frame steady state a producer authors (a SCOPE_ALL seal would advance the structural floors every drain, extra reconcile work a real control loop never triggers). The shared KinematicCube is deactivated here because a kinematic body is filtered out of the device scatter, so its row would route through the host-staging (filtered-chunk) path and dilute this lane's pure-device measurement."
+    metersPerUnit = 1
+    upAxis = "Y"
+    subLayers = [
+        @./simple_physics_scene.usda@
+    ]
+)
+
+over "World"
+{
+    over "PhysicsScene" (
+        prepend apiSchemas = ["PhysxSceneAPI"]
+    )
+    {
+        bool physxScene:enableGPUDynamics = true
+        uniform token physxScene:broadphaseType = "GPU"
+    }
+
+    # The benchmark measures the pure device fast path: every remaining body is dynamic and takes the
+    # device scatter, so no row is host-staged. See the layer doc above.
+    over "KinematicCube" (
+        active = false
+    )
+    {
+    }
+}

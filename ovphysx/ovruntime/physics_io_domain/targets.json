@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "targets": {
+    "RIGID_BODY": 0,
+    "ARTICULATION_LINK": 1,
+    "ARTICULATION_JOINT": 2,
+    "VEHICLE_WHEEL": 3,
+    "DEFORMABLE_VOLUME": 4,
+    "DEFORMABLE_SURFACE": 5,
+    "PARTICLE_SET": 6,
+    "FIXED_TENDON": 7,
+    "SPATIAL_TENDON": 8,
+    "ARTICULATION": 9,
+    "DEFORMABLE_MATERIAL": 10,
+    "CONTACT_SENSOR": 11,
+    "CHARACTER_CONTROLLER": 12,
+    "VEHICLE": 13,
+    "SCENE": 14,
+    "PHYSX_MATERIAL": 15,
+    "SHAPE": 16,
+    "COMPOUND_SHAPE": 17,
+    "RIGID_ACTOR": 18,
+    "JOINT": 19,
+    "CUSTOM_JOINT": 20,
+    "PARTICLE_SYSTEM": 21,
+    "PHYSICS": 22,
+    "DEBUG_RENDER": 23,
+    "SDF_SHAPE": 24,
+    "DEFORMABLE_SKIN_MESH": 25
+  }
+}

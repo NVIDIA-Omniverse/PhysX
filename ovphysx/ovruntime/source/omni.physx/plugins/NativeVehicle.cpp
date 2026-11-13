@@ -44,12 +44,10 @@ try
     const omni::physics::parse::ObjectKey key=source->findByPath(path);
     const omni::physx::usdparser::ObjectDb * objects=owner->getObjectDatabase();
     omni::physx::internal::InternalPhysXDatabase & db=owner->getInternalPhysXDatabase();
-    const omni::physx::internal::InternalDatabase::Record * record=db.getFullTypedRecord(ePTVehicleController, objects->findEntry(key,usdparser::eVehicleControllerStandard));
+    const omni::physx::internal::InternalDatabase::Record * record=db.getFullTypedRecord(ePTVehicleController, objects->findEntry(key,usdparser::eVehicleController));
     if (!record || !record->mInternalPtr || record->mKey!=key)
     {
         if (command.generation) return VehicleResult::Stale;
-        if (db.getFullTypedRecord(ePTVehicleController,objects->findEntry(key,usdparser::eVehicleControllerTank)))
-            return VehicleResult::Unavailable;
         const omni::physx::internal::InternalDatabase::Record * vehicleRecord=db.getFullTypedRecord(ePTVehicle,objects->findEntry(key,usdparser::eVehicle));
         if (vehicleRecord && vehicleRecord->mInternalPtr &&
             static_cast<internal::InternalVehicle*>(vehicleRecord->mInternalPtr)->isRawWheelControl())
@@ -58,7 +56,8 @@ try
     }
     if (command.generation && command.generation!=record->mGeneration) return VehicleResult::Stale;
     omni::physx::internal::InternalVehicle * vehicle=static_cast<internal::InternalVehicle*>(record->mInternalPtr);
-    if (!vehicle->mPhysXVehicle || vehicle->isRawWheelControl()) return VehicleResult::Unavailable;
+    // ObjectDb indexes controller categories, so the record can also belong to a tank.
+    if (!vehicle->mPhysXVehicle || vehicle->isRawWheelControl() || vehicle->isTank()) return VehicleResult::Unavailable;
     const bool engine=vehicle->mPhysXVehicle->getType()==PhysXVehicleType::eENGINE_DRIVE;
     ::physx::PxRigidDynamic * actor=vehicle->getRigidDynamicActor();
     ::physx::PxScene * scene=actor ? actor->getScene() : nullptr;

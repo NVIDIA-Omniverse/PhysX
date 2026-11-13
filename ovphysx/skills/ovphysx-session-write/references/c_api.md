@@ -1,10 +1,13 @@
 # C Write-Session Lifecycle
 
 Read this file for the C `ovphysx_write()` branch. Session operations return
-`ovphysx_enqueue_result_t`: admission is separate from execution success. Wait
-for each receipt before using output handles/groups, and collect release tasks
-on both success and error paths. Keep input arrays and output slots alive until
-completion. GPU buffers retain their additional producer/consumer dependencies.
+`ovphysx_enqueue_result_t`: admission is separate from execution success. Query
+and write handles are available on admission and may be passed to later calls
+immediately. Wait successfully before inspecting summaries or fetched groups,
+and collect release tasks on both success and error paths. Strings, attribute
+arrays and selection descriptors are copied before submission returns. Keep
+borrowed tensor data and output slots alive until completion. GPU buffers retain
+their additional producer/consumer dependencies.
 
 ## Lifecycle
 
@@ -13,9 +16,9 @@ completion. GPU buffers retain their additional producer/consumer dependencies.
    or a path pattern. The last argument of either is an optional discovery
    result; pass NULL when you do not need it.
 2. **Open** a write session over an array of attributes (`ovphysx_write`). Each
-   entry is an `ovx_string_or_token_t`: a semantic string such as
+   entry is an `ovx_token_or_string_t`: a semantic string such as
    `OVPHYSX_ATTR_LINEAR_VELOCITY`, or an interned token from the attached Stage's
-   dictionary (a token wins over a string in the same entry). Every entry is
+   dictionary (a non-NULL string wins over the token in the same entry). Every entry is
    validated before the session is published: an empty array is rejected, and a
    duplicate (including a string and a token naming the same attribute), a token
    that does not resolve, or an unsupported or read-only name fails the open task.
@@ -67,9 +70,9 @@ static ovphysx_result_t drive_all_bodies(ovphysx_instance_handle_t handle, float
     ovphysx_query_handle_t query = 0;
     ovphysx_write_handle_t write = 0;
     int committed = 0;
-    const ovx_string_or_token_t attrs[] = {
-        { 0, { OVPHYSX_ATTR_LINEAR_VELOCITY, sizeof(OVPHYSX_ATTR_LINEAR_VELOCITY) - 1 } },
-        { 0, { OVPHYSX_ATTR_ANGULAR_VELOCITY, sizeof(OVPHYSX_ATTR_ANGULAR_VELOCITY) - 1 } },
+    const ovx_token_or_string_t attrs[] = {
+        { OVX_INVALID_TOKEN, { OVPHYSX_ATTR_LINEAR_VELOCITY, sizeof(OVPHYSX_ATTR_LINEAR_VELOCITY) - 1 } },
+        { OVX_INVALID_TOKEN, { OVPHYSX_ATTR_ANGULAR_VELOCITY, sizeof(OVPHYSX_ATTR_ANGULAR_VELOCITY) - 1 } },
     };
     error_text[0] = '\0';
     ovphysx_result_t r = finish_task(handle, ovphysx_query(handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &query, NULL), error_text, error_capacity);
@@ -183,9 +186,9 @@ there is nothing to read back -- assert the consequence.
 - Warm up or step before the first write for a recipe that works on DirectGPU too.
   On CPU and GPU-with-readback a pre-step write is applied; on DirectGPU it is
   refused. The write never auto-warms.
-- Every group's tensors are fully filled before `ovphysx_commit_group`; there is
-  no fill mask for skipping rows. Narrow the prims with `ovphysx_query_selection`
-  instead.
+- Every group's tensors are fully filled before `ovphysx_commit_group`. To skip
+  rows, commit with `ovphysx_commit_group_masked` and a bool/uint8 row mask; to
+  write a fixed set of prims, narrow them with `ovphysx_query_selection`.
 - Each group's attribute is identified by `attribute_index`, never by tensor
   shape or fetch order.
 - Both release calls are submitted on the success AND every error path. A

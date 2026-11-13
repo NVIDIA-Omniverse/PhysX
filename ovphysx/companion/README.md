@@ -77,8 +77,9 @@ Runtime interaction borrows live playback with `ToolsSession(physics)`; only an
 explicit `PreviewSession` creates an independent attachment. The viewport sample
 applies forces/drag to the existing ovphysx simulation and the host steps it.
 
-CPU interaction is available in `ovphysx_companion.interaction`: force/impulse at
+Interaction on CPU and GPU-dynamics scenes is available in `ovphysx_companion.interaction`: force/impulse at
 a point, default native force grabbing with damping restoration, and explicit collision-aware D6 dragging with flag/velocity restoration.
+DirectGPU scenes report interaction and scene queries as unavailable.
 `native_access.h` provides optional build-matched, synchronous read-only C++ SDK
 leases. Python receives copied typed data and never runs a native pointer callback.
 See `samples/viewport_drag.py` and `samples/native/read_only.h`.

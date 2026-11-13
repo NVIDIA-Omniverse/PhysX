@@ -114,7 +114,7 @@ class FrameCoordinator:
             if callback is not None and not callable(callback):raise TypeError('Host callbacks must be callable')
         if update is not None:
             if (not isinstance(update,(tuple,list)) or len(update)!=2 or
-                    any(isinstance(v,bool) or not isinstance(v,int) or v<1 for v in update) or update[0]>update[1]):
+                    any(isinstance(v,bool) or not isinstance(v,int) or not 1<=v<=2**63-1 for v in update) or update[0]>update[1]):
                 raise ValueError('update requires positive ordered source ordinals')
         self._entered=True
         try:

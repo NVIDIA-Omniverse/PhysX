@@ -189,15 +189,20 @@ namespace physx {
 
 		if(theMesh == NULL)
 		{
+			// ### DEFENSIVE against NvBugs 6408886 / OMPE-100163
+			if(!theDesc.isValid())
+			{
+				PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "RepX: invalid triangle mesh descriptor. The mesh is not created.");
+				return PxCreateRepXObject(theMesh);
+			}
 			PX_ASSERT(inArgs.cooker);
 			theTempBuf.clear();
 
 			PxCookingParams params = *inArgs.cooker;
 			params.midphaseDesc = PxMeshMidPhase::eBVH33;
 
-			PxCookTriangleMesh( params, theDesc, theTempBuf );
-//			theMesh = inArgs.physics.createTriangleMesh( theTempBuf );
-			theMesh = static_cast<PxBVH33TriangleMesh*>(inArgs.physics.createTriangleMesh( theTempBuf ));
+			if(PxCookTriangleMesh( params, theDesc, theTempBuf ))
+				theMesh = static_cast<PxBVH33TriangleMesh*>(inArgs.physics.createTriangleMesh( theTempBuf ));
 		}
 
 		return PxCreateRepXObject( theMesh );
@@ -290,15 +295,20 @@ namespace physx {
 
 		if(theMesh == NULL)
 		{
+			// ### DEFENSIVE against NvBugs 6408886 / OMPE-100163
+			if(!theDesc.isValid())
+			{
+				PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "RepX: invalid triangle mesh descriptor. The mesh is not created.");
+				return PxCreateRepXObject(theMesh);
+			}
 			PX_ASSERT(inArgs.cooker);
 			theTempBuf.clear();
 
 			PxCookingParams params = *inArgs.cooker;
 			params.midphaseDesc = PxMeshMidPhase::eBVH34;
 
-			PxCookTriangleMesh( params, theDesc, theTempBuf );
-//			theMesh = inArgs.physics.createTriangleMesh( theTempBuf );
-			theMesh = static_cast<PxBVH34TriangleMesh*>(inArgs.physics.createTriangleMesh( theTempBuf ));
+			if(PxCookTriangleMesh( params, theDesc, theTempBuf ))
+				theMesh = static_cast<PxBVH34TriangleMesh*>(inArgs.physics.createTriangleMesh( theTempBuf ));
 		}
 
 		return PxCreateRepXObject(theMesh);
@@ -337,8 +347,19 @@ namespace physx {
 		PxHeightFieldDesc theDesc;
 		readAllProperties( inArgs, inReader, &theDesc, inAllocator, *inCollection );
 		//Now read the data...
-		PxU64 count = 0; //ignored because numRows and numColumns tells the story
+		PxU64 count = 0;
 		readStridedBufferProperty<PxHeightFieldSample>( inReader, "samples", theDesc.samples, count, inAllocator);
+		//PxHeightFieldDesc::isValid() does not look at the sample buffer, but height field creation
+		//reads nbRows * nbColumns samples out of it, so the size has to be checked here. The buffer
+		//is missing or short when the file declares more samples than it carries, or when the sample
+		//data was rejected as malformed.
+		// ### DEFENSIVE against NvBugs 6408886 / OMPE-100163
+		if ( theDesc.samples.data == NULL || count < PxU64(theDesc.nbRows) * PxU64(theDesc.nbColumns) )
+		{
+			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "RepX: height field carries fewer samples than nbRows * nbColumns. The height field is not created.");
+			PxHeightField* theNullField = NULL;
+			return PxCreateRepXObject(theNullField);
+		}
 		PxHeightField* retval = PxCreateHeightField( theDesc, inArgs.physics.getPhysicsInsertionCallback() );
 		return PxCreateRepXObject(retval);
 	}
@@ -393,11 +414,17 @@ namespace physx {
 
 		if(theMesh == NULL)
 		{
+			// ### DEFENSIVE against NvBugs 6408886 / OMPE-100163
+			if(!theDesc.isValid())
+			{
+				PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "RepX: invalid convex mesh descriptor. The mesh is not created.");
+				return PxCreateRepXObject(theMesh);
+			}
 			PX_ASSERT(inArgs.cooker);
 			theTempBuf.clear();
 
-			PxCookConvexMesh( *inArgs.cooker, theDesc, theTempBuf );
-			theMesh = inArgs.physics.createConvexMesh( theTempBuf );
+			if(PxCookConvexMesh( *inArgs.cooker, theDesc, theTempBuf ))
+				theMesh = inArgs.physics.createConvexMesh( theTempBuf );
 		}
 
 		return PxCreateRepXObject(theMesh);

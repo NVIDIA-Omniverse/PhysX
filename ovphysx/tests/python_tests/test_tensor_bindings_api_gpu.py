@@ -194,8 +194,9 @@ def _cpu_read(binding) -> np.ndarray:
 
 class TestArticulationKinematicUpdateGpu:
 
-    def test_first_fk_update_auto_warmups_gpu(self, physx_sdk, native_log_callback_factory):
-        """First GPU FK refresh should initialize DirectGPU buffers itself."""
+    def test_fk_update_before_the_first_step_is_refused_gpu(self, physx_sdk, native_log_callback_factory):
+        """A DirectGPU FK refresh never warms the scene up: before a first step it is refused without
+        reaching PhysX, and after an explicit warmup it runs cleanly (ADR-0052)."""
         from ovphysx._bindings import _lib
 
         load_usd_with_ovstage(physx_sdk, data_path("two_articulations.usda"))
@@ -214,6 +215,9 @@ class TestArticulationKinematicUpdateGpu:
         assert result.status == 0, "Failed to register native log callback"
 
         try:
+            with pytest.raises(RuntimeError, match="simulation step"):
+                physx_sdk.update_articulations_kinematic()
+            physx_sdk.warmup()
             physx_sdk.update_articulations_kinematic()
         finally:
             _lib.ovphysx_set_log_callback(LogLevel.DEFAULT, None, None, None)

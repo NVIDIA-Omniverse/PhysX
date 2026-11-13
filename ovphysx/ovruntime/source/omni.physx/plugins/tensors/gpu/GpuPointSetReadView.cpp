@@ -7,6 +7,9 @@
  *
  * @implements REQ-READ-DEVICE-001
  * @covers AC-1, AC-2
+ *
+ * @implements REQ-READ-SKIN-001
+ * @covers AC-2
  */
 
 #include "tensors/gpu/GpuPointSetReadView.h"
@@ -31,7 +34,9 @@ namespace tensors
 namespace
 {
 
-// Allocate and fill in one step, so a half-built record array cannot be mistaken for a usable one.
+// Allocate and fill in one step, so a half-built record array cannot be mistaken for a usable one. A copy from
+// pageable memory may return before it reaches the device, and a read on a non-blocking stream does not wait for the
+// legacy default stream it runs on, so the upload is waited for.
 bool uploadRecords(void*& devOut, const std::vector<GpuPointSetReadRecord>& host)
 {
     const size_t bytes = host.size() * sizeof(GpuPointSetReadRecord);
@@ -40,7 +45,8 @@ bool uploadRecords(void*& devOut, const std::vector<GpuPointSetReadRecord>& host
         devOut = nullptr;
         return false;
     }
-    if (!CHECK_CUDA(cudaMemcpy(devOut, host.data(), bytes, cudaMemcpyHostToDevice)))
+    if (!CHECK_CUDA(cudaMemcpy(devOut, host.data(), bytes, cudaMemcpyHostToDevice)) ||
+        !CHECK_CUDA(cudaStreamSynchronize(nullptr)))
     {
         CHECK_CUDA(cudaFree(devOut));
         devOut = nullptr;
@@ -52,8 +58,9 @@ bool uploadRecords(void*& devOut, const std::vector<GpuPointSetReadRecord>& host
 } // namespace
 
 GpuPointSetReadView::GpuPointSetReadView(PxCudaContextManager* const ctxMgr,
-                                         const std::vector<PointSetReadEntry>& entries)
-    : mCtxMgr(ctxMgr)
+                                         const std::vector<PointSetReadEntry>& entries,
+                                         const PointSetSourceLayout layout)
+    : mCtxMgr(ctxMgr), mLayout(layout)
 {
     if (!ctxMgr || entries.empty())
         return;
@@ -121,64 +128,77 @@ GpuPointSetReadView::GpuPointSetReadView(PxCudaContextManager* const ctxMgr,
     if (!uploadRecords(mPointRecordsDev, points) || !uploadRecords(mVelocityRecordsDev, velocities))
         return;
 
-    if (!CHECK_CUDA(cudaMalloc(&mTransformsDev, entries.size() * sizeof(PointSetTransform))))
-    {
-        mTransformsDev = nullptr;
-        return;
-    }
-
     mUsable = true;
 }
 
 GpuPointSetReadView::~GpuPointSetReadView()
 {
     PhysxCudaContextGuard ctxGuard(mCtxMgr);
-    // Drain before freeing: an ovstage gather is launched on the null stream and returns without
-    // synchronizing, so a view destroyed in the same frame as its last read can free records the
-    // kernel is still reading. cudaFree has historically synchronized implicitly; that is not a
-    // guarantee to rely on. Same reason GpuArticulationView drains before its selection buffer.
+    // Drain before freeing: an ovstage gather launched on the null stream returns without synchronizing, so a
+    // view destroyed in the same frame as its last read can free records the kernel is still reading. cudaFree
+    // has historically synchronized implicitly; that is not a guarantee to rely on. A stream-ordered read runs on
+    // its caller's stream instead, which the drain does not cover: it is waited for as well.
     CHECK_CUDA(cudaStreamSynchronize(nullptr));
+    for (const uintptr_t read : mStreamReads)
+        CHECK_CU(getCudaShim()->eventSynchronize(read, nullptr));
+    for (const std::vector<uintptr_t>* events : { &mStreamReads, &mIdleStreamReads })
+        for (const uintptr_t event : *events)
+            CHECK_CU(getCudaShim()->eventDestroy(event, nullptr));
 
     CHECK_CUDA(cudaFree(mPointRecordsDev));
     CHECK_CUDA(cudaFree(mVelocityRecordsDev));
-    CHECK_CUDA(cudaFree(mTransformsDev));
 }
 
-bool GpuPointSetReadView::setReframeMatrices(const PointSetTransform* const transforms, const PxU32 count)
+bool GpuPointSetReadView::readColumnOvStage(const Column column,
+                                            void* const dstDev,
+                                            const PointSetTransform* const transformsDev,
+                                            const OvStageDeviceReadArgs& args) const
 {
-    if (!mUsable || !transforms || count != mNumSets)
-        return false;
-    // Guarded like the constructor and destructor that bracket it: this copy targets device memory
-    // this view owns, and a caller on a thread with a different current context would otherwise copy
-    // into the wrong one.
-    PhysxCudaContextGuard ctxGuard(mCtxMgr);
-    return CHECK_CUDA(cudaMemcpy(mTransformsDev, transforms, size_t(count) * sizeof(PointSetTransform),
-                                 cudaMemcpyHostToDevice));
-}
-
-bool GpuPointSetReadView::setReframeMatricesAsync(const PointSetTransform* const pinnedTransforms,
-                                                  const PxU32 count)
-{
-    if (!mUsable || !pinnedTransforms || count != mNumSets)
-        return false;
-    // Guarded like the sync form; the copy targets this view's own device memory. Stream 0, so it is
-    // ordered before the gather that reads mTransformsDev without the host blocking on it -- the caller
-    // owns the pinned source and keeps it alive until the read's completion event has been waited.
-    PhysxCudaContextGuard ctxGuard(mCtxMgr);
-    return CHECK_CUDA(cudaMemcpyAsync(mTransformsDev, pinnedTransforms,
-                                      size_t(count) * sizeof(PointSetTransform), cudaMemcpyHostToDevice, 0));
-}
-
-bool GpuPointSetReadView::getColumnOvStage(const Column column, void* const dstDev) const
-{
-    if (!mUsable || !dstDev)
-        return false;
-
     const bool reframe = (column == Column::ePoints);
+    if (!mUsable || !dstDev || (reframe && !transformsDev))
+        return false;
+    PhysxCudaContextGuard ctxGuard(mCtxMgr);
     const void* records = reframe ? mPointRecordsDev : mVelocityRecordsDev;
-    return fetchPointSetColumnOvStage(static_cast<float*>(dstDev),
-                                      static_cast<const GpuPointSetReadRecord*>(records), mTransformsDev,
-                                      mNumSets, mMaxPoints, reframe);
+    const bool launched =
+        fetchPointSetColumnOvStage(static_cast<float*>(dstDev), static_cast<const GpuPointSetReadRecord*>(records),
+                                   transformsDev, mNumSets, mMaxPoints, reframe, mLayout, args.stream);
+    if (args.capturing)
+        return launched;
+    // A read whose event has completed no longer reads the records.
+    for (size_t i = 0; i < mStreamReads.size();)
+    {
+        if (cudaEventQuery(reinterpret_cast<cudaEvent_t>(mStreamReads[i])) == cudaSuccess)
+        {
+            mIdleStreamReads.push_back(mStreamReads[i]);
+            mStreamReads[i] = mStreamReads.back();
+            mStreamReads.pop_back();
+        }
+        else
+        {
+            ++i;
+        }
+    }
+    IOptionalCuda* const cuda = getCudaShim();
+    uintptr_t read = 0;
+    if (!mIdleStreamReads.empty())
+    {
+        read = mIdleStreamReads.back();
+        mIdleStreamReads.pop_back();
+    }
+    int status = 0;
+    if ((read || cuda->eventCreate(&read, CU_EVENT_DISABLE_TIMING, &status)) &&
+        cuda->eventRecord(read, reinterpret_cast<uintptr_t>(args.stream), &status))
+    {
+        mStreamReads.push_back(read);
+        return launched;
+    }
+    if (read)
+        mIdleStreamReads.push_back(read);
+    // Without the record the destructor cannot tell when this read stops reading the records, so wait for it now.
+    CARB_LOG_ERROR_ONCE("Recording a stream-ordered point-set read failed (CUresult %d); waiting for its stream "
+                        "instead, which stalls the host.",
+                        status);
+    return CHECK_CU(cuda->streamSynchronize(reinterpret_cast<uintptr_t>(args.stream), nullptr)) && launched;
 }
 
 } // namespace tensors

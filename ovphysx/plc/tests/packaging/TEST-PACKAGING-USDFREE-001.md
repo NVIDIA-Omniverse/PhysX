@@ -38,7 +38,7 @@ readelf --dyn-syms -W _install/lib/libovphysx.so | c++filt | awk '$7=="UND"{prin
 find _install _dist -iname "*OvruntimePhysicsUsd*"                        # AC-5: empty
 grep -rn "UsdVersionCheck\|preloadUsd\|detectUsd" src                    # AC-6: empty
 grep -rln "#include <pxr/\|#include \"pxr/" _install/include              # AC-8: empty
-ls _install/include/common/utilities/OmniPhysXUtilities.h _install/include/common/utilities/Utilities.h   # AC-8: both listed
+ls _install/include/common/utilities/Utilities.h   # AC-8: listed
 ```
 
 ## Scenario
@@ -79,8 +79,8 @@ ovstage resolves for itself.
   path.
 - AC-7: an install or wheel build whose staging tree violates AC-2 or AC-4, or
   bundles schema resources, fails with a specific verifier error.
-- AC-8: No installed SDK header includes `pxr/`; `OmniPhysXUtilities.h` and
-  `Utilities.h` are installed and are themselves pxr-free.
+- AC-8: No installed SDK header includes `pxr/`; `Utilities.h` is installed and
+  is itself pxr-free.
 
 ## Notes
 

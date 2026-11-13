@@ -4,7 +4,7 @@
 // @implements REQ-COMP-VEHICLE-001
 // @covers AC-1 AC-2 AC-3 AC-4
 // @implements REQ-CAPI-COMPANION-001
-// @covers AC-1
+// @covers AC-1 AC-3
 #include "ovphysx_companion/vehicle.h"
 #include "internal/sdk/CompanionRuntime.hpp"
 #include <omni/physx/NativeVehicle.h>
@@ -34,6 +34,8 @@ ovphysx_companion_status_t execute(uint64_t attach, const char* path,
     if (!input || !output || inputSize!=sizeof(*input) || outputSize!=sizeof(*output)) return OVPHYSX_COMPANION_INVALID_ARGUMENT;
     CompanionOperationGuard guard(companionRuntime());
     if (!guard) return OVPHYSX_COMPANION_BUSY;
+    CompanionOwnerLane owner;
+    if (!owner.tryAcquireForAttachment(attach)) return OVPHYSX_COMPANION_BUSY;
     const VehicleCommand cmd{input->generation,input->action,input->direction,input->throttle,input->brake0,input->brake1,input->steer};
     VehicleState state{};
     switch (controlVehicle(attach,path,cmd,state))

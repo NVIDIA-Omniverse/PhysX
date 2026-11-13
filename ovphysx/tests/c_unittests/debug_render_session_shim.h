@@ -27,7 +27,7 @@ ovphysx_result_t debugRenderFinish(ovphysx_instance_handle_t handle, ovphysx_enq
     return status;
 }
 
-const ovx_string_or_token_t* debugRenderParamName(uint32_t param)
+const ovx_token_or_string_t* debugRenderParamName(uint32_t param)
 {
     switch (param)
     {
@@ -82,7 +82,7 @@ struct DebugRenderQuery
 };
 
 ovphysx_result_t debugRenderWriteFloat(ovphysx_instance_handle_t handle,
-                                           const ovx_string_or_token_t* attribute,
+                                           const ovx_token_or_string_t* attribute,
                                            float value)
 {
     DebugRenderQuery query(handle);
@@ -137,7 +137,7 @@ ovphysx_result_t debug_render_enable(ovphysx_instance_handle_t handle, bool enab
 ovphysx_result_t debug_render_set_parameter(ovphysx_instance_handle_t handle, uint32_t param, float value)
 {
     ovphysx_result_t status{};
-    const ovx_string_or_token_t* name = debugRenderParamName(param);
+    const ovx_token_or_string_t* name = debugRenderParamName(param);
     if (!name)
     {
         status.status = OVPHYSX_API_INVALID_ARGUMENT;
@@ -158,15 +158,17 @@ ovphysx_result_t debug_render_get_parameter(ovphysx_instance_handle_t handle, ui
     DebugRenderQuery query(handle);
     if (query.status.status != OVPHYSX_API_SUCCESS)
         return query.status;
-    const ovx_string_or_token_t* attribute = debugRenderParamName(param);
+    const ovx_token_or_string_t* attribute = debugRenderParamName(param);
     ovphysx_read_handle_t read = 0;
-    status = debugRenderFinish(handle, ovphysx_read(handle, query.query, attribute, 1, &read, nullptr));
+    status = debugRenderFinish(handle, ovphysx_read(handle, query.query, attribute, 1,
+                                                    ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr));
     if (status.status != OVPHYSX_API_SUCCESS)
         return status;
     const ovstage_read_group_t* group = nullptr;
     status = debugRenderFinish(handle, ovphysx_fetch_read_next(handle, read, &group));
-    if (status.status == OVPHYSX_API_SUCCESS && group && group->data.tensors && group->data.tensors[0].data)
-        *out_value = *static_cast<const float*>(group->data.tensors[0].data);
+    if (status.status == OVPHYSX_API_SUCCESS && group && group->columns[0].data.tensors
+        && group->columns[0].data.tensors[0].data)
+        *out_value = *static_cast<const float*>(group->columns[0].data.tensors[0].data);
     else
         status.status = OVPHYSX_API_ERROR;
     if (group)
@@ -198,13 +200,15 @@ ovphysx_result_t debug_render_get_scale(ovphysx_instance_handle_t handle, float*
     if (query.status.status != OVPHYSX_API_SUCCESS)
         return query.status;
     ovphysx_read_handle_t read = 0;
-    status = debugRenderFinish(handle, ovphysx_read(handle, query.query, &OVPHYSX_NAME_DEBUG_SCALE, 1, &read, nullptr));
+    status = debugRenderFinish(handle, ovphysx_read(handle, query.query, &OVPHYSX_NAME_DEBUG_SCALE, 1,
+                                                    ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr));
     if (status.status != OVPHYSX_API_SUCCESS)
         return status;
     const ovstage_read_group_t* group = nullptr;
     status = debugRenderFinish(handle, ovphysx_fetch_read_next(handle, read, &group));
-    if (status.status == OVPHYSX_API_SUCCESS && group && group->data.tensors && group->data.tensors[0].data)
-        *out_scale = *static_cast<const float*>(group->data.tensors[0].data);
+    if (status.status == OVPHYSX_API_SUCCESS && group && group->columns[0].data.tensors
+        && group->columns[0].data.tensors[0].data)
+        *out_scale = *static_cast<const float*>(group->columns[0].data.tensors[0].data);
     else
         status.status = OVPHYSX_API_ERROR;
     if (group)
@@ -298,12 +302,13 @@ ovphysx_result_t debug_render_get_points(ovphysx_instance_handle_t handle, const
     DebugRenderQuery query(handle);
     if (query.status.status != OVPHYSX_API_SUCCESS)
         return query.status;
-    const ovx_string_or_token_t attributes[] = {
+    const ovx_token_or_string_t attributes[] = {
         OVPHYSX_NAME_DEBUG_POINT_POSITION,
         OVPHYSX_NAME_DEBUG_POINT_COLOR,
     };
     ovphysx_read_handle_t read = 0;
-    status = debugRenderFinish(handle, ovphysx_read(handle, query.query, attributes, 2, &read, nullptr));
+    status = debugRenderFinish(handle, ovphysx_read(handle, query.query, attributes, 2,
+                                                    ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr));
     if (status.status != OVPHYSX_API_SUCCESS)
         return status;
     const ovstage_read_group_t* position = nullptr;
@@ -311,11 +316,12 @@ ovphysx_result_t debug_render_get_points(ovphysx_instance_handle_t handle, const
     status = debugRenderFinish(handle, ovphysx_fetch_read_next(handle, read, &position));
     if (status.status == OVPHYSX_API_SUCCESS)
         status = debugRenderFinish(handle, ovphysx_fetch_read_next(handle, read, &color));
-    if (status.status == OVPHYSX_API_SUCCESS && position && color && position->data.tensors && position->data.tensors[0].shape)
+    if (status.status == OVPHYSX_API_SUCCESS && position && color && position->columns[0].data.tensors
+        && position->columns[0].data.tensors[0].shape)
     {
-        const int64_t count = position->data.tensors[0].shape[0];
-        const float* xyz = static_cast<const float*>(position->data.tensors[0].data);
-        const uint32_t* colors = color->data.tensors ? static_cast<const uint32_t*>(color->data.tensors[0].data) : nullptr;
+        const int64_t count = position->columns[0].data.tensors[0].shape[0];
+        const float* xyz = static_cast<const float*>(position->columns[0].data.tensors[0].data);
+        const uint32_t* colors = color->columns[0].data.tensors ? static_cast<const uint32_t*>(color->columns[0].data.tensors[0].data) : nullptr;
         g_debugRenderPoints.resize(static_cast<size_t>(count));
         for (int64_t i = 0; i < count; ++i)
         {
@@ -351,12 +357,13 @@ ovphysx_result_t debug_render_get_lines(ovphysx_instance_handle_t handle, const 
     DebugRenderQuery query(handle);
     if (query.status.status != OVPHYSX_API_SUCCESS)
         return query.status;
-    const ovx_string_or_token_t attributes[] = {
+    const ovx_token_or_string_t attributes[] = {
         OVPHYSX_NAME_DEBUG_LINE_POSITION,
         OVPHYSX_NAME_DEBUG_LINE_COLOR,
     };
     ovphysx_read_handle_t read = 0;
-    status = debugRenderFinish(handle, ovphysx_read(handle, query.query, attributes, 2, &read, nullptr));
+    status = debugRenderFinish(handle, ovphysx_read(handle, query.query, attributes, 2,
+                                                    ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr));
     if (status.status != OVPHYSX_API_SUCCESS)
         return status;
     const ovstage_read_group_t* position = nullptr;
@@ -364,11 +371,12 @@ ovphysx_result_t debug_render_get_lines(ovphysx_instance_handle_t handle, const 
     status = debugRenderFinish(handle, ovphysx_fetch_read_next(handle, read, &position));
     if (status.status == OVPHYSX_API_SUCCESS)
         status = debugRenderFinish(handle, ovphysx_fetch_read_next(handle, read, &color));
-    if (status.status == OVPHYSX_API_SUCCESS && position && color && position->data.tensors && position->data.tensors[0].shape)
+    if (status.status == OVPHYSX_API_SUCCESS && position && color && position->columns[0].data.tensors
+        && position->columns[0].data.tensors[0].shape)
     {
-        const int64_t count = position->data.tensors[0].shape[0];
-        const float* xyz = static_cast<const float*>(position->data.tensors[0].data);
-        const uint32_t* colors = color->data.tensors ? static_cast<const uint32_t*>(color->data.tensors[0].data) : nullptr;
+        const int64_t count = position->columns[0].data.tensors[0].shape[0];
+        const float* xyz = static_cast<const float*>(position->columns[0].data.tensors[0].data);
+        const uint32_t* colors = color->columns[0].data.tensors ? static_cast<const uint32_t*>(color->columns[0].data.tensors[0].data) : nullptr;
         g_debugRenderLines.resize(static_cast<size_t>(count));
         for (int64_t i = 0; i < count; ++i)
         {
@@ -409,12 +417,13 @@ ovphysx_result_t debug_render_get_triangles(ovphysx_instance_handle_t handle, co
     DebugRenderQuery query(handle);
     if (query.status.status != OVPHYSX_API_SUCCESS)
         return query.status;
-    const ovx_string_or_token_t attributes[] = {
+    const ovx_token_or_string_t attributes[] = {
         OVPHYSX_NAME_DEBUG_TRIANGLE_POSITION,
         OVPHYSX_NAME_DEBUG_TRIANGLE_COLOR,
     };
     ovphysx_read_handle_t read = 0;
-    status = debugRenderFinish(handle, ovphysx_read(handle, query.query, attributes, 2, &read, nullptr));
+    status = debugRenderFinish(handle, ovphysx_read(handle, query.query, attributes, 2,
+                                                    ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr));
     if (status.status != OVPHYSX_API_SUCCESS)
         return status;
     const ovstage_read_group_t* position = nullptr;
@@ -422,11 +431,12 @@ ovphysx_result_t debug_render_get_triangles(ovphysx_instance_handle_t handle, co
     status = debugRenderFinish(handle, ovphysx_fetch_read_next(handle, read, &position));
     if (status.status == OVPHYSX_API_SUCCESS)
         status = debugRenderFinish(handle, ovphysx_fetch_read_next(handle, read, &color));
-    if (status.status == OVPHYSX_API_SUCCESS && position && color && position->data.tensors && position->data.tensors[0].shape)
+    if (status.status == OVPHYSX_API_SUCCESS && position && color && position->columns[0].data.tensors
+        && position->columns[0].data.tensors[0].shape)
     {
-        const int64_t count = position->data.tensors[0].shape[0];
-        const float* xyz = static_cast<const float*>(position->data.tensors[0].data);
-        const uint32_t* colors = color->data.tensors ? static_cast<const uint32_t*>(color->data.tensors[0].data) : nullptr;
+        const int64_t count = position->columns[0].data.tensors[0].shape[0];
+        const float* xyz = static_cast<const float*>(position->columns[0].data.tensors[0].data);
+        const uint32_t* colors = color->columns[0].data.tensors ? static_cast<const uint32_t*>(color->columns[0].data.tensors[0].data) : nullptr;
         g_debugRenderTriangles.resize(static_cast<size_t>(count));
         for (int64_t i = 0; i < count; ++i)
         {

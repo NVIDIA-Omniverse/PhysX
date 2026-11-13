@@ -63,7 +63,10 @@ class Operation(Generic[T]):
 
     Inputs and output slots survive until collection, even if the operation is
     dropped. Periodically call ``wait_all()`` for fire-and-forget submissions.
-    Collecting Python-owned receipts directly through the C API is unsupported.
+    Neither waits nor ``result`` submit releases: the release of a dropped or
+    failed output is submitted by the instance's next step, query, read or write
+    open, attach or detach. Collecting Python-owned receipts directly through the
+    C API is unsupported.
     """
 
     def __init__(self, sdk, tasks=(), *, convert=lambda: None, cleanup=None, keepalive=(), on_complete=None,
@@ -85,7 +88,7 @@ class Operation(Generic[T]):
         for task in self.tasks:
             key = _key(task)
             sdk._session_operations[key] = self
-            if keepalive or cleanup is not None:
+            if keepalive or cleanup is not None or on_complete is not None:
                 sdk._session_pending[key] = self._output
         if not self.tasks:
             self._output.collected = True
@@ -110,7 +113,7 @@ class Operation(Generic[T]):
     @property
     def result(self) -> T:
         """Return the cached typed result without waiting."""
-        from .api import TaskError, _chain_cleanup
+        from .api import TaskError
 
         if threading.get_ident() != self._thread:
             raise RuntimeError("operation results must be materialized on the submitting thread")
@@ -126,14 +129,9 @@ class Operation(Generic[T]):
                 self._value = self._convert()
             except Exception as error:
                 cleanup, self._output.cleanup = self._output.cleanup, None
-                try:
-                    if cleanup is not None:
-                        cleanup()
-                except Exception as cleanup_error:
-                    # Rejected admission leaves native ownership in the closure.
+                if cleanup is not None:
                     with self._sdk._session_cleanup_lock:
                         self._sdk._session_cleanups.append(cleanup)
-                    _chain_cleanup(error, cleanup_error)
                 self._error = _copy_error(error)
                 raise
             finally:
@@ -160,10 +158,9 @@ class Operation(Generic[T]):
             remaining = None if deadline is None else max(0, deadline - time.monotonic_ns())
             try:
                 self._sdk.wait_task(task, timeout_ns=remaining)
-            except TaskError as error:
+            except TaskError:
                 # Dispatch already cached the failure. Collect the other real tasks too.
-                # A chained cleanup failure must remain observable on this wait.
-                if _key(task) not in self._outcomes or error.__cause__ is not None:
+                if _key(task) not in self._outcomes:
                     raise
         return self.result
 
@@ -173,10 +170,11 @@ class Operation(Generic[T]):
             self._output.collected = True
             self._output.keepalive = ()
             self._owners = ()
-            if not any(self._outcomes.values()) and self._output.on_complete is not None:
-                self._output.on_complete()
+            failed = any(self._outcomes.values())
+            if self._output.on_complete is not None:
+                self._output.on_complete(failed)
             self._output.on_complete = None
-            if any(self._outcomes.values()) and self._output.cleanup is not None:
+            if failed and self._output.cleanup is not None:
                 cleanup, self._output.cleanup = self._output.cleanup, None
                 with self._sdk._session_cleanup_lock:
                     self._sdk._session_cleanups.append(cleanup)
@@ -226,8 +224,8 @@ def dispatch(sdk, keys, errors):
         elif output is not None and not output.remaining:
             output.keepalive = ()
             output.collected = True
-            if not output.failed and output.on_complete is not None:
-                output.on_complete()
+            if output.on_complete is not None:
+                output.on_complete(output.failed)
             output.on_complete = None
             cleanup, output.cleanup = output.cleanup, None
             if cleanup is not None:

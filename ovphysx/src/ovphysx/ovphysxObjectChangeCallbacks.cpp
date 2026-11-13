@@ -16,6 +16,12 @@
  *
  * @implements REQ-CAPI-OBJCHANGE-002
  * @covers AC-1 AC-2 AC-3 AC-4
+ *
+ * @implements REQ-CAPI-LANE-001
+ * @covers AC-1
+ *
+ * @implements REQ-CAPI-REENTRY-001
+ * @covers AC-1 AC-2
  */
 
 
@@ -76,6 +82,13 @@ struct ActiveCallbackGuard;
 // restarts. Windows retains the framework until process exit.
 thread_local ActiveCallbackGuard* t_activeCallback = nullptr;
 carb::tasking::TaskStorageKey g_activeCallbackStorage = carb::tasking::kInvalidTaskStorageKey;
+// Set once g_activeCallbackStorage holds a key. Until then no task has run a callback.
+std::atomic<bool> g_activeCallbackStorageAllocated{false};
+// Callbacks running on any thread or task. A guard counts itself before it marks its
+// thread or task and until after it restores the mark, so a caller inside a callback
+// never reads zero here; while none runs, the callback check needs no thread-local or
+// task storage.
+std::atomic<uint32_t> g_activeCallbacksRunning{0};
 
 carb::tasking::ITasking* objectChangeTasking()
 {
@@ -95,6 +108,8 @@ carb::tasking::TaskStorageKey objectChangeCallbackStorage(carb::tasking::ITaskin
     static std::once_flag once;
     std::call_once(once, [tasking]() {
         g_activeCallbackStorage = tasking->allocTaskStorage(nullptr);
+        if (g_activeCallbackStorage != carb::tasking::kInvalidTaskStorageKey)
+            g_activeCallbackStorageAllocated.store(true, std::memory_order_release);
     });
     // Continuing without the slot would let a migrated task look idle and
     // deadlock the next unsubscribe. Same failure mode as a failed set.
@@ -132,9 +147,14 @@ struct ActiveCallbackGuard
         : state(s)
         , previous(activeCallback())
     {
+        g_activeCallbacksRunning.fetch_add(1, std::memory_order_relaxed);
         setActiveCallback(this);
     }
-    ~ActiveCallbackGuard() { setActiveCallback(previous); }
+    ~ActiveCallbackGuard()
+    {
+        setActiveCallback(previous);
+        g_activeCallbacksRunning.fetch_sub(1, std::memory_order_relaxed);
+    }
     ActiveCallbackGuard(const ActiveCallbackGuard&) = delete;
     ActiveCallbackGuard& operator=(const ActiveCallbackGuard&) = delete;
 };
@@ -389,6 +409,21 @@ int closeObjectChangeFromCallbackImpl(
 
 } // anonymous namespace
 
+// Same answer as activeCallback() != nullptr, but cheap enough for every lane
+// acquisition: nothing is looked up while no callback runs anywhere, the caller passes
+// the running tasking interface and its task context, and task storage is only
+// consulted once some task has run a callback. Until then only a native thread can be
+// inside one, and a task's thread keeps no native guard.
+bool ovphysx_object_change_callback_active(carb::tasking::ITasking* tasking, uint64_t task) noexcept
+{
+    if (g_activeCallbacksRunning.load(std::memory_order_relaxed) == 0)
+        return false;
+    if (task == carb::tasking::kInvalidTaskContext || !tasking ||
+        !g_activeCallbackStorageAllocated.load(std::memory_order_acquire))
+        return t_activeCallback != nullptr;
+    return tasking->getTaskStorage(g_activeCallbackStorage) != nullptr;
+}
+
 
 OVPHYSX_API ovphysx_result_t ovphysx_subscribe_object_changes(
     ovphysx_instance_handle_t handle,
@@ -421,6 +456,15 @@ OVPHYSX_API ovphysx_result_t ovphysx_subscribe_object_changes(
             "internal sidecar not loaded -- cannot subscribe to object changes "
             "(create an ovphysx instance first)");
     }
+
+    // The attachment read and the runtime binding run under the instance lane, after
+    // earlier work on the instance.
+    ovphysx::InstanceLane lane;
+    const ovphysx_api_status_t laneStatus = lane.acquire(handle);
+    if (laneStatus == OVPHYSX_API_INVALID_STATE)
+        return {laneStatus};
+    if (laneStatus != OVPHYSX_API_SUCCESS)
+        return set_error(OVPHYSX_API_INVALID_ARGUMENT, "invalid OVPhysX handle");
 
     auto state = std::make_unique<TrampolineState>();
     state->lifetime         = std::make_shared<OvphysxObjectChangeLifetime>();
@@ -477,7 +521,10 @@ bool ovphysx_object_change_attach_instance(ovphysx_instance_handle_t handle, uin
     for (const std::pair<const uint64_t, std::unique_ptr<TrampolineState>>& entry : g_subs)
     {
         TrampolineState& state = *entry.second;
-        if (state.owner == handle && !state.closed.load(std::memory_order_acquire) &&
+        // Unsubscribe publishes this flag under the same mutex before it drops
+        // the lock, so an attach must not create a runtime subscription afterward.
+        if (state.owner == handle && !state.unsubscribe_in_progress &&
+            !state.closed.load(std::memory_order_acquire) &&
             state.runtime_subscription == kInvalidSub)
         {
             state.runtime_subscription = bindSubscription(state, attach);

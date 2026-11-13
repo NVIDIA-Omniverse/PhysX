@@ -13,9 +13,11 @@ Individual waits preserve earlier failures and collect each outcome exactly once
 
 ## Given
 
-- A live instance accepting an inline failing clone A and successful reset B.
+- A live instance accepting a failing clone A and successful detach B.
 - Real missing-source clone failures and successful idempotent releases,
   including discarded original receipts and sparse out-of-order collection.
+- A step whose pre-step callback plants a dispatch failure and whose post-step
+  callback clears or replaces thread-local error state.
 
 ## When
 
@@ -23,16 +25,19 @@ Individual waits preserve earlier failures and collect each outcome exactly once
 - Repeat direct and aggregate waits; collect tasks out of submission order.
 - Submit invalid, wrong-owner, never-issued and destroyed-instance receipts.
 - Execute real step and clone producers and inspect their receipts and waits.
+- Collect the callback-bearing failed step through its task receipt.
 
 ## Then
 
-- Accepted inline failure has successful admission with nonzero identity;
+- Accepted execution failure has successful admission with nonzero identity;
   rejected work has zero identity and an immediate error (REQ AC-1).
 - B succeeds and A remains in the next aggregate result; repeated direct waits
   return `NOT_FOUND`, and repeated empty aggregate waits succeed (REQ AC-2, AC-3).
 - Identity and output validation return the documented statuses (REQ AC-4).
 - Recoverable earlier failure does not prevent otherwise-valid work; real
   simulation/clone ordering and error reporting remain correct (REQ AC-6).
+- The step retains its first dispatch cause through callback delivery and task
+  publication (REQ AC-6).
 
 ## Automated cases
 
@@ -43,18 +48,23 @@ Individual waits preserve earlier failures and collect each outcome exactly once
   - `TaskWaitAllFindsDiscardedReceiptsInSubmissionOrder` and
     `TaskOutOfOrderCollectionPreservesEarlierOutcomesAndErrorText`: discarded
     receipts and out-of-order collection (AC-2, AC-3).
+  - `TaskErrorLookupIsSafeWhileRetainedResultsGrow`: callback-time error lookup
+    remains stable while another thread collects and retains 256 failures (AC-5).
   - `TaskSparseCollectionKeepsHolesAndCompactsAtWaitAll`: interleaved direct waits
     preserve holes and aggregate collection acknowledges the remainder (AC-2, AC-3).
-  - `TaskInlineFailureIsAcceptedButInvalidSubmissionHasNoIdentity`: admission
+  - `TaskExecutionFailureIsAcceptedButInvalidSubmissionHasNoIdentity`: admission
     versus execution failure (AC-1).
   - `TaskWaitRejectsInvalidReceiptsAndPreservesOwnedOutput` and
     `TaskReceiptFromAnotherLiveInstanceIsRejected`: identity, instance-first
     validation and output ownership (AC-4).
   - `StepWaitSucceedsWhilePriorCloneFailureRemainsUncollected`: a real step
     proceeds after recoverable failure (AC-6).
+- [test_worker_step.cpp](../../../tests/c_unittests/test_worker_step.cpp),
+  `WorkerStep.DispatchErrorSurvivesFetchCallbacks`: callback-time TLS changes do
+  not replace the step task's first execution failure (AC-6).
 - [test_clone.cpp](../../../tests/c_unittests/test_clone.cpp),
   `CloneTest.ErrorSourceDoesNotExist` and
-  `CloneTest.FailedCloneUnregistersReplicatorForReattach`: inline clone failure
+  `CloneTest.FailedCloneUnregistersReplicatorForReattach`: clone execution failure
   is collected through its receipt and survives reset/reload (AC-1, AC-6).
 - [test_physx_async.cpp](../../../tests/c_unittests/test_physx_async.cpp),
   `PhysXTestFixture.PhysXAsync_ConsumedOpsRemainSingleUseAfterInternalSync` and

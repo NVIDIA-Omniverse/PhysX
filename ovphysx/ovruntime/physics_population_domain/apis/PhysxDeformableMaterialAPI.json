@@ -1,0 +1,57 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxDeformableMaterialAPI",
+  "title": "PhysxDeformableMaterialAPI",
+  "summary": "PhysX elasticity damping for a volume or surface deformable material, read when PhysxDeformableMaterialAPI is listed in usd-schemas of a deformable material prim or of the material bound to a PhysicsScene (its default deformable materials).",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "Material"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "producer_scope": "Published like any applied physics API: every declared attribute at its resolved value; a prim carrying this API is in physics scope on its own. No column is rewritten or created by the producer.",
+  "columns": [
+    {
+      "name": "physxDeformableMaterial:elasticityDamping",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0: no elasticity damping. A negative value is clamped to 0 at parse.",
+      "raw_fallback_diverges": false,
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp",
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physx/plugins/usdLoad/Material.cpp",
+        "include/omni/physics/parse/Descriptors.h",
+        "source/omni.physx/plugins/usdInterface/UsdInterface.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXDeformablePropertiesUpdate.cpp"
+      ],
+      "notes": "The property update passes a new value to PhysX without the clamp."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "OmniPhysicsDeformableMaterialAPI",
+      "rule": "The ovstage walker enumerates deformable materials by OmniPhysicsDeformableMaterialAPI, OmniPhysicsSurfaceDeformableMaterialAPI or OmniPhysicsCurveDeformableMaterialAPI (sic; the schema is OmniPhysicsCurvesDeformableMaterialAPI); the column is read on those prims. The scene's bound material is parsed too, whatever OmniPhysics material APIs it lists."
+    },
+    {
+      "with": "PhysxSurfaceDeformableMaterialAPI",
+      "rule": "USD applies this API as a built-in of PhysxSurfaceDeformableMaterialAPI and USD population lists both names; the parser checks each name on its own, so a hand-populated surface material must list PhysxDeformableMaterialAPI for elasticityDamping to be read."
+    }
+  ]
+}

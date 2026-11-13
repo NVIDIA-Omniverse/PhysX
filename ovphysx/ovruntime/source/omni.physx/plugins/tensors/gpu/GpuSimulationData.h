@@ -1,20 +1,39 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-READ-CCT-001
+ * @covers AC-3
+ *
+ * @implements REQ-TENSOR-CONTACT-005
+ * @covers AC-3
+ *
+ * @implements REQ-TENSOR-VIEW-001
+ * @covers AC-14 AC-16 AC-17
+ */
+
 #pragma once
 
 #include <omni/physics/tensors/TensorApi.h>
 
 #include "tensors/InstancerReframe.h"
+#include "tensors/PointSetReframe.h"
 #include "tensors/PhysicsTypes.h"
 #include "tensors/gpu/CudaCommon.h"
 #include "tensors/gpu/ThrustUtils.h"
 
 #include <memory>
 #include <unordered_map>
+#include <vector>
 
 #define GPUAPI_CHECK_READY(gpuSimData_, retval_)                                                                       \
     if (!gpuSimData_ || !gpuSimData_->checkApiReady(__FUNCTION__))                                                     \
+        return (retval_);
+
+// GPUAPI_CHECK_READY, and for a call on data laid out with the articulation strides also that they are still PhysX's.
+#define GPUAPI_CHECK_READY_ARTICULATIONS(gpuSimData_, usesArticulationStrides_, retval_)                               \
+    if (!gpuSimData_ || !gpuSimData_->checkApiReady(__FUNCTION__) ||                                                   \
+        ((usesArticulationStrides_) && !gpuSimData_->checkArticulationStrides(__FUNCTION__)))                          \
         return (retval_);
 
 namespace omni
@@ -154,7 +173,23 @@ struct GpuRigidBodyRecord
     ::physx::PxU32 linkIdx = 0xffffffff; // articulation link index
     bool isRootLink = false; // whether this body is an articulation root link
     ::physx::PxVec3 origin{ 0.0f }; // subspace origin
+    ::physx::PxQuat orientationFixup{ ::physx::PxIdentity }; // controller actor to prim frame
 };
+
+// One volume deformable as the ovstage kinematic-target commit writes it (submitKinematicTargetsOvStage): the
+// runtime-owned buffer PhysX adopted (null leaves the body as it is), where the body's nodes start in the caller's
+// column and how many there are, and the transform from the column's sim-mesh frame into the buffer's.
+struct KinematicTargetBodyRecord
+{
+    ::physx::PxVec4* dst = nullptr;
+    ::physx::PxU32 floatOffset = 0;
+    ::physx::PxU32 nodeCount = 0;
+    PointSetTransform columnToBuffer;
+};
+
+// Logs that kinematic-target commits kept `count` pinned nodes pinned although the write marked them free; nothing
+// when `count` is 0.
+void logKeptPinnedTargets(unsigned long long count);
 
 // One POINT SET, as the ovstage output read needs it. A deformable body's simulation mesh and a
 // particle set are both this shape, which is why the record and the view over it are named for the
@@ -165,11 +200,15 @@ struct GpuRigidBodyRecord
 // builds it flips ePARTIALLY_KINEMATIC on every body it covers. A read must not change how the
 // solver behaves, so it brings its own record instead.
 //
-// `src` points straight at PhysX's own device buffer, so the fetch reads engine memory and writes
-// the destination column once, with nothing to copy first.
+// `src` points straight at the source buffer, PhysX's own for a sim mesh or a particle set and the
+// runtime's skinned-vertex buffer for a deformable skin mesh, so the fetch reads it in place and
+// writes the destination column once, with nothing to copy first.
 struct GpuPointSetReadRecord
 {
-    const ::physx::PxVec4* src = nullptr; // PhysX point buffer, device
+    // The point buffer, device: PxVec4 (xyz + inverse mass) for a PhysX sim-mesh or particle buffer,
+    // PxVec3 for the runtime's skinned-vertex buffer. Decided per VIEW (fetchPointSetColumnOvStage's
+    // `layout`), not per record, so the record stays 16 bytes.
+    const void* src = nullptr;
     ::physx::PxU32 numPoints = 0;        // points in this set; the kernel's per-record bounds test
     ::physx::PxU32 dstOffsetFloats = 0;  // start of this set's slice in the destination column
 };
@@ -258,6 +297,19 @@ struct GpuRigidContactFilterIdPair
     };
 };
 
+// Device tables that map a contact pair's node index to a sensor row. Lookups outside a table report no
+// sensor, so bodies added after the tables were built cannot index past them.
+struct RigidContactReferentTables
+{
+    const ::physx::PxU32* nodeIdx2ArtiGpuIdx = nullptr;
+    const ::physx::PxU32* rdContactIndices = nullptr;
+    const ::physx::PxU32* linkContactIndices = nullptr;
+    ::physx::PxU32 nodeIdx2ArtiGpuIdxCount = 0;
+    ::physx::PxU32 rdContactIndexCount = 0;
+    ::physx::PxU32 linkContactIndexCount = 0;
+    ::physx::PxU32 maxLinks = 0;
+};
+
 // This is almost identical to the GpuRigidContactFilterIdPair struct, but it's used for the actor-to-pathId lookup for raw contact data.
 // Since we need pathId to be uint64_t, we can't use the GpuRigidContactFilterIdPair struct.
 // TODO: Use template to avoid code duplication?
@@ -301,12 +353,11 @@ public:
     DeformableBodyBufferManager() : buffersD(nullptr), bufferSizesD(nullptr), maxBufferSize(0), dataSize(0){};
     DeformableBodyBufferManager(::physx::PxU32 dataSize)
         : buffersD(nullptr), bufferSizesD(nullptr), maxBufferSize(0), dataSize(dataSize){};
-    static void allocDevMemAndCopyH2D(void** dst, const void* src, size_t size, const char* name);
-    static void resizeDeviceData(::physx::PxU32 previousSize,
-                                 ::physx::PxU32 currentSize,
-                                 ::physx::PxU32 elementSize,
-                                 void* previousBufferDev);
-    void uploadDeviceData(std::string debugMessage);
+    // Both return false when an allocation or copy failed, leaving what was allocated for the caller to free.
+    static bool allocDevMemAndCopyH2D(void** dst, const void* src, size_t size, const char* name);
+    // Frees the buffers the tensor views allocate for a body (the others belong to PhysX) and nulls them.
+    static void freeRecordBuffers(GpuDeformableBodyRecord& record);
+    bool uploadDeviceData(std::string debugMessage);
     void setMaxBufferSize();
     void releaseDeviceMem();
     void resetDeviceMem();
@@ -359,16 +410,43 @@ public:
 typedef ::physx::PxFlags<ArticulationGpuFlag::Enum, ::physx::PxU32> ArticulationGpuFlags;
 typedef ::physx::PxFlags<ActorGpuFlag::Enum, ::physx::PxU16> ActorGpuFlags;
 
+// Rigid-body disable state of one scene. SimulationBackend keeps one per scene and gives it to every
+// GpuSimulationData built for that scene, so a disable through a view on one copy reaches views on the others.
+struct GpuRdDisableState
+{
+    uint64_t epoch = 0;
+    bool mayHaveDisabledRd = false;
+};
+
+// The per-articulation strides GPU simulation data is sized and indexed by: the largest link, DOF, fixed- and
+// spatial-tendon counts among the scene's articulations, each raised to the stride PhysX lays its DirectGPU
+// articulation blocks out with. GpuSimulationData::init sizes its buffers with them and
+// SimulationBackend::sceneTopology compares them to decide whether cached data still fits the scene, so both take
+// them from here.
+void articulationStrides(::physx::PxScene* scene,
+                         ::physx::PxU32& maxLinks,
+                         ::physx::PxU32& maxDofs,
+                         ::physx::PxU32& maxFixedTendons,
+                         ::physx::PxU32& maxSpatialTendons);
+
 // data shared with child views that persist even if simulation view is deleted
 struct GpuSimulationData
 {
-    GpuSimulationData(SimulationBackend& backend, omni::physics::tensors::AttachHandle attachHandle);
+    GpuSimulationData(SimulationBackend& backend,
+                      omni::physics::tensors::AttachHandle attachHandle,
+                      std::shared_ptr<GpuRdDisableState> rdDisableState);
     ~GpuSimulationData();
 
     bool init(::physx::PxScene* scene);
 
-    // checks for illegal usage
+    // checks for illegal usage: before the first step
     bool checkApiReady(const char* function) const;
+    // false while the articulation strides differ from PhysX's (a larger articulation was inserted, so this data or
+    // PhysX is out of date); checked only by calls on data laid out with them
+    bool checkArticulationStrides(const char* function) const;
+    // whether `arti` is one this data was built for (in the scene then, with the GPU index it has now); a view over
+    // one it does not describe -- inserted after the data was built -- asks PhysX for more blocks than its buffers hold
+    bool describesArticulation(const ::physx::PxArticulationReducedCoordinate& arti) const;
     void clearForces();
 
     bool flush();
@@ -393,6 +471,7 @@ struct GpuSimulationData
     ::physx::PxU32 mNumArtis = 0;
     ::physx::PxU32 mNumRds = 0;
 
+    // The strides of the DirectGPU articulation buffers (articulationStrides), not the scene's live maxima.
     ::physx::PxU32 mMaxLinks = 0;
     ::physx::PxU32 mMaxDofs = 0;
     ::physx::PxU32 mMaxFixedTendons = 0;
@@ -402,23 +481,27 @@ struct GpuSimulationData
     ::physx::PxU32 mDofBufSize = 0;
     ::physx::PxU32 mFixedTendonBufSize = 0;
     ::physx::PxU32 mSpatialTendonBufSize = 0;
-    ::physx::PxU32 mMaxArtiIndex = 0;
 
-    ::physx::PxU32 mMaxRdIndex = 0;
+    // Record-lifetime epoch of the attach when init() ran. The per-object maps below describe the
+    // records of that epoch, so the data is not reused once the epoch moves.
+    uint64_t mRecordEpoch = 0;
+
     // Maps PxRigidDynamic* to global RD index in GPU buffers. The actor pointer
     // is stable across disable/enable cycles (unlike the island node index which
     // PhysX invalidates when eDISABLE_SIMULATION is set), so this is the sole
     // lookup used by GpuRigidBodyView::ctor.
     std::unordered_map<::physx::PxRigidDynamic*, uint32_t> mActor2RdIndexMap;
+    // The scene's disable state. The two references below name its fields.
+    std::shared_ptr<GpuRdDisableState> mRdDisableState;
     // Scene-wide rigid-body disable/enable generation (OMPE-94459, multi-view +
-    // body disable). This struct is shared by every rigid-body view over the
-    // same scene, but each view's mRdIndexDirty flag is private to that view.
+    // body disable). It is shared by every rigid-body view over the same scene,
+    // on every copy of this data, but each view's mRdIndexDirty flag is private to that view.
     // A disable issued through one view frees/reallocates the shared GPU island
     // indices for *all* views holding that body, so each successful
     // setDisableSimulations bumps this counter; sibling views compare it against
     // their last-synced value in refreshRdGpuIndices() and rebuild when it moved,
     // instead of reading stale/invalid GPU indices.
-    uint64_t mRdDisableEpoch = 0;
+    uint64_t& mRdDisableEpoch;
     // Conservative scene-wide "at least one rigid dynamic may lack a DirectGPU row". Seeded by the
     // census below (free -- that loop already reads every getGPUIndex()), set by every notified
     // disable/enable toggle, and cleared only by the scene superset view's refreshRdGpuIndices()
@@ -429,7 +512,7 @@ struct GpuSimulationData
     // just "scan to find out". Lets the ovstage read/write filter skip its per-body actor-flag scan
     // on the disable-free steady state, which is the common case and was costing a cache miss per
     // matched body on every I/O.
-    bool mMayHaveDisabledRd = false;
+    bool& mMayHaveDisabledRd;
     ::physx::PxTransform* mRdPoseDev = nullptr;
     ::physx::PxVec3* mRdLinearVelAccDev = nullptr;
     ::physx::PxVec3* mRdAngularVelAccDev = nullptr;
@@ -439,6 +522,7 @@ struct GpuSimulationData
     // maps articulation node indices to global articulation indices in GPU buffers
     std::unordered_map<uint32_t, ::physx::PxArticulationGPUIndex> mNodeIdx2ArtiIdxMap;
     ::physx::PxU32* mNodeIdx2ArtiGpuIdxDev = nullptr;
+    ::physx::PxU32 mNodeIdx2ArtiGpuIdxCount = 0;
 
     ::physx::PxTransform* mLinkOrRootTransformsDev = nullptr;
     ::physx::PxVec3* mLinkOrRootLinearVelAccDev = nullptr;
@@ -586,6 +670,37 @@ struct GpuSimulationData
         return releasedA && releasedB && gathered;
     }
 
+    // A stream-ordered session commit or read (ADR-0052, ADR-0055) reads the views' tables -- the rigid-body
+    // DirectGPU index map and records, the centre-of-mass table, the point-instancer frames, the articulation
+    // records -- on the caller's stream, which nothing orders against the host rewriting them in place or a view
+    // freeing them. Call once the operation's work is queued on `stream`, outside a capture, with the scene's CUDA
+    // context current. False only when neither the record nor the fallback wait for `stream` held.
+    bool noteTableReader(CUstream stream);
+
+    // Waits on the host until every operation noted above has finished reading the tables. A view calls it before
+    // freeing them. False when a wait failed.
+    bool waitForTableReaders();
+
+    // The device address of the count of pinned nodes kinematic-target commits on this scene kept pinned although the
+    // write marked them free (submitKinematicTargetsOvStage), in host memory the device writes directly, so the host
+    // reads it without waiting. Allocated on the first call; null when that failed. Call outside a capture, with the
+    // scene's CUDA context current.
+    unsigned long long* keptPinnedTargetsCounter();
+
+    // Logs the nodes counted since the last report, if any. Waits for nothing: a count a commit is still adding to is
+    // reported by a later call.
+    void reportKeptPinnedTargets();
+
+    // Copy `bytes` from the host over one of those tables, once every operation noted above is done reading it.
+    // Returns once the copy has reached the device, so work queued afterwards on any stream reads the new
+    // contents. Call with the scene's CUDA context current.
+    bool rewriteTable(void* dst, const void* src, size_t bytes);
+
+    // One event per operation noted above that may still be running, recorded on its own stream so operations on
+    // different streams stay independent. Events found complete go back to the idle pool for later operations.
+    std::vector<CUevent> mTableReaders;
+    std::vector<CUevent> mIdleTableReaders;
+
     // whether forces were applied by the user
     bool mRdForcesApplied = false;
     bool mRdTorquesApplied = false;
@@ -594,6 +709,10 @@ struct GpuSimulationData
     bool mArtiDofForcesApplied = false;
 
 private:
+    unsigned long long* mKeptPinnedTargetsHost = nullptr;
+    unsigned long long* mKeptPinnedTargetsDev = nullptr;
+    unsigned long long mKeptPinnedTargetsReported = 0;
+
     void dumpGpuContactData(::physx::PxGpuContactPair* contactPairsDev, ::physx::PxU32* numContactPairsDev);
     int64_t mRigidContactTimestamp = -1;
 };

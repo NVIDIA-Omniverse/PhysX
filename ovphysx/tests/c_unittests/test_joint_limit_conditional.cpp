@@ -38,10 +38,10 @@ namespace
 
 // A string literal carries its length in its type, so the attribute name needs no std::strlen.
 template <size_t N>
-ovx_string_or_token_t makeAttr(const char (&name)[N])
+ovx_token_or_string_t makeAttr(const char (&name)[N])
 {
-    ovx_string_or_token_t a{};
-    a.token = 0;
+    ovx_token_or_string_t a{};
+    a.token = ovx_token_t{0};
     a.string.ptr = name;
     a.string.length = N - 1;
     return a;
@@ -66,7 +66,7 @@ TEST_F(PhysXTestFixture, JointLimitOnAFreeAxisIsRefusedAndWritesNothing)
     for (int i = 0; i < 3; ++i)
         ASSERT_EQ(ovphysx_step_sync(m_handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
 
-    const ovx_string_or_token_t limitAttr = makeAttr(OVPHYSX_ATTR_JOINT_LIMIT);
+    const ovx_token_or_string_t limitAttr = makeAttr(OVPHYSX_ATTR_JOINT_LIMIT);
 
     // Every joint's (low, high) limit into a flat vector, in query order. ARTICULATION_JOINT is an
     // array group with one tensor per joint, so every tensor is read, not just tensors[0].
@@ -76,7 +76,7 @@ TEST_F(PhysXTestFixture, JointLimitOnAFreeAxisIsRefusedAndWritesNothing)
         EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_query(m_handle, OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT, OVPHYSX_SCOPE_ALL, &rq, nullptr)).status,
                   OVPHYSX_API_SUCCESS);
         ovphysx_read_handle_t rh = 0;
-        EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_read(m_handle, rq, &limitAttr, 1, &rh, nullptr)).status, OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_read(m_handle, rq, &limitAttr, 1, ovstage_cuda_sync_t{ 0, 0 }, &rh, nullptr)).status, OVPHYSX_API_SUCCESS);
         const ovstage_read_group_t* g = nullptr;
         for (;;)
         {
@@ -84,9 +84,9 @@ TEST_F(PhysXTestFixture, JointLimitOnAFreeAxisIsRefusedAndWritesNothing)
             EXPECT_EQ(fetch.status, OVPHYSX_API_SUCCESS) << test_utils::last_task_error();
             if (fetch.status != OVPHYSX_API_SUCCESS || !g)
                 break;
-            for (uint32_t ti = 0; g->data.tensors && ti < g->data.tensor_count; ++ti)
+            for (uint32_t ti = 0; g->columns[0].data.tensors && ti < g->columns[0].data.tensor_count; ++ti)
             {
-                const DLTensor& t = g->data.tensors[ti];
+                const DLTensor& t = g->columns[0].data.tensors[ti];
                 if (!t.data || t.device.device_type != kDLCPU)
                     continue;
                 const size_t lanes = t.dtype.lanes ? t.dtype.lanes : 1;

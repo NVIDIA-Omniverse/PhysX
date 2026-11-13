@@ -5,11 +5,11 @@
 
 # PhysxSplinesSurfaceVelocityAPI
 
-Surface velocity that follows a BasisCurves prim under the body instead of a constant vector. Read only on dynamic bodies and articulation links. Silently disables itself when its curve target does not validate.
+Surface velocity that follows a BasisCurves [prim](glossary.md#prim) under the body instead of a constant vector. Read only on dynamic bodies and articulation links. Silently disables itself when its curve target does not validate.
 
-- **Applies to:** `Xformable`
+- **Applies to:** [`Xformable`](glossary.md#xformable)
 - **Requires on the same prim:** [`PhysicsRigidBodyAPI`](PhysicsRigidBodyAPI.md)
-- **Read only when listed in `usd-schemas`.**
+- **Read only when listed in [`usd-schemas`](prim.md#columns).**
 
 ## What USD population writes
 
@@ -17,13 +17,13 @@ Every declared attribute is published at its resolved value; the curve relations
 
 ## Columns
 
-*Raw fallback* is the USD schema value. *Producer writes* is what ovstage population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
+*Raw fallback* is the [USD](glossary.md#usd) schema value. *Producer writes* is what [ovstage](glossary.md#ovstage) population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
 
 | Column | Type | Units | Raw fallback | Producer writes | Parser default | If absent |
 |---|---|---|---|---|---|---|
 | `physxSplinesSurfaceVelocity:surfaceVelocityEnabled` | bool8 | none | true | resolved USD value (authored, else raw fallback) | true | On, but forced off when PhysxSurfaceVelocityAPI is enabled on the same body, when surfaceVelocityCurve is empty, or when its first target is not a BasisCurves prim that is a descendant of the body. |
 | `physxSplinesSurfaceVelocity:surfaceVelocityMagnitude` | float32 | length/s | 0.0 | resolved USD value (authored, else raw fallback) | 0.0 | 0: the surface does not move along the curve. |
-| `physxSplinesSurfaceVelocity:surfaceVelocityCurve` | uint64 array, RELATIONSHIP_PATH_ID |  |  | not written |  | Feature disabled. Only the first target is used; it must be a prim of concrete type BasisCurves (an isA check, not an applied-schema check) and a descendant of the body, otherwise the feature is disabled silently on the parse side (the runtime re-emits a warning on the USD path only). |
+| `physxSplinesSurfaceVelocity:surfaceVelocityCurve` | uint64 array, RELATIONSHIP_PATH_ID |  |  | not written |  | Feature disabled. Only the first target is used; it must be a prim of concrete type BasisCurves (a prim-type check, not an applied-schema check) and a descendant of the body, otherwise the feature is disabled silently on the parse side (the runtime re-emits a warning on the USD path only). |
 
 ## Interactions
 
@@ -32,3 +32,4 @@ Every declared attribute is published at its resolved value; the curve relations
 ## Notes
 
 - physxSplinesSurfaceVelocity:surfaceVelocityForceBased (bool, fallback true) is declared by the schema but not read by the consumer; it is not a column of this contract.
+- The compiled cache does not support this API (a body that lists it bypasses), but its scalar columns are in the read plan: the dynamic-body batch requests them for every dynamic body.

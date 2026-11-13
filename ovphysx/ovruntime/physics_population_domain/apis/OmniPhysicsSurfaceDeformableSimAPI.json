@@ -1,0 +1,93 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "OmniPhysicsSurfaceDeformableSimAPI",
+  "title": "OmniPhysicsSurfaceDeformableSimAPI",
+  "summary": "Marks the triangle simulation mesh of a surface deformable body and carries its rest shape and default bending rest angles. The walker accepts it on the body prim or an immediate child typed Mesh; body creation requires the rest shape to match the mesh exactly.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "Mesh"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true,
+    "geometry_role": true
+  },
+  "columns": [
+    {
+      "name": "omniphysics:restShapePoints",
+      "usd_type": "point3f[]",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "POINT",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 3,
+        "is_array": true
+      },
+      "required": true,
+      "absent": "Surface body creation requires exactly one rest point per mesh point, so an absent column logs 'Surface deformable body creation failed. Mismatch between OmniPhysicsSurfaceDeformableSimAPI rest shape attributes and UsdGeomMesh topology detected' and no body is created. For a PhysxAutoDeformableBodyAPI body the runtime's cooker writes this column itself.",
+      "units": "length",
+      "implemented_in": [
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceDeformable.cpp",
+        "source/omni.physx/plugins/tensors/base/BaseSimulationView.cpp",
+        "source/omni.physx/plugins/OvxPhysicsRead.cpp",
+        "source/omni.physics.ovstage/OvstageSource.cpp"
+      ],
+      "notes": "The rest points are what PhysX cooks the surface triangle mesh from. Tensor views warn when the count differs from the mesh points."
+    },
+    {
+      "name": "omniphysics:restTriVtxIndices",
+      "usd_type": "int3[]",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "int",
+        "bits": 32,
+        "lanes": 3,
+        "is_array": true
+      },
+      "required": true,
+      "absent": "Body creation requires it to equal faceVertexIndices element for element (a triangulated mesh), so an absent column fails the same check and no body is created.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceDeformable.cpp",
+        "source/omni.physx/plugins/tensors/base/BaseSimulationView.cpp",
+        "source/omni.physics.ovstage/OvstageSource.cpp"
+      ],
+      "notes": "Tensor views refuse the body ('No support for distinct rest shape topology') on a mismatch. A change re-parses the deformable body."
+    },
+    {
+      "name": "omniphysics:restBendAnglesDefault",
+      "usd_type": "uniform token",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "TOKEN_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "flatDefault",
+      "parser_default": "flatDefault",
+      "absent": "flatDefault: PhysX flattening is enabled for the surface deformable (zero rest bending angles). Any other token, restShapeDefault included, disables flattening.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physx/plugins/usdLoad/LoadStage.cpp",
+        "source/omni.physx/plugins/usdLoad/PhysicsBody.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceDeformable.cpp"
+      ],
+      "notes": "Token-dictionary id, read by the consumer after the scan on the simulation mesh only when it lists OmniPhysicsSurfaceDeformableSimAPI; otherwise the consumer's body default applies. Not re-read on change."
+    }
+  ],
+  "notes": [
+    "omniphysics:restAdjTriPairs and omniphysics:restBendAngles are not read by the runtime."
+  ]
+}

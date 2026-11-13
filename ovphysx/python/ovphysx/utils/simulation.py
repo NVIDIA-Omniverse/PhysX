@@ -2,9 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # @implements REQ-PYTHON-FRAME-001
-# @covers AC-1 AC-2 AC-3 AC-4 AC-5
+# @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7
 # @implements REQ-PYTHON-UTILS-001
 # @covers AC-13
+# @implements REQ-CAPI-JOINT-ARRAYS-001
+# @covers AC-1 AC-2 AC-3 AC-4
 
 """Stepping a running simulation and writing its output back to ovstage.
 
@@ -39,12 +41,20 @@ _DEFAULT_OVSTAGE_OUTPUTS = {
     SimObjectType.DEFORMABLE_VOLUME: ("points", "velocities"),
     SimObjectType.DEFORMABLE_SURFACE: ("points", "velocities"),
     SimObjectType.PARTICLE_SET: ("points", "velocities"),
+    SimObjectType.DEFORMABLE_SKIN_MESH: ("points",),
 }
 
 _FIXED_POSE_TYPES = {
     SimObjectType.RIGID_BODY,
     SimObjectType.ARTICULATION_LINK,
     SimObjectType.VEHICLE_WHEEL,
+}
+
+# Fixed-pose types whose world scale physics stores and the read serves as ``worldScale``. A vehicle
+# wheel has none, so its scale is still derived from the current ``omni:fabric:worldMatrix``.
+_STORED_SCALE_TYPES = {
+    SimObjectType.RIGID_BODY,
+    SimObjectType.ARTICULATION_LINK,
 }
 
 
@@ -71,10 +81,60 @@ def _lane_fold_ovstage_array_tensors(tensors):
     return columns
 
 
+def split_joint_group(stage, group):
+    """Split an ``ARTICULATION_JOINT`` read or write group into one array per joint.
+
+    ovphysx reads and writes joint state and joint properties with one row per
+    unlocked DOF: a joint's rows are consecutive, and its prim path repeats once per
+    DOF in the group's prim list. ovstage stores a joint's values as one array per
+    joint prim. This returns that form without copying anything.
+
+    Args:
+        stage: The ``ovstage.Stage`` attached to the instance the group comes from.
+        group: An ``ARTICULATION_JOINT`` ``ReadGroup`` or ``WriteGroup``.
+
+    Returns:
+        ``(prim_list, tensors)``. ``prim_list`` is an ``ovstage.PathList`` naming each
+        joint once, in the group's order, for ``Stage.query_from_path_list``; the caller
+        releases it, or uses it in a ``with`` block. ``tensors`` holds one ``warp.array``
+        per joint, each a view of that joint's rows in the group's own memory, to write
+        as an array attribute (``is_array=True``). The views are valid only while the
+        group is, and writing to a view of a write group fills that group's column.
+
+    Raises:
+        ValueError: if ``group`` is a deleted read group, or is not shaped as a joint
+            group (one tensor with one row per prim-list entry, no index map).
+    """
+    import numpy as np
+    import ovstage
+
+    if getattr(group, "is_delete", False):
+        raise ValueError("a deleted group has no joint values")
+    if len(group.tensors) != 1:
+        raise ValueError("a joint group carries exactly one tensor")
+    if getattr(group, "index_map", None) is not None or getattr(group, "prim_index_map", None) is not None:
+        raise ValueError("a joint group has no index map")
+    column = group.tensors[0]
+    rows = int(column.shape[0])
+    if rows != group.prim_count:
+        raise ValueError(f"a joint group has one prim-list entry per row, got {group.prim_count} for {rows} rows")
+    paths = ovstage.PathDictionary(stage)
+    if rows == 0:
+        return paths.create_path_list([]), []
+    handles = paths.get_paths(group.prim_list)[group.prim_offset : group.prim_offset + group.prim_count]
+    row_paths = np.fromiter((handle.raw_id for handle in handles), dtype=np.uint64, count=rows)
+    # A joint is a run of equal paths: each run's first row starts its view.
+    starts = np.flatnonzero(np.concatenate(([True], row_paths[1:] != row_paths[:-1])))
+    ends = np.append(starts[1:], rows)
+    prim_list = paths.create_path_list([handles[int(start)] for start in starts])
+    return prim_list, [column[int(start) : int(end)] for start, end in zip(starts, ends)]
+
+
 class _FixedPoseBuffers:
     __slots__ = ("scales", "matrices")
 
     def __init__(self, scales, matrices):
+        # None when the physics read supplies worldScale each call.
         self.scales = scales
         self.matrices = matrices
 
@@ -100,8 +160,7 @@ class _OvStageOutputContext:
     def __init__(self, physx: "PhysX", caller: str = "OvStageOutputCache"):
         import ovstage
 
-        stage = physx._attached_ovstage
-        if stage is None:
+        if not physx._held_stages():
             raise RuntimeError(f"{caller} requires an attached OVStage")
         required = (
             "get_attribute_write_floor",
@@ -109,21 +168,26 @@ class _OvStageOutputContext:
             "query_from_path_list",
             "release_query",
             "write_attribute",
+            "compute_hierarchy",
             "advance_write_floor",
         )
-        if any(not hasattr(stage, method) for method in required):
-            raise RuntimeError(f"{caller} requires attachment with an ovstage.Stage object")
 
         self._physx = physx
-        self._stage = stage
+        self._stage = None
         self._attachment_query = 0
         self._paths = None
         self._closed = False
         self._token_names = {}
         try:
+            # The query waits for earlier work on the instance, a queued attach or
+            # detach included, so the held Stage native code reports now is current.
             self._attachment_query = physx._capture_attachment_query()
-            if not physx._is_query_valid(self._attachment_query) or not physx.is_stage_attached(stage):
+            stage = physx._resolve_attached_stage()
+            if stage is None or not physx._is_query_valid(self._attachment_query):
                 raise RuntimeError(f"{caller} requires attachment with the current ovstage.Stage object")
+            if any(not hasattr(stage, method) for method in required):
+                raise RuntimeError(f"{caller} requires attachment with an ovstage.Stage object")
+            self._stage = stage
             self._paths = ovstage.PathDictionary(stage)
             self._tokens = {
                 name: self._paths.intern_token(name)
@@ -140,8 +204,10 @@ class _OvStageOutputContext:
     def _check_bound(self):
         if self._closed:
             raise RuntimeError("OvStageOutputCache is closed")
-        if self._physx._attached_ovstage is not self._stage:
-            raise RuntimeError("OvStageOutputCache cannot be reused with another OVStage")
+        # The attachment query ends with its attachment, so it also rejects another
+        # Stage; the instance's committed Stage can lag behind uncollected lifecycle tasks.
+        # The check waits for earlier work on the instance, as the synchronous step that
+        # step_and_write_to_ovstage() runs next waits anyway.
         if not self._physx._is_query_valid(self._attachment_query):
             raise RuntimeError("OvStageOutputCache cannot be reused after detach or reattach")
 
@@ -165,29 +231,29 @@ class _OvStageOutputContext:
         finally:
             self._stage.release_query(query).wait()
 
-    def _group_array(self, group, tensor_index, *, lanes, bits, name):
+    def _column_array(self, column, tensor_index, *, lanes, bits, name):
         import warp as wp
 
-        tensor = group.tensor(tensor_index)
+        tensor = column.tensor(tensor_index)
         if int(tensor.dtype.code) != 2 or int(tensor.dtype.bits) != bits or int(tensor.dtype.lanes or 1) not in (1, lanes):
             raise RuntimeError(f"point-instancer {name} must use float{bits} elements with {lanes} components")
-        if int(group.raw.data.cuda_sync.wait_event):
-            self._physx._order_warp_stream_after_group(group.raw, wp)
-        borrowed = wp.from_dlpack(group.dlpack(tensor_index))
+        if int(column.raw.data.cuda_sync.wait_event):
+            self._physx._order_warp_stream_after_group(column.raw, wp)
+        borrowed = wp.from_dlpack(column.dlpack(tensor_index))
         if len(borrowed.shape) != 2 or borrowed.shape[1] != lanes:
             raise RuntimeError(f"point-instancer {name} must have shape [N, {lanes}]")
         return borrowed
 
-    def _world_matrix_array(self, group):
+    def _world_matrix_array(self, column):
         import warp as wp
 
-        tensor = group.tensor(0)
-        if (group.is_array or int(tensor.dtype.code) != 2 or int(tensor.dtype.bits) != 64
+        tensor = column.tensor(0)
+        if (column.is_array or int(tensor.dtype.code) != 2 or int(tensor.dtype.bits) != 64
                 or int(tensor.dtype.lanes or 1) not in (1, 16)):
             raise RuntimeError("omni:fabric:worldMatrix must contain float64 matrices")
-        if int(group.raw.data.cuda_sync.wait_event):
-            self._physx._order_warp_stream_after_group(group.raw, wp)
-        borrowed = wp.from_dlpack(group.dlpack(0))
+        if int(column.raw.data.cuda_sync.wait_event):
+            self._physx._order_warp_stream_after_group(column.raw, wp)
+        borrowed = wp.from_dlpack(column.dlpack(0))
         if borrowed.dtype == wp.float64 and len(borrowed.shape) == 3 and borrowed.shape[1:] == (4, 4):
             if borrowed.strides[1:] != (32, 8):
                 raise RuntimeError("omni:fabric:worldMatrix component axes must be contiguous")
@@ -218,15 +284,16 @@ class _OvStageOutputContext:
         with self._read_current_attributes(prim_list, [self._tokens["omni:fabric:worldMatrix"]]) as groups:
             for group in groups:
                 with group:
-                    if group.is_delete:
+                    column = group.columns[0]
+                    if column.is_delete:
                         continue
-                    borrowed = self._world_matrix_array(group)
+                    borrowed = self._world_matrix_array(column)
 
                     full_group = (
                         group.prim_count == len(path_tuple)
                         and group.prim_offset == 0
                         and not group.has_prim_index_map
-                        and not group.has_data_index_map
+                        and not column.has_data_index_map
                         and borrowed.shape[0] == len(path_tuple)
                     )
                     if full_group:
@@ -263,7 +330,7 @@ class _OvStageOutputContext:
                         destination_row = destination_by_path.get(path)
                         if destination_row is None:
                             continue
-                        source_rows.append(group.data_row_index(local))
+                        source_rows.append(column.data_row_index(local))
                         destination_rows.append(destination_row)
                         captured.add(path)
                     if not source_rows:
@@ -323,30 +390,33 @@ class _OvStageOutputContext:
             with ExitStack() as stack:
                 for group in groups:
                     stack.enter_context(group)
-                    if group.is_delete:
-                        continue
-                    group_paths = self._paths.get_paths(group.prim_list)
-                    for local in range(group.prim_count):
-                        if group_paths[group.prim_index(local)] != path:
+                    group_paths = None
+                    for column in group.columns:
+                        if column.is_delete:
                             continue
-                        if not group.is_array:
-                            raise RuntimeError("point-instancer pose columns must be array attributes")
-                        if group.attribute == self._tokens["positions"]:
-                            captured["positions"] = self._group_array(
-                                group,
-                                group.data_row_index(local),
-                                lanes=3,
-                                bits=32,
-                                name="positions",
-                            )
-                        elif group.attribute == self._tokens["orientations"]:
-                            captured["orientations"] = self._group_array(
-                                group,
-                                group.data_row_index(local),
-                                lanes=4,
-                                bits=16,
-                                name="orientations",
-                            )
+                        if group_paths is None:
+                            group_paths = self._paths.get_paths(group.prim_list)
+                        for local in range(group.prim_count):
+                            if group_paths[group.prim_index(local)] != path:
+                                continue
+                            if not column.is_array:
+                                raise RuntimeError("point-instancer pose columns must be array attributes")
+                            if column.attribute == self._tokens["positions"]:
+                                captured["positions"] = self._column_array(
+                                    column,
+                                    column.data_row_index(local),
+                                    lanes=3,
+                                    bits=32,
+                                    name="positions",
+                                )
+                            elif column.attribute == self._tokens["orientations"]:
+                                captured["orientations"] = self._column_array(
+                                    column,
+                                    column.data_row_index(local),
+                                    lanes=4,
+                                    bits=16,
+                                    name="orientations",
+                                )
                 positions = captured.get("positions")
                 if positions is None:
                     positions = wp.empty((0, 3), dtype=wp.float32, device=device)
@@ -401,15 +471,16 @@ class _OvStageOutputContext:
             self._token_names[token] = name
         return name
 
-    def _fixed_pose_buffers(self, prim_list, path_tuple, device):
+    def _fixed_pose_buffers(self, prim_list, path_tuple, device, *, stored_scale):
         import warp as wp
 
-        key = (path_tuple, str(device))
+        # The mode is part of the key: a stored-scale entry holds no scales, a wheel entry holds stage-captured ones.
+        key = (path_tuple, str(device), stored_scale)
         buffers = self._fixed_buffers.get(key)
         if buffers is not None:
             return buffers
         buffers = _FixedPoseBuffers(
-            self._capture_world_scales(prim_list, path_tuple, device),
+            None if stored_scale else self._capture_world_scales(prim_list, path_tuple, device),
             wp.empty(len(path_tuple), dtype=wp.mat44d, device=device),
         )
         self._fixed_buffers[key] = buffers
@@ -450,14 +521,15 @@ class _OvStageOutputContext:
         with self._read_current_attributes(prim_list, [self._tokens["omni:fabric:worldMatrix"]]) as groups:
             for group in groups:
                 with group:
-                    if group.is_delete:
+                    column = group.columns[0]
+                    if column.is_delete:
                         continue
-                    borrowed = self._world_matrix_array(group)
+                    borrowed = self._world_matrix_array(column)
                     full_group = (
                         group.prim_count == count
                         and group.prim_offset == 0
                         and not group.has_prim_index_map
-                        and not group.has_data_index_map
+                        and not column.has_data_index_map
                         and borrowed.shape == (count, 16)
                     )
                     if full_group:
@@ -583,11 +655,13 @@ class OvStageOutputCache(_OvStageOutputContext):
     """Reusable application-owned state for :func:`step_and_write_to_ovstage`.
 
     The cache binds to the exact OVStage attachment and lazily owns copies of
-    scales derived from ``omni:fabric:worldMatrix`` and point-instancer pose
-    arrays. It also reuses Warp buffers on each producing device. Call
-    :meth:`refresh` after authored transforms, point-instancer pose arrays, or
-    topology change. Omit the cache from :func:`step_and_write_to_ovstage` to
-    read current OVStage values on every call instead.
+    vehicle-wheel scales derived from ``omni:fabric:worldMatrix`` and of
+    point-instancer pose arrays. It also reuses Warp buffers on each producing
+    device. Rigid bodies and articulation links need no scale copy: physics
+    supplies their stored ``worldScale`` with each read. Call :meth:`refresh`
+    after authored transforms, point-instancer pose arrays, or topology change.
+    Omit the cache from :func:`step_and_write_to_ovstage` to read current OVStage
+    values on every call instead.
     """
 
     def __init__(self, physx: "PhysX"):
@@ -612,18 +686,23 @@ class OvStageOutputCache(_OvStageOutputContext):
         super().close()
 
 
-def _validate_fixed_pose_pair(position_group, orientation_group):
+def _validate_fixed_pose_pair(position_group, orientation_group, scale_group=None):
+    """Validate a fixed pose pair, plus its ``worldScale`` group when physics supplies one.
+
+    Returns ``(positions, orientations, scales)``; ``scales`` is None without a scale group.
+    """
     import warp as wp
 
-    if position_group.is_array or orientation_group.is_array:
+    groups = [group for group in (position_group, orientation_group, scale_group) if group is not None]
+    if any(group.is_array for group in groups):
         raise RuntimeError("fixed pose columns must not be array attributes")
-    if position_group.prim_count != orientation_group.prim_count:
-        raise RuntimeError("position and orientation groups have different prim counts")
-    if position_group.index_map is not None or orientation_group.index_map is not None:
+    if any(group.prim_count != position_group.prim_count for group in groups):
+        raise RuntimeError("fixed pose groups have different prim counts")
+    if any(group.index_map is not None for group in groups):
         raise RuntimeError("fixed pose columns unexpectedly carry a data index map")
-    if position_group.prim_index_map is not None or orientation_group.prim_index_map is not None:
+    if any(group.prim_index_map is not None for group in groups):
         raise RuntimeError("fixed pose columns unexpectedly carry a prim index map")
-    if position_group.prim_offset != 0 or orientation_group.prim_offset != 0:
+    if any(group.prim_offset != 0 for group in groups):
         raise RuntimeError("fixed pose columns unexpectedly carry a prim offset")
 
     positions = position_group.tensors[0]
@@ -636,7 +715,14 @@ def _validate_fixed_pose_pair(position_group, orientation_group):
         raise RuntimeError("position and orientation tensors must use float32 elements")
     if positions.device != orientations.device:
         raise RuntimeError("position and orientation tensors must be on the same device")
-    return positions, orientations
+    scales = None
+    if scale_group is not None:
+        scales = scale_group.tensors[0]
+        if scales.shape != (scale_group.prim_count, 3) or scales.dtype != wp.float32:
+            raise RuntimeError(f"worldScale tensor must be float32 with shape [N, 3], got {scales.shape}")
+        if scales.device != positions.device:
+            raise RuntimeError("worldScale and pose tensors must be on the same device")
+    return positions, orientations, scales
 
 
 def _validate_instancer_pose_pair(position_group, orientation_group, path_tuple):
@@ -689,17 +775,23 @@ def step_and_write_to_ovstage(
 ) -> int:
     """Step once and write selected physics output to the attached OVStage.
 
-    Fixed rigid-body, articulation-link, and vehicle-wheel poses are combined
-    with scale derived from the current ``omni:fabric:worldMatrix`` and written
-    directly to that attribute. The helper never writes ``omni:xform`` or
-    ``omni:resetXformStack``. Point-instancer rigid-body poses are written to
-    their native instancer-local ``positions`` and ``orientations`` arrays;
-    unsimulated slots retain the current OVStage values.
+    Fixed rigid-body and articulation-link poses are combined with the signed
+    world scale physics stored for each body (``worldScale``, read beside the
+    pose, so no stage world matrix is read for them). Vehicle-wheel poses are
+    combined with scale derived from the current ``omni:fabric:worldMatrix``.
+    Both are written directly to ``omni:fabric:worldMatrix``. The helper then
+    computes the hierarchy at ``output_ordinal`` with the CPU model, which sets
+    those prims' local transforms to match, so a later parent edit moves them
+    with their parent. It never writes ``omni:resetXformStack``.
+    Point-instancer rigid-body poses are written to their native
+    instancer-local ``positions`` and ``orientations`` arrays; unsimulated slots
+    retain the current OVStage values.
 
     By default the helper reads current OVStage values on every call and keeps
     no snapshots after returning. Passing an application-owned ``cache`` opts
-    into retaining derived scale, point-instancer baselines, Warp buffers, and
-    CUDA events across calls. Persistent borrowed OVStage views are never kept.
+    into retaining derived vehicle-wheel scale, point-instancer baselines, Warp
+    buffers, and CUDA events across calls. Persistent borrowed OVStage views are
+    never kept.
 
     Other selected output is written to its shadow ``sim:<name>`` attribute.
     ``output_ordinal`` is caller-owned and must never be drained back into
@@ -774,12 +866,23 @@ def _write_to_ovstage(physx, output_ordinal, cache, validated_outputs, *, retain
     import ovstage
     import warp as wp
 
-    from .._utils_kernels import compose_world_xforms, merge_instancer_poses
+    from .._utils_kernels import (
+        compose_world_xforms,
+        compose_world_xforms_with_world_scales,
+        merge_instancer_poses,
+    )
 
     stage = cache._stage
     written = 0
+    wrote_world_matrix = False
     for object_type, attribute_names in validated_outputs:
-        with physx.read_sync(object_type, attribute_names, scope=ObjectScope.ALL) as result:
+        # Rigid bodies and links compose with the scale physics stored, read beside the pose. It is
+        # requested here only to compose; it reaches sim:worldScale only when the caller selected it.
+        stored_scale = object_type in _STORED_SCALE_TYPES and "position" in attribute_names
+        read_names = attribute_names
+        if stored_scale and "worldScale" not in attribute_names:
+            read_names = [*attribute_names, "worldScale"]
+        with physx.read_sync(object_type, read_names, scope=ObjectScope.ALL) as result:
             regular_groups = []
             pose_groups = {}
             for group in result.groups:
@@ -792,6 +895,10 @@ def _write_to_ovstage(physx, output_ordinal, cache, validated_outputs, *, retain
                     "positions",
                     "orientations",
                 )
+                if stored_scale and emitted_name == "worldScale" and not group.is_array:
+                    is_pose = True
+                    if "worldScale" in attribute_names:
+                        regular_groups.append((group, emitted_name))
                 if not is_pose:
                     regular_groups.append((group, emitted_name))
                     continue
@@ -803,7 +910,12 @@ def _write_to_ovstage(physx, output_ordinal, cache, validated_outputs, *, retain
 
             prepared = []
             for (is_array, prim_list_key), pair in pose_groups.items():
-                expected = {"positions", "orientations"} if is_array else {"position", "orientation"}
+                if is_array:
+                    expected = {"positions", "orientations"}
+                elif stored_scale:
+                    expected = {"position", "orientation", "worldScale"}
+                else:
+                    expected = {"position", "orientation"}
                 if set(pair) != expected:
                     missing = next(iter(expected - set(pair)))
                     raise RuntimeError(f"pose group for prim list {prim_list_key} is missing {missing}")
@@ -856,10 +968,37 @@ def _write_to_ovstage(physx, output_ordinal, cache, validated_outputs, *, retain
                         event = None
                     prepared.append((True, pair, output_positions, output_orientations, event))
                 else:
-                    positions, orientations = _validate_fixed_pose_pair(pair["position"], pair["orientation"])
-                    if retain:
+                    positions, orientations, scales = _validate_fixed_pose_pair(
+                        pair["position"], pair["orientation"], pair.get("worldScale")
+                    )
+                    if scales is not None:
+                        # No stage read: the stored scale arrives with the pose, on its device.
+                        if retain:
+                            path_tuple = cache._path_tuple(pair["position"])
+                            matrices = cache._fixed_pose_buffers(
+                                pair["position"].prim_list, path_tuple, positions.device, stored_scale=True
+                            ).matrices
+                        else:
+                            matrices = wp.empty(positions.shape[0], dtype=wp.mat44d, device=positions.device)
+                        if positions.shape[0]:
+                            wp.launch(
+                                compose_world_xforms_with_world_scales,
+                                dim=positions.shape[0],
+                                inputs=[positions, orientations, scales],
+                                outputs=[matrices],
+                                device=positions.device,
+                            )
+                        if retain:
+                            event = _record_completion_event(cache, positions.device)
+                        else:
+                            if matrices.device.is_cuda:
+                                wp.synchronize_stream(matrices.device.stream)
+                            event = None
+                    elif retain:
                         path_tuple = cache._path_tuple(pair["position"])
-                        buffers = cache._fixed_pose_buffers(pair["position"].prim_list, path_tuple, positions.device)
+                        buffers = cache._fixed_pose_buffers(
+                            pair["position"].prim_list, path_tuple, positions.device, stored_scale=False
+                        )
                         if positions.shape[0]:
                             wp.launch(
                                 compose_world_xforms,
@@ -881,25 +1020,36 @@ def _write_to_ovstage(physx, output_ordinal, cache, validated_outputs, *, retain
                     prepared.append((False, pair, matrices, None, event))
 
             for group, emitted_name in regular_groups:
-                query = stage.query_from_path_list(group.prim_list)
+                # A joint state or property group has one row per DOF; ovstage keeps a joint's values as one array
+                # per joint prim. physxPointer stays one row per joint.
+                per_dof = object_type == SimObjectType.ARTICULATION_JOINT and emitted_name != "physxPointer"
+                prim_list, arrays = split_joint_group(stage, group) if per_dof else (group.prim_list, group.tensors)
                 try:
-                    tensors = _lane_fold_ovstage_array_tensors(group.tensors) if group.is_array else group.tensors[0]
-                    index_map = group.index_map.numpy().tolist() if group.index_map is not None else None
-                    stage.write_attribute(
-                        query,
-                        f"sim:{emitted_name}",
-                        output_ordinal,
-                        tensors,
-                        is_array=group.is_array,
-                        semantic=group.semantic,
-                        index_map=index_map,
-                        count=group.prim_count if index_map is not None else None,
-                        cuda_event=group.cuda_wait_event,
-                        cuda_stream=group.cuda_stream,
-                    ).wait()
-                    written += 1
+                    if per_dof and not arrays:
+                        continue
+                    is_array = per_dof or group.is_array
+                    query = stage.query_from_path_list(prim_list)
+                    try:
+                        tensors = _lane_fold_ovstage_array_tensors(arrays) if is_array else arrays[0]
+                        index_map = group.index_map.numpy().tolist() if group.index_map is not None else None
+                        stage.write_attribute(
+                            query,
+                            f"sim:{emitted_name}",
+                            output_ordinal,
+                            tensors,
+                            is_array=is_array,
+                            semantic=group.semantic,
+                            index_map=index_map,
+                            count=group.prim_count if index_map is not None else None,
+                            cuda_event=group.cuda_wait_event,
+                            cuda_stream=group.cuda_stream,
+                        ).wait()
+                        written += 1
+                    finally:
+                        stage.release_query(query).wait()
                 finally:
-                    stage.release_query(query).wait()
+                    if per_dof:
+                        prim_list.release()
 
             for is_array, pair, first_output, second_output, event in prepared:
                 if is_array:
@@ -949,10 +1099,16 @@ def _write_to_ovstage(physx, output_ordinal, cache, validated_outputs, *, retain
                             cuda_stream=None,
                         ).wait()
                         written += 1
+                        wrote_world_matrix = True
                     finally:
                         stage.release_query(query).wait()
 
+    if wrote_world_matrix:
+        # The CPU hierarchy model folds a direct world write into the local transform at its next computation,
+        # against the parents of that time. Fold it now, so a later parent edit moves the body with it. The GPU
+        # models would instead rederive the world matrices from the old local transforms.
+        stage.compute_hierarchy(output_ordinal, output_ordinal, ovstage.HierarchyComputationModel.DEFAULT_CPU)
     return written
 
 
-__all__ = ["OvStageOutputCache", "step_and_write_to_ovstage"]
+__all__ = ["OvStageOutputCache", "split_joint_group", "step_and_write_to_ovstage"]

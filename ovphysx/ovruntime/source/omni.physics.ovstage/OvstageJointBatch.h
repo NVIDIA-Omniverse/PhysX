@@ -3,10 +3,14 @@
 
 /** @implements REQ-PARSE-PARALLEL-001
  * @covers AC-1 AC-2 AC-3 AC-5
+ *
+ * @implements REQ-PARSE-NEWTON-JOINT-001
+ * @covers AC-4
  */
 #pragma once
 #include <omni/physics/parse/PreparedJoint.h>
 #include <cmath>
+#include <limits>
 
 namespace omni::physics::ovstage
 {
@@ -57,6 +61,10 @@ void readOvstageJointAttributes(const Reader& row, const KnownTokens& tok, const
     }
     auto readLimit = [&](TokenId low, TokenId high, JointLimitInfo& limit)
     {
+        // Seed the USD schema fallbacks so an absent column (e.g. a prim retyped at runtime)
+        // means no bound, as on USD, rather than an active [0, 0] limit.
+        limit.lower = -std::numeric_limits<float>::infinity();
+        limit.upper = std::numeric_limits<float>::infinity();
         row.getAttribute(key, low, limit.lower);
         row.getAttribute(key, high, limit.upper);
         constexpr float sentinel = 0.5e38f;
@@ -80,6 +88,8 @@ void readOvstageJointAttributes(const Reader& row, const KnownTokens& tok, const
     }
     else if (info.type == eJointSpherical)
     {
+        // USD schema fallback -1 disables the cone when a column is absent.
+        info.limit.lower = info.limit.upper = -1.0f;
         row.getAttribute(key, fields.cone0, info.limit.lower);
         row.getAttribute(key, fields.cone1, info.limit.upper);
         info.limit.enabled = std::isfinite(info.limit.lower) && std::isfinite(info.limit.upper) &&
@@ -114,7 +124,7 @@ inline void appendJointAttributeTokens(const KnownTokens& tok, const JointReadTo
     if (inputs.empty()) return;
     const ObjectType type = inputs.front().info.type;
     const bool hasAxis = type == eJointRevolute || type == eJointPrismatic || type == eJointSpherical || type == eJointD6;
-    if (hasAxis) attributes.insert(attributes.end(), {tok.newtonVelocityLimit, tok.newtonArmature,
+    if (hasAxis) attributes.insert(attributes.end(), {tok.physxJointMaxJointVelocity, tok.newtonVelocityLimit, tok.newtonArmature,
         tok.newtonFriction, tok.newtonDamping});
     bool spring = false;
     std::array<PreparedJointInstance, 10> used{};

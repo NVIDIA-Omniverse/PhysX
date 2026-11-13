@@ -1,8 +1,12 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-CACHE-ATTACH-001
+ * @covers AC-9
+ */
+
 /** @implements REQ-PARSE-FEED-006
- * @covers AC-1 AC-2 AC-3
+ * @covers AC-1 AC-2 AC-3 AC-8
  */
 
 /**
@@ -27,8 +31,10 @@
 #include <ovstage/ovstage.h>
 #include <ovstage/ovx_path_dictionary.h>
 
+#include <array>
 #include <algorithm>
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -45,17 +51,47 @@ public:
     // `source` must outlive the feed (it owns the path/token tables the feed
     // resolves through). `instance`/`dict` are the same non-owning handles the
     // source reads from.
-    OvstageChangeFeed(OvstageSource& source, ovstage_instance_t* instance, ovx_path_dictionary_t* dict);
+    OvstageChangeFeed(OvstageSource& source,
+                      ovstage_instance_t* instance,
+                      ovx_path_dictionary_t* dict,
+                      bool deferBaseline = false);
     ~OvstageChangeFeed() override;
 
     OvstageChangeFeed(const OvstageChangeFeed&) = delete;
     OvstageChangeFeed& operator=(const OvstageChangeFeed&) = delete;
+
+    // Compiled attachment restores the exact initial membership under its
+    // content identity. Misses initialize from the live source before publication.
+    void initializeBaseline();
+    bool baselineInitialized() const
+    {
+        return mBaselineInitialized;
+    }
+    // Visit the initial physics membership, or the selected paths that belong to
+    // it. Each path is valid during its call only. False while the membership is
+    // not exactly known.
+    bool forEachBaselinePath(const std::function<void(std::string_view)>& visit) const;
+    bool forEachBaselinePath(const std::vector<std::string>& selected,
+                             const std::function<void(std::string_view)>& visit) const;
+    bool restoreBaseline(const std::vector<std::string_view>& paths);
+    // What restoreBaseline adopts for a membership: the physics paths, their ancestor-closed
+    // transform paths and each transform path's reference count. It is built from the paths
+    // alone, so a caller can prepare it on another thread ahead of the adoption.
+    struct PreparedBaseline
+    {
+        std::unordered_set<std::string> physics, transforms;
+        std::unordered_map<std::string, size_t> transformRefCounts;
+        bool valid = false; // false for a membership naming a path twice
+    };
+    static PreparedBaseline prepareBaseline(const std::vector<std::string_view>& paths);
+    bool restoreBaseline(PreparedBaseline&& baseline);
 
     // --- IChangeFeed ---
     void registerInterest(ObjectKey objectType, TokenId prop, int device, OnChangeFn cb, uint64_t userData) override;
     void registerGroupComplete(OnGroupCompleteFn cb) override;
     bool drain() override; // no-op for the pull feed; the range comes via drainRange
     void setEnabled(bool enabled) override;
+    void setDeviceOrdinal(int ordinal) override;
     void setAddedPrimPropertiesCoveredByResync(bool covered) override { mAddedPropertiesCovered = covered; }
 
     // Read every changed column in the ordinal interval [ord0, ord1] and deliver
@@ -106,11 +142,41 @@ private:
 
     struct PathListQuery
     {
+        // A large addition seals a segment; the next one past the cap folds them all.
+        static constexpr size_t kMaxSegments = 8;
+        // Smaller batches do not amortize the extra read calls of a retained segment.
+        static constexpr size_t kMinSegmentPaths = 64;
         PathListHandle base;
         PathListHandle delta;
-        std::vector<std::string> deltaPaths; // the known paths `base` does not cover
+        std::vector<PathListHandle> segments; // bounded immutable batches of prior additions
+        std::vector<std::string> deltaPaths; // paths not yet sealed in the base/segments
         bool dirty = true;                    // `delta` does not match deltaPaths yet
         bool fold = true;                     // the set was replaced: rebuild `base` over all of it
+        // Base, segments and delta in read order. A drain walks them several times,
+        // so listing them allocates nothing.
+        struct Handles
+        {
+            std::array<const PathListHandle*, kMaxSegments + 2> items{};
+            size_t count = 0;
+            const PathListHandle* const* begin() const
+            {
+                return items.data();
+            }
+            const PathListHandle* const* end() const
+            {
+                return items.data() + count;
+            }
+        };
+        Handles handles() const
+        {
+            CARB_ASSERT(segments.size() <= kMaxSegments);
+            Handles result;
+            result.items[result.count++] = &base;
+            for (size_t i = 0; i < segments.size() && i < kMaxSegments; ++i)
+                result.items[result.count++] = &segments[i];
+            result.items[result.count++] = &delta;
+            return result;
+        }
         void noteAdded(const std::string& path)
         {
             deltaPaths.push_back(path);
@@ -193,7 +259,7 @@ private:
     {
         struct Row
         {
-            ovx_primpath_t raw = 0; // first handle seen for the path (resolveGroupPathKey input)
+            ovx_primpath_t raw = OVX_INVALID_PRIMPATH; // first handle seen for the path (resolveGroupPathKey input)
             std::string path;
             bool bySchemas = false; // usd-schemas row names a known physics schema
             bool byType = false;    // usd-prim-type row is a known physics type
@@ -213,6 +279,7 @@ private:
         // Meaningful only when `exact`.
         std::vector<SchemaRowDelta> schemas;
         std::vector<PrimTypeRowDelta> types;
+        std::vector<OvstageSource::SharedInputTypeRow> sharedTypes;
         // Known paths the read saw tombstoned (known-rows mode only).
         std::vector<ovx_primpath_t> tombstoned;
         // false: a row the classifier cannot decide (undecodable payload, packed array
@@ -225,6 +292,7 @@ private:
             unfamiliar.clear();
             schemas.clear();
             types.clear();
+            sharedTypes.clear();
             tombstoned.clear();
             exact = true;
         }
@@ -232,7 +300,7 @@ private:
     // `knownRowsExpected`: the range is known to carry known-prim changes (the exact known-path
     // read saw them), so a known row is a patch input rather than a classification failure.
     bool readStructuralRows(uint64_t ord0, uint64_t ord1, StructuralRows& out, bool knownRowsExpected = false);
-    void classifyStructuralGroup(const ovstage_read_group_t& group,
+    void classifyStructuralGroup(const ReadGroupColumn& group,
                                  ReadListMemo& listMemo,
                                  ovx_token_t schemasTok,
                                  ovx_token_t primTypeTok,
@@ -298,12 +366,18 @@ private:
     TokenId propertyTokenFor(ovx_token_t attr);
     // Rows -> keys. A group over `handle`'s own list, or over ovstage's same-sized copy of it,
     // indexes the captured paths; any other list is fetched from the dictionary once per read.
-    void collectGroupKeys(const ovstage_read_group_t& group,
+    // `skipMaskedRows` drops rows the group's data mask marks absent (a caller that needs only the
+    // rows actually carrying a value); off by default, so the keys stay aligned with the data rows.
+    // `keptRows`, when given, receives each kept key's logical row, so a caller that skips rows can
+    // still map every key back to its data row.
+    void collectGroupKeys(const ReadGroupColumn& group,
                           std::vector<ObjectKey>& keys,
-                          const PathListHandle* handle = nullptr);
+                          const PathListHandle* handle = nullptr,
+                          bool skipMaskedRows = false,
+                          std::vector<uint32_t>* keptRows = nullptr);
     void rebuildRegisteredAttributeTokens();
     void rebuildValueReadAttributes();
-    std::vector<ObjectKey> collectPathsFromGroup(const ovstage_read_group_t& group,
+    std::vector<ObjectKey> collectPathsFromGroup(const ReadGroupColumn& group,
                                                  ReadListMemo& listMemo,
                                                  std::unordered_set<std::string>& physicsPaths,
                                                  std::unordered_set<std::string>& transformPaths,
@@ -327,6 +401,8 @@ private:
                                     bool* outExactPatch = nullptr,
                                     bool* outPureRemoval = nullptr);
     void rebuildTransformPathRefCounts();
+    template <typename Paths>
+    static void countTransformPaths(const Paths& physicsPaths, std::unordered_map<std::string, size_t>& counts);
     bool rememberTransformPathAndAncestors(std::string_view path);
     bool rememberTransformPathAndAncestors(std::unordered_set<std::string>& paths,
                                            std::string_view path);
@@ -382,8 +458,12 @@ private:
     std::vector<ovstage_read_group_t> mDeferredGroups;
     // Every insert into a path set must reach the matching query's noteAdded, every wholesale
     // replacement its noteReplaced, or the base/delta handles silently stop covering the set.
+    bool mBaselineInitialized = false;
     std::unordered_set<std::string> mKnownPhysicsPaths;
     std::unordered_set<std::string> mKnownTransformPaths;
+    // Rescan additions may have been partially applied before rejection. Keep them
+    // separate from known membership so live additions are redelivered on retry.
+    std::unordered_set<std::string> mPendingRescanAddedPaths;
     // Number of watched physics paths using each transform path (including itself).
     std::unordered_map<std::string, size_t> mTransformPathRefCounts;
     PathListQuery              mKnownPhysicsQuery;
@@ -418,6 +498,11 @@ private:
     bool                      mRangeGapSinceDrop = false;
     OnGroupCompleteFn         mGroupComplete;
     bool                      mEnabled = true;
+    // Consumer residency for value delivery: -1 host, >=0 a CUDA device ordinal.
+    // When >=0 and the ovstage device-read hook is present, the value drain reads a device-eligible
+    // attribute on device over the drained range (a change-range read, same as the host path) and
+    // delivers it as a borrowable device column instead of staging it host-side.
+    int                       mDeviceOrdinal = -1;
 };
 
 } // namespace omni::physics::ovstage

@@ -4,11 +4,17 @@
 #pragma once
 
 /**
+ * @implements REQ-READ-CCT-001
+ * @covers AC-3
+ *
  * @implements REQ-TENSOR-PATH-001
  * @covers AC-2
  *
  * @implements REQ-PUBLICAPI-001
  * @covers AC-40
+ *
+ * @implements REQ-READ-ATTRS-001
+ * @covers AC-30
  */
 
 #include <omni/physics/parse/Handles.h>
@@ -71,6 +77,17 @@ struct RigidBodyEntry
 
     ::physx::PxU32 numShapes = 0;
     std::vector<::physx::PxShape*> shapes;
+
+    // Creation-time controller actor to prim frame correction; identity for other bodies.
+    ::physx::PxQuat orientationFixup{ ::physx::PxIdentity };
+
+    // Signed world scale the body was created with (InternalActor::mScale): the scale the parser
+    // decomposed off its world transform (a replicated clone copies its source's), which PhysX does
+    // not carry. Constant for the actor's lifetime -- a scale edit either recreates the actor or is
+    // not applied to it (controllers, DirectGPU bodies, links, time-sampled kinematics) -- so a view may
+    // cache it; destroying the actor invalidates the view. Unit when the body has no owning database
+    // record (an unmanaged actor).
+    ::physx::PxVec3 worldScale{ 1.0f };
 };
 
 // One instance of a point-instancer prototype. The body is a plain PxRigidDynamic in the scene, so it

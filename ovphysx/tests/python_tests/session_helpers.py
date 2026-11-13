@@ -2,13 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Session read/write helpers for tests: one attribute of one object type, over the whole set or a prim-set
-selection, keyed by prim path. A fixed group contributes each row's components; an array group (one tensor per
-prim, e.g. per-axis joint columns) contributes each prim's tensor. Values travel as flat float64 numpy rows
-whatever the column's dtype or device."""
+selection, keyed by prim path. A fixed group contributes each row's components, a joint its consecutive rows
+together (one per DOF); an array group (one tensor per prim, e.g. deformable points) contributes each prim's
+tensor. Values travel as flat float64 numpy rows whatever the column's dtype or device."""
 
 import numpy as np
 import ovstage
 import warp as wp
+from ovphysx.types import SimObjectType
 
 
 def handles_for(stage, paths):
@@ -22,6 +23,22 @@ def _group_paths(dictionary, group):
     return [dictionary.path_to_string(handles[group.prim_offset + row]) for row in range(group.prim_count)]
 
 
+def _runs(paths, object_type):
+    """(path, first row, end row) for each object's rows.
+
+    A joint's rows, one per DOF, are consecutive and repeat its path, so they make one run. Any other type
+    keeps one run per row: a repeated path there is another object, as with two tendons on one root prim.
+    """
+    per_dof = object_type == SimObjectType.ARTICULATION_JOINT
+    runs = []
+    for row, path in enumerate(paths):
+        if per_dof and runs and runs[-1][0] == path:
+            runs[-1][2] = row + 1
+        else:
+            runs.append([path, row, row + 1])
+    return runs
+
+
 def read_column(physx, stage, object_type, attribute, *, pattern=None, prim_paths=None):
     """{prim path -> flat float64 row} for `attribute` of every `object_type` object, or of those selected."""
     out = {}
@@ -32,13 +49,31 @@ def read_column(physx, stage, object_type, attribute, *, pattern=None, prim_path
                 rows = None if group.is_array else np.asarray(group.tensors[0].numpy()).reshape(
                     group.tensors[0].shape[0], -1
                 )
-                for row, path in enumerate(_group_paths(dictionary, group)):
-                    data_row = int(index_map[row]) if index_map is not None else row
-                    if group.is_array:
-                        values = np.asarray(group.tensors[data_row].numpy())
-                    else:
-                        values = rows[data_row]
-                    out[path] = np.asarray(values, dtype=np.float64).reshape(-1).copy()
+                for path, first, end in _runs(_group_paths(dictionary, group), object_type):
+                    values = []
+                    for row in range(first, end):
+                        data_row = int(index_map[row]) if index_map is not None else row
+                        if group.is_array:
+                            values.append(np.asarray(group.tensors[data_row].numpy(), dtype=np.float64).reshape(-1))
+                        else:
+                            values.append(np.asarray(rows[data_row], dtype=np.float64).reshape(-1))
+                    out[path] = np.concatenate(values)
+    return out
+
+
+def read_row_shapes(physx, stage, object_type, attribute):
+    """{prim path -> its row's dimensions} for a fixed-group `attribute`: the group tensor's shape past the row count.
+
+    An inverse dynamics matrix carries its dimensions there (`jacobian` is ``[N, R, C]``); a lane-packed column has
+    none, its width being the array's trailing axis instead."""
+    out = {}
+    with physx.read_sync(object_type, [attribute]) as result:
+        with ovstage.PathDictionary(stage) as dictionary:
+            for group in result.groups:
+                assert not group.is_array, attribute
+                row_shape = tuple(int(extent) for extent in group.tensors[0].shape[1:])
+                for path in _group_paths(dictionary, group):
+                    out[path] = row_shape
     return out
 
 
@@ -67,15 +102,17 @@ def write_column(physx, stage, object_type, attribute, fill, *, pattern=None, pr
                     tensor = group.tensors[0]
                     current = np.asarray(tensor.numpy())
                     rows = current.reshape(current.shape[0], -1).astype(np.float64)
-                    for row, path in enumerate(paths):
-                        rows[row] = np.asarray(fill(path, rows[row].copy()), dtype=np.float64).reshape(-1)
+                    # A joint's rows, one per DOF, fill together.
+                    for path, first, end in _runs(paths, object_type):
+                        new = np.asarray(fill(path, rows[first:end].reshape(-1).copy()), dtype=np.float64)
+                        rows[first:end] = new.reshape(end - first, -1)
                     tensor.assign(rows.reshape(current.shape).astype(current.dtype))
                 cuda_tensor = next((t for t in group.tensors if t.size and t.device.is_cuda), None)
                 if cuda_tensor is not None:
                     session.commit_sync(group, cuda_stream=int(wp.get_stream(cuda_tensor.device).cuda_stream or 1))
                 else:
                     session.commit_sync(group)
-                written += group.prim_count
+                written += len(_runs(paths, object_type))
     return written
 
 

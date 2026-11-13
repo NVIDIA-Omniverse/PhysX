@@ -5,8 +5,8 @@
 
 // Session read/write helpers for the C unit tests: one attribute of one object type, over the whole set or
 // a pattern selection, keyed by prim path, on host or device memory. A fixed group contributes each row's
-// components; an array group (one tensor per prim, e.g. per-axis joint columns) contributes each prim's
-// tensor. Values travel as double whatever the column's dtype.
+// components, a joint its consecutive rows together (one per DOF); an array group (one tensor per prim, e.g.
+// deformable points) contributes each prim's tensor. Values travel as double whatever the column's dtype.
 
 #include "cuda_test_helpers.h"
 #include "test_utilities.h"
@@ -179,9 +179,9 @@ inline bool deviceUpload(const DLTensor& tensor, const std::vector<unsigned char
     return context.ok() && cuda->memcpyHtoD(reinterpret_cast<uintptr_t>(destination), bytes.data(), bytes.size(), nullptr);
 }
 
-inline ovx_string_or_token_t attributeName(const char* attribute)
+inline ovx_token_or_string_t attributeName(const char* attribute)
 {
-    ovx_string_or_token_t name{};
+    ovx_token_or_string_t name{};
     name.string = { attribute, std::strlen(attribute) };
     return name;
 }
@@ -233,9 +233,10 @@ inline bool readColumn(ovphysx_instance_handle_t handle, ovphysx_query_target_t 
     path_dictionary_instance_t* dictionary = test_utils::attached_ovstage_dictionary(handle);
     bool ok = dictionary != nullptr;
     ovx_path_dictionary_t* dict = static_cast<ovx_path_dictionary_t*>(dictionary);
-    const ovx_string_or_token_t name = detail::attributeName(attribute);
+    const ovx_token_or_string_t name = detail::attributeName(attribute);
     ovphysx_read_handle_t read = 0;
-    ok = ok && test_utils::complete_task(handle, ovphysx_read(handle, query, &name, 1, &read, nullptr)).status ==
+    ok = ok && test_utils::complete_task(handle, ovphysx_read(handle, query, &name, 1,
+                                                              ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr)).status ==
                    OVPHYSX_API_SUCCESS;
     std::vector<unsigned char> bytes;
     while (ok)
@@ -245,45 +246,50 @@ inline bool readColumn(ovphysx_instance_handle_t handle, ovphysx_query_target_t 
              OVPHYSX_API_SUCCESS;
         if (!ok || !group)
             break;
-        for (uint32_t row = 0; ok && !group->is_delete && row < group->prims.count; ++row)
+        std::string previous;
+        for (uint32_t row = 0; ok && !group->columns[0].is_delete && row < group->prims.count; ++row)
         {
             std::string path;
             ok = detail::rowPath(dict, group->prims, row, path);
             if (!ok)
                 break;
             std::vector<double>& values = out[path];
-            values.clear();
-            if (group->is_array)
+            // A joint's rows, one per DOF, add up to its value. Any other repeated path is another object
+            // (two tendons on one root prim), so its row replaces the previous one.
+            if (type != OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT || row == 0 || path != previous)
+                values.clear();
+            previous = path;
+            if (group->columns[0].is_array)
             {
-                const uint32_t index = group->data.index_map ? group->data.index_map[row] : row;
-                ok = index < group->data.tensor_count;
+                const uint32_t index = group->columns[0].data.index_map ? group->columns[0].data.index_map[row] : row;
+                ok = index < group->columns[0].data.tensor_count;
                 if (!ok)
                     break;
-                const DLTensor& tensor = group->data.tensors[index];
+                const DLTensor& tensor = group->columns[0].data.tensors[index];
                 if (expectedDtype)
                 {
                     EXPECT_EQ(tensor.dtype.code, expectedDtype->code) << attribute << " dtype.code";
                     EXPECT_EQ(tensor.dtype.bits, expectedDtype->bits) << attribute << " dtype.bits";
                 }
-                ok = ok && detail::hostBytes(tensor, group->data.cuda_sync, cudaContext, bytes);
+                ok = ok && detail::hostBytes(tensor, group->columns[0].data.cuda_sync, cudaContext, bytes);
                 const size_t width = detail::componentBytes(tensor.dtype);
                 for (size_t i = 0; ok && i < bytes.size() / width; ++i)
                     values.push_back(detail::decode(tensor.dtype, bytes.data() + i * width));
             }
             else
             {
-                ok = group->data.tensor_count >= 1;
-                const DLTensor& tensor = group->data.tensors[0];
+                ok = group->columns[0].data.tensor_count >= 1;
+                const DLTensor& tensor = group->columns[0].data.tensors[0];
                 if (ok && row == 0 && expectedDtype)
                 {
                     EXPECT_EQ(tensor.dtype.code, expectedDtype->code) << attribute << " dtype.code";
                     EXPECT_EQ(tensor.dtype.bits, expectedDtype->bits) << attribute << " dtype.bits";
                 }
                 if (ok && row == 0)
-                    ok = detail::hostBytes(tensor, group->data.cuda_sync, cudaContext, bytes);
+                    ok = detail::hostBytes(tensor, group->columns[0].data.cuda_sync, cudaContext, bytes);
                 const size_t components = detail::rowComponents(tensor);
                 const size_t width = detail::componentBytes(tensor.dtype);
-                const size_t dataRow = group->data.index_map ? group->data.index_map[row] : row;
+                const size_t dataRow = group->columns[0].data.index_map ? group->columns[0].data.index_map[row] : row;
                 for (size_t i = 0; ok && i < components; ++i)
                 {
                     const size_t offset = (dataRow * components + i) * width;
@@ -292,6 +298,44 @@ inline bool readColumn(ovphysx_instance_handle_t handle, ovphysx_query_target_t 
                         values.push_back(detail::decode(tensor.dtype, bytes.data() + offset));
                 }
             }
+        }
+        ok = test_utils::complete_task(handle, ovphysx_release_group(handle, read, group->read_group_id)).status ==
+                 OVPHYSX_API_SUCCESS &&
+             ok;
+    }
+    if (read != 0)
+        ok = test_utils::complete_task(handle, ovphysx_release_read(handle, read)).status == OVPHYSX_API_SUCCESS && ok;
+    ok = test_utils::complete_task(handle, ovphysx_release_query(handle, query)).status == OVPHYSX_API_SUCCESS && ok;
+    return ok;
+}
+
+// Each group's tensor shape for `attribute`, in publication order, or false on failure. An inverse dynamics matrix
+// carries its row's dimensions as axes after the row count (jacobian `[N, R, C]`); a lane-packed column has only the
+// row count.
+inline bool readGroupShapes(ovphysx_instance_handle_t handle, ovphysx_query_target_t type, const char* attribute,
+                            std::vector<std::vector<int64_t>>& out)
+{
+    out.clear();
+    ovphysx_query_handle_t query = 0;
+    if (!detail::openQuery(handle, type, nullptr, query))
+        return false;
+    const ovx_token_or_string_t name = detail::attributeName(attribute);
+    ovphysx_read_handle_t read = 0;
+    bool ok = test_utils::complete_task(handle, ovphysx_read(handle, query, &name, 1, ovstage_cuda_sync_t{ 0, 0 },
+                                                             &read, nullptr)).status == OVPHYSX_API_SUCCESS;
+    while (ok)
+    {
+        const ovstage_read_group_t* group = nullptr;
+        ok = test_utils::complete_task(handle, ovphysx_fetch_read_next(handle, read, &group)).status ==
+             OVPHYSX_API_SUCCESS;
+        if (!ok || !group)
+            break;
+        ok = group->column_count == 1 && group->columns[0].data.tensor_count >= 1 &&
+             group->columns[0].data.tensors[0].shape;
+        if (ok)
+        {
+            const DLTensor& tensor = group->columns[0].data.tensors[0];
+            out.emplace_back(tensor.shape, tensor.shape + tensor.ndim);
         }
         ok = test_utils::complete_task(handle, ovphysx_release_group(handle, read, group->read_group_id)).status ==
                  OVPHYSX_API_SUCCESS &&
@@ -319,7 +363,7 @@ inline int writeColumn(ovphysx_instance_handle_t handle, ovphysx_query_target_t 
     path_dictionary_instance_t* dictionary = test_utils::attached_ovstage_dictionary(handle);
     bool ok = dictionary != nullptr;
     ovx_path_dictionary_t* dict = static_cast<ovx_path_dictionary_t*>(dictionary);
-    const ovx_string_or_token_t name = detail::attributeName(attribute);
+    const ovx_token_or_string_t name = detail::attributeName(attribute);
     ovphysx_write_handle_t write = 0;
     ok = ok && test_utils::complete_task(handle, ovphysx_write(handle, query, &name, 1, &write, nullptr)).status ==
                    OVPHYSX_API_SUCCESS;
@@ -368,24 +412,40 @@ inline int writeColumn(ovphysx_instance_handle_t handle, ovphysx_query_target_t 
             ok = detail::hostBytes(tensor, ovstage_cuda_sync_t{}, cudaContext, bytes);
             const size_t components = detail::rowComponents(tensor);
             const size_t width = detail::componentBytes(tensor.dtype);
-            for (uint32_t row = 0; ok && row < group->prims.count; ++row)
+            for (uint32_t row = 0; ok && row < group->prims.count;)
             {
                 std::string path;
                 ok = detail::rowPath(dict, group->prims, row, path);
-                const size_t dataRow = group->data.index_map ? group->data.index_map[row] : row;
-                values.assign(components, 0.0);
-                for (size_t i = 0; ok && i < components; ++i)
+                // A joint's rows, one per DOF, fill together; any other repeated path is another object.
+                uint32_t end = row + 1;
+                std::string next;
+                while (ok && type == OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT && end < group->prims.count &&
+                       detail::rowPath(dict, group->prims, end, next) && next == path)
+                    ++end;
+                values.assign(size_t(end - row) * components, 0.0);
+                for (uint32_t r = row; ok && r < end; ++r)
                 {
-                    const size_t offset = (dataRow * components + i) * width;
-                    ok = offset + width <= bytes.size();
-                    if (ok)
-                        values[i] = detail::decode(tensor.dtype, bytes.data() + offset);
+                    const size_t dataRow = group->data.index_map ? group->data.index_map[r] : r;
+                    for (size_t i = 0; ok && i < components; ++i)
+                    {
+                        const size_t offset = (dataRow * components + i) * width;
+                        ok = offset + width <= bytes.size();
+                        if (ok)
+                            values[size_t(r - row) * components + i] =
+                                detail::decode(tensor.dtype, bytes.data() + offset);
+                    }
                 }
                 if (ok)
                     fill(path, values);
-                for (size_t i = 0; ok && i < components; ++i)
-                    detail::encode(tensor.dtype, values[i], bytes.data() + (dataRow * components + i) * width);
+                for (uint32_t r = row; ok && r < end; ++r)
+                {
+                    const size_t dataRow = group->data.index_map ? group->data.index_map[r] : r;
+                    for (size_t i = 0; i < components; ++i)
+                        detail::encode(tensor.dtype, values[size_t(r - row) * components + i],
+                                       bytes.data() + (dataRow * components + i) * width);
+                }
                 written += ok ? 1 : 0;
+                row = end;
             }
             ok = ok && detail::deviceUpload(tensor, bytes, cudaContext);
         }
@@ -422,7 +482,7 @@ inline ovphysx_api_status_t writeOpenStatus(ovphysx_instance_handle_t handle, ov
     ovphysx_query_handle_t query = 0;
     if (!detail::openQuery(handle, type, pattern, query))
         return OVPHYSX_API_ERROR;
-    const ovx_string_or_token_t name = detail::attributeName(attribute);
+    const ovx_token_or_string_t name = detail::attributeName(attribute);
     ovphysx_write_handle_t write = 0;
     const ovphysx_api_status_t status =
         test_utils::complete_task(handle, ovphysx_write(handle, query, &name, 1, &write, nullptr)).status;

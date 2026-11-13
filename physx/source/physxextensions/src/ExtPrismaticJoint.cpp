@@ -151,11 +151,22 @@ void PrismaticJoint::resolveReferences(PxDeserializationContext& context)
 
 void PrismaticJoint::updateOmniPvdProperties() const
 {
+	updateOmniPvdProperties(omniPvdCpuJointState(*this));
+}
+
+void PrismaticJoint::updateOmniPvdProperties(const PxConstraintOmniPvdState& state) const
+{
 	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
 
 	const PxPrismaticJoint& j = static_cast<const PxPrismaticJoint&>(*this);
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxPrismaticJoint, position, j, getPosition())
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxPrismaticJoint, velocity, j, getVelocity())
+	if (omniPvdJointPoseValid(state))
+	{
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxPrismaticJoint, position, j, omniPvdRelativeTransform(j, state).p.x)
+	}
+	if (omniPvdJointVelocityValid(state))
+	{
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxPrismaticJoint, velocity, j, omniPvdRelativeVelocity(j, state, false).x)
+	}
 
 	OMNI_PVD_WRITE_SCOPE_END
 }
@@ -184,8 +195,6 @@ void physx::Ext::omniPvdInitJoint<PrismaticJoint>(OmniPvdWriter* pvdWriter, cons
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxPrismaticJoint, limitStiffness, j, limit.stiffness)
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxPrismaticJoint, limitDamping, j, limit.damping)
 
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxPrismaticJoint, position, j, joint.getPosition())
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxPrismaticJoint, velocity, j, joint.getVelocity())
 
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxPrismaticJoint, jointFlags, j, joint.getPrismaticJointFlags())
 }

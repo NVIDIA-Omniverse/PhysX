@@ -35,8 +35,8 @@ both the chrome-trace format and the ovphysx zone names.
   held alive across the creations that follow it, so those run inside an open loader
   epoch rather than starting a new one.
 - A separate, dedicated process for the trace case, with no shared instance in it,
-  because the trace is written by the last-loader release and any other live
-  instance would defer the write past the end of the test.
+  because the trace is finalized by the last-loader release and any other live
+  instance would defer finalization past the end of the test.
 
 ## When
 
@@ -110,7 +110,7 @@ both the chrome-trace format and the ovphysx zone names.
 - The last-loader release (REQ AC-4) for the NVTX backend: the test binary keeps the
   shared CPU instance alive for its whole run, so that release path only executes at
   process teardown, where nothing can observe it. The trace case does cover the rule
-  end to end, since the file only appears when the release runs. Cache tests do
+  end to end, since the completed trace is checked after release. Cache tests do
   not supply profiler-refcount coverage: their directory now follows datastore
   shutdown rather than last-loader release.
 - The build without `carb.profiler-nvtx.static` (REQ AC-9 NVTX half): a

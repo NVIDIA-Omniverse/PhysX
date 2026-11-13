@@ -45,7 +45,7 @@ namespace physx
 		void selfCollision();
 
 		//after narrow phase, we sort soft body contact by rigid id and particle id
-		void sortContacts(const PxU32 nbActiveSoftbodies);
+		void sortContacts();
 
 		void updateSimTetraRotations();
 

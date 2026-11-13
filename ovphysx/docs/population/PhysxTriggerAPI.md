@@ -5,9 +5,9 @@
 
 # PhysxTriggerAPI
 
-Marks a collision shape as a trigger volume. The API declares no properties: its presence in usd-schemas is the whole signal. The shape is created with PxShapeFlag::eTRIGGER_SHAPE set (to physics:collisionEnabled) and eSIMULATION_SHAPE and eSCENE_QUERY_SHAPE cleared.
+Marks a collision shape as a trigger volume. The API declares no properties: its presence in [usd-schemas](prim.md#columns) is the whole signal. The shape is created with PxShapeFlag::eTRIGGER_SHAPE set (to physics:collisionEnabled) and eSIMULATION_SHAPE and eSCENE_QUERY_SHAPE cleared.
 
-- **Applies to:** `Gprim`
+- **Applies to:** [`Gprim`](glossary.md#gprim)
 - **Requires on the same prim:** [`PhysicsCollisionAPI`](PhysicsCollisionAPI.md)
 - **Read only when listed in `usd-schemas`.**
 
@@ -17,11 +17,11 @@ The API has no attributes or relationships, so the producer publishes only its t
 
 ## Interactions
 
-- **[`PhysicsCollisionAPI`](PhysicsCollisionAPI.md):** parseCollisionExt sets PhysxShapeDesc::isTrigger = true when this API is in usd-schemas (the flag is only ever set, never cleared). At shape creation the consumer then sets eSIMULATION_SHAPE false, eTRIGGER_SHAPE = desc.collisionEnabled, eSCENE_QUERY_SHAPE false. Verification of a trigger prim: shape->getFlags().isSet(::physx::PxShapeFlag::eTRIGGER_SHAPE) is true and isSet(eSIMULATION_SHAPE) is false; the contract can attach this only to a column, and this API owns none.
+- **[`PhysicsCollisionAPI`](PhysicsCollisionAPI.md):** The collision parse marks the shape as a trigger when this API is in usd-schemas (the mark is only ever set, never cleared). At shape creation the consumer then sets eSIMULATION_SHAPE false, eTRIGGER_SHAPE to physics:collisionEnabled, eSCENE_QUERY_SHAPE false. Verification of a trigger prim: the shape has PxShapeFlag::eTRIGGER_SHAPE set and eSIMULATION_SHAPE clear; the contract can attach this only to a column, and this API owns none.
 - **[`PhysicsMeshCollisionAPI`](PhysicsMeshCollisionAPI.md):** A trigger on a triangle-mesh shape (approximation none, meshSimplification or sdf on a static or kinematic body) is refused: the consumer logs a warning and creates a regular collision shape instead.
-- **`PhysxTriggerStateAPI`:** When PhysxTriggerStateAPI is also applied, isTriggerUsdOutput is set as well and the trigger manager writes physxTrigger:triggeredCollisions back to a USD stage; on a stage-less ovstage attach preloadTrigger is a no-op.
+- **[`PhysxTriggerStateAPI`](PhysxTriggerStateAPI.md):** When PhysxTriggerStateAPI is also applied, the shape is also marked for trigger output and the trigger manager writes physxTrigger:triggeredCollisions back to a [USD](glossary.md#usd) stage; on a stage-less [ovstage](glossary.md#ovstage) attach the trigger preload does nothing.
 
 ## Notes
 
-- The generated tests cannot verify this API because verify blocks hang on columns and the API has none; the expected observation on a trigger collider is shape->getFlags().isSet(::physx::PxShapeFlag::eTRIGGER_SHAPE) == true.
+- The generated tests cannot verify this API because verify blocks hang on columns and the API has none; the expected observation on a trigger collider is a shape with PxShapeFlag::eTRIGGER_SHAPE set.
 - Because eTRIGGER_SHAPE is set to physics:collisionEnabled, a trigger whose collider is disabled has neither the simulation nor the trigger flag.

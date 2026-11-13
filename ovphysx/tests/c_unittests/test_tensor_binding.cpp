@@ -1245,7 +1245,7 @@ TEST_F(TensorBindingCpuTest, CpuArticulationUpdateKinematicPropagatesDofToLinks)
     ASSERT_EQ(query_task.status, OVPHYSX_API_SUCCESS);
     ASSERT_TRUE(wait_task_success(m_handle, query_task));
     ovphysx_enqueue_result_t update_task = ovphysx_update_articulations_kinematic(
-        m_handle, query, OVPHYSX_ARTICULATION_KINEMATIC_POSITION);
+        m_handle, query, OVPHYSX_ARTICULATION_KINEMATIC_POSITION, ovstage_cuda_sync_t{ 0, 0 });
     ASSERT_EQ(update_task.status, OVPHYSX_API_SUCCESS);
     ASSERT_TRUE(wait_task_success(m_handle, update_task));
 
@@ -3516,7 +3516,7 @@ protected:
         ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_query(m_handle, objectType, OVPHYSX_SCOPE_ALL, &guard.query, nullptr)).status,
                   OVPHYSX_API_SUCCESS);
 
-        const ovx_string_or_token_t attribute = {
+        const ovx_token_or_string_t attribute = {
             0,
             { attributeName, std::strlen(attributeName) }
         };
@@ -6953,7 +6953,7 @@ TEST_F(TensorBindingGpuTest, NewBindingIncludesReenabledBody)
     ovphysx_query_handle_t query = 0;
     ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_query(
                   m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &query, nullptr)).status, OVPHYSX_API_SUCCESS);
-    const ovx_string_or_token_t attribute = {0, {OVPHYSX_ATTR_DISABLE_SIMULATION,
+    const ovx_token_or_string_t attribute = {0, {OVPHYSX_ATTR_DISABLE_SIMULATION,
                                                 sizeof(OVPHYSX_ATTR_DISABLE_SIMULATION) - 1}};
     ovphysx_write_handle_t write = 0;
     ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_write(m_handle, query, &attribute, 1, &write, nullptr)).status,

@@ -23,10 +23,10 @@ TEST_F(PhysXTestFixture, JointDataMovement_ArticulationDofSessionRW) {
 
     // Session-API attributes: write joint velocity TARGETS (app->physics), read joint
     // velocities back (physics->app). ARTICULATION_JOINT groups carry per-axis columns.
-    const ovx_string_or_token_t velTargetAttr = {
+    const ovx_token_or_string_t velTargetAttr = {
         0, { OVPHYSX_ATTR_JOINT_VELOCITY_TARGET, sizeof(OVPHYSX_ATTR_JOINT_VELOCITY_TARGET) - 1 }
     };
-    const ovx_string_or_token_t velAttr = { 0, { OVPHYSX_ATTR_JOINT_VELOCITY, sizeof(OVPHYSX_ATTR_JOINT_VELOCITY) - 1 } };
+    const ovx_token_or_string_t velAttr = { 0, { OVPHYSX_ATTR_JOINT_VELOCITY, sizeof(OVPHYSX_ATTR_JOINT_VELOCITY) - 1 } };
 
     for (int i = 0; i < 100; ++i)
     {
@@ -87,7 +87,7 @@ TEST_F(PhysXTestFixture, JointDataMovement_ArticulationDofSessionRW) {
             ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_query(m_handle, OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT, OVPHYSX_SCOPE_ALL, &readQuery, nullptr)).status,
                       OVPHYSX_API_SUCCESS);
             ovphysx_read_handle_t readSession = 0;
-            ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_read(m_handle, readQuery, &velAttr, 1, &readSession, nullptr)).status, OVPHYSX_API_SUCCESS);
+            ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_read(m_handle, readQuery, &velAttr, 1, ovstage_cuda_sync_t{ 0, 0 }, &readSession, nullptr)).status, OVPHYSX_API_SUCCESS);
 
             bool has_nonzero_velocity = false;
             const ovstage_read_group_t* group = nullptr;
@@ -97,9 +97,10 @@ TEST_F(PhysXTestFixture, JointDataMovement_ArticulationDofSessionRW) {
                 if (fr.status == OVPHYSX_API_SUCCESS && !group)
                     break;
                 ASSERT_EQ(fr.status, OVPHYSX_API_SUCCESS);
-                for (uint32_t ti = 0; !group->is_delete && group->data.tensors && ti < group->data.tensor_count; ++ti)
+                for (uint32_t ti = 0; !group->columns[0].is_delete && group->columns[0].data.tensors
+                     && ti < group->columns[0].data.tensor_count; ++ti)
                 {
-                    const DLTensor& t = group->data.tensors[ti];
+                    const DLTensor& t = group->columns[0].data.tensors[ti];
                     if (!t.data || t.device.device_type != kDLCPU)
                         continue;
                     const size_t lanes = t.dtype.lanes ? t.dtype.lanes : 1;
@@ -123,12 +124,12 @@ TEST_F(PhysXTestFixture, JointDataMovement_ArticulationDofSessionRW) {
     // After 100 driven steps the chain's joints have displaced toward their +/-5.625 deg limits, so
     // a jointPosition read must show non-trivial angles.
     {
-        const ovx_string_or_token_t posAttr = { 0, { OVPHYSX_ATTR_JOINT_POSITION, sizeof(OVPHYSX_ATTR_JOINT_POSITION) - 1 } };
+        const ovx_token_or_string_t posAttr = { 0, { OVPHYSX_ATTR_JOINT_POSITION, sizeof(OVPHYSX_ATTR_JOINT_POSITION) - 1 } };
         ovphysx_query_handle_t posQuery = 0;
         ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_query(m_handle, OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT, OVPHYSX_SCOPE_ALL, &posQuery, nullptr)).status,
                   OVPHYSX_API_SUCCESS);
         ovphysx_read_handle_t posSession = 0;
-        ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_read(m_handle, posQuery, &posAttr, 1, &posSession, nullptr)).status, OVPHYSX_API_SUCCESS);
+        ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_read(m_handle, posQuery, &posAttr, 1, ovstage_cuda_sync_t{ 0, 0 }, &posSession, nullptr)).status, OVPHYSX_API_SUCCESS);
         float max_abs_pos = 0.0f;
         const ovstage_read_group_t* group = nullptr;
         for (;;)
@@ -137,9 +138,10 @@ TEST_F(PhysXTestFixture, JointDataMovement_ArticulationDofSessionRW) {
             if (fr.status == OVPHYSX_API_SUCCESS && !group)
                 break;
             ASSERT_EQ(fr.status, OVPHYSX_API_SUCCESS);
-            for (uint32_t ti = 0; !group->is_delete && group->data.tensors && ti < group->data.tensor_count; ++ti)
+            for (uint32_t ti = 0; !group->columns[0].is_delete && group->columns[0].data.tensors
+                 && ti < group->columns[0].data.tensor_count; ++ti)
             {
-                const DLTensor& t = group->data.tensors[ti];
+                const DLTensor& t = group->columns[0].data.tensors[ti];
                 if (!t.data || t.device.device_type != kDLCPU)
                     continue;
                 const size_t lanes = t.dtype.lanes ? t.dtype.lanes : 1;

@@ -150,6 +150,12 @@ export OVPHYSX_LIB="$(pwd)/_build/linux-x86_64/release/libovphysx.so"
 python my_script.py
 ```
 
+Set `OVPHYSX_LIB` before the first native API access or explicit
+`ovphysx.bootstrap()` call. Importing `ovphysx` alone does not load the native
+library. A missing or unloadable override raises `OSError` during bootstrap.
+The original exception is stored and re-raised by later bootstrap attempts in
+the same process; after correcting the override, start a new Python process.
+
 ## Configuration Reference
 
 ### CMake Cache Variables
@@ -188,6 +194,9 @@ Common from-source build and first-run failures:
   is below the compiler and CMake versions required by ovphysx and the PhysX SDK.
   Match those requirements; on Windows, `set GENERATOR=ninja` to use Ninja instead
   of the default Visual Studio generator.
+- **Configure picks a different Visual Studio than intended** — set
+  `OVPHYSX_VS_ROOT` to the installation path to pin one; the pin is taken ahead of
+  the packaged MSVC where that is present.
 - **packman download or connection error on the first configure** — a dependency
   fetch failed. Retry (transient failures are common); the cache lives under
   `_build/target-deps/` (refer to `OVPHYSX_FETCH_DEPS` and `LOCAL_TARGET_DEPS` in the
@@ -215,7 +224,8 @@ Common from-source build and first-run failures:
   on Linux** — both steps use `readelf` to find unstripped ELF binaries and
   `strip` to remove their symbols. Minimal images need binutils:
   `apt-get install binutils`.
-- **`No CMAKE_CUDA_COMPILER could be found`** — `nvcc` is not on `PATH`, or the
-  CUDA Toolkit does not match the tested version. Install a compatible CUDA Toolkit
-  (refer to the PhysX SDK [Linux platform readme](https://github.com/NVIDIA-Omniverse/PhysX/blob/main/physx/documentation/platformreadme/linux/README_LINUX.md))
-  with `nvcc` on `PATH` or set `CUDACXX`; CPU-only builds do not need CUDA.
+- **CUDA compiler is missing or cannot run** — both platforms use the pinned
+  toolkit downloaded through Packman. Check dependency-download errors and
+  verify that `nvcc` (Linux) or `nvcc.exe` (Windows) exists and can run from
+  `ovruntime/_build/target-deps/cuda/bin/`. Then rerun `./build.sh --generate`
+  on Linux or `build.bat --generate` on Windows.

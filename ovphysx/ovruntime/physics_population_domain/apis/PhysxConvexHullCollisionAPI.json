@@ -1,0 +1,80 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxConvexHullCollisionAPI",
+  "title": "PhysxConvexHullCollisionAPI",
+  "summary": "Convex hull cooking parameters for a Mesh collider with physics:approximation convexHull. Cooking inputs only: PhysX exposes no getter for them, so nothing here is verified.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "Gprim"
+  ],
+  "requires": [
+    "PhysicsCollisionAPI"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "producer_scope": "Every declared attribute of an applied collision API is published at its resolved value; both columns land as their raw fallbacks when unauthored. No derivation.",
+  "columns": [
+    {
+      "name": "physxConvexHullCollision:minThickness",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.001,
+      "parser_default": 0.001,
+      "absent": "0.001, the convex mesh cooking default. Unauthored preserves the existing value; no clamping.",
+      "raw_fallback_diverges": false,
+      "units": "length",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseCollision.cpp"
+      ]
+    },
+    {
+      "name": "physxConvexHullCollision:hullVertexLimit",
+      "usd_type": "int",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "int",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 64,
+      "parser_default": 64,
+      "absent": "64, the cooking default, unless the free attribute newton:maxHullVertices is present with a value > 0, which then supplies the limit. Read through an int64 hop and cast to uint32; no clamping.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseCollision.cpp"
+      ],
+      "notes": "A published value suppresses the newton:maxHullVertices fallback because every present column counts as authored on ovstage."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysicsMeshCollisionAPI",
+      "rule": "Read only when the descriptor kind is convexHull, including the silent promotion of none and meshSimplification on a dynamic body. Both columns are gated on this API being in usd-schemas."
+    }
+  ],
+  "notes": [
+    "Cooking APIs on a Mesh cannot be verified by the generated tests: the parameters are consumed by the cooking service and PhysX exposes no getter for them on the resulting PxConvexMeshGeometry, and the builder writes no mesh arrays."
+  ]
+}

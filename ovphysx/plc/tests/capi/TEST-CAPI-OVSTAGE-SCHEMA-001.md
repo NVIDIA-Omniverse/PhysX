@@ -19,6 +19,7 @@ the ovphysx installation. Covers AC-1 through AC-8.
 - Temporary provider installations with missing resources, different versions,
   incorrect package identity, and an initializer that raises if imported.
 - Fresh subprocesses for USD registration and population-order tests.
+- A stand-in repository that answers with errors before the wheel, and a controllable clock.
 
 ## When
 
@@ -30,8 +31,8 @@ the ovphysx installation. Covers AC-1 through AC-8.
   minimum version available.
 - OVStage samples and tests register both resources before population.
 - Stock-USD registration runs before and after its schema registry is built.
-- The existing Newton registration/probe scenarios run unchanged apart from
-  discovery of the separately installed PhysX provider.
+- Newton registration is timely, omitted, or rejected as late before attach;
+  a separate scenario injects failure of the private diagnostic population.
 
 ## Then
 
@@ -45,6 +46,10 @@ the ovphysx installation. Covers AC-1 through AC-8.
   Python-sample and authoring discovery accept a different provider version.
   The resolver rejects a candidate below the manifest constraint; the native
   installer rejects an incorrect package identity while retaining digest checks.
+  `test_devschema_provider.py` covers the installer's opt-in retry window: it recovers from
+  5xx and temporary 404 responses, stops at the configured window, makes one attempt by
+  default, never retries a digest mismatch or an authentication or certificate error, and
+  rejects an invalid window before downloading.
 - AC-3: `test_codeless_schemas.py` asserts removed Python locators are absent;
   `lifecycle_tests/test_import_has_no_usd_side_effects.py` verifies no environment
   mutation, pxr import, or native bootstrap. The install/wheel package gate and
@@ -61,7 +66,15 @@ the ovphysx installation. Covers AC-1 through AC-8.
   smoke explicitly register both external PhysX families before population.
 - AC-5: `cpu_tests/test_newton_schema_registration.py` keeps registered,
   unregistered, warning-as-error, hidden-package, opt-out, alternate-root, and
-  procedural-first coverage. `test_codeless_schemas.py` keeps Newton discovery
+  procedural-first coverage. The late-registration regression (NVBug 6927028)
+  populates without Newton, observes OVStage rejecting the application's late
+  registration from either the installed package or another directory, then
+  attaches twice. Exactly one Newton warning must name the process-restart
+  remedy, and the dropped joint limit must still read as `FLT_MAX`. Promoting
+  that warning to an error leaves the instance detached; a retry can attach
+  without repeating the warning. An injected private-probe population failure
+  logs one cannot-verify warning, permits both attaches, and emits no missing-schema
+  `RuntimeWarning`. `test_codeless_schemas.py` keeps Newton discovery
   and missing-package diagnostics without importing its package.
 - AC-7: `test_documentation_contracts.py::test_copy_paste_samples_use_installed_schema_support`
   parses every `tests/python_samples/*.py` and fails on any `import` or
@@ -69,7 +82,8 @@ the ovphysx installation. Covers AC-1 through AC-8.
   `physx_schema_paths` must import it from
   `ovphysx.samples.python_samples.schema_support`. Each doc page that embeds
   one of those samples must `{literalinclude}` that file by its path relative
-  to the page.
+  to the page. `README.md` and the four skill pages that describe the recipe
+  must name that installed module.
 
 ## Coverage
 
@@ -90,10 +104,15 @@ the real export configuration. The staged tree must include `scripts/build_wheel
 configuration `repo_tools.toml`. This prevents devschema builds from losing the
 provider wheel builder or its inputs during source export.
 
+`test_drop_stages_complete_schema_python_package` adds tracked helper modules,
+nested package data, and documentation in a temporary Git repository. The real
+export configuration must copy all of them without naming each file, while
+excluding an untracked local module and the internal publishing configuration.
+
 `test_devschema_provider.py` exercises native CMake selection and Python metadata
 precedence with a local provider, refusal to fall back when the selected provider
 is missing, the unchanged published default, and the focused pytest wrapper.
-Custom build paths (including spaces and absolute paths) must ignore stale
+Custom build paths inside `_build` (including spaces and absolute paths) must ignore stale
 default-directory stamps. Explicit `BUILD_DIR` takes precedence over
 `OVPHYSX_BUILD_DIR`.
 The CMake path-selection probe includes `scripts/build_directory.cmake` with an
@@ -107,7 +126,7 @@ On Windows, extraction and cached-provider reuse succeed when resource paths
 exceed `MAX_PATH`, without changing the returned provider root.
 Full `cmake -DDEV_SCHEMA=ON -P scripts/validate_all.cmake` exercises the actual schema wheel builder,
 native registration, Python samples, and package isolation against local data.
-Repeat with `-DBUILD_DIR=<custom-path>` to verify that packaging still uses the
+Repeat with `-DBUILD_DIR=_build/<variant>` to verify that packaging still uses the
 shared dependencies and license archive under `_build`.
 Build/packaging validation also runs with the worktree's `usd_ext_physics` link
 unavailable and verifies that dependency fetching does not recreate it. Both
@@ -137,13 +156,18 @@ receipts for successful attach and detach.
   The relative-directory leftover assertion checks only this helper's
   `ovphysx-schema-probe-*` artifacts; unrelated runtime files such as OVStage's
   lock file are permitted. Existing file-valued overrides remain untouched.
-  A separate live-root harness verifies that the probe selects `/tmp`, not the
-  relative override or the launch directory. The existing
+  Selection of `/tmp` rather than the relative override or launch directory is
+  verified by source review of `ProbeDescriptors` in
+  `src/include/internal/sdk/PhysxSchemaRegistration.hpp`; the automated test
+  does not observe the live probe root. The existing
   `test_relative_temp_dir_is_not_used` cooking-cache test also completes without
   a schema-probe error.
-- Platform-level probe validation checks Linux mode `0700`, Windows protected
-  user/SYSTEM directory permissions and child inheritance, exclusive unique
-  directory creation, and cleanup after synchronous descriptor use.
+- Source review of `ProbeDescriptors` covers Linux mode `0700`, Windows
+  protected user/SYSTEM directory permissions and child inheritance, exclusive
+  unique directory creation, and cleanup after synchronous descriptor use.
+  These properties have no committed automated test that inspects the live
+  directory, its permissions or inheritance, or exclusive creation. The
+  relative-directory leftover assertion above does not establish that coverage.
 - Setting `/ovphysx/schemas/requireRegistration` to false permits attachment
   with a warning. Native log assertions inspect stdout and stderr together.
 - A procedurally populated stage attached while USD schema definitions remain

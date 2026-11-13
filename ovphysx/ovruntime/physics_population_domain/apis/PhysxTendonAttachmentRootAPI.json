@@ -1,0 +1,155 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxTendonAttachmentRootAPI",
+  "title": "PhysxTendonAttachmentRootAPI",
+  "summary": "Root attachment of a spatial tendon, applied as PhysxTendonAttachmentRootAPI:<name>. The parser emits the spatial tendon with these settings; clamped like the fixed tendon root.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "Xformable"
+  ],
+  "multi_apply": true,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "producer_scope": "Every declared attribute of an applied instance is published at its resolved value; USD auto-applies PhysxTendonAttachmentAPI:<name> with it.",
+  "columns": [
+    {
+      "name": "physxTendon:<inst>:tendonEnabled",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": true,
+      "parser_default": true,
+      "absent": "true.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseSpatialTendon.cpp"
+      ]
+    },
+    {
+      "name": "physxTendon:<inst>:stiffness",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0.",
+      "raw_fallback_diverges": false,
+      "units": "force/length",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseSpatialTendon.cpp"
+      ]
+    },
+    {
+      "name": "physxTendon:<inst>:limitStiffness",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0.",
+      "raw_fallback_diverges": false,
+      "units": "force/length",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseSpatialTendon.cpp"
+      ]
+    },
+    {
+      "name": "physxTendon:<inst>:damping",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0.",
+      "raw_fallback_diverges": false,
+      "units": "force*s/length",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseSpatialTendon.cpp"
+      ]
+    },
+    {
+      "name": "physxTendon:<inst>:offset",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0.",
+      "raw_fallback_diverges": false,
+      "units": "length",
+      "clamp": [
+        "-FLT_MAX",
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseSpatialTendon.cpp"
+      ]
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysxTendonAttachmentAPI",
+      "rule": "Owns localPos, parentAttachment and parentLink, which the parser reads for the root too."
+    }
+  ],
+  "notes": [
+    "Instance names are arbitrary (one per tendon), so the compiled cache declares every physxTendon:* column."
+  ]
+}

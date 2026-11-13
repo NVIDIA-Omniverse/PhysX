@@ -7,10 +7,10 @@
 
 Actuator performance envelope of one joint drive (maximum actuator velocity, velocity-dependent resistance, speed-effort gradient), applied as PhysxDrivePerformanceEnvelopeAPI:<inst> alongside PhysicsDriveAPI:<inst>. Effective only on articulation joints: standalone joints strip it with a warning. Every instance except linear is treated as rotational and converted.
 
-- **Applies to:** `PhysicsJoint`
+- **Applies to:** [`PhysicsJoint`](glossary.md#physicsjoint)
 - **Requires on the same prim:** [`PhysicsDriveAPI`](PhysicsDriveAPI.md)
 - **Multi-apply:** applied as `PhysxDrivePerformanceEnvelopeAPI:<instance>`; `<inst>` in a column name is the instance. Instances: `angular`, `linear`, `rotX`, `rotY`, `rotZ`.
-- **Read only when listed in `usd-schemas`.**
+- **Read only when listed in [`usd-schemas`](prim.md#columns).**
 
 ## What USD population writes
 
@@ -18,7 +18,7 @@ All three declared attributes of every applied instance are published at their r
 
 ## Columns
 
-*Raw fallback* is the USD schema value. *Producer writes* is what ovstage population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
+*Raw fallback* is the [USD](glossary.md#usd) schema value. *Producer writes* is what [ovstage](glossary.md#ovstage) population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
 
 | Column | Type | Units | Raw fallback | Producer writes | Parser default | If absent |
 |---|---|---|---|---|---|---|
@@ -28,8 +28,8 @@ All three declared attributes of every applied instance are published at their r
 
 ## Interactions
 
-- **[`PhysicsDriveAPI`](PhysicsDriveAPI.md):** Read only when the matching PhysicsDriveAPI:<inst> drive exists; applying the envelope sets drive.isEnvelopeUsed and the runtime then builds PxArticulationDrive with a PxPerformanceEnvelope whose maxEffort is the drive's maxForce.
-- **[`PhysicsJoint`](PhysicsJoint.md):** On a standalone joint every applied instance is removed from the prim with a 'supported only for joints that are part of an articulation' warning and the plain drive is kept.
+- **[`PhysicsDriveAPI`](PhysicsDriveAPI.md):** Read only when the matching PhysicsDriveAPI:<inst> drive exists; applying the envelope marks the drive as envelope-driven, and the runtime then builds the PxArticulationDrive with a PxPerformanceEnvelope whose maximum effort is the drive's maxForce.
+- **[`PhysicsJoint`](PhysicsJoint.md):** On a standalone joint every applied instance is removed from the [prim](glossary.md#prim) with a 'supported only for joints that are part of an articulation' warning and the plain drive is kept.
 
 ## Known divergences
 

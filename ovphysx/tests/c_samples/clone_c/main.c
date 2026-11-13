@@ -100,7 +100,7 @@ static int run(void)
       target_strings,
       NUM_TARGETS,
       anchor_transforms,
-      NULL);  /* env_ids: NULL selects automatic per-call numbering. */
+      NULL);  /* env_ids: NULL selects automatic numbering from a per-attachment base. */
   if (!wait_task_success(handle, clone_res, 10ULL * 1000 * 1000 * 1000)) {
     fprintf(stderr, "Clone operation failed or timed out\n");
     ovphysx_sample_destroy_stage(handle, &stage_attachment);

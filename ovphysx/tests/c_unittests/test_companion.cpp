@@ -15,6 +15,7 @@
 
 #include <ovphysx_companion/companion.h>
 #include <ovphysx/experimental/ovphysx.hpp>
+#include "ovphysxTestHelpers.h"
 #include <stdexcept>
 #include <future>
 #include <thread>
@@ -120,6 +121,36 @@ TEST_F(CompanionBridge, DetachReattachInvalidatesGenerationWithoutReusingSession
     EXPECT_EQ(api.get_identity(first, &stale), OVPHYSX_COMPANION_STALE);
     EXPECT_EQ(api.close_session(first), OVPHYSX_COMPANION_OK);
     EXPECT_EQ(api.get_identity(second, &current), OVPHYSX_COMPANION_OK);
+}
+
+TEST_F(CompanionBridge, AcceptedDetachKeepsLaterCompanionOperationBusy)
+{
+    if (!ovphysxInstancesHaveWorkers())
+        GTEST_SKIP() << kNoWorkerThread;
+    ASSERT_TRUE(attach());
+    ASSERT_TRUE(ovphysx_set_worker_hold_for_test_internal(m_handle, true));
+    struct ReleaseWorker
+    {
+        ovphysx_instance_handle_t handle;
+        ~ReleaseWorker() { ovphysx_set_worker_hold_for_test_internal(handle, false); }
+    } release{ m_handle };
+
+    const ovphysx_enqueue_result_t detach = ovphysx_detach_ovstage(m_handle);
+    ASSERT_EQ(detach.status, OVPHYSX_API_SUCCESS);
+    ovphysx_companion_scene_statistics_t statistics{};
+    EXPECT_EQ(api.scene_statistics(0, "/World", sizeof(statistics), &statistics), OVPHYSX_COMPANION_BUSY);
+    ASSERT_TRUE(ovphysx_set_worker_hold_for_test_internal(m_handle, false));
+    release.handle = OVPHYSX_INVALID_HANDLE;
+    EXPECT_TRUE(waitForTaskSuccess(m_handle, detach));
+    EXPECT_EQ(api.scene_statistics(0, "/World", sizeof(statistics), &statistics), OVPHYSX_COMPANION_NOT_FOUND);
+
+    for (size_t iteration = 0; iteration < 50; ++iteration)
+    {
+        EXPECT_TRUE(waitForTaskSuccess(m_handle, ovphysx_detach_ovstage(m_handle)));
+        EXPECT_EQ(api.scene_statistics(0, "/World", sizeof(statistics), &statistics),
+                  OVPHYSX_COMPANION_NOT_FOUND)
+            << "reservation remained after waited detach " << iteration;
+    }
 }
 
 TEST_F(CompanionBridge, SceneStatisticsAreCopiedAndOwnerScoped)

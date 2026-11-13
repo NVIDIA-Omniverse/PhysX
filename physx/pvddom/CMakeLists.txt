@@ -17,6 +17,8 @@ if(NOT CMAKE_PROJECT_NAME OR CMAKE_PROJECT_NAME STREQUAL "PvdDom")
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
 
+option(PVDDOM_BUILD_INSPECTION "Build bounded OVD inspection APIs" OFF)
+
 set(PVDDOM_SOURCES
     src/PvdDomLog.cpp
     src/PvdDom.cpp
@@ -26,6 +28,13 @@ set(PVDDOM_SOURCES
     src/PvdDomUtils.cpp
     src/PvdDomChunkAlloc.cpp
 )
+if(PVDDOM_BUILD_INSPECTION)
+    list(APPEND PVDDOM_SOURCES
+        src/PvdDomDocument.cpp
+        src/PvdDomInspection.cpp
+        src/PvdDomEvidence.cpp
+    )
+endif()
 
 if(NOT TARGET PVDRuntime)
     # Standalone mode (e.g. PVD3): create the same static runtime target used by
@@ -33,6 +42,8 @@ if(NOT TARGET PVDRuntime)
     if(NOT DEFINED PVDRUNTIME_ROOT)
         message(FATAL_ERROR "PVDRUNTIME_ROOT must be set to the pvdruntime directory (standalone mode)")
     endif()
+    file(TO_CMAKE_PATH "${PVDRUNTIME_ROOT}" PVDRUNTIME_ROOT)
+    get_filename_component(PVDRUNTIME_ROOT "${PVDRUNTIME_ROOT}" ABSOLUTE)
 
     if(WIN32)
         set(_PVDDOM_RUNTIME_PLATFORM windows)
@@ -70,7 +81,24 @@ if(NOT TARGET PVDRuntime)
     _pvddom_add_standalone_runtime("${PVDRUNTIME_ROOT}" "${_PVDDOM_RUNTIME_PLATFORM}")
 endif()
 
+if(MSVC)
+    # This directory builds the ordinary PvdDom core without C++ exceptions.
+    string(REGEX REPLACE "(^|[ \\t])/EHsc([ \\t]|$)" " " CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+endif()
 add_library(PvdDom STATIC ${PVDDOM_SOURCES})
+
+if(PVDDOM_BUILD_INSPECTION)
+    target_compile_definitions(PvdDom PRIVATE PVDDOM_INSPECTION_ENABLED)
+    if(MSVC)
+        target_compile_options(PvdDom PRIVATE /EHsc)
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(PvdDom PRIVATE -fexceptions)
+    endif()
+elseif(MSVC)
+    target_compile_definitions(PvdDom PRIVATE _HAS_EXCEPTIONS=0)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(PvdDom PRIVATE -fno-exceptions)
+endif()
 
 # The archive gets linked into shared objects (e.g. libomni.physx.pvd.plugin.so),
 # so the objects must be position-independent on Linux/clang/gcc.
@@ -98,12 +126,77 @@ endif()
 
 target_include_directories(PvdDom
     PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include/pvddom>
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 target_link_libraries(PvdDom PUBLIC PVDRuntime)
+target_compile_features(PvdDom PUBLIC cxx_std_14)
+
+option(PVDDOM_BUILD_TOOLS "Build the SDK OVD inspection CLI" OFF)
+if(PVDDOM_BUILD_TOOLS AND NOT PVDDOM_BUILD_INSPECTION)
+    message(FATAL_ERROR "PVDDOM_BUILD_TOOLS requires PVDDOM_BUILD_INSPECTION=ON")
+endif()
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/../include/foundation/PxPhysicsVersion.h" _version_lines
+    REGEX "#define PX_PHYSICS_VERSION_(MAJOR|MINOR|BUGFIX)")
+foreach(_line IN LISTS _version_lines)
+    if(_line MATCHES "#define PX_PHYSICS_VERSION_(MAJOR|MINOR|BUGFIX)[ \t]+([0-9]+)")
+        set(_version_${CMAKE_MATCH_1} "${CMAKE_MATCH_2}")
+    endif()
+endforeach()
+set(_pvddom_sdk_version "${_version_MAJOR}.${_version_MINOR}.${_version_BUGFIX}")
+if(PVDDOM_BUILD_TOOLS)
+    add_executable(ovd_inspect tools/ovd_inspect.cpp)
+    if(MSVC)
+        target_compile_options(ovd_inspect PRIVATE /EHsc)
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(ovd_inspect PRIVATE -fexceptions)
+    endif()
+    set_target_properties(ovd_inspect PROPERTIES OUTPUT_NAME ovd-inspect)
+    target_link_libraries(ovd_inspect PRIVATE PvdDom)
+    if(MSVC AND NV_USE_STATIC_WINCRT)
+        target_compile_options(ovd_inspect PRIVATE $<$<CONFIG:Debug>:/MTd> $<$<NOT:$<CONFIG:Debug>>:/MT>)
+    endif()
+    target_include_directories(ovd_inspect PRIVATE src)
+    target_compile_definitions(ovd_inspect PRIVATE
+        PVDDOM_SDK_VERSION="${_pvddom_sdk_version}"
+        PVDDOM_BUILD_INFO="${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}-$<CONFIG>")
+    install(TARGETS ovd_inspect RUNTIME DESTINATION bin)
+endif()
+
+# Standalone exports carry both archives and all public headers.
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    include(CMakePackageConfigHelpers)
+    configure_package_config_file(cmake/PvdDomConfig.cmake
+        "${CMAKE_CURRENT_BINARY_DIR}/PvdDomConfig.cmake"
+        INSTALL_DESTINATION lib/cmake/PvdDom)
+    write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/PvdDomConfigVersion.cmake"
+        VERSION "${_pvddom_sdk_version}" COMPATIBILITY SameMajorVersion)
+    install(TARGETS PvdDom EXPORT PvdDomTargets ARCHIVE DESTINATION lib/$<CONFIG>)
+    install(TARGETS PVDRuntime EXPORT PvdDomRuntimeTargets ARCHIVE DESTINATION lib/$<CONFIG>)
+    install(FILES
+        include/PvdDom.h
+        include/PvdDomLog.h
+        include/PvdDomParser.h
+        include/PvdDomQuery.h
+        include/PvdDomUtils.h
+        DESTINATION include/pvddom)
+    if(PVDDOM_BUILD_INSPECTION)
+        install(FILES
+            include/PvdDomDocument.h
+            include/PvdDomInspection.h
+            DESTINATION include/pvddom)
+    endif()
+    install(DIRECTORY "${PVDRUNTIME_ROOT}/include/" DESTINATION pvdruntime/include FILES_MATCHING PATTERN "*.h")
+    install(EXPORT PvdDomTargets NAMESPACE PhysX:: DESTINATION lib/cmake/PvdDom)
+    install(EXPORT PvdDomRuntimeTargets NAMESPACE PvdDom:: DESTINATION lib/cmake/PvdDom)
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/PvdDomConfig.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/PvdDomConfigVersion.cmake" DESTINATION lib/cmake/PvdDom)
+    install(DIRECTORY ../skills/ DESTINATION share/physx/skills)
+    install(FILES ../SKILLS.md DESTINATION share/physx)
+endif()
 
 # Tests (optional)
 option(PVDDOM_BUILD_TESTS "Build pvddom tests" OFF)

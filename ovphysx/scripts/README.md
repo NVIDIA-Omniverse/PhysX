@@ -5,6 +5,24 @@
 
 Cross-platform CMake scripts for building, testing, packaging, and installing ovphysx.
 
+## Documentation validation without a native build
+
+`test_documentation_package.py` stages the SDK and wheel documentation in temporary
+directories using the same helpers as `install.cmake` and `build_wheel.cmake`.
+It checks the portable file inventory, relative links, and rendered HTML with the
+existing artifact validator, including decoding portable and rendered images.
+It needs Python, Pillow and CMake, but no compiler, installed
+OVPhysX package, or GPU. From `ovphysx/`, after rendering the docs:
+
+```bash
+python -m pip install -r scripts/documentation_requirements.txt
+python scripts/test_documentation_package.py --html-docs _build/docs/ovphysx/latest
+```
+
+Use `--portable-only` for a local check when rendered HTML is unavailable. That
+checks portable staging and links; CI requires the rendered output as well.
+
+
 ## Full local validation
 
 From `ovphysx/`, `./build.sh` is the build.
@@ -152,7 +170,8 @@ calling `build.cmake` directly—they are not plain pass-throughs. On both platf
   script compiles on the host.
 - **Windows:** **`build.bat`** clears Visual Studio environment variables that can
   override the packman MSVC toolchain, then runs `cmake -P scripts/build.cmake` with the
-  mapped arguments above.
+  mapped arguments above. `OVPHYSX_VS_ROOT=<installation path>` pins a specific Visual
+  Studio; the pin is taken ahead of the packaged MSVC.
 
 `build.cmake` compiles the SDK, including ovruntime. It does not install into
 `_install/` or run tests. `./build.sh` is the usual way to run it. A shell that
@@ -239,10 +258,11 @@ exceptions. This policy does not alter the test's own CUDA/CPU capability skips.
 ### `test_cpp_samples.cmake`
 
 Add `-DBASIC_WORKFLOW_SMOKE=ON` to also build and run the installed
-`basic-workflow` skill's C and CMake snippets. This check uses the generator
-recorded in the SDK build cache and runs from an SDK-layout test directory with
-system and CUDA directories alone on Windows `PATH`. The Windows Ninja and
-Visual Studio CI lanes enable it in their build-only and run-only passes.
+`samples/c_samples/basic_workflow_c` example referenced by the `ovphysx-basic-workflow`
+skill. This check builds the installed source and CMake files directly with the
+generator recorded in the SDK build cache; it does not read skill Markdown.
+It runs with system and CUDA directories alone on Windows `PATH`. The Windows
+Ninja and Visual Studio CI lanes enable it in their build-only and run-only passes.
 
 Builds and runs C/C++ sample applications against the installed SDK. The build
 uses the compiler recorded in `_build`. `SAMPLES_BUILD_ONLY` compiles and does
@@ -261,10 +281,36 @@ runs `python -m ovphysx`.
 ### `test_python_samples.cmake`
 Runs Python sample applications against the installed wheel across Python versions.
 
+The Python 3.12 pass also runs the installed `omnipvd_inspection.py` workflow in
+separate CPU/GPU subprocesses. It requires a separately installed SDK inspector;
+missing tools fail the gate. `OVPHYSX_TEST_REQUIRE_CUDA=1` makes GPU absence a failure.
+`OVPHYSX_SKIP_GPU_PASSES=ON` selects `--cpu-only`, even with CUDA present or
+`OVPHYSX_TEST_REQUIRE_CUDA=1`. An explicit CMake value takes precedence over the
+environment, so `-DOVPHYSX_SKIP_GPU_PASSES=OFF` overrides an inherited `ON`.
+Otherwise the workflow uses `--require-gpu` only for `OVPHYSX_TEST_REQUIRE_CUDA=1`;
+with neither mode selected, GPU absence can skip. The flags are never combined.
+Captures, live/recorded evidence, logs and CPU/GPU comparison annotations remain in
+`_build/test_results/ovd-workflow/`.
+
+For focused CPU iteration, invoke `tests/ovd_workflow/test_workflow.py` with its
+explicit `--inspector`, `--sample`, and `--output-root` paths plus `--cpu-only`.
+This skips GPU and CPU/GPU comparison tests and is not full workflow acceptance.
+`--cpu-only` and `--require-gpu` are mutually exclusive; the latter requires the
+GPU workflow to run successfully rather than skip for missing CUDA.
+
+`cmake -P scripts/build_ovd_inspector.cmake` builds and installs that headless tool
+from this checkout's `physx/pvddom` into `<BUILD_DIR>/ovd-inspector-install`. The aggregate
+validation targets and C++ sample build phase provision it automatically. Split
+build/test jobs transfer that install with the selected build directory; run jobs consume it without a
+compiler. A standalone OvPhysX source tree can instead set `OVPHYSX_OVD_INSPECTOR`
+to an explicitly installed SDK executable before configure/validation. Neither the
+wheel nor the sample depends on the SDK source tree. The companion SDK installation
+also supplies `share/physx/SKILLS.md` and its inspection/comparison playbooks.
+
 ## `build.sh` options
 
 ```bash
-./build.sh --clean                                # clean artifacts only (no build)
+./build.sh --clean                                # remove local build outputs (no build)
 ./build.sh --rebuild                              # clean then rebuild
 ./build.sh --debug                                # debug build
 ./build.sh --release                              # release build (default)
@@ -287,7 +333,21 @@ without a clean rebuild. OVPhysX consumes no PhysX schema headers or Packman sch
 For a custom build directory, pass `-DBUILD_DIR=<path>` to CMake scripts or set
 `OVPHYSX_BUILD_DIR` for scripts and `run_pytest.sh`/`.bat`. Relative paths are
 resolved from `ovphysx/`; an explicit `BUILD_DIR` overrides the environment.
+The directory must be `_build` or a subdirectory such as `_build/debug`, with
+no symbolic links or junctions in that path. Absolute paths are accepted only
+inside the same `_build` directory. Local build and test caches belong here.
 Generated targets and CTest retain their build directory automatically.
+`--clean` removes `_build`, including all custom build variants and their local
+caches. It also retains the existing cleanup of `_install`, `_repo`, `_dist`,
+`.venv`, and `__pycache__` directories throughout `ovphysx/`, directories named
+`_build` in nested projects, immediate `ovruntime/_*` directories, and generated
+`packaging_lock/*_new.json` snapshots. Committed packaging locks are preserved.
+`--rebuild` does the same before building again; run
+`cmake -P scripts/install.cmake` afterward to recreate `_install`.
+Cleanup never traverses symbolic links or junctions. A matching cache link is
+removed without deleting its target; other linked trees are left alone. Links
+at the four top-level output directories, `ovruntime`, or `packaging_lock` are
+rejected before any deletion. Failed cleanup stops the build.
 
 
 The build (`build.sh`/`build.bat`) has two phases:
@@ -302,9 +362,13 @@ The build (`build.sh`/`build.bat`) has two phases:
 Changes to files under `ovphysx/ovruntime/` therefore require a rebuild from
 `ovphysx/` to take effect.
 
-**VS Code / Cursor test explorer:** run `uv sync` once in `tests/python_tests/`
-to create the `.venv`, then select that interpreter. `conftest.py` auto-detects
-`_install/` and handles native library preloading.
+**VS Code / Cursor test explorer:** from `ovphysx/`, run
+`tests/python_tests/run_pytest.sh --collect-only` (Windows:
+`tests/python_tests/run_pytest.bat --collect-only`) to prepare the test environment.
+Select `_build/venv/python_tests/bin/python` on Linux or
+`_build/venv/python_tests/Scripts/python.exe` on Windows. With a custom build
+variant, use `venv/python_tests/` beneath that build directory. `conftest.py`
+auto-detects `_install/` and handles native library preloading.
 
 ## Updating the pinned ovstage version
 
@@ -318,7 +382,14 @@ reconstructed from wheels (ADR-0033).
 
 Retries are opt-in: `OVSTAGE_FETCH_RETRY_TIMEOUT=1800` allows a 30-minute
 window. The fetcher's `--retry-timeout` overrides the environment; `0` means
-one attempt.
+one attempt. The same variable and option set the window of the schema installer
+(`tests/c_samples/common/fetch_physx_schemas.py`).
+
+uv's own requests (index pages, wheel downloads, build requirements) are opt-in the
+same way, through uv's `UV_HTTP_RETRIES`, which the test drivers leave to the
+environment. With uv 0.9.7 the default of 3 retries gives up after about 19 s, 5 after
+105 s and 6 after 249 s. CI sets `OVSTAGE_FETCH_RETRY_TIMEOUT=300` and
+`UV_HTTP_RETRIES=6` so a repository outage of a few minutes does not fail a job.
 
 
 ## Prerequisites

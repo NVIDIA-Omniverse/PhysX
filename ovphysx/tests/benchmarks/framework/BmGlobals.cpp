@@ -8,10 +8,11 @@
 
 // Adapted from omni.physx/tests/test.benchmarks/framework/BmGlobals.cpp.
 //
-// The registry / glob-filter / accumulator logic is preserved verbatim so
-// future updates from omni.physx merge cleanly. The BmGlobals constructor
-// is rewritten because ovphysx does not bootstrap through a
-// carb::AppScoped plus a manual plugin list. It goes through ovphysx::PhysX,
+// The registry / accumulator logic is preserved verbatim so future updates
+// from omni.physx merge cleanly. Glob filtering uses the local BmFilter helper.
+// The BmGlobals constructor is rewritten because ovphysx does not bootstrap
+// through a carb::AppScoped plus a manual plugin list. It goes through
+// ovphysx::PhysX,
 // which handles Carbonite startup, plugin loading and GPU foundation
 // creation internally.
 //
@@ -22,6 +23,8 @@
 // is the zero-valued record an unexecuted row must never publish.
 
 #include "BmGlobals.h"
+
+#include "BmFilter.h"
 
 #include "BmUtils.h"
 
@@ -59,50 +62,6 @@ void bmRegisterBenchmark(BmRegistrable& benchmark)
     sRegistry[sSize++] = &benchmark;
 }
 
-// adapted from similar code in gtest
-bool matchString(const char* pattern, const char* str)
-{
-    switch (*pattern)
-    {
-    case '\0':
-    case ':':
-        return *str == '\0';
-    case '?': // any single character.
-        return *str != '\0' && matchString(pattern + 1, str + 1);
-    case '*': // any (possibly empty) string  of characters.
-        return (*str != '\0' && matchString(pattern, str + 1)) || matchString(pattern + 1, str);
-    default:
-        return *pattern == *str && matchString(pattern + 1, str + 1);
-    }
-}
-
-
-bool matchFilter(const char* filter, const char* name)
-{
-    bool match = false;
-    bool noIncludeFilter = true;
-    while (filter)
-    {
-        bool exclude = *filter == '-';
-        filter += exclude; // skips the exclude prefix (the '-' character)
-
-        if (matchString(filter, name))
-        {
-            if (exclude)
-                return false;
-            else
-                match = true;
-        }
-
-        filter = strchr(filter, ':'); // finds the next pattern in the filter.
-        filter += !!filter; // skips the pattern separater (the ':' character).
-
-        noIncludeFilter &= exclude;
-    }
-    return match || noIncludeFilter;
-}
-
-
 struct StrLess
 {
     bool operator()(const BmRegistrable* a, const BmRegistrable* b) const
@@ -115,7 +74,7 @@ void bmGetRegister(std::vector<BmRegistrable*>& a, const char* filterString, boo
 {
     for (uint32_t i = 0; i < sSize; i++)
     {
-        if (matchFilter(filterString, sRegistry[i]->getName()) && (!sRegistry[i]->isHidden() || includeHidden))
+        if (BenchmarkHarness::matchFilter(filterString, sRegistry[i]->getName()) && (!sRegistry[i]->isHidden() || includeHidden))
             a.push_back(sRegistry[i]);
     }
 

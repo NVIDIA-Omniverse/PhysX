@@ -306,16 +306,20 @@ PX_FORCE_INLINE void NpRigidActorTemplate<APIClass>::setActorSimFlag(bool value)
 
 	if (hadNoSimFlag && (!value))
 	{
+#if PX_SUPPORT_GPU_PHYSX
 		if (scene)
 		{
 			// Element filters are keyed on the sims, so they are rebuilt around the switch.
 			NpActor::removeElementFilters(*this, false);
 		}
+#endif
 		switchFromNoSim();
 		ActorTemplateClass::setActorFlagsInternal(oldFlags & (~PxActorFlag::eDISABLE_SIMULATION));  // needs to be done before the code below to make sure the latest flags get picked up
 		if (scene)
 		{
+#if PX_SUPPORT_GPU_PHYSX
 			NpActor::addElementFilters(*this);
+#endif
 			NpActor::addConstraintsToScene();
 		}
 	}
@@ -324,7 +328,9 @@ PX_FORCE_INLINE void NpRigidActorTemplate<APIClass>::setActorSimFlag(bool value)
 		if (scene)
 		{
 			NpActor::removeConstraintsFromScene();
+#if PX_SUPPORT_GPU_PHYSX
 			NpActor::removeElementFilters(*this, false);
+#endif
 		}
 		ActorTemplateClass::setActorFlagsInternal(oldFlags | PxActorFlag::eDISABLE_SIMULATION);
 		switchToNoSim();

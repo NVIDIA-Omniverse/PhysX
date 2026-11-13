@@ -106,7 +106,7 @@ namespace Bp
 													return true;
 												}
 
-		virtual void							updateBounds(const PxTransform& transform, const PxGeometry& geom, PxU32 index, PxU32 /*indexFrom*/)
+		virtual void							updateBounds(const PxTransform& transform, const PxGeometry& geom, PxU32 index, bool /*isNew*/, bool /*isDynamicRigidShape*/)
 												{
 													Gu::computeBounds(mBounds[index], geom, transform, 0.0f, 1.0f);
 													mHasAnythingChanged = true;
@@ -118,6 +118,11 @@ namespace Bp
 													mBounds[index] = bounds;
 													mHasAnythingChanged = true;
 												}
+
+		// Marks an element whose bounds and transform are about to be written, possibly in parallel, so that they can be processed once written.
+		virtual	void							markForUpdate(PxU32 /*index*/, bool /*isDynamicRigidShape*/)	{}
+
+		virtual	bool							isChangeTrackingEnabled()	const	{ return false;	}
 
 		PX_FORCE_INLINE const PxBounds3*		begin()					const	{ return mBounds.begin();		}
 		PX_FORCE_INLINE PxBounds3*				begin()							{ return mBounds.begin();		}

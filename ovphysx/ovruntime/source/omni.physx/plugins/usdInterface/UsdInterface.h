@@ -10,6 +10,9 @@
 // @implements REQ-ATTACH-RESOLVE-001
 // @covers AC-9 AC-10
 
+// @implements REQ-CACHE-ATTACH-001
+// @covers AC-20
+
 /**
  * @implements REQ-PUBLICAPI-001
  * @covers AC-7 AC-9 AC-10
@@ -277,6 +280,9 @@ public:
     bool initialStagePopulationInProgress(const usdparser::AttachedStage& owner) const;
 
     void sendObjectCreationNotification(usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, usdparser::ObjectId objectId, PhysXType physxType);
+    // Whether any current subscriber would receive a creation notification now;
+    // lets a bulk sender skip per-object snapshots when nobody listens.
+    bool objectCreationNotificationsWanted(const usdparser::AttachedStage& attachedStage) const;
 
     void sendObjectDestructionNotification(usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, usdparser::ObjectId objectId, PhysXType physxType);
 
@@ -412,6 +418,14 @@ private:
 void applyRigidDynamicPhysxDesc(PhysXScene* ps,
                                 const usdparser::DynamicPhysxRigidBodyDesc& desc,
                                 ::physx::PxRigidDynamic& rigidDynamic);
+
+/**
+ * Environment id that a dynamic body or articulation aggregate keyed by \p key receives
+ * when it is created on \p attachedStage: PX_INVALID_U32 unless the stage assigns
+ * replicator env ids, else the id registered for the prim's scene-partition primvar,
+ * else 0. Compiled-cache hydration applies the same rule to restored objects.
+ */
+uint32_t creationEnvironmentId(const usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey key);
 
 } // namespace physx
 } // namespace omni

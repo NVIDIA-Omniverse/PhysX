@@ -34,6 +34,11 @@ files.include = [
 files.extensions = [".h", ".h.in", ".hpp", ".inl", ".cpp", ".c"]
 
 files.exclude = [
+   "include/ovphysx/ovphysx_attributes.h",
+   "include/ovphysx/generated/**",
+   "src/ovphysx/generated/**",
+   # Written by ovruntime/physics_population_domain/tools/gen_contract.py, which --check compares.
+   "include/ovphysx/population/Population.hpp",
    "include/ovphysx/dlpack/**"  # vendored third-party header (upstream copyright)
 ]
 
@@ -64,7 +69,8 @@ files.exclude."++" = ["ovruntime/**"]
 [repo_format.text_files.rst]
 files.exclude."++" = ["ovruntime/**"]
 [repo_format.text_files.md]
-files.exclude."++" = ["ovruntime/**"]
+# Generated artifacts keep deterministic generator-owned copyright notices.
+files.exclude."++" = ["ovruntime/**", "docs/read_write/attributes/**", "docs/population/**"]
 
 # repo_format ships no text_files type for cmake.
 # Matching is by include glob, not files.extensions: splitext("CMakeLists.txt")
@@ -116,5 +122,8 @@ files.exclude = [
     # Vendored bootstrap tooling - upstream copyright, not ours to stamp.
     "tools/packman/**",
     "tools/repoman/**",
+    "python/ovphysx/_attribute_data.py",
+    # Written by ovruntime/physics_population_domain/tools/gen_contract.py.
+    "python/ovphysx/population.py",
 ]
 

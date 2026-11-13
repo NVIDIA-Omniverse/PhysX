@@ -1,0 +1,59 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxJointAPI",
+  "title": "PhysxJointAPI (removed)",
+  "summary": "Removed PhysX joint API that older assets still apply. Only physxJoint:maxJointVelocity is read for compatibility without a schema gate. Migrate it to newton:velocityLimit (NewtonJointAPI). Other physxJoint:* values remain ignored.",
+  "status": "draft",
+  "compiled_cache": true,
+  "authoring": false,
+  "applies_to": [
+    "PhysicsJoint"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "producer_scope": "The explicit property-name selector publishes an authored legacy velocity on physics prims, with or without the removed API name; no current USD schema declares it.",
+  "columns": [
+    {
+      "name": "physxJoint:maxJointVelocity",
+      "usd_type": "float",
+      "origin": "producer",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "parser_default": "FLT_MAX",
+      "absent": "Keep newton:velocityLimit, then FLT_MAX. Values below FLT_MAX override the Newton seed; finite per-axis PhysxJointAxisAPI limits take precedence.",
+      "sentinel": "FLT_MAX or inf means no legacy opinion.",
+      "units": "linear: length/s; angular: deg/s",
+      "conversion": "deg_to_rad",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "include/omni/physics/parse/PreparedJoint.h",
+        "source/omni.physics.parse/ParseJoint.cpp"
+      ],
+      "notes": "Deprecated compatibility attribute, explicitly published when authored without requiring the removed PhysxJointAPI schema. Warn once and migrate to newton:velocityLimit (NewtonJointAPI). Other removed physxJoint properties remain ignored."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysxJointAxisAPI",
+      "rule": "Finite per-axis velocity limits override the finite Newton seed, which overrides the legacy joint limit. Armature and friction use PhysxJointAxisAPI or NewtonJointAPI only."
+    }
+  ],
+  "notes": [
+    "The USD schema remains removed and the builders do not expose it. The compatibility velocity column is explicitly selected by name during population and read without requiring this API."
+  ],
+  "usd_schemas_gate": false
+}

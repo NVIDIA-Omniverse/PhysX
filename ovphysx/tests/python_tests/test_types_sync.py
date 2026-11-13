@@ -7,6 +7,8 @@
 # @covers AC-1
 # @implements REQ-PYTHON-OMNIPVD-001
 # @covers AC-1
+# @implements REQ-CAPI-COMPILED-CACHE-001
+# @covers AC-1
 
 """Verify Python constants stay in sync with their C and C++ headers."""
 
@@ -43,17 +45,19 @@ def _extract_cpp_max_tensor_rank(header_text: str) -> int:
 
 def test_debug_render_scope_api_is_token_only():
     """Debug rendering is a read/write target. The runtime scope API stays token-only."""
-    public_header = (_repo_root() / "include" / "ovphysx" / "ovphysx.h").read_text()
+    public_header = (_repo_root() / "include" / "ovphysx" / "ovphysx.h").read_text(encoding="utf-8")
     runtime_header = (
         _repo_root() / "ovruntime" / "include" / "omni" / "physx" / "IPhysxVisualization.h"
-    ).read_text()
+    ).read_text(encoding="utf-8")
 
     assert re.search(r"\bovphysx_debug_render_set_scope\s*\(", public_header) is None
     assert re.search(r"\bovphysx_intern_paths\s*\(", public_header) is None
     assert "ovphysx_debug_render_set_scope_tokens" not in public_header
-    types_header = (_repo_root() / "include" / "ovphysx" / "ovphysx_types.h").read_text()
+    types_header = (_repo_root() / "include" / "ovphysx" / "ovphysx_types.h").read_text(encoding="utf-8")
     assert "OVPHYSX_QUERY_TARGET_DEBUG_RENDER" in types_header
-    assert "OVPHYSX_NAME_DEBUG_BODY_AXES" in types_header
+    assert '#include "generated/AttributeNames.inc"' in types_header
+    names_header = (_repo_root() / "include/ovphysx/generated/AttributeNames.inc").read_text(encoding="utf-8")
+    assert "OVPHYSX_NAME_DEBUG_BODY_AXES" in names_header
     assert "OVPHYSX_NAME_INIT" not in types_header
     assert re.search(r"\bsetVisualizationScope\s*\(", runtime_header) is None
     assert "setVisualizationScopeTokens" in runtime_header
@@ -70,7 +74,7 @@ def test_max_tensor_rank_matches_cpp_header():
 
     header = (
         _repo_root() / "ovruntime" / "include" / "omni" / "physics" / "tensors" / "TensorDesc.h"
-    ).read_text()
+    ).read_text(encoding="utf-8")
     assert _MAX_TENSOR_RANK == _extract_cpp_max_tensor_rank(header)
 
 
@@ -78,7 +82,7 @@ def test_tensor_type_values_match_c_header():
     """Every OVPHYSX_TENSOR_* integer in the C header must appear in TensorType."""
     from ovphysx.types import TensorType
 
-    header = (_repo_root() / "include" / "ovphysx" / "ovphysx_legacy_types.h").read_text()
+    header = (_repo_root() / "include" / "ovphysx" / "ovphysx_legacy_types.h").read_text(encoding="utf-8")
     c_vals = _extract_c_tensor_values(header)
     py_vals = set(int(m) for m in TensorType)
 
@@ -90,7 +94,7 @@ def test_api_status_values_match_c_header():
     """Every OVPHYSX_API_* integer in the C header must appear in ApiStatus."""
     from ovphysx.types import ApiStatus
 
-    header = (_repo_root() / "include" / "ovphysx" / "ovphysx_types.h").read_text()
+    header = (_repo_root() / "include" / "ovphysx" / "ovphysx_types.h").read_text(encoding="utf-8")
     c_vals = _extract_c_api_status_values(header)
     py_vals = set(int(m) for m in ApiStatus)
 
@@ -102,7 +106,7 @@ def test_log_level_values_match_c_header():
     """Every OVPHYSX_LOG_* integer in the C header must appear in LogLevel."""
     from ovphysx.types import LogLevel
 
-    header = (_repo_root() / "include" / "ovphysx" / "ovphysx_types.h").read_text()
+    header = (_repo_root() / "include" / "ovphysx" / "ovphysx_types.h").read_text(encoding="utf-8")
     c_vals = _extract_c_log_level_values(header)
     py_vals = set(int(m) for m in LogLevel)
 
@@ -147,7 +151,7 @@ def test_config_int32_and_string_values_match_c_header():
     """Deprecated typed keys remain synchronized with legacy C definitions."""
     from ovphysx.types import ConfigBool, ConfigInt32, ConfigString
 
-    header = (_repo_root() / "include" / "ovphysx" / "ovphysx_legacy_types.h").read_text()
+    header = (_repo_root() / "include" / "ovphysx" / "ovphysx_legacy_types.h").read_text(encoding="utf-8")
     expected_bool = _extract_c_config_enum(header, "ovphysx_config_bool_t", "OVPHYSX_CONFIG_")
     assert {member.name: int(member) for member in ConfigBool} == expected_bool
     expected_int32 = _extract_c_config_enum(header, "ovphysx_config_int32_t", "OVPHYSX_CONFIG_")
@@ -160,7 +164,7 @@ def test_scoped_config_values_match_c_header():
     """Scoped global and instance keys have the same Python names and values."""
     from ovphysx.types import ConfigKey, GlobalConfigKey
 
-    header = (_repo_root() / "include" / "ovphysx" / "ovphysx_types.h").read_text()
+    header = (_repo_root() / "include" / "ovphysx" / "ovphysx_types.h").read_text(encoding="utf-8")
     expected_global = _extract_c_config_enum(
         header, "ovphysx_global_config_key_t", "OVPHYSX_GLOBAL_CONFIG_"
     )
@@ -171,11 +175,23 @@ def test_scoped_config_values_match_c_header():
     assert {member.name: int(member) for member in ConfigKey} == expected_instance
 
 
+def test_compiled_stage_cache_mode_values_match_c_header():
+    """The compiled stage cache mode has the same Python names and values as C."""
+    from ovphysx.types import CompiledStageCacheMode
+
+    header = (_repo_root() / "include" / "ovphysx" / "ovphysx_types.h").read_text(encoding="utf-8")
+    expected = _extract_c_config_enum(
+        header, "ovphysx_compiled_stage_cache_mode_t", "OVPHYSX_COMPILED_STAGE_CACHE_"
+    )
+    assert {member.name: int(member) for member in CompiledStageCacheMode} == expected
+    assert expected == {"AUTOMATIC": 0, "DISABLED": 1, "READ_ONLY": 2, "READ_WRITE": 3}
+
+
 def test_no_python_only_tensor_values():
     """TensorType must not have values absent from the C header."""
     from ovphysx.types import TensorType
 
-    header = (_repo_root() / "include" / "ovphysx" / "ovphysx_legacy_types.h").read_text()
+    header = (_repo_root() / "include" / "ovphysx" / "ovphysx_legacy_types.h").read_text(encoding="utf-8")
     c_vals = _extract_c_tensor_values(header)
     py_vals = set(int(m) for m in TensorType if int(m) != 0)  # exclude INVALID
 
@@ -212,7 +228,7 @@ def test_scene_query_mode_values_match_c_header():
     """Every OVPHYSX_SCENE_QUERY_MODE_* in C must appear in SceneQueryMode."""
     from ovphysx.types import SceneQueryMode
 
-    header = (_repo_root() / "include" / "ovphysx" / "ovphysx_legacy_types.h").read_text()
+    header = (_repo_root() / "include" / "ovphysx" / "ovphysx_legacy_types.h").read_text(encoding="utf-8")
     c_vals = _extract_c_scene_query_mode_values(header)
     py_vals = set(int(m) for m in SceneQueryMode)
     missing = c_vals - py_vals
@@ -225,7 +241,7 @@ def test_scene_query_geometry_type_values_match_c_header():
     """Every OVPHYSX_SCENE_QUERY_GEOMETRY_* in C must appear in SceneQueryGeometryType."""
     from ovphysx.types import SceneQueryGeometryType
 
-    header = (_repo_root() / "include" / "ovphysx" / "ovphysx_legacy_types.h").read_text()
+    header = (_repo_root() / "include" / "ovphysx" / "ovphysx_legacy_types.h").read_text(encoding="utf-8")
     c_vals = _extract_c_scene_query_geom_type_values(header)
     py_vals = set(int(m) for m in SceneQueryGeometryType)
     missing = c_vals - py_vals
@@ -238,7 +254,7 @@ def test_articulation_kinematic_flag_values_match_c_header():
     """Every articulation kinematic flag in C must appear in Python."""
     from ovphysx.types import ArticulationKinematicFlag
 
-    header = (_repo_root() / "include" / "ovphysx" / "ovphysx_types.h").read_text()
+    header = (_repo_root() / "include" / "ovphysx" / "ovphysx_types.h").read_text(encoding="utf-8")
     c_vals = set(
         1 << int(bit)
         for bit in re.findall(r"OVPHYSX_ARTICULATION_KINEMATIC_\w+\s*=\s*1u\s*<<\s*(\d+)", header)
@@ -255,3 +271,12 @@ def test_scene_query_hit_struct_size():
     assert ctypes.sizeof(ovphysx_scene_query_hit_t) == 64, (
         f"ovphysx_scene_query_hit_t size mismatch: " f"ctypes={ctypes.sizeof(ovphysx_scene_query_hit_t)}, expected=64"
     )
+
+
+def test_task_status_values_match_c_header():
+    """TaskStatus must mirror ovphysx_task_status_t name for name."""
+    from ovphysx.types import TaskStatus
+
+    header = (_repo_root() / "include" / "ovphysx" / "ovphysx_types.h").read_text()
+    c_values = _extract_c_config_enum(header, "ovphysx_task_status_t", "OVPHYSX_TASK_STATUS_")
+    assert {member.name: int(member) for member in TaskStatus} == c_values

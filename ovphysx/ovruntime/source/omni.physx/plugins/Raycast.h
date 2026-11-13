@@ -154,7 +154,7 @@ void handleRaycast(AttachHandle attach, const float* orig, const float* dir, boo
 
 // KnownTokens is batch-interned once by the caller (see raycastSingle()) and
 // handed in by const reference -- preFilter() runs once per broad-phase
-// candidate shape, so re-interning the ~659-field vocabulary inside it would
+// candidate shape, so re-interning the several-hundred-name vocabulary inside it would
 // turn a single query into hundreds of full batch-interns (see REQ-SIM-SCENEQUERY-001).
 class raycastFilterExcludeInvisible : ::physx::PxQueryFilterCallback
 {

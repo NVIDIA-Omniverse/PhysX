@@ -222,7 +222,8 @@ extra surface rather than describing a hole in the product.
 - ovphysx/CMakeLists.txt (`OVPHYSX_NO_USD` option, its documentation comment,
   the `OVRUNTIME_PHYSX_NO_USD` cache-var wiring, and the absence of any USD
   include or link directory on the `ovphysx` target -- AC-1, AC-2, AC-5, AC-7,
-  AC-11)
+  AC-11; the Linux `--no-as-needed` link that keeps `libovphysx.so`'s
+  `DT_NEEDED` on `libovstage.so`)
 - ovphysx/src/ovphysxInternal/CMakeLists.txt (the sidecar links only `ovphysx`;
   no USD library, include, or link directory -- AC-3, AC-4, AC-11)
 - ovphysx/scripts/package_deps.py (stages Carbonite and PhysX runtime payloads;

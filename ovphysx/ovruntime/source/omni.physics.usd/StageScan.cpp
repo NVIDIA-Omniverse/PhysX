@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-SIM-LOCALVELOCITY-001
+// @covers AC-8
+
 /**
  * Whole-stage scan implementation — see ADR-0002 for the architecture
  * and ADR-0003 for the native USD driver design. This file is the
@@ -236,8 +239,8 @@ ScannedStage scanStage(PXR_NS::UsdStageWeakPtr stage,
 }
 
 // The native USD walk over a backend-opaque AttachTarget: reinterprets
-// `target.nativeStage` as the live UsdStageWeakPtr and dispatches to the
-// SdfPath-typed scanStage() above. Shared by the backend-less fallback below
+// `target.nativeStage` as the live UsdStageWeakPtr and passes the consumer
+// options to the native walker. Shared by the backend-less fallback below
 // and by UsdScanBackend::scan() (this file's bottom), which is the same walk
 // wrapped as a registerable IScanBackend (ADR-0018 scanStage
 // backend-registration gap) so AttachTarget-based callers can go through
@@ -251,13 +254,11 @@ ScannedStage scanTargetNative(const parse::AttachTarget& target,
 {
     const PXR_NS::UsdStageWeakPtr stage =
         target.nativeStage ? *static_cast<const PXR_NS::UsdStageWeakPtr*>(target.nativeStage) : PXR_NS::UsdStageWeakPtr{};
-    if (!target.attachedSource)
-        return scanStage(stage, scanRoots, excludePaths, allocator, traversalForScope(options.descendantScope));
-
     // Share the matching attach's identity table, with private scan-local caches.
     // A foreign backend or a different stage cannot provide this identity owner.
     UsdSource* source = dynamic_cast<UsdSource*>(target.attachedSource);
-    if (!source || !source->isForStage(stage) || !stage || scanRoots.empty())
+    if (!stage || scanRoots.empty() ||
+        (target.attachedSource && (!source || !source->isForStage(stage))))
         return {};
     const SubtreeTraversal traversal = traversalForScope(options.descendantScope);
     if (!excludePaths.empty())
@@ -265,7 +266,7 @@ ScannedStage scanTargetNative(const parse::AttachTarget& target,
         const std::set<PXR_NS::SdfPath> rootSet(scanRoots.begin(), scanRoots.end());
         omni::physics::schema::PrimIteratorMapRange rootsIterator(rootSet, stage);
         omni::physics::schema::PrimIteratorExcludeRange iterator(rootsIterator, excludePaths);
-        return scanStageNative(stage, iterator, allocator, source);
+        return scanStageNative(stage, iterator, allocator, source, options.outputVelocitiesLocalSpaceDefault);
     }
     if (scanRoots.size() == 1 && traversal != SubtreeTraversal::eInstanceProxies)
     {
@@ -275,11 +276,11 @@ ScannedStage scanTargetNative(const parse::AttachTarget& target,
         PXR_NS::UsdPrimRange range = traversal == SubtreeTraversal::eAllPrims ?
             PXR_NS::UsdPrimRange(prim, PXR_NS::UsdPrimAllPrimsPredicate) : PXR_NS::UsdPrimRange(prim);
         omni::physics::schema::PrimIteratorRange iterator(range);
-        return scanStageNative(stage, iterator, allocator, source);
+        return scanStageNative(stage, iterator, allocator, source, options.outputVelocitiesLocalSpaceDefault);
     }
     const std::set<PXR_NS::SdfPath> rootSet(scanRoots.begin(), scanRoots.end());
     omni::physics::schema::PrimIteratorMapRange iterator(rootSet, stage);
-    return scanStageNative(stage, iterator, allocator, source);
+    return scanStageNative(stage, iterator, allocator, source, options.outputVelocitiesLocalSpaceDefault);
 }
 
 // Backend-dispatched whole-stage scan (ADR-0002 M2c) — the single switch point.

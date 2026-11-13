@@ -54,3 +54,30 @@ Zero-sample spline geometry is rejected before mass computation.
 Round-three `test_inactive_material_density_is_ignored` pairs an active
 density-100 material with the same material deactivated; stopped mass is 100 kg
 and 1000 kg respectively, each matching the native oracle.
+
+## Installed-wheel worker regression
+
+Given separately installed ovphysx and ovstage Linux x86_64 wheels, run
+[wheel_worker_smoke.py](../../../tests_native/wheel_worker_smoke.py) in a fresh
+Python process. It launches the actual stopped-mass sample worker with inherited
+LD_LIBRARY_PATH, LD_PRELOAD and OVSTAGE_LIBRARY_PATH_HINT removed, selecting
+the installed core wheel through OVPHYSX_LIB. Only companion source is added to
+the child's Python path.
+
+The worker must return mass 480 kg and diagonal inertia (2080, 1600, 800)
+without attaching or stepping (REQ AC-1, AC-2). The parent must retain no
+libovphysx.so or libovstage.so mappings and import no core bindings or OVStage.
+The smoke runs from scripts/test_python_wheel.cmake for each supported Python
+version on Linux x86_64; it needs no GPU or customer USD installation.
+
+[Loader selection tests](../../../tests_native/test_worker_library.py) verify
+that the dependency is retained, SDK overrides do not preload an unrelated
+installed wheel, SDK-only environments need no Python packages, and a missing
+OVStage package fails before loading the core.
+
+Executed on 2026-10-14: the wheel smoke fails before the fix with missing
+libovstage.so, then passes with ovphysx 0.7.0.73411310 and ovstage
+0.3.0.1791455901 on Python 3.10.12 / glibc 2.35. All four selection tests and
+five existing worker transport tests pass. The complete stopped_mass_editor.run()
+also passes with customer usd-core 26.8, including undo/redo, mass 480 and
+absence of native library mappings in the customer-USD parent.

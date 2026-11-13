@@ -1,0 +1,317 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxPBDMaterialAPI",
+  "title": "PhysxPBDMaterialAPI (as read for a scene default material)",
+  "summary": "Position-based-dynamics particle material. This contract covers only the read the rigid-body consumer makes: the material bound to a PhysicsScene is parsed as the scene's default PBD material, and every physxPBDMaterial:* column it carries applies whether or not the API is listed.",
+  "status": "draft",
+  "compiled_cache": "reads",
+  "usd_schemas_gate": false,
+  "applies_to": [
+    "Material"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "producer_scope": "Published like any applied API: every declared attribute at its resolved value.",
+  "columns": [
+    {
+      "name": "physxPBDMaterial:friction",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.2,
+      "parser_default": 0.2,
+      "absent": "0.2: the PBD material default.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp"
+      ]
+    },
+    {
+      "name": "physxPBDMaterial:particleFrictionScale",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 1.0,
+      "parser_default": 1.0,
+      "absent": "1.0: the PBD material default.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp"
+      ]
+    },
+    {
+      "name": "physxPBDMaterial:damping",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0: the PBD material default.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp"
+      ]
+    },
+    {
+      "name": "physxPBDMaterial:viscosity",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0: the PBD material default.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp"
+      ]
+    },
+    {
+      "name": "physxPBDMaterial:vorticityConfinement",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0: the PBD material default.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp"
+      ]
+    },
+    {
+      "name": "physxPBDMaterial:surfaceTension",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0: the PBD material default.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp"
+      ]
+    },
+    {
+      "name": "physxPBDMaterial:cohesion",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0: the PBD material default.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp"
+      ]
+    },
+    {
+      "name": "physxPBDMaterial:adhesion",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0: the PBD material default.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp"
+      ]
+    },
+    {
+      "name": "physxPBDMaterial:particleAdhesionScale",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 1.0,
+      "parser_default": 1.0,
+      "absent": "1.0: the PBD material default.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp"
+      ]
+    },
+    {
+      "name": "physxPBDMaterial:adhesionOffsetScale",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0: the PBD material default.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp"
+      ]
+    },
+    {
+      "name": "physxPBDMaterial:gravityScale",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 1.0,
+      "parser_default": 1.0,
+      "absent": "1.0: the PBD material default.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp"
+      ]
+    },
+    {
+      "name": "physxPBDMaterial:cflCoefficient",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 1.0,
+      "parser_default": 1.0,
+      "absent": "1.0: the PBD material default.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp"
+      ]
+    },
+    {
+      "name": "physxPBDMaterial:density",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 1000.0,
+      "absent": "1000.0: the PBD material default.",
+      "raw_fallback_diverges": true,
+      "units": "mass/length^3",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp"
+      ],
+      "notes": "The schema fallback 0.0 is what an authored-by-population column carries; the parser uses it as given, while an absent column parses as 1000."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysicsScene",
+      "rule": "The scene's bound default material is parsed as a PBD material: the API, or any of these columns, enables it."
+    }
+  ],
+  "notes": [
+    "The compiled cache does not support particle systems (PhysxParticleSystem), so a Stage with one bypasses it. The compiled cache reads these columns because the scene parse reads them."
+  ]
+}

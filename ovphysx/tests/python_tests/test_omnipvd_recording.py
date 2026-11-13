@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# @implements REQ-PYTHON-OMNIPVD-CAPTURE-001
+# @covers AC-2 AC-3 AC-4
+
 # @implements REQ-PYTHON-OMNIPVD-001
 # @covers AC-3
 # @implements REQ-PYTHON-OMNIPVD-LATE-001
@@ -10,6 +13,7 @@
 
 import ctypes
 import gc
+import os
 import socket
 import subprocess
 import sys
@@ -26,14 +30,14 @@ _TEST_DATA = Path(__file__).resolve().parent.parent / "data"
 _USD_SCENE = str(_TEST_DATA / "simple_physics_scene.usda")
 
 
-def _run_ovphysx_subprocess(script_body: str) -> None:
+def _run_ovphysx_subprocess(script_body: str, *, cwd: Path | None = None) -> None:
     """Run startup-only configuration in a fresh process."""
     script = f"import sys\nsys.path.insert(0, {repr(str(Path(__file__).resolve().parent))})\n" + textwrap.dedent(
         script_body
     )
     result = subprocess.run(
         [sys.executable, "-c", script],
-        cwd=Path(__file__).resolve().parent,
+        cwd=Path(__file__).resolve().parent if cwd is None else cwd,
         text=True,
         capture_output=True,
         timeout=120,
@@ -70,10 +74,11 @@ def _run_ovd_recording_subprocess(output_path: str, steps: int, *, start: bool =
 
 
 def test_late_destination_factories_validate_exact_shapes():
-    """Python destinations expose only exact FILE and TCP tuples."""
+    """FILE paths and TCP addresses keep the existing destination layout."""
     from ovphysx import OmniPvdDestination
 
     assert OmniPvdDestination.file("capture.ovd").file_path == "capture.ovd"
+    assert OmniPvdDestination.file("captures").file_path == "captures"
     tcp = OmniPvdDestination.tcp("127.0.0.1", 5425, timeout_ms=3000)
     assert (tcp.tcp_address, tcp.tcp_port, tcp.tcp_timeout_ms) == ("127.0.0.1", 5425, 3000)
     with pytest.raises(ValueError):
@@ -92,7 +97,8 @@ def test_start_recording_keeps_destination_strings_alive_through_native_call():
         def __init__(self):
             self.destinations = []
 
-        def ovphysx_ovd_start_recording(self, handle, destination):
+        def ovphysx_ovd_start_recording(self, handle, destination, options):
+            assert options is None
             assert handle == 17
             gc.collect()
             native_destination = ctypes.cast(
@@ -121,16 +127,265 @@ def test_start_recording_keeps_destination_strings_alive_through_native_call():
     physx._lifecycle_acquired = False
     physx._released = True
     physx.start_recording(OmniPvdDestination.file("capture.ovd"))
+    physx.start_recording(OmniPvdDestination.file("captures/\u00e9tage"))
+    physx.start_recording(OmniPvdDestination.file("runs/capture.ovd/"))
     physx.start_recording(OmniPvdDestination.tcp("127.0.0.1", 5425))
 
     assert fake_lib.destinations == [
         (0, "capture.ovd", ""),
+        (0, "captures/\u00e9tage", ""),
+        (0, "runs/capture.ovd/", ""),
         (1, "", "127.0.0.1"),
     ]
 
 
-def test_late_start_requires_creation_capability():
+@pytest.mark.parametrize("record_secondary_data", [False, True])
+def test_start_recording_keeps_filter_paths_alive_through_native_call(record_secondary_data):
+    """Union selectors and optional secondary data survive ctypes copying and GC."""
+    from ovphysx import OmniPvdFilter, OmniPvdDestination, PhysX
+    from ovphysx import api
+    from ovphysx.types import ApiStatus
+
+    class FakeLib:
+        def ovphysx_ovd_start_recording(self, handle, destination, capture):
+            assert handle == 17
+            gc.collect()
+            native = ctypes.cast(capture, ctypes.POINTER(api.ovphysx_omnipvd_recording_options_t)).contents
+            assert native.record_secondary_data is record_secondary_data
+            for views, count, expected in (
+                (native.scene_paths, native.scene_count, ["/World/scene"]),
+                (native.object_paths, native.object_count, ["/World/body", "/World/body", "/World/robot", "/World/particles"]),
+            ):
+                assert count == len(expected)
+                assert [ctypes.string_at(views[i].ptr, views[i].length).decode("utf-8")
+                        for i in range(count)] == expected
+            return SimpleNamespace(status=ApiStatus.SUCCESS)
+
+    physx = PhysX.__new__(PhysX)
+    physx._lib = FakeLib()
+    physx._omni_physx_sdk_handle = ctypes.c_uint64(17)
+    physx._attached_ovstage = None
+    physx._lifecycle_acquired = False
+    physx._released = True
+    capture = OmniPvdFilter(
+        record_secondary_data=record_secondary_data,
+        scenes=["/World/scene"],
+        objects=["/World/body", "/World/body", "/World/robot", "/World/particles"],
+    )
+    physx.start_recording(OmniPvdDestination.file("capture.ovd"), filter=capture)
+    physx.start_recording(OmniPvdDestination.tcp("127.0.0.1", 5425), filter=capture)
+    with pytest.raises(TypeError, match="filter"):
+        physx.start_recording(OmniPvdDestination.file("capture.ovd"), filter={})
+
+
+def _make_ovd_session_mock(lib):
+    from ovphysx import PhysX
+
+    physx = PhysX.__new__(PhysX)
+    physx._lib = lib
+    physx._omni_physx_sdk_handle = ctypes.c_uint64(17)
+    physx._attached_ovstage = None
+    physx._lifecycle_acquired = False
+    physx._released = True
+    return physx
+
+
+def test_start_recording_wait_for_selection_binding_uses_existing_descriptor_layouts():
+    from ovphysx import _bindings
+
+    function = _bindings._lib.ovphysx_ovd_start_recording
+    assert function.argtypes == [
+        ctypes.c_uint64,
+        ctypes.POINTER(_bindings.ovphysx_omnipvd_destination_t),
+        ctypes.POINTER(_bindings.ovphysx_omnipvd_recording_options_t),
+    ]
+    assert function.restype is _bindings.ovphysx_result_t
+
+
+@pytest.mark.parametrize("record_secondary_data", [None, False, True])
+def test_start_recording_wait_for_selection_keeps_tcp_filter_buffers_alive(record_secondary_data):
+    from ovphysx import OmniPvdDestination, OmniPvdFilter, api
+    from ovphysx.types import ApiStatus
+
+    calls = []
+
+    class FakeLib:
+        def ovphysx_ovd_start_recording(self, handle, destination, capture):
+            assert handle == 17
+            gc.collect()
+            native_destination = ctypes.cast(
+                destination, ctypes.POINTER(api.ovphysx_omnipvd_destination_t)
+            ).contents
+            assert native_destination.transport == 1
+            assert ctypes.string_at(
+                native_destination.tcp_address.ptr, native_destination.tcp_address.length
+            ).decode("utf-8") == "receiver.example"
+            assert native_destination.tcp_port == 5425
+            assert native_destination.tcp_timeout_ms == 3000
+            native = ctypes.cast(capture, ctypes.POINTER(api.ovphysx_omnipvd_recording_options_t)).contents
+            assert native.wait_for_selection is True
+            if record_secondary_data is None:
+                assert native.record_secondary_data is True
+                assert native.scene_count == native.object_count == 0
+                assert not native.scene_paths and not native.object_paths
+            else:
+                assert native.record_secondary_data is record_secondary_data
+                for views, count, expected in (
+                    (native.scene_paths, native.scene_count, ["/World/scene"]),
+                    (native.object_paths, native.object_count, ["/World/\u00e9tage", "/World/body", "/World/body"]),
+                ):
+                    assert count == len(expected)
+                    assert [ctypes.string_at(views[i].ptr, views[i].length).decode("utf-8")
+                            for i in range(count)] == expected
+            calls.append(handle)
+            return SimpleNamespace(status=ApiStatus.SUCCESS)
+
+    physx = _make_ovd_session_mock(FakeLib())
+    capture = None if record_secondary_data is None else OmniPvdFilter(
+        record_secondary_data=record_secondary_data,
+        scenes=["/World/scene"],
+        objects=["/World/\u00e9tage", "/World/body", "/World/body"],
+    )
+    physx.start_recording(
+        OmniPvdDestination.tcp("receiver.example", 5425, timeout_ms=3000), filter=capture
+    , wait_for_selection=True)
+    assert calls == [17]
+
+
+def test_start_recording_wait_for_selection_rejects_file_and_invalid_descriptors_before_native_call():
+    from ovphysx import OmniPvdDestination
+
+    physx = _make_ovd_session_mock(SimpleNamespace())
+    with pytest.raises(ValueError, match="TCP"):
+        physx.start_recording(OmniPvdDestination.file("capture.ovd"), wait_for_selection=True)
+    with pytest.raises(TypeError, match="destination"):
+        physx.start_recording("tcp://receiver.example:5425", wait_for_selection=True)
+    with pytest.raises(TypeError, match="filter"):
+        physx.start_recording(OmniPvdDestination.tcp("receiver.example", 5425), filter={}, wait_for_selection=True)
+    for invalid in (None, 0, 1, "true"):
+        with pytest.raises(TypeError, match="wait_for_selection"):
+            physx.start_recording(OmniPvdDestination.tcp("receiver.example", 5425), wait_for_selection=invalid)
+
+
+@pytest.mark.parametrize("status_name", ["INVALID_STATE", "NOT_IMPLEMENTED"])
+def test_start_recording_wait_for_selection_preserves_native_error_status(status_name):
+    from ovphysx import OmniPvdDestination
+    from ovphysx.types import ApiStatus
+
+    calls = []
+
+    class FakeLib:
+        def ovphysx_ovd_start_recording(self, handle, destination, capture):
+            calls.append(handle)
+            return SimpleNamespace(status=getattr(ApiStatus, status_name))
+
+    physx = _make_ovd_session_mock(FakeLib())
+    physx._get_last_error = lambda: "discovery unavailable"
+    with pytest.raises(RuntimeError, match=rf"start_recording failed \({status_name}\): discovery unavailable"):
+        physx.start_recording(OmniPvdDestination.tcp("receiver.example", 5425), wait_for_selection=True)
+    assert calls == [17]
+
+
+def test_selective_python_session_rejects_missing_path_and_restarts(tmp_path):
     _run_ovphysx_subprocess(f"""
+        from pathlib import Path
+        from ovphysx import GlobalConfigKey, OmniPvdFilter, OmniPvdDestination, PhysX, set_global_config
+        from test_utils import load_usd_with_ovstage
+        set_global_config(GlobalConfigKey.OVD_RECORDING_CAPABLE, True)
+        physx = PhysX()
+        try:
+            load_usd_with_ovstage(physx, {repr(_USD_SCENE)})
+            physx.wait_all()
+            invalid = Path({str(tmp_path / 'missing' / 'nested' / 'invalid.ovd')!r})
+            try:
+                physx.start_recording(OmniPvdDestination.file(str(invalid)),
+                    filter=OmniPvdFilter(objects=["/World/missing"]))
+                raise AssertionError("missing selector was accepted")
+            except RuntimeError as exc:
+                assert "NOT_FOUND" in str(exc)
+            assert not invalid.exists() and not invalid.parent.parent.exists()
+            assert not physx.is_recording()
+            for name, capture in (
+                ("poses", OmniPvdFilter(record_secondary_data=False,
+                                        objects=["/World/Cube1"])),
+                ("all", None),
+            ):
+                output = Path({str(tmp_path)!r}) / (name + ".ovd")
+                physx.start_recording(OmniPvdDestination.file(str(output)), filter=capture)
+                assert physx.is_recording()
+                physx.step_sync(1.0 / 60.0)
+                physx.stop_recording()
+                assert not physx.is_recording() and output.stat().st_size > 0
+        finally:
+            physx.destroy()
+        """)
+
+
+@pytest.mark.cuda
+@pytest.mark.parametrize("direct_gpu", [False, True], ids=["readback", "directgpu"])
+@pytest.mark.parametrize("asset, root", [
+    ("particles_simple.usda", "/World/particleSystem"),
+    ("surface_deformable_simple.usda", "/World/DeformableBody"),
+    ("volume_deformable_simple.usda", "/World/DeformableBody"),
+])
+def test_selective_gpu_object_paths_accept_particle_and_deformable_payload(tmp_path, direct_gpu, asset, root):
+    """C-first decoded tests verify values; Python verifies real sender forwarding."""
+    import warp as wp
+
+    if os.environ.get("OVPHYSX_DISABLE_GPU") == "1" or not wp.get_cuda_device_count():
+        pytest.skip("Particle and deformable recording requires CUDA")
+    _run_ovphysx_subprocess(f"""
+        from pathlib import Path
+        from ovphysx import GlobalConfigKey, OmniPvdFilter, OmniPvdDestination, PhysX, PhysXConfig, set_global_config
+        from test_utils import load_usd_with_ovstage
+        set_global_config(GlobalConfigKey.OVD_RECORDING_CAPABLE, True)
+        physx = PhysX(config=PhysXConfig(
+            carbonite_overrides={{"/physics/suppressReadback": {direct_gpu!r}}}))
+        try:
+            load_usd_with_ovstage(physx, {str(_TEST_DATA / asset)!r})
+            physx.wait_all()
+            physx.step_sync(1.0 / 60.0)
+            output = Path({str(tmp_path / 'selected.ovd')!r})
+            physx.start_recording(OmniPvdDestination.file(str(output)),
+                filter=OmniPvdFilter(objects=[{root!r}]))
+            assert physx.is_recording()
+            physx.step_sync(1.0 / 60.0)
+            physx.stop_recording()
+            assert not physx.is_recording() and output.stat().st_size > 12
+        finally:
+            physx.destroy()
+        """)
+
+
+def test_bare_exact_filename_records_in_current_directory(tmp_path):
+    _run_ovphysx_subprocess(f"""
+        from pathlib import Path
+        from ovphysx import GlobalConfigKey, OmniPvdDestination, PhysX, set_global_config
+        from test_utils import load_usd_with_ovstage
+
+        set_global_config(GlobalConfigKey.OVD_RECORDING_CAPABLE, True)
+        physx = PhysX()
+        try:
+            load_usd_with_ovstage(physx, {repr(_USD_SCENE)})
+            physx.wait_all()
+            physx.start_recording(OmniPvdDestination.file("capture.ovd"))
+            assert physx.is_recording()
+            physx.step_sync(1.0 / 60.0)
+            physx.stop_recording()
+            assert not physx.is_recording()
+            capture = Path("capture.ovd")
+            assert capture.is_file()
+            assert capture.stat().st_size > 12
+        finally:
+            physx.destroy()
+    """, cwd=tmp_path)
+    assert (tmp_path / "capture.ovd").stat().st_size > 12
+
+
+def test_late_start_requires_creation_capability(tmp_path):
+    directory = tmp_path / "missing" / "captures"
+    _run_ovphysx_subprocess(f"""
+        from pathlib import Path
         from ovphysx import OmniPvdDestination, PhysX
         from test_utils import load_usd_with_ovstage
         physx = PhysX()
@@ -138,12 +393,14 @@ def test_late_start_requires_creation_capability():
             load_usd_with_ovstage(physx, {repr(_USD_SCENE)})
             physx.wait_all()
             physx.step_sync(1.0 / 60.0)
-            try:
-                physx.start_recording(OmniPvdDestination.file("unavailable.ovd"))
-                raise AssertionError("default instance unexpectedly became recording-capable")
-            except RuntimeError as exc:
-                assert "INVALID_STATE" in str(exc)
-                assert "OVD_RECORDING_CAPABLE" in str(exc)
+            for path in ("unavailable.ovd", {str(directory)!r}):
+                try:
+                    physx.start_recording(OmniPvdDestination.file(path))
+                    raise AssertionError("default instance unexpectedly became recording-capable")
+                except RuntimeError as exc:
+                    assert "INVALID_STATE" in str(exc)
+                    assert "OVD_RECORDING_CAPABLE" in str(exc)
+            assert not Path({str(directory.parent)!r}).exists()
         finally:
             physx.destroy()
     """)
@@ -154,6 +411,8 @@ def test_late_file_recording_retries_rejects_takeover_and_restarts():
     with tempfile.TemporaryDirectory(prefix="ovphysx_pvd_late_") as output_dir:
         first_path = str(Path(output_dir) / "first.ovd")
         second_path = str(Path(output_dir) / "second.ovd")
+        obstacle = Path(output_dir) / "obstacle.ovd"
+        obstacle.mkdir()
         _run_ovphysx_subprocess(f"""
             from ovphysx import GlobalConfigKey, OmniPvdDestination, PhysX, set_global_config
             from test_utils import load_usd_with_ovstage
@@ -167,8 +426,8 @@ def test_late_file_recording_retries_rejects_takeover_and_restarts():
                 assert not physx.is_recording()
 
                 try:
-                    physx.start_recording(OmniPvdDestination.file({output_dir!r}))
-                    raise AssertionError("opening a directory as a file unexpectedly succeeded")
+                    physx.start_recording(OmniPvdDestination.file({str(obstacle)!r}))
+                    raise AssertionError("opening a .ovd directory as an exact file unexpectedly succeeded")
                 except RuntimeError:
                     pass
                 assert not physx.is_recording()
@@ -195,6 +454,62 @@ def test_late_file_recording_retries_rejects_takeover_and_restarts():
             """)
         assert Path(first_path).stat().st_size > 12
         assert Path(second_path).stat().st_size > 12
+        assert obstacle.is_dir() and not list(obstacle.iterdir())
+
+
+def test_file_path_infers_directory_only_after_explicit_start_and_preserves_captures(tmp_path):
+    """The existing FILE destination creates timestamped sessions in a directory."""
+    directory = tmp_path / "missing" / "captures"
+    takeover = tmp_path / "must_not_create"
+    _run_ovphysx_subprocess(f"""
+        import re
+        from pathlib import Path
+        from ovphysx import GlobalConfigKey, OmniPvdDestination, PhysX, set_global_config
+        from test_utils import load_usd_with_ovstage
+
+        directory = Path({str(directory)!r})
+        destination = OmniPvdDestination.file(str(directory))
+        assert not directory.parent.exists()
+        set_global_config(GlobalConfigKey.OVD_RECORDING_CAPABLE, True)
+        physx = PhysX()
+        try:
+            try:
+                physx.start_recording(destination)
+                raise AssertionError("unattached instance unexpectedly started recording")
+            except RuntimeError as exc:
+                assert "INVALID_STATE" in str(exc)
+            assert not directory.parent.exists()
+            load_usd_with_ovstage(physx, {_USD_SCENE!r})
+            physx.wait_all()
+            assert not physx.is_recording()
+            assert not directory.parent.exists()
+            physx.start_recording(destination)
+            assert directory.is_dir() and physx.is_recording()
+            try:
+                physx.start_recording(OmniPvdDestination.file({str(takeover)!r}))
+                raise AssertionError("active directory capture unexpectedly retargeted")
+            except RuntimeError as exc:
+                assert "INVALID_STATE" in str(exc)
+            assert not Path({str(takeover)!r}).exists()
+            physx.step_sync(1.0 / 60.0)
+            physx.stop_recording()
+            captures = list(directory.glob("*.ovd"))
+            assert len(captures) == 1
+            first = captures[0]
+            first_bytes = first.read_bytes()
+            assert len(first_bytes) > 12
+            assert re.fullmatch(r"[0-9]{{4}}_(?:[0-9]{{2}}_){{5}}[0-9]{{2,}}_rec[.]ovd", first.name)
+            physx.start_recording(destination)
+            physx.step_sync(1.0 / 60.0)
+            physx.stop_recording()
+            captures = list(directory.glob("*.ovd"))
+            assert len(captures) == 2
+            assert first.read_bytes() == first_bytes
+            assert all(path.stat().st_size > 12 for path in captures)
+            assert not (directory / "tmp.ovd").exists()
+        finally:
+            physx.destroy()
+    """)
 
 
 def test_explicit_recording_owner_and_reattach_stay_dormant():
@@ -256,8 +571,9 @@ def test_explicit_recording_owner_and_reattach_stay_dormant():
         assert {path.name for path in Path(output_dir).iterdir()} == {"owner.ovd", "peer.ovd"}
 
 
+@pytest.mark.parametrize("discovery", [False, True], ids=["recording", "discovery"])
 @pytest.mark.parametrize("step_before_start", [False, True], ids=["before-first-step", "after-first-step"])
-def test_tcp_streams_to_ready_listener(step_before_start, tmp_path):
+def test_tcp_streams_to_ready_listener(step_before_start, discovery, tmp_path):
     """Explicit TCP start emits payload before or after the first simulation step."""
     listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     listener.bind(("127.0.0.1", 0))
@@ -323,9 +639,11 @@ def test_tcp_streams_to_ready_listener(step_before_start, tmp_path):
             if {step_before_start!r}:
                 physx.step_sync(1.0 / 60.0)
             assert not physx.is_recording()
-            physx.start_recording(OmniPvdDestination.tcp("127.0.0.1", {port}, timeout_ms=3000))
+            destination = OmniPvdDestination.tcp("127.0.0.1", {port}, timeout_ms=3000)
+            physx.start_recording(destination, wait_for_selection={discovery!r})
             assert physx.is_recording()
             physx.step_sync(1.0 / 60.0)
+            assert physx.is_recording()
             physx.stop_recording()
             assert not physx.is_recording()
             physx.step_sync(1.0 / 60.0)
@@ -359,7 +677,7 @@ def test_tcp_streams_to_ready_listener(step_before_start, tmp_path):
 
 
 class TestOvdRecording:
-    """Exact-path output requires an explicit recording start."""
+    """FILE output requires an explicit recording start."""
 
     def test_ovd_file_produced_before_first_step(self, tmp_path):
         output = tmp_path / "capture.ovd"
@@ -372,28 +690,11 @@ class TestOvdRecording:
         _run_ovd_recording_subprocess(str(output), steps=1, start=False)
         assert not list(tmp_path.iterdir())
 
-    def test_ovd_missing_parent_fails_without_starting(self, tmp_path):
+    def test_ovd_exact_filename_creates_missing_parents_at_start(self, tmp_path):
         output = tmp_path / "missing" / "capture.ovd"
-        _run_ovphysx_subprocess(f"""
-            from ovphysx import GlobalConfigKey, OmniPvdDestination, PhysX, set_global_config
-            from test_utils import load_usd_with_ovstage
-            set_global_config(GlobalConfigKey.OVD_RECORDING_CAPABLE, True)
-            physx = PhysX()
-            try:
-                load_usd_with_ovstage(physx, {_USD_SCENE!r})
-                physx.wait_all()
-                try:
-                    physx.start_recording(OmniPvdDestination.file({str(output)!r}))
-                except RuntimeError:
-                    pass
-                else:
-                    raise AssertionError("missing parent directory unexpectedly accepted")
-                assert not physx.is_recording()
-                physx.step_sync(1.0 / 60.0)
-            finally:
-                physx.destroy()
-        """)
-        assert not output.exists()
+        _run_ovd_recording_subprocess(str(output), steps=1)
+        assert output.is_file() and output.stat().st_size > 12
+        assert list(output.parent.iterdir()) == [output]
 
 
 def test_retired_ovd_carbonite_overrides_rejected_without_freezing_capability():

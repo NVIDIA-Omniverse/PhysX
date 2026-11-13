@@ -332,6 +332,7 @@ void NpArticulationJointReducedCoordinate::setDriveTarget(PxArticulationAxis::En
 	if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
 	{
 		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationJointReducedCoordinate::setDriveTarget(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
+		return;
 	}
 
 	if (autowake && npScene)
@@ -360,6 +361,7 @@ void NpArticulationJointReducedCoordinate::setDriveVelocity(PxArticulationAxis::
 	if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
 	{
 		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationJointReducedCoordinate::setDriveVelocity(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
+		return;
 	}
 
 	if (autowake && npScene)
@@ -485,6 +487,7 @@ void NpArticulationJointReducedCoordinate::setJointPosition(PxArticulationAxis::
 	if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
 	{
 		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationJointReducedCoordinate::setJointPosition(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
+		return;
 	}
 
 	scSetJointPosition(axis, jointPos);
@@ -517,6 +520,7 @@ void NpArticulationJointReducedCoordinate::setJointVelocity(PxArticulationAxis::
 	if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
 	{
 		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationJointReducedCoordinate::setJointVelocity(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
+		return;
 	}
 
 	scSetJointVelocity(axis, jointVel);

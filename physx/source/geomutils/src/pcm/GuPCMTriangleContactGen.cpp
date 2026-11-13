@@ -161,6 +161,8 @@ static bool testPolyEdgeNormal(const TriangleV& triangle, const PxU8 triFlags, c
 
 	PxU32 nbTriangleAxes = 0;
 	Vec3V triangleAxes[3];
+	Vec3V toThirdVertex[3];
+	FloatV thirdVertexTolerance[3];
 	for(PxI8 kStart = 0, kEnd =2; kStart<3; kEnd = kStart++)
 	{
 		const bool active = (triFlags & (1 << (kEnd+3))) != 0;
@@ -169,6 +171,9 @@ static bool testPolyEdgeNormal(const TriangleV& triangle, const PxU8 triFlags, c
 		{
 			const Vec3V p00 = vertexSpaceTriangle.verts[kStart];
 			const Vec3V p01 = vertexSpaceTriangle.verts[kEnd];
+			//in the shape space, like n0 below
+			toThirdVertex[nbTriangleAxes] = V3Sub(triangle.verts[3 - kStart - kEnd], triangle.verts[kStart]);
+			thirdVertexTolerance[nbTriangleAxes] = FMul(FLoad(1e-4f), V3Length(toThirdVertex[nbTriangleAxes]));
 			triangleAxes[nbTriangleAxes++] = V3Sub(p01, p00);
 		}
 	}
@@ -218,14 +223,23 @@ static bool testPolyEdgeNormal(const TriangleV& triangle, const PxU8 triFlags, c
 					const FloatV tempOverlap0 = FSub(max0, min1);
 					const FloatV tempOverlap1 = FSub(max1, min0);
 
-					if(FAllGrtr(overlap, tempOverlap0))
+					// The axis is an edge-edge axis only if the triangle edge is the feature of the triangle that is
+					// closest to the convex along the axis. Otherwise another feature of the triangle sets the overlap
+					// along the axis, for example an inactive edge shared with a coplanar triangle, and the contact
+					// normal would point across that edge. The third vertex of the triangle must then not be closer
+					// to the convex than the edge.
+					const FloatV thirdVertexProj = V3Dot(n0, toThirdVertex[j]);
+
+					// The convex is on the positive side of the axis, the triangle on the negative side.
+					if(FAllGrtrOrEq(thirdVertexTolerance[j], thirdVertexProj) && FAllGrtr(overlap, tempOverlap0))
 					{
 						overlap = tempOverlap0;
 						minNormal = n0;
 						status = edgeStatus;
 					}
 
-					if(FAllGrtr(overlap, tempOverlap1))
+					// The convex is on the negative side of the axis, the triangle on the positive side.
+					if(FAllGrtrOrEq(thirdVertexProj, FNeg(thirdVertexTolerance[j])) && FAllGrtr(overlap, tempOverlap1))
 					{
 						overlap = tempOverlap1;
 						minNormal = V3Neg(n0);

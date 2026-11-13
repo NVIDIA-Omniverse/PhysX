@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-IO-CONTRACT-001
+// @covers AC-5
+
 #include <gtest/gtest.h>
 #include "ovphysx/ovphysx.h"
 #include "ovphysx/ovphysx_attributes.h"
@@ -26,9 +29,9 @@ void stepN(ovphysx_instance_handle_t handle, int n)
         ASSERT_EQ(ovphysx_step_sync(handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
 }
 
-ovx_string_or_token_t attrName(const char* name)
+ovx_token_or_string_t attrName(const char* name)
 {
-    ovx_string_or_token_t a{};
+    ovx_token_or_string_t a{};
     a.string.ptr = name;
     a.string.length = std::strlen(name);
     return a;
@@ -48,9 +51,9 @@ std::map<std::string, std::array<float, 3>> rigidPositions(ovphysx_instance_hand
         test_utils::complete_task(handle, ovphysx_release_query(handle, query));
         return out;
     }
-    const ovx_string_or_token_t name = attrName(OVPHYSX_ATTR_POSITION);
+    const ovx_token_or_string_t name = attrName(OVPHYSX_ATTR_POSITION);
     ovphysx_read_handle_t read = 0;
-    if (test_utils::complete_task(handle, ovphysx_read(handle, query, &name, 1, &read, nullptr)).status != OVPHYSX_API_SUCCESS)
+    if (test_utils::complete_task(handle, ovphysx_read(handle, query, &name, 1, ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr)).status != OVPHYSX_API_SUCCESS)
     {
         test_utils::complete_task(handle, ovphysx_release_query(handle, query));
         return out;
@@ -61,7 +64,7 @@ std::map<std::string, std::array<float, 3>> rigidPositions(ovphysx_instance_hand
         const ovphysx_result_t fetched = test_utils::complete_task(handle, ovphysx_fetch_read_next(handle, read, &group));
         if (fetched.status != OVPHYSX_API_SUCCESS || !group)
             break;
-        const DLTensor& tensor = group->data.tensors[0];
+        const DLTensor& tensor = group->columns[0].data.tensors[0];
         const ovx_primpath_t* paths = nullptr;
         size_t pathCount = 0;
         if (tensor.data && ovx_path_dictionary_get_paths(dict, group->prims.list, &paths, &pathCount) == OVX_OK)
@@ -96,7 +99,7 @@ std::map<std::string, std::array<float, 3>> rigidPositions(ovphysx_instance_hand
 
 bool commitMove(ovphysx_instance_handle_t handle, ovphysx_query_handle_t query, float x, float y, float z)
 {
-    const ovx_string_or_token_t name = attrName(OVPHYSX_ATTR_CCT_MOVE);
+    const ovx_token_or_string_t name = attrName(OVPHYSX_ATTR_CCT_MOVE);
     ovphysx_write_handle_t write = 0;
     ovphysx_write_result_t summary{};
     if (test_utils::complete_task(handle, ovphysx_write(handle, query, &name, 1, &write, &summary)).status != OVPHYSX_API_SUCCESS)
@@ -154,12 +157,12 @@ TEST_F(OutputReadTest, RigidBodyPositionAndOrientation)
     // The interned identifiers resolve through the attached Stage's own path dictionary.
     EXPECT_NE(attached_ovstage_dictionary(m_handle), nullptr);
 
-    const ovx_string_or_token_t names[] = {
+    const ovx_token_or_string_t names[] = {
         { 0, { OVPHYSX_ATTR_POSITION, sizeof(OVPHYSX_ATTR_POSITION) - 1 } },
         { 0, { OVPHYSX_ATTR_ORIENTATION, sizeof(OVPHYSX_ATTR_ORIENTATION) - 1 } },
     };
     ovphysx_read_handle_t read = 0;
-    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_read(m_handle, query, names, 2, &read, nullptr)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_read(m_handle, query, names, 2, ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr)).status, OVPHYSX_API_SUCCESS);
     ASSERT_NE(read, 0u);
 
     int groups = 0;
@@ -176,15 +179,36 @@ TEST_F(OutputReadTest, RigidBodyPositionAndOrientation)
         ASSERT_NE(gp, nullptr);
         const ovstage_read_group_t& g = *gp;
         ++groups;
-        EXPECT_NE(g.attribute, 0u);                 // interned attribute token
-        EXPECT_FALSE(g.is_array);
+        EXPECT_NE(g.columns[0].attribute.raw_id, 0u);                 // interned attribute token
+        EXPECT_FALSE(g.columns[0].is_array);
         EXPECT_GT(g.prims.count, 0u);
-        EXPECT_NE(g.prims.list, 0u);                // interned prim-list handle
-        ASSERT_GE(g.data.tensor_count, 1u);
-        ASSERT_NE(g.data.tensors, nullptr);
-        const DLTensor t = g.data.tensors[0];
+        EXPECT_NE(g.prims.list, OVX_INVALID_PRIMPATH_LIST);                // interned prim-list handle
+        ASSERT_GE(g.columns[0].data.tensor_count, 1u);
+        ASSERT_NE(g.columns[0].data.tensors, nullptr);
+        const DLTensor t = g.columns[0].data.tensors[0];
         ASSERT_NE(t.shape, nullptr);
         ASSERT_GE(t.ndim, 1);
+        // Check actual groups against independent fixed-layout expectations.
+        ovx_string_t attributeText{};
+        ASSERT_EQ(ovx_path_dictionary_token_to_string(attached_ovstage_dictionary(m_handle),
+                                                     g.columns[0].attribute, &attributeText), OVX_OK);
+        const std::string attribute(attributeText.ptr, attributeText.length);
+        EXPECT_EQ(t.dtype.code, kDLFloat);
+        EXPECT_EQ(t.dtype.bits, 32);
+        EXPECT_EQ(t.ndim, 1);
+        EXPECT_EQ(t.shape[0], g.prims.count);
+        EXPECT_EQ(t.device.device_type, kDLCPU);
+        if (attribute == OVPHYSX_ATTR_POSITION)
+        {
+            EXPECT_EQ(t.dtype.lanes, 3);
+            EXPECT_EQ(g.columns[0].semantic, OVSTAGE_SEMANTIC_POINT);
+        }
+        else
+        {
+            EXPECT_EQ(attribute, OVPHYSX_ATTR_ORIENTATION);
+            EXPECT_EQ(t.dtype.lanes, 4);
+            EXPECT_EQ(g.columns[0].semantic, OVSTAGE_SEMANTIC_QUATERNION);
+        }
         const int64_t rowsBeforeGroupRelease = t.shape[0];
         // A fixed column stacks all prims along shape[0]. The tuple width is
         // carried in dtype.lanes (vec3 / quat), not in a trailing shape dim.
@@ -349,13 +373,13 @@ TEST_F(OutputReadTest, ArticulationDofColumnDescriptor)
     ovx_path_dictionary_t* dict = attached_ovstage_dictionary(m_handle);
     ASSERT_NE(dict, nullptr);
 
-    const ovx_string_or_token_t names[] = {
+    const ovx_token_or_string_t names[] = {
         { 0, { OVPHYSX_ATTR_DOF_COUNT, sizeof(OVPHYSX_ATTR_DOF_COUNT) - 1 } },
         { 0, { OVPHYSX_ATTR_DOF_JOINT_PATH, sizeof(OVPHYSX_ATTR_DOF_JOINT_PATH) - 1 } },
         { 0, { OVPHYSX_ATTR_DOF_AXIS_INDEX, sizeof(OVPHYSX_ATTR_DOF_AXIS_INDEX) - 1 } },
     };
     ovphysx_read_handle_t read = 0;
-    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_read(m_handle, query, names, 3, &read, nullptr)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_read(m_handle, query, names, 3, ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr)).status, OVPHYSX_API_SUCCESS);
     ASSERT_NE(read, 0u);
 
     // Keep each group's whole [rows x lanes] block; dofCount (one per row) is each row's real length. The
@@ -381,16 +405,16 @@ TEST_F(OutputReadTest, ArticulationDofColumnDescriptor)
         ASSERT_EQ(r.status, OVPHYSX_API_SUCCESS);
         ASSERT_NE(gp, nullptr);
         const ovstage_read_group_t& g = *gp;
-        ASSERT_GE(g.data.tensor_count, 1u);
-        ASSERT_NE(g.data.tensors, nullptr);
-        const DLTensor t = g.data.tensors[0];
+        ASSERT_GE(g.columns[0].data.tensor_count, 1u);
+        ASSERT_NE(g.columns[0].data.tensors, nullptr);
+        const DLTensor t = g.columns[0].data.tensors[0];
         ASSERT_NE(t.data, nullptr);
         ASSERT_NE(t.shape, nullptr);
         const int64_t rows = t.shape[0];
         const uint16_t lanes = t.dtype.lanes;
 
         ovx_string_t attrName{};
-        ASSERT_EQ(ovx_path_dictionary_token_to_string(dict, g.attribute, &attrName), OVX_OK);
+        ASSERT_EQ(ovx_path_dictionary_token_to_string(dict, g.columns[0].attribute, &attrName), OVX_OK);
         const std::string name(attrName.ptr, attrName.length);
 
         if (name == OVPHYSX_ATTR_DOF_COUNT)
@@ -442,7 +466,7 @@ TEST_F(OutputReadTest, ArticulationDofColumnDescriptor)
             const size_t idx = static_cast<size_t>(row) * pathLanes + k;
             EXPECT_NE(pathVals[idx], 0ull) << "a real DOF must name its joint";
             ovx_string_t p{};
-            ASSERT_EQ(ovx_path_dictionary_path_to_string(dict, pathVals[idx], &p), OVX_OK);
+            ASSERT_EQ(ovx_path_dictionary_path_to_string(dict, ovx_primpath_t{pathVals[idx]}, &p), OVX_OK);
             ASSERT_NE(p.ptr, nullptr);
             const std::string jointPath(p.ptr, p.length);
             EXPECT_NE(jointPath.find("RevoluteJoint"), std::string::npos) << jointPath;
@@ -476,16 +500,18 @@ TEST_F(OutputReadTest, ArgumentValidation)
 
     // null out args on read / fetch
     ovphysx_read_handle_t read = 0;
-    const ovx_string_or_token_t names[] = {
+    const ovx_token_or_string_t names[] = {
         { 0, { OVPHYSX_ATTR_POSITION, sizeof(OVPHYSX_ATTR_POSITION) - 1 } },
     };
-    EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_read(m_handle, query, names, 1, nullptr, nullptr)).status, OVPHYSX_API_INVALID_ARGUMENT);
-    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_read(m_handle, query, names, 1, &read, nullptr)).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_read(m_handle, query, names, 1, ovstage_cuda_sync_t{ 0, 0 }, nullptr, nullptr)).status, OVPHYSX_API_INVALID_ARGUMENT);
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_read(m_handle, query, names, 1, ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr)).status, OVPHYSX_API_SUCCESS);
 
     EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_fetch_read_next(m_handle, read, nullptr)).status, OVPHYSX_API_INVALID_ARGUMENT);
 
     // release_group accepts an unknown id. release_read and release_query are idempotent.
-    EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_release_group(m_handle, read, 123456789ull)).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(test_utils::complete_task(m_handle,
+                                        ovphysx_release_group(m_handle, read,
+                                                              ovstage_read_group_id_t{ 123456789ull })).status, OVPHYSX_API_SUCCESS);
     EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_release_read(m_handle, read)).status, OVPHYSX_API_SUCCESS);
     EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_release_read(m_handle, read)).status, OVPHYSX_API_SUCCESS);
     EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_release_query(m_handle, query)).status, OVPHYSX_API_SUCCESS);
@@ -511,7 +537,7 @@ TEST_F(OutputReadTest, CharacterControllerSelectionMovesOneController)
     ovx_path_dictionary_t* dict = attached_ovstage_dictionary(m_handle);
     ASSERT_NE(dict, nullptr);
     const ovx_string_t controllerName = { "/World/Controller", sizeof("/World/Controller") - 1 };
-    ovx_primpath_t controller = 0;
+    ovx_primpath_t controller = OVX_INVALID_PRIMPATH;
     ASSERT_EQ(ovx_path_dictionary_intern_path(dict, controllerName, &controller), OVX_OK);
     EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_release_query(m_handle, discovery)).status, OVPHYSX_API_SUCCESS);
 

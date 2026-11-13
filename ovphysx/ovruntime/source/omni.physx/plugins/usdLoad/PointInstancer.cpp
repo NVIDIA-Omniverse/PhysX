@@ -32,6 +32,9 @@
 // @implements REQ-PARSE-INSTANCER-004
 // @covers AC-1 AC-2 AC-3
 
+// @implements REQ-PARSE-MIRROR-001
+// @covers AC-1 AC-3
+
 #include "PointInstancer.h"
 
 #include <atomic>
@@ -737,7 +740,7 @@ void parseRigidBodyInstancer(AttachedStage& attachedStage,
                 {
                     const ObjectKey shapeKey = shapesDescs[shapeIndex].first;
                     const PhysxShapeDesc& shapeDesc = *shapesDescs[shapeIndex].second;
-                    PhysxShapeDesc* scaledShapeDesc = scaleShapeDesc(shapeDesc, instanceScale);
+                    PhysxShapeDesc* scaledShapeDesc = scaleShapeDesc(attachedStage, shapeDesc, instanceScale);
                     if (scaledShapeDesc)
                     {
                         ObjectId shapeId = kInvalidObjectId;
@@ -869,7 +872,7 @@ void parseRigidBodyInstancer(AttachedStage& attachedStage,
             const ::physx::PxMat44d shapeWorldMatrix = instancerMatrix * instanceMatrix * localShapeMatrix;
             const ::physx::PxMat44d newLocalShapeMatrix = topBodyMatrixInverse * shapeWorldMatrix;
 
-            PhysxShapeDesc* scaledShapeDesc = scaleShapeDesc(*sourceShapeDesc, instanceScale);
+            PhysxShapeDesc* scaledShapeDesc = scaleShapeDesc(attachedStage, *sourceShapeDesc, instanceScale);
             if (!scaledShapeDesc)
                 continue; // Unsupported custom scale: skip this instance without dereferencing a null descriptor.
 

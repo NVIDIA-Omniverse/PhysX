@@ -28,6 +28,14 @@
  *
  * @implements REQ-CAPI-ASYNC-002
  * @covers AC-6
+ *
+ * @implements REQ-CAPI-ASYNC-003
+ * @covers AC-3
+ * @implements REQ-CAPI-TASK-001
+ * @covers AC-2 AC-3 AC-8
+ *
+ * @implements REQ-CAPI-OMNIPVD-LATE-001
+ * @covers AC-11
  */
 
 #include <gtest/gtest.h>
@@ -41,6 +49,7 @@
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
+#include <cstring>
 #include <mutex>
 #include <thread>
 
@@ -107,9 +116,10 @@ TEST(MultiInstance, MultipleSimultaneousInstances) {
     }
 }
 
-// Hold a real runtime entry on B, including callback context on its thread.
+// Hold shared-admitted per-owner execution on B, including callback context.
 // A must finish its entire output lifecycle before B is allowed to return.
-TEST(MultiInstance, OutputCompletesWhilePeerRuntimeCallbackIsBlocked)
+// Exclusive attachment transitions have a separate blocking contract below.
+TEST(MultiInstance, OutputCompletesWhilePeerSharedExecutionCallbackIsBlocked)
 {
     const char* scene = OVPHYSX_SOURCE_DIR "/tests/data/boxes_falling_on_groundplane.usda";
     ovphysx_instance_handle_t handles[2]{};
@@ -133,11 +143,63 @@ TEST(MultiInstance, OutputCompletesWhilePeerRuntimeCallbackIsBlocked)
         ASSERT_TRUE(attach_usd_with_ovstage(handles[i], scene));
         ASSERT_EQ(ovphysx_step_sync(handles[i], 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
     }
+    // Tombstone one peer body, but leave its update pending until the worker
+    // enters the real destruction callback. Clone and initial population do not
+    // emit object-change notifications; incremental updates do.
+    ovstage_instance_t* stage = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(ovstage_test_attachments_mutex());
+        stage = ovstage_test_attachments().at(handles[1]).back().stage;
+    }
+    const auto completeStage = [stage](ovstage_enqueue_result_t task) {
+        if (task.status != OVSTAGE_OK)
+            return false;
+        if (task.op_index == OVSTAGE_INVALID_OP_ID)
+            return true;
+        ovstage_op_wait_result_t result{};
+        const bool success = ovstage_wait_op(stage, task.op_index, OVSTAGE_TIMEOUT_INFINITE, &result) == OVSTAGE_OK &&
+                             result.error_op_id_count == 0;
+        return ovstage_release_op(stage, task.op_index) == OVSTAGE_OK && success;
+    };
+    ovx_path_dictionary_t* dictionary = ovstage_get_path_dictionary(stage);
+    const ovx_string_t path = {"/World/Cube1", sizeof("/World/Cube1") - 1};
+    ovx_primpath_list_t paths = OVX_INVALID_PRIMPATH_LIST;
+    ASSERT_EQ(ovx_path_dictionary_create_path_list_from_strings(dictionary, &path, 1, &paths), OVX_OK);
+    ovstage_query_handle_t removal = OVSTAGE_INVALID_QUERY_HANDLE;
+    const bool queried = ovstage_query_from_path_list(stage, paths, &removal) == OVSTAGE_OK;
+    const bool deleted = queried && completeStage(ovstage_delete_attributes(stage, removal, nullptr, 0, 2));
+    const bool released = !queried || completeStage(ovstage_release_query(stage, removal));
+    EXPECT_EQ(ovx_path_dictionary_destroy_path_list(dictionary, paths), OVX_OK);
+    ASSERT_TRUE(deleted && released);
+    ovstage_write_floor_desc_t floor{};
+    floor.ordinal = 2;
+    floor.scope = OVSTAGE_SCOPE_ALL;
+    ASSERT_TRUE(completeStage(ovstage_advance_write_floor(stage, &floor)));
+
     const ovphysx_instance_handle_t owner = handles[0];
-    const ovx_string_or_token_t mass{0, {OVPHYSX_ATTR_MASS, sizeof(OVPHYSX_ATTR_MASS) - 1}};
+    const ovx_token_or_string_t mass{0, {OVPHYSX_ATTR_MASS, sizeof(OVPHYSX_ATTR_MASS) - 1}};
     ovphysx_query_handle_t query = 0;
     ASSERT_TRUE(waitForTaskSuccess(owner,
         ovphysx_query(owner, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &query, nullptr)));
+
+    // These operations are already complete; collection must not enter the runtime.
+    const ovphysx_enqueue_result_t completed = ovphysx_release_query(owner, 0);
+    ASSERT_EQ(completed.status, OVPHYSX_API_SUCCESS);
+    const ovphysx_enqueue_result_t completedForAll = ovphysx_release_query(owner, 0);
+    ASSERT_EQ(completedForAll.status, OVPHYSX_API_SUCCESS);
+
+    // Establish completion without collecting either outcome. Forced-queue mode
+    // may return from submission before these otherwise trivial jobs finish.
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(3);
+    ovphysx_task_status_t completedStatus = OVPHYSX_TASK_STATUS_PENDING;
+    while (completedStatus == OVPHYSX_TASK_STATUS_PENDING || completedStatus == OVPHYSX_TASK_STATUS_RUNNING)
+    {
+        ASSERT_EQ(ovphysx_query_task_status(owner, completedForAll, &completedStatus).status,
+                  OVPHYSX_API_SUCCESS);
+        ASSERT_LT(std::chrono::steady_clock::now(), deadline);
+        std::this_thread::yield();
+    }
+    ASSERT_EQ(completedStatus, OVPHYSX_TASK_STATUS_SUCCEEDED);
 
     struct Gate
     {
@@ -147,6 +209,171 @@ TEST(MultiInstance, OutputCompletesWhilePeerRuntimeCallbackIsBlocked)
         bool entered = false;
         bool open = false;
         bool timedOut = false;
+        ovphysx_api_status_t reentry = OVPHYSX_API_SUCCESS;
+    } gate;
+    gate.peer = owner;
+    ovphysx_object_change_callbacks_t callbacks{};
+    callbacks.user_data = &gate;
+    callbacks.on_object_destroyed = [](ovphysx_string_t path, ovphysx_physx_type_t type, void* data) {
+        // Shape notifications or another prim cannot satisfy the gate.
+        if (type != OVPHYSX_PHYSX_TYPE_ACTOR || path.length != sizeof("/World/Cube1") - 1 ||
+            !path.ptr || std::memcmp(path.ptr, "/World/Cube1", path.length) != 0)
+            return;
+        Gate& state = *static_cast<Gate*>(data);
+        std::unique_lock<std::mutex> lock(state.mutex);
+        if (state.entered)
+            return;
+        state.reentry = ovphysx_release_query(state.peer, 0).status;
+        state.entered = true;
+        state.condition.notify_all();
+        state.timedOut = !state.condition.wait_for(lock, std::chrono::seconds(15), [&] { return state.open; });
+    };
+    ovphysx_subscription_id_t subscription = 0;
+    ASSERT_EQ(ovphysx_subscribe_object_changes(handles[1], &callbacks, &subscription).status,
+              OVPHYSX_API_SUCCESS);
+    struct Unsubscribe
+    {
+        ovphysx_instance_handle_t owner;
+        ovphysx_subscription_id_t subscription;
+        ~Unsubscribe() { ovphysx_unsubscribe_object_changes(owner, subscription); }
+    } unsubscribe{handles[1], subscription};
+    ovphysx_api_status_t updated = OVPHYSX_API_ERROR;
+    std::thread worker([&] {
+        ovstage_ordinal_range_t range{};
+        range.end_ordinal = 2;
+        updated = complete_task(handles[1], ovphysx_update_from_ovstage(handles[1], range)).status;
+    });
+    struct Join
+    {
+        Gate& gate;
+        std::thread& worker;
+        ~Join()
+        {
+            {
+                std::lock_guard<std::mutex> lock(gate.mutex);
+                gate.open = true;
+            }
+            gate.condition.notify_all();
+            worker.join();
+        }
+    };
+    {
+        Join join{gate, worker};
+        {
+            std::unique_lock<std::mutex> lock(gate.mutex);
+            ASSERT_TRUE(gate.condition.wait_for(lock, std::chrono::seconds(15), [&] { return gate.entered; }))
+                << "Expected /World/Cube1 ACTOR destruction during the incremental update";
+        }
+        EXPECT_EQ(gate.reentry, OVPHYSX_API_INVALID_STATE);
+        EXPECT_TRUE(waitForTaskSuccess(owner, completed, OVPHYSX_TIMEOUT_POLL));
+        ovphysx_wait_task_result_t completedOutput{};
+        EXPECT_EQ(ovphysx_wait_all(owner, OVPHYSX_TIMEOUT_POLL, &completedOutput).status,
+                  OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(completedOutput.num_errors, 0u);
+        EXPECT_EQ(completedOutput.pending_task.op_index, 0u);
+        ovphysx_destroy_wait_task_result(&completedOutput);
+        EXPECT_EQ(ovphysx_wait_task(owner, completedForAll, OVPHYSX_TIMEOUT_POLL,
+                                   &completedOutput).status, OVPHYSX_API_NOT_FOUND);
+        ovphysx_destroy_wait_task_result(&completedOutput);
+        bool valid = false;
+        EXPECT_EQ(ovphysx_internal_is_query_valid(owner, query, &valid).status, OVPHYSX_API_SUCCESS);
+        EXPECT_TRUE(valid);
+        // A fresh query exercises the entry used by read_sync/write_sync.
+        ovphysx_query_handle_t fresh = 0;
+        EXPECT_TRUE(waitForTaskSuccess(owner,
+            ovphysx_query(owner, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &fresh, nullptr)));
+        EXPECT_TRUE(waitForTaskSuccess(owner, ovphysx_release_query(owner, fresh)));
+        ovphysx_write_handle_t write = 0;
+        ASSERT_TRUE(waitForTaskSuccess(owner, ovphysx_write(owner, query, &mass, 1, &write, nullptr)));
+        ovphysx_fetched_write_group_t fetched{};
+        ASSERT_TRUE(waitForTaskSuccess(owner, ovphysx_fetch_write_next(owner, write, &fetched)));
+        ASSERT_NE(fetched.group, nullptr);
+        ASSERT_EQ(fetched.group->data.tensor_count, 1u);
+        const DLTensor& tensor = fetched.group->data.tensors[0];
+        ASSERT_EQ(tensor.device.device_type, kDLCPU);
+        ASSERT_EQ(tensor.dtype.bits, 32);
+        ASSERT_GT(tensor.shape[0], 0);
+        for (int64_t i = 0; i < tensor.shape[0]; ++i)
+            static_cast<float*>(tensor.data)[i] = 7.0f;
+        EXPECT_TRUE(waitForTaskSuccess(owner, ovphysx_commit_group(owner, write, fetched.group, {})));
+        EXPECT_TRUE(waitForTaskSuccess(owner, ovphysx_release_write(owner, write)));
+        ovphysx_read_handle_t read = 0;
+        ASSERT_TRUE(waitForTaskSuccess(owner, ovphysx_read(owner, query, &mass, 1,
+                                                           ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr)));
+        const ovstage_read_group_t* group = nullptr;
+        ASSERT_TRUE(waitForTaskSuccess(owner, ovphysx_fetch_read_next(owner, read, &group)));
+        ASSERT_NE(group, nullptr);
+        ASSERT_EQ(group->columns[0].data.tensor_count, 1u);
+        const DLTensor& values = group->columns[0].data.tensors[0];
+        ASSERT_GT(values.shape[0], 0);
+        for (int64_t i = 0; i < values.shape[0]; ++i)
+            EXPECT_FLOAT_EQ(static_cast<const float*>(values.data)[i], 7.0f);
+        EXPECT_TRUE(waitForTaskSuccess(owner, ovphysx_release_group(owner, read, group->read_group_id)));
+        EXPECT_TRUE(waitForTaskSuccess(owner, ovphysx_release_read(owner, read)));
+        EXPECT_TRUE(waitForTaskSuccess(owner, ovphysx_release_query(owner, query)));
+    }
+    EXPECT_FALSE(gate.timedOut) << "A must finish before B leaves its runtime callback";
+    EXPECT_EQ(updated, OVPHYSX_API_SUCCESS);
+}
+
+// A blocked peer detach leaves another owner's completed receipts and query
+// validity available under the current per-instance execution model.
+TEST(MultiInstance, CompletedReceiptsAndQueryValidityProgressWhilePeerDetachIsBlocked)
+{
+    ovphysx_instance_handle_t handles[2]{};
+    struct Cleanup
+    {
+        ovphysx_instance_handle_t* handles;
+        ~Cleanup()
+        {
+            for (int i = 0; i < 2; ++i)
+                if (handles[i])
+                {
+                    complete_task(handles[i], ovphysx_detach_ovstage(handles[i]));
+                    destroy_ovstage_test_stages(handles[i]);
+                    ovphysx_destroy_instance(handles[i]);
+                }
+        }
+    } cleanup{handles};
+    for (int i = 0; i < 2; ++i)
+    {
+        ASSERT_EQ(ovphysx_create_instance(&handles[i]).status, OVPHYSX_API_SUCCESS);
+        ASSERT_TRUE(attach_usd_with_ovstage(handles[i],
+            OVPHYSX_SOURCE_DIR "/tests/data/boxes_falling_on_groundplane.usda"));
+        ASSERT_EQ(ovphysx_step_sync(handles[i], 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
+    }
+    const ovphysx_instance_handle_t owner = handles[0];
+    ovphysx_query_handle_t query = 0;
+    ASSERT_TRUE(waitForTaskSuccess(owner,
+        ovphysx_query(owner, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &query, nullptr)));
+    const ovphysx_enqueue_result_t completed = ovphysx_release_query(owner, 0);
+    ASSERT_EQ(completed.status, OVPHYSX_API_SUCCESS);
+    const ovphysx_enqueue_result_t completedForAll = ovphysx_release_query(owner, 0);
+    ASSERT_EQ(completedForAll.status, OVPHYSX_API_SUCCESS);
+
+    // FIFO completion of the second task establishes that both outcomes are
+    // ready, without collecting them before the peer callback is blocked.
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(3);
+    ovphysx_task_status_t completedStatus = OVPHYSX_TASK_STATUS_PENDING;
+    while (completedStatus == OVPHYSX_TASK_STATUS_PENDING || completedStatus == OVPHYSX_TASK_STATUS_RUNNING)
+    {
+        ASSERT_EQ(ovphysx_query_task_status(owner, completedForAll, &completedStatus).status,
+                  OVPHYSX_API_SUCCESS);
+        ASSERT_LT(std::chrono::steady_clock::now(), deadline);
+        std::this_thread::yield();
+    }
+    ASSERT_EQ(completedStatus, OVPHYSX_TASK_STATUS_SUCCEEDED);
+
+    struct Gate
+    {
+        std::mutex mutex;
+        std::condition_variable condition;
+        ovphysx_instance_handle_t peer;
+        bool entered = false;
+        bool open = false;
+        bool timedOut = false;
+        bool nativeStarted = false;
+        bool nativeFinished = false;
         ovphysx_api_status_t reentry = OVPHYSX_API_SUCCESS;
     } gate;
     gate.peer = owner;
@@ -169,14 +396,18 @@ TEST(MultiInstance, OutputCompletesWhilePeerRuntimeCallbackIsBlocked)
         ovphysx_subscription_id_t subscription;
         ~Unsubscribe() { ovphysx_unsubscribe_object_changes(owner, subscription); }
     } unsubscribe{handles[1], subscription};
-    ovphysx_api_status_t retired = OVPHYSX_API_ERROR;
+    ovphysx_api_status_t detached = OVPHYSX_API_ERROR;
+    ovphysx_api_status_t nativeStatus = OVPHYSX_API_ERROR;
+    bool valid = false;
+    std::thread output;
     std::thread worker([&] {
-        retired = complete_task(handles[1], ovphysx_detach_ovstage(handles[1])).status;
+        detached = complete_task(handles[1], ovphysx_detach_ovstage(handles[1])).status;
     });
     struct Join
     {
         Gate& gate;
         std::thread& worker;
+        std::thread& output;
         ~Join()
         {
             {
@@ -185,51 +416,53 @@ TEST(MultiInstance, OutputCompletesWhilePeerRuntimeCallbackIsBlocked)
             }
             gate.condition.notify_all();
             worker.join();
+            if (output.joinable())
+                output.join();
         }
     };
     {
-        Join join{gate, worker};
+        Join join{gate, worker, output};
         {
             std::unique_lock<std::mutex> lock(gate.mutex);
             ASSERT_TRUE(gate.condition.wait_for(lock, std::chrono::seconds(15), [&] { return gate.entered; }));
         }
         EXPECT_EQ(gate.reentry, OVPHYSX_API_INVALID_STATE);
-        bool valid = false;
-        EXPECT_EQ(ovphysx_internal_is_query_valid(owner, query, &valid).status, OVPHYSX_API_SUCCESS);
-        EXPECT_TRUE(valid);
-        // A fresh query exercises the entry used by read_sync/write_sync.
-        ovphysx_query_handle_t fresh = 0;
-        EXPECT_TRUE(waitForTaskSuccess(owner,
-            ovphysx_query(owner, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &fresh, nullptr)));
-        EXPECT_TRUE(waitForTaskSuccess(owner, ovphysx_release_query(owner, fresh)));
-        ovphysx_write_handle_t write = 0;
-        ASSERT_TRUE(waitForTaskSuccess(owner, ovphysx_write(owner, query, &mass, 1, &write, nullptr)));
-        ovphysx_fetched_write_group_t fetched{};
-        ASSERT_TRUE(waitForTaskSuccess(owner, ovphysx_fetch_write_next(owner, write, &fetched)));
-        ASSERT_NE(fetched.group, nullptr);
-        ASSERT_EQ(fetched.group->data.tensor_count, 1u);
-        const DLTensor& tensor = fetched.group->data.tensors[0];
-        ASSERT_EQ(tensor.device.device_type, kDLCPU);
-        ASSERT_EQ(tensor.dtype.bits, 32);
-        for (int64_t i = 0; i < tensor.shape[0]; ++i)
-            static_cast<float*>(tensor.data)[i] = 7.0f;
-        EXPECT_TRUE(waitForTaskSuccess(owner, ovphysx_commit_group(owner, write, fetched.group, {})));
-        EXPECT_TRUE(waitForTaskSuccess(owner, ovphysx_release_write(owner, write)));
-        ovphysx_read_handle_t read = 0;
-        ASSERT_TRUE(waitForTaskSuccess(owner, ovphysx_read(owner, query, &mass, 1, &read, nullptr)));
-        const ovstage_read_group_t* group = nullptr;
-        ASSERT_TRUE(waitForTaskSuccess(owner, ovphysx_fetch_read_next(owner, read, &group)));
-        ASSERT_NE(group, nullptr);
-        ASSERT_EQ(group->data.tensor_count, 1u);
-        const DLTensor& values = group->data.tensors[0];
-        for (int64_t i = 0; i < values.shape[0]; ++i)
-            EXPECT_FLOAT_EQ(static_cast<const float*>(values.data)[i], 7.0f);
-        EXPECT_TRUE(waitForTaskSuccess(owner, ovphysx_release_group(owner, read, group->read_group_id)));
-        EXPECT_TRUE(waitForTaskSuccess(owner, ovphysx_release_read(owner, read)));
-        EXPECT_TRUE(waitForTaskSuccess(owner, ovphysx_release_query(owner, query)));
+        EXPECT_TRUE(waitForTaskSuccess(owner, completed, OVPHYSX_TIMEOUT_POLL));
+        ovphysx_wait_task_result_t completedOutput{};
+        EXPECT_EQ(ovphysx_wait_all(owner, OVPHYSX_TIMEOUT_POLL, &completedOutput).status,
+                  OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(completedOutput.num_errors, 0u);
+        EXPECT_EQ(completedOutput.pending_task.op_index, 0u);
+        ovphysx_destroy_wait_task_result(&completedOutput);
+        EXPECT_EQ(ovphysx_wait_task(owner, completedForAll, OVPHYSX_TIMEOUT_POLL,
+                                   &completedOutput).status, OVPHYSX_API_NOT_FOUND);
+        ovphysx_destroy_wait_task_result(&completedOutput);
+        EXPECT_TRUE(waitForTaskSuccess(owner, ovphysx_release_query(owner, 0), 3'000'000'000ULL));
+
+        // Finish all owner metadata calls before starting its native query;
+        // the public contract still requires same-handle serialization.
+        output = std::thread([&] {
+            {
+                std::lock_guard<std::mutex> lock(gate.mutex);
+                gate.nativeStarted = true;
+            }
+            gate.condition.notify_all();
+            nativeStatus = ovphysx_internal_is_query_valid(owner, query, &valid).status;
+            {
+                std::lock_guard<std::mutex> lock(gate.mutex);
+                gate.nativeFinished = true;
+            }
+            gate.condition.notify_all();
+        });
+        std::unique_lock<std::mutex> lock(gate.mutex);
+        ASSERT_TRUE(gate.condition.wait_for(lock, std::chrono::seconds(15), [&] { return gate.nativeStarted; }));
+        EXPECT_TRUE(gate.condition.wait_for(lock, std::chrono::seconds(3), [&] { return gate.nativeFinished; }));
     }
-    EXPECT_FALSE(gate.timedOut) << "A must finish before B leaves its runtime callback";
-    EXPECT_EQ(retired, OVPHYSX_API_SUCCESS);
+    EXPECT_FALSE(gate.timedOut) << "Metadata must finish before the peer detach callback returns";
+    EXPECT_EQ(detached, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(nativeStatus, OVPHYSX_API_SUCCESS);
+    EXPECT_TRUE(valid);
+    EXPECT_TRUE(waitForTaskSuccess(owner, ovphysx_release_query(owner, query)));
 }
 
 // Exercise the real log dispatcher without needing a CUDA failure or holding
@@ -243,7 +476,7 @@ TEST_F(PhysXTestFixture, OutputReentryFromLogCallbackIsRejected)
     {
         ovphysx_instance_handle_t handle;
         ovphysx_query_handle_t query = 0;
-        const ovx_string_or_token_t mass{0, {OVPHYSX_ATTR_MASS, sizeof(OVPHYSX_ATTR_MASS) - 1}};
+        const ovx_token_or_string_t mass{0, {OVPHYSX_ATTR_MASS, sizeof(OVPHYSX_ATTR_MASS) - 1}};
         bool called = false;
         bool nestedValid = true;
         ovphysx_result_t nestedMetadata{OVPHYSX_API_SUCCESS};
@@ -274,7 +507,7 @@ TEST_F(PhysXTestFixture, OutputReentryFromLogCallbackIsRejected)
     // the logger's callback-serialization mutex is held by this thread.
     ovphysx_read_handle_t warmup = 0;
     ASSERT_TRUE(waitForTaskSuccess(m_handle,
-        ovphysx_read(m_handle, state.query, &state.mass, 1, &warmup, nullptr)));
+        ovphysx_read(m_handle, state.query, &state.mass, 1, ovstage_cuda_sync_t{ 0, 0 }, &warmup, nullptr)));
     ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_read(m_handle, warmup)));
     ASSERT_EQ(ovphysx_set_log_callback(OVPHYSX_LOG_WARNING, nullptr,
         [](ovphysx_log_level_t, ovphysx_string_t, ovphysx_string_t, double, void* data) {
@@ -283,7 +516,8 @@ TEST_F(PhysXTestFixture, OutputReentryFromLogCallbackIsRejected)
                 return;
             state.called = true;
             state.nestedMetadata = ovphysx_internal_is_query_valid(state.handle, state.query, &state.nestedValid);
-            state.nestedReceipt = ovphysx_read(state.handle, state.query, &state.mass, 1, &state.nestedRead, nullptr);
+            state.nestedReceipt = ovphysx_read(state.handle, state.query, &state.mass, 1,
+                                               ovstage_cuda_sync_t{ 0, 0 }, &state.nestedRead, nullptr);
 
             // The same idle attachment remains usable from a different client
             // thread while this callback is still active. No global barrier.
@@ -291,7 +525,8 @@ TEST_F(PhysXTestFixture, OutputReentryFromLogCallbackIsRejected)
                 state.otherMetadata = ovphysx_internal_is_query_valid(state.handle, state.query, &state.otherValid);
                 ovphysx_read_handle_t read = 0;
                 state.otherRead = complete_task(state.handle,
-                    ovphysx_read(state.handle, state.query, &state.mass, 1, &read, nullptr));
+                    ovphysx_read(state.handle, state.query, &state.mass, 1,
+                                 ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr));
                 if (read)
                     complete_task(state.handle, ovphysx_release_read(state.handle, read));
             });
@@ -311,14 +546,16 @@ TEST_F(PhysXTestFixture, OutputReentryFromLogCallbackIsRejected)
 }
 
 // Regression (NVBugs 6433668): a second, stage-less handle's async
-// ovphysx_step() must be rejected rather than silently advancing whatever
-// stage another handle has attached. IPhysxSimulation is a process-wide
-// singleton (CarboniteLoader::loadPhysxPlugins()), so without the rejection a
+// ovphysx_step() must fail rather than silently advancing whatever stage another
+// handle has attached. IPhysxSimulation is a process-wide singleton
+// (CarboniteLoader::loadPhysxPlugins()), so without the attachment check a
 // stage-less handle B's ovphysx_step() falls through ensure_physics_attached()'s
 // "no stage -> trivial success" branch straight into physxSim->simulate(). That
 // steps handle A's stage while marking only B's own first_step_done, which lets
 // clone() on A's real stage pass its after-step guard although A has been
-// stepped through B.
+// stepped through B. An attach submitted before a step may still be queued, so
+// the step checks the attachment when it runs: B's step is accepted and its task
+// fails without simulating.
 TEST(MultiInstance, StagelessHandleAsyncStepRejectedDoesNotAdvanceOtherHandleStage) {
     const char* usd_path = OVPHYSX_SOURCE_DIR "/tests/data/basic_simulation.usda";
 
@@ -331,13 +568,15 @@ TEST(MultiInstance, StagelessHandleAsyncStepRejectedDoesNotAdvanceOtherHandleSta
     ovphysx_instance_handle_t handle_b = 0;
     ASSERT_EQ(ovphysx_create_instance(&handle_b).status, OVPHYSX_API_SUCCESS);
 
-    // B's async step() must be rejected outright. It must never reach
-    // physxSim->simulate() and silently advance A's stage.
+    // B's async step() fails its task. It must never reach physxSim->simulate()
+    // and silently advance A's stage.
     ovphysx_enqueue_result_t step_b = ovphysx_step(handle_b, 1.0f / 60.0f);
-    EXPECT_NE(step_b.status, OVPHYSX_API_SUCCESS)
-        << "Stage-less handle B's async step() should be rejected, not silently advance A's stage";
+    ASSERT_EQ(step_b.status, OVPHYSX_API_SUCCESS) << "the attachment check belongs to the step job";
+    EXPECT_EQ(step_b.instance, handle_b);
+    EXPECT_TRUE(waitForTaskFailure(handle_b, step_b, "No stage attached"))
+        << "Stage-less handle B's async step() should fail, not silently advance A's stage";
 
-    // A's stage was never touched by B's rejected call, so A must still accept
+    // A's stage was never touched by B's failed step, so A must still accept
     // clone(). It would be rejected if A's first_step_done/warmup_done had been
     // flipped by B's step.
     ovphysx_string_t target1 = ovphysx_cstr("/World/envs/env1");
@@ -349,7 +588,7 @@ TEST(MultiInstance, StagelessHandleAsyncStepRejectedDoesNotAdvanceOtherHandleSta
         EXPECT_TRUE(waitForTaskSuccess(handle_a, clone_res, 5'000'000'000ULL));
     }
 
-    // Step A for real, then clone() on A is rejected in all modes. The guard
+    // Step A for real, then clone() on A fails its task in all modes. The guard
     // enforces the same ordering contract on CPU and GPU.
     ovphysx_enqueue_result_t step_a = ovphysx_step(handle_a, 1.0f / 60.0f);
     ASSERT_EQ(step_a.status, OVPHYSX_API_SUCCESS);
@@ -358,7 +597,8 @@ TEST(MultiInstance, StagelessHandleAsyncStepRejectedDoesNotAdvanceOtherHandleSta
     ovphysx_string_t target2 = ovphysx_cstr("/World/envs/env2");
     ovphysx_enqueue_result_t clone_res2 = ovphysx_clone(
         handle_a, ovphysx_cstr("/World/envs/env0"), &target2, 1, nullptr, nullptr);
-    EXPECT_EQ(clone_res2.status, OVPHYSX_API_INVALID_ARGUMENT)
+    ASSERT_EQ(clone_res2.status, OVPHYSX_API_SUCCESS) << "the after-step check runs in the clone job";
+    EXPECT_TRUE(waitForTaskFailure(handle_a, clone_res2, "clone() must be called before warmup() and the first step()"))
         << "clone() after step() must be rejected in all modes";
 
     ovphysx_destroy_instance(handle_a);
@@ -760,12 +1000,14 @@ TEST(MultiInstance, ForeignQueryRejectedOnPeerInstance)
     EXPECT_FALSE(valid);
 
     // A session over the query is refused on the peer and still opens on the owner.
-    const ovx_string_or_token_t position = { 0, { OVPHYSX_ATTR_POSITION, sizeof(OVPHYSX_ATTR_POSITION) - 1 } };
+    const ovx_token_or_string_t position = { 0, { OVPHYSX_ATTR_POSITION, sizeof(OVPHYSX_ATTR_POSITION) - 1 } };
     ovphysx_read_handle_t foreign_read = 0;
-    EXPECT_EQ(ovphysx_read(handle_b, query, &position, 1, &foreign_read, nullptr).status, OVPHYSX_API_NOT_FOUND);
+    EXPECT_EQ(ovphysx_read(handle_b, query, &position, 1,
+                           ovstage_cuda_sync_t{ 0, 0 }, &foreign_read, nullptr).status, OVPHYSX_API_NOT_FOUND);
     EXPECT_EQ(foreign_read, 0u);
     ovphysx_read_handle_t owner_read = 0;
-    const ovphysx_enqueue_result_t owner_read_task = ovphysx_read(handle_a, query, &position, 1, &owner_read, nullptr);
+    const ovphysx_enqueue_result_t owner_read_task = ovphysx_read(handle_a, query, &position, 1,
+                                                                  ovstage_cuda_sync_t{ 0, 0 }, &owner_read, nullptr);
     ASSERT_EQ(owner_read_task.status, OVPHYSX_API_SUCCESS);
     EXPECT_TRUE(waitForTaskSuccess(handle_a, owner_read_task));
     const ovphysx_enqueue_result_t release_read = ovphysx_release_read(handle_a, owner_read);
@@ -831,7 +1073,7 @@ TEST(MultiInstance, TaskErrorIsolatedPerInstance)
 
     ovphysx_wait_task_result_t wait_result{};
     const ovphysx_result_t wait_status =
-        ovphysx_wait_task(handle_a, task, 1'000'000'000ULL, &wait_result);
+        ovphysx_wait_task(handle_a, task, OVPHYSX_TIMEOUT_INFINITE, &wait_result);
     EXPECT_EQ(wait_status.status, OVPHYSX_API_ERROR);
     if (wait_result.num_errors >= 1u)
     {

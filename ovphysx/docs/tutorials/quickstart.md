@@ -29,9 +29,9 @@ For both Python and C:
   driver compatible with CUDA 12.8; use NVIDIA's
   [CUDA 12.8 corresponding-driver table](https://docs.nvidia.com/cuda/archive/12.8.0/cuda-toolkit-release-notes/index.html#id6)
   for x86_64. On Linux aarch64, use the platform's CUDA 12.8-compatible driver.
-  The CUDA Toolkit is needed only to build GPU support from source; refer to
-  [Local Development](../local_development.md). CPU-only simulation needs
-  neither an NVIDIA driver nor the CUDA Toolkit.
+  Source builds on Linux and Windows fetch the toolkit automatically through
+  Packman; see [Local Development](../local_development.md). Running CPU-only simulation
+  needs neither an NVIDIA driver nor the CUDA Toolkit.
 
 ## Quick Start by Language
 
@@ -53,6 +53,7 @@ and drop the `newton_schema_root()` entry.
 from pathlib import Path
 
 import ovstage
+from ovphysx.population import physics_population_descs
 import ovphysx
 from ovphysx.samples.python_samples.schema_support import physx_schema_paths
 from ovphysx import PhysX
@@ -71,8 +72,12 @@ ovstage.population.register_usd_schemas(
     [*[str(p) for p in physx_schema_paths()], str(ovphysx.newton_schema_root())]
 )
 stage = ovstage.Stage("scene")
-ovstage.population.open_usd(
-    stage, str(usd_path), ordinal=1, domains=ovstage.PopulationDomain.ALL
+ovstage.population.open_usd_with_desc(
+    stage,
+    str(usd_path),
+    ordinal=1,
+    time=ovstage.population.DEFAULT_TIME,
+    descs=physics_population_descs(rendering=True),
 )
 # attach_ovstage() reads at a sealed ordinal.
 stage.advance_write_floor(ordinal=1).wait()
@@ -85,11 +90,12 @@ physx.destroy()
 stage.destroy()
 ```
 
-`domains` is an OR-combinable bitmask whose ovstage default (`RENDERING`) omits
-physics. For arbitrary USD prefer `ALL` (equivalently `PHYSICS | RENDERING`);
-`PHYSICS` alone is only safe when the content is known not to put physics under
-native scene-graph instances — refer to
-[Population domains](../ovstage_integration.md#population-domains).
+OVStage populates physics only through ovphysx's physics population description;
+its plain `open_usd()` populates `RENDERING` alone. For arbitrary USD populate the
+description with RENDERING beside it, as above; the description alone
+(`physics_population_descs()`) is only safe when the content is known not to put
+physics under native scene-graph instances — refer to
+[Populating physics](../ovstage_integration.md#populating-physics-the-physics-population-description).
 
 ### C/C++
 

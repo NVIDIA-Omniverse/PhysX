@@ -49,7 +49,7 @@ broadphase.
 - ovphysx/include/ovphysx/ovphysx.h
 - ovphysx/docs/tutorials/cloning.md
 - ovphysx/docs/developer_guide.md
-- ovphysx/skills/clone-environments/SKILL.md
+- ovphysx/skills/ovphysx-clone-environments/SKILL.md
 
 ## Dependencies
 

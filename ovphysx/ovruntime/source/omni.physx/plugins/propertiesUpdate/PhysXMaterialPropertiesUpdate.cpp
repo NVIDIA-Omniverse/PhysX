@@ -243,7 +243,7 @@ bool omni::physx::updateCompliantMaterial(AttachedStage& attachedStage, omni::ph
             if (source)
                 tok.intern(*source);
 
-            if (property == tok.compliantContactStiffness)
+            if (property == tok.physxMaterialCompliantContactStiffness)
             {
                 float data;
                 if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
@@ -257,11 +257,11 @@ bool omni::physx::updateCompliantMaterial(AttachedStage& attachedStage, omni::ph
                 {
                     // disable compliance and restore restitution from USD:
                     float restitution = 0.0f;
-                    getValue<float>(attachedStage, objectRecord->mKey, tok.restitution, timeCode, restitution);
+                    getValue<float>(attachedStage, objectRecord->mKey, tok.physicsRestitution, timeCode, restitution);
                     material->setRestitution(restitution);
                 }
             }
-            else if (property == tok.compliantContactDamping)
+            else if (property == tok.physxMaterialCompliantContactDamping)
             {
                 float data;
                 if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
@@ -276,7 +276,7 @@ bool omni::physx::updateCompliantMaterial(AttachedStage& attachedStage, omni::ph
                 }
                 material->setDamping(data);
             }
-            else if (property == tok.compliantContactAccelerationSpring)
+            else if (property == tok.physxMaterialCompliantContactAccelerationSpring)
             {
                 bool data;
                 if (!getValue<bool>(attachedStage, objectRecord->mKey, property, timeCode, data))

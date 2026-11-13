@@ -4,7 +4,7 @@
 // @implements REQ-COMP-INTERACTION-001
 // @covers AC-2 AC-3 AC-4 AC-5 AC-6
 // @implements REQ-CAPI-COMPANION-001
-// @covers AC-1 AC-4
+// @covers AC-1 AC-3 AC-4
 #include "ovphysx_companion/interaction.h"
 #include "internal/sdk/CompanionRuntime.hpp"
 #include "CarboniteLoader/CarboniteLoader.hpp"
@@ -36,9 +36,10 @@ struct Session
     CompanionServiceLease lease{companionRuntime()};
     std::shared_ptr<ovphysx::CarboniteLoader> runtime;
     std::shared_ptr<Drag> drag;
+    uint64_t attachment=0;
     std::mutex mutex;
     bool closed=false;
-    explicit Session(std::shared_ptr<ovphysx::CarboniteLoader> r):runtime(std::move(r)){}
+    Session(std::shared_ptr<ovphysx::CarboniteLoader> r,uint64_t a):runtime(std::move(r)),attachment(a){}
     ~Session(){if(drag)closeDrag(drag);drag.reset();runtime.reset();}
 };
 
@@ -46,6 +47,7 @@ Status force(const ovphysx_companion_object_t* ref,uint32_t size,const ovphysx_c
 {
     if(!ref || size!=sizeof(*ref) || !input || inputSize!=sizeof(*input))return OVPHYSX_COMPANION_INVALID_ARGUMENT;
     CompanionOperationGuard admission(companionRuntime());if(!admission)return OVPHYSX_COMPANION_BUSY;
+    CompanionOwnerLane owner;if(!owner.tryAcquireForAttachment(ref->attachment))return OVPHYSX_COMPANION_BUSY;
     BodyForce command;command.mode=input->mode;command.frame=input->frame;command.atPoint=input->atPoint;command.wake=input->wake;
     std::copy_n(input->force,3,command.force);std::copy_n(input->point,3,command.point);
     return convert(applyBodyForce(reference(*ref),command));
@@ -56,10 +58,11 @@ try
 {
     if(!ref || size!=sizeof(*ref) || !input || inputSize!=sizeof(*input) || !output)return OVPHYSX_COMPANION_INVALID_ARGUMENT;
     CompanionOperationGuard admission(companionRuntime());if(!admission)return OVPHYSX_COMPANION_BUSY;
+    CompanionOwnerLane owner;if(!owner.tryAcquireForAttachment(ref->attachment))return OVPHYSX_COMPANION_BUSY;
     std::shared_ptr<ovphysx::CarboniteLoader> runtime=companionRuntimeForAttachment(ref->attachment);if(!runtime)return OVPHYSX_COMPANION_STALE;
     DragOptions options;std::copy_n(input->target,3,options.target);options.stiffness=input->stiffness;
     options.damping=input->damping;options.maxForce=input->maxForce;options.flags=input->flags;options.velocityPolicy=input->velocityPolicy;
-    std::shared_ptr<Session> session=std::make_shared<Session>(std::move(runtime));
+    std::shared_ptr<Session> session=std::make_shared<Session>(std::move(runtime),ref->attachment);
     // Allocate the registry node before creating a joint or changing actor state.
     // The native path cannot call this registry; all other operations release the
     // registry mutex before taking owner admission.
@@ -77,10 +80,11 @@ try
 {
     if(!ref || size!=sizeof(*ref) || !input || inputSize!=sizeof(*input) || !output)return OVPHYSX_COMPANION_INVALID_ARGUMENT;
     CompanionOperationGuard admission(companionRuntime());if(!admission)return OVPHYSX_COMPANION_BUSY;
+    CompanionOwnerLane owner;if(!owner.tryAcquireForAttachment(ref->attachment))return OVPHYSX_COMPANION_BUSY;
     std::shared_ptr<ovphysx::CarboniteLoader> runtime=companionRuntimeForAttachment(ref->attachment);if(!runtime)return OVPHYSX_COMPANION_STALE;
     ForceDragOptions options;std::copy_n(input->point,3,options.point);options.pickingForce=input->pickingForce;
     options.pickDistance=input->pickDistance;options.velocityPolicy=input->velocityPolicy;
-    std::shared_ptr<Session> session=std::make_shared<Session>(std::move(runtime));
+    std::shared_ptr<Session> session=std::make_shared<Session>(std::move(runtime),ref->attachment);
     std::lock_guard<std::mutex> lock(companionRuntime().interactions().mutex);
     if(companionRuntime().interactions().nextHandle==UINT64_MAX)return OVPHYSX_COMPANION_ERROR;
     const uint64_t handle=companionRuntime().interactions().nextHandle++;companionRuntime().interactions().entries.emplace(handle,session);
@@ -93,10 +97,13 @@ template<class Fn> Status withSession(uint64_t handle,Fn fn) noexcept
 try
 {
     CompanionOperationGuard admission(companionRuntime());if(!admission)return OVPHYSX_COMPANION_BUSY;
+    // Declared before the session, so a session released here ends under the lane.
+    CompanionOwnerLane owner;
     std::shared_ptr<Session> session;
     {std::lock_guard<std::mutex> lock(companionRuntime().interactions().mutex);std::map<uint64_t, std::shared_ptr<Session>>::iterator found=companionRuntime().interactions().entries.find(handle);
      if(found==companionRuntime().interactions().entries.end())return OVPHYSX_COMPANION_NOT_FOUND;
      session=found->second;}
+    if(!owner.tryAcquireForAttachment(session->attachment))return OVPHYSX_COMPANION_BUSY;
     std::unique_lock<std::mutex> lock(session->mutex,std::try_to_lock);
     if(!lock.owns_lock())return OVPHYSX_COMPANION_BUSY;
     if(session->closed)return OVPHYSX_COMPANION_NOT_FOUND;

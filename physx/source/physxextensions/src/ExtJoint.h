@@ -45,6 +45,71 @@ namespace Ext
 		return 4.0f * PxAtan2(swingYZ, 1.0f + swingW);	// tan (t/2) = sin(t)/(1+cos t), so this is the quarter angle
 	}
 
+#if PX_SUPPORT_OMNI_PVD
+	PX_FORCE_INLINE PxConstraintOmniPvdState omniPvdCpuJointState(const PxJoint& joint)
+	{
+		PxConstraintOmniPvdState state;
+		PxRigidActor* actors[2]; joint.getActors(actors[0], actors[1]);
+		for (PxU32 i = 0; i < 2; ++i)
+		{
+			const PxRigidActor* actor = actors[i];
+			const PxRigidBody* body = actor ? actor->is<PxRigidBody>() : NULL;
+			const PxScene* scene = actor ? actor->getScene() : NULL;
+			if (body && scene && (scene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API)) continue;
+			if (actor) state.actorGlobalPose[i] = actor->getGlobalPose();
+			if (body)
+			{
+				state.actorLinearVelocity[i] = body->getLinearVelocity();
+				state.actorAngularVelocity[i] = body->getAngularVelocity();
+			}
+			state.actorPoseValid[i] = state.actorVelocityValid[i] = true;
+		}
+		return state;
+	}
+
+	PX_FORCE_INLINE bool omniPvdJointPoseValid(const PxConstraintOmniPvdState& state)
+	{
+		return state.actorPoseValid[0] && state.actorPoseValid[1];
+	}
+
+	PX_FORCE_INLINE bool omniPvdJointVelocityValid(const PxConstraintOmniPvdState& state)
+	{
+		return omniPvdJointPoseValid(state) && state.actorVelocityValid[0] && state.actorVelocityValid[1];
+	}
+
+	PX_FORCE_INLINE PxTransform omniPvdRelativeTransform(const PxJoint& joint, const PxConstraintOmniPvdState& state)
+	{
+		const PxTransform firstFrame = state.actorGlobalPose[0] * joint.getLocalPose(PxJointActorIndex::eACTOR0);
+		const PxTransform actor1Frame = state.actorGlobalPose[1] * joint.getLocalPose(PxJointActorIndex::eACTOR1);
+		return firstFrame.transformInv(actor1Frame);
+	}
+
+	PX_FORCE_INLINE PxVec3 omniPvdRelativeVelocity(const PxJoint& joint, const PxConstraintOmniPvdState& state, bool angular)
+	{
+		PxRigidActor* actors[2]; joint.getActors(actors[0], actors[1]);
+		PxVec3 linear[2] = { state.actorLinearVelocity[0], state.actorLinearVelocity[1] };
+		if (!angular)
+			for (PxU32 i = 0; i < 2; ++i)
+			{
+				const PxRigidBody* body = actors[i] ? actors[i]->is<PxRigidBody>() : NULL;
+				const PxVec3 com = body ? body->getCMassLocalPose().p : PxVec3(0.0f);
+				const PxVec3 offset = joint.getLocalPose(static_cast<PxJointActorIndex::Enum>(i)).p - com;
+				linear[i] += state.actorAngularVelocity[i].cross(state.actorGlobalPose[i].rotate(offset));
+			}
+		const PxQuat frame = state.actorGlobalPose[0].q * joint.getLocalPose(PxJointActorIndex::eACTOR0).q;
+		return frame.rotateInv(angular ? state.actorAngularVelocity[1] - state.actorAngularVelocity[0] : linear[1] - linear[0]);
+	}
+
+	PX_FORCE_INLINE PxReal omniPvdJointAngle(const PxJoint& joint, const PxConstraintOmniPvdState& state, PxU32 axis)
+	{
+		PxQuat swing, twist;
+		PxSeparateSwingTwist(omniPvdRelativeTransform(joint, state).q, swing, twist);
+		if (axis == 0) return twist.x < 0.0f ? -twist.getAngle() : twist.getAngle();
+		if (swing.w < 0.0f) swing = -swing;
+		return computeSwingAngle(axis == 1 ? swing.y : swing.z, swing.w);
+	}
+#endif
+
 	template<class JointType, class DataType>
 	PX_FORCE_INLINE	JointType* createJointT(PxPhysics& physics, PxRigidActor* actor0, const PxTransform& localFrame0, PxRigidActor* actor1, const PxTransform& localFrame1, const PxConstraintShaderTable& shaders)
 	{
@@ -58,6 +123,9 @@ namespace Ext
 		if (j)
 		{
 			omniPvdInitJoint(*j);
+			// Snapshots and re-entry update measured values after emitting the joint.
+			if (OmniPvdCaptureJoint(*j))
+				j->updateOmniPvdProperties();
 		}
 #endif
 
@@ -520,7 +588,6 @@ namespace Ext
 		// PxConstraintConnector
 		virtual	void onConstraintRelease()	PX_OVERRIDE
 		{
-			PX_FREE(mData);
 			PX_DELETE_THIS;
 		}
 

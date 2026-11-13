@@ -7,6 +7,7 @@
  */
 
 #include "DebugRenderSession.h"
+#include <omni/physx/IOvxPhysicsRead.h>
 
 #include "PhysXDebugVisualization.h"
 #include "usdLoad/LoadUsd.h"
@@ -53,49 +54,9 @@ struct Attr
     int access;
 };
 
-#define OVPHYSX_DEBUG_ATTR(literal, kind, param, access) { literal, sizeof(literal) - 1, kind, param, access }
-
 const Attr kAttrs[] = {
-    OVPHYSX_DEBUG_ATTR("enabled", Kind::Enabled, -1, 1),
-    OVPHYSX_DEBUG_ATTR("scale", Kind::Scale, -1, 1),
-    OVPHYSX_DEBUG_ATTR("worldAxes", Kind::Param, eWorldAxes, 1),
-    OVPHYSX_DEBUG_ATTR("bodyAxes", Kind::Param, eBodyAxes, 1),
-    OVPHYSX_DEBUG_ATTR("bodyMassAxes", Kind::Param, eBodyMassAxes, 1),
-    OVPHYSX_DEBUG_ATTR("bodyLinearVelocity", Kind::Param, eBodyLinearVelocity, 1),
-    OVPHYSX_DEBUG_ATTR("bodyAngularVelocity", Kind::Param, eBodyAngularVelocity, 1),
-    OVPHYSX_DEBUG_ATTR("contactPoint", Kind::Param, eContactPoint, 1),
-    OVPHYSX_DEBUG_ATTR("contactNormal", Kind::Param, eContactNormal, 1),
-    OVPHYSX_DEBUG_ATTR("contactError", Kind::Param, eContactError, 1),
-    OVPHYSX_DEBUG_ATTR("contactImpulse", Kind::Param, eContactImpulse, 1),
-    OVPHYSX_DEBUG_ATTR("frictionPoint", Kind::Param, eFrictionPoint, 1),
-    OVPHYSX_DEBUG_ATTR("frictionNormal", Kind::Param, eFrictionNormal, 1),
-    OVPHYSX_DEBUG_ATTR("frictionImpulse", Kind::Param, eFrictionImpulse, 1),
-    OVPHYSX_DEBUG_ATTR("actorAxes", Kind::Param, eActorAxes, 1),
-    OVPHYSX_DEBUG_ATTR("collisionAABBs", Kind::Param, eCollisionAABBs, 1),
-    OVPHYSX_DEBUG_ATTR("collisionShapes", Kind::Param, eCollisionShapes, 1),
-    OVPHYSX_DEBUG_ATTR("collisionAxes", Kind::Param, eCollisionAxes, 1),
-    OVPHYSX_DEBUG_ATTR("collisionCompounds", Kind::Param, eCollisionCompounds, 1),
-    OVPHYSX_DEBUG_ATTR("collisionFaceNormals", Kind::Param, eCollisionFaceNormals, 1),
-    OVPHYSX_DEBUG_ATTR("collisionEdges", Kind::Param, eCollisionEdges, 1),
-    OVPHYSX_DEBUG_ATTR("collisionStaticPruner", Kind::Param, eCollisionStaticPruner, 1),
-    OVPHYSX_DEBUG_ATTR("collisionDynamicPruner", Kind::Param, eCollisionDynamicPruner, 1),
-    OVPHYSX_DEBUG_ATTR("jointLocalFrames", Kind::Param, eJointLocalFrames, 1),
-    OVPHYSX_DEBUG_ATTR("jointLimits", Kind::Param, eJointLimits, 1),
-    OVPHYSX_DEBUG_ATTR("cullBox", Kind::Param, eCullBox, 1),
-    OVPHYSX_DEBUG_ATTR("mbpRegions", Kind::Param, eMBPRegions, 1),
-    OVPHYSX_DEBUG_ATTR("simulationMesh", Kind::Param, eSimulationMesh, 1),
-    OVPHYSX_DEBUG_ATTR("sdf", Kind::Param, eSDF, 1),
-    OVPHYSX_DEBUG_ATTR("cullingBox", Kind::CullingBox, -1, 1),
-    OVPHYSX_DEBUG_ATTR("scope", Kind::Scope, -1, 1),
-    OVPHYSX_DEBUG_ATTR("pointPosition", Kind::PointPosition, -1, 4),
-    OVPHYSX_DEBUG_ATTR("pointColor", Kind::PointColor, -1, 4),
-    OVPHYSX_DEBUG_ATTR("linePosition", Kind::LinePosition, -1, 4),
-    OVPHYSX_DEBUG_ATTR("lineColor", Kind::LineColor, -1, 4),
-    OVPHYSX_DEBUG_ATTR("trianglePosition", Kind::TrianglePosition, -1, 4),
-    OVPHYSX_DEBUG_ATTR("triangleColor", Kind::TriangleColor, -1, 4),
+#include "generated/kDebugAttributes.inc"
 };
-
-#undef OVPHYSX_DEBUG_ATTR
 
 std::mutex g_mutex;
 std::unordered_map<uint64_t, SavedState> g_states;
@@ -121,13 +82,14 @@ const Attr* findByString(const char* name, size_t length)
     return nullptr;
 }
 
-const Attr* findAttr(const ovx_string_or_token_t* attribute, ovx_path_dictionary_t* dictionary)
+const Attr* findAttr(const ovx_token_or_string_t* attribute, ovx_path_dictionary_t* dictionary)
 {
     if (!attribute)
         return nullptr;
-    if (attribute->string.ptr && attribute->string.length > 0)
+    // A non-NULL string wins; otherwise the token names the attribute.
+    if (attribute->string.ptr)
         return findByString(attribute->string.ptr, attribute->string.length);
-    if (attribute->token == 0 || !dictionary)
+    if (attribute->token == OVX_INVALID_TOKEN || !dictionary)
         return nullptr;
     ovx_string_t resolved{};
     if (ovx_path_dictionary_token_to_string(dictionary, attribute->token, &resolved) != OVX_OK || !resolved.ptr)
@@ -135,24 +97,33 @@ const Attr* findAttr(const ovx_string_or_token_t* attribute, ovx_path_dictionary
     return findByString(resolved.ptr, resolved.length);
 }
 
-std::string attributeLabel(const ovx_string_or_token_t* attribute)
+std::string attributeLabel(const ovx_token_or_string_t* attribute)
 {
+    if (attribute && !attribute->string.ptr && attribute->token != OVX_INVALID_TOKEN)
+        return "token " + std::to_string(attribute->token.raw_id);
     if (attribute && attribute->string.ptr && attribute->string.length > 0)
         return std::string(attribute->string.ptr, attribute->string.length);
-    if (attribute && attribute->token != 0)
-        return "token " + std::to_string(attribute->token);
     return "empty name";
 }
 
 ovx_token_t internAttributeName(ovx_path_dictionary_t* dictionary, const char* literal, size_t length)
 {
     if (!dictionary || !literal || length == 0)
-        return 0;
-    ovx_token_t token = 0;
+        return OVX_INVALID_TOKEN;
+    ovx_token_t token = OVX_INVALID_TOKEN;
     const ovx_string_t name{ literal, length };
     if (ovx_path_dictionary_intern_token(dictionary, name, &token) != OVX_OK)
-        return 0;
+        return OVX_INVALID_TOKEN;
     return token;
+}
+
+// A string request carries no usable token; intern the canonical name
+// (OVX_INVALID_TOKEN without a stage).
+ovx_token_t requestToken(const ovx_token_or_string_t& attribute, const Attr& attr, ovx_path_dictionary_t* dictionary)
+{
+    if (!attribute.string.ptr)
+        return attribute.token;
+    return internAttributeName(dictionary, attr.name, attr.nameLength);
 }
 
 bool isGeometry(Kind kind)
@@ -407,20 +378,10 @@ SavedState copyState(uint64_t instanceId)
     return found->second;
 }
 
-int writability(const char* name, size_t length)
-{
-    if (!name)
-        return 0;
-    for (const Attr& attr : kAttrs)
-        if (nameEquals(attr.name, name, length))
-            return attr.access;
-    return 0;
-}
-
 bool buildRead(uint64_t instanceId,
                uint64_t attach,
                ovx_path_dictionary_t* dictionary,
-               const ovx_string_or_token_t* attributes,
+               const ovx_token_or_string_t* attributes,
                size_t attributeCount,
                std::vector<HostColumn>& columns,
                std::string& error)
@@ -428,7 +389,7 @@ bool buildRead(uint64_t instanceId,
     struct Selected
     {
         const Attr* attr = nullptr;
-        ovx_token_t token = 0;
+        ovx_token_t token = OVX_INVALID_TOKEN;
     };
     std::vector<Selected> selected;
     selected.reserve(attributeCount);
@@ -438,18 +399,15 @@ bool buildRead(uint64_t instanceId,
         const Attr* attr = findAttr(&attributes[i], dictionary);
         if (!attr)
         {
-            const bool tokenOnly = attributes && attributes[i].token != 0 &&
-                                   !(attributes[i].string.ptr && attributes[i].string.length > 0);
-            if (tokenOnly && !dictionary)
+            const bool tokenWithoutDictionary =
+                attributes && !attributes[i].string.ptr && attributes[i].token != OVX_INVALID_TOKEN && !dictionary;
+            if (tokenWithoutDictionary)
                 error = "ovphysx_read: debug-render attribute token cannot be resolved without an attached stage";
             else
                 error = "ovphysx_read: unknown debug-render attribute " + attributeLabel(&attributes[i]);
             return false;
         }
-        ovx_token_t token = attributes[i].token;
-        if (token == 0)
-            token = internAttributeName(dictionary, attr->name, attr->nameLength);
-        selected.push_back(Selected{ attr, token });
+        selected.push_back(Selected{ attr, requestToken(attributes[i], *attr, dictionary) });
         wantGeometry = wantGeometry || isGeometry(attr->kind);
     }
 
@@ -491,7 +449,7 @@ bool buildRead(uint64_t instanceId,
 
 bool planWrite(uint64_t instanceId,
                ovx_path_dictionary_t* dictionary,
-               const ovx_string_or_token_t* attribute,
+               const ovx_token_or_string_t* attribute,
                WritePlan& plan,
                std::string& error)
 {
@@ -502,6 +460,7 @@ bool planWrite(uint64_t instanceId,
                 attributeLabel(attribute) + ")";
         return false;
     }
+    const ovx_token_t token = requestToken(*attribute, *attr, dictionary);
     SavedState state;
     {
         std::lock_guard<std::mutex> lock(g_mutex);
@@ -537,6 +496,7 @@ bool planWrite(uint64_t instanceId,
     }
     else
         fillSetting(plan.column, *attr, state);
+    plan.column.attribute = token;
     return true;
 }
 

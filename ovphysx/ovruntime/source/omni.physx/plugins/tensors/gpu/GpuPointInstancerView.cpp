@@ -9,7 +9,7 @@
  * @covers AC-8
  *
  * @implements REQ-INPUT-DEVICE-001
- * @covers AC-1 AC-2
+ * @covers AC-1 AC-2 AC-14
  *
  * @implements REQ-INPUT-CORE-001
  * @covers AC-10
@@ -99,6 +99,18 @@ GpuPointInstancerView::GpuPointInstancerView(GpuSimulationView* const sim,
     if (mNumInstances == 0)
         return;
 
+    // The record rows the write's packed index build reads, in range order, which is the order the kernel writes
+    // its packed slots in; with one token per range, minted from the shared ovstage row-cache counter. Distinct per
+    // range because ranges can share an instance count, which alone would false-hit in the superset cache; stable
+    // for this view's lifetime so repeated writes reuse the device copy. Not derived from `this`: a freed view
+    // re-created at the same address would alias its predecessor's slot and scatter into the wrong bodies.
+    mWriteRows.reserve(mNumInstances);
+    for (const GpuPointInstancerRecord& rec : records)
+        mWriteRows.push_back(rec.rbRow);
+    mWriteRowsTokens.resize(mRanges.size());
+    for (uint64_t& token : mWriteRowsTokens)
+        token = nextOvStageRowsVersion();
+
     // An allocation failure marks the view unusable rather than empty. Empty is a legitimate state
     // that reads succeed against; this is not one.
     PhysxCudaContextGuard ctxGuard(mGpuSimData ? mGpuSimData->mCudaContextManager : nullptr);
@@ -126,16 +138,17 @@ GpuPointInstancerView::GpuPointInstancerView(GpuSimulationView* const sim,
 GpuPointInstancerView::~GpuPointInstancerView()
 {
     PhysxCudaContextGuard ctxGuard(mGpuSimData ? mGpuSimData->mCudaContextManager : nullptr);
-    // Drain before freeing: an ovstage gather is launched on the null stream and returns without
-    // synchronizing, so a view destroyed in the same frame as its last read can free records the
-    // kernel is still reading. cudaFree has historically synchronized implicitly; that is not a
-    // guarantee to rely on. Same reason GpuArticulationView drains before its selection buffer.
+    // Drain before freeing: a read or write over this view's records and frames returns without synchronizing, so a
+    // view destroyed in the same frame as its last use can free what a kernel is still reading. cudaFree has
+    // historically synchronized implicitly; that is not a guarantee to rely on. Work on the null stream is drained;
+    // a stream-ordered read or commit reads them on its caller's stream instead, which is waited for as well.
     CHECK_CUDA(cudaStreamSynchronize(nullptr));
+    if (mGpuSimData)
+        mGpuSimData->waitForTableReaders();
 
     CHECK_CUDA(cudaFree(mRecordsDev));
     CHECK_CUDA(cudaFree(mWorldInversesDev));
     CHECK_CUDA(cudaFree(mWorldForwardsDev)); // allocated beside the inverses, so freed beside them
-    CHECK_CUDA(cudaFree(mOffsetsDev));
 }
 
 bool GpuPointInstancerView::setWorldInverses(const ::physx::PxMat44d* const inverses, const PxU32 numInstancers)
@@ -179,44 +192,17 @@ bool GpuPointInstancerView::uploadWorldInverses() const
         hostFwd[i] = omni::physx::affineInverse(mWorldInversesHost[i]);
     }
 
-    if (!CHECK_CUDA(cudaMemcpy(mWorldInversesDev, mWorldInversesHost.data(),
-                               mWorldInversesHost.size() * sizeof(InstancerAffine), cudaMemcpyHostToDevice)))
+    if (!mGpuSimData || !mGpuSimData->rewriteTable(mWorldInversesDev, mWorldInversesHost.data(),
+                                                    mWorldInversesHost.size() * sizeof(InstancerAffine)))
     {
         return false;
     }
     if (mWorldForwardsDev &&
-        !CHECK_CUDA(cudaMemcpy(mWorldForwardsDev, hostFwd.data(), hostFwd.size() * sizeof(InstancerAffine),
-                               cudaMemcpyHostToDevice)))
+        !mGpuSimData->rewriteTable(mWorldForwardsDev, hostFwd.data(), hostFwd.size() * sizeof(InstancerAffine)))
     {
         return false;
     }
     mWorldInversesDirty = false;
-    return true;
-}
-
-bool GpuPointInstancerView::uploadOffsets(const PxU32* const offsets, const PxU32 numInstancers) const
-{
-    if (numInstancers > mOffsetsCapacity)
-    {
-        CHECK_CUDA(cudaFree(mOffsetsDev));
-        mOffsetsDev = nullptr;
-        mOffsetsCapacity = 0;
-        mOffsetsHost.clear(); // the device array is gone; nothing is known to be resident
-        if (!prepareDeviceData((void**)&mOffsetsDev, nullptr, numInstancers * sizeof(PxU32), "mOffsetsDev"))
-            return false;
-        mOffsetsCapacity = numInstancers;
-    }
-    else if (mOffsetsHost.size() == numInstancers &&
-             std::memcmp(mOffsetsHost.data(), offsets, numInstancers * sizeof(PxU32)) == 0)
-    {
-        return true; // this exact array is already on the device
-    }
-    if (!CHECK_CUDA(
-            cudaMemcpy(mOffsetsDev, offsets, numInstancers * sizeof(PxU32), cudaMemcpyHostToDevice)))
-    {
-        return false;
-    }
-    mOffsetsHost.assign(offsets, offsets + numInstancers);
     return true;
 }
 
@@ -228,70 +214,135 @@ bool GpuPointInstancerView::refreshDisabledRowsOvStage() const
     return mRigidView->refreshDisabledRowsOvStage();
 }
 
-bool GpuPointInstancerView::getInstancerColumnsOvStage(const InstancerColumn column,
-                                                       void* const dst,
-                                                       const PxU32* const offsets,
-                                                       const PxU32 numInstancers) const
+namespace
 {
-    // Same split as the CPU view: an unusable view or a missing sibling is a decline the reader
-    // handles, the other two are caller errors that must not look like one.
-    if (!check() || !mRigidView || !mUsable)
-        return false;
-    if (!dst || !offsets)
-    {
-        CARB_LOG_ERROR("%s: null destination or offsets", __FUNCTION__);
-        return false;
-    }
-    if (numInstancers != mEntries.size())
-    {
-        CARB_LOG_ERROR("%s: called with %u instancers, view holds %zu", __FUNCTION__, numInstancers,
-                       mEntries.size());
-        return false;
-    }
-    if (mNumInstances == 0)
-        return true;
-
-    PhysxCudaContextGuard ctxGuard(mGpuSimData ? mGpuSimData->mCudaContextManager : nullptr);
-    if (!uploadOffsets(offsets, numInstancers))
-        return false;
-
-    float* const dstDev = static_cast<float*>(dst);
+GpuRigidBodyView::OvStageRigidRead rigidReadOf(const BasePointInstancerView::InstancerColumn column)
+{
+    using Column = BasePointInstancerView::InstancerColumn;
+    using Read = GpuRigidBodyView::OvStageRigidRead;
     switch (column)
     {
-    case InstancerColumn::eLocalPosition:
-    case InstancerColumn::eLocalOrientation:
+    case Column::eLocalPosition:
+        return Read::ePosition;
+    case Column::eLocalOrientation:
+        return Read::eOrientation;
+    case Column::eLinearVelocity:
+        return Read::eLinearVelocity;
+    case Column::eAngularVelocity:
+        return Read::eAngularVelocity;
+    case Column::eLinearAcceleration:
+        return Read::eLinearAcceleration;
+    case Column::eAngularAcceleration:
+        return Read::eAngularAcceleration;
+    }
+    return Read::eNone;
+}
+} // namespace
+
+bool GpuPointInstancerView::planOvStageRead(const InstancerColumn* columns,
+                                            const PxU32* const* offsets,
+                                            const PxU32 columnCount,
+                                            const bool capturing,
+                                            std::vector<uint8_t>& head,
+                                            size_t& scratchBytes) const
+{
+    head.clear();
+    scratchBytes = 0;
+    if (!check() || !mRigidView || !mUsable || !columns || !offsets || columnCount == 0)
+        return false;
+    // A view with no live instance gathers nothing (readOvStageColumns), so neither its frames nor the GPU index map
+    // has to be current; it allocated no frames to upload. Only the local pose columns read the frames: velocities
+    // are published in world space.
+    bool wantsFrames = false;
+    for (PxU32 c = 0; c < columnCount; ++c)
+        wantsFrames = wantsFrames || columns[c] == InstancerColumn::eLocalPosition ||
+                      columns[c] == InstancerColumn::eLocalOrientation;
+    if (mNumInstances != 0 && capturing)
     {
-        // Only the pose columns need the instancer frame; the velocity ones are published in world
-        // space, so they never pay for this upload.
-        if (!uploadWorldInverses())
+        if ((wantsFrames && mWorldInversesDirty) || mRigidView->rdIndicesRefreshPending())
+        {
+            CARB_LOG_ERROR("ovstage instancer read: an instancer moved, or an instance was enabled or disabled, "
+                           "since the query's last read outside the capture, and a captured read cannot upload "
+                           "the refreshed frames or GPU index map");
             return false;
-        const bool wantOrientation = (column == InstancerColumn::eLocalOrientation);
-        return mRigidView->getInstancerPoseColumnOvStage(wantOrientation, dstDev, mRecordsDev, mWorldInversesDev,
-                                                         mOffsetsDev, mNumInstances);
+        }
     }
-    case InstancerColumn::eLinearVelocity:
-    case InstancerColumn::eAngularVelocity:
-    case InstancerColumn::eLinearAcceleration:
-    case InstancerColumn::eAngularAcceleration:
+    else if (mNumInstances != 0)
     {
-        // All four are world frame, so none pays for the instancer-frame upload above; acceleration
-        // differs from velocity only in the DirectGPU read type it asks for.
-        const bool wantAngular = (column == InstancerColumn::eAngularVelocity ||
-                                  column == InstancerColumn::eAngularAcceleration);
-        const bool wantAcceleration = (column == InstancerColumn::eLinearAcceleration ||
-                                       column == InstancerColumn::eAngularAcceleration);
-        return mRigidView->getInstancerVelocityColumnOvStage(wantAngular, wantAcceleration, dstDev,
-                                                             mRecordsDev, mOffsetsDev, mNumInstances);
+        PhysxCudaContextGuard ctxGuard(mGpuSimData ? mGpuSimData->mCudaContextManager : nullptr);
+        if ((wantsFrames && !uploadWorldInverses()) || !mRigidView->refreshDisabledRowsOvStage())
+            return false;
     }
+
+    const PxU32 numInstancers = PxU32(mEntries.size());
+    OvStageScratch layout(nullptr);
+    std::vector<size_t> at(columnCount);
+    for (PxU32 c = 0; c < columnCount; ++c)
+    {
+        at[c] = layout.used();
+        layout.take<PxU32>(numInstancers);
     }
-    return false;
+    head.assign(layout.used(), 0);
+    for (PxU32 c = 0; c < columnCount; ++c)
+        std::memcpy(head.data() + at[c], offsets[c], size_t(numInstancers) * sizeof(PxU32));
+    std::vector<GpuRigidBodyView::OvStageInstancerReadColumn> reads(columnCount);
+    for (PxU32 c = 0; c < columnCount; ++c)
+        reads[c].kind = rigidReadOf(columns[c]);
+    scratchBytes = layout.used() + mRigidView->ovStageInstancerReadScratchBytes(reads.data(), columnCount);
+    return true;
 }
 
+bool GpuPointInstancerView::readOvStageColumns(const OvStageDeviceReadArgs& args,
+                                               const InstancerColumn* columns,
+                                               float* const* dsts,
+                                               const PxU32 columnCount) const
+{
+    if (!check() || !mRigidView || !mUsable || !args.scratch || !columns || !dsts)
+        return false;
+    if (mNumInstances == 0)
+        return true;
+    const PxU32 numInstancers = PxU32(mEntries.size());
+    OvStageScratch scratch(args.scratch);
+    std::vector<GpuRigidBodyView::OvStageInstancerReadColumn> reads(columnCount);
+    for (PxU32 c = 0; c < columnCount; ++c)
+    {
+        reads[c].kind = rigidReadOf(columns[c]);
+        reads[c].dst = dsts[c];
+        reads[c].offsetsDev = scratch.take<PxU32>(numInstancers);
+    }
+    // The rigid view's copies follow the offsets in the same scratch.
+    OvStageDeviceReadArgs copies = args;
+    copies.scratch = static_cast<char*>(args.scratch) + scratch.used();
+    copies.scratchBytes = args.scratchBytes > scratch.used() ? args.scratchBytes - scratch.used() : 0;
+    return mRigidView->readOvStageInstancerColumns(copies, reads.data(), columnCount, mRecordsDev, mWorldInversesDev,
+                                                   mNumInstances);
+}
+
+bool GpuPointInstancerView::prepareInstancerWriteOvStage(const PxU32 instancerIndex,
+                                                         const PxU32*& outRows,
+                                                         PxU32& outCount)
+{
+    outRows = nullptr;
+    outCount = 0;
+    if (!check() || !mUsable || !mRigidView || !mRecordsDev)
+        return false;
+    if (instancerIndex >= mEntries.size() || instancerIndex >= mRanges.size())
+        return false;
+    PhysxCudaContextGuard ctxGuard(mGpuSimData ? mGpuSimData->mCudaContextManager : nullptr);
+    if (!uploadWorldInverses())
+        return false;
+    const InstancerRange& range = mRanges[instancerIndex];
+    outRows = mWriteRows.data() + range.begin;
+    outCount = range.count;
+    return true;
+}
 
 bool GpuPointInstancerView::setInstancerColumnOvStage(const InstancerColumn column,
                                                       const ::physx::PxU32 instancerIndex,
                                                       const void* const src,
-                                                      const ::physx::PxU32 arrayLength)
+                                                      const ::physx::PxU32 arrayLength,
+                                                      const uint8_t*,
+                                                      const OvStageDeviceWriteArgs* const sessionDeviceArgs)
 {
     if (!check() || !mUsable || !mRigidView || !mRecordsDev)
         return false;
@@ -328,31 +379,15 @@ bool GpuPointInstancerView::setInstancerColumnOvStage(const InstancerColumn colu
     if (range.count == 0)
         return true; // every instance of this instancer is a hole -- nothing to write, not a failure
 
+    const OvStageDeviceWriteArgs deviceArgs = sessionDeviceArgs ? *sessionDeviceArgs : OvStageDeviceWriteArgs();
     PhysxCudaContextGuard ctxGuard(mGpuSimData ? mGpuSimData->mCudaContextManager : nullptr);
-
-    // The record-row list for THIS instancer's live instances, in range order, which is the order the
-    // kernel writes its packed slots in. Held per view and rebuilt only when the records are, since
-    // the ranges and rbRows change together with them.
-    if (mWriteRows.empty())
+    // A session prepared both at open; anything still to upload here means the instancer changed since.
+    if (deviceArgs.capturing && mWorldInversesDirty)
     {
-        std::vector<GpuPointInstancerRecord> hostRecords(mNumInstances);
-        if (!CHECK_CUDA(cudaMemcpy(hostRecords.data(), mRecordsDev,
-                                   size_t(mNumInstances) * sizeof(GpuPointInstancerRecord),
-                                   cudaMemcpyDeviceToHost)))
-        {
-            return false;
-        }
-        mWriteRows.resize(mNumInstances);
-        for (PxU32 i = 0; i < mNumInstances; ++i)
-            mWriteRows[i] = hostRecords[i].rbRow;
-        // A per-range token minted from the shared ovstage row-cache counter, once, with the list it
-        // identifies. Distinct per range because ranges can share an instance count, which alone would
-        // false-hit in the superset cache; stable for this view's lifetime so repeated writes reuse the
-        // device copy. Not derived from `this`: a freed view re-created at the same address would alias
-        // its predecessor's slot and scatter into the wrong bodies.
-        mWriteRowsTokens.resize(mRanges.size());
-        for (uint64_t& token : mWriteRowsTokens)
-            token = nextOvStageRowsVersion();
+        CARB_LOG_ERROR("%s: instancer %u changed since this write was opened, and a captured commit cannot upload "
+                       "its transforms. Reopen the write and capture again.",
+                       __FUNCTION__, instancerIndex);
+        return false;
     }
     const PxU32* const rbRows = mWriteRows.data() + range.begin;
     const uint64_t rowsToken = mWriteRowsTokens[instancerIndex];
@@ -368,14 +403,14 @@ bool GpuPointInstancerView::setInstancerColumnOvStage(const InstancerColumn colu
         const bool wantOrientation = (column == InstancerColumn::eLocalOrientation);
         return mRigidView->setInstancerPoseColumnOvStage(wantOrientation, srcDev, mRecordsDev + range.begin,
                                                          mWorldInversesDev, mWorldForwardsDev, rbRows,
-                                                         range.count, instancerIndex, rowsToken);
+                                                         range.count, instancerIndex, rowsToken, deviceArgs);
     }
     case InstancerColumn::eLinearVelocity:
     case InstancerColumn::eAngularVelocity:
     {
         const bool wantAngular = (column == InstancerColumn::eAngularVelocity);
         return mRigidView->setInstancerVelocityColumnOvStage(wantAngular, srcDev, mRecordsDev + range.begin,
-                                                             rbRows, range.count, rowsToken);
+                                                             rbRows, range.count, rowsToken, deviceArgs);
     }
     }
     return false;

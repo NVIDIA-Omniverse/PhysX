@@ -27,6 +27,12 @@ not grant ownership, extend lifetime, or permit an SDK call the simulation
 or device mode already forbids. Do not `release()` the address. Do not
 toggle `PxActorFlag::eDISABLE_SIMULATION`; use the `disableSimulation` write.
 
+Structural changes (adding, removing or re-inserting objects, moving them
+between scenes, attaching or detaching shapes) through a native PhysX pointer
+are not recommended. ovphysx cannot detect such changes, so after one its read
+and write calls are not guaranteed to work
+([ADR-0074](../../../ovruntime/plc/adr/ADR-0074-reads-and-writes-after-native-structural-changes.md)).
+
 A missing object is absent, including an explicit selection that matches
 nothing. A query type with no `physxPointer` attribute skips that name.
 A destroyed object disappears from the next query. A previously read
@@ -59,8 +65,9 @@ Python reads the same column through `PhysX.read` as a Warp `uint64` array.
   objects of the same type have distinct addresses.
 - AC-6: The developer guide states that the column is borrowed, that
   `release()` is forbidden, that toggling `eDISABLE_SIMULATION` on a
-  returned actor is unsupported, and that instance-scoped destroy
-  callbacks are the invalidation signal.
+  returned actor is unsupported, that reads and writes are not guaranteed
+  after a structural change through a returned address, and that
+  instance-scoped destroy callbacks are the invalidation signal.
 
 ## Test References
 
@@ -82,3 +89,4 @@ Python reads the same column through `PhysX.read` as a Warp `uint64` array.
 - [ADR-0044](../../../ovruntime/plc/adr/ADR-0044-native-pointer-through-reads.md)
 - [REQ-READ-POINTER-001](../../../ovruntime/plc/requirements/output/REQ-READ-POINTER-001.md)
 - [ADR-0027](../../../ovruntime/plc/adr/ADR-0027-rigid-body-disable-notification.md)
+- [ADR-0074](../../../ovruntime/plc/adr/ADR-0074-reads-and-writes-after-native-structural-changes.md)

@@ -5,6 +5,8 @@
 # @covers AC-1 AC-2 AC-4
 # @implements REQ-OVD-DECODE-001
 # @covers AC-1 AC-2 AC-3
+# @implements REQ-CAPI-OMNIPVD-LATE-001
+# @covers AC-9 AC-11
 import ctypes as C
 from pathlib import Path
 import struct
@@ -103,6 +105,7 @@ def test_preview_attach_does_not_start_or_restart_recording(tmp_path):
     late=tmp_path/'late.ovd'
     script=textwrap.dedent(f"""
         import ovphysx,ovstage
+        from ovphysx.population import physics_population_descs
         from ovphysx import GlobalConfigKey, OmniPvdDestination, set_global_config
         from ovphysx_companion.preview import PreviewSession
         from ovphysx_companion.schemas import physx_schema_paths
@@ -113,8 +116,9 @@ def test_preview_attach_does_not_start_or_restart_recording(tmp_path):
         stages=[]
         def stage(name):
             s=ovstage.Stage(name);stages.append(s)
-            ovstage.population.open_usd(s,{str(companion/'samples/scenes/two_boxes.usda')!r},ordinal=1,
-                                        domains=ovstage.PopulationDomain.ALL)
+            ovstage.population.open_usd_with_desc(s,{str(companion/'samples/scenes/two_boxes.usda')!r},ordinal=1,
+                                        time=ovstage.population.DEFAULT_TIME,
+                                        descs=physics_population_descs(rendering=True))
             s.advance_write_floor(ordinal=1).wait()
             return s
         try:
@@ -148,3 +152,75 @@ def test_preview_attach_does_not_start_or_restart_recording(tmp_path):
     assert first.stat().st_size>12
     assert late.stat().st_size>12
     assert {path.name for path in tmp_path.iterdir()}=={'first.ovd','late.ovd'}
+
+def test_recording_owner_detach_rejects_pending_preview(tmp_path):
+    # Recording capability must be set before the first instance in a fresh process.
+    import os
+    import subprocess
+    import sys
+    import textwrap
+    import ovphysx_companion
+
+    companion = Path(__file__).resolve().parents[1]
+    capture = tmp_path / 'owner_detach.ovd'
+    script = textwrap.dedent(f"""
+        import ovphysx
+        import ovstage
+        from ovphysx.population import physics_population_descs
+        from ovphysx import ApiStatus, GlobalConfigKey, OmniPvdDestination, set_global_config
+        from ovphysx_companion.ovd import decode
+        from ovphysx_companion.preview import PreviewSession
+        from ovphysx_companion.schemas import physx_schema_paths
+        from pathlib import Path
+
+        ovstage.population.register_usd_schemas([str(p) for p in physx_schema_paths()])
+        ovphysx.PhysX.set_cpu_mode(True)
+        set_global_config(GlobalConfigKey.OVD_RECORDING_CAPABLE, True)
+        physics = ovphysx.PhysX()
+        stages = []
+        def stage(name):
+            result = ovstage.Stage(name)
+            stages.append(result)
+            ovstage.population.open_usd_with_desc(
+                result, {str(companion / 'samples/scenes/two_boxes.usda')!r},
+                ordinal=1, time=ovstage.population.DEFAULT_TIME, descs=physics_population_descs(rendering=True))
+            result.advance_write_floor(ordinal=1).wait()
+            return result
+
+        try:
+            core_stage = stage('recording-owner')
+            physics.wait_task(physics.attach_ovstage(core_stage, read_ordinal=1))
+            with PreviewSession(physics, stage('pending-preview'), read_ordinal=1) as preview:
+                physics.start_recording(OmniPvdDestination.file({str(capture)!r}))
+                physics.step_sync(1/60)
+                preview.simulate(1/60)
+
+                # Check native admission directly: rejection must issue no task receipt.
+                rejected = physics._lib.ovphysx_detach_ovstage(physics._omni_physx_sdk_handle.value)
+                assert rejected.status == ApiStatus.INVALID_STATE, rejected.status
+                assert rejected.op_index == 0
+                assert physics.is_stage_attached(core_stage)
+
+                # Rejection must preserve the preview's unfetched work and core owner.
+                preview.fetch()
+                assert physics.is_recording()
+                physics.step_sync(1/60)
+            physics.wait_task(physics.detach_ovstage())
+            assert not physics.is_stage_attached(core_stage)
+            assert not physics.is_recording()
+            document = decode(physics._lib, Path({str(capture)!r}).read_bytes())
+            assert any(record.command == 9 for record in document.records)  # CREATE_OBJECT
+            assert any(record.command == 12 for record in document.records)  # STOP_FRAME
+            assert any(record.command == 10 for record in document.records)  # DESTROY_OBJECT
+        finally:
+            physics.destroy()
+            for item in stages:
+                item.destroy()
+    """)
+    env = dict(os.environ)
+    env['PYTHONPATH'] = os.pathsep.join(filter(None, [
+        str(Path(ovphysx_companion.__file__).parents[1]), env.get('PYTHONPATH')]))
+    result = subprocess.run(
+        [sys.executable, '-c', script], env=env, capture_output=True, text=True, timeout=120)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert capture.stat().st_size > 12

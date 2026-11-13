@@ -32,9 +32,15 @@ public:
 	}
 
 	/**
-	 * \brief Sets the log function to print the internal debug messages of the OmniPVD Reader instance
+	 * \brief Replaces the callback for this reader's internal diagnostics.
 	 *
-	 * \param logFunction The function pointer to receive the log messages
+	 * For readers created by this module's factories, successful-read output is off by default.
+	 * Use setOmniPvdReaderDiagnostics with verbose=true and the callback to enable it. This method
+	 * preserves the current verbosity and parsing state. Failure diagnostics do not require verbose.
+	 * The callback is synchronous; its buffer is read-only and valid only during the call.
+	 * It must not throw, re-enter or destroy the active reader.
+	 *
+	 * \param[in] logFunction The borrowed callback. nullptr disables all reader diagnostics.
 	 */
 	virtual void OMNI_PVD_CALL setLogFunction(OmniPvdLogFunction logFunction) = 0;
 	

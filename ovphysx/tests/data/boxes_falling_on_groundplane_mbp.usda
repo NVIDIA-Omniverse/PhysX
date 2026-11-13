@@ -1,4 +1,6 @@
 #usda 1.0
+# @implements REQ-PACKAGING-SAMPLE-SCENE-001
+# @covers AC-1
 (
     customLayerData = {
         dictionary cameraSettings = {
@@ -40,7 +42,9 @@
 
 def Xform "World"
 {
-    def PhysicsScene "physicsScene"
+    def PhysicsScene "physicsScene" (
+        prepend apiSchemas = ["PhysxSceneAPI"]
+    )
     {
         vector3f physics:gravityDirection = (0, 0, -1)
         float physics:gravityMagnitude = 9.81

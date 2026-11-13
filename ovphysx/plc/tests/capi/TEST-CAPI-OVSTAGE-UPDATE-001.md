@@ -30,8 +30,11 @@ redundantly updates the ordinal already consumed by attachment.
   snapshot (AC-1).
 - Runtime coverage additionally drains an overlapping range, observes a
   post-attach creation, and verifies replay does not repeat it (AC-2).
-- An update without an attachment is rejected without a task; a valid consumed
+- An update without an attachment is accepted and fails at collection; a valid consumed
   range produces a separately collectible successful task (AC-3).
+- After an attach at ordinal 1, Python ranges wholly or partly below 1 (down to
+  `ovstage.ORDINAL_MIN`) complete successfully as no-ops, and range ordinals
+  outside `int64_t` raise `ValueError` without detaching (AC-5).
 
 ## Test locations
 
@@ -44,5 +47,8 @@ redundantly updates the ordinal already consumed by attachment.
   collect-once completion for AC-3).
 - `ovphysx/tests/c_unittests/test_task_completion.cpp`:
   `LifecycleInvalidArgumentsAndMissingAttachmentRejectWithoutTaskIdentity`
-  (invalid range, missing attachment and invalid instance reject without a task
-  for AC-3).
+  (invalid range and instance reject without a task; missing attachment fails its
+  accepted task for AC-3). `WorkerUpdate.ReturnsWhilePendingAndFailsWithoutAttach`
+  in `tests/c_unittests/test_worker_clone.cpp` verifies deferred execution.
+- `ovphysx/tests/python_tests/cpu_tests/test_attach_ordinal.py`:
+  `test_update_ranges_below_one_are_consumed_and_int64_bounded` (AC-5).

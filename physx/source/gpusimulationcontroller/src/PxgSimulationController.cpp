@@ -9,6 +9,7 @@
 #include "PxvDynamics.h"
 #include "cudamanager/PxCudaContextManager.h"
 #include "foundation/PxAllocator.h"
+#include "foundation/PxSort.h"
 #include "PxgSimulationCore.h"
 #include "PxgArticulation.h"
 #include "PxgDynamicsContext.h"
@@ -57,6 +58,9 @@
 #include "BpAABBManagerBase.h"
 #include "PxgAABBManager.h"
 #include "PxgSimulationCoreKernelIndices.h"
+#if PX_SUPPORT_OMNI_PVD
+#include "PxContact.h"
+#endif
 
 // TODO: Consider refactoring indentation for improved code readability
 
@@ -162,6 +166,9 @@ namespace physx
 		mEnableOVDCollisionReadback(false)
 #if PX_SUPPORT_OMNI_PVD
 		,mOvdCallbacks(NULL)
+		,mOmniPvdReadbackBytes(0)
+		,mOmniPvdReadbackCopyCount(0)
+		,mOmniPvdContactBatchPrepared(false)
 #endif
 	{
 		if(bp->getType() == PxBroadPhaseType::eGPU)
@@ -234,7 +241,7 @@ namespace physx
 	void PxgSimulationController::addArticulation(Dy::FeatherstoneArticulation* artBase, const PxNodeIndex& nodeIndex)
 	{
 		Dy::FeatherstoneArticulation* articulation = static_cast<Dy::FeatherstoneArticulation*>(artBase);
-		mBodySimManager.addArticulation(articulation, nodeIndex.index(), getEnableOVDReadback());
+		mBodySimManager.addArticulation(articulation, nodeIndex.index(), getOVDReadbackMode() != PxsOVDReadbackMode::eDISABLED);
 	}
 
 	void PxgSimulationController::releaseArticulation(Dy::FeatherstoneArticulation* artBase, const PxNodeIndex& nodeIndex)
@@ -282,6 +289,11 @@ namespace physx
 	void PxgSimulationController::releaseDeferredSoftBodyIds()
 	{
 		mBodySimManager.releaseDeferredSoftBodyIds();
+	}
+
+	PxU32 PxgSimulationController::getNbReservedSoftBodyIds() const
+	{
+		return mBodySimManager.mSoftBodyIdPool.getNumReservedIDs();
 	}
 
 	void PxgSimulationController::activateSoftbody(Dy::DeformableVolume* deformableVolume)
@@ -406,6 +418,11 @@ namespace physx
 		mBodySimManager.releaseDeferredFEMClothIds();
 	}
 
+	PxU32 PxgSimulationController::getNbReservedFEMClothIds() const
+	{
+		return mBodySimManager.mFEMClothIdPool.getNumReservedIDs();
+	}
+
 	void PxgSimulationController::activateCloth(Dy::DeformableSurface* deformableSurface)
 	{
 		if (mBodySimManager.activateCloth(deformableSurface))
@@ -488,6 +505,12 @@ namespace physx
 		}
 		else
 			mBodySimManager.updateBody(nodeIndex);
+	}
+
+	void PxgSimulationController::setKinematicTargetDirectGPU(const PxNodeIndex& nodeIndex, const PxTransform& body2World)
+	{
+		PX_ASSERT(mDynamicContext->getEnableDirectGPUAPI());
+		mSimulationCore->stageKinematicTarget(nodeIndex.index(), body2World);
 	}
 
 	void PxgSimulationController::addJoint(const Dy::Constraint& constraint)
@@ -675,11 +698,16 @@ namespace physx
 					mCudaContextManager->getCudaContext()->setAbortMode(true);
 				}
 			}
-			else if(numChanges)
+			else
 			{
-				CUdeviceptr updatedActorDescd = mSimulationCore->getUpdatedActorDescDesc();
-				mergeBoundsAndTransformsChanges(directGPUBoundsArray, transformCache, gpuTransformCache, boundsArraySize,
-												totalTransformCacheSize, numChanges, updatedActorDescd, npStream);
+				// Only the marked elements are uploaded. Lowering the changed state keeps the broadphase from copying all CPU bounds over
+				// the GPU bounds.
+				directGPUBoundsArray.resetChangedState();
+				if(numChanges)
+				{
+					mergeBoundsAndTransformsChanges(directGPUBoundsArray, transformCache, gpuTransformCache, boundsArraySize,
+													totalTransformCacheSize, numChanges, npStream);
+				}
 			}
 		}
 		else
@@ -692,7 +720,7 @@ namespace physx
 	void PxgSimulationController::mergeBoundsAndTransformsChanges(PxgBoundsArray& directGPUBoundsArray,
 																  PxsTransformCache& transformCache,
 																  PxgCudaBuffer& gpuTransformCache, PxU32 boundsArraySize,
-																  PxU32 totalTransformCacheSize, PxU32 numChanges, CUdeviceptr updatedActorDescd, CUstream npStream)
+																  PxU32 totalTransformCacheSize, PxU32 numChanges, CUstream npStream)
 	{
 
 		const PxgBoundTransformUpdate* changes = reinterpret_cast<const PxgBoundTransformUpdate*>(
@@ -713,12 +741,19 @@ namespace physx
 		gpuTransformCache.allocateCopyOldDataAsync(sizeof(PxsCachedTransform) * totalTransformCacheSize, mCudaContextManager->getCudaContext(), npStream, PX_FL);
 		CUdeviceptr transformCachePtr = gpuTransformCache.getDevicePtr();
 
+		const PxgShapeSim* shapeSims = mSimulationCore->mPxgShapeSimManager.getShapeSimsDeviceTypedPtr();
+		const PxgBodySim* bodySims = mSimulationCore->getBodySimBufferDeviceData().getPointer();
+		const PxgArticulation* articulations = mSimulationCore->getArticulationBuffer().getTypedPtr();
+		const PxgShape* shapes = reinterpret_cast<const PxgShape*>(mDynamicContext->getNarrowphaseCore()->mGpuShapesManager.mGpuShapesBuffer.getDevicePtr());
+
 		CUfunction kernelFunction = mSimulationCore->mGpuKernelWranglerManager->getCuFunction(
 			PxgKernelIds::MERGE_TRANSFORMCACHE_AND_BOUNDARRAY_CHANGES);
 
-		PxCudaKernelParam kernelParams[] = { PX_CUDA_KERNEL_PARAM(boundsPtr), PX_CUDA_KERNEL_PARAM(transformCachePtr), PX_CUDA_KERNEL_PARAM(updatedActorDescd),
+		PxCudaKernelParam kernelParams[] = { PX_CUDA_KERNEL_PARAM(boundsPtr), PX_CUDA_KERNEL_PARAM(transformCachePtr),
 											 PX_CUDA_KERNEL_PARAM(cpuBounds), PX_CUDA_KERNEL_PARAM(cpuTransforms),
-											 PX_CUDA_KERNEL_PARAM(changes),	 PX_CUDA_KERNEL_PARAM(numChanges) };
+											 PX_CUDA_KERNEL_PARAM(changes),	 PX_CUDA_KERNEL_PARAM(numChanges),
+											 PX_CUDA_KERNEL_PARAM(shapeSims), PX_CUDA_KERNEL_PARAM(bodySims),
+											 PX_CUDA_KERNEL_PARAM(articulations), PX_CUDA_KERNEL_PARAM(shapes) };
 
 		int gridDim = (numChanges + PxgSimulationCoreKernelBlockDim::MERGE_TRANSFORMCACHE_AND_BOUNDARRAY_CHANGES - 1) /
 					  PxgSimulationCoreKernelBlockDim::MERGE_TRANSFORMCACHE_AND_BOUNDARRAY_CHANGES;
@@ -728,6 +763,10 @@ namespace physx
 
 		PX_UNUSED(result);
 		PX_ASSERT(result == CUDA_SUCCESS);
+
+		// The broadphase reads the bounds on its own stream.
+		PX_ASSERT(mBroadPhase);
+		synchronizeStreams(mCudaContextManager->getCudaContext(), npStream, mBroadPhase->getBpStream());
 	}
 
 	void PxgSimulationController::copyBoundsAndTransforms(Bp::BoundsArray& boundsArray, PxsTransformCache& transformCache,
@@ -740,6 +779,12 @@ namespace physx
 			mSimulationCore->getBoundArrayBuffer()->allocate(boundsArraySize, PX_FL);
 			mCudaContextManager->getCudaContext()->memcpyHtoDAsync(mSimulationCore->getBoundArrayBuffer()->getDevicePtr(),
 																   boundsArray.getBounds(), boundsArraySize, npStream);
+
+			// The broadphase reads the bounds on its own stream.
+			if(mBroadPhase)
+			{
+				synchronizeStreams(mCudaContextManager->getCudaContext(), npStream, mBroadPhase->getBpStream());
+			}
 		}
 		if(transformCache.hasChanged())
 		{
@@ -761,12 +806,32 @@ namespace physx
 		CUstream npStream = npCore->getStream();
 		const bool hasShapeInstanceChanged = npCore->mGpuShapesManager.mHasShapeInstanceChanged; // we reset it in updateNarrowPhaseShape, but cache for computeRigidsToShapes.
 
+		// The rigid dynamic writes of the direct GPU API change bounds, transforms and update flags on the simulation stream, and these
+		// are read from here on, starting with the copy of a growing buffer. The merge also reads the shape sims uploaded there in this step.
+		if(mDynamicContext->getEnableDirectGPUAPI())
+		{
+			synchronizeStreams(mCudaContextManager->getCudaContext(), mSimulationCore->getStream(), npStream);
+		}
+
 		// we are in Pxg-land, so GPU NP and dynamics is implied. Upload to GPU if dirty.
-		// The bounds array is shared by NP and BP, and at this point we are before NP and BP.
-		if (!isDirectApiInitialized || hasShapeInstanceChanged)
+		// The bounds array is shared by NP and BP, and at this point we are before NP and BP. Once change tracking is on, only the
+		// marked elements are merged.
+		const bool changeTrackingEnabled = aabbManager.getBoundsArray().isChangeTrackingEnabled();
+		PX_ASSERT(!changeTrackingEnabled || mDynamicContext->getEnableDirectGPUAPI());
+
+		// The full copy runs first, so that the broadphase only waits for the bounds upload, not for the uploads of updateNarrowPhaseShape().
+		if(!changeTrackingEnabled)
+		{
 			updateBoundsAndTransformCache(aabbManager, npStream, mNpContext->getContext().getTransformCache(), npCore->getTransformCache());
-			
+		}
+
 		mNpContext->updateNarrowPhaseShape();
+
+		// For dynamic rigid shapes, the merge computes the bounds from the narrowphase shapes, so it runs after updateNarrowPhaseShape().
+		if(changeTrackingEnabled)
+		{
+			updateBoundsAndTransformCache(aabbManager, npStream, mNpContext->getContext().getTransformCache(), npCore->getTransformCache());
+		}
 
 		// AD TODO: remove this if again once we have the warm-start implemented, or find a way to avoid doing this alltogether.
 		// this needs to run even if direct-GPU API is not initialized, because it is part of the initialization.
@@ -1226,6 +1291,37 @@ namespace physx
 		}
 	}
 
+	void PxgSimulationController::stageArticulationLink(PxU32 index, const Dy::ArticulationLink& cpuLink)
+	{
+		const PxsBodyCore& core = *cpuLink.bodyCore;
+
+		mLinkBody2WorldPool[index] = core.body2World;
+		mLinkBody2ActorPool[index] = core.getBody2Actor();
+		mLinkParentPool[index] = cpuLink.parent;
+
+		PxgArticulationLink& link = mLinksPool[index];
+		link.initialLinVel = core.linearVelocity;
+		link.initialAngVel = core.angularVelocity;
+		link.invMass = core.inverseMass;
+		link.penBiasClamp = core.maxPenBias;
+		link.maxAngularVelocitySq = core.maxAngularVelocitySq;
+		link.maxLinearVelocitySq = core.maxLinearVelocitySq;
+		link.angularDamping = core.angularDamping;
+		link.linearDamping = core.linearDamping;
+		link.offsetSlop = core.offsetSlop;
+		link.pathToRootOffset = cpuLink.mPathToRootStartIndex;
+		link.numPathToRoot = cpuLink.mPathToRootCount;
+		link.childrenOffset = cpuLink.mChildrenStartIndex;
+		link.numChildren = cpuLink.mNumChildren;
+		link.cfmScale = core.cfmScale;
+		link.disableGravity = !!core.disableGravity;
+		link.retainsAccelerations = core.mFlags & PxRigidBodyFlag::eRETAIN_ACCELERATIONS;
+
+		PxgArticulationLinkProp& linkProp = mLinkPropPool[index];
+		linkProp.invInertia = core.inverseInertia;
+		linkProp.invMass = core.inverseMass;
+	}
+
 	// AD: this is only for new articulations.
 	void PxgSimulationController::copyToGpuArticulationSim(const PxU32 bodySimOffset, PxU32 startIndex, PxU32 nbToCopy,
 		PxI32* sharedArticulationLinksIndex, PxI32* sharedArticulationDofIndex,
@@ -1453,62 +1549,25 @@ namespace physx
 				const Dy::ArticulationLink& cpuLink = data.getLink(a);
 
 				const PxU32 index = linkBegin + a;
-				PxgArticulationLink& link = mLinksPool[index];
-				PxgArticulationLinkProp& linkProp = mLinkPropPool[index];
-				PxReal& linkWakeCounter = mLinkWakeCounterPool[index];
-				PxTransform& body2World = mLinkBody2WorldPool[index];
-				PxTransform& body2Actor = mLinkBody2ActorPool[index];
+				stageArticulationLink(index, cpuLink);
+
+				mLinkWakeCounterPool[index] = cpuLink.bodyCore->wakeCounter;
+
 				Cm::UnAlignedSpatialVector& accel = mLinkAccelPool[index];
 				const Cm::SpatialVector& inAccel = data.getExternalAcceleration(a);
 				accel.top = inAccel.linear;
 				accel.bottom = inAccel.angular;
-
-				PxU32& parent = mLinkParentPool[index];
-
-				PxsBodyCore& core = *cpuLink.bodyCore;
-
-				body2World = core.body2World;
-				body2Actor = core.getBody2Actor();
-
-				link.initialLinVel = core.linearVelocity;
-				link.initialAngVel = core.angularVelocity;
-				link.invMass = core.inverseMass;
-				//link.invInertia = core.inverseInertia;
-				link.penBiasClamp = core.maxPenBias;
-				link.maxAngularVelocitySq = core.maxAngularVelocitySq;
-				link.maxLinearVelocitySq = core.maxLinearVelocitySq;
-				link.angularDamping = core.angularDamping;
-				link.linearDamping = core.linearDamping;
-				link.offsetSlop = core.offsetSlop;
-
-				link.pathToRootOffset = cpuLink.mPathToRootStartIndex;
-				link.numPathToRoot = cpuLink.mPathToRootCount;
-				link.childrenOffset = cpuLink.mChildrenStartIndex;
-				link.numChildren = cpuLink.mNumChildren;
-				//link.linkIndex = linkBegin + a;
-
-				parent = cpuLink.parent;
-
-				link.cfmScale = core.cfmScale;
-
-				link.disableGravity = !!core.disableGravity;
-				link.retainsAccelerations = core.mFlags & PxRigidBodyFlag::eRETAIN_ACCELERATIONS;
-
-				linkWakeCounter = core.wakeCounter;
-
-				linkProp.invInertia = core.inverseInertia;
-				linkProp.invMass = core.inverseMass;
 
 				Dy::ArticulationJointCore* joint = cpuLink.inboundJoint;
 				Dy::ArticulationJointCoreData& jointDatum = data.getJointData(a);
 
 				if (joint)
 				{
-					//New Joint - force GPU to update everything!
-					joint->jCalcUpdateFrames = true;
+					// The GPU jcalc recomputes the frames of every copied joint. The flag of the CPU joint is left to the CPU jcalc,
+					// which recomputes the CPU frames when the CPU articulation needs them.
 					mJointPool[index] = *joint;
+					mJointPool[index].jCalcUpdateFrames = true;
 					mJointDataPool[index] = jointDatum;
-					joint->jCalcUpdateFrames = false;
 				}
 			}
 
@@ -1910,13 +1969,15 @@ namespace physx
 
 			PxU32 dirtyFlags = artic->mGPUDirtyFlags;
 
-			//If we have dirty joints or dirty root link, we need to reserve space for the links in the articulation
+			//If we have dirty joints, links, positions or external accelerations, we need to reserve space for the links in the articulation.
+			//Root transform and root velocity changes arrive as dirty links, since they move every link.
 			if (dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_JOINTS || dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_LINKS
 				|| dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_POSITIONS || dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_EXT_ACCEL)
 				totalLinks += data.getLinkCount();
-			else if (dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_ROOT_TRANSFORM
-				|| dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_ROOT_VELOCITIES)
-				totalLinks++; //We need space for the root
+
+			//The link wake counters are staged in the space reserved above. A wake counter change sets the wake counter of
+			//every link too, which raises dirty links, so it needs no reservation of its own.
+			PX_ASSERT(!(dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_WAKECOUNTER) || (dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_LINKS));
 
 			// need to check for tendon flags individually as combinations of them may be raised:
 			if(dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON)
@@ -1992,7 +2053,7 @@ namespace physx
 
 			const Dy::ArticulationData& data = artic->getArticulationData();
 			const PxU32 dofs = data.getDofs();
-			//If we have dirty joints or dirty root link, we need to reserve space for the links in the articulation
+			//If we have dirty joints or dirty links, we stage them for every link in the articulation.
 			if (dirtyFlags & (Dy::ArticulationDirtyFlag::eDIRTY_JOINTS | Dy::ArticulationDirtyFlag::eDIRTY_LINKS))
 			{
 				const PxU32 linkCount = data.getLinkCount();
@@ -2001,115 +2062,42 @@ namespace physx
 					const Dy::ArticulationLink& cpuLink = data.getLink(a);
 
 					if (dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_LINKS)
-					{
-						const PxU32 index = linkBegin + a;
-						PxgArticulationLink& link = mLinksPool[index];
-						PxgArticulationLinkProp& linkProp = mLinkPropPool[index];
-						PxTransform& body2World = mLinkBody2WorldPool[index];
-						PxTransform& body2Actor = mLinkBody2ActorPool[index];
-
-						PxU32& parent = mLinkParentPool[index];
-						parent = cpuLink.parent;
-						
-						PxsBodyCore& core = *cpuLink.bodyCore;
-
-						body2World = core.body2World;
-						body2Actor = core.getBody2Actor();
-
-						link.initialLinVel = core.linearVelocity;
-						link.initialAngVel = core.angularVelocity;
-						link.invMass = core.inverseMass;
-						
-						link.penBiasClamp = core.maxPenBias;
-						link.maxAngularVelocitySq = core.maxAngularVelocitySq;
-						link.maxLinearVelocitySq = core.maxLinearVelocitySq;
-						link.angularDamping = core.angularDamping;
-						link.linearDamping = core.linearDamping;
-						link.disableGravity = !!core.disableGravity;
-						link.retainsAccelerations = core.mFlags & PxRigidBodyFlag::eRETAIN_ACCELERATIONS;
-						
-						link.childrenOffset = cpuLink.mChildrenStartIndex;
-						link.numChildren = cpuLink.mNumChildren;
-
-						linkProp.invInertia = core.inverseInertia;
-						linkProp.invMass = core.inverseMass;
-					}
+						stageArticulationLink(linkBegin + a, cpuLink);
 
 					//Skip root link because it doesn't have any joints
 					if ((dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_JOINTS) && a != 0)
 					{
 						Dy::ArticulationJointCore* joint = cpuLink.inboundJoint;
 						Dy::ArticulationJointCoreData& jointDatum = data.getJointData(a);
+						const PxU32 index = linkBegin + a;
 
-						// AD hack/remove again: if we have dirty joints, we always raise the frame flag because we might have to recompute motionMatrix and RelativeQuats. 
-						// this could have been lowered again already though because we might have done jcalc on CPU.
-						joint->jCalcUpdateFrames = true;
-
-						mJointPool[linkBegin + a] = *joint;
-						mJointDataPool[linkBegin + a] = jointDatum;
-
-						//Clear dirty flag
-						joint->jCalcUpdateFrames = false;
+						// The GPU jcalc recomputes the frames of every copied joint. The flag of the CPU joint is left to the CPU
+						// jcalc, which recomputes the CPU frames when the CPU articulation needs them.
+						mJointPool[index] = *joint;
+						mJointPool[index].jCalcUpdateFrames = true;
+						mJointDataPool[index] = jointDatum;
 					}
 				}
 				linkBegin += linkCount;
 			}
 
-			//KS - if we didn't update links above, we need to check to see if root transforms or joint positions changed, in which case
+			//KS - if we didn't update links above, we need to check to see if joint positions changed, in which case
 			//link states still need updating...
-			if (!(dirtyFlags & (Dy::ArticulationDirtyFlag::eDIRTY_LINKS)))
+			if (!(dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_LINKS) && (dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_POSITIONS))
 			{
-				if (dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_ROOT_TRANSFORM
-					|| dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_ROOT_VELOCITIES)
-				{
-					const Dy::ArticulationLink& cpuLink = data.getLink(0);
+				const PxU32 linkCount = data.getLinkCount();
+				PxU32 index = update.linkStartIndex;
 
-					const PxU32 index = linkBegin;
-					PxgArticulationLink& link = mLinksPool[index];
-					PxgArticulationLinkProp& linkProp = mLinkPropPool[index];
-					PxTransform& body2World = mLinkBody2WorldPool[index];
-					PxTransform& body2Actor = mLinkBody2ActorPool[index];
-					
+				for (PxU32 a = 0; a < linkCount; ++a)
+				{
+					const Dy::ArticulationLink& cpuLink = data.getLink(a);
+
+					PxTransform& body2World = mLinkBody2WorldPool[index++];
 					PxsBodyCore& core = *cpuLink.bodyCore;
-
 					body2World = core.body2World;
-					body2Actor = core.getBody2Actor();
-
-					link.initialLinVel = core.linearVelocity;
-					link.initialAngVel = core.angularVelocity;
-					link.invMass = core.inverseMass;
-					
-					link.penBiasClamp = core.maxPenBias;
-					link.maxAngularVelocitySq = core.maxAngularVelocitySq;
-					link.maxLinearVelocitySq = core.maxLinearVelocitySq;
-					link.angularDamping = core.angularDamping;
-					link.linearDamping = core.linearDamping;
-					link.disableGravity = !!core.disableGravity;
-					link.retainsAccelerations = core.mFlags & PxRigidBodyFlag::eRETAIN_ACCELERATIONS;
-
-					linkProp.invInertia = core.inverseInertia;
-					linkProp.invMass = core.inverseMass;
-
-					if (!(dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_POSITIONS))
-						linkBegin++;
 				}
 
-				if (dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_POSITIONS)
-				{
-					const PxU32 linkCount = data.getLinkCount();
-					PxU32 index = update.linkStartIndex;
-
-					for (PxU32 a = 0; a < linkCount; ++a)
-					{
-						const Dy::ArticulationLink& cpuLink = data.getLink(a);
-
-						PxTransform& body2World = mLinkBody2WorldPool[index++];
-						PxsBodyCore& core = *cpuLink.bodyCore;
-						body2World = core.body2World;
-					}
-
-					linkBegin = index;
-				}
+				linkBegin = index;
 			}
 
 			if (dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_WAKECOUNTER)
@@ -2354,7 +2342,10 @@ namespace physx
 			newParticleSystem.mCommonData.mNumParticleBuffers = numParticleBuffers + numDiffuseBuffers;
 			newParticleSystem.mNumDiffuseBuffers = numDiffuseBuffers;
 			newParticleSystem.mCommonData.mMaxDiffuseParticles = numMaxDiffuseParticles;
-			
+
+			// The core outlives scene removal, but the new GPU record holds none of its data.
+			dyParticleSystemCore.markForFullUpload();
+
 			// allocate pinned memory(s)
 			getPBDParticleSystemCore()->updateParticleSystemData(newParticleSystem, dyParticleSystemCore);
 		}
@@ -2454,6 +2445,13 @@ namespace physx
 			mMimicJointPool, mPathToRootPool, nbTotalBodies, nbTotalArticulations,
 			mMaxLinks, mMaxDofs, mMaxMimicJoints, mMaxSpatialTendons, mMaxAttachments,
 			mMaxFixedTendons, mMaxTendonJoints, enableBodyAccelerations);
+
+		// After the articulation buffer has grown and before new articulations are copied into their slots. Only the direct
+		// GPU API walks the slots.
+		if (mDynamicContext->getEnableDirectGPUAPI())
+		{
+			mSimulationCore->markRemovedArticulationSlotsEmpty(mBodySimManager);
+		}
 
 		mSimulationCore->updateBodies(updatedBodySimPool.size(), mNewBodySimPool.size());
 
@@ -2722,14 +2720,14 @@ namespace physx
 		{
 
 			PX_PROFILE_ZONE("GpuSimulationController.sortSoftbodyContacts", 0);
-			mSoftBodyCore->sortContacts(nbActiveSoftbodies);
+			mSoftBodyCore->sortContacts();
 		}
 
 		if (nbActiveFemCloths > 0)
 		{
 			
 			PX_PROFILE_ZONE("GpuSimulationController.sortClothContacts", 0);
-			mFEMClothCore->sortContacts(nbActiveFemCloths);
+			mFEMClothCore->sortContacts();
 		}
 
 		mCudaContextManager->releaseContext();
@@ -2871,7 +2869,7 @@ namespace physx
 #if PXG_SC_DEBUG
 			mSimulationCore->mPxgShapeSimManager.validateCacheAndBounds(boundArray.getBounds(), cache.getTransforms());
 #endif
-			if ( (!mDynamicContext->getEnableDirectGPUAPI()) || mEnableOVDReadback)
+			if ((!mDynamicContext->getEnableDirectGPUAPI()) || getOVDReadbackMode() == PxsOVDReadbackMode::eFULL)
 			{
 				mCallback->updateScBodyAndShapeSim(continuation);
 				//Now update sleep state for FEM cloth...
@@ -3310,9 +3308,17 @@ namespace physx
 		mEnableOVDReadback = enableOVDReadback;
 	}
 
-	bool PxgSimulationController::getEnableOVDReadback() const
+	PxsOVDReadbackMode::Enum PxgSimulationController::getOVDReadbackMode() const
 	{
-		return mEnableOVDReadback;
+		if (!mEnableOVDReadback)
+			return PxsOVDReadbackMode::eDISABLED;
+#if PX_SUPPORT_OMNI_PVD
+		// Keep indexed access available for late recording. Callbacks gate individual payloads.
+		if (mDynamicContext->getEnableDirectGPUAPI() &&
+			(!mOvdCallbacks || mOvdCallbacks->isSelectiveCapture() || !mOvdCallbacks->isCaptureActive()))
+			return PxsOVDReadbackMode::eINDEXED;
+#endif
+		return PxsOVDReadbackMode::eFULL;
 	}
 
 	void PxgSimulationController::setEnableOVDCollisionReadback(bool enableOVDCollisionsReadback)
@@ -3322,12 +3328,172 @@ namespace physx
 
 	bool PxgSimulationController::getEnableOVDCollisionReadback() const
 	{
+#if PX_SUPPORT_OMNI_PVD
+		if (!mDynamicContext->getEnableDirectGPUAPI()) return mEnableOVDCollisionReadback;
+		return mEnableOVDCollisionReadback && mOvdCallbacks && mOvdCallbacks->isCapturingAllObjects() && mOvdCallbacks->isContactReadEnabled();
+#else
 		return mEnableOVDCollisionReadback;
+#endif
 	}
 #if PX_SUPPORT_OMNI_PVD
 	void PxgSimulationController::setOVDCallbacks(PxsSimulationControllerOVDCallbacks& ovdCallbacks)
 	{
 		mOvdCallbacks = &ovdCallbacks;
+	}
+
+	bool PxgSimulationController::ovdReadbackRigidDynamicData(const PxRigidDynamicGPUIndex* indices, PxU32 count, PxRigidDynamicGPUAPIReadType::Enum dataType)
+	{
+		return mSimulationCore->ovdReadbackRigidDynamicData(indices, count, dataType);
+	}
+
+	bool PxgSimulationController::ovdReadbackArticulationData(const PxArticulationGPUIndex* indices, PxU32 count, PxArticulationGPUAPIReadType::Enum dataType)
+	{
+		PxgArticulationCore* core = mDynamicContext->getArticulationCore();
+		return !core || core->ovdReadbackArticulationData(indices, count, dataType, mMaxLinks, mMaxDofs);
+	}
+
+	bool PxgSimulationController::ovdIsContactPairCaptured(const PxActor& actor0, const PxActor& actor1) const
+	{
+		return !mOvdCallbacks || mOvdCallbacks->isContactPairCaptured(actor0, actor1);
+	}
+
+	// GPU narrowphase uses the low prefix; CPU contacts use the high tail but still need solver readback.
+	// CCD streams outside these pools remain ordinary CPU streams.
+	static bool ovdReadbackPoolRange(PxgSimulationController& controller, PxCudaContext& cuda,
+		const PxcDataStreamPool& pool, CUdeviceptr device, PxU64 deviceBytes, const void* source, PxU64 bytes, bool onlyGpu, bool performCopy = true)
+	{
+		if (!source || !bytes) return true;
+		const size_t address = reinterpret_cast<size_t>(source);
+		const size_t base = reinterpret_cast<size_t>(pool.mDataStream);
+		if (address < base || address - base >= pool.mDataStreamSize) return true;
+		const PxU64 offset = address - base;
+		if (pool.mSharedDataIndex < 0 || PxU64(pool.mSharedDataIndex) + pool.mSharedDataIndexGPU > pool.mDataStreamSize
+			|| bytes > pool.mDataStreamSize - offset) return false;
+		const bool gpuRange = offset < pool.mSharedDataIndexGPU && bytes <= pool.mSharedDataIndexGPU - offset;
+		const bool cpuRange = offset >= pool.mDataStreamSize - PxU32(pool.mSharedDataIndex);
+		if (!gpuRange && !cpuRange) return false;
+		if (onlyGpu && cpuRange) return true;
+		if (!device || offset > deviceBytes || bytes > deviceBytes - offset) return false;
+		if (!performCopy) return true;
+		if (cuda.memcpyDtoH(pool.mDataStream + offset, device + offset, size_t(bytes))) return false;
+		controller.recordOmniPvdReadbackCopy(bytes);
+		return true;
+	}
+
+	bool PxgSimulationController::ovdBeginContactReadback()
+	{
+		mOmniPvdContactBatchPrepared = false;
+		mOmniPvdContactPairs.clear();
+		// Late snapshots cannot rely on bulk copies from a step made while recording was off.
+		return mEnableOVDReadback && mDynamicContext->getEnableDirectGPUAPI() && mOvdCallbacks
+			&& mOvdCallbacks->isContactReadEnabled() && (!mOvdCallbacks->isCapturingAllObjects() || mOvdCallbacks->isTakingSnapshot());
+	}
+
+	void PxgSimulationController::ovdQueueContactReadback(const void* patches, const void* points, const void* friction,
+		const PxReal* forces, PxU32 nbContacts, PxU32 nbPatches)
+	{
+		OmniPvdContactPair pair = { patches, points, friction, forces, nbContacts, nbPatches };
+		mOmniPvdContactPairs.pushBack(pair);
+	}
+
+	bool PxgSimulationController::ovdFinishContactReadback()
+	{
+		PxScopedCudaLock lock(*mCudaContextManager);
+		PxCudaContext& cuda = *mCudaContextManager->getCudaContext();
+		PxgGpuNarrowphaseCore& narrowphase = *mDynamicContext->getNarrowphaseCore();
+		PxgSolverCore& solver = *mDynamicContext->getGpuSolverCore();
+		const PxgGpuContext::OmniPvdContactStreams& streams = mDynamicContext->getOmniPvdContactStreams();
+		const PxcDataStreamPool* pools[] = { &streams.patches, &streams.points, &streams.forces, &streams.friction };
+		const CUdeviceptr devices[] = { narrowphase.getOmniPvdPatchStream(), narrowphase.getOmniPvdContactStream(),
+			solver.mForceBuffer.getDevicePtr(), solver.mFrictionPatches.getDevicePtr() };
+		const PxU64 deviceSizes[] = { streams.patches.mDataStreamSize, streams.points.mDataStreamSize,
+			solver.mForceBuffer.getSize(), solver.mFrictionPatches.getSize() };
+		// Patch flags determine point layout. Read their merged ranges before examining those flags.
+		for (PxU32 poolId = 0; poolId < 4; ++poolId)
+		{
+			const PxcDataStreamPool& pool = *pools[poolId];
+			mOmniPvdContactRanges.clear();
+			for (PxU32 i = 0; i < mOmniPvdContactPairs.size(); ++i)
+			{
+				const OmniPvdContactPair& pair = mOmniPvdContactPairs[i];
+				if (!pair.nbPatches) { if (pair.nbContacts) return false; else continue; }
+				if (!pair.patches || (pair.nbContacts && !pair.points)) return false;
+				const void* source = pair.patches;
+				PxU64 bytes = PxU64(pair.nbPatches) * sizeof(PxContactPatch);
+				if (poolId)
+				{
+					const PxU16 flags = static_cast<const PxContactPatch*>(pair.patches)[0].internalFlags;
+					if (poolId == 1)
+					{
+						source = pair.points;
+						const PxU32 pointSize = flags & PxContactPatch::eCOMPRESSED_MODIFIED_CONTACT ? sizeof(PxExtendedContact)
+							: flags & PxContactPatch::eMODIFIABLE ? sizeof(PxModifiableContact) : sizeof(PxContact);
+						bytes = PxU64(pair.nbContacts) * pointSize;
+					}
+					else if (poolId == 2)
+					{
+						source = pair.forces;
+						bytes = PxU64(pair.nbContacts) * (sizeof(PxReal) + ((flags & PxContactPatch::eHAS_FACE_INDICES) ? sizeof(PxU32) : 0));
+					}
+					else { source = pair.friction; bytes = PxU64(pair.nbPatches) * sizeof(PxFrictionPatch); }
+				}
+				if (!ovdReadbackPoolRange(*this, cuda, pool, devices[poolId], deviceSizes[poolId], source, bytes, poolId < 2, false)) return false;
+				const size_t address = reinterpret_cast<size_t>(source), base = reinterpret_cast<size_t>(pool.mDataStream);
+				if (!source || !bytes || address < base || address - base >= pool.mDataStreamSize) continue;
+				const PxU64 offset = address - base;
+				if (poolId < 2 && offset >= pool.mSharedDataIndexGPU) continue;
+				OmniPvdContactRange range = { offset, bytes };
+				mOmniPvdContactRanges.pushBack(range);
+			}
+			PxSort(mOmniPvdContactRanges.begin(), mOmniPvdContactRanges.size(), OmniPvdContactRangeLess());
+			for (PxU32 first = 0; first < mOmniPvdContactRanges.size();)
+			{
+				const PxU64 offset = mOmniPvdContactRanges[first].offset;
+				PxU64 end = offset + mOmniPvdContactRanges[first].bytes;
+				PxU32 next = first + 1;
+				while (next < mOmniPvdContactRanges.size() && mOmniPvdContactRanges[next].offset <= end &&
+					((mOmniPvdContactRanges[next].offset < pool.mSharedDataIndexGPU) == (offset < pool.mSharedDataIndexGPU)))
+				{
+					end = PxMax(end, mOmniPvdContactRanges[next].offset + mOmniPvdContactRanges[next].bytes);
+					++next;
+				}
+				if (!ovdReadbackPoolRange(*this, cuda, pool, devices[poolId], deviceSizes[poolId], pool.mDataStream + offset, end - offset, poolId < 2)) return false;
+				first = next;
+			}
+		}
+		mOmniPvdContactBatchPrepared = true;
+		return true;
+	}
+
+	bool PxgSimulationController::ovdReadbackContactPair(const void* patches, const void* points, const void* friction,
+		const PxReal* forces, PxU32 nbContacts, PxU32 nbPatches)
+	{
+		if (!mEnableOVDReadback || !mDynamicContext->getEnableDirectGPUAPI() || !mOvdCallbacks || !mOvdCallbacks->isContactReadEnabled()
+			|| (mOvdCallbacks->isCapturingAllObjects() && !mOvdCallbacks->isTakingSnapshot())) return true;
+		if (!nbPatches) return nbContacts == 0;
+		if (!patches || (nbContacts && !points)) return false;
+		PxScopedCudaLock lock(*mCudaContextManager);
+		PxCudaContext& cuda = *mCudaContextManager->getCudaContext();
+		PxgGpuNarrowphaseCore& narrowphase = *mDynamicContext->getNarrowphaseCore();
+		const PxgGpuContext::OmniPvdContactStreams& streams = mDynamicContext->getOmniPvdContactStreams();
+		const PxcDataStreamPool& patchPool = streams.patches;
+		const PxcDataStreamPool& pointPool = streams.points;
+		const PxU64 patchBytes = PxU64(nbPatches) * sizeof(PxContactPatch);
+		if (!ovdReadbackPoolRange(*this, cuda, patchPool, narrowphase.getOmniPvdPatchStream(), patchPool.mDataStreamSize, patches, patchBytes, true, !mOmniPvdContactBatchPrepared)) return false;
+		const PxContactPatch* contactPatches = static_cast<const PxContactPatch*>(patches);
+		const PxU16 flags = contactPatches[0].internalFlags;
+		const PxU32 pointSize = flags & PxContactPatch::eCOMPRESSED_MODIFIED_CONTACT ? sizeof(PxExtendedContact)
+			: flags & PxContactPatch::eMODIFIABLE ? sizeof(PxModifiableContact) : sizeof(PxContact);
+		if (!ovdReadbackPoolRange(*this, cuda, pointPool, narrowphase.getOmniPvdContactStream(), pointPool.mDataStreamSize,
+			points, PxU64(nbContacts) * pointSize, true, !mOmniPvdContactBatchPrepared)) return false;
+		PxgSolverCore& solver = *mDynamicContext->getGpuSolverCore();
+		const PxU64 forceBytes = PxU64(nbContacts) * sizeof(PxReal)
+			+ ((flags & PxContactPatch::eHAS_FACE_INDICES) ? PxU64(nbContacts) * sizeof(PxU32) : 0);
+		if (!ovdReadbackPoolRange(*this, cuda, streams.forces, solver.mForceBuffer.getDevicePtr(),
+			solver.mForceBuffer.getSize(), forces, forceBytes, false, !mOmniPvdContactBatchPrepared)) return false;
+		if (!ovdReadbackPoolRange(*this, cuda, streams.friction, solver.mFrictionPatches.getDevicePtr(),
+			solver.mFrictionPatches.getSize(), friction, PxU64(nbPatches) * sizeof(PxFrictionPatch), false, !mOmniPvdContactBatchPrepared)) return false;
+		return true;
 	}
 
 	void PxgSimulationController::ovdSnapshotRigidDynamicForces(const PxRigidDynamicGPUIndex* gpuIndices, PxU32 nbElements)

@@ -10,7 +10,6 @@ namespace physx
 struct IPhysx;
 struct IPhysxSimulation;
 struct IPhysxPrivate;
-struct IPhysxJoint;
 
 namespace tensors
 {
@@ -26,7 +25,6 @@ void tensorsShutdown();
 extern omni::physx::IPhysx* g_physx;
 extern omni::physx::IPhysxSimulation* g_physxSimulation;
 extern omni::physx::IPhysxPrivate* g_physxPrivate;
-extern omni::physx::IPhysxJoint* g_physxJoint;
 
 // When true (default), the pre-leaf tokens of a pattern are matched strictly
 // (level by level) and only the final named or glob leaf token is searched at

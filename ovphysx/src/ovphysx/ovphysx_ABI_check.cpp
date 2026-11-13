@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-CAPI-OMNIPVD-CAPTURE-001
+// @covers AC-1
+
 #include <stddef.h>
 #include "ovphysx_ABI_check.h"
 #include "ovphysx/dlpack/dlpack.h"
@@ -95,6 +98,31 @@ size_t ovphysx_internal_omnipvd_destination_offset(int field)
     case OVPHYSX_OD_TCP_ADDRESS: return offsetof(ovphysx_omnipvd_destination_t, tcp_address);
     case OVPHYSX_OD_TCP_PORT: return offsetof(ovphysx_omnipvd_destination_t, tcp_port);
     case OVPHYSX_OD_TCP_TIMEOUT_MS: return offsetof(ovphysx_omnipvd_destination_t, tcp_timeout_ms);
+    default: return (size_t)~0ULL;
+    }
+}
+
+// ovphysx_omnipvd_recording_options_t
+size_t ovphysx_internal_omnipvd_recording_options_sizeof()
+{
+    return sizeof(ovphysx_omnipvd_recording_options_t);
+}
+
+size_t ovphysx_internal_omnipvd_recording_options_alignof()
+{
+    return alignof(ovphysx_omnipvd_recording_options_t);
+}
+
+size_t ovphysx_internal_omnipvd_recording_options_offset(int field)
+{
+    switch (field)
+    {
+    case OVPHYSX_ORO_RECORD_SECONDARY_DATA: return offsetof(ovphysx_omnipvd_recording_options_t, record_secondary_data);
+    case OVPHYSX_ORO_SCENE_PATHS: return offsetof(ovphysx_omnipvd_recording_options_t, scene_paths);
+    case OVPHYSX_ORO_SCENE_COUNT: return offsetof(ovphysx_omnipvd_recording_options_t, scene_count);
+    case OVPHYSX_ORO_OBJECT_PATHS: return offsetof(ovphysx_omnipvd_recording_options_t, object_paths);
+    case OVPHYSX_ORO_OBJECT_COUNT: return offsetof(ovphysx_omnipvd_recording_options_t, object_count);
+    case OVPHYSX_ORO_WAIT_FOR_SELECTION: return offsetof(ovphysx_omnipvd_recording_options_t, wait_for_selection);
     default: return (size_t)~0ULL;
     }
 }

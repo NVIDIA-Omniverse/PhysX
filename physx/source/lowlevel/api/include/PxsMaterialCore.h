@@ -34,7 +34,7 @@ struct PxsMaterialData
 		dampingCombineMode(PxCombineMode::eAVERAGE)
 	{}
 
-	PxsMaterialData(const PxEMPTY) {}
+	PxsMaterialData(const PxEMPTY) : flags(PxEmpty) {}
 
 	PX_CUDA_CALLABLE PX_FORCE_INLINE PxCombineMode::Enum getFrictionCombineMode()		const	{ return PxCombineMode::Enum(fricCombineMode);	}
 	PX_CUDA_CALLABLE PX_FORCE_INLINE PxCombineMode::Enum getRestitutionCombineMode()	const	{ return PxCombineMode::Enum(restCombineMode);	}

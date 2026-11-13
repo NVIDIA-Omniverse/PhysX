@@ -19,7 +19,7 @@ dependencies = [
   # against the population/runtime ABI of the pinned ovstage release. This pin is
   # generated from the OVSTAGE_VERSION constant in scripts/fetch_ovstage_release.py
   # (the version source of truth); do not edit this line by hand.
-  "ovstage==0.3.0.1791986420",
+  "ovstage==0.4.0.1794520352",
   # Warp is the public CPU/CUDA array frontend for PhysX.read(). Floor is the tested line,
   # pinned exactly in tests; <2 only guards a major bump (a minor cap collides with IsaacLab).
   "warp-lang>=1.16,<2",
@@ -48,7 +48,7 @@ Changelog = "https://nvidia-omniverse.github.io/PhysX/ovphysx/latest/changelog.h
 [dependency-groups]
 dev = [
   "build>=1.0.0", # for building a wheel
-  "pyright==1.1.411", # pinned; bump intentionally via MR
+  "pyright[nodejs]==1.1.411", # pinned; bump intentionally via MR. [nodejs] ships node as a PyPI wheel so pyright never runs nodeenv
   "warp-lang>=1.16,<1.17", # stub types for pyright's no-install-project environment
 ]
 

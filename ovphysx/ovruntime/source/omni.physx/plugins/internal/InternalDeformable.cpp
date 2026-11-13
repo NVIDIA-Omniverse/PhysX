@@ -1,6 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-LOAD-DEFORMABLE-001
+ * @covers AC-2 AC-3
+ */
+
 #include "InternalDeformable.h"
 #include "InternalDeformableAttachment.h"
 #include "InternalScene.h"

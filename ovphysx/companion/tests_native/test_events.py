@@ -17,12 +17,13 @@ from ovphysx_companion.native import CompanionError,Status
 @pytest.fixture
 def event_stages(physics):
     import ovstage
+    from ovphysx.population import physics_population_descs
     stages=[]
     try:
         for name in ('event-A','event-B'):
             stage=ovstage.Stage(name);stages.append(stage)
-            ovstage.population.open_usd(stage,str(Path(__file__).resolve().parents[1]/'samples/scenes/events.usda'),
-                ordinal=1,domains=ovstage.PopulationDomain.ALL)
+            ovstage.population.open_usd_with_desc(stage,str(Path(__file__).resolve().parents[1]/'samples/scenes/events.usda'),
+                ordinal=1,time=ovstage.population.DEFAULT_TIME,descs=physics_population_descs(rendering=True))
             stage.advance_write_floor(ordinal=1).wait()
         yield stages
     finally:
@@ -128,6 +129,7 @@ def test_event_monitor_sample():
 
 def test_contact_point_instance_identity(physics,tmp_path):
     import ovstage
+    from ovphysx.population import physics_population_descs
     source=tmp_path/'instances.usda'
     source.write_text('''#usda 1.0
 (metersPerUnit = 1
@@ -163,8 +165,9 @@ def Xform "World" {
 ''')
     stage=ovstage.Stage('contact-instances')
     try:
-        ovstage.population.open_usd(stage,str(source),ordinal=1,
-            domains=ovstage.PopulationDomain.PHYSICS|ovstage.PopulationDomain.RENDERING)
+        ovstage.population.open_usd_with_desc(stage,str(source),ordinal=1,
+            time=ovstage.population.DEFAULT_TIME,
+            descs=physics_population_descs(rendering=True))
         stage.advance_write_floor(ordinal=1).wait()
         with PreviewSession(physics,stage,read_ordinal=1) as preview,EventQueue(preview,mask=Mask.CONTACT|Mask.TRIGGER) as queue:
             indices=set();enters=set();leaves=set();stays=set()
@@ -189,6 +192,7 @@ def test_event_queue_retains_runtime_after_last_owner_in_worker():
     env['PYTHONPATH']=os.pathsep.join(filter(None,[str(Path(ovphysx_companion.__file__).parents[1]),env.get('PYTHONPATH')]))
     code='''
 import ovphysx,ovstage
+from ovphysx.population import physics_population_descs
 from ovphysx_companion.preview import PreviewSession
 from ovphysx_companion.events import EventQueue
 from ovphysx_companion.schemas import physx_schema_paths
@@ -196,7 +200,7 @@ ovstage.population.register_usd_schemas([str(p) for p in physx_schema_paths()])
 ovphysx.PhysX.set_cpu_mode(True)
 p=ovphysx.PhysX();s=ovstage.Stage('event-retention')
 import sys
-ovstage.population.open_usd(s,sys.argv[1],ordinal=1,domains=ovstage.PopulationDomain.ALL)
+ovstage.population.open_usd_with_desc(s,sys.argv[1],ordinal=1,time=ovstage.population.DEFAULT_TIME,descs=physics_population_descs(rendering=True))
 s.advance_write_floor(ordinal=1).wait()
 preview=PreviewSession(p,s,read_ordinal=1);q=EventQueue(preview)
 preview.step(.01);preview.close();p.destroy();s.destroy()
@@ -210,13 +214,14 @@ q.close();assert batch.events
 
 def test_trigger_leave_for_articulation_link(physics,tmp_path):
     import ovstage
+    from ovphysx.population import physics_population_descs
     source=Path(__file__).resolve().parents[1]/'samples/scenes/events.usda'
     text=source.read_text().replace('"PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysxContactReportAPI"',
         '"PhysicsRigidBodyAPI", "PhysicsArticulationRootAPI", "PhysicsCollisionAPI", "PhysxContactReportAPI"',1)
     path=tmp_path/'articulation-trigger.usda';path.write_text(text)
     stage=ovstage.Stage('articulation-trigger')
     try:
-        ovstage.population.open_usd(stage,str(path),ordinal=1,domains=ovstage.PopulationDomain.ALL)
+        ovstage.population.open_usd_with_desc(stage,str(path),ordinal=1,time=ovstage.population.DEFAULT_TIME,descs=physics_population_descs(rendering=True))
         stage.advance_write_floor(ordinal=1).wait()
         with PreviewSession(physics,stage,read_ordinal=1) as preview,EventQueue(preview,mask=Mask.TRIGGER) as queue:
             events=[]
@@ -232,6 +237,7 @@ def test_trigger_leave_for_articulation_link(physics,tmp_path):
 @pytest.mark.parametrize('approximation', ['convexDecomposition', 'sphereFill'])
 def test_compound_collider_contact_filter(physics, tmp_path, approximation):
     import ovstage
+    from ovphysx.population import physics_population_descs
     source = tmp_path / 'compound.usda'
     source.write_text('''#usda 1.0
 (metersPerUnit = 1
@@ -261,7 +267,7 @@ def Xform "World" {
 }
 '''.replace('APPROXIMATION', approximation))
     with ovstage.Stage('compound-contact-filter') as stage:
-        ovstage.population.open_usd(stage, str(source), ordinal=1, domains=ovstage.PopulationDomain.ALL)
+        ovstage.population.open_usd_with_desc(stage, str(source), ordinal=1, time=ovstage.population.DEFAULT_TIME, descs=physics_population_descs(rendering=True))
         stage.advance_write_floor(ordinal=1).wait()
         with PreviewSession(physics, stage, read_ordinal=1) as preview:
             with EventQueue(preview, mask=Mask.CONTACT, filter_path='/World/Body/Collider') as filtered, \

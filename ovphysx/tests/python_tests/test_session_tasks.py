@@ -9,6 +9,7 @@
 
 import ctypes
 
+import ovstage
 import pytest
 
 from ovphysx import ApiStatus, PhysX, Task, TaskError
@@ -108,15 +109,17 @@ def test_kinematic_update_waits_and_returns_none(failure):
 
 
 @pytest.mark.parametrize("kind", ["read", "write"])
-def test_kinematic_update_drains_deferred_session_cleanup(kind):
+def test_kinematic_update_leaves_deferred_session_cleanup_queued(kind):
     sdk = _sdk()
     holder = _ReadRelease(sdk, 7, 9) if kind == "read" else _WriteRelease(sdk, 7, 9)
     getattr(sdk, "_enqueue_" + kind + "_release")(holder)
 
     sdk.update_articulations_kinematic()
 
-    assert sdk._lib.waited == ["query", "kinematic", "release_query"]
-    assert len(sdk._lib.pending) == 2
+    assert sdk._lib.submitted == ["query", "kinematic", "release_query"]
+    assert holder.pending
+    # The next step, query, session open, attach or detach submits it.
+    sdk._drain_pending_read_releases()
     sdk.wait_all()
     assert sdk._lib.waited[-2:] == ["release_" + kind, "release_query"]
     assert sdk._lib.pending == {}
@@ -124,7 +127,7 @@ def test_kinematic_update_drains_deferred_session_cleanup(kind):
 
 def test_commit_waits_for_execution_failure():
     sdk = _sdk()
-    group = WriteGroup(0, 0, 0, [], 0, 1)
+    group = WriteGroup(ovstage.PrimPathList(0), 0, 0, [], 0, ovstage.Token(1))
     session = WriteSession(sdk, 7, 9, [group], [ctypes.pointer(_bindings.ovstage_map_group_t())])
     sdk._lib.failures["commit"] = ["execute"]
     with pytest.raises(TaskError, match="commit execution failed"):

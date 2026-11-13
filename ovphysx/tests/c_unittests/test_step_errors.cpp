@@ -6,6 +6,12 @@
  * @covers AC-1 AC-2
  * @implements REQ-CAPI-TASK-001
  * @covers AC-5 AC-6
+ *
+ * @implements REQ-CAPI-ASYNC-003
+ * @covers AC-5
+ *
+ * @implements REQ-CAPI-CONTACT-003
+ * @covers AC-3
  */
 
 #include <gtest/gtest.h>
@@ -16,6 +22,7 @@
 
 #include "cuda_test_helpers.h"
 #include "global_test_environment.h"
+#include "ovphysxTestHelpers.h"
 #include "ovphysx/ovphysx_config.h"
 #include "ovphysx_test_utils.h"
 
@@ -96,9 +103,13 @@ TEST_P(GpuStepErrorGpuTest, SyncFailureSurvivesDisabledLogging)
 {
     for (int step = 0; step < 2; ++step)
     {
-        EXPECT_EQ(ovphysx_step_sync(m_handle, 1.0f / 60.0f).status, OVPHYSX_API_ERROR);
+        EXPECT_EQ(ovphysx_step_sync(m_handle, 1.0f / 30.0f).status, OVPHYSX_API_ERROR);
         const ovphysx_string_t error = ovphysx_get_last_error();
         EXPECT_NE(std::string(error.ptr ? error.ptr : "", error.length).find("CUDA error 2"), std::string::npos);
+        float simulationTime = 0.0f;
+        float contactDt = 0.0f;
+        ASSERT_TRUE(ovphysx_read_step_bookkeeping_for_test_internal(m_handle, &simulationTime, &contactDt));
+        EXPECT_FLOAT_EQ(contactDt, 1.0f / 60.0f);
     }
 }
 
@@ -106,7 +117,7 @@ TEST_P(GpuStepErrorGpuTest, AsyncFailureSurvivesDisabledLogging)
 {
     for (int step = 0; step < 2; ++step)
     {
-        const ovphysx_enqueue_result_t task = ovphysx_step(m_handle, 1.0f / 60.0f);
+        const ovphysx_enqueue_result_t task = ovphysx_step(m_handle, 1.0f / 30.0f);
         ASSERT_EQ(task.status, OVPHYSX_API_SUCCESS);
         ovphysx_wait_task_result_t wait{};
         EXPECT_EQ(ovphysx_wait_task(m_handle, task, OVPHYSX_TIMEOUT_INFINITE, &wait).status, OVPHYSX_API_ERROR);
@@ -119,6 +130,10 @@ TEST_P(GpuStepErrorGpuTest, AsyncFailureSurvivesDisabledLogging)
         const ovphysx_string_t error = ovphysx_get_last_task_error(m_handle, task);
         EXPECT_NE(std::string(error.ptr ? error.ptr : "", error.length).find("CUDA error 2"), std::string::npos);
         ovphysx_destroy_wait_task_result(&wait);
+        float simulationTime = 0.0f;
+        float contactDt = 0.0f;
+        ASSERT_TRUE(ovphysx_read_step_bookkeeping_for_test_internal(m_handle, &simulationTime, &contactDt));
+        EXPECT_FLOAT_EQ(contactDt, 1.0f / 60.0f);
     }
 }
 

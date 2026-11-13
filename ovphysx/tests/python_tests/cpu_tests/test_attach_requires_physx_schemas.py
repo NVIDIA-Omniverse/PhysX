@@ -29,6 +29,7 @@ _CHILD_SCRIPT = textwrap.dedent(
     from pathlib import Path
 
     import ovstage
+    from ovphysx.population import physics_population_descs
     import ovphysx
     from schema_support import physx_schema_paths
 
@@ -107,7 +108,7 @@ _CHILD_SCRIPT = textwrap.dedent(
         assert "PhysicsScene" in exported.read_text(encoding="utf-8")
         print("EXPORT_OK", flush=True)
     else:
-        ovstage.population.open_usd(stage, usd_path, ordinal=1, domains=ovstage.PopulationDomain.PHYSICS)
+        ovstage.population.open_usd_with_desc(stage, usd_path, ordinal=1, time=ovstage.population.DEFAULT_TIME, descs=physics_population_descs())
         stage.advance_write_floor(ordinal=1).wait()
     if mode == "late-application-registration":
         # OVStage inserts plugin identities even when it rejects late registration.
@@ -132,8 +133,11 @@ _CHILD_SCRIPT = textwrap.dedent(
                         read.wait()
                         for group in read.groups():
                             with group:
-                                for i in range(group.tensor_count):
-                                    values.extend(float(value) for value in np.ravel(np.array(group.array(i), copy=True)))
+                                for column in group.columns:
+                                    for i in range(column.tensor_count):
+                                        values.extend(
+                                            float(value) for value in np.ravel(np.array(column.array(i), copy=True))
+                                        )
         assert values == [123.0], values
         print("CUSTOM_PROVIDER_OK", flush=True)
     try:

@@ -5,7 +5,7 @@
 
 # PhysicsCollisionAPI
 
-Makes a Gprim a collision shape. Enumerated by usd-schemas CONTAINS PhysicsCollisionAPI. The shape geometry comes from the prim_type component (Cube, Capsule, Mesh, ...); this API only switches collision on and binds the shape to a scene.
+Makes a [Gprim](glossary.md#gprim) a collision shape. Enumerated by [usd-schemas](prim.md#columns) CONTAINS PhysicsCollisionAPI. The shape geometry comes from the prim_type component (Cube, Capsule, [Mesh](glossary.md#mesh), ...); this API only switches collision on and binds the shape to a scene.
 
 - **Applies to:** `Gprim`
 - **Read only when listed in `usd-schemas`.**
@@ -17,7 +17,7 @@ Applying this API is what makes the producer publish the prim's geometry attribu
 
 ## Columns
 
-*Raw fallback* is the USD schema value. *Producer writes* is what ovstage population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
+*Raw fallback* is the [USD](glossary.md#usd) schema value. *Producer writes* is what [ovstage](glossary.md#ovstage) population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
 
 | Column | Type | Units | Raw fallback | Producer writes | Parser default | If absent |
 |---|---|---|---|---|---|---|
@@ -29,3 +29,4 @@ Applying this API is what makes the producer publish the prim's geometry attribu
 - **[`prim`](prim.md):** The decomposed world scale of this prim is baked into the shape geometry (see each prim_type's derived values). A shape under a rigid body gets its local pose from this prim's transform relative to the body prim.
 - **[`MaterialBindingAPI`](MaterialBindingAPI.md):** Without a material binding the shape has no material slot and uses the scene default material.
 - **[`PhysicsRigidBodyAPI`](PhysicsRigidBodyAPI.md):** A collider with no rigid body ancestor or self is a static shape.
+- **[`NewtonCollisionAPI`](NewtonCollisionAPI.md):** Read for every collider without checking usd-schemas; each applies only when the matching physxCollision offset is absent.

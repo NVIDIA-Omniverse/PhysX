@@ -7,23 +7,23 @@
 
 Explicit mass properties on a body or a shape. Every column is optional and encodes unset through a value sentinel; anything unset is computed from geometry and density.
 
-- **Applies to:** `Xformable`
-- **Read only when listed in `usd-schemas`.**
+- **Applies to:** [`Xformable`](glossary.md#xformable)
+- **Read only when listed in [`usd-schemas`](prim.md#columns).**
 - **Uses blocks:** [`stage_units`](stage_units.md)
 
 ## What USD population writes
 
-All five attributes are published at their resolved USD value with no derivation: the raw fallbacks are exactly the unset sentinels the consumer tests for, so a producer-populated body without authored mass reads as fully unset.
+All five attributes are published at their resolved [USD](glossary.md#usd) value with no derivation: the raw fallbacks are exactly the unset sentinels the consumer tests for, so a producer-populated body without authored mass reads as fully unset.
 
 ## Columns
 
-*Raw fallback* is the USD schema value. *Producer writes* is what ovstage population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
+*Raw fallback* is the USD schema value. *Producer writes* is what [ovstage](glossary.md#ovstage) population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
 
 | Column | Type | Units | Raw fallback | Producer writes | Parser default | If absent |
 |---|---|---|---|---|---|---|
 | `physics:mass` | float32 | mass | 0.0 | resolved USD value (authored, else raw fallback) | -1.0 | Mass is computed from volume and density. |
 | `physics:density` | float32 | mass/length^3 | 0.0 | resolved USD value (authored, else raw fallback) | -1.0 | Density falls back to the bound physics material, then to default_density. |
-| `physics:centerOfMass` | float32[3], POINT | length | (`-inf`, `-inf`, `-inf`) | resolved USD value (authored, else raw fallback) |  | Computed from the shapes; there is no fixed parser default, the sentinel below is the parser's 'unset' marker. An authored value is multiplied component-wise by the prim's world scale, without rotation. |
+| `physics:centerOfMass` | float32[3], POINT | length | (`-inf`, `-inf`, `-inf`) | resolved USD value (authored, else raw fallback) |  | Computed from the shapes; there is no fixed parser default, the sentinel below is the parser's 'unset' marker. An authored value is multiplied component-wise by the [prim](glossary.md#prim)'s world scale, without rotation. |
 | `physics:diagonalInertia` | float32[3] | mass*length^2 | (0, 0, 0) | resolved USD value (authored, else raw fallback) |  | Computed from the shapes; there is no fixed parser default, the sentinel below is the parser's 'unset' marker. |
 | `physics:principalAxes` | float32[4], QUATERNION | none | (0, 0, 0, 0) | resolved USD value (authored, else raw fallback) | (0, 0, 0, 1) | Identity. Lane order is x, y, z, w. |
 

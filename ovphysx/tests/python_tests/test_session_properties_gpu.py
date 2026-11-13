@@ -16,6 +16,9 @@
 # @implements REQ-TENSOR-FK-001
 # @covers AC-2 AC-3
 # @maps_to TEST-TENSOR-FK-001
+# @implements REQ-PYTHON-READ-001
+# @covers AC-2
+# @maps_to TEST-PYTHON-READ-001
 
 """GPU-mode session read/write tests for DOF, body, body-inverse, inverse-dynamics, link-wrench, tendon, shape, metadata and kinematic properties (DirectGPU)."""
 
@@ -26,7 +29,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 from ovphysx.types import LogLevel, SimObjectType
-from session_helpers import handles_for, read_column, write_column, write_is_refused, write_uniform
+from session_helpers import handles_for, read_column, read_row_shapes, write_column, write_is_refused, write_uniform
 from test_utils import attach_usd_with_ovstage, data_path, load_usd_with_ovstage
 
 
@@ -95,8 +98,9 @@ def _make_usd_with_authored_dof_max_velocity(tmp_path, max_velocity_rad=5.0):
 
 class TestArticulationKinematicUpdateGpu:
 
-    def test_first_fk_update_auto_warmups_gpu(self, physx_sdk, native_log_callback_factory):
-        """First GPU FK refresh should initialize DirectGPU buffers itself."""
+    def test_fk_update_before_the_first_step_is_refused_gpu(self, physx_sdk, native_log_callback_factory):
+        """A DirectGPU FK refresh never warms the scene up: before a first step it is refused without
+        reaching PhysX, and after an explicit warmup it runs cleanly (ADR-0052)."""
         from ovphysx._bindings import _lib
 
         load_usd_with_ovstage(physx_sdk, data_path("two_articulations.usda"))
@@ -115,6 +119,9 @@ class TestArticulationKinematicUpdateGpu:
         assert result.status == 0, "Failed to register native log callback"
 
         try:
+            with pytest.raises(RuntimeError, match="simulation step"):
+                physx_sdk.update_articulations_kinematic()
+            physx_sdk.warmup()
             physx_sdk.update_articulations_kinematic()
         finally:
             _lib.ovphysx_set_log_callback(LogLevel.DEFAULT, None, None, None)
@@ -410,8 +417,8 @@ class TestInverseDynamicsTensorsGpu:
     def test_jacobian_readable(self, physx_sdk):
         stage = _load_and_step(physx_sdk)
         jacobians = read_column(physx_sdk, stage, SimObjectType.ARTICULATION, "jacobian")
-        shapes = read_column(physx_sdk, stage, SimObjectType.ARTICULATION, "jacobianShape")
-        # Each articulation's Jacobian is a rows x cols matrix; jacobianShape holds (rows, cols).
+        shapes = read_row_shapes(physx_sdk, stage, SimObjectType.ARTICULATION, "jacobian")
+        # Each articulation's Jacobian is a rows x cols matrix, the group's own trailing dimensions.
         for path, jacobian in jacobians.items():
             rows, cols = shapes[path]
             assert jacobian.size == rows * cols

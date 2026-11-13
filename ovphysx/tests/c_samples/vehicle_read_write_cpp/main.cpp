@@ -22,7 +22,7 @@ void awaitTask(ovphysx_instance_handle_t instance, ovphysx_enqueue_result_t task
 }
 
 template <std::size_t N>
-ovx_string_or_token_t attribute(const char (&name)[N])
+ovx_token_or_string_t attribute(const char (&name)[N])
 {
     return { OVX_INVALID_TOKEN, { name, N - 1 } };
 }
@@ -82,8 +82,9 @@ const DLTensor& cpuFloats(const ovstage_data_t& data)
 template <std::size_t N>
 void printColumn(Sessions& sessions, const char (&name)[N])
 {
-    const ovx_string_or_token_t attr = attribute(name);
+    const ovx_token_or_string_t attr = attribute(name);
     awaitTask(sessions.instance, ovphysx_read(sessions.instance, sessions.query, &attr, 1,
+                                             ovstage_cuda_sync_t{ 0, 0 },
                                              &sessions.read, nullptr));
     for (;;)
     {
@@ -91,7 +92,7 @@ void printColumn(Sessions& sessions, const char (&name)[N])
         awaitTask(sessions.instance, ovphysx_fetch_read_next(sessions.instance, sessions.read, &group));
         if (!group)
             break;
-        const DLTensor& tensor = cpuFloats(group->data);
+        const DLTensor& tensor = cpuFloats(group->columns[0].data);
         const unsigned char* bytes = static_cast<const unsigned char*>(tensor.data);
         const float* values = bytes ? reinterpret_cast<const float*>(bytes + tensor.byte_offset) : nullptr;
         for (int64_t row = 0; row < tensor.shape[0]; ++row)
@@ -129,7 +130,7 @@ void driveOneCar(ovphysx_instance_handle_t instance)
     if (summary.total_prim_count != 4)
         throw std::runtime_error("Expected four wheels");
 
-    const ovx_string_or_token_t accelerator = attribute(OVPHYSX_ATTR_ACCELERATOR);
+    const ovx_token_or_string_t accelerator = attribute(OVPHYSX_ATTR_ACCELERATOR);
     awaitTask(instance, ovphysx_write(instance, vehicle.query, &accelerator, 1,
                                       &vehicle.write, nullptr));
     for (;;)

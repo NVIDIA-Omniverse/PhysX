@@ -1,8 +1,16 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-CACHE-UPDATE-001
+ * @covers AC-6 AC-8 AC-14
+ */
+/** @implements REQ-CACHE-ATTACH-001
+ * @covers AC-9 AC-20
+ */
+
 /** @implements REQ-PARSE-FEED-006
- * @covers AC-5
+ * @covers AC-5 AC-7
  */
 
 // @implements REQ-PARSE-BATCH-001
@@ -56,6 +64,8 @@
 // @implements REQ-NATIVE-INTERACTION-001
 // @covers AC-2
 #pragma once
+// @implements REQ-CACHE-ATTACH-001
+// @covers AC-3 AC-4
 #include <carb/tasking/TaskingUtils.h>
 #include "RuntimeExecution.h"
 #include "AttachmentEvents.h"
@@ -91,6 +101,7 @@
 #include <iterator>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <set>
 #include <string>
 #include <string_view>
@@ -105,6 +116,11 @@
 namespace physx { class PxCpuDispatcher; class PxCudaContextManager; }
 namespace omni::sampling { struct SurfaceSampler; }
 namespace omni::physx::native { class Drag; }
+namespace omni::physx::cache
+{
+class DecodedCollection;
+class RuntimeArtifactService;
+} // namespace omni::physx::cache
 namespace omni::physx { class CustomPhysXJoint; class CustomPhysXGeometryCallback; }
 namespace omni::physx::particles
 {
@@ -119,6 +135,9 @@ using PostprocessRefMap = std::unordered_map<omni::physics::parse::ObjectKey, Po
     omni::physics::parse::ObjectKey::Hash>;
 }
 namespace omni { namespace physics { namespace parse { class DescriptorBatchAllocator; struct ScanOptions; class IPhysicsSource; class IPhysicsDataWrite; class IChangeFeed; struct AttachTarget; } } }
+// Defined in OvxPhysicsWrite.cpp (same module); forward-declared to avoid pulling the write header
+// into this widely-included one. -1 unless every attached scene is DirectGPU on the same device.
+namespace omni { namespace physx { namespace usdparser { class AttachedStage; } int ovxDirectGpuDeviceOrdinal(usdparser::AttachedStage& owner); } }
 
 namespace omni
 {
@@ -451,6 +470,9 @@ public:
     {
         bool enabled = false;
         bool initialPopulation = false;
+        // Set while an unpublished compiled unit rolls back: its objects were
+        // never announced, so no observer receives their destruction.
+        bool suppressed = false;
     };
     ObjectNotificationState& objectNotificationState() { return mObjectNotificationState; }
     const ObjectNotificationState& objectNotificationState() const { return mObjectNotificationState; }
@@ -463,6 +485,7 @@ public:
         // the UsdSource rebuildSource() is about to build.
         mExternalAttachPayload = nullptr;
         mExternalReadOrdinal = 0;
+        mScanReadOrdinal = 0;
         mExternalBackingStageId = 0;
         rebuildSource();
     }
@@ -484,7 +507,8 @@ public:
     void setOvstageSource(const void* attachPayload,
                           AttachedStageUsdHandle backingStage = AttachedStageUsdHandle{},
                           uint64_t readOrdinal = 1,
-                          uint64_t backingStageId = 0);
+                          uint64_t backingStageId = 0,
+                          bool deferChangeFeedBaseline = false);
 
     // The backend-opaque attach handle for the current source: the live USD
     // stage for a USD attach, or the consumer-provided payload otherwise. Fed to
@@ -497,6 +521,48 @@ public:
     internal::InternalPhysXDatabase& getInternalPhysXDatabase() const;
     void releaseInternalPhysXDatabase();
     void releaseNativePhysics();
+    // Records are the ones hydration created from this collection; shared are its
+    // registered materials and shapes, which other owners may reference. A retained
+    // collection is freed once all of them are unused (see the .cpp).
+    void retainCompiledCollection(std::unique_ptr<cache::DecodedCollection>& collection,
+                                  std::vector<ObjectId> records,
+                                  std::vector<::physx::PxRefCounted*> shared);
+    size_t retainedCompiledCollectionCount() const
+    {
+        return mCompiledCollections.size();
+    }
+    void configureCompiledInsertion(const PhysxCompiledStageCacheOptions* options);
+    // Retain the datastore client across updates; every lookup still validates
+    // the current content/profile and artifact. Released with this attachment.
+    cache::RuntimeArtifactService* compiledInsertionStore();
+    PhysxCompiledStageCacheMode compiledInsertionMode() const
+    {
+        return mCompiledInsertionMode;
+    }
+    PhysxCompiledStageCacheResult compiledInsertionResult = PhysxCompiledStageCacheResult::eDisabled;
+    // Shapes and materials a load or an update failed to create, for example because
+    // cooking failed or PhysX's material table was full. The compiled cache stores
+    // nothing from a load during which this grew: every later process would restore
+    // the result without them.
+    void noteCreationFailure()
+    {
+        mCreationFailures.fetch_add(1, std::memory_order_relaxed);
+    }
+    uint32_t creationFailures() const
+    {
+        return mCreationFailures.load(std::memory_order_relaxed);
+    }
+    // The scene a whole-stage compiled-cache attach created ahead of loading, while it
+    // captured the stage's inputs (cache::AttachmentCache::restore): its prim, its object
+    // and every record its creation added. Hydration on a hit, or the ordinary scene pass
+    // on a miss, takes it instead of creating that prim's scene.
+    struct PreparedScene
+    {
+        omni::physics::parse::ObjectKey key;
+        ObjectId id = kInvalidObjectId;
+        std::vector<ObjectId> records;
+    };
+    std::optional<PreparedScene> preparedScene;
 
     FilteredPairsSet& getFilteredPairs() const
     {
@@ -774,13 +840,21 @@ public:
             return true;
 
         const uint64_t unreadFromOrdinal = std::max(fromOrdinal, mExternalReadOrdinal + 1);
-        const bool ok = mChangeFeed->drainRange(unreadFromOrdinal, toOrdinal);
+        // Learn the sim's residency now that its scenes exist (interest registration ran during
+        // attach, before the scenes were built): on a DirectGPU sim the feed then reads
+        // device-eligible value columns straight from device and the scatter borrows them.
+        mChangeFeed->setDeviceOrdinal(omni::physx::ovxDirectGpuDeviceOrdinal(*this));
+        bool ok = mChangeFeed->drainRange(unreadFromOrdinal, toOrdinal);
         if (ok)
         {
-            // Advance the read cursor only after a successful drain: a failed
-            // range must not leave state claiming those ordinals were consumed.
-            mExternalReadOrdinal = toOrdinal;
-            flushBufferedChanges(*this, 0.0f);
+            // The feed read through toOrdinal and may defer new-prim properties to
+            // the structural scan, which must read at the same ordinal
+            // (attachTarget()). So must a later flush that retries this range's
+            // roots after this one fails or throws, so the scan ordinal stays.
+            mScanReadOrdinal = toOrdinal;
+            // The range is consumed once a flush succeeds: this one, or a later
+            // one that retries its roots (consumeDrainedChanges()).
+            ok = flushBufferedChanges(*this, 0.0f);
         }
         // A false holds the cursor uniformly, whichever kind drainRange meant: a partial-commit HOLD
         // (correct -- retry the same range next drain) or an UNSERVABLE range (from below retained history,
@@ -788,6 +862,15 @@ public:
         // one bool (see its doc), so an unservable range stalls here until a re-attach is triggered out of
         // band. Distinguishing them in the result is the deferred re-attach work (ADR-0003 / ADR-0006 OQs).
         return ok;
+    }
+
+    // Called by every flush that succeeds. It applied each change drained so far,
+    // including the roots of an update whose own flush failed and a simulation
+    // update retried, so updateFromOvStage must not replay those changes: a
+    // replayed structural change would recreate the objects it loaded.
+    void consumeDrainedChanges()
+    {
+        mExternalReadOrdinal = mScanReadOrdinal;
     }
 
     // Resolution is string-typed (keyFor / textFor / textViewFor); there is no pxr-typed
@@ -831,11 +914,6 @@ public:
                 return true;
         }
         return false;
-    }
-
-    bool isPhysXDefaultSimulator() const
-    {
-        return mCachedSettings.physxDefaultSimulator;
     }
 
     void setDisableResetOnStop(bool disable)
@@ -1286,6 +1364,13 @@ void bufferRequestRigidBodyMassUpdate(omni::physics::parse::ObjectKey key)
         }
     }
 
+    // False until replicate() registers a scene-partition token. Until then every
+    // partition resolves to env 0.
+    bool hasRegisteredEnvIds() const
+    {
+        return !mTokenIdEnvIdMap.empty();
+    }
+
     uint32_t getEnvIdFromToken(omni::physics::parse::TokenId token) const
     {
         TokenIdEnvIdMap::const_iterator fit = mTokenIdEnvIdMap.find(token);
@@ -1391,6 +1476,24 @@ private:
     // into this consumer.
     // Declared before the source bundle so backends and payload outlive all readers.
     omni::physics::ovstage::OvstageAttach mOwnedAttachPayload;
+    // Native objects live in their collection's aligned binary allocation.
+    struct RetainedCollection
+    {
+        RetainedCollection() = default;
+        RetainedCollection(const RetainedCollection&) = delete;
+        RetainedCollection& operator=(const RetainedCollection&) = delete;
+        ~RetainedCollection(); // drops the shared references before the storage
+        std::unique_ptr<cache::DecodedCollection> collection;
+        std::vector<ObjectId> records;
+        std::vector<::physx::PxRefCounted*> shared; // each holds one reference of ours
+    };
+    // Held by pointer: pruning must never assign one collection over another,
+    // which would free that one's storage without dropping its shared references.
+    std::vector<std::unique_ptr<RetainedCollection>> mCompiledCollections;
+    std::unique_ptr<cache::RuntimeArtifactService> mCompiledInsertionStore;
+    bool mCompiledInsertionStoreFailed = false;
+    PhysxCompiledStageCacheMode mCompiledInsertionMode = PhysxCompiledStageCacheMode::eDisabled;
+    std::atomic<uint32_t> mCreationFailures{ 0 };
     std::unique_ptr<omni::physics::parse::IParseBackend> mParseBackend;
     std::unique_ptr<omni::physics::parse::IScanBackend> mScanBackend;
     // Protect publication/reset across coordinator entry points; never used by fill workers.
@@ -1426,9 +1529,14 @@ private:
     // via setOvstageSource(); consumer-owned (must outlive the attach). Kept as
     // const void* so this header needs no ovstage (or any backend) dependency.
     const void* mExternalAttachPayload = nullptr;
-    // Optional snapshot override carried through AttachTarget for runtime ovstage
-    // re-scans. 0 means the backend should use its payload's attach-time ordinal.
+    // The last ordinal whose changes are fully applied: updateFromOvStage skips a
+    // range at or below it.
     uint64_t mExternalReadOrdinal = 0;
+    // Snapshot override carried through AttachTarget for runtime ovstage re-scans:
+    // the last ordinal the change feed drained, which can run ahead of the applied
+    // cursor while a failed flush waits to retry. 0 means the backend should use
+    // its payload's attach-time ordinal.
+    uint64_t mScanReadOrdinal = 0;
     // The external attach's *input parameter* for its resident backing stage id,
     // as classified by the caller of setOvstageSource(). This is not a second
     // copy of the stage id — it exists only because the external backend must be

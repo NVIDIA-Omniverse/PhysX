@@ -15,6 +15,9 @@
  *
  * @implements REQ-READ-SLEEP-001
  * @covers AC-3
+ *
+ * @implements REQ-READ-CORE-001
+ * @covers AC-11
  */
 
 // Object enumeration shared by the ovstage read (OvxPhysicsRead.cpp) and write (OvxPhysicsWrite.cpp).
@@ -51,6 +54,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional> // std::hash (RigidReadCacheKeyHash)
+#include <memory>     // std::shared_ptr (queryDeviceBuffers)
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -146,7 +151,8 @@ bool getSceneSourceContext(const ::physx::PxScene* scene, const char* who, Sourc
 // Wait out a caller's producer handoff (ovstage's {stream, wait_event}) before its data is read: a nonzero stream is
 // drained, then a nonzero event waited on, both observed on the host. {0, 0} asserts nothing is outstanding. False,
 // with the runtime error "<who>: ...; <consequence>.", when a handoff is supplied but cannot be proven. Shared by the
-// write commit and the SDF evaluation, so both honour a handoff by the same rules and report it in the same words.
+// write commit, the read and the SDF evaluation, so all honour a handoff by the same rules and report it in the same
+// words.
 bool waitForCallerProducer(const ovstage_cuda_sync_t& sync, const char* who, const char* consequence);
 
 // Active-actor tracking. When a scene runs with PxSceneFlag::eENABLE_ACTIVE_ACTORS
@@ -556,6 +562,23 @@ struct JointSlice
     uint32_t count;
 };
 
+// The per-DOF rows of `slices`: each joint's entry of `perJoint` repeated once per DOF, so row r of a joint group
+// names the joint DOF r belongs to (ADR-0059). Empty when `perJoint` does not have one entry per slice.
+template <typename T>
+std::vector<T> jointRowsPerDof(const std::vector<JointSlice>& slices, const std::vector<T>& perJoint)
+{
+    std::vector<T> rows;
+    if (perJoint.size() != slices.size())
+        return rows;
+    size_t count = 0;
+    for (const JointSlice& slice : slices)
+        count += slice.count;
+    rows.reserve(count);
+    for (size_t i = 0; i < slices.size(); ++i)
+        rows.insert(rows.end(), slices[i].count, perJoint[i]);
+    return rows;
+}
+
 // Structural data parallel to one authoritative ePTArticulation record. The articulation pointer
 // and root key live in ArticulationReadCacheEntry::rootArtis/rootKeys at the same index; this owns
 // the database indices of every link so ACTIVE can test any-link membership without another record
@@ -587,8 +610,9 @@ struct ArticulationRootRec
 //                          SUPERSET ROW, valid only for the view build that numbered the rows, and
 //                          the backend takes a fresh generation when it rebuilds that view.
 //   rootGeneration         the same rule for the root rows and handles, kept separate so one path
-//                          cannot claim the other's partially rebuilt vectors.
-//   rootRowsVersion        identifies the root row LIST for the device selection cache.
+//                          cannot claim the other's partially rebuilt vectors. The full-population
+//                          linkPath handles below are valid only while linkHandleGeneration equals it.
+//   rootRowsVersion        identifies the root row LIST, for the device read's kept plans.
 //   rootShapeTopologyEpoch covers the per-shape widths, which change without any object being
 //                          created or removed.
 //
@@ -622,10 +646,21 @@ struct ArticulationReadCacheEntry
     std::vector<uint32_t> rootRows;
     std::vector<ovx_primpath_t> rootHandles;
 
+    // Full-population link prim handles in getLinkIndex() order, concatenated per rootArtis
+    // index. linkHandleOffsets has one more entry than rootArtis: link i occupies
+    // [offsets[i], offsets[i + 1]). A selected read gathers from this and does not replace it.
+    uint64_t linkHandleGeneration = 0;
+    std::vector<size_t> linkHandleOffsets;
+    std::vector<ovx_primpath_t> linkPathHandles;
+
     std::vector<omni::physx::tensors::ArticulationDofOvStageRecord> recs;
     std::vector<JointSlice> slices;
     std::vector<ObjectKey> sliceKeys;
     std::vector<ovx_primpath_t> sliceHandles;
+    // One entry per record: the joint each DOF belongs to, which is a joint group's prim list (ADR-0059).
+    // `dofHandles` is empty when `sliceHandles` is.
+    std::vector<ObjectKey> dofKeys;
+    std::vector<ovx_primpath_t> dofHandles;
 };
 
 // Run the articulation structural walk for `scenes` if the object database has moved since the last
@@ -687,6 +722,10 @@ struct TendonRec
     ObjectKey key;
     uint32_t tendonIdx;   // index within that articulation's tendon list, PhysX's own order
     uint32_t viewArtiIdx; // index into `artis` below
+    // Multi-apply instance name. Empty when the root record has no internal pointer. The tendon
+    // property read and the write API ignore it; tendon identity fails closed on an empty name. The
+    // ovstage tendon drain matches on it with the prim key, since several instances can share a prim.
+    std::string instance;
 };
 
 // Same two-validator split as ArticulationReadCacheEntry, for the same reasons: the enumeration is a
@@ -727,7 +766,7 @@ TendonReadCacheEntry& tendonCacheEntry(::physx::PxScene* scene, bool fixed);
 // TWO validators, and note the first is NOT the object-lifetime epoch the other caches use.
 //
 //   setEpoch    the VEHICLE SET epoch (InternalScene::mVehicleSetEpoch, reported by
-//               BaseVehicleView::getBuiltEpoch). The read's TASK-06 records that the object-lifetime
+//               BaseVehicleView::getBuiltEpoch). The read side established that the object-lifetime
 //               epoch was the wrong validator here -- vehicles are renumbered by changes it does not
 //               observe -- so a consumer caching rows must compare this one.
 //   generation  the backend view build the rows are numbered against, as everywhere else.
@@ -786,12 +825,19 @@ bool enumerateCctRows(usdparser::AttachedStage& owner, uint32_t scope, std::vect
 // and array lengths it must name.
 struct InstancerWriteTargets
 {
+    // Whether `keys` is the scene's complete current instancer list, possibly empty. False when it is
+    // unknown: a DirectGPU scene whose device instancer view the read has not built for its current
+    // state. A null `view` alone does not say which, so this is what tells an empty scene from an unknown one.
+    bool listed = false;
     // Null when this scene has no instancers, or when the enumeration could not be served.
     //
     // The BASE type, so one struct serves both devices: a DirectGPU scene yields the GPU view the
     // read already caches, a host scene the CPU one. The scatter is virtual, so the write does not
     // branch on which it got.
     omni::physx::tensors::BasePointInstancerView* view = nullptr;
+    // The scene-view generation `view` was taken under. `view` is a child of that scene view, and a rebuild of the
+    // scene view deletes it, so whoever keeps `view` checks this generation before every use.
+    uint64_t generation = 0;
     std::vector<ObjectKey> keys;        // one per instancer, in view order
     std::vector<uint32_t> arrayLengths; // instance-array length per instancer, parallel to `keys`
 };
@@ -876,19 +922,26 @@ ovx_path_dictionary_t* queryDictionaryLocked(uint64_t query);
 // AC-4). Defined in OvxPhysicsRead.cpp beside queryTypeScope, where the query state lives.
 bool querySelection(uint64_t query, std::unordered_set<ObjectKey, ObjectKey::Hash>& outKeys);
 
+// The device buffers a query's operations reuse across steps; see QueryDeviceBuffers.h.
+struct QueryDeviceBuffers;
+
+// The query's reusable device buffers, created on first use. Null for an unknown query. Shared rather than
+// owned outright because an open write session keeps using them after its query is released (ADR-0045).
+// Defined in OvxPhysicsRead.cpp beside the query state.
+std::shared_ptr<QueryDeviceBuffers> queryDeviceBuffers(uint64_t query);
+
 // Identity for a row list, handed to a rigid-body view as its upload token: the view re-uploads its
 // device copy exactly when this changes, so it must change exactly when the CONTENTS do.
 //
 // ONE counter for every producer, and that is the point rather than tidiness. A view's row cache is a
-// small shared LRU keyed by this token, so reads, writes and the point-instancer path all feed it into
-// the same comparison. Two counters would hand out the same value for different lists, and a slot would
-// then keep one list's rows and index another's data through them -- wrong values, silently, with
-// nothing to fail on.
+// small shared LRU keyed by this token, so the writes and the point-instancer path all feed it into
+// the same comparison, whoever minted the token. Two counters would hand out the same value for
+// different lists, and a slot would then keep one list's rows and index another's data through them
+// -- wrong values, silently, with nothing to fail on.
 //
-// A read and a write over the same query resolve the SAME rows and now share one cache entry, so they
-// share its rowsVersion too: whichever runs first mints it, the other reuses it, and the row list is
-// uploaded once rather than once per direction. Mint a new one only where a new list is genuinely
-// built.
+// A read and a write over the same query resolve the SAME rows and share one cache entry, so they
+// share its rowsVersion too: whichever runs first mints it and the other reuses it. Mint a new one only
+// where a new list is genuinely built.
 uint64_t nextRowsVersion();
 
 } // namespace omni::physx::ovx
@@ -900,6 +953,8 @@ namespace omni::physx::ovx
 void retireAttachmentReadCaches(omni::physics::AttachHandle attach, bool retireReadMetadata = false);
 // Internal lifecycle diagnostic for retention regressions.
 size_t attachmentReadCacheEntryCount();
+// Internal lifecycle diagnostic for retention regressions: the scenes holding a cached skin-mesh view.
+size_t skinMeshReadCacheEntryCount();
 // Internal lifecycle diagnostic for reuse regressions: the DirectGPU contact reducers built so far, process-wide.
 uint64_t contactReducerBuildCount();
 // How many contact reads of its attachment an unused contact-query reducer survives. A caller opening a fresh

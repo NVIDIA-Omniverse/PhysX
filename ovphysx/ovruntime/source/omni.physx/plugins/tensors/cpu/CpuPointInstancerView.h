@@ -25,11 +25,13 @@ public:
     bool getInstancerColumnsOvStage(InstancerColumn column,
                                     void* dst,
                                     const ::physx::PxU32* offsets,
-                                    ::physx::PxU32 numInstancers) const override;
+                                    ::physx::PxU32 numInstancers) const;
     bool setInstancerColumnOvStage(InstancerColumn column,
                                    ::physx::PxU32 instancerIndex,
                                    const void* src,
-                                   ::physx::PxU32 arrayLength) override;
+                                   ::physx::PxU32 arrayLength,
+                                   const uint8_t* hostMask,
+                                   const OvStageDeviceWriteArgs* deviceArgs) override;
 
 };
 

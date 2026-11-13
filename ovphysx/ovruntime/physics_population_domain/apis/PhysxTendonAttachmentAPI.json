@@ -1,0 +1,131 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxTendonAttachmentAPI",
+  "title": "PhysxTendonAttachmentAPI",
+  "summary": "One attachment of a spatial tendon on an articulation link, applied as PhysxTendonAttachmentAPI:<name>. The parser reads the local attachment point (scaled by the link's world scale), the parent link and the parent attachment's instance name for every attachment, root and leaf included.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "Xformable"
+  ],
+  "multi_apply": true,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "producer_scope": "Every declared attribute of an applied instance is published at its resolved value; parentLink when authored.",
+  "columns": [
+    {
+      "name": "physxTendon:<inst>:gearing",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 1.0,
+      "parser_default": 1.0,
+      "absent": "1.0. Not read for a root attachment, whose gearing is always 1.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "clamp": [
+        "-FLT_MAX",
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseSpatialTendon.cpp"
+      ]
+    },
+    {
+      "name": "physxTendon:<inst>:localPos",
+      "usd_type": "point3f",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "POINT",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 3,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": [
+        0,
+        0,
+        0
+      ],
+      "parser_default": [
+        0,
+        0,
+        0
+      ],
+      "absent": "The link origin.",
+      "raw_fallback_diverges": false,
+      "units": "length",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseSpatialTendon.cpp"
+      ]
+    },
+    {
+      "name": "physxTendon:<inst>:parentAttachment",
+      "usd_type": "uniform token",
+      "origin": "schema",
+      "kind": "token",
+      "semantic": "TOKEN_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "parser_default": "none",
+      "absent": "No parent attachment instance; with parentLink this attachment has no parent.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseSpatialTendon.cpp"
+      ]
+    },
+    {
+      "name": "physxTendon:<inst>:parentLink",
+      "usd_type": "rel",
+      "origin": "schema",
+      "kind": "relationship",
+      "semantic": "RELATIONSHIP_PATH_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": true
+      },
+      "required": false,
+      "absent": "No parent: valid only for the root. The first of several targets is used, with a warning.",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseSpatialTendon.cpp"
+      ]
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysxTendonAttachmentRootAPI",
+      "rule": "Auto-applies this API with the same name; the parser classifies the instance as the root."
+    },
+    {
+      "with": "PhysxTendonAttachmentLeafAPI",
+      "rule": "Auto-applies this API with the same name; the parser classifies the instance as a leaf."
+    },
+    {
+      "with": "PhysicsRigidBodyAPI",
+      "rule": "Attachments are read only on emitted bodies (articulation links)."
+    }
+  ],
+  "notes": [
+    "Instance names are arbitrary (one per tendon), so the compiled cache declares every physxTendon:* column."
+  ]
+}

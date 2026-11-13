@@ -89,8 +89,8 @@ def test_deformable_body_gpu_read_write_and_metadata(physx_sdk):
     write("velocities", new_velocities)
     np.testing.assert_allclose(read("velocities"), new_velocities, atol=1.0e-4)
 
-    # One (x, y, z, w) target per node, where w = 0 drives the node. The read serves the targets of a
-    # driven body only, so every node is driven here.
+    # One (x, y, z, w) target per node, where w = 0 drives the node. Every node is pinned here, so the
+    # read returns exactly what was written.
     new_targets = np.zeros((5, 4))
     new_targets[:, :3] = new_positions.reshape(5, 3) + np.array([0.0, 0.03, 0.0])
     new_targets = new_targets.reshape(-1)

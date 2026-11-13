@@ -6,6 +6,7 @@
 
 #include "PvdDomUtils.h"
 #include "PvdDomLog.h"
+#include <memory>
 
 OmniPvdClass* findOmniPvdClass(OmniPvdClassHandle omniPvdClassHandle, std::unordered_map<OmniPvdClassHandle, OmniPvdClass*> &classHandleToClassMap)
 {
@@ -33,12 +34,12 @@ uint64_t getInternalHandle(OmniPvdObjectHandle externalHandle, std::unordered_ma
 
 OmniPvdClass* createInternalClass(const char *className, OmniPvdPhysXClassEnum physXClass)
 {
-    OmniPvdClass *internalClass = new OmniPvdClass();
+    std::unique_ptr<OmniPvdClass> internalClass(new OmniPvdClass());
     internalClass->mOmniClassHandle = 0;
     internalClass->mClassName = std::string(className);
     internalClass->mPhysXBaseProcessingClassId = physXClass;
     internalClass->mIsDefaultParsed = false; // If the class is explicitly created by the user, it's not default parsed
-    return internalClass;
+    return internalClass.release();
 }
 
 OmniPvdObject* createInternalObject(OmniPvdClass* internalCass, uint64_t objectHandle)
@@ -49,11 +50,11 @@ OmniPvdObject* createInternalObject(OmniPvdClass* internalCass, uint64_t objectH
 OmniPvdObject* createInternalObject(OmniPvdClass* internalCass, uint64_t objectHandle,
                                     uint64_t recordingSegmentId)
 {
-    OmniPvdObject *refObject = new OmniPvdObject();
+    std::unique_ptr<OmniPvdObject> refObject(new OmniPvdObject());
     refObject->mOmniObjectHandle = objectHandle;
     refObject->mOmniPvdClass = internalCass;
     refObject->mRecordingSegmentId = recordingSegmentId;
-    return refObject;
+    return refObject.release();
 }
 
 OmniPvdObject* createNamedObject(OmniPvdClass* internalCass, const std::string& objectName)
@@ -64,26 +65,26 @@ OmniPvdObject* createNamedObject(OmniPvdClass* internalCass, const std::string& 
 OmniPvdObject* createNamedObject(OmniPvdClass* internalCass, const std::string& objectName,
                                  uint64_t recordingSegmentId)
 {
-    OmniPvdObject *refObject = new OmniPvdObject();
+    std::unique_ptr<OmniPvdObject> refObject(new OmniPvdObject());
     refObject->mOmniObjectHandle = 0;
     refObject->mOmniPvdClass = internalCass;
     refObject->mObjectName = objectName;
     refObject->mRecordingSegmentId = recordingSegmentId;
-    return refObject;
+    return refObject.release();
 }
 
 OmniPvdObject* createInternalNode(std::list<OmniPvdObject*> &objectCreations, OmniPvdObject* ancestor, OmniPvdClass* internalCass, OmniPvdObjectHandle objectHandle,uint8_t isShared, uint8_t isVisible)
 {
-    OmniPvdObject *node = createInternalObject(internalCass, objectHandle);
+    std::unique_ptr<OmniPvdObject> node(createInternalObject(internalCass, objectHandle));
     node->mIsShared = isShared;
     node->mIsStaticVisibility = 1;
     node->mIsStaticVisible = isVisible;
+    objectCreations.push_back(node.get());
     if (ancestor)
     {
-        ancestor->appendChild(node);
+        ancestor->appendChild(node.get());
     }
-    objectCreations.push_back(node);
-    return node;
+    return node.release();
 }
 
 OmniPvdObject* findChildObject(uint64_t *data, std::unordered_map<OmniPvdObjectHandle, OmniPvdObjectHandle> &externalToInternalHandleMap, std::unordered_map<OmniPvdObjectHandle, OmniPvdObject*> &objectHandleToObjectMap)
@@ -116,16 +117,17 @@ OmniPvdObject* findClassNodeObject(OmniPvdClass* classNode, std::unordered_map<O
 
 OmniPvdObject* createOmniPvdBranchObject(const OmniPvdContextHandle contextHandle, OmniPvdClass* branchClass, OmniPvdObjectHandle branchHandle, OmniPvdObject* branchAncestor, std::list<OmniPvdObject*> &objectCreations, std::unordered_map<OmniPvdContextHandle, OmniPvdObject*> &contextHandleTobranchMap)
 {
-    OmniPvdObject* branch = new OmniPvdObject();
+    std::unique_ptr<OmniPvdObject> branch(new OmniPvdObject());
     branch->mOmniObjectHandle = branchHandle; // Uses as display integer : branchName + _ + branchHandle
     branch->mOmniPvdClass = branchClass;
     branch->mRecordingSegmentId = branchAncestor ? branchAncestor->mRecordingSegmentId : 0;
     branch->mIsStaticVisibility = 1;
     branch->mIsStaticVisible = 1;
-    if (branchAncestor) branchAncestor->appendChild(branch); // The Branchestor, thirst mutilator!
-    objectCreations.push_back(branch);
-    contextHandleTobranchMap[contextHandle] = branch;
-    return branch;
+    objectCreations.push_back(branch.get());
+    if (branchAncestor) branchAncestor->appendChild(branch.get()); // The Branchestor, thirst mutilator!
+    branch.release();
+    contextHandleTobranchMap[contextHandle] = objectCreations.back();
+    return objectCreations.back();
 }
 
 // Set the internal reference object (omniPvdObject->mReferenceObject) to point to the shared mesh data (childObject)

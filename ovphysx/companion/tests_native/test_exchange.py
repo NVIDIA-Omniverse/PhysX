@@ -15,10 +15,12 @@ from ovphysx_companion.preview import PreviewSession
 @pytest.fixture
 def exchange_attached(physics):
     import ovstage
+    from ovphysx.population import physics_population_descs
     from pathlib import Path
     stage=ovstage.Stage('exchange-core')
-    ovstage.population.open_usd(stage,str(Path(__file__).resolve().parents[1]/'samples/scenes/exchange.usda'),ordinal=1,
-                                domains=ovstage.PopulationDomain.ALL)
+    ovstage.population.open_usd_with_desc(stage,str(Path(__file__).resolve().parents[1]/'samples/scenes/exchange.usda'),ordinal=1,
+                                time=ovstage.population.DEFAULT_TIME,
+                                descs=physics_population_descs(rendering=True))
     stage.advance_write_floor(ordinal=1).wait();physics.wait_task(physics.attach_ovstage(stage,read_ordinal=1))
     physics.wait_task(physics.step(.01))
     try:yield physics
@@ -44,8 +46,74 @@ def read(stage,path,attribute,ordinal):
                     batch.wait()
                     for group in batch.groups():
                         with group:
-                            for i in range(group.tensor_count):values.append(np.array(group.array(i),copy=True))
+                            for column in group.columns:
+                                for i in range(column.tensor_count):values.append(np.array(column.array(i),copy=True))
     return values
+
+
+def test_stage_flow_resolves_an_uncollected_attach(physics):
+    import ovstage
+    from ovphysx.population import physics_population_descs
+    from pathlib import Path
+
+    stage = ovstage.Stage("exchange-uncollected-attach")
+    try:
+        ovstage.population.open_usd_with_desc(
+            stage,
+            str(Path(__file__).resolve().parents[1] / "samples/scenes/exchange.usda"),
+            ordinal=1,
+            time=ovstage.population.DEFAULT_TIME,
+            descs=physics_population_descs(rendering=True),
+        )
+        stage.advance_write_floor(ordinal=1).wait()
+        attach = physics.attach_ovstage(stage, read_ordinal=1)
+        physics.wait_task(physics.step(0.01))
+        assert physics._attached_ovstage is None
+        with ToolsSession(physics) as owner, StageFlow(owner, stage, consumed_ordinal=1):
+            pass
+        physics.wait_task(attach)
+    finally:
+        physics.wait_task(physics.detach_ovstage())
+        stage.destroy()
+
+
+def test_stage_flow_resolves_uncollected_detach_and_replacement(physics):
+    import ovstage
+    from ovphysx.population import physics_population_descs
+    from pathlib import Path
+
+    stages = [ovstage.Stage("exchange-replaced-a"), ovstage.Stage("exchange-replaced-b")]
+    detach = None
+    attach = None
+    try:
+        for stage in stages:
+            ovstage.population.open_usd_with_desc(
+                stage,
+                str(Path(__file__).resolve().parents[1] / "samples/scenes/exchange.usda"),
+                ordinal=1,
+                time=ovstage.population.DEFAULT_TIME,
+                descs=physics_population_descs(rendering=True),
+            )
+            stage.advance_write_floor(ordinal=1).wait()
+        physics.wait_task(physics.attach_ovstage(stages[0], read_ordinal=1))
+        detach = physics.detach_ovstage()
+        attach = physics.attach_ovstage(stages[1], read_ordinal=1)
+        physics.wait_task(physics.step(0.01))
+        assert physics._attached_ovstage is stages[0]
+
+        with ToolsSession(physics) as owner:
+            with pytest.raises(ValueError, match="belong"):
+                StageFlow(owner, stages[0], consumed_ordinal=1)
+            with StageFlow(owner, stages[1], consumed_ordinal=1):
+                pass
+    finally:
+        if detach is not None:
+            physics.wait_task(detach)
+        if attach is not None:
+            physics.wait_task(attach)
+        physics.wait_task(physics.detach_ovstage())
+        for stage in stages:
+            stage.destroy()
 
 
 def test_core_authored_input_explicit_output_and_snapshot(exchange_attached):
@@ -87,12 +155,14 @@ def test_core_authored_input_explicit_output_and_snapshot(exchange_attached):
 
 def test_preview_flow_owner_election_sealing_and_retirement(physics):
     import ovstage
+    from ovphysx.population import physics_population_descs
     from pathlib import Path
     from concurrent.futures import ThreadPoolExecutor
     stage=ovstage.Stage('exchange-preview');other=ovstage.Stage('unrelated')
     try:
-        ovstage.population.open_usd(stage,str(Path(__file__).resolve().parents[1]/'samples/scenes/exchange.usda'),ordinal=1,
-                                    domains=ovstage.PopulationDomain.ALL)
+        ovstage.population.open_usd_with_desc(stage,str(Path(__file__).resolve().parents[1]/'samples/scenes/exchange.usda'),ordinal=1,
+                                    time=ovstage.population.DEFAULT_TIME,
+                                    descs=physics_population_descs(rendering=True))
         stage.advance_write_floor(ordinal=1).wait()
         with PreviewSession(physics,stage,read_ordinal=1) as owner,Inspector(owner) as inspector:
             with pytest.raises(ValueError,match='belong'):StageFlow(owner,other,consumed_ordinal=1)

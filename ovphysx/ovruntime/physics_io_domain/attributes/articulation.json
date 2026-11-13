@@ -1,0 +1,885 @@
+{
+  "$schema": "../contract.schema.json",
+  "schema_version": 1,
+  "attributes": [
+    {
+      "id": "root_position",
+      "name": "rootPosition",
+      "public": true,
+      "semantic": "POINT",
+      "uses": [
+        {
+          "target": "ARTICULATION",
+          "description": "root-link position",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "length",
+          "writability": "WRITABLE",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "effect": "set_state",
+            "persistence": "simulation_state",
+            "visibility": "commit",
+            "preserves": [
+              "rootOrientation"
+            ]
+          },
+          "notes": "The row is keyed by the prim carrying PhysicsArticulationRootAPI, which may be an ancestor Xform. Values describe the root link, not the row prim's own pose or velocity."
+        }
+      ]
+    },
+    {
+      "id": "root_orientation",
+      "name": "rootOrientation",
+      "public": true,
+      "semantic": "QUATERNION",
+      "uses": [
+        {
+          "target": "ARTICULATION",
+          "description": "root-link rotation",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 4,
+              "shape": [
+                "objects"
+              ],
+              "order": "xyzw"
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 4,
+              "shape": [
+                "objects"
+              ],
+              "order": "xyzw"
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "effect": "set_state",
+            "persistence": "simulation_state",
+            "visibility": "commit",
+            "preserves": [
+              "rootPosition"
+            ]
+          },
+          "notes": "The row is keyed by the prim carrying PhysicsArticulationRootAPI, which may be an ancestor Xform. Values describe the root link, not the row prim's own pose or velocity."
+        }
+      ]
+    },
+    {
+      "id": "root_linear_velocity",
+      "name": "rootLinearVelocity",
+      "public": true,
+      "semantic": "VECTOR",
+      "uses": [
+        {
+          "target": "ARTICULATION",
+          "description": "root linear velocity",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "velocity",
+          "writability": "WRITABLE",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "effect": "set_state",
+            "persistence": "simulation_state",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "The row is keyed by the prim carrying PhysicsArticulationRootAPI, which may be an ancestor Xform. Values describe the root link, not the row prim's own pose or velocity."
+        }
+      ]
+    },
+    {
+      "id": "root_angular_velocity",
+      "name": "rootAngularVelocity",
+      "public": true,
+      "semantic": "VECTOR",
+      "uses": [
+        {
+          "target": "ARTICULATION",
+          "description": "root angular velocity",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "angular_velocity",
+          "writability": "WRITABLE",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "effect": "set_state",
+            "persistence": "simulation_state",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "The row is keyed by the prim carrying PhysicsArticulationRootAPI, which may be an ancestor Xform. Values describe the root link, not the row prim's own pose or velocity."
+        }
+      ]
+    },
+    {
+      "id": "center_of_mass_world",
+      "name": "centerOfMassWorld",
+      "public": true,
+      "semantic": "POINT",
+      "uses": [
+        {
+          "target": "ARTICULATION",
+          "description": "articulation COM",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "length",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": false,
+          "notes": "Uses the scene-world frame, independent of TensorBindings subspace roots."
+        }
+      ]
+    },
+    {
+      "id": "center_of_mass_local",
+      "name": "centerOfMassLocal",
+      "public": true,
+      "semantic": "POINT",
+      "uses": [
+        {
+          "target": "ARTICULATION",
+          "description": "articulation COM",
+          "dtype": "f32",
+          "frame": "root-link COM",
+          "units": "length",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 3,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "jacobian",
+      "name": "jacobian",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION",
+          "description": "dense Jacobian",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "jacobian",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "cohort",
+              "lanes": 1,
+              "shape": [
+                "objects",
+                "jacobian_rows",
+                "jacobian_cols"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": false,
+          "notes": "One group per structural cohort. M = numDofs + (fixedBase ? 0 : 6). Each row's dimensions are tensor axes, row-major, with lanes 1. Angular generalized coordinates are radians. centroidalMomentum is floating-base only; its last column is bias. Generalized joint coordinates follow the authored body relationship: sign +1 when body0 is the articulation parent and -1 when body1 is the parent. With S_dof containing those signs and T=S_dof for a fixed base or T=diag(I6,S_dof) for a floating base, the returned quantities are J=J_physx*T, M=T*M_physx*T, c=T*c_physx, g=T*g_physx, and [A|b]=[A_physx*T|b_physx]. Prismatic and floating-translation coordinates retain their linear units; angular coordinates receive no degree conversion."
+        }
+      ]
+    },
+    {
+      "id": "mass_matrix",
+      "name": "massMatrix",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION",
+          "description": "generalized mass matrix",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "mass_matrix",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "cohort",
+              "lanes": 1,
+              "shape": [
+                "objects",
+                "M",
+                "M"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": false,
+          "notes": "One group per structural cohort. M = numDofs + (fixedBase ? 0 : 6). Each row's dimensions are tensor axes, row-major, with lanes 1. Angular generalized coordinates are radians. centroidalMomentum is floating-base only; its last column is bias. Generalized joint coordinates follow the authored body relationship: sign +1 when body0 is the articulation parent and -1 when body1 is the parent. With S_dof containing those signs and T=S_dof for a fixed base or T=diag(I6,S_dof) for a floating base, the returned quantities are J=J_physx*T, M=T*M_physx*T, c=T*c_physx, g=T*g_physx, and [A|b]=[A_physx*T|b_physx]. Prismatic and floating-translation coordinates retain their linear units; angular coordinates receive no degree conversion."
+        }
+      ]
+    },
+    {
+      "id": "coriolis_force",
+      "name": "coriolisForce",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION",
+          "description": "Coriolis + centrifugal compensation",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "joint_effort",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "cohort",
+              "lanes": 1,
+              "shape": [
+                "objects",
+                "M"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": false,
+          "notes": "One group per structural cohort. M = numDofs + (fixedBase ? 0 : 6). Each row's dimensions are tensor axes, row-major, with lanes 1. Angular generalized coordinates are radians. centroidalMomentum is floating-base only; its last column is bias. Compensation effort: the effort required to counteract the corresponding Coriolis/centrifugal or gravity term, not the force that term applies to the articulation. Generalized joint coordinates follow the authored body relationship: sign +1 when body0 is the articulation parent and -1 when body1 is the parent. With S_dof containing those signs and T=S_dof for a fixed base or T=diag(I6,S_dof) for a floating base, the returned quantities are J=J_physx*T, M=T*M_physx*T, c=T*c_physx, g=T*g_physx, and [A|b]=[A_physx*T|b_physx]. Prismatic and floating-translation coordinates retain their linear units; angular coordinates receive no degree conversion."
+        }
+      ]
+    },
+    {
+      "id": "gravity_force",
+      "name": "gravityForce",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION",
+          "description": "gravity compensation",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "joint_effort",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "cohort",
+              "lanes": 1,
+              "shape": [
+                "objects",
+                "M"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": false,
+          "notes": "One group per structural cohort. M = numDofs + (fixedBase ? 0 : 6). Each row's dimensions are tensor axes, row-major, with lanes 1. Angular generalized coordinates are radians. centroidalMomentum is floating-base only; its last column is bias. Compensation effort: the effort required to counteract the corresponding Coriolis/centrifugal or gravity term, not the force that term applies to the articulation. Generalized joint coordinates follow the authored body relationship: sign +1 when body0 is the articulation parent and -1 when body1 is the parent. With S_dof containing those signs and T=S_dof for a fixed base or T=diag(I6,S_dof) for a floating base, the returned quantities are J=J_physx*T, M=T*M_physx*T, c=T*c_physx, g=T*g_physx, and [A|b]=[A_physx*T|b_physx]. Prismatic and floating-translation coordinates retain their linear units; angular coordinates receive no degree conversion."
+        }
+      ]
+    },
+    {
+      "id": "centroidal_momentum",
+      "name": "centroidalMomentum",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION",
+          "description": "centroidal momentum matrix (floating-base only; a fixed-base articulation contributes no row)",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "centroidal_momentum_matrix",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "cohort",
+              "lanes": 1,
+              "shape": [
+                "objects",
+                6,
+                "num_dofs + 7"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": false,
+          "notes": "One group per structural cohort. M = numDofs + (fixedBase ? 0 : 6). Each row's dimensions are tensor axes, row-major, with lanes 1. Angular generalized coordinates are radians. centroidalMomentum is floating-base only; its last column is bias. Generalized joint coordinates follow the authored body relationship: sign +1 when body0 is the articulation parent and -1 when body1 is the parent. With S_dof containing those signs and T=S_dof for a fixed base or T=diag(I6,S_dof) for a floating base, the returned quantities are J=J_physx*T, M=T*M_physx*T, c=T*c_physx, g=T*g_physx, and [A|b]=[A_physx*T|b_physx]. Prismatic and floating-translation coordinates retain their linear units; angular coordinates receive no degree conversion."
+        }
+      ]
+    },
+    {
+      "id": "dof_count",
+      "name": "dofCount",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION",
+          "description": "degrees of freedom",
+          "dtype": "i32",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            }
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "link_count",
+      "name": "linkCount",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION",
+          "description": "articulation links (not standalone rigid bodies)",
+          "dtype": "i32",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            }
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "joint_count",
+      "name": "jointCount",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION",
+          "description": "inter-link joints",
+          "dtype": "i32",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            }
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "fixed_tendon_count",
+      "name": "fixedTendonCount",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION",
+          "description": "fixed tendons on this articulation",
+          "dtype": "i32",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            }
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "spatial_tendon_count",
+      "name": "spatialTendonCount",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION",
+          "description": "spatial tendons on this articulation",
+          "dtype": "i32",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            }
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "is_fixed_base",
+      "name": "isFixedBase",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION",
+          "description": "1 = fixed base, 0 = floating",
+          "dtype": "i32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            }
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "dof_joint_path",
+      "name": "dofJointPath",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION",
+          "description": "owning joint prim for each DOF column (interned prim-path handle; `0` pads)",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_dof_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "dofCount",
+              "padding": 0
+            }
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "dof_axis_index",
+      "name": "dofAxisIndex",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION",
+          "description": "each DOF's ordinal among its joint's unlocked axes",
+          "dtype": "i32",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_dof_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "dofCount",
+              "padding": 0
+            }
+          },
+          "write": false,
+          "notes": "Axes follow PhysX TWIST/SWING1/SWING2 order with locked axes removed. A locked leading axis compacts the ordinal: with TWIST locked, SWING1=0 and SWING2=1. This is not a canonical axis ID."
+        }
+      ]
+    },
+    {
+      "id": "dof_axis_kind",
+      "name": "dofAxisKind",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION",
+          "description": "PhysX articulation axis id for each DOF column",
+          "dtype": "i32",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_dof_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "dofCount",
+              "padding": 0
+            }
+          },
+          "write": false,
+          "notes": "Same slots and padding as dofJointPath. Values are PhysX joint-frame axis ids, not USD axis tokens: 0 twist, 1 swing1, 2 swing2, 3 x, 4 y, 5 z. A revolute about Y is 0 and a prismatic along Y is 3. A 0 inside dofCount is twist; only entries past dofCount are padding. This is not dofAxisIndex: with twist locked, swing1 is kind 1 and ordinal 0."
+        }
+      ]
+    },
+    {
+      "id": "dof_joint_type",
+      "name": "dofJointType",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION",
+          "description": "PhysX joint type for each DOF column",
+          "dtype": "i32",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_dof_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "dofCount",
+              "padding": 0
+            }
+          },
+          "write": false,
+          "notes": "Same slots and padding as dofJointPath. Values are PxArticulationJointType: 1 prismatic, 2 revolute, 3 revolute unwrapped, 4 spherical. Fixed joints are 0 and have no DOF row, so a 0 inside dofCount is not a type; only entries past dofCount are padding. For unique joint leaf names, the legacy DOF name is the leaf of dofJointPath, plus ':' and dofAxisKind, only when this value is spherical. Legacy names disambiguate colliding joint leaves with numeric suffixes; full prim paths remain the identity."
+        }
+      ]
+    },
+    {
+      "id": "link_path",
+      "name": "linkPath",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION",
+          "description": "interned link prim handle per link index (`0` pads)",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_link_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "linkCount",
+              "padding": 0
+            }
+          },
+          "write": false,
+          "notes": "Slot L is the link index PxArticulationLink::getLinkIndex() returns. 0 pads past linkCount. Slot 0 is the root link. The articulation row prim carries PhysicsArticulationRootAPI and may be the root link, an ancestor Xform, or a fixed joint that is a child of slot 0. Fixed base: link 0 has no Jacobian rows; link L > 0 occupies rows 6*(L-1) through 6*L-1. Floating base: link L occupies rows 6*L through 6*L+5. An ARTICULATION_LINK query is not guaranteed to be in this order."
+        }
+      ]
+    },
+    {
+      "id": "link_inbound_joint",
+      "name": "linkInboundJoint",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION",
+          "description": "inbound joint prim per link index (`0` means none, and pads)",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_link_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "linkCount",
+              "padding": 0
+            }
+          },
+          "write": false,
+          "notes": "Slot L is the interned prim of the joint PxArticulationLink::getInboundJoint() returns for linkPath slot L. 0 inside linkCount means that link has no inbound joint; slot 0 is 0 because the root link has none. 0 past linkCount is padding. A fixed joint between two links is included. dofJointPath skips zero-DOF joints, so it is not this map. The world fixed joint that carries PhysicsArticulationRootAPI is the articulation row prim, not slot 0."
+        }
+      ]
+    },
+    {
+      "id": "fixed_tendon_root",
+      "name": "fixedTendonRoot",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION",
+          "description": "interned root prim for each fixed tendon index (`0` pads)",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_fixed_tendon_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "fixedTendonCount",
+              "padding": 0
+            }
+          },
+          "write": false,
+          "notes": "Slot T is this articulation's getFixedTendons index, not database order and not the FIXED_TENDON query row. 0 pads past fixedTendonCount. The value is the tendon root prim. One prim may carry several tendons; pair with fixedTendonInstance."
+        }
+      ]
+    },
+    {
+      "id": "fixed_tendon_instance",
+      "name": "fixedTendonInstance",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION",
+          "description": "instance-name token for each fixed tendon index (`0` pads)",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_fixed_tendon_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "fixedTendonCount",
+              "padding": 0
+            }
+          },
+          "write": false,
+          "notes": "Interned multi-apply instance name for the fixed tendon at getFixedTendons index T. 0 pads past fixedTendonCount. Pair with fixedTendonRoot; a root prim alone is not unique."
+        }
+      ]
+    },
+    {
+      "id": "spatial_tendon_root",
+      "name": "spatialTendonRoot",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION",
+          "description": "interned root prim for each spatial tendon index (`0` pads)",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_spatial_tendon_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "spatialTendonCount",
+              "padding": 0
+            }
+          },
+          "write": false,
+          "notes": "Slot T is this articulation's getSpatialTendons index, not database order and not the SPATIAL_TENDON query row. 0 pads past spatialTendonCount. The value is the tendon root prim. One prim may carry several tendons; pair with spatialTendonInstance."
+        }
+      ]
+    },
+    {
+      "id": "spatial_tendon_instance",
+      "name": "spatialTendonInstance",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION",
+          "description": "instance-name token for each spatial tendon index (`0` pads)",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "padded",
+              "lanes": "max_spatial_tendon_count",
+              "shape": [
+                "objects"
+              ],
+              "count": "spatialTendonCount",
+              "padding": 0
+            }
+          },
+          "write": false,
+          "notes": "Interned multi-apply instance name for the spatial tendon at getSpatialTendons index T. 0 pads past spatialTendonCount. Pair with spatialTendonRoot; a root prim alone is not unique."
+        }
+      ]
+    }
+  ]
+}

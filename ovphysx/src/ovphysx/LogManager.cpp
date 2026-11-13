@@ -3,7 +3,7 @@
 
 /**
  * @implements REQ-CAPI-LOG-001
- * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7 AC-8
  *
  * @implements REQ-CAPI-STRING-001
  * @covers AC-4
@@ -16,6 +16,9 @@
  *
  * @implements REQ-CAPI-PROFILER-001
  * @covers AC-5
+ *
+ * @implements REQ-CAPI-REENTRY-001
+ * @covers AC-1
  */
 
 // LogManager: global log level, one application callback, and test capture.
@@ -134,6 +137,18 @@ using ovphysx::LogCaptureLogger;
 
 // Recursion suppression belongs to the current thread, not the process owner.
 thread_local bool t_inDispatch = false;
+// Dispatches running on any thread. Each one counts itself before it sets its thread's
+// flag and until after it restores it, so a thread inside a dispatch never reads zero
+// here; while none runs, isInLogCallback() needs no thread-local lookup.
+std::atomic<uint32_t> g_dispatchesRunning{0};
+
+struct DispatchCount
+{
+    DispatchCount() noexcept { g_dispatchesRunning.fetch_add(1, std::memory_order_relaxed); }
+    ~DispatchCount() { g_dispatchesRunning.fetch_sub(1, std::memory_order_relaxed); }
+    DispatchCount(const DispatchCount&) = delete;
+    DispatchCount& operator=(const DispatchCount&) = delete;
+};
 
 bool isValidLogLevel(ovphysx_log_level_t level)
 {
@@ -300,6 +315,7 @@ void ovphysx::UserCallbackLogger::handleMessage(const carb::logging::LogMessage&
 
         {
             std::lock_guard<std::mutex> invokeLock(registration->invokeMutex);
+            const DispatchCount running;
             const bool previousInDispatch = t_inDispatch;
             t_inDispatch = true;
             const char* message = msg.message ? msg.message : "";
@@ -567,14 +583,17 @@ void onCarboniteLoggingReady()
         const uint32_t level = state.logLevel.load(std::memory_order_acquire);
         applyCarboniteLogLevel(logging, level);
 
-        // Apply stored default-output preference (user may have called
-        // ovphysx_enable_default_log_output(false) before Carbonite init).
-        // Carbonite starts with the default logger registered, which matches
-        // state.defaultOutputEnabled == true, so only the false case needs action.
-        if (!state.defaultOutputEnabled)
+        // A retained framework may still have the previous lifecycle's policy.
+        // Reconcile once per stopped-to-ready transition, avoiding duplicate
+        // registrations when sibling instances share an already-ready framework.
+        if (!state.carboniteReady.load(std::memory_order_acquire))
         {
             if (carb::logging::StandardLogger2* defLogger = logging->getDefaultLogger())
+            {
                 logging->removeLogger(defLogger->getLogger());
+                if (state.defaultOutputEnabled)
+                    logging->addLogger(defLogger->getLogger());
+            }
         }
     }
 
@@ -617,7 +636,7 @@ ovphysx_result_t shutdownLogCallback()
 
 bool isInLogCallback()
 {
-    return t_inDispatch;
+    return g_dispatchesRunning.load(std::memory_order_relaxed) != 0 && t_inDispatch;
 }
 
 ovphysx_result_t setLogLevel(uint32_t level)

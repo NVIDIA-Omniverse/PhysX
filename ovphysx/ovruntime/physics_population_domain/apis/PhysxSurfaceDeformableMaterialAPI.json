@@ -1,0 +1,60 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxSurfaceDeformableMaterialAPI",
+  "title": "PhysxSurfaceDeformableMaterialAPI",
+  "summary": "PhysX bend damping for a surface deformable material, read only when the material prim also carries OmniPhysicsSurfaceDeformableMaterialAPI and lists PhysxSurfaceDeformableMaterialAPI in its usd-schemas.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "Material"
+  ],
+  "requires": [
+    "OmniPhysicsSurfaceDeformableMaterialAPI"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "producer_scope": "Published like any applied physics API: every declared attribute at its resolved value. USD population also lists the built-in PhysxDeformableMaterialAPI in usd-schemas. No column is rewritten or created by the producer.",
+  "columns": [
+    {
+      "name": "physxDeformableMaterial:bendDamping",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0: no bend damping. A negative value is clamped to 0 at parse.",
+      "raw_fallback_diverges": false,
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp",
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physx/plugins/usdLoad/Material.cpp",
+        "include/omni/physics/parse/Descriptors.h",
+        "source/omni.physx/plugins/usdInterface/UsdInterface.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXDeformablePropertiesUpdate.cpp"
+      ],
+      "notes": "The property update applies a change to a surface material only, without the clamp."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "OmniPhysicsSurfaceDeformableMaterialAPI",
+      "rule": "Read only when that API is listed on the same prim: it decides whether the material is parsed as a surface material at all."
+    },
+    {
+      "with": "PhysxDeformableMaterialAPI",
+      "rule": "elasticityDamping lives on the built-in PhysxDeformableMaterialAPI, which the parser checks separately."
+    }
+  ]
+}

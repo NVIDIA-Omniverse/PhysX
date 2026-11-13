@@ -834,21 +834,22 @@ namespace physx
 	#endif
 	}
 
-	void PxgFEMClothCore::sortContacts(PxU32 nbActiveFemCloths)
+	void PxgFEMClothCore::sortContacts()
 	{
 		clampContactCounts();
 
 		// we need 2x rsDesc on the host fem cloth. The reason for this is that, while the sorting occurs synchronously
 		// on the same stream on the device, the host-side buffers could get changed prior to the DMAs having occurred
 		// due to device latency
-		const PxU32 nbRequired = (nbActiveFemCloths) + 2u;
-		mRSDesc.resize(nbRequired * 2u);
+		// One slot each for the rigid and the particle contact sort.
+		const PxU32 nbSorts = 2u;
+		mRSDesc.resize(nbSorts * 2u);
 
-		mRadixCountTotalBuf.allocate(mRadixCountSize * nbRequired, PX_FL);
+		mRadixCountTotalBuf.allocate(mRadixCountSize * nbSorts, PX_FL);
 
 		for(PxU32 i = 0; i < 2; ++i)
 		{
-			mRadixSortDescBuf[i].allocate(sizeof(PxgRadixSortBlockDesc) * nbRequired, PX_FL);
+			mRadixSortDescBuf[i].allocate(sizeof(PxgRadixSortBlockDesc) * nbSorts, PX_FL);
 		}
 
 		// total number of rigid vs fem cloth contacts
@@ -865,7 +866,7 @@ namespace physx
 
 		updateGPURadixSortBlockDesc(mStream, inputKeyd, inputRankd, outputKeyd, outputRankd,
 									mRadixCountTotalBuf.getDevicePtr(), totalRFContactCountsd,
-									&mRSDesc[2 * nbActiveFemCloths], mRadixSortDescBuf[0].getDevicePtr(),
+									&mRSDesc[0], mRadixSortDescBuf[0].getDevicePtr(),
 									mRadixSortDescBuf[1].getDevicePtr());
 
 		// sorted contacts based on particle id
@@ -876,7 +877,7 @@ namespace physx
 
 		updateGPURadixSortBlockDesc(mStream, inputKeyd2, inputRankd2, outputKeyd2, outputRankd2,
 									mRadixCountTotalBuf.getDevicePtr() + mRadixCountSize, totalPFContactCountsd,
-									&mRSDesc[2 * nbActiveFemCloths + 2],
+									&mRSDesc[2],
 									mRadixSortDescBuf[0].getDevicePtr() + sizeof(PxgRadixSortBlockDesc),
 									mRadixSortDescBuf[1].getDevicePtr() + sizeof(PxgRadixSortBlockDesc));
 

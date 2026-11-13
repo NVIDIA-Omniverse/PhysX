@@ -1,0 +1,21 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxVehicleAutoGearBoxAPI",
+  "title": "PhysxVehicleAutoGearBoxAPI",
+  "summary": "Automatic gear box of a standard vehicle drive: the up and down shift ratios. The walkers parse every prim that lists it. A standard drive uses the prim its physxVehicleDriveStandard:autoGearBox relationship targets (exactly one target), or the drive prim itself when it lists this API.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "Typed"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "columns": [],
+  "notes": [
+    "Its columns are not described yet."
+  ]
+}

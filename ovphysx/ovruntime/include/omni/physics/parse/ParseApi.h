@@ -487,6 +487,23 @@ MeshApproximation parseMeshApproximation(ParseContext& ctx, ObjectKey key);
 // ParseContext::getBuffer<T> to access the typed bytes.
 MeshGeometry parseMeshGeometry(ParseContext& ctx, ObjectKey key);
 
+// PhysxMeshMergeCollisionAPI: concatenate the geometry of the collider's
+// `collisionmeshes` members into one mesh in the collider's frame (unscaled by the
+// collider; the typed descriptor's meshScale carries that); both walkers build their
+// merged collider through this. Members are merged in canonical path order whatever
+// order the source resolves the collection in, because the layout feeds the
+// cooked-data hash and order-sensitive cooking. The merged buffers are right-handed,
+// which is what the cooking service assumes for a merged mesh: a face is reversed
+// when the member is authored left-handed or its transform into the collider's frame
+// reflects (negative determinant), keeping each face's first vertex so the
+// triangulator's fan anchor stays where standalone cooking puts it. A member without
+// mesh geometry is ignored; a member whose topology is inconsistent (a face with fewer
+// than three vertices, face counts not summing to its index count, an index outside its
+// points, a hole outside its faces) is skipped with a warning. The source buffers the
+// read registered are released before returning. Returns the number of members merged;
+// zero leaves `out` empty and logs a warning, and the caller emits no shape.
+size_t buildMergedMesh(ParseContext& ctx, ObjectKey colliderKey, MergeMeshDesc& out);
+
 // Per-shape-type cooking-API extension readers. These overlay schema-
 // authored cooking knobs on top of `params`, which the caller seeds
 // with cooking-defaults or current desc state. The actual cooking call
@@ -746,7 +763,8 @@ void parseSpatialTendons(ParseContext& ctx, ObjectKey linkKey,
 //
 // `gearing` and `forceCoefficient` are VtFloatArray attributes; only
 // the first element is read. For revolute joints, gearing is converted
-// deg→rad (or clamped to ±FLT_MAX past ±180°). Joint kind (revolute /
+// from per-degree to per-radian units (g * 180/pi), saturating only at
+// float overflow. Joint kind (revolute /
 // prismatic) is walker-resolved; everything else is rejected with a
 // warning.
 //

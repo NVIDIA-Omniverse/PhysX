@@ -1,0 +1,352 @@
+{
+  "schema_version": 1,
+  "tables": [],
+  "handlers": [
+    {
+      "source": "source/omni.physx/plugins/OvxPhysicsRead.cpp",
+      "symbol": "buildDeformableGroups",
+      "target": "DEFORMABLE_VOLUME",
+      "representation": "default",
+      "direction": "read",
+      "attributes": [
+        "points",
+        "velocities",
+        "rest_points",
+        "sim_element_indices",
+        "collision_element_indices",
+        "kinematic_target"
+      ]
+    },
+    {
+      "source": "source/omni.physx/plugins/OvxPhysicsWrite.cpp",
+      "symbol": "planDeformableGroup",
+      "target": "DEFORMABLE_VOLUME",
+      "representation": "default",
+      "direction": "write",
+      "attributes": [
+        "points",
+        "velocities",
+        "kinematic_target"
+      ]
+    },
+    {
+      "source": "source/omni.physx/plugins/OvxPhysicsRead.cpp",
+      "symbol": "buildDeformableGroups",
+      "target": "DEFORMABLE_SURFACE",
+      "representation": "default",
+      "direction": "read",
+      "attributes": [
+        "points",
+        "velocities",
+        "rest_points",
+        "sim_element_indices"
+      ]
+    },
+    {
+      "source": "source/omni.physx/plugins/OvxPhysicsWrite.cpp",
+      "symbol": "planDeformableGroup",
+      "target": "DEFORMABLE_SURFACE",
+      "representation": "default",
+      "direction": "write",
+      "attributes": [
+        "points",
+        "velocities"
+      ]
+    },
+    {
+      "source": "source/omni.physx/plugins/OvxPhysicsRead.cpp",
+      "symbol": "buildDeformableSkinMeshGroups",
+      "target": "DEFORMABLE_SKIN_MESH",
+      "representation": "default",
+      "direction": "read",
+      "attributes": [
+        "points"
+      ]
+    },
+    {
+      "source": "source/omni.physx/plugins/OvxPhysicsRead.cpp",
+      "symbol": "buildParticleGroups",
+      "target": "PARTICLE_SET",
+      "representation": "default",
+      "direction": "read",
+      "attributes": [
+        "points",
+        "velocities"
+      ]
+    },
+    {
+      "source": "source/omni.physx/plugins/OvxPhysicsWrite.cpp",
+      "symbol": "planParticleGroup",
+      "target": "PARTICLE_SET",
+      "representation": "default",
+      "direction": "write",
+      "attributes": [
+        "points",
+        "velocities"
+      ]
+    },
+    {
+      "source": "source/omni.physx/plugins/OvxPhysicsRead.cpp",
+      "symbol": "buildInstancerBackendGroups",
+      "target": "RIGID_BODY",
+      "representation": "instancer",
+      "direction": "read",
+      "attributes": [
+        "velocities",
+        "positions",
+        "orientations",
+        "angular_velocities",
+        "accelerations",
+        "angular_accelerations"
+      ]
+    },
+    {
+      "source": "source/omni.physx/plugins/OvxPhysicsWrite.cpp",
+      "symbol": "planInstancerGroup",
+      "target": "RIGID_BODY",
+      "representation": "instancer",
+      "direction": "write",
+      "attributes": [
+        "velocities",
+        "positions",
+        "orientations",
+        "angular_velocities"
+      ]
+    },
+    {
+      "source": "source/omni.physx/plugins/OvxPhysicsRead.cpp",
+      "symbol": "buildArticulationRoot",
+      "target": "ARTICULATION",
+      "representation": "default",
+      "direction": "read",
+      "attributes": [
+        "dof_joint_path",
+        "dof_axis_index",
+        "dof_axis_kind",
+        "dof_joint_type",
+        "link_path",
+        "link_inbound_joint",
+        "fixed_tendon_root",
+        "fixed_tendon_instance",
+        "spatial_tendon_root",
+        "spatial_tendon_instance"
+      ]
+    },
+    {
+      "source": "source/omni.physx/plugins/OvxPhysicsRead.cpp",
+      "symbol": "buildTendonState",
+      "target": "FIXED_TENDON",
+      "representation": "default",
+      "direction": "read",
+      "attributes": [
+        "tendon_instance"
+      ]
+    },
+    {
+      "source": "source/omni.physx/plugins/OvxPhysicsRead.cpp",
+      "symbol": "buildTendonState",
+      "target": "SPATIAL_TENDON",
+      "representation": "default",
+      "direction": "read",
+      "attributes": [
+        "tendon_instance"
+      ]
+    },
+    {
+      "source": "source/omni.physx/plugins/OvxPhysicsRead.cpp",
+      "symbol": "buildVehicleWheelState",
+      "target": "VEHICLE_WHEEL",
+      "representation": "default",
+      "direction": "read",
+      "attributes": [
+        "position",
+        "orientation"
+      ]
+    },
+    {
+      "source": "source/omni.physx/plugins/OvxPhysicsRead.cpp",
+      "symbol": "buildPhysXPointerColumn",
+      "target": "ARTICULATION_LINK",
+      "representation": "default",
+      "direction": "read",
+      "attributes": [
+        "physx_pointer"
+      ]
+    },
+    {
+      "source": "source/omni.physx/plugins/OvxPhysicsRead.cpp",
+      "symbol": "buildPhysXPointerColumn",
+      "target": "ARTICULATION_JOINT",
+      "representation": "default",
+      "direction": "read",
+      "attributes": [
+        "physx_pointer"
+      ]
+    },
+    {
+      "source": "source/omni.physx/plugins/OvxPhysicsRead.cpp",
+      "symbol": "buildPhysXPointerColumn",
+      "target": "PARTICLE_SET",
+      "representation": "default",
+      "direction": "read",
+      "attributes": [
+        "physx_pointer"
+      ]
+    },
+    {
+      "source": "source/omni.physx/plugins/OvxPhysicsRead.cpp",
+      "symbol": "buildPhysXPointerColumn",
+      "target": "ARTICULATION",
+      "representation": "default",
+      "direction": "read",
+      "attributes": [
+        "physx_pointer"
+      ]
+    },
+    {
+      "source": "source/omni.physx/plugins/OvxPhysicsRead.cpp",
+      "symbol": "buildPhysXPointerColumn",
+      "target": "SCENE",
+      "representation": "default",
+      "direction": "read",
+      "attributes": [
+        "physx_pointer"
+      ]
+    },
+    {
+      "source": "source/omni.physx/plugins/OvxPhysicsRead.cpp",
+      "symbol": "buildPhysXPointerColumn",
+      "target": "PHYSX_MATERIAL",
+      "representation": "default",
+      "direction": "read",
+      "attributes": [
+        "physx_pointer"
+      ]
+    },
+    {
+      "source": "source/omni.physx/plugins/OvxPhysicsRead.cpp",
+      "symbol": "buildPhysXPointerColumn",
+      "target": "SHAPE",
+      "representation": "default",
+      "direction": "read",
+      "attributes": [
+        "physx_pointer"
+      ]
+    },
+    {
+      "source": "source/omni.physx/plugins/OvxPhysicsRead.cpp",
+      "symbol": "buildPhysXPointerColumn",
+      "target": "COMPOUND_SHAPE",
+      "representation": "default",
+      "direction": "read",
+      "attributes": [
+        "physx_pointer"
+      ]
+    },
+    {
+      "source": "source/omni.physx/plugins/OvxPhysicsRead.cpp",
+      "symbol": "buildPhysXPointerColumn",
+      "target": "RIGID_ACTOR",
+      "representation": "default",
+      "direction": "read",
+      "attributes": [
+        "physx_pointer"
+      ]
+    },
+    {
+      "source": "source/omni.physx/plugins/OvxPhysicsRead.cpp",
+      "symbol": "buildPhysXPointerColumn",
+      "target": "JOINT",
+      "representation": "default",
+      "direction": "read",
+      "attributes": [
+        "physx_pointer"
+      ]
+    },
+    {
+      "source": "source/omni.physx/plugins/OvxPhysicsRead.cpp",
+      "symbol": "buildPhysXPointerColumn",
+      "target": "CUSTOM_JOINT",
+      "representation": "default",
+      "direction": "read",
+      "attributes": [
+        "physx_pointer"
+      ]
+    },
+    {
+      "source": "source/omni.physx/plugins/OvxPhysicsRead.cpp",
+      "symbol": "buildPhysXPointerColumn",
+      "target": "PARTICLE_SYSTEM",
+      "representation": "default",
+      "direction": "read",
+      "attributes": [
+        "physx_pointer"
+      ]
+    },
+    {
+      "source": "source/omni.physx/plugins/OvxPhysicsRead.cpp",
+      "symbol": "buildPhysXPointerColumn",
+      "target": "PHYSICS",
+      "representation": "default",
+      "direction": "read",
+      "attributes": [
+        "physx_pointer"
+      ]
+    },
+    {
+      "source": "source/omni.physx/plugins/OvxPhysicsRead.cpp",
+      "symbol": "buildLinkIncomingJointForce",
+      "target": "ARTICULATION_LINK",
+      "representation": "default",
+      "direction": "read",
+      "attributes": [
+        "link_incoming_joint_force"
+      ]
+    },
+    {
+      "source": "source/omni.physx/plugins/OvxPhysicsRead.cpp",
+      "symbol": "buildContactSensorGroups",
+      "target": "CONTACT_SENSOR",
+      "representation": "default",
+      "direction": "read",
+      "attributes": [
+        "net_normal_contact_force",
+        "net_friction_contact_force",
+        "normal_contact_force_matrix",
+        "friction_contact_force_matrix",
+        "filtered_contact_force",
+        "filtered_contact_point",
+        "filtered_contact_normal",
+        "filtered_contact_separation",
+        "filtered_contact_count",
+        "filtered_friction_force",
+        "filtered_friction_point",
+        "filtered_friction_count",
+        "raw_contact_force",
+        "raw_contact_point",
+        "raw_contact_normal",
+        "raw_contact_separation",
+        "raw_contact_other_body",
+        "contact_event_type",
+        "contact_event_sensor_side",
+        "contact_event_collider",
+        "contact_event_other_body",
+        "contact_event_other_collider",
+        "contact_event_proto_index",
+        "contact_event_other_proto_index",
+        "contact_event_point_count",
+        "contact_event_anchor_count",
+        "contact_event_point_position",
+        "contact_event_point_normal",
+        "contact_event_point_impulse",
+        "contact_event_point_separation",
+        "contact_event_point_face_index",
+        "contact_event_point_other_face_index",
+        "contact_event_point_material",
+        "contact_event_point_other_material",
+        "contact_event_anchor_position",
+        "contact_event_anchor_impulse"
+      ]
+    }
+  ]
+}

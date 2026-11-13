@@ -20,16 +20,19 @@ Close a tools session with work outstanding, then detach and reopen on a new gen
 
 - Core instance A with a playback attachment, unattached core peer C, and a borrowed tools session with pending work, subscription and buffer lease.
 - A companion-owned native attachment B on another ovstage, plus shared-service and per-owner allocation/callback counters.
+- A borrowed session whose core owner has a held worker and a queued task.
 
 ## When
 
 - Try A's tools handles through C and B; close the tools session with work pending, test a retained buffer lease, release it and finish cleanup.
 - Attempt a second facade attachment through C while A remains attached; independently keep B live through native companion acquisition.
 - Retire A before B, then repeat with B retired first. Step/read the survivor, recreate the retired owner and try stale handles; request final shutdown through the coordinating bridge.
+- Request scene statistics and body inspection while the core task is queued, then release the worker and retry after completion.
 
 ## Then
 
 - Borrowed session acquisition performs no attach/step; operations validate the selected owner. (REQ AC-1)
+- Attachment access returns Busy promptly while core work is pending, leaves its receipt pending, and succeeds after completion. (REQ AC-1)
 - Close drains tasks/delivery, retained leases prevent premature destruction, and release permits safe completion. (REQ AC-2)
 - Foreign/stale access and C's facade attach fail without peer mutation, while compatible native B coexists with A. (REQ AC-3)
 - Repeated cycles return owner-local counters to baseline and old-generation callbacks cannot target recreated owners. (REQ AC-4)
@@ -45,3 +48,7 @@ Qualification: Linux x86_64 CPU and customer USD 26.8. No GPU/device execution
 or same-process legacy-provider coexistence is claimed.
 
 [Tools session process-exit regression](../../../tests_native/test_bridge.py), `test_tools_session_closes_before_core_at_process_exit`, verifies lease cleanup precedes core destruction (AC-4).
+
+[Core/companion admission regression](../../../../tests/c_unittests/test_companion_access.cpp),
+`CompanionAccess.SessionCallAnswersBusyWhileOwnerHasWork`, covers queued-core-work
+refusal and successful retry (AC-1).

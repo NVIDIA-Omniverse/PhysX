@@ -4,6 +4,9 @@
 # @implements REQ-PYTHON-TASK-001
 # @covers AC-6 AC-7 AC-9 AC-10
 # @maps_to TEST-PYTHON-TASK-001
+# @implements REQ-PYTHON-READ-001
+# @covers AC-9 AC-10
+# @maps_to TEST-PYTHON-READ-001
 # @implements REQ-CAPI-READ-CONTACT-002
 # @covers AC-3
 # @maps_to TEST-CAPI-READ-CONTACT-003
@@ -14,12 +17,15 @@
 
 import ctypes
 import gc
+import itertools
 import threading
 import sys
 from types import SimpleNamespace
 import weakref
 from collections import defaultdict
 
+import numpy as np
+import ovstage
 import pytest
 
 from ovphysx import _bindings as b
@@ -41,6 +47,7 @@ class Native:
         self.write_groups = []
         self.last_error = ""
         self.summary_requests = []
+        self.path_selections = []
 
     def submit(self, name, publish=lambda: None):
         failure = self.failures[name].pop(0) if self.failures[name] else None
@@ -52,6 +59,14 @@ class Native:
         self.next_id += 1
         self.pending[index] = (name, publish, failure)
         return b.ovphysx_enqueue_result_t(ApiStatus.SUCCESS, index, 17)
+
+    def produce(self, name, output, handle, publish=lambda: None):
+        # Like native code: an accepted producer's handle exists when the call returns, also if the
+        # task later fails; everything else it outputs is written when it runs (here: at collection).
+        receipt = self.submit(name, publish)
+        if receipt.status == ApiStatus.SUCCESS:
+            output._obj.value = handle
+        return receipt
 
     def _collect(self, index):
         name, publish, failure = self.pending.pop(index)
@@ -101,7 +116,13 @@ class Native:
 
     def ovphysx_query(self, instance, kind, scope, output, metadata):
         self.summary_requests.append(("query", bool(metadata)))
-        return self.submit("query", lambda: setattr(output._obj, "value", 7))
+        return self.produce("query", output, 7)
+
+    def ovphysx_query_selection(self, instance, kind, selection, output, metadata):
+        self.summary_requests.append(("query_selection", bool(metadata)))
+        selection = selection._obj
+        self.path_selections.append([int(selection.prim_paths[i]) for i in range(selection.prim_paths_count)])
+        return self.produce("query_selection", output, 7)
 
     def ovphysx_query_contacts(self, instance, selections, count, filters_per_sensor, output, metadata):
         self.summary_requests.append(("query_contacts", bool(metadata)))
@@ -113,20 +134,18 @@ class Native:
                 )
                 for i in range(count)
             ]
-            output._obj.value = 7
             if metadata:
                 attributes = (ctypes.c_uint64 * 2)(40, 41)
                 self.storage.append(attributes)
                 metadata._obj.total_prim_count = count
                 metadata._obj.attributes = attributes
                 metadata._obj.attribute_count = 2
-        return self.submit("query_contacts", publish)
+        return self.produce("query_contacts", output, 7, publish)
 
-    def ovphysx_read(self, instance, query, attrs, count, output, metadata):
+    def ovphysx_read(self, instance, query, attrs, count, sync, output, metadata):
         assert query == 7
         self.summary_requests.append(("read", bool(metadata)))
         def publish():
-            output._obj.value = 9
             if metadata:
                 rows = (b.ovphysx_read_attribute_result_t * 2)(
                     b.ovphysx_read_attribute_result_t(40, 1, 0), b.ovphysx_read_attribute_result_t(0, 0, 1))
@@ -134,12 +153,12 @@ class Native:
                 metadata._obj.total_prim_count = 3
                 metadata._obj.attribute_count = 2
                 metadata._obj.attributes = rows
-        return self.submit("read", publish)
+        return self.produce("read", output, 9, publish)
 
     def ovphysx_write(self, instance, query, attrs, count, output, metadata):
         assert query == 7
         self.summary_requests.append(("write", bool(metadata)))
-        return self.submit("write", lambda: setattr(output._obj, "value", 10))
+        return self.produce("write", output, 10)
 
     def ovphysx_fetch_write_next(self, instance, write, output):
         item = self.write_groups.pop(0) if self.write_groups else None
@@ -179,21 +198,43 @@ class Native:
         return b.ovphysx_result_t(ApiStatus.SUCCESS)
 
     def ovphysx_attach_ovstage(self, instance, stage, ordinal):
-        return self.submit("attach", self.on_attach)
+        pointer = stage.value
+
+        def publish():
+            self.attached_pointer = pointer
+            self.on_attach()
+        return self.submit("attach", publish)
 
     def ovphysx_update_from_ovstage(self, instance, ordinal_range):
         return self.submit("update")
 
     def ovphysx_detach_ovstage(self, instance):
-        return self.submit("detach", self.on_detach)
+        def publish():
+            self.attached_pointer = None
+            self.on_detach()
+        return self.submit("detach", publish)
 
     def ovphysx_is_stage_attached(self, instance, stage, output):
-        output._obj.value = bool(self.attachment())
+        # Like native code: a supplied Stage pointer must match the attached one exactly.
+        pointer = stage.value
+        output._obj.value = bool(self.attachment()) and (not pointer or pointer == self.attached_pointer)
         return b.ovphysx_result_t(ApiStatus.SUCCESS)
 
     def ovphysx_internal_get_attach_handle(self, instance, output):
         output._obj.value = self.attachment()
         return b.ovphysx_result_t(ApiStatus.SUCCESS)
+
+
+class FakeStage:
+    """A Stage double with its own native pointer, as attach and is_stage_attached read it."""
+
+    _pointers = itertools.count(0x1000)
+
+    def __init__(self):
+        self._inst = ctypes.c_void_p(next(FakeStage._pointers))
+
+    def get_path_dictionary(self):
+        return object()
 
 
 def make_sdk(native_type=Native):
@@ -205,7 +246,8 @@ def make_sdk(native_type=Native):
     owner = weakref.proxy(result)
     result._get_last_error = lambda: owner._lib.last_error
     result._omni_physx_sdk_handle = ctypes.c_uint64(17)
-    result._attached_ovstage = object()
+    result._attached_ovstage = FakeStage()
+    result._lib.attached_pointer = result._attached_ovstage._inst.value
     result._attachment_identity = 44
     result._lib.attachment = lambda: owner._attachment_identity
     result._lib.on_attach = lambda: setattr(owner, "_attachment_identity", 44)
@@ -216,6 +258,8 @@ def make_sdk(native_type=Native):
     result._pending_write_lock = threading.Lock()
     result._pending_read_releases = []
     result._pending_write_releases = []
+    result._pending_binding_lock = threading.Lock()
+    result._pending_binding_destroys = []
     return result
 
 
@@ -262,6 +306,7 @@ def test_attach_retains_stage_until_collected_ownership_is_known(sdk, monkeypatc
     if failure == "rollback":
         # Failed attachment rollback can leave ownership published.
         sdk._attachment_identity = 44
+        sdk._lib.attached_pointer = Stage._inst.value
         with pytest.raises(TaskError, match="attach failed"):
             sdk.wait_task(receipt)
         assert owner() is sdk._attached_ovstage
@@ -311,12 +356,10 @@ def test_lifecycle_receipts_separate_admission_from_execution(sdk, operation, fa
 
 
 def test_dropped_detach_receipt_retains_stage_through_timeout(sdk):
-    class Stage:
-        pass
-
-    stage = Stage()
+    stage = FakeStage()
     owner = weakref.ref(stage)
     sdk._attached_ovstage = stage
+    sdk._lib.attached_pointer = stage._inst.value
     sdk._lib.blocked = sdk.detach_ovstage().op_index
     del stage
     with pytest.raises(TaskTimeoutError):
@@ -327,17 +370,43 @@ def test_dropped_detach_receipt_retains_stage_through_timeout(sdk):
     assert owner() is None
 
 
-def test_older_detach_collection_does_not_drop_a_later_pending_stage_owner(sdk):
+def test_older_detach_collection_does_not_drop_a_later_pending_stage_owner(sdk, monkeypatch):
+    monkeypatch.setitem(sys.modules, "ovstage", SimpleNamespace(Stage=FakeStage))
     stage = sdk._attached_ovstage
+    owner = weakref.ref(stage)
     older = sdk.detach_ovstage()
-    newer = Task._from_native(sdk._lib.submit("attach", sdk._lib.on_attach))
-    sdk._retain_stage_until_collection(newer)
+    newer = sdk.attach_ovstage(stage)
+    del stage
     sdk.wait_task(older)
+    gc.collect()
     assert not sdk.is_stage_attached()
-    assert sdk._attached_ovstage is stage
+    assert owner() is not None and sdk._attached_ovstage is owner()
     sdk.wait_task(newer)
-    assert sdk.is_stage_attached()
-    assert sdk._attached_ovstage is stage
+    assert sdk.is_stage_attached(owner())
+    assert sdk._attached_ovstage is owner()
+
+
+@pytest.mark.parametrize("failure", [None, "execute"])
+def test_detach_keeps_a_dropped_stage_until_a_successful_detach_is_known(sdk, failure):
+    stage = sdk._attached_ovstage
+    owner = weakref.ref(stage)
+    if failure:
+        sdk._lib.failures["detach"] = [failure]
+    receipt = sdk.detach_ovstage()
+    del stage
+    gc.collect()
+    assert owner() is not None
+    if failure:
+        with pytest.raises(TaskError, match="detach failed"):
+            sdk.wait_task(receipt)
+        gc.collect()
+        # The failed detach left the attachment: its Stage stays committed.
+        assert sdk.is_stage_attached(owner())
+        assert owner() is sdk._attached_ovstage
+    else:
+        sdk.wait_task(receipt)
+        gc.collect()
+        assert owner() is None and sdk._attached_ovstage is None
 
 
 def test_query_dictionary_accessor_is_not_public():
@@ -386,11 +455,31 @@ def test_attachment_query_release_collects_its_outcome_once(sdk, failure):
     assert sdk._pending_write_releases == []
 
 
+@pytest.mark.parametrize("handle", [101, np.uint64(101), np.int64(101), ovstage.PrimPath(101)])
+def test_path_selections_accept_handles_and_numpy_integers(sdk, handle):
+    # Raw ids often come from NumPy readback buffers; any integer is a raw ovx_primpath_t.
+    sdk.query(SimObjectType.RIGID_BODY, prim_paths=[handle, 102]).wait()
+    assert sdk._lib.path_selections == [[101, 102]]
+    sdk.query(SimObjectType.CONTACT_SENSOR,
+              contacts=[ContactSelection("/World/Sensor*", [[handle], [np.uint64(102)]])]).wait()
+    assert sdk._lib.contact_selections == [(b"/World/Sensor*", [101, 102])]
+
+
+@pytest.mark.parametrize("handle", [True, False, np.True_, np.False_, np.array(101), 1.0, "101", ovstage.Token(101)])
+def test_path_selections_reject_non_integers_and_other_handle_kinds(sdk, handle):
+    with pytest.raises(TypeError, match="ovstage.PrimPath or an integer"):
+        sdk.query(SimObjectType.RIGID_BODY, prim_paths=[handle])
+    with pytest.raises(ValueError, match="prim handles"):
+        sdk.query(SimObjectType.CONTACT_SENSOR, contacts=[ContactSelection("/World/Sensor*", [[handle]])])
+    assert sdk._lib.calls == []
+
+
 @pytest.mark.parametrize("metadata", [False, True])
 def test_contact_query_collects_output_and_optional_metadata(sdk, metadata):
     operation = sdk.query(
         SimObjectType.CONTACT_SENSOR,
-        contacts=[ContactSelection("/World/Sensor*", [[101], [102]])],
+        # A filter's prim handle is a raw int or an ovstage.PrimPath; both marshal to the same uint64.
+        contacts=[ContactSelection("/World/Sensor*", [[101], [ovstage.PrimPath(102)]])],
         metadata=metadata,
     )
     assert sdk._lib.waits == []
@@ -404,14 +493,17 @@ def test_contact_query_collects_output_and_optional_metadata(sdk, metadata):
     assert sdk._lib.summary_requests == [("query_contacts", metadata)]
     if metadata:
         assert selector.metadata.total_prim_count == 1
-        assert selector.metadata.attributes == (40, 41)
+        assert selector.metadata.attributes == (ovstage.Token(40), ovstage.Token(41))
     else:
         assert selector.metadata is None
     selector.close_sync()
     assert sdk._lib.pending == {}
 
 
-@pytest.mark.parametrize("method,attributes", [("read_sync", ["netNormalContactForce"]), ("read_tokens_sync", [40])])
+@pytest.mark.parametrize(
+    "method,attributes",
+    [("read_sync", ["netNormalContactForce"]), ("read_tokens_sync", [40]), ("read_tokens_sync", [ovstage.Token(40)])],
+)
 def test_contact_read_sync_owns_and_collects_its_contact_query(sdk, method, attributes):
     with getattr(sdk, method)(
         SimObjectType.CONTACT_SENSOR, attributes,
@@ -507,50 +599,25 @@ def test_cached_conversion_failure_does_not_retain_caller_frames(sdk):
 
 
 @pytest.mark.parametrize("wait_kind", ["wait_task", "wait_all", "operation"])
-@pytest.mark.parametrize("failure", ["execute", "timeout"])
-def test_wait_keeps_primary_error_and_all_rejected_cleanup_causes(sdk, wait_kind, failure):
-    if failure == "execute":
-        sdk._lib.failures["step"] = ["execute"]
-    operation = Operation(sdk, (Task._from_native(sdk._lib.submit("step")),))
-    if failure == "timeout":
-        sdk._lib.blocked = operation.task.op_index
-    attempts = []
-
-    def cleanup(name):
-        attempts.append(name)
-        if attempts.count(name) == 1:
-            raise RuntimeError(name + " rejected")
-
-    pending = [lambda: cleanup("query release"), lambda: cleanup("read release")]
-    native_name = "ovphysx_" + ("wait_task" if wait_kind == "operation" else wait_kind)
-    native_wait = getattr(sdk._lib, native_name)
-
-    def wait_then_queue_cleanup(*args):
-        result = native_wait(*args)
-        sdk._session_cleanups.extend(pending)
-        return result
-
-    setattr(sdk._lib, native_name, wait_then_queue_cleanup)
-    expected = TaskError if failure == "execute" else TaskTimeoutError
-    with pytest.raises(expected) as caught:
+def test_waits_submit_no_release(sdk, wait_kind):
+    # A failed producer keeps its handle; a dropped Query's finalizer queues its release.
+    sdk._lib.failures["query"] = ["execute"]
+    operation = sdk.query(SimObjectType.RIGID_BODY)
+    dropped = query(sdk)
+    del dropped
+    gc.collect()
+    with pytest.raises(TaskError, match="query failed"):
         if wait_kind == "operation":
-            operation.wait(timeout_ns=0)
+            operation.wait()
         elif wait_kind == "wait_task":
-            sdk.wait_task(operation.task, timeout_ns=0)
+            sdk.wait_task(operation.task)
         else:
-            sdk.wait_all(timeout_ns=0)
-    assert attempts == ["query release", "read release"]
-    messages = []
-    error = caught.value.__cause__
-    while error is not None:
-        messages.append(str(error))
-        error = error.__cause__
-    assert "query release rejected" in messages
-    assert "read release rejected" in messages
-    assert sdk._session_cleanups == pending
+            sdk.wait_all()
+    assert sdk._lib.calls == ["query"]
+    # The next step, query, session open, attach or detach submits both releases.
     sdk._drain_pending_read_releases()
-    assert attempts == ["query release", "read release"] * 2
-    assert not sdk._session_cleanups
+    assert sdk._lib.calls == ["query", "release_query", "release_query"]
+    sdk.wait_all()
 
 
 def test_rejected_orphan_cleanup_does_not_skip_read_and_write_holders(sdk):
@@ -590,67 +657,16 @@ def test_rejected_orphan_cleanup_does_not_skip_read_and_write_holders(sdk):
     sdk.wait_all()
 
 
-@pytest.mark.parametrize("wait_kind", ["wait_task", "wait_all", "operation"])
-def test_successful_wait_inside_except_does_not_capture_callers_error(sdk, wait_kind):
-    operation = Operation(sdk, (Task._from_native(sdk._lib.submit("work")),))
-    native_name = "ovphysx_wait_all" if wait_kind == "wait_all" else "ovphysx_wait_task"
-    native_wait = getattr(sdk._lib, native_name)
-
-    def rejected():
-        raise RuntimeError("cleanup rejected")
-
-    def wait_then_queue(*args):
-        result = native_wait(*args)
-        sdk._session_cleanups.append(rejected)
-        return result
-
-    setattr(sdk._lib, native_name, wait_then_queue)
-    outer = KeyError("unrelated caller error")
-    try:
-        raise outer
-    except KeyError:
-        with pytest.raises(RuntimeError, match="cleanup rejected") as caught:
-            if wait_kind == "operation":
-                operation.wait()
-            elif wait_kind == "wait_task":
-                sdk.wait_task(operation.task)
-            else:
-                sdk.wait_all()
-    assert caught.value is not outer
-    assert outer.__cause__ is None
-    assert operation.done
-    sdk._session_cleanups.clear()
-
-
 def test_cleanup_chaining_terminates_and_preserves_distinct_errors_in_a_cycle():
-    from ovphysx.api import _run_cleanups
+    from ovphysx.api import _chain_cleanup
 
     primary = ValueError("body")
     primary.__cause__ = primary
     rejected = RuntimeError("cleanup rejected")
     rejected.__cause__ = rejected
-
-    def cleanup():
-        raise rejected
-
-    with pytest.raises(ValueError, match="body") as caught:
-        _run_cleanups((cleanup,), primary=primary)
-    assert caught.value.__cause__ is rejected
+    _chain_cleanup(primary, rejected)
+    assert primary.__cause__ is rejected
     assert rejected.__cause__ is None
-
-
-def test_wait_all_collects_even_if_queued_cleanup_keeps_rejecting(sdk):
-    operation = Operation(sdk, (Task._from_native(sdk._lib.submit("work")),))
-
-    def rejected():
-        raise RuntimeError("cleanup rejected")
-
-    sdk._session_cleanups.append(rejected)
-    with pytest.raises(RuntimeError, match="cleanup rejected"):
-        sdk.wait_all()
-    assert operation.done and operation.result is None
-    assert sdk._session_cleanups == [rejected]
-    sdk._session_cleanups.clear()
 
 
 def test_detach_leaves_earlier_failure_for_explicit_collection(sdk):
@@ -787,11 +803,11 @@ def test_dropped_creator_releases_orphan_without_materialization(sdk):
     assert reference() is None
     assert sdk._session_pending
     sdk.wait_all()
-    assert "release_read" in sdk._lib.calls
-    assert sdk._lib.waits == ["read", "release_query"]
+    assert sdk._lib.waits == ["read"]
     assert not sdk._session_pending
+    sdk._drain_pending_read_releases()
     sdk.wait_all()
-    assert "release_read" in sdk._lib.waits
+    assert sdk._lib.waits == ["read", "release_read", "release_query"]
 
 
 def test_read_fetch_materializes_once_at_first_result_access(sdk):
@@ -821,9 +837,10 @@ def test_fetch_materialization_after_parent_close_fails_and_retires_group(sdk):
     assert "release_read" not in sdk._lib.calls
     with pytest.raises(RuntimeError, match="closed"):
         operation.wait()
-    assert "release_group" in sdk._lib.calls
+    assert "release_group" not in sdk._lib.calls and session._release._refs == 1
     sdk._drain_pending_read_releases()
-    assert "release_read" in sdk._lib.calls
+    assert sdk._lib.calls[-2:] == ["release_group", "release_read"]
+    assert session._release._refs == 0
 
 
 def test_close_rejected_group_retains_owner_for_retry(sdk):
@@ -859,6 +876,7 @@ def test_deferred_write_release_failure_survives_dropped_receipt(family, sdk):
     gc.collect()
     assert reference() is None
     assert sdk._lib.calls == []
+    sdk._drain_pending_read_releases()
     with pytest.raises(TaskError, match=release_name + " failed"):
         sdk.wait_all()
     assert sdk._lib.calls == [release_name]
@@ -869,7 +887,7 @@ def test_deferred_write_release_failure_survives_dropped_receipt(family, sdk):
 
 
 def test_write_commit_spends_exact_group_on_admission_even_if_execution_fails(sdk):
-    group = WriteGroup(3, 0, 1, [], 1, 42)
+    group = WriteGroup(ovstage.PrimPathList(3), 0, 1, [], 1, ovstage.Token(42))
     native = ctypes.pointer(b.ovstage_map_group_t())
     session = WriteSession(sdk, 0, 10, [group], [native])
     sdk._lib.failures["commit"] = ["execute"]
@@ -917,7 +935,9 @@ def test_dropped_multi_task_retains_inputs_until_all_outcomes_collected(sdk):
     assert reference() is not None and cleaned == []
     sdk.wait_task(tasks[1])
     gc.collect()
-    assert reference() is None and cleaned == [True]
+    assert reference() is None and cleaned == []
+    sdk._drain_pending_read_releases()
+    assert cleaned == [True]
 
 
 def test_sync_close_collects_own_cleanup_without_consuming_unrelated_failure(sdk):
@@ -940,18 +960,25 @@ def test_sync_convenience_omits_internal_query_summary(family, sdk):
     session.close_sync()
 
 
+@pytest.mark.parametrize("attribute", ["position", 40, ovstage.Token(40)])
+def test_write_sync_accepts_a_single_name_or_token(sdk, attribute):
+    session = sdk.write_sync(SimObjectType.RIGID_BODY, attribute)
+    assert session._attributes == (attribute,)
+    session.close_sync()
+
+
 def test_opt_in_metadata_is_copied_immutable_snapshot(sdk):
     from dataclasses import FrozenInstanceError
     from ovphysx.api import ReadOmission
     session = sdk.read(query(sdk), ["position", "unknown"], metadata=True).wait()
     assert session.metadata.total_prim_count == 3
-    assert session.metadata.attributes[0].attribute == 40
+    assert session.metadata.attributes[0].attribute == ovstage.Token(40)
     assert session.metadata.attributes[1].omission_reasons == ReadOmission.UNSUPPORTED_ATTRIBUTE
     with pytest.raises(FrozenInstanceError):
         session.metadata.total_prim_count = 99
     rows = next(value for value in sdk._lib.storage if value._type_ is b.ovphysx_read_attribute_result_t)
     rows[0].attribute = 81
-    assert session.metadata.attributes[0].attribute == 40
+    assert session.metadata.attributes[0].attribute == ovstage.Token(40)
 
 
 @pytest.mark.parametrize("family", ["read", "write"])
@@ -970,22 +997,6 @@ def test_partial_release_admission_preserves_prior_execution_failure(family, sdk
     assert not sdk._lib.pending
 
 
-def test_materialization_error_requeues_rejected_cleanup(sdk):
-    session = sdk.read(query(sdk), ["position"]).wait()
-    native = b.ovstage_read_group_t()
-    native.read_group_id = 99
-    sdk._lib.groups.append(native)
-    operation = session.fetch_next()
-    session.close()
-    sdk._lib.failures["release_group"] = ["reject"]
-    with pytest.raises(RuntimeError, match="closed"):
-        operation.wait()
-    assert sdk._session_cleanups and session._release._refs == 1
-    sdk._drain_pending_read_releases()
-    assert not sdk._session_cleanups and session._release._refs == 0
-    sdk.wait_all()
-
-
 def test_fetch_cleanup_failure_survives_dropped_group_receipt(sdk):
     session = ReadResult(sdk, 0, 9)
     native = b.ovstage_read_group_t()
@@ -996,6 +1007,7 @@ def test_fetch_cleanup_failure_survives_dropped_group_receipt(sdk):
     sdk._lib.failures["release_group"] = ["execute"]
     with pytest.raises(RuntimeError, match="closed"):
         operation.wait()
+    sdk._drain_pending_read_releases()
     assert session._release._group_ids == []
     with pytest.raises(TaskError, match="release_group failed"):
         sdk.wait_all()
@@ -1044,8 +1056,11 @@ def test_conversion_error_does_not_keep_unexposed_array_in_cached_traceback(sdk,
     native = b.ovstage_read_group_t()
     native.read_group_id = 108
     tensors = (b.DLTensor * 1)()
-    native.data.tensors = tensors
-    native.data.tensor_count = 1
+    column = b.ovstage_read_column_t()
+    column.data.tensors = tensors
+    column.data.tensor_count = 1
+    native.columns = ctypes.pointer(column)
+    native.column_count = 1
     sdk._lib.groups.append(native)
     session = sdk.read(query(sdk), ["position"]).wait()
     operation = session.fetch_next()
@@ -1055,6 +1070,65 @@ def test_conversion_error_does_not_keep_unexposed_array_in_cached_traceback(sdk,
     with pytest.raises(ValueError, match="index map"):
         _ = operation.result
     assert not borrows
+
+
+def _fake_warp_conversion(sdk, monkeypatch):
+    from ovphysx import api
+    monkeypatch.setitem(sys.modules, "warp", SimpleNamespace())
+    monkeypatch.setattr(api, "_warn_if_warp_build_breaks_cpu_mode", lambda wp: None)
+    ordered = []
+    sdk._order_warp_stream_after_group = lambda target, *args: ordered.append(target.attribute)
+    sdk._dltensor_to_warp_array = lambda tensor, *args: int(tensor.ndim)
+    sdk._u32_warp_array = lambda pointer, count, *args: count if pointer else None
+    return ordered
+
+
+def test_read_group_flattens_its_single_native_column(sdk, monkeypatch):
+    ordered = _fake_warp_conversion(sdk, monkeypatch)
+    native = b.ovstage_read_group_t()
+    native.read_group_id = 109
+    native.prims.list = 77
+    native.prims.count = 2
+    tensors = (b.DLTensor * 2)()
+    tensors[0].ndim = 1
+    tensors[1].ndim = 2
+    column = b.ovstage_read_column_t()
+    column.attribute = 0x1234
+    column.ordinal = 7
+    column.is_array = True
+    column.semantic = 5
+    column.data.tensors = tensors
+    column.data.tensor_count = 2
+    column.data.cuda_sync.stream = 11
+    column.data.cuda_sync.wait_event = 12
+    column.meta.layout_generation = 3
+    column.meta.attribute_write_floor_ordinal = 9
+    native.columns = ctypes.pointer(column)
+    native.column_count = 1
+    sdk._lib.groups.append(native)
+    session = sdk.read(query(sdk), ["position"]).wait()
+    group = session.fetch_next().wait()
+    # Per-attribute fields come from columns[0], prim rows from the group.
+    assert group.attribute.raw_id == 0x1234
+    assert (group.ordinal, group.is_array, group.is_delete, group.semantic) == (7, True, False, 5)
+    assert group.tensors == [1, 2]
+    assert (group.layout_generation, group.write_floor_ordinal) == (3, 9)
+    assert (group.cuda_stream, group.cuda_wait_event) == (11, 12)
+    assert group.prim_list.raw_id == 77
+    assert (group.prim_offset, group.prim_count, group.prim_index_map, group.index_map) == (0, 2, None, None)
+    assert ordered == [0x1234]  # the column is what orders Warp's stream
+
+
+def test_read_group_without_exactly_one_column_fails_materialization(sdk, monkeypatch):
+    ordered = _fake_warp_conversion(sdk, monkeypatch)
+    native = b.ovstage_read_group_t()
+    native.read_group_id = 110
+    native.prims.count = 1
+    sdk._lib.groups.append(native)
+    session = sdk.read(query(sdk), ["position"]).wait()
+    with pytest.raises(RuntimeError, match="exactly one column"):
+        session.fetch_next().wait()
+    assert ordered == []
 
 
 def test_read_close_drain_rejection_preserves_group_receipt(sdk):
@@ -1078,7 +1152,7 @@ def test_discarded_pending_operations_do_not_create_an_sdk_gc_cycle(family):
     elif family in ("read", "write"):
         operation = getattr(sdk, family)(query(sdk), ["position"])
     elif family == "commit":
-        group = WriteGroup(0, 0, 0, [], 0, 40)
+        group = WriteGroup(ovstage.PrimPathList(0), 0, 0, [], 0, ovstage.Token(40))
         session = WriteSession(sdk, 0, 10, groups=[group], native=[ctypes.pointer(b.ovstage_map_group_t())])
         operation = session.commit(group)
         del session
@@ -1107,7 +1181,7 @@ def test_pending_read_orphan_gc_only_enqueues_until_owner_collection(sdk):
     collector.start()
     collector.join()
     assert sdk._lib.calls == calls_before
-    sdk.wait_all()
+    sdk._drain_pending_read_releases()
     assert "release_group" in sdk._lib.calls
     assert "release_read" in sdk._lib.calls
     sdk.wait_all()
@@ -1177,9 +1251,14 @@ def test_detach_callback_cannot_materialize_retired_write_buffers(sdk):
     assert callbacks == [True]
 
 
-def test_boolean_is_not_an_attribute_token(sdk):
-    with pytest.raises(TypeError, match="nonzero uint64"):
-        sdk.read(query(sdk), [True])
+@pytest.mark.parametrize(
+    "token", [True, False, np.True_, np.False_, 0, 2**64 - 1,
+              ovstage.Token(0), ovstage.Token(2**64 - 1), ovstage.PrimPath(40)]
+)
+def test_boolean_empty_and_invalid_values_are_not_attribute_tokens(sdk, token):
+    with pytest.raises(TypeError, match="uint64 token other than 0 and 2"):
+        sdk.read(query(sdk), [token])
+    assert sdk._lib.calls == []
 
 
 @pytest.mark.parametrize("kind", ["wait_task", "wait_all", "operation", "cleanup", "wait_and_cleanup", "destroy",

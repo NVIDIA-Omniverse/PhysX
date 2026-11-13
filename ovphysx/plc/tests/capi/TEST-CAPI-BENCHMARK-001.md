@@ -18,11 +18,12 @@ operations, semantic gates, or row cardinality are wrong.
 
 - An ovphysx build configured with `OVPHYSX_BUILD_BENCHMARKS=ON`, followed by
   SDK installation.
-- The pinned `producer_inventory.json` containing eighteen unique,
-  substring-collision-free names: twelve CPU and six requested-GPU rows.
-- The four shipped Authoring fixture dependencies:
+- The pinned `producer_inventory.json` containing twenty-two unique,
+  substring-collision-free names: twelve CPU and ten requested-GPU rows.
+- The five shipped Authoring fixture dependencies:
   `empty_dynamic_boxes.usda`, `empty_dynamic_boxes_cpu.usda`,
-  `simple_physics_scene.usda`, and `simple_physics_scene_cpu.usda`.
+  `simple_physics_scene.usda`, `simple_physics_scene_cpu.usda`, and
+  `simple_physics_scene_gpu.usda`.
 - A CPU benchmark process selected with
   `--hidden --filter=Authoring.*_cpu:WriteScaling.*_cpu --regenerate`.
 
@@ -61,8 +62,8 @@ operations, semantic gates, or row cardinality are wrong.
 
 ## Then
 
-- Filtered `--list` output contains all eighteen exact hidden names and the
-  CPU/GPU split is twelve/six, while family execution without `--hidden`
+- Filtered `--list` output contains all twenty-two exact hidden names and the
+  CPU/GPU split is twelve/ten, while family execution without `--hidden`
   publishes zero rows (REQ AC-1).
 - `BENCHMARK_HIDDEN=1` produces `--hidden` for a pass. A selection with no
   enabled pass fails. `BENCHMARK_EXPECT_ROWS` rejects non-positive or
@@ -133,7 +134,7 @@ operations, semantic gates, or row cardinality are wrong.
   and floor, pose/velocity effects, and all 4,096 WriteScaling velocities.
   CPU authoring checks pass, while requested-GPU execution is not required and
   no realized-GPU claim is inferred from absent fallback or capacity output in
-  the attachment and warm-up window. **Coverage limitation:** all six
+  the attachment and warm-up window. **Coverage limitation:** all ten
   requested-GPU Authoring rows reuse the same detector by inspection; this
   contract does not separately inject a capacity warning into each row.
   `BenchmarkFailureTest` checks capacity-string classification only; it does

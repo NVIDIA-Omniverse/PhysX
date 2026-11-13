@@ -110,18 +110,19 @@ static void* read_rigid_actor_pointer(ovphysx_instance_handle_t handle, const ch
         return NULL;
 
     ovstage_instance_t* stage = g_stage_attachment.stage;
-    path_dictionary_instance_t* dict = stage ? stage->vtable->get_path_dictionary(stage->context) : nullptr;
+    path_dictionary_instance_t* dict = stage ? ovstage_get_path_dictionary(stage) : nullptr;
     if (!dict) {
         ovphysx_enqueue_result_t released_query = ovphysx_release_query(handle, query);
         wait_task(handle, released_query, "release rigid-actor query");
         return NULL;
     }
 
-    ovx_string_or_token_t name = {};
+    ovx_token_or_string_t name = {};
     name.string.ptr = OVPHYSX_ATTR_PHYSX_POINTER;
     name.string.length = std::strlen(OVPHYSX_ATTR_PHYSX_POINTER);
     ovphysx_read_handle_t read = 0;
-    ovphysx_enqueue_result_t started = ovphysx_read(handle, query, &name, 1, &read, nullptr);
+    ovphysx_enqueue_result_t started = ovphysx_read(handle, query, &name, 1,
+                                                    ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr);
     if (started.status != OVPHYSX_API_SUCCESS) {
         ovphysx_enqueue_result_t released_query = ovphysx_release_query(handle, query);
         wait_task(handle, released_query, "release rigid-actor query");
@@ -141,7 +142,7 @@ static void* read_rigid_actor_pointer(ovphysx_instance_handle_t handle, const ch
         ovphysx_enqueue_result_t fetched = ovphysx_fetch_read_next(handle, read, &group);
         if (fetched.status != OVPHYSX_API_SUCCESS || !wait_task(handle, fetched, "fetch physxPointer") || !group)
             break;
-        const DLTensor* tensor = group->data.tensors;
+        const DLTensor* tensor = group->columns[0].data.tensors;
         const int row = find_prim_row(dict, group, path);
         if (row >= 0 && tensor && tensor->data && tensor->dtype.code == kDLUInt && tensor->dtype.bits == 64)
             found = reinterpret_cast<void*>(static_cast<uint64_t*>(tensor->data)[row]);
@@ -212,7 +213,9 @@ static int run(void)
     }
     printf("Got PxRigidDynamic* for /World/KinematicCube\n");
 
-    // 5. Set kinematic target to move the cube from (0,2,0) to (3,2,0)
+    // 5. Set kinematic target to move the cube from (0,2,0) to (3,2,0). Structural changes (adding, removing or
+    //    re-inserting objects, moving them between scenes, attaching or detaching shapes) through a native PhysX
+    //    pointer are not recommended: after one, ovphysx reads and writes are not guaranteed to work.
     physx::PxTransform target(physx::PxVec3(3.0f, 2.0f, 0.0f));
     actor->setKinematicTarget(target);
     printf("Set kinematic target to (3, 2, 0)\n");
@@ -236,9 +239,9 @@ static int run(void)
     if (!check_result(result, "query") || read_query == 0) {
         return destroy_instance_and_shutdown(handle);
     }
-    const ovx_string_or_token_t pos_attr = { 0, { OVPHYSX_ATTR_POSITION, sizeof(OVPHYSX_ATTR_POSITION) - 1 } };
+    const ovx_token_or_string_t pos_attr = { 0, { OVPHYSX_ATTR_POSITION, sizeof(OVPHYSX_ATTR_POSITION) - 1 } };
     ovphysx_read_handle_t read_session = 0;
-    result = ovphysx_sample_complete_task(handle, ovphysx_read(handle, read_query, &pos_attr, 1, &read_session, nullptr));
+    result = ovphysx_sample_complete_task(handle, ovphysx_read(handle, read_query, &pos_attr, 1, ovstage_cuda_sync_t{ 0, 0 }, &read_session, nullptr));
     if (!check_result(result, "read")) {
         return destroy_instance_and_shutdown(handle);
     }
@@ -248,7 +251,7 @@ static int run(void)
     // near the target. Matching on x/y alone would false-pass on a future body at the same x/y or
     // a target-z regression.
     ovstage_instance_t* stage = g_stage_attachment.stage;
-    path_dictionary_instance_t* dict = stage ? stage->vtable->get_path_dictionary(stage->context) : nullptr;
+    path_dictionary_instance_t* dict = stage ? ovstage_get_path_dictionary(stage) : nullptr;
     if (!dict) {
         fprintf(stderr, "The attached Stage published no path dictionary\n");
         return destroy_instance_and_shutdown(handle);
@@ -268,9 +271,10 @@ static int run(void)
         }
         // A fixed rigid-body position group stacks every body into tensors[0] ([N,3]) with row i ==
         // prim i, so resolve prims.list and pick the /World/KinematicCube row exactly.
-        if (!found_cube && !rg->is_delete && rg->data.tensor_count == 1 && rg->data.tensors &&
-            rg->prims.list != 0) {
-            const DLTensor& t = rg->data.tensors[0];
+        if (!found_cube && !rg->columns[0].is_delete && rg->columns[0].data.tensor_count == 1
+            && rg->columns[0].data.tensors &&
+            rg->prims.list != OVX_INVALID_PRIMPATH_LIST) {
+            const DLTensor& t = rg->columns[0].data.tensors[0];
             if (t.data && t.device.device_type == kDLCPU && t.dtype.lanes == 3) {
                 const int cube_row = find_prim_row(dict, rg, "/World/KinematicCube");
                 if (cube_row >= 0 && cube_row < t.shape[0]) {

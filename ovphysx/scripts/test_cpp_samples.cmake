@@ -46,6 +46,18 @@ if(SAMPLES_BUILD_ONLY AND SAMPLES_RUN_ONLY)
     message(FATAL_ERROR "SAMPLES_BUILD_ONLY and SAMPLES_RUN_ONLY are mutually exclusive")
 endif()
 
+# Provision the companion SDK inspection executable on the compiler host. Split
+# CI transfers this installed tool in _build; its GPU run jobs need no compiler.
+if(NOT SAMPLES_RUN_ONLY AND
+   (NOT DEFINED ENV{OVPHYSX_OVD_INSPECTOR} OR "$ENV{OVPHYSX_OVD_INSPECTOR}" STREQUAL ""))
+    execute_process(COMMAND "${CMAKE_COMMAND}" "-DBUILD_DIR=${BUILD_PATH}"
+        -P "${PROJECT_ROOT}/scripts/build_ovd_inspector.cmake"
+        RESULT_VARIABLE _inspector_result)
+    if(NOT "${_inspector_result}" STREQUAL "0")
+        message(FATAL_ERROR "Required SDK inspector build failed: ${_inspector_result}")
+    endif()
+endif()
+
 # ============================================================================
 # Installed SDK staleness check
 # ============================================================================
@@ -138,6 +150,24 @@ endif()
 set(SAMPLE_TOOLCHAIN_ARGS "")
 if(NOT SAMPLES_RUN_ONLY)
     ovphysx_pin_packaged_host_toolchain(SAMPLE_TOOLCHAIN_ARGS)
+    set(HEADER_TEST_BUILD "${PROJECT_ROOT}/_build/installed_header_tests")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -S "${PROJECT_ROOT}/tests/installed_headers" -B "${HEADER_TEST_BUILD}"
+            "-DOVPHYSX_SDK_ROOT=${INSTALL_PATH}"
+            "-DOVPHYSX_OVSTAGE_ROOT=${OVPHYSX_OVSTAGE_ROOT}"
+            ${SAMPLE_TOOLCHAIN_ARGS}
+        RESULT_VARIABLE HEADER_CONFIG_RESULT
+    )
+    if(NOT HEADER_CONFIG_RESULT STREQUAL "0")
+        message(FATAL_ERROR "Installed C/C++ header test configuration failed")
+    endif()
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} --build "${HEADER_TEST_BUILD}" --config ${BUILD_TYPE}
+        RESULT_VARIABLE HEADER_BUILD_RESULT
+    )
+    if(NOT HEADER_BUILD_RESULT STREQUAL "0")
+        message(FATAL_ERROR "Installed C/C++ headers failed to compile")
+    endif()
 endif()
 
 if(BASIC_WORKFLOW_SMOKE)

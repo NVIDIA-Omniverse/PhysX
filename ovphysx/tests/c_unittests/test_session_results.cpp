@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // @implements REQ-CAPI-SESSION-001
-// @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-7 AC-8 AC-9
+// @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-7 AC-8 AC-9 AC-10
 
 #include "global_test_environment.h"
 #include "test_utilities.h"
@@ -18,7 +18,7 @@
 
 namespace
 {
-ovx_string_or_token_t sessionAttribute(const char* name)
+ovx_token_or_string_t sessionAttribute(const char* name)
 {
     return { OVX_INVALID_TOKEN, { name, std::strlen(name) } };
 }
@@ -48,7 +48,7 @@ protected:
         const std::vector<test_utils::OvstageTestAttachment>& attachments =
             test_utils::ovstage_test_attachments().at(m_handle);
         ovstage_instance_t* stage = attachments.back().stage;
-        return stage->vtable->get_path_dictionary(stage->context);
+        return ovstage_get_path_dictionary(stage);
     }
 };
 
@@ -60,17 +60,18 @@ TEST_F(SessionResultsTest, ReadMetadataPreservesRequestIdentityAndQueryIndepende
     ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_query(
         m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &query, &discovery)));
     ASSERT_GT(discovery.total_prim_count, 0u);
-    EXPECT_EQ(discovery.query_result_id, 0u);
-    EXPECT_EQ(discovery.all_handle, 0u);
+    EXPECT_EQ(discovery.query_result_id.raw_id, 0u);
+    EXPECT_EQ(discovery.all_handle.raw_id, 0u);
     const size_t membershipCount = discovery.total_prim_count;
 
-    const ovx_string_or_token_t attributes[] = {
+    const ovx_token_or_string_t attributes[] = {
         sessionAttribute(OVPHYSX_ATTR_POSITION), sessionAttribute("unknownOne"),
         sessionAttribute("unknownTwo"), sessionAttribute(OVPHYSX_ATTR_ORIENTATION)
     };
     ovphysx_read_handle_t read = 0;
     ovphysx_read_result_t summary{};
-    ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_read(m_handle, query, attributes, 4, &read, &summary)));
+    ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_read(m_handle, query, attributes, 4,
+                                                          ovstage_cuda_sync_t{ 0, 0 }, &read, &summary)));
     ASSERT_EQ(summary.attribute_count, 4u);
     ASSERT_NE(summary.attributes, nullptr);
     EXPECT_EQ(summary.total_prim_count, membershipCount);
@@ -95,12 +96,74 @@ TEST_F(SessionResultsTest, ReadMetadataPreservesRequestIdentityAndQueryIndepende
         ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_fetch_read_next(m_handle, read, &group)));
         if (!group)
             break;
-        ASSERT_TRUE(group->attribute == position || group->attribute == orientation);
-        ++counts[group->attribute == position ? 0 : 1];
+        ASSERT_TRUE(group->columns[0].attribute == position || group->columns[0].attribute == orientation);
+        ++counts[group->columns[0].attribute == position ? 0 : 1];
         ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_group(m_handle, read, group->read_group_id)));
     }
     EXPECT_EQ(counts[0], summary.attributes[0].group_count);
     EXPECT_EQ(counts[1], summary.attributes[3].group_count);
+    ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_read(m_handle, read)));
+}
+
+TEST_F(SessionResultsTest, ReadGroupsCarryOneColumnOwnedByTheReadSession)
+{
+    attachAndStep();
+    ovphysx_query_handle_t query = 0;
+    ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_query(
+        m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &query, nullptr)));
+    // Position and orientation share their prim rows; each still comes back as its own group.
+    const ovx_token_or_string_t attributes[] = { sessionAttribute(OVPHYSX_ATTR_POSITION),
+                                                 sessionAttribute(OVPHYSX_ATTR_ORIENTATION) };
+    ovphysx_read_handle_t read = 0;
+    ovphysx_read_result_t summary{};
+    ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_read(m_handle, query, attributes, 2,
+                                                          ovstage_cuda_sync_t{ 0, 0 }, &read, &summary)));
+    ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_query(m_handle, query)));
+    ASSERT_EQ(summary.attribute_count, 2u);
+
+    struct Fetched
+    {
+        const ovstage_read_column_t* column;
+        ovstage_read_column_t copy;
+        float first;
+    };
+    std::vector<Fetched> fetched;
+    for (;;)
+    {
+        const ovstage_read_group_t* group = nullptr;
+        ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_fetch_read_next(m_handle, read, &group)));
+        if (!group)
+            break;
+        ASSERT_EQ(group->column_count, 1u);
+        ASSERT_NE(group->columns, nullptr);
+        const ovstage_read_column_t& column = group->columns[0];
+        EXPECT_TRUE(column.attribute == summary.attributes[0].attribute ||
+                    column.attribute == summary.attributes[1].attribute);
+        EXPECT_FALSE(column.is_delete);
+        EXPECT_FALSE(column.is_array);
+        EXPECT_EQ(column.ordinal, 0u);
+        ASSERT_EQ(column.data.tensor_count, 1u);
+        ASSERT_NE(column.data.tensors, nullptr);
+        const DLTensor& tensor = column.data.tensors[0];
+        ASSERT_EQ(tensor.device.device_type, kDLCPU);
+        ASSERT_GT(scalarCount(tensor), 0u);
+        const float first = *reinterpret_cast<const float*>(static_cast<const char*>(tensor.data) + tensor.byte_offset);
+        fetched.push_back({ &column, column, first });
+        // Releasing the group retires its descriptor and prim list, not the column.
+        ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_group(m_handle, read, group->read_group_id)));
+    }
+    EXPECT_EQ(fetched.size(), summary.attributes[0].group_count + summary.attributes[1].group_count);
+
+    // Every column stays readable until the read session is released.
+    for (const Fetched& entry : fetched)
+    {
+        EXPECT_EQ(entry.column->attribute, entry.copy.attribute);
+        ASSERT_EQ(entry.column->data.tensors, entry.copy.data.tensors);
+        ASSERT_EQ(entry.column->data.tensor_count, entry.copy.data.tensor_count);
+        const DLTensor& tensor = entry.column->data.tensors[0];
+        EXPECT_EQ(*reinterpret_cast<const float*>(static_cast<const char*>(tensor.data) + tensor.byte_offset),
+                  entry.first);
+    }
     ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_read(m_handle, read)));
 }
 
@@ -114,11 +177,11 @@ TEST_F(SessionResultsTest, CanonicalDuplicatesAndInvalidTokensFailWithoutPublish
     ovx_token_t position = OVX_INVALID_TOKEN;
     ASSERT_EQ(path_dictionary_create_tokens_from_strings(dictionary(), &positionName, 1, &position).status,
               OVX_API_SUCCESS);
-    const ovx_string_or_token_t tokenWins{ position, { nullptr, 99 } };
+    const ovx_token_or_string_t tokenWins{ position, { nullptr, 99 } };
     ovphysx_read_handle_t tokenRead = 0;
     ovphysx_read_result_t tokenReadSummary{};
     ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_read(
-        m_handle, query, &tokenWins, 1, &tokenRead, &tokenReadSummary)));
+        m_handle, query, &tokenWins, 1, ovstage_cuda_sync_t{ 0, 0 }, &tokenRead, &tokenReadSummary)));
     ASSERT_EQ(tokenReadSummary.attribute_count, 1u);
     EXPECT_EQ(tokenReadSummary.attributes[0].attribute, position);
     ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_read(m_handle, tokenRead)));
@@ -126,34 +189,57 @@ TEST_F(SessionResultsTest, CanonicalDuplicatesAndInvalidTokensFailWithoutPublish
     ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_write(
         m_handle, query, &tokenWins, 1, &tokenWrite, nullptr)));
     ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_write(m_handle, tokenWrite)));
-    const ovx_string_or_token_t duplicate[] = {
-        sessionAttribute(OVPHYSX_ATTR_POSITION), { position, { "ignored", 7 } }
+    const ovx_token_or_string_t duplicate[] = {
+        sessionAttribute(OVPHYSX_ATTR_POSITION), { position, { nullptr, 0 } }
     };
+    // A failed session still has the handle the call returned; nothing was opened behind it,
+    // and releasing it is a successful no-op.
     ovphysx_read_handle_t read = 999;
     ovphysx_read_result_t readSummary{ 999, 999, nullptr };
-    ovphysx_enqueue_result_t submitted = ovphysx_read(m_handle, query, duplicate, 2, &read, &readSummary);
+    ovphysx_enqueue_result_t submitted = ovphysx_read(m_handle, query, duplicate, 2,
+                                                      ovstage_cuda_sync_t{ 0, 0 }, &read, &readSummary);
     ASSERT_EQ(submitted.status, OVPHYSX_API_SUCCESS);
     EXPECT_NE(test_utils::complete_task(m_handle, submitted).status, OVPHYSX_API_SUCCESS);
-    EXPECT_EQ(read, 0u);
+    EXPECT_NE(read, 0u);
     EXPECT_EQ(readSummary.attribute_count, 0u);
     EXPECT_EQ(readSummary.total_prim_count, 0u);
     EXPECT_EQ(readSummary.attributes, nullptr);
+    ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_read(m_handle, read)));
 
     ovphysx_write_handle_t write = 999;
     ovphysx_write_result_t writeSummary{ 999, 999, nullptr };
     submitted = ovphysx_write(m_handle, query, duplicate, 2, &write, &writeSummary);
     ASSERT_EQ(submitted.status, OVPHYSX_API_SUCCESS);
     EXPECT_NE(test_utils::complete_task(m_handle, submitted).status, OVPHYSX_API_SUCCESS);
-    EXPECT_EQ(write, 0u);
+    EXPECT_NE(write, 0u);
     EXPECT_EQ(writeSummary.attribute_count, 0u);
     EXPECT_EQ(writeSummary.attributes, nullptr);
+    ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_write(m_handle, write)));
 
-    const ovx_string_or_token_t invalidToken{ std::numeric_limits<ovx_token_t>::max(), positionName };
-    submitted = ovphysx_read(m_handle, query, &invalidToken, 1, &read, &readSummary);
+    // A NULL string selects the token: an unresolvable token-only request fails.
+    const ovx_token_t unresolvable = ovx_token_t{std::numeric_limits<uint64_t>::max() - 1};
+    const ovx_token_or_string_t invalidToken{ unresolvable, { nullptr, 0 } };
+    submitted = ovphysx_read(m_handle, query, &invalidToken, 1, ovstage_cuda_sync_t{ 0, 0 }, &read, &readSummary);
     ASSERT_EQ(submitted.status, OVPHYSX_API_SUCCESS);
     EXPECT_NE(test_utils::complete_task(m_handle, submitted).status, OVPHYSX_API_SUCCESS);
-    EXPECT_EQ(read, 0u);
     EXPECT_EQ(readSummary.attributes, nullptr);
+    ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_read(m_handle, read)));
+    submitted = ovphysx_write(m_handle, query, &invalidToken, 1, &write, nullptr);
+    ASSERT_EQ(submitted.status, OVPHYSX_API_SUCCESS);
+    EXPECT_NE(test_utils::complete_task(m_handle, submitted).status, OVPHYSX_API_SUCCESS);
+    ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_write(m_handle, write)));
+
+    // A non-NULL string wins, so the same unresolvable token beside it is ignored.
+    const ovx_token_or_string_t stringWins{ unresolvable, positionName };
+    ovphysx_read_handle_t stringRead = 0;
+    ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_read(
+        m_handle, query, &stringWins, 1, ovstage_cuda_sync_t{ 0, 0 }, &stringRead, nullptr)));
+    EXPECT_NE(stringRead, 0u);
+    ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_read(m_handle, stringRead)));
+    ovphysx_write_handle_t stringWrite = 0;
+    ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_write(m_handle, query, &stringWins, 1, &stringWrite, nullptr)));
+    EXPECT_NE(stringWrite, 0u);
+    ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_write(m_handle, stringWrite)));
     ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_query(m_handle, query)));
 }
 
@@ -163,7 +249,7 @@ TEST_F(SessionResultsTest, MultiAttributeWriteUsesOriginalRequestIndexAndOrigina
     ovphysx_query_handle_t query = 0;
     ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_query(
         m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &query, nullptr)));
-    const ovx_string_or_token_t attributes[] = {
+    const ovx_token_or_string_t attributes[] = {
         sessionAttribute(OVPHYSX_ATTR_LINEAR_VELOCITY), sessionAttribute(OVPHYSX_ATTR_ANGULAR_VELOCITY)
     };
     const std::array<float, 2> values{ 3.0f, 7.0f };
@@ -218,7 +304,8 @@ TEST_F(SessionResultsTest, MultiAttributeWriteUsesOriginalRequestIndexAndOrigina
     ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_query(
         m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &query, nullptr)));
     ovphysx_read_handle_t read = 0;
-    ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_read(m_handle, query, attributes, 2, &read, nullptr)));
+    ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_read(m_handle, query, attributes, 2,
+                                                          ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr)));
     std::array<size_t, 2> scalarCounts{};
     for (;;)
     {
@@ -226,11 +313,11 @@ TEST_F(SessionResultsTest, MultiAttributeWriteUsesOriginalRequestIndexAndOrigina
         ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_fetch_read_next(m_handle, read, &group)));
         if (!group)
             break;
-        ASSERT_TRUE(group->attribute == tokens[0] || group->attribute == tokens[1]);
-        const size_t index = group->attribute == tokens[0] ? 0 : 1;
-        for (size_t tensorIndex = 0; tensorIndex < group->data.tensor_count; ++tensorIndex)
+        ASSERT_TRUE(group->columns[0].attribute == tokens[0] || group->columns[0].attribute == tokens[1]);
+        const size_t index = group->columns[0].attribute == tokens[0] ? 0 : 1;
+        for (size_t tensorIndex = 0; tensorIndex < group->columns[0].data.tensor_count; ++tensorIndex)
         {
-            const DLTensor& tensor = group->data.tensors[tensorIndex];
+            const DLTensor& tensor = group->columns[0].data.tensors[tensorIndex];
             ASSERT_EQ(tensor.device.device_type, kDLCPU);
             const float* data = reinterpret_cast<const float*>(
                 static_cast<const unsigned char*>(tensor.data) + tensor.byte_offset);
@@ -253,7 +340,7 @@ TEST_F(SessionResultsTest, InvalidMiddleWriteAttributePublishesNothing)
     ovphysx_query_handle_t query = 0;
     ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_query(
         m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &query, nullptr)));
-    const ovx_string_or_token_t attributes[] = {
+    const ovx_token_or_string_t attributes[] = {
         sessionAttribute(OVPHYSX_ATTR_POSITION), sessionAttribute("unknownWrite"),
         sessionAttribute(OVPHYSX_ATTR_LINEAR_VELOCITY)
     };
@@ -262,10 +349,16 @@ TEST_F(SessionResultsTest, InvalidMiddleWriteAttributePublishesNothing)
     const ovphysx_enqueue_result_t submitted = ovphysx_write(m_handle, query, attributes, 3, &write, &summary);
     ASSERT_EQ(submitted.status, OVPHYSX_API_SUCCESS);
     EXPECT_NE(test_utils::complete_task(m_handle, submitted).status, OVPHYSX_API_SUCCESS);
-    EXPECT_EQ(write, 0u);
+    // The failed session's handle names no session: fetching from it fails its own task.
+    EXPECT_NE(write, 0u);
+    ovphysx_fetched_write_group_t fetched{};
+    EXPECT_NE(test_utils::complete_task(m_handle, ovphysx_fetch_write_next(m_handle, write, &fetched)).status,
+              OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(fetched.group, nullptr);
     EXPECT_EQ(summary.total_prim_count, 0u);
     EXPECT_EQ(summary.attribute_count, 0u);
     EXPECT_EQ(summary.attributes, nullptr);
+    ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_write(m_handle, write)));
     ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_query(m_handle, query)));
 }
 
@@ -279,12 +372,13 @@ TEST_F(SessionResultsTest, SelectedEmptyQueryReturnsValidEmptySessionSummaries)
     ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_query_selection(
         m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, &selection, &query, &discovery)));
     EXPECT_EQ(discovery.total_prim_count, 0u);
-    EXPECT_EQ(discovery.query_result_id, 0u);
-    EXPECT_EQ(discovery.all_handle, 0u);
-    const ovx_string_or_token_t attribute = sessionAttribute(OVPHYSX_ATTR_POSITION);
+    EXPECT_EQ(discovery.query_result_id.raw_id, 0u);
+    EXPECT_EQ(discovery.all_handle.raw_id, 0u);
+    const ovx_token_or_string_t attribute = sessionAttribute(OVPHYSX_ATTR_POSITION);
     ovphysx_read_handle_t read = 0;
     ovphysx_read_result_t readSummary{};
-    ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_read(m_handle, query, &attribute, 1, &read, &readSummary)));
+    ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_read(m_handle, query, &attribute, 1,
+                                                          ovstage_cuda_sync_t{ 0, 0 }, &read, &readSummary)));
     ASSERT_EQ(readSummary.attribute_count, 1u);
     EXPECT_EQ(readSummary.total_prim_count, 0u);
     EXPECT_EQ(readSummary.attributes[0].group_count, 0u);
@@ -310,11 +404,11 @@ TEST_F(SessionResultsTest, ReattachingEqualPathsDoesNotReviveOldSessions)
     ovphysx_query_handle_t oldQuery = 0;
     ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_query(
         m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &oldQuery, nullptr)));
-    const ovx_string_or_token_t attribute = sessionAttribute(OVPHYSX_ATTR_POSITION);
+    const ovx_token_or_string_t attribute = sessionAttribute(OVPHYSX_ATTR_POSITION);
     ovphysx_read_handle_t oldRead = 0;
     ovphysx_write_handle_t oldWrite = 0;
     ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_read(
-        m_handle, oldQuery, &attribute, 1, &oldRead, nullptr)));
+        m_handle, oldQuery, &attribute, 1, ovstage_cuda_sync_t{ 0, 0 }, &oldRead, nullptr)));
     ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_write(
         m_handle, oldQuery, &attribute, 1, &oldWrite, nullptr)));
     ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_detach_ovstage(m_handle)));
@@ -326,10 +420,14 @@ TEST_F(SessionResultsTest, ReattachingEqualPathsDoesNotReviveOldSessions)
     };
     ovphysx_read_handle_t rejectedRead = 999;
     ovphysx_read_result_t rejectedSummary{ 999, 999, nullptr };
-    EXPECT_TRUE(fails(ovphysx_read(m_handle, oldQuery, &attribute, 1, &rejectedRead, &rejectedSummary)));
-    EXPECT_EQ(rejectedRead, 0u);
+    EXPECT_TRUE(fails(ovphysx_read(m_handle, oldQuery, &attribute, 1, ovstage_cuda_sync_t{ 0, 0 },
+                                   &rejectedRead, &rejectedSummary)));
+    // An accepted read that failed still returned its handle; it names no session.
+    EXPECT_NE(rejectedRead, 999u);
+    EXPECT_NE(rejectedRead, 0u);
     EXPECT_EQ(rejectedSummary.attribute_count, 0u);
     EXPECT_EQ(rejectedSummary.attributes, nullptr);
+    ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_read(m_handle, rejectedRead)));
     const ovstage_read_group_t* oldGroup = nullptr;
     EXPECT_TRUE(fails(ovphysx_fetch_read_next(m_handle, oldRead, &oldGroup)));
     EXPECT_EQ(oldGroup, nullptr);

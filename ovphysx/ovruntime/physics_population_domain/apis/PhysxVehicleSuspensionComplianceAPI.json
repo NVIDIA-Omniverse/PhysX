@@ -1,0 +1,21 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxVehicleSuspensionComplianceAPI",
+  "title": "PhysxVehicleSuspensionComplianceAPI",
+  "summary": "Suspension compliance of a vehicle wheel: toe and camber angles and the suspension and tire force application points as graphs over the suspension jounce. The walkers parse every prim that lists it.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "Xformable"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "columns": [],
+  "notes": [
+    "Its columns are not described yet."
+  ]
+}

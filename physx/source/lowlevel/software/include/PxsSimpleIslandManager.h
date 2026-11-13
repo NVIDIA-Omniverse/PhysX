@@ -7,6 +7,7 @@
 #define PXS_SIMPLE_ISLAND_GEN_H
 
 #include "foundation/PxUserAllocated.h"
+#include "foundation/PxIntrinsics.h"
 #include "PxsIslandSim.h"
 #include "CmTask.h"
 
@@ -216,6 +217,7 @@ public:
 	PX_FORCE_INLINE Dy::Constraint*		getConstraint(IG::EdgeIndex edgeId)		const { return reinterpret_cast<Dy::Constraint*>(mAuxCpuData.mConstraintOrCm[edgeId]);		}
 
 	PX_FORCE_INLINE Sc::Interaction*	getInteractionFromEdgeIndex(IG::EdgeIndex edgeId) const { return mInteractions[edgeId]; }
+	PX_FORCE_INLINE void				prefetchInteractionFromEdgeIndex(IG::EdgeIndex edgeId) const { PxPrefetchLine(&mInteractions[edgeId]); }
 
 	PX_FORCE_INLINE	PxU64				getContextId() const { return mContextID; }
 

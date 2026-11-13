@@ -25,7 +25,8 @@ the fetcher and its CMake package invokes it.
 ## Acceptance Criteria
 
 - AC-1: The native package is obtained from the released archive
-  `ovstage@<numeric>.<githash>.<platform>.zip`, extracted so that the package
+  `ovstage@<numeric>.<githash>.<platform>.zip`, where `<numeric>` is the pip
+  version (a dev build's whole `major.minor.patch.devN+label.githash`), extracted so that the package
   prefix (`include/`, `lib/cmake/ovstage/`, `bin/`) lands at the OVStage root.
   Extraction rejects an archive whose entries escape the destination, that lacks
   `include/` or `bin/`, or that lacks the `THIRD-PARTY-NOTICES.txt` the SDK
@@ -90,6 +91,8 @@ the fetcher and its CMake package invokes it.
 - ovphysx/CMakeLists.txt
 - ovphysx/scripts/fetch_deps.cmake
 - ovphysx/scripts/test_basic_workflow.py
+- ovphysx/tests/c_samples/basic_workflow_c/main.c
+- ovphysx/tests/c_samples/basic_workflow_c/CMakeLists.txt
 - ovphysx/scripts/test_cpp_samples.cmake
 - ovphysx/scripts/ovstage_index.cmake
 - ovphysx/scripts/validate_python_test_uv_lock.py

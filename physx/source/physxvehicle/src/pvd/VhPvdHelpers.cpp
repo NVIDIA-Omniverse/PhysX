@@ -373,6 +373,7 @@ void PxVehiclePvdObjectRelease
 	}
 	destroyObject(ow, ch, oh.physxRigidActorOH);
 	destroyObject(ow, ch, oh.physxSteerStateOH);
+	destroyObject(ow, ch, oh.vehicleOH);
 
 	//Free the memory.
 	allocator.deallocate(&oh);

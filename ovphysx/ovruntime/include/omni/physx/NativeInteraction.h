@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // @implements REQ-NATIVE-INTERACTION-001
-// @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6
+// @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7
 #pragma once
 #include "NativeInspection.h"
 #include <memory>
@@ -19,9 +19,10 @@ struct BodyForce
     uint32_t mode=0,frame=0,atPoint=0,wake=1; // force/impulse 0/1; world/actor-local 0/1
     float force[3]{},point[3]{};
 };
-// CPU dynamic rigid actors, idle owner. Kinematic/static/link/disabled bodies are
-// unavailable. Point is absolute world or actor-local according to frame; absent
-// point applies at COM. Units force=m*l/s^2, impulse=m*l/s. No implicit step/fetch.
+// Dynamic rigid actors in CPU or GPU-dynamics scenes, idle owner. DirectGPU scenes
+// and kinematic/static/link/disabled bodies are unavailable. Point is absolute
+// world or actor-local according to frame; absent point applies at COM. Units
+// force=m*l/s^2, impulse=m*l/s. No implicit step/fetch.
 InspectionResult applyBodyForce(const ObjectReference&,const BodyForce&) noexcept;
 struct DragOptions
 {
@@ -41,8 +42,8 @@ struct ForceDragOptions
     uint32_t velocityPolicy=0;
 };
 class Drag;
-// Managed CPU force grab: retain the actor-local picked point and original ray
-// distance. Native stepping applies the legacy impulse law once per actual scene
+// Managed force grab on CPU or GPU-dynamics scenes (DirectGPU unavailable): retain
+// the actor-local picked point and original ray distance. Native stepping applies the legacy impulse law once per actual scene
 // substep. No joint, axis-lock change or CCD change. Angular damping restores on
 // close; links support the preserve-velocity policy only. No implicit step/fetch.
 InspectionResult beginForceDrag(const ObjectReference&,const ForceDragOptions&,std::shared_ptr<Drag>&) noexcept;

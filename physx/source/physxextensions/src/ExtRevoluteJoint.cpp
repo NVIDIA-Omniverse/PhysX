@@ -264,11 +264,22 @@ void RevoluteJoint::resolveReferences(PxDeserializationContext& context)
 
 void RevoluteJoint::updateOmniPvdProperties() const
 {
+	updateOmniPvdProperties(omniPvdCpuJointState(*this));
+}
+
+void RevoluteJoint::updateOmniPvdProperties(const PxConstraintOmniPvdState& state) const
+{
 	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
 
 	const PxRevoluteJoint& j = static_cast<const PxRevoluteJoint&>(*this);
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, angle, j, getAngle())
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, velocity, j, getVelocity())
+	if (omniPvdJointPoseValid(state))
+	{
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, angle, j, omniPvdJointAngle(j, state, 0))
+	}
+	if (omniPvdJointVelocityValid(state))
+	{
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, velocity, j, omniPvdRelativeVelocity(j, state, true).magnitude())
+	}
 
 	OMNI_PVD_WRITE_SCOPE_END
 }
@@ -302,8 +313,6 @@ void physx::Ext::omniPvdInitJoint<RevoluteJoint>(OmniPvdWriter* pvdWriter, const
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, driveGearRatio, j, joint.getDriveGearRatio())
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, jointFlags, j, joint.getRevoluteJointFlags())
 
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, angle, j, joint.getAngle())
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, velocity, j, joint.getVelocity())
 }
 
 #endif

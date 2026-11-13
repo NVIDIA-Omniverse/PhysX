@@ -690,7 +690,7 @@ bool CpuArticulationView::getInverseDynamicsColumnsOvStage(const InverseDynamics
             break;
         default:
             CARB_LOG_ERROR("%s: %d is not a shareable inverse dynamics compute column", __FUNCTION__, static_cast<int>(dc));
-            return false; // eNone / eJacobianShape have no compute
+            return false; // eNone has no compute
         }
 
         const TensorDesc* const dst = columns[c].dst;
@@ -794,7 +794,7 @@ bool CpuArticulationView::getInverseDynamicsColumnsOvStage(const InverseDynamics
                     out, cache->centroidalMomentumMatrix, cache->centroidalMomentumBias, numDofs, metatype);
                 break;
             default:
-                break; // eNone / eJacobianShape were rejected in the validation loop above
+                break; // eNone was rejected in the validation loop above
             }
         }
     }
@@ -1645,7 +1645,7 @@ bool CpuArticulationView::getLinkIncomingJointForcesOvStage(const ArticulationLi
     {
         return true;
     }
-    // Reused across reads, like the DOF row above and like the GPU sibling's persistent scratch.
+    // Reused across reads, like the DOF row above.
     mLinkStagingRow.assign(denseFloats, 0.0f);
     std::vector<float>& dense = mLinkStagingRow;
     TensorDesc denseDesc;

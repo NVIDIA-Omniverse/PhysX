@@ -9,9 +9,8 @@ Read this file for the Python branch: the waiting `PhysX.read_sync()` /
 `physx.read_sync(object_type, attribute_names, scope=...)` creates its own query,
 waits for the session open and every fetch, and returns a context-managed
 `ReadResult` whose `groups` are already populated. Leaving the `with` block waits
-for the releases it submits. Read storage that arrays still borrow is released only
-after the result, its `groups` and every array alias are dropped; a later
-`physx.wait_all()` submits and collects that release.
+for the releases it submits, and the result's arrays are invalid afterwards: copy
+what you keep inside the block.
 
 Every tensor is a `warp.array`, so callers never branch on frontend type. Residency
 is per COLUMN, not per read: on a GPU scene the backend-sourced columns are CUDA
@@ -38,7 +37,9 @@ def inspect_active_rigid_bodies(physx):
 The default operations let the caller choose where outcomes are collected.
 `physx.query(...)` returns an `Operation` whose result is a reusable `Query`;
 `physx.read(query, attributes)` returns an `Operation` whose result is a
-`ReadResult` that has fetched nothing yet; each `result.fetch_next()` returns an
+`ReadResult` that has fetched nothing yet. Its keyword arguments `cuda_stream`,
+`cuda_wait_event` and `event_owner` are the producer handoff, as for
+`WriteSession.commit`; see `PhysX.read`. Each `result.fetch_next()` returns an
 `Operation` whose result is one `ReadGroup`, or `None` at the end. `wait()` collects
 an operation and returns its result, raising `TaskError` for a failure. Leaving a
 `with` block submits the release without waiting; `physx.wait_all()` collects it.
@@ -69,7 +70,8 @@ def read_positions_with_summary(physx):
 ```
 
 `result.metadata.attributes` has one row per requested attribute, in request order:
-the canonical `attribute` token (`0` for a name the type cannot read), the
+the canonical `attribute` token (`OVX_INVALID_TOKEN`, Python `2**64 - 1`, for a
+name the type cannot read), the
 `group_count`, and `omission_reasons`, a `ReadOmission` flag of
 `UNSUPPORTED_ATTRIBUTE`, `UNSUPPORTED_CONFIGURATION` and `NOT_READY`. No flag with no
 groups is a valid empty answer. `metadata` is `None` unless requested, and reading it
@@ -139,25 +141,31 @@ cannot look like a complete mixed read.
 Use `read_tokens_sync(object_type, attribute_tokens, scope=ObjectScope.ALL)`, or
 pass tokens in the attribute list of `read()`, when the caller already has interned
 attribute tokens from the attached Stage's dictionary, for example
-`query.metadata.attributes` or an emitted `ReadGroup.attribute`. A token takes
-precedence over a name, a token that does not resolve fails the read, and so does a
+`query.metadata.attributes` or an emitted `ReadGroup.attribute`. Each list entry is
+either a name or a token; a token that does not resolve fails the read, and so does a
 duplicate request. Attributes that the selected type does not emit are skipped.
 A type with no matching objects yields an empty `groups` list.
 
 ## Ownership
 
 Every non-empty tensor, `group.index_map`, and `group.prim_index_map` is a
-borrowed Warp array: tensors on the read's device, index maps always on CPU. Each
-may outlive the context and keeps the native read-session buffer alive for as long
-as the array, its Warp views, or retaining downstream views are referenced. An
-empty tensor is a Warp-owned empty array that retains no read session; an empty
+borrowed Warp array: tensors on the read's device, index maps always on CPU. Closing
+the `ReadResult` (`close()`, `release()` or the end of its `with` block) ends its data:
+the arrays are invalid afterwards, so copy what you keep. A held query's next read
+reuses its device columns. A result dropped
+without a close keeps the native read-session buffer alive for as long as the array,
+its Warp views, or retaining downstream views are referenced, until ovphysx's
+process-exit cleanup. Exit handlers registered after `import ovphysx` run before that
+cleanup and may read those retained arrays. Handlers
+registered before import must use an owned CPU copy made before cleanup instead.
+An empty tensor is a Warp-owned empty array that retains no read session; an empty
 index map is `None`.
 
 `group.prim_list` and `group.attribute` belong to the attached Stage's path
 dictionary and are used only while the `ReadResult` is open and its attachment remains
 live. Detach retires this metadata even when numeric arrays survive. Each is an **opaque
-interned integer**, not a path or a name: `prim_list` is a prim-path-list handle and
-`attribute` is an attribute token. Resolve them with `result.dictionary` (or
+interned handle**, not a path or a name: `prim_list` is an `ovstage.PrimPathList` and
+`attribute` is an `ovstage.Token`. Resolve them with `result.dictionary` (or
 `query.dictionary`), an `ovstage.PathDictionary` for the attached Stage, so nothing
 is rebuilt:
 
@@ -179,13 +187,12 @@ assuming the requested string. `group.prim_list` also feeds
 `stage.query_from_path_list(group.prim_list)` directly for a no-repack write-back. See
 `tests/python_samples/output_read.py` for the same pattern end to end.
 
-Closing the result releases context-bound identity handles and drops its session
-reference. The caller's `Query` is not owned by a `ReadResult` and stays open until
-closed; a session opened from it stays valid after the query is closed. Numeric
-storage is released after the last array/view is gone. Drop all aliases before
-calling `PhysX.destroy()`. With live aliases, destruction raises `RuntimeError`
-before teardown and leaves the instance and arrays usable. Drop the aliases, then
-retry destruction.
+Closing the result releases context-bound identity handles and ends the read: its
+arrays are invalid afterwards. The caller's `Query` is not owned by a `ReadResult` and
+stays open until closed; a session opened from it stays valid after the query is
+closed. Drop all aliases before calling `PhysX.destroy()`. With live aliases,
+destruction raises `RuntimeError` before teardown and leaves the instance and arrays
+usable. Drop the aliases, then retry destruction.
 
 ## Scope and Layout
 
@@ -201,7 +208,14 @@ retry destruction.
   the per-type rules in [Scope and layout constraints](scope_and_layout.md).
 - Fixed groups contain one stacked tensor. Array groups contain one tensor per
   prim. A tuple width above 1 (native DLPack `dtype.lanes`) appears as a trailing
-  Warp dimension; a single-lane column has none.
+  Warp dimension; a single-lane column has none, except the five whole-articulation
+  inverse-dynamics columns, which keep each row's dimensions: `jacobian` `[N, R, C]`,
+  `massMatrix` `[N, M, M]`, `coriolisForce` and `gravityForce` `[N, M]`,
+  `centroidalMomentum` `[N, 6, numDofs + 7]`.
+- An `ARTICULATION_JOINT` group is fixed with one row per DOF: a joint's rows are
+  consecutive and its path repeats once per axis in `prim_list`.
+  `ovphysx.utils.split_joint_group(stage, group)` returns a path list naming each
+  joint once (release it) and one view per joint, for ovstage or per-joint code.
 - Arrays are mutable snapshots of the read, not live write-through views of
   PhysX simulation state.
 - Point-instancer `position` and `orientation` requests emit the attribute

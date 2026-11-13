@@ -39,19 +39,12 @@ Sc::ArticulationJointSim::~ArticulationJointSim()
 	mCore.setSim(NULL);
 }
 
-Sc::BodySim& Sc::ArticulationJointSim::getParent() const
-{
-	return static_cast<BodySim&>(getActorSim0());
-}
-
-Sc::BodySim& Sc::ArticulationJointSim::getChild() const
-{
-	return static_cast<BodySim&>(getActorSim1());
-}
-
 bool Sc::ArticulationJointSim::onActivate()
 {
-	if(!(getParent().isActive() && getChild().isActive()))
+	const Sc::BodySim& parent = static_cast<BodySim&>(getActorSim0());
+	const Sc::BodySim& child = static_cast<BodySim&>(getActorSim1());
+
+	if(!(parent.isActive() && child.isActive()))
 		return false;
 
 	raiseInteractionFlag(InteractionFlag::eIS_ACTIVE);

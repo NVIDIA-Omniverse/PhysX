@@ -3,7 +3,7 @@
 
 /**
  * @implements REQ-CAPI-OVSTAGE-OUTPUT-001
- * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7
  */
 
 #include "cuda_test_helpers.h"
@@ -41,13 +41,15 @@ namespace
 using Matrix = std::array<double, 16>;
 using Matrices = std::map<std::string, Matrix>;
 using Poses = std::map<std::string, physx::PxTransform>;
+using Scales = std::map<std::string, physx::PxVec3>;
 using ovphysx::utils::OvStageOutputCache;
 using ovphysx::utils::OvStageOutputResult;
 using ovphysx::utils::writeWorldTransformsToOvstage;
 
 constexpr const char* kWorldMatrix = "omni:fabric:worldMatrix";
+constexpr const char* kLocalMatrix = "omni:xform";
 
-ovx_string_or_token_t attribute(const char* name)
+ovx_token_or_string_t attribute(const char* name)
 {
     return { 0, { name, std::strlen(name) } };
 }
@@ -82,7 +84,7 @@ bool seal(ovstage_instance_t* stage, ovstage_ordinal_t ordinal)
 
 ovstage_ordinal_t writeFloor(ovstage_instance_t* stage)
 {
-    ovstage_ordinal_query_handle_t query = 0;
+    ovstage_ordinal_query_handle_t query = OVSTAGE_INVALID_ORDINAL_QUERY_HANDLE;
     EXPECT_TRUE(complete(stage, ovstage_get_attribute_write_floor(stage, {}, &query)));
     ovstage_ordinal_t ordinal = 0;
     EXPECT_EQ(ovstage_fetch_ordinal(stage, query, OVSTAGE_TIMEOUT_INFINITE, &ordinal), OVSTAGE_OK);
@@ -99,15 +101,15 @@ ovstage_instance_t* attachedStage(ovphysx_instance_handle_t handle)
 struct StageQuery
 {
     ovstage_instance_t* stage;
-    ovstage_query_handle_t query = 0;
-    ovstage_read_handle_t read = 0;
+    ovstage_query_handle_t query = OVSTAGE_INVALID_QUERY_HANDLE;
+    ovstage_read_handle_t read = OVSTAGE_INVALID_READ_HANDLE;
 
     StageQuery(ovstage_instance_t* value, const std::vector<std::string>& paths) : stage(value)
     {
         std::vector<ovx_string_t> names;
         for (const std::string& path : paths)
             names.push_back({ path.data(), path.size() });
-        ovx_primpath_list_t list = 0;
+        ovx_primpath_list_t list = OVX_INVALID_PRIMPATH_LIST;
         ovx_path_dictionary_t* dictionary = ovstage_get_path_dictionary(stage);
         EXPECT_EQ(
             ovx_path_dictionary_create_path_list_from_strings(dictionary, names.data(), names.size(), &list), OVX_OK);
@@ -117,11 +119,11 @@ struct StageQuery
 
     ~StageQuery()
     {
-        if (read)
+        if (read != OVSTAGE_INVALID_READ_HANDLE)
         {
             EXPECT_TRUE(complete(stage, ovstage_release_read(stage, read)));
         }
-        if (query)
+        if (query != OVSTAGE_INVALID_QUERY_HANDLE)
         {
             EXPECT_TRUE(complete(stage, ovstage_release_query(stage, query)));
         }
@@ -151,8 +153,8 @@ std::vector<std::string> groupPaths(ovx_path_dictionary_t* dictionary, const ovs
 
 void copyRow(const ovstage_read_group_t& group, size_t row, void* destination, size_t bytes, uintptr_t cudaContext)
 {
-    const DLTensor& tensor = group.data.tensors[0];
-    const size_t index = group.data.index_map ? group.data.index_map[row] : row;
+    const DLTensor& tensor = group.columns[0].data.tensors[0];
+    const size_t index = group.columns[0].data.index_map ? group.columns[0].data.index_map[row] : row;
     const size_t elementBytes = tensor.dtype.bits / 8 * tensor.dtype.lanes;
     const size_t strideBytes = tensor.strides ? tensor.strides[0] * elementBytes : bytes;
     const char* source = static_cast<const char*>(tensor.data) + tensor.byte_offset + index * strideBytes;
@@ -165,13 +167,13 @@ void copyRow(const ovstage_read_group_t& group, size_t row, void* destination, s
     omni::physx::IOptionalCuda* cuda = ovphysx::test_cuda::getCuda();
     ovphysx::test_cuda::ScopedCudaContextPush context(cuda, cudaContext);
     ASSERT_TRUE(context.ok());
-    if (group.data.cuda_sync.wait_event)
+    if (group.columns[0].data.cuda_sync.wait_event)
     {
-        ASSERT_TRUE(cuda->eventSynchronize(group.data.cuda_sync.wait_event, nullptr));
+        ASSERT_TRUE(cuda->eventSynchronize(group.columns[0].data.cuda_sync.wait_event, nullptr));
     }
-    if (group.data.cuda_sync.stream)
+    if (group.columns[0].data.cuda_sync.stream)
     {
-        ASSERT_TRUE(cuda->streamSynchronize(group.data.cuda_sync.stream, nullptr));
+        ASSERT_TRUE(cuda->streamSynchronize(group.columns[0].data.cuda_sync.stream, nullptr));
     }
     ASSERT_TRUE(cuda->memcpyDtoH(destination, reinterpret_cast<uintptr_t>(source), bytes, nullptr));
 }
@@ -179,7 +181,8 @@ void copyRow(const ovstage_read_group_t& group, size_t row, void* destination, s
 Matrices readMatrices(ovstage_instance_t* stage,
                       const std::vector<std::string>& paths,
                       ovstage_ordinal_t ordinal,
-                      uintptr_t cudaContext = 0)
+                      uintptr_t cudaContext = 0,
+                      const char* name = kWorldMatrix)
 {
     // Readback is test-side work. Keep ovstage's device selection inside a
     // balanced context scope so it cannot affect the helper's caller contract.
@@ -191,33 +194,35 @@ Matrices readMatrices(ovstage_instance_t* stage,
     }
     Matrices result;
     StageQuery query(stage, paths);
-    ovx_token_t token = 0;
+    ovx_token_t token{0};
     EXPECT_EQ(
-        ovx_path_dictionary_intern_token(ovstage_get_path_dictionary(stage), attribute(kWorldMatrix).string, &token),
-        OVX_OK);
+        ovx_path_dictionary_intern_token(ovstage_get_path_dictionary(stage), attribute(name).string, &token), OVX_OK);
     if (!complete(stage, ovstage_read_attributes(stage, query.query, &token, 1, { 0, ordinal, false }, &query.read)))
         return result;
     for (;;)
     {
         ovstage_read_group_t group{};
-        const ovstage_api_status_t status = ovstage_fetch_read_next(stage, query.read, OVSTAGE_TIMEOUT_INFINITE, &group);
+        size_t fetched = 0;
+        const ovstage_api_status_t status =
+            ovstage_fetch_read_next(stage, query.read, OVSTAGE_TIMEOUT_INFINITE, &group, 1, &fetched);
         if (status == OVSTAGE_ERROR_END_OF_ITERATION)
             break;
         EXPECT_EQ(status, OVSTAGE_OK);
         if (status != OVSTAGE_OK)
             break;
-        if (!group.is_delete)
+        EXPECT_EQ(group.column_count, 1u);
+        if (!group.columns[0].is_delete)
         {
-            EXPECT_FALSE(group.is_array);
-            EXPECT_EQ(group.data.tensor_count, 1u);
-            const DLTensor& tensor = group.data.tensors[0];
+            EXPECT_FALSE(group.columns[0].is_array);
+            EXPECT_EQ(group.columns[0].data.tensor_count, 1u);
+            const DLTensor& tensor = group.columns[0].data.tensors[0];
             EXPECT_EQ(tensor.dtype.code, kDLFloat);
             EXPECT_EQ(tensor.dtype.bits, 64);
             DLTensor matrixTensor{};
             int64_t layout[2]{};
             EXPECT_EQ(ovstage_tensor_to_write(&tensor, &matrixTensor, layout), OVSTAGE_OK);
             EXPECT_EQ(matrixTensor.dtype.lanes, 16);
-            EXPECT_EQ(group.semantic, OVSTAGE_SEMANTIC_MATRIX);
+            EXPECT_EQ(group.columns[0].semantic, OVSTAGE_SEMANTIC_MATRIX);
             const std::vector<std::string> names = groupPaths(ovstage_get_path_dictionary(stage), group);
             for (size_t row = 0; row < names.size(); ++row)
             {
@@ -226,7 +231,7 @@ Matrices readMatrices(ovstage_instance_t* stage,
                 result[names[row]] = matrix;
             }
         }
-        EXPECT_EQ(ovstage_release_group(stage, &group), OVSTAGE_OK);
+        EXPECT_EQ(ovstage_release_groups(stage, &group, 1), OVSTAGE_OK);
     }
     return result;
 }
@@ -236,7 +241,8 @@ bool writeMatrix(ovstage_instance_t* stage,
                  const Matrix& matrix,
                  ovstage_ordinal_t ordinal,
                  uintptr_t cudaData = 0,
-                 int device = 0)
+                 int device = 0,
+                 const char* name = kWorldMatrix)
 {
     StageQuery query(stage, { path });
     int64_t shape = 1;
@@ -250,8 +256,8 @@ bool writeMatrix(ovstage_instance_t* stage,
     write.tensors = &tensor;
     write.tensor_count = 1;
     write.semantic = OVSTAGE_SEMANTIC_MATRIX;
-    return complete(stage, ovstage_write_attribute(
-                               stage, query.query, attribute(kWorldMatrix), ordinal, write, OVSTAGE_PRIM_MODE_UPSERT));
+    return complete(
+        stage, ovstage_write_attribute(stage, query.query, attribute(name), ordinal, write, OVSTAGE_PRIM_MODE_UPSERT));
 }
 
 Poses readPoses(ovphysx_instance_handle_t handle, ovphysx_query_target_t type, uintptr_t cudaContext = 0)
@@ -261,9 +267,9 @@ Poses readPoses(ovphysx_instance_handle_t handle, ovphysx_query_target_t type, u
     EXPECT_EQ(test_utils::complete_task(handle, ovphysx_query(handle, type, OVPHYSX_SCOPE_ALL, &query, nullptr)).status, OVPHYSX_API_SUCCESS);
     ovx_path_dictionary_t* dictionary = test_utils::attached_ovstage_dictionary(handle);
     EXPECT_NE(dictionary, nullptr);
-    const ovx_string_or_token_t names[] = { attribute(OVPHYSX_ATTR_POSITION), attribute(OVPHYSX_ATTR_ORIENTATION) };
+    const ovx_token_or_string_t names[] = { attribute(OVPHYSX_ATTR_POSITION), attribute(OVPHYSX_ATTR_ORIENTATION) };
     ovphysx_read_handle_t read = 0;
-    EXPECT_EQ(test_utils::complete_task(handle, ovphysx_read(handle, query, names, 2, &read, nullptr)).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(test_utils::complete_task(handle, ovphysx_read(handle, query, names, 2, ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr)).status, OVPHYSX_API_SUCCESS);
     for (;;)
     {
         const ovstage_read_group_t* group = nullptr;
@@ -273,9 +279,9 @@ Poses readPoses(ovphysx_instance_handle_t handle, ovphysx_query_target_t type, u
         EXPECT_EQ(status.status, OVPHYSX_API_SUCCESS);
         if (status.status != OVPHYSX_API_SUCCESS)
             break;
-        if (!group->is_array && !group->is_delete)
+        if (!group->columns[0].is_array && !group->columns[0].is_delete)
         {
-            const DLTensor& tensor = group->data.tensors[0];
+            const DLTensor& tensor = group->columns[0].data.tensors[0];
             EXPECT_EQ(tensor.device.device_type, cudaContext ? kDLCUDA : kDLCPU);
             const std::vector<std::string> paths = groupPaths(dictionary, *group);
             for (size_t row = 0; row < paths.size(); ++row)
@@ -296,6 +302,50 @@ Poses readPoses(ovphysx_instance_handle_t handle, ovphysx_query_target_t type, u
     return result;
 }
 
+// The stored creation scale ovphysx serves as OVPHYSX_ATTR_WORLD_SCALE, in the pose's residency.
+Scales readWorldScales(ovphysx_instance_handle_t handle, ovphysx_query_target_t type, uintptr_t cudaContext = 0)
+{
+    Scales result;
+    ovphysx_query_handle_t query = 0;
+    EXPECT_EQ(test_utils::complete_task(handle, ovphysx_query(handle, type, OVPHYSX_SCOPE_ALL, &query, nullptr)).status, OVPHYSX_API_SUCCESS);
+    ovx_path_dictionary_t* dictionary = test_utils::attached_ovstage_dictionary(handle);
+    EXPECT_NE(dictionary, nullptr);
+    const ovx_token_or_string_t name = attribute(OVPHYSX_ATTR_WORLD_SCALE);
+    ovphysx_read_handle_t read = 0;
+    EXPECT_EQ(test_utils::complete_task(handle, ovphysx_read(handle, query, &name, 1, ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr)).status, OVPHYSX_API_SUCCESS);
+    for (;;)
+    {
+        const ovstage_read_group_t* group = nullptr;
+        const ovphysx_result_t status = test_utils::complete_task(handle, ovphysx_fetch_read_next(handle, read, &group));
+        if (status.status == OVPHYSX_API_SUCCESS && !group)
+            break;
+        EXPECT_EQ(status.status, OVPHYSX_API_SUCCESS);
+        if (status.status != OVPHYSX_API_SUCCESS)
+            break;
+        // worldScale has no point-instancer array form.
+        EXPECT_FALSE(group->columns[0].is_array);
+        if (!group->columns[0].is_delete)
+        {
+            const DLTensor& tensor = group->columns[0].data.tensors[0];
+            EXPECT_EQ(tensor.device.device_type, cudaContext ? kDLCUDA : kDLCPU);
+            EXPECT_EQ(tensor.dtype.code, kDLFloat);
+            EXPECT_EQ(tensor.dtype.bits, 32);
+            EXPECT_EQ(tensor.dtype.lanes, 3);
+            const std::vector<std::string> paths = groupPaths(dictionary, *group);
+            for (size_t row = 0; row < paths.size(); ++row)
+            {
+                float values[3]{};
+                copyRow(*group, row, values, sizeof(values), cudaContext);
+                result[paths[row]] = physx::PxVec3(values[0], values[1], values[2]);
+            }
+        }
+        EXPECT_EQ(test_utils::complete_task(handle, ovphysx_release_group(handle, read, group->read_group_id)).status, OVPHYSX_API_SUCCESS);
+    }
+    EXPECT_EQ(test_utils::complete_task(handle, ovphysx_release_read(handle, read)).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(test_utils::complete_task(handle, ovphysx_release_query(handle, query)).status, OVPHYSX_API_SUCCESS);
+    return result;
+}
+
 std::vector<std::string> posePaths(const Poses& poses)
 {
     std::vector<std::string> paths;
@@ -304,16 +354,38 @@ std::vector<std::string> posePaths(const Poses& poses)
     return paths;
 }
 
-void expectPoseAndScale(const Matrix& actual, const physx::PxTransform& pose, const Matrix& baseline)
+physx::PxVec3 decomposedScale(const Matrix& matrix)
 {
     physx::PxTransform ignored;
     physx::PxVec3 scale;
-    omni::physx::decomposeMatrix(ignored, scale, baseline.data());
+    omni::physx::decomposeMatrix(ignored, scale, matrix.data());
+    return scale;
+}
+
+void expectScale(const physx::PxVec3& actual, const physx::PxVec3& expected)
+{
+    for (uint32_t axis = 0; axis < 3; ++axis)
+        EXPECT_NEAR(actual[axis], expected[axis], 1e-5f) << "scale axis " << axis;
+}
+
+void expectPoseAndScale(const Matrix& actual, const physx::PxTransform& pose, const physx::PxVec3& scale)
+{
     const physx::PxMat44 rotation(pose);
     for (size_t i = 0; i < 16; ++i)
     {
         const double expected = rotation.front()[i] * (i < 12 ? scale[static_cast<uint32_t>(i / 4)] : 1.0);
         EXPECT_NEAR(actual[i], expected, 2e-5) << "matrix element " << i;
+    }
+}
+
+// The stored scale of every body is the parser's decomposition of its authored world matrix.
+void expectStoredScalesMatch(const Scales& scales, const Matrices& baseline)
+{
+    ASSERT_EQ(scales.size(), baseline.size());
+    for (const std::pair<const std::string, physx::PxVec3>& item : scales)
+    {
+        SCOPED_TRACE(item.first);
+        expectScale(item.second, decomposedScale(baseline.at(item.first)));
     }
 }
 
@@ -332,11 +404,16 @@ TEST_F(OvStageOutputTest, RigidBodiesAcrossScenesPreserveSignedScaleAndNestedWor
     ASSERT_EQ(ovphysx_step_sync(m_handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
     const Poses poses = readPoses(m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY);
     ASSERT_EQ(poses.size(), 3u);
+    const Scales scales = readWorldScales(m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY);
     const Matrices baseline = readMatrices(stage, posePaths(poses), 2);
     ASSERT_EQ(baseline.size(), poses.size());
     EXPECT_DOUBLE_EQ(baseline.at("/World/Parent/Body")[0], 1.0);
     EXPECT_DOUBLE_EQ(baseline.at("/World/Parent/Body")[5], 6.0);
     EXPECT_DOUBLE_EQ(baseline.at("/World/Parent/Body")[10], 1.0);
+    // Stored at creation: a mirror reads all-negative, a nested body its parent-composed scale.
+    expectStoredScalesMatch(scales, baseline);
+    expectScale(scales.at("/World/Mirrored"), physx::PxVec3(-2.0f, -3.0f, -4.0f));
+    expectScale(scales.at("/World/Parent/Body"), physx::PxVec3(1.0f, 6.0f, 1.0f));
 
     const OvStageOutputResult result = writeWorldTransformsToOvstage(m_handle, stage, 3);
     ASSERT_TRUE(result.ok()) << result.message;
@@ -347,7 +424,7 @@ TEST_F(OvStageOutputTest, RigidBodiesAcrossScenesPreserveSignedScaleAndNestedWor
     const Matrices output = readMatrices(stage, posePaths(poses), 3);
     ASSERT_EQ(output.size(), poses.size());
     for (const std::pair<const std::string, physx::PxTransform>& item : poses)
-        expectPoseAndScale(output.at(item.first), item.second, baseline.at(item.first));
+        expectPoseAndScale(output.at(item.first), item.second, scales.at(item.first));
 
     // Publishing does not advance the simulation.
     const Poses after = readPoses(m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY);
@@ -355,15 +432,84 @@ TEST_F(OvStageOutputTest, RigidBodiesAcrossScenesPreserveSignedScaleAndNestedWor
         EXPECT_EQ(after.at(item.first).p, item.second.p);
 }
 
-TEST_F(OvStageOutputTest, ArticulationLinksMatchCurrentPhysicsPoses)
+TEST_F(OvStageOutputTest, CharacterControllersPublishPrimOrientation)
 {
-    ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/two_articulations.usda"));
+    ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/character_controller.usda"));
+    ovstage_instance_t* stage = attachedStage(m_handle);
+    const std::vector<std::string> paths = { "/World/Controller", "/World/Other" };
+    const Matrices baseline = readMatrices(stage, paths, 1);
+    ASSERT_EQ(baseline.size(), paths.size());
+    OvStageOutputCache cache;
+    for (ovstage_ordinal_t ordinal = 2; ordinal <= 3; ++ordinal)
+    {
+        ASSERT_EQ(ovphysx_step_sync(m_handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
+        const OvStageOutputResult result =
+            writeWorldTransformsToOvstage(m_handle, stage, ordinal, ordinal == 2 ? nullptr : &cache);
+        ASSERT_TRUE(result.ok()) << result.message;
+        EXPECT_EQ(result.matricesWritten, paths.size());
+        ASSERT_TRUE(seal(stage, ordinal));
+        const Matrices output = readMatrices(stage, paths, ordinal);
+        ASSERT_EQ(output.size(), paths.size());
+        for (const std::string& path : paths)
+            for (size_t component = 0; component < 16; ++component)
+                EXPECT_NEAR(output.at(path)[component], baseline.at(path)[component], 1e-5);
+    }
+}
+
+// OMPE-120176: an edit of the parent after publication moves the child with it, in OVStage and in PhysX.
+TEST_F(OvStageOutputTest, ParentEditAfterPublicationMovesKinematicChild)
+{
+    const std::string parent = "/World/Outer/Parent";
+    const std::string body = "/World/Outer/Parent/Body";
+    ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/ovstage_output_parent_edit.usda"));
+    ovstage_instance_t* stage = attachedStage(m_handle);
+    ASSERT_TRUE(complete(stage, ovstage_compute_hierarchy(stage, OVSTAGE_HIERARCHY_COMPUTATION_MODEL_DEFAULT_CPU, 1, 2)));
+    ASSERT_TRUE(seal(stage, 2));
+    ASSERT_EQ(ovphysx_step_sync(m_handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
+    const OvStageOutputResult result = writeWorldTransformsToOvstage(m_handle, stage, 3);
+    ASSERT_TRUE(result.ok()) << result.message;
+    EXPECT_EQ(result.matricesWritten, 1u);
+    EXPECT_EQ(writeFloor(stage), 2u);
+    ASSERT_TRUE(seal(stage, 3));
+
+    // Outer turns the parent's (3, 4, 0) translation into (-8, 6, 0) in world space.
+    const Matrix translation = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 3, 4, 0, 1 };
+    ASSERT_TRUE(writeMatrix(stage, parent.c_str(), translation, 4, 0, 0, kLocalMatrix));
+    ASSERT_TRUE(seal(stage, 4));
+    const Matrices world = readMatrices(stage, { parent, body }, 4);
+    const Matrices local = readMatrices(stage, { body }, 4, 0, kLocalMatrix);
+    ASSERT_EQ(world.size(), 2u);
+    ASSERT_EQ(local.size(), 1u);
+    const auto expectTranslation = [](const Matrix& matrix, double x, double y, double z) {
+        EXPECT_NEAR(matrix[12], x, 1e-4);
+        EXPECT_NEAR(matrix[13], y, 1e-4);
+        EXPECT_NEAR(matrix[14], z, 1e-4);
+    };
+    expectTranslation(world.at(parent), 42, 6, 0);
+    expectTranslation(world.at(body), 42, 6, 8);
+    expectTranslation(local.at(body), 0, 0, 4);
+
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_update_from_ovstage(m_handle, { 4, 4, true })).status,
+              OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_step_sync(m_handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
+    const physx::PxVec3 position = readPoses(m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY).at(body).p;
+    EXPECT_NEAR(position.x, 42.0f, 1e-4f);
+    EXPECT_NEAR(position.y, 6.0f, 1e-4f);
+    EXPECT_NEAR(position.z, 8.0f, 1e-4f);
+}
+
+TEST_F(OvStageOutputTest, ArticulationLinksMatchCurrentPhysicsPosesAndStoredScale)
+{
+    ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/two_articulations_scaled.usda"));
     ovstage_instance_t* stage = attachedStage(m_handle);
     ASSERT_EQ(ovphysx_step_sync(m_handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
     const Poses poses = readPoses(m_handle, OVPHYSX_QUERY_TARGET_ARTICULATION_LINK);
     ASSERT_EQ(poses.size(), 6u);
+    const Scales scales = readWorldScales(m_handle, OVPHYSX_QUERY_TARGET_ARTICULATION_LINK);
     const Matrices baseline = readMatrices(stage, posePaths(poses), 1);
     ASSERT_EQ(baseline.size(), poses.size());
+    expectStoredScalesMatch(scales, baseline);
+    expectScale(scales.at("/World/articulation/articulationLink0"), physx::PxVec3(2.0f));
     const OvStageOutputResult result = writeWorldTransformsToOvstage(m_handle, stage, 2);
     ASSERT_TRUE(result.ok()) << result.message;
     EXPECT_EQ(result.matricesWritten, poses.size());
@@ -371,44 +517,40 @@ TEST_F(OvStageOutputTest, ArticulationLinksMatchCurrentPhysicsPoses)
     const Matrices output = readMatrices(stage, posePaths(poses), 2);
     ASSERT_EQ(output.size(), poses.size());
     for (const std::pair<const std::string, physx::PxTransform>& item : poses)
-        expectPoseAndScale(output.at(item.first), item.second, baseline.at(item.first));
+        expectPoseAndScale(output.at(item.first), item.second, scales.at(item.first));
 }
 
-TEST_F(OvStageOutputTest, CacheRetainsScaleUntilRefreshAndDefaultReadsCurrentScale)
+TEST_F(OvStageOutputTest, StageWorldMatrixEditsDoNotChangePublishedScale)
 {
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/boxes_falling_on_groundplane.usda"));
     ovstage_instance_t* stage = attachedStage(m_handle);
     ASSERT_EQ(ovphysx_step_sync(m_handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
     const Poses poses = readPoses(m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY);
+    const Scales scales = readWorldScales(m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY);
     const char* path = "/World/Cube1";
     const Matrix original = readMatrices(stage, { path }, 1).at(path);
+    expectScale(scales.at(path), decomposedScale(original));
     Matrix edited = original;
     edited[0] = -2;
     edited[5] = 3;
     edited[10] = 4;
+
+    // The helper reads no stage matrix, so neither a cached nor an uncached call, nor one after
+    // refresh(), picks up a direct world-matrix edit: the scale is the one ovphysx stored.
     OvStageOutputCache cache;
-    OvStageOutputResult result = writeWorldTransformsToOvstage(m_handle, stage, 2, &cache);
-    ASSERT_TRUE(result.ok()) << result.message;
-    ASSERT_TRUE(seal(stage, 2));
-    ASSERT_TRUE(writeMatrix(stage, path, edited, 3));
-    ASSERT_TRUE(seal(stage, 3));
-    result = writeWorldTransformsToOvstage(m_handle, stage, 4, &cache);
-    ASSERT_TRUE(result.ok()) << result.message;
-    ASSERT_TRUE(seal(stage, 4));
-    expectPoseAndScale(readMatrices(stage, { path }, 4).at(path), poses.at(path), original);
-
-    ASSERT_TRUE(writeMatrix(stage, path, edited, 5));
-    ASSERT_TRUE(seal(stage, 5));
-    result = writeWorldTransformsToOvstage(m_handle, stage, 6);
-    ASSERT_TRUE(result.ok()) << result.message;
-    ASSERT_TRUE(seal(stage, 6));
-    expectPoseAndScale(readMatrices(stage, { path }, 6).at(path), poses.at(path), edited);
-
-    cache.refresh();
-    result = writeWorldTransformsToOvstage(m_handle, stage, 7, &cache);
-    ASSERT_TRUE(result.ok()) << result.message;
-    ASSERT_TRUE(seal(stage, 7));
-    expectPoseAndScale(readMatrices(stage, { path }, 7).at(path), poses.at(path), edited);
+    ovstage_ordinal_t ordinal = 2;
+    for (OvStageOutputCache* outputCache : { &cache, static_cast<OvStageOutputCache*>(nullptr), &cache })
+    {
+        if (ordinal == 6)
+            cache.refresh();
+        ASSERT_TRUE(writeMatrix(stage, path, edited, ordinal));
+        ASSERT_TRUE(seal(stage, ordinal));
+        const OvStageOutputResult result = writeWorldTransformsToOvstage(m_handle, stage, ordinal + 1, outputCache);
+        ASSERT_TRUE(result.ok()) << result.message;
+        ASSERT_TRUE(seal(stage, ordinal + 1));
+        expectPoseAndScale(readMatrices(stage, { path }, ordinal + 1).at(path), poses.at(path), scales.at(path));
+        ordinal += 2;
+    }
 }
 
 TEST_F(OvStageOutputTest, InvalidArgumentsAndReattachmentRejectBoundCache)
@@ -467,36 +609,46 @@ TEST_F(OvStageOutputTest, InvalidArgumentsAndReattachmentRejectBoundCache)
     EXPECT_TRUE(result.ok()) << result.message;
 }
 
-TEST_F(OvStageOutputTest, MissingWorldMatrixFailsBeforePublication)
+TEST_F(OvStageOutputTest, MissingWorldMatrixIsPublishedFromStoredScale)
 {
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/boxes_falling_on_groundplane.usda"));
     ovstage_instance_t* stage = attachedStage(m_handle);
     ASSERT_EQ(ovphysx_step_sync(m_handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
+    const Poses poses = readPoses(m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY);
+    const Scales scales = readWorldScales(m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY);
+    const char* path = "/World/Cube1";
     {
-        StageQuery query(stage, { "/World/Cube1" });
-        const ovx_string_or_token_t name = attribute(kWorldMatrix);
+        StageQuery query(stage, { path });
+        const ovx_token_or_string_t name = attribute(kWorldMatrix);
         ASSERT_TRUE(complete(stage, ovstage_delete_attributes(stage, query.query, &name, 1, 2)));
     }
     ASSERT_TRUE(seal(stage, 2));
+    EXPECT_EQ(readMatrices(stage, { path }, 2).count(path), 0u);
     const OvStageOutputResult result = writeWorldTransformsToOvstage(m_handle, stage, 3);
-    EXPECT_FALSE(result.ok());
-    EXPECT_EQ(result.matricesWritten, 0u);
-    EXPECT_FALSE(result.message.empty());
-    EXPECT_EQ(writeFloor(stage), 2u);
+    ASSERT_TRUE(result.ok()) << result.message;
+    EXPECT_EQ(result.matricesWritten, poses.size());
+    ASSERT_TRUE(seal(stage, 3));
+    expectPoseAndScale(readMatrices(stage, { path }, 3).at(path), poses.at(path), scales.at(path));
 }
 
-TEST_F(OvStageOutputTest, UnsealedWorldMatrixWriteIsReported)
+TEST_F(OvStageOutputTest, OutputOrdinalAtOrBelowWriteFloorIsRejected)
 {
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/boxes_falling_on_groundplane.usda"));
     ovstage_instance_t* stage = attachedStage(m_handle);
     ASSERT_EQ(ovphysx_step_sync(m_handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
     const OvStageOutputResult first = writeWorldTransformsToOvstage(m_handle, stage, 2);
     ASSERT_TRUE(first.ok()) << first.message;
-    const OvStageOutputResult second = writeWorldTransformsToOvstage(m_handle, stage, 3);
-    EXPECT_FALSE(second.ok());
-    EXPECT_EQ(second.matricesWritten, 0u);
-    EXPECT_FALSE(second.message.empty());
+    // The helper never seals its own output.
     EXPECT_EQ(writeFloor(stage), 1u);
+    ASSERT_TRUE(seal(stage, 2));
+    for (ovstage_ordinal_t ordinal : { 1, 2 })
+    {
+        const OvStageOutputResult rejected = writeWorldTransformsToOvstage(m_handle, stage, ordinal);
+        EXPECT_FALSE(rejected.ok());
+        EXPECT_EQ(rejected.matricesWritten, 0u);
+        EXPECT_FALSE(rejected.message.empty());
+    }
+    EXPECT_EQ(writeFloor(stage), 2u);
 }
 
 TEST_F(OvStageOutputTest, PointInstancerGroupsAreCountedWhileFixedBodyPublishes)
@@ -663,57 +815,51 @@ protected:
 ovphysx_instance_handle_t OvStageOutputGpuTest::s_handle = 0;
 std::string OvStageOutputGpuTest::s_skipReason;
 
-TEST_F(OvStageOutputGpuTest, DirectGpuCachedAndUncachedMatricesPreserveScaleAndCallerContext)
+TEST_F(OvStageOutputGpuTest, DirectGpuCachedAndUncachedMatricesUseDeviceScaleAndCallerContext)
 {
-    ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/boxes_falling_on_groundplane_gpu.usda"));
+    ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/ovstage_output_bodies_gpu.usda"));
     ovstage_instance_t* stage = attachedStage(m_handle);
     ASSERT_EQ(ovphysx_step_sync(m_handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
-    void* actorPointer = test_utils::read_physx_pointer(m_handle, OVPHYSX_QUERY_TARGET_RIGID_ACTOR, "/World/Cube1");
+    void* actorPointer = test_utils::read_physx_pointer(m_handle, OVPHYSX_QUERY_TARGET_RIGID_ACTOR, "/World/Mirrored");
     physx::PxRigidActor* actor = static_cast<physx::PxRigidActor*>(actorPointer);
     ASSERT_NE(actor, nullptr);
     physx::PxCudaContextManager* manager = actor->getScene()->getCudaContextManager();
     ASSERT_NE(manager, nullptr);
     const uintptr_t context = reinterpret_cast<uintptr_t>(manager->getContext());
-    ASSERT_FALSE(readPoses(m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, context).empty());
-    const char* path = "/World/Cube1";
-    Matrix baseline = readMatrices(stage, { path }, 1, context).at(path);
-    baseline[0] = -2;
-    baseline[5] = 3;
-    baseline[10] = 4;
-    ASSERT_TRUE(writeMatrix(stage, path, baseline, 2));
-    ASSERT_TRUE(seal(stage, 2));
+    const Poses poses = readPoses(m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, context);
+    ASSERT_EQ(poses.size(), 2u);
+    // readWorldScales asserts kDLCUDA: the stored scale is served from its device copy.
+    const Scales scales = readWorldScales(m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, context);
+    const Matrices baseline = readMatrices(stage, posePaths(poses), 1, context);
+    expectStoredScalesMatch(scales, baseline);
+    expectScale(scales.at("/World/Mirrored"), physx::PxVec3(-2.0f, -3.0f, -4.0f));
+    expectScale(scales.at("/World/Parent/Body"), physx::PxVec3(1.0f, 6.0f, 1.0f));
 
     ovphysx::test_cuda::ScopedCudaContextDetach detached(ovphysx::test_cuda::getCuda());
     ASSERT_TRUE(ovphysx::test_cuda::noCudaContextCurrent(ovphysx::test_cuda::getCuda()));
     OvStageOutputCache cache;
-    for (ovstage_ordinal_t ordinal = 3; ordinal <= 6; ++ordinal)
+    for (ovstage_ordinal_t ordinal = 2; ordinal <= 5; ++ordinal)
     {
-        if (ordinal == 6)
+        if (ordinal == 5)
             cache.refresh();
         const OvStageOutputResult result =
-            writeWorldTransformsToOvstage(m_handle, stage, ordinal, ordinal == 5 ? nullptr : &cache);
+            writeWorldTransformsToOvstage(m_handle, stage, ordinal, ordinal == 4 ? nullptr : &cache);
         ASSERT_TRUE(result.ok()) << result.message;
-        EXPECT_GT(result.matricesWritten, 0u);
+        EXPECT_EQ(result.matricesWritten, poses.size());
         EXPECT_EQ(result.instancerGroupsSkipped, 0u);
         EXPECT_TRUE(ovphysx::test_cuda::noCudaContextCurrent(ovphysx::test_cuda::getCuda()));
         ASSERT_TRUE(seal(stage, ordinal));
-        const Matrices output = readMatrices(stage, { path }, ordinal, context);
-        ASSERT_EQ(output.size(), 1u);
-        // Boxes have no angular velocity: mirrored source scale follows canonical
-        // decomposition while the current DirectGPU translation reflects gravity.
-        const Matrix& matrix = output.at(path);
-        EXPECT_NEAR(matrix[0], -2.0, 1e-5);
-        EXPECT_NEAR(matrix[5], -3.0, 1e-5);
-        EXPECT_NEAR(matrix[10], -4.0, 1e-5);
-        EXPECT_LT(matrix[14], baseline[14]);
-        EXPECT_DOUBLE_EQ(matrix[15], 1.0);
+        const Matrices output = readMatrices(stage, posePaths(poses), ordinal, context);
+        ASSERT_EQ(output.size(), poses.size());
+        for (const std::pair<const std::string, physx::PxTransform>& item : poses)
+            expectPoseAndScale(output.at(item.first), item.second, scales.at(item.first));
         EXPECT_TRUE(ovphysx::test_cuda::noCudaContextCurrent(ovphysx::test_cuda::getCuda()));
     }
 }
 
-TEST_F(OvStageOutputGpuTest, DirectGpuArticulationLinksMatchPoseAndSignedScale)
+TEST_F(OvStageOutputGpuTest, DirectGpuArticulationLinksMatchPoseAndStoredScale)
 {
-    ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/two_articulations.usda"));
+    ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/two_articulations_scaled.usda"));
     ovstage_instance_t* stage = attachedStage(m_handle);
     ASSERT_EQ(ovphysx_step_sync(m_handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
     const char* path = "/World/articulation/articulationLink0";
@@ -725,26 +871,23 @@ TEST_F(OvStageOutputGpuTest, DirectGpuArticulationLinksMatchPoseAndSignedScale)
     const uintptr_t context = reinterpret_cast<uintptr_t>(manager->getContext());
     const Poses poses = readPoses(m_handle, OVPHYSX_QUERY_TARGET_ARTICULATION_LINK, context);
     ASSERT_EQ(poses.size(), 6u);
-    Matrices baseline = readMatrices(stage, posePaths(poses), 1, context);
-    ASSERT_EQ(baseline.size(), poses.size());
-    baseline.at(path)[0] = -2;
-    baseline.at(path)[5] = 3;
-    baseline.at(path)[10] = 4;
-    ASSERT_TRUE(writeMatrix(stage, path, baseline.at(path), 2));
-    ASSERT_TRUE(seal(stage, 2));
+    const Scales scales = readWorldScales(m_handle, OVPHYSX_QUERY_TARGET_ARTICULATION_LINK, context);
+    const Matrices baseline = readMatrices(stage, posePaths(poses), 1, context);
+    expectStoredScalesMatch(scales, baseline);
+    expectScale(scales.at(path), physx::PxVec3(2.0f));
 
     OvStageOutputCache cache;
-    for (ovstage_ordinal_t ordinal = 3; ordinal <= 4; ++ordinal)
+    for (ovstage_ordinal_t ordinal = 2; ordinal <= 3; ++ordinal)
     {
         const OvStageOutputResult result =
-            writeWorldTransformsToOvstage(m_handle, stage, ordinal, ordinal == 3 ? &cache : nullptr);
+            writeWorldTransformsToOvstage(m_handle, stage, ordinal, ordinal == 2 ? &cache : nullptr);
         ASSERT_TRUE(result.ok()) << result.message;
         EXPECT_EQ(result.matricesWritten, poses.size());
         ASSERT_TRUE(seal(stage, ordinal));
         const Matrices output = readMatrices(stage, posePaths(poses), ordinal, context);
         ASSERT_EQ(output.size(), poses.size());
         for (const std::pair<const std::string, physx::PxTransform>& item : poses)
-            expectPoseAndScale(output.at(item.first), item.second, baseline.at(item.first));
+            expectPoseAndScale(output.at(item.first), item.second, scales.at(item.first));
     }
 }
 
@@ -773,7 +916,7 @@ TEST_F(OvStageOutputGpuTest, DirectGpuPublicationRestoresForeignCallerContext)
     EXPECT_EQ(current, foreign.context());
 }
 
-TEST_F(OvStageOutputGpuTest, CpuPosesCaptureGpuAuthoredScaleAndRestoreCallerContext)
+TEST_F(OvStageOutputGpuTest, CpuPublicationOverGpuAuthoredMatricesKeepsStoredScaleAndCallerContext)
 {
     // Retain a real primary-context manager for test-side GPU authoring even
     // after switching to a scene whose native physics pose columns are on CPU.
@@ -793,11 +936,15 @@ TEST_F(OvStageOutputGpuTest, CpuPosesCaptureGpuAuthoredScaleAndRestoreCallerCont
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/simple_physics_scene_cpu.usda"));
     ovstage_instance_t* stage = attachedStage(m_handle);
     ASSERT_EQ(ovphysx_step_sync(m_handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
-    // readPoses without a CUDA context asserts that every pose tensor is CPU.
+    // readPoses and readWorldScales without a CUDA context assert that every tensor is CPU.
     const Poses poses = readPoses(m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY);
     ASSERT_EQ(poses.size(), 4u);
+    const Scales scales = readWorldScales(m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY);
     const char* path = "/World/Cube1";
+    // Authored on the device so the stage column the CPU output overwrites is GPU-backed. Its edited
+    // scale must not reach the output: the helper publishes the stored physics scale.
     Matrix baseline = readMatrices(stage, { path }, 1).at(path);
+    expectScale(scales.at(path), decomposedScale(baseline));
     baseline[0] = -2;
     baseline[5] = 3;
     baseline[10] = 4;
@@ -828,19 +975,20 @@ TEST_F(OvStageOutputGpuTest, CpuPosesCaptureGpuAuthoredScaleAndRestoreCallerCont
     ovphysx::test_cuda::ScopedCudaContextDetach detached(cuda);
     ASSERT_TRUE(authorGpuMatrix(2));
     ASSERT_TRUE(ovphysx::test_cuda::noCudaContextCurrent(cuda));
-    // No stage read occurs between GPU authoring and the helper's scale capture.
+    // The helper reads no stage matrix, so its CPU publication is the only stage access that can
+    // touch the GPU-backed column.
     OvStageOutputResult result = writeWorldTransformsToOvstage(m_handle, stage, 3);
     ASSERT_TRUE(result.ok()) << result.message;
     EXPECT_EQ(result.matricesWritten, poses.size());
     EXPECT_TRUE(ovphysx::test_cuda::noCudaContextCurrent(cuda));
     ASSERT_TRUE(seal(stage, 3));
-    expectPoseAndScale(readMatrices(stage, { path }, 3, context).at(path), poses.at(path), baseline);
+    expectPoseAndScale(readMatrices(stage, { path }, 3, context).at(path), poses.at(path), scales.at(path));
 
     OvStageOutputCache cache;
     for (ovstage_ordinal_t ordinal : { 4, 6 })
     {
-        // The second call reuses captured scales, so it tests CPU publication
-        // into GPU-backed storage without a preceding scale-read context guard.
+        // The second call reuses cached buffers, so it tests CPU publication into
+        // GPU-backed storage with nothing but the write under the context guard.
         ASSERT_TRUE(authorGpuMatrix(ordinal));
         ASSERT_TRUE(ovphysx::test_cuda::noCudaContextCurrent(cuda));
         result = writeWorldTransformsToOvstage(m_handle, stage, ordinal + 1, &cache);
@@ -848,7 +996,8 @@ TEST_F(OvStageOutputGpuTest, CpuPosesCaptureGpuAuthoredScaleAndRestoreCallerCont
         EXPECT_EQ(result.matricesWritten, poses.size());
         EXPECT_TRUE(ovphysx::test_cuda::noCudaContextCurrent(cuda));
         ASSERT_TRUE(seal(stage, ordinal + 1));
-        expectPoseAndScale(readMatrices(stage, { path }, ordinal + 1, context).at(path), poses.at(path), baseline);
+        expectPoseAndScale(
+            readMatrices(stage, { path }, ordinal + 1, context).at(path), poses.at(path), scales.at(path));
     }
 
     ForeignCudaContext foreign;
@@ -864,7 +1013,8 @@ TEST_F(OvStageOutputGpuTest, CpuPosesCaptureGpuAuthoredScaleAndRestoreCallerCont
         ASSERT_TRUE(cuda->ctxGetCurrent(&current, nullptr));
         EXPECT_EQ(current, foreign.context());
         ASSERT_TRUE(seal(stage, ordinal + 1));
-        expectPoseAndScale(readMatrices(stage, { path }, ordinal + 1, context).at(path), poses.at(path), baseline);
+        expectPoseAndScale(
+            readMatrices(stage, { path }, ordinal + 1, context).at(path), poses.at(path), scales.at(path));
     }
 }
 

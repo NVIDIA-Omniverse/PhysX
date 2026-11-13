@@ -65,6 +65,12 @@ public:
                                         const ::physx::PxU32* outRecordIdx,
                                         ::physx::PxU32 numOutputs,
                                         uint64_t rowsToken) const;
+    // The creation-time world scale each entry carries (RigidBodyEntry::worldScale). No PhysX query:
+    // PhysX has no body scale, so the entry is the source on this backend.
+    bool getWorldScalesOvStage(const TensorDesc* dstTensor,
+                               const ::physx::PxU32* outRecordIdx,
+                               ::physx::PxU32 numOutputs,
+                               uint64_t rowsToken) const;
 
     // ovstage column WRITE (ADR-0012), the return direction of the four getters above and the host
     // counterpart of GpuRigidBodyView's. Same signature on both backends so the writer's table calls

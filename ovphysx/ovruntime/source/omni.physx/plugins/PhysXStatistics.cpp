@@ -1,10 +1,13 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-PUBLICAPI-001
+// @covers AC-52
+
 // @implements REQ-ATTACH-EXECUTION-001
 // @covers AC-1 AC-2
 
-#include <omni/physx/IPhysxStatistics.h>
+#include <omni/physx/NativeStatistics.h>
 
 #include "OmniPhysX.h"
 #include "RuntimeExecution.h"
@@ -179,9 +182,4 @@ bool getPhysXSceneStatistics(AttachHandle attachHandle, uint64_t path, PhysicsSc
     return true;
 }
 }
-}
-
-void fillInterface(omni::physx::IPhysxStatistics& iface)
-{
-    iface.getPhysXSceneStatistics = omni::physx::getPhysXSceneStatistics;
 }

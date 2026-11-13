@@ -1,6 +1,17 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-SIM-LOCALVELOCITY-001
+// @covers AC-8
+
+/**
+ * @implements REQ-CACHE-UPDATE-001
+ * @covers AC-6 AC-8
+ */
+/** @implements REQ-CACHE-ATTACH-001
+ * @covers AC-7 AC-9
+ */
+
 /**
  * @implements REQ-PARSE-MASS-004
  * @covers AC-4
@@ -64,6 +75,9 @@
  * @covers AC-7
  */
 
+// @implements REQ-CACHE-ATTACH-001
+// @covers AC-3 AC-4
+#include <private/omni/physx/CompiledCollection.h>
 #include "PhysXDebugVisualization.h"
 #include "../particles/PhysXParticlePost.h"
 #include "../particles/PhysXParticleSampling.h"
@@ -93,6 +107,7 @@
 // lives in the pxr-free usdBridge/AttachedStageBridge.cpp (ADR-0027) and reaches USD only
 // through the installed seams.
 #include <CookingDataAsync.h>
+#include <MeshCache.h>
 
 #include <omni/physics/parse/IParseBackend.h>
 #include <OvstageSource.h>
@@ -106,10 +121,12 @@
 #include <common/utilities/MemoryMacros.h>
 
 #include <carb/InterfaceUtils.h>
-#include <common/utilities/OmniPhysXUtilities.h>
 
 #include <unordered_set>
 #include <algorithm>
+#include <unordered_map>
+#include <private/omni/physx/RuntimeArtifactService.h>
+#include "../cache/AttachmentCache.h"
 
 
 namespace omni
@@ -255,6 +272,131 @@ AttachedStage::~AttachedStage()
         runtime->getPhysXSetup().releaseAttachmentResources(*this);
 }
 
+void AttachedStage::configureCompiledInsertion(const PhysxCompiledStageCacheOptions* options)
+{
+    mCompiledInsertionStore.reset();
+    mCompiledInsertionStoreFailed = false;
+    mCompiledInsertionMode = options ? options->mode : PhysxCompiledStageCacheMode::eDisabled;
+    // A store keeps each triangle mesh as its cooked stream: from now on, the
+    // triangle meshes the mesh cache creates keep theirs.
+    if (mCompiledInsertionMode == PhysxCompiledStageCacheMode::eReadWrite)
+        getMeshCache()->retainTriangleMeshCookedData();
+    // Insertions of an attachment whose options always bypass need no shared inputs.
+    if (auto* source = dynamic_cast<omni::physics::ovstage::OvstageSource*>(mSource.get()))
+        source->enablePhysicsInputSharing(mCompiledInsertionMode != PhysxCompiledStageCacheMode::eDisabled &&
+                                          cache::eligibleOptions(*this));
+}
+
+cache::RuntimeArtifactService* AttachedStage::compiledInsertionStore()
+{
+    using Mode = PhysxCompiledStageCacheMode;
+    // A datastore that cannot be used is not retried for this configuration.
+    if (!mCompiledInsertionStore && !mCompiledInsertionStoreFailed && mCompiledInsertionMode != Mode::eDisabled)
+    {
+        mCompiledInsertionStore = cache::RuntimeArtifactService::create(
+            mCompiledInsertionMode == Mode::eReadOnly ? cache::RuntimeArtifactService::Mode::eReadOnly :
+                                                        cache::RuntimeArtifactService::Mode::eReadWrite);
+        mCompiledInsertionStoreFailed = !mCompiledInsertionStore;
+    }
+    return mCompiledInsertionStore.get();
+}
+
+// @implements REQ-CACHE-UPDATE-001
+// @covers AC-12
+AttachedStage::RetainedCollection::~RetainedCollection()
+{
+    for (::physx::PxRefCounted* object : shared)
+        object->release();
+}
+
+void AttachedStage::retainCompiledCollection(std::unique_ptr<cache::DecodedCollection>& collection,
+                                             std::vector<ObjectId> records,
+                                             std::vector<::physx::PxRefCounted*> shared)
+{
+    // Free collections whose restored objects are all gone, so repeated
+    // insertion and deletion does not grow without bound. Every shape, material
+    // and mesh in the collection must be referenced only by the collection itself:
+    // its own handle, plus material and mesh references of its unused shapes.
+    const std::vector<internal::InternalDatabase::Record>& all = getInternalPhysXDatabase().getRecords();
+    const auto released = [&](const std::unique_ptr<RetainedCollection>& retained) {
+        for (const ObjectId id : retained->records)
+            if (id < all.size() && all[id].mType != ePTRemoved)
+                return false;
+        const ::physx::PxCollection& remaining = retained->collection->collection();
+        std::vector<const ::physx::PxRefCounted*> owned(retained->shared.begin(), retained->shared.end());
+        for (::physx::PxU32 i = 0; i < remaining.getNbObjects(); ++i)
+        {
+            ::physx::PxBase& object = remaining.getObject(i);
+            if (const ::physx::PxMaterial* material = object.is<::physx::PxMaterial>())
+                owned.push_back(material);
+            else if (const ::physx::PxShape* shape = object.is<::physx::PxShape>())
+                owned.push_back(shape);
+            else if (const ::physx::PxConvexMesh* convex = object.is<::physx::PxConvexMesh>())
+                owned.push_back(convex);
+            else if (const ::physx::PxTriangleMesh* triangles = object.is<::physx::PxTriangleMesh>())
+                owned.push_back(triangles);
+            else if (const ::physx::PxHeightField* heightField = object.is<::physx::PxHeightField>())
+                owned.push_back(heightField);
+            else
+                return false; // any other remaining object keeps the collection until teardown
+        }
+        std::unordered_map<const ::physx::PxRefCounted*, ::physx::PxU32> internal;
+        for (const ::physx::PxRefCounted* object : owned)
+        {
+            const ::physx::PxShape* shape = object->is<::physx::PxShape>();
+            if (!shape)
+                continue;
+            if (shape->getReferenceCount() != 1)
+                return false;
+            std::vector<::physx::PxMaterial*> materials(shape->getNbMaterials());
+            shape->getMaterials(materials.data(), ::physx::PxU32(materials.size()));
+            for (const ::physx::PxMaterial* material : materials)
+                ++internal[material];
+            const ::physx::PxGeometry& geometry = shape->getGeometry();
+            switch (geometry.getType())
+            {
+            case ::physx::PxGeometryType::eCONVEXMESH:
+                ++internal[static_cast<const ::physx::PxConvexMeshGeometry&>(geometry).convexMesh];
+                break;
+            case ::physx::PxGeometryType::eTRIANGLEMESH:
+                ++internal[static_cast<const ::physx::PxTriangleMeshGeometry&>(geometry).triangleMesh];
+                break;
+            case ::physx::PxGeometryType::eHEIGHTFIELD:
+                ++internal[static_cast<const ::physx::PxHeightFieldGeometry&>(geometry).heightField];
+                break;
+            default:
+                break;
+            }
+        }
+        for (const ::physx::PxRefCounted* object : owned)
+        {
+            const auto found = internal.find(object);
+            if (object->getReferenceCount() != 1 + (found == internal.end() ? 0 : found->second))
+                return false;
+        }
+        return true;
+    };
+    // Decide every removal before moving any entry: the check allocates, and a
+    // throw in the middle of a compaction would leave an emptied entry behind.
+    std::vector<bool> gone;
+    gone.reserve(mCompiledCollections.size());
+    for (const std::unique_ptr<RetainedCollection>& retained : mCompiledCollections)
+        gone.push_back(released(retained));
+    size_t kept = 0;
+    for (size_t i = 0; i < mCompiledCollections.size(); ++i)
+        if (!gone[i])
+            std::swap(mCompiledCollections[kept++], mCompiledCollections[i]);
+    mCompiledCollections.resize(kept);
+    // Allocation failure leaves the candidate owned by its transaction.
+    mCompiledCollections.push_back(std::make_unique<RetainedCollection>());
+    RetainedCollection& retained = *mCompiledCollections.back();
+    retained.collection = std::move(collection);
+    retained.records = std::move(records);
+    for (::physx::PxRefCounted* object : shared)
+        object->acquireReference();
+    retained.shared = std::move(shared);
+}
+
 void AttachedStage::releaseNativePhysics()
 {
     omni::sampling::releaseAttachmentSurfaceSamplers(*this);
@@ -271,6 +413,7 @@ void AttachedStage::releaseNativePhysics()
     }
     // Scene teardown can lazily recreate the database through particle cleanup.
     SAFE_DELETE_SINGLE(mInternalPhysXDatabase);
+    mCompiledCollections.clear();
 }
 
 omni::physics::parse::ScanOptions AttachedStage::descriptorScanOptions()
@@ -446,7 +589,8 @@ void AttachedStage::bindKnownTokens()
 void AttachedStage::setOvstageSource(const void* attachPayload,
                                      AttachedStageUsdHandle backingStage,
                                      uint64_t readOrdinal,
-                                     uint64_t backingStageId)
+                                     uint64_t backingStageId,
+                                     bool deferChangeFeedBaseline)
 {
     // Source/scanner ownership is local even when a developer backing stage exists.
     mStage = backingStage;
@@ -458,11 +602,12 @@ void AttachedStage::setOvstageSource(const void* attachPayload,
         throw std::invalid_argument("ovstage attachment requires a payload");
     mOwnedAttachPayload = *static_cast<const omni::physics::ovstage::OvstageAttach*>(attachPayload);
     mExternalAttachPayload = &mOwnedAttachPayload;
-    mParseBackend = omni::physics::ovstage::makeOvstageParseBackend();
+    mParseBackend = omni::physics::ovstage::makeOvstageParseBackend(deferChangeFeedBaseline);
     mScanBackend = omni::physics::ovstage::makeOvstageScanBackend(mExternalAttachPayload);
     // Caller-owned sealed read ordinal for the initial parse; updateFromOvStage
     // advances it thereafter. Flows to the backends via AttachTarget::readOrdinal.
     mExternalReadOrdinal = readOrdinal;
+    mScanReadOrdinal = readOrdinal;
 
     // No predicate install here: init() only stores the predicate, and every ObjectDb this
     // class owns already got it from initPrimHierarchyStorage() at construction (or at
@@ -502,7 +647,9 @@ omni::physics::parse::ScannedStage AttachedStage::scanStage(
     const omni::physics::parse::ScanOptions& options,
     omni::physics::parse::IDescriptorAllocator& allocator) const
 {
-    return omni::physics::parse::scanStage(mScanBackend.get(), attachTarget(), roots, excludes, options, allocator);
+    omni::physics::parse::ScanOptions ownerOptions = options;
+    ownerOptions.outputVelocitiesLocalSpaceDefault = mCachedSettings.outputVelocitiesLocalSpace;
+    return omni::physics::parse::scanStage(mScanBackend.get(), attachTarget(), roots, excludes, ownerOptions, allocator);
 }
 
 // @implements REQ-PARSE-SCAN-001
@@ -517,7 +664,7 @@ omni::physics::parse::AttachTarget AttachedStage::attachTarget() const
         // fallbacks, and is what the external source publishes as its resident
         // USD stage id.
         target.nativeStage = mExternalAttachPayload;
-        target.readOrdinal = mExternalReadOrdinal;
+        target.readOrdinal = mScanReadOrdinal;
         target.residentBackingStageId = mExternalBackingStageId;
     }
     else

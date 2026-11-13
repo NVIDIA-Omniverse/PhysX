@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 # PhysX Preset Support for FetchContent Integration
 # 
 # This module provides functionality to apply PhysX build presets from XML files,
@@ -116,12 +119,22 @@ function(physx_parse_cmake_switches xml_content)
             # command-line -D flags take precedence over preset values.
             # CMake's cache semantics: if the variable is already in the cache
             # (from -D), set() without FORCE is a no-op, preserving the user's choice.
+            # This also means the caller must not declare these options (option() or
+            # set(CACHE)) before this function runs, or the preset value is lost.
             if("${SWITCH_VALUE}" STREQUAL "True")
-                set(${SWITCH_NAME} ON CACHE BOOL "Set by preset ${PHYSX_PRESET}")
-                message(STATUS "  ${SWITCH_NAME} = ${${SWITCH_NAME}} (preset default: ON)")
+                set(PRESET_BOOL ON)
             elseif("${SWITCH_VALUE}" STREQUAL "False")
-                set(${SWITCH_NAME} OFF CACHE BOOL "Set by preset ${PHYSX_PRESET}")
-                message(STATUS "  ${SWITCH_NAME} = ${${SWITCH_NAME}} (preset default: OFF)")
+                set(PRESET_BOOL OFF)
+            else()
+                continue()
+            endif()
+            set(${SWITCH_NAME} ${PRESET_BOOL} CACHE BOOL "Set by preset ${PHYSX_PRESET}")
+            # Report the effective value and say so when it is not the preset's,
+            # instead of a line that contradicts itself.
+            if((${SWITCH_NAME} AND PRESET_BOOL) OR (NOT ${SWITCH_NAME} AND NOT PRESET_BOOL))
+                message(STATUS "  ${SWITCH_NAME} = ${PRESET_BOOL} (from preset)")
+            else()
+                message(STATUS "  ${SWITCH_NAME} = ${${SWITCH_NAME}} (preset says ${PRESET_BOOL}; kept the value already in the cache, from -D or a previous configure)")
             endif()
         endif()
     endforeach()

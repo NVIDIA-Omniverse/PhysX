@@ -5,6 +5,9 @@
 // @covers AC-1 AC-2
 
 /**
+ * @implements REQ-PROPS-THRESHOLD-001
+ * @covers AC-1 AC-2 AC-3
+ *
  * @implements REQ-PROPS-LINK-001
  * @covers AC-1 AC-2 AC-3 AC-4
  *
@@ -31,7 +34,7 @@
 
 /**
  * @implements REQ-READ-CORE-001
- * @covers AC-5 AC-7
+ * @covers AC-5 AC-7 AC-10
  */
 
 /**
@@ -237,6 +240,10 @@ bool omni::physx::updateBodyEnabled(AttachedStage& attachedStage, ObjectId objec
             if (scene)
                 scene->addActor(*rigidStatic);
             attachedStage.getPhysXPhysicsInterface()->sendObjectCreationNotification(attachedStage, objectRecord->mKey, objectId, ePTActor);
+            // The dynamic was released and replaced by a static in place, so the scene's rigid-dynamic
+            // set changed without an add/remove. Advance the record-lifetime epoch, which that in-place
+            // swap leaves untouched, so whole-set read caches keyed on it rebuild and drop the stale body.
+            attachedStage.recordVersion.fetch_add(1, std::memory_order_relaxed);
         }
         else if (!isDynamic && data)
         {
@@ -255,6 +262,8 @@ bool omni::physx::updateBodyEnabled(AttachedStage& attachedStage, ObjectId objec
                 scene->addActor(*rigidDynamic);
             db.addDirtyMassActor(size_t(objectId));
             attachedStage.getPhysXPhysicsInterface()->sendObjectCreationNotification(attachedStage, objectRecord->mKey, objectId, ePTActor);
+            // Same rigid-dynamic membership change as the disable path above: advance the record-lifetime epoch.
+            attachedStage.recordVersion.fetch_add(1, std::memory_order_relaxed);
         }
     }
     else if (objectRecord->mType == ePTLink)
@@ -568,12 +577,18 @@ bool omni::physx::updateBodySleepThreshold(AttachedStage& attachedStage, omni::p
 
     if (internalType == ePTActor || internalType == ePTLink)
     {
-        const float toleranceSpeed = OmniPhysX::getInstance().getPhysXSetup().getPhysics()->getTolerancesScale().speed;
         float data;
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
             return true;
 
-        data = data * toleranceSpeed * toleranceSpeed;
+        // Match initial parsing when a USD edit clears the authored value.
+        // OVStage supplies resolved values and reports them as authored.
+        if (!attachedStage.getSource()->hasAuthoredAttribute(objectRecord->mKey, property))
+        {
+            omni::physics::parse::DynamicPhysxRigidBodyDesc defaults;
+            omni::physics::parse::setToDefault(defaults, attachedStage.getSourceUnits());
+            data = defaults.sleepThreshold;
+        }
         PxRigidActor* actor = (PxRigidActor*)objectRecord->mPtr;
         if (actor->is<PxRigidDynamic>())
             actor->is<PxRigidDynamic>()->setSleepThreshold(data);
@@ -593,11 +608,17 @@ bool omni::physx::updateBodyStabilizationThreshold(AttachedStage& attachedStage,
 
     if (internalType == ePTActor || internalType == ePTLink)
     {
-        const float toleranceSpeed = OmniPhysX::getInstance().getPhysXSetup().getPhysics()->getTolerancesScale().speed;
         float data;
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
             return true;
-        data = data * toleranceSpeed * toleranceSpeed;
+        // Match initial parsing when a USD edit clears the authored value.
+        // OVStage supplies resolved values and reports them as authored.
+        if (!attachedStage.getSource()->hasAuthoredAttribute(objectRecord->mKey, property))
+        {
+            omni::physics::parse::DynamicPhysxRigidBodyDesc defaults;
+            omni::physics::parse::setToDefault(defaults, attachedStage.getSourceUnits());
+            data = defaults.stabilizationThreshold;
+        }
 
         PxRigidActor* actor = (PxRigidActor*)objectRecord->mPtr;
         if (actor->is<PxRigidDynamic>())
@@ -1401,11 +1422,13 @@ bool omni::physx::updateBodySplineSurfaceVelocityEnabled(AttachedStage& attached
                 tok.intern(*source);
             // An absent relationship and a defined-but-empty one are both invalid: a spline curve
             // target must be present.
-            const bool hasSplinesRel = hasRelationship(attachedStage, bodyKey, tok.physxSplinesSurfaceVelocityCurve);
+            const bool hasSplinesRel =
+                hasRelationship(attachedStage, bodyKey, tok.physxSplinesSurfaceVelocitySurfaceVelocityCurve);
             std::vector<omni::physics::parse::ObjectKey> splinesList;
             if (hasSplinesRel)
             {
-                getRelationshipValue(attachedStage, bodyKey, tok.physxSplinesSurfaceVelocityCurve, splinesList);
+                getRelationshipValue(attachedStage, bodyKey, tok.physxSplinesSurfaceVelocitySurfaceVelocityCurve,
+                                     splinesList);
             }
 
             if (!hasSplinesRel || splinesList.empty())

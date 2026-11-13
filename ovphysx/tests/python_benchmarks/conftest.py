@@ -125,6 +125,7 @@ def attach_usd_with_ovstage(physx, usd_path: Path, stage_name: str):
     import ovphysx
     from schema_support import physx_schema_paths
     import ovstage
+    from ovphysx.population import physics_population_descs
     if not ovstage.population.available():
         raise RuntimeError("ovstage population bridge is unavailable")
 
@@ -138,7 +139,7 @@ def attach_usd_with_ovstage(physx, usd_path: Path, stage_name: str):
     stage = ovstage.Stage(stage_name)
     ordinal = 1
     try:
-        ovstage.population.open_usd(stage, str(usd_path), ordinal=ordinal, domains=ovstage.PopulationDomain.PHYSICS)
+        ovstage.population.open_usd_with_desc(stage, str(usd_path), ordinal=ordinal, time=ovstage.population.DEFAULT_TIME, descs=physics_population_descs())
         stage.advance_write_floor(ordinal=ordinal).wait()
         physx.wait_task(physx.attach_ovstage(stage, read_ordinal=ordinal))
     except Exception:

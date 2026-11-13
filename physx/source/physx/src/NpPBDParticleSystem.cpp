@@ -127,6 +127,10 @@ namespace physx
 			if(foundHandle == core.mUniqueMaterialHandles.end())
 			{
 				core.mUniqueMaterialHandles.pushBack(materialHandle);
+#if PX_SUPPORT_OMNI_PVD
+				if (OmniPvdPxSampler* sampler = OmniPvdPxSampler::getSamplingInstance())
+					sampler->onParticlePhaseChange(*this);
+#endif
 			}
 
 			if (mCore.getSim())

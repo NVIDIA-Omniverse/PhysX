@@ -132,7 +132,12 @@ void NpRigidDynamic::setKinematicTarget(const PxTransform& destination)
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_EXCEPT_SPLIT_SIM(npScene, "PxRigidDynamic::setKinematicTarget() not allowed while simulation is running. Call will be ignored.")
 
-	setKinematicTargetInternal(destination.getNormalized());
+	const PxTransform target = destination.getNormalized();
+	setKinematicTargetInternal(target);
+
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidDynamic, kinematicTarget, static_cast<PxRigidDynamic&>(*this), target);
+	OMNI_PVD_WRITE_SCOPE_END
 }
 
 bool NpRigidDynamic::getKinematicTarget(PxTransform& target) const
@@ -263,6 +268,12 @@ void NpRigidDynamic::setAngularVelocity(const PxVec3& velocity, bool autowake)
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_EXCEPT_SPLIT_SIM(npScene, "PxRigidDynamic::setAngularVelocity() not allowed while simulation is running. Call will be ignored.")
 
+	if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
+	{
+		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxRigidDynamic::setAngularVelocity(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
+		return;
+	}
+
 	scSetAngularVelocity(velocity);
 
 	// Update prev velocity in acceleration array for correct acceleration computation next frame
@@ -275,12 +286,6 @@ void NpRigidDynamic::setAngularVelocity(const PxVec3& velocity, bool autowake)
 	}
 
 	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, angularVelocity, *static_cast<PxRigidBody*>(this), velocity);
-
-	if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
-	{
-		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxRigidDynamic::setAngularVelocity(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
-		return;
-	}
 
 	if(npScene)
 		wakeUpInternalNoKinematicTest((!velocity.isZero()), autowake);
@@ -628,6 +633,7 @@ PxRigidDynamicLockFlags NpRigidDynamic::getRigidDynamicLockFlags() const
 
 void NpRigidDynamic::setRigidDynamicLockFlags(PxRigidDynamicLockFlags flags)
 {
+	NP_WRITE_CHECK(getNpScene());
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxRigidDynamic::setRigidDynamicLockFlags() not allowed while simulation is running. Call will be ignored.")
 	scSetLockFlags(flags);
 
@@ -636,6 +642,7 @@ void NpRigidDynamic::setRigidDynamicLockFlags(PxRigidDynamicLockFlags flags)
 
 void NpRigidDynamic::setRigidDynamicLockFlag(PxRigidDynamicLockFlag::Enum flag, bool value)
 {
+	NP_WRITE_CHECK(getNpScene());
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxRigidDynamic::setRigidDynamicLockFlag() not allowed while simulation is running. Call will be ignored.")
 	PxRigidDynamicLockFlags flags = mCore.getRigidDynamicLockFlags();
 	if (value)

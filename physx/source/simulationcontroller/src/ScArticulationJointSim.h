@@ -14,7 +14,6 @@ namespace Sc
 {
 
 class ArticulationJointCore;
-class BodySim;
 
 class ArticulationJointSim : public Interaction
 {
@@ -27,9 +26,6 @@ public:
 					bool					onDeactivate();
 
 	PX_FORCE_INLINE	ArticulationJointCore&	getCore()	const	{ return mCore; }
-
-					BodySim&				getParent()	const;
-					BodySim&				getChild()	const;
 
 					void					setDirty();
 private:

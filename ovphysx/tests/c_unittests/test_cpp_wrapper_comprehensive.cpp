@@ -352,6 +352,8 @@ TEST_F(CppWrapperTest, CloneBasicFunctionality) {
     ASSERT_FALSE(wait.hasErrors());
 }
 
+// @implements REQ-CAPI-ASYNC-003
+// @covers AC-2 AC-3
 TEST_F(CppWrapperTest, CloneErrorHandling) {
     // The C++ wrapper passes the C status codes through unchanged.
 
@@ -363,8 +365,10 @@ TEST_F(CppWrapperTest, CloneErrorHandling) {
     std::vector<std::string> empty_targets;
     EXPECT_EQ(m_sdk->clone("/World/envs/env0", empty_targets).status, OVPHYSX_API_INVALID_ARGUMENT) << "Empty targets should return error";
 
-    // No stage loaded.
-    EXPECT_EQ(m_sdk->clone("/World/envs/env0", targets).status, OVPHYSX_API_ERROR);
+    // No stage loaded: the clone is accepted and its task fails.
+    const ovphysx_enqueue_result_t noStage = m_sdk->clone("/World/envs/env0", targets);
+    ASSERT_EQ(noStage.status, OVPHYSX_API_SUCCESS);
+    EXPECT_TRUE(waitForTaskFailure(m_sdk->handle(), noStage, "clone: no ovstage is attached"));
 
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_sdk->handle(), "tests/data/basic_simulation.usda"));
     std::vector<std::string> same_targets = {"/World/envs/env0"};

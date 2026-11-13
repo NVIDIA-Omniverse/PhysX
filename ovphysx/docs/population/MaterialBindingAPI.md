@@ -7,23 +7,32 @@
 
 Binds a physics material to a collision shape. The producer resolves the binding onto every material consumer; the consumer additionally walks purposes and ancestors for stages that were not produced that way.
 
-- **Applies to:** `Gprim`, `Xformable`
-- **Read only when listed in `usd-schemas`.**
+- **Applies to:** [`Gprim`](glossary.md#gprim), [`Xformable`](glossary.md#xformable), `GeomSubset`
+- **Read only when listed in [`usd-schemas`](prim.md#columns).**
 
 ## What USD population writes
 
-On a prim with PhysicsCollisionAPI, PhysicsRigidBodyAPI, OmniPhysicsBodyAPI or OmniPhysicsDeformableBodyAPI, and on collider GeomSubsets, the producer computes the USD-resolved physics-purpose binding (direct, inherited or collection-based) and writes it to material:binding:physics, overriding any direct binding on the prim, but only if the bound Material carries a physics schema. On every other in-scope prim the authored material:binding[:*] relationships are copied unresolved. A prim that only authors material:binding:physics towards a physics material gets a row of its own for that reason.
+On a [prim](glossary.md#prim) with PhysicsCollisionAPI, PhysicsRigidBodyAPI, OmniPhysicsBodyAPI or OmniPhysicsDeformableBodyAPI, and on collider GeomSubsets, the producer computes the USD-resolved physics-purpose binding (direct, inherited or collection-based) and writes it to material:binding:physics, overriding any direct binding on the prim, but only if the bound [Material](glossary.md#material) carries a physics schema. On every other in-scope prim the authored material:binding[:*] relationships are copied unresolved. A prim that only authors material:binding:physics towards a physics material gets a row of its own for that reason.
 
 ## Columns
 
-*Raw fallback* is the USD schema value. *Producer writes* is what ovstage population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
+*Raw fallback* is the [USD](glossary.md#usd) schema value. *Producer writes* is what [ovstage](glossary.md#ovstage) population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
 
 | Column | Type | Units | Raw fallback | Producer writes | Parser default | If absent |
 |---|---|---|---|---|---|---|
-| `material:binding:physics` | uint64 array, RELATIONSHIP_PATH_ID |  |  | the USD-resolved physics-purpose bound Material path, when it carries a physics schema (column created even without the API) |  | The consumer falls back to material:binding on the same prim, then walks ancestors trying both. With none, the shape has no material slot: the scene default material applies and density resolves to PhysicsMassAPI.default_density. |
+| `material:binding:physics` | uint64 array, RELATIONSHIP_PATH_ID |  |  | the USD-resolved physics-purpose bound Material path, when it carries a physics schema (on components with material_consumer) (column created even without the API) |  | The consumer falls back to material:binding on the same prim, then walks ancestors trying both. With none, the shape has no material slot: the scene default material applies and density resolves to PhysicsMassAPI.default_density. |
 | `material:binding` | uint64 array, RELATIONSHIP_PATH_ID |  |  | not written |  | See material:binding:physics. |
+| `_instanceMaterialBinding` | uint64 | none |  | the resolved material path id of an instanced prim (rendering population) |  | No instance-proxy material: the material comes from the bindings alone. |
+| `material:binding:physics:winning-binding-purpose` | uint64, TOKEN_ID |  |  | the purpose of the binding that won the resolved physics material: physics or allPurpose (on components with material_consumer) |  | Treat material:binding:physics as a physics-purpose binding for manually published rows without provenance. |
+| `material:binding:physics:winning-binding-strength` | uint64, TOKEN_ID |  |  | the strength of the binding that won the resolved physics material: weakerThanDescendants or strongerThanDescendants (only where a description selector lists it) |  | Use weakerThanDescendants precedence. |
+
+The builders do not write `_instanceMaterialBinding`, `material:binding:physics:winning-binding-purpose`, `material:binding:physics:winning-binding-strength`; another population writes them.
 
 ## Interactions
 
 - **[`PhysicsCollisionAPI`](PhysicsCollisionAPI.md):** Only shapes consume the binding. The Material prim itself is a separate prim_type component (not yet written); it gets a row because PhysicsMaterialAPI is in the producer's physics set.
 - **[`prim`](prim.md):** Resolved bindings are not published at instance-proxy paths; a consumer must resolve proxy to _protoPath to prototype (open producer gap).
+
+## Notes
+
+- Before resolving a binding the consumer probes the Stage for any column starting with material:binding, and it resolves purpose and collection bindings beyond the columns above. The compiled cache's read plan therefore covers the whole prefix (column_prefixes).

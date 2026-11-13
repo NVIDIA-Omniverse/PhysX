@@ -1,0 +1,104 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxVehicleWheelControllerAPI",
+  "title": "PhysxVehicleWheelControllerAPI",
+  "summary": "Direct per-wheel drive torque, brake torque and steer angle for a vehicle without a drive, applied on a wheel attachment (a prim with PhysxVehicleWheelAttachmentAPI below the vehicle prim). The runtime checks each wheel attachment for it and reads its columns once, when the vehicle is created.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "Xformable"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "columns": [
+    {
+      "name": "physxVehicleWheelController:driveTorque",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0: no drive torque. Any value is accepted.",
+      "raw_fallback_diverges": false,
+      "units": "mass*length^2/s^2",
+      "implemented_in": [
+        "source/omni.physx/plugins/usdLoad/Vehicle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXVehiclePropertiesUpdate.cpp"
+      ]
+    },
+    {
+      "name": "physxVehicleWheelController:brakeTorque",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0: no brake torque. A present value outside [0, FLT_MAX) logs an error and the vehicle is not created.",
+      "raw_fallback_diverges": false,
+      "units": "mass*length^2/s^2",
+      "implemented_in": [
+        "source/omni.physx/plugins/usdLoad/Vehicle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXVehiclePropertiesUpdate.cpp"
+      ]
+    },
+    {
+      "name": "physxVehicleWheelController:steerAngle",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0: the wheel is not steered. Any value is accepted.",
+      "raw_fallback_diverges": false,
+      "units": "rad",
+      "conversion": "none",
+      "implemented_in": [
+        "source/omni.physx/plugins/usdLoad/Vehicle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXVehiclePropertiesUpdate.cpp"
+      ],
+      "notes": "Radians, as the schema documents; passed to the vehicle without conversion."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysxVehicleAPI",
+      "rule": "Read only for the wheel attachments of a vehicle that has no drive. On a vehicle with a drive (physxVehicle:drive or a drive API on the vehicle prim) the API is an illegal configuration: an error is logged and the vehicle is not created."
+    },
+    {
+      "with": "PhysxVehicleControllerAPI",
+      "rule": "Mutually exclusive with PhysxVehicleControllerAPI on the vehicle prim; having both logs an error and the vehicle is not created."
+    }
+  ],
+  "notes": [
+    "The prim must also carry PhysxVehicleWheelAttachmentAPI, which this contract does not describe yet; only wheel attachments the vehicle parse accepted are checked for this API.",
+    "All three columns are change-tracked: the runtime applies a new value while simulating; a negative brakeTorque then logs an error and is ignored."
+  ]
+}

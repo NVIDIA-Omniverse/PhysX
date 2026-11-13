@@ -18,9 +18,13 @@
 # @maps_to TEST-PYTHON-BINDING-DEVICE-001
 # @implements REQ-PYTHON-UTILS-001
 # @covers AC-2
+# @implements REQ-PYTHON-TASK-001
+# @covers AC-8
+# @maps_to TEST-PYTHON-TASK-001
 
 from __future__ import annotations
 
+import ast
 from pathlib import Path
 
 import pytest
@@ -52,6 +56,33 @@ def test_public_api_pyi_stubs_present(pkg_dir: Path):
     )
     missing = [name for name in expected if not (pkg_dir / name).is_file()]
     assert not missing, f"Missing .pyi stubs under {pkg_dir}: {missing}"
+
+
+def test_root_stub_declares_all_public_exports(pkg_dir: Path):
+    """Every runtime export needs an explicit stub declaration, even with __getattr__."""
+    import ovphysx
+
+    stub = ast.parse((pkg_dir / "__init__.pyi").read_text(encoding="utf-8"))
+    declared = set()
+    for node in stub.body:
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
+            # An unaliased stub import is not an explicit public re-export.
+            declared.update(alias.name for alias in node.names if alias.asname == alias.name)
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            declared.add(node.name)
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            declared.add(node.target.id)
+
+    missing = sorted(set(ovphysx.__all__) - declared)
+    assert not missing, f"Runtime exports missing explicit declarations in __init__.pyi: {missing}"
+
+
+def test_root_articulation_kinematic_flag_is_types_enum():
+    """The public root export must retain the pure-Python enum's identity."""
+    from ovphysx import ArticulationKinematicFlag as RootFlag
+    from ovphysx.types import ArticulationKinematicFlag as DeclaredFlag
+
+    assert RootFlag is DeclaredFlag
 
 
 def test_physx_stub_documents_constructor_params(pkg_dir: Path):
@@ -150,7 +181,7 @@ def test_write_surface_stub_matches_runtime(pkg_dir: Path):
     physx_body = text.split("class PhysX:", 1)[1]
     write_signature = physx_body.split("    def write(", 1)[1].split("    def ", 1)[0]
     assert "query: Query" in write_signature
-    assert "attributes: Sequence[str | int]" in write_signature
+    assert "attributes: Sequence[str | Token | int]" in write_signature
     assert ") -> Operation[WriteSession]: ..." in write_signature
     sync_signature = physx_body.split("    def write_sync(", 1)[1].split("    def ", 1)[0]
     assert "object_type: SimObjectType" in sync_signature

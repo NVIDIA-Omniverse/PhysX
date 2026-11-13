@@ -1,0 +1,152 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxForceAPI",
+  "title": "PhysxForceAPI",
+  "summary": "Applies a constant force and torque to the rigid body that owns the prim, at the body's centre of mass or at this Xformable's position. Read by the runtime's force loader when the API is listed.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "Xformable"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "producer_scope": "Every declared attribute of the applied API is published at its resolved value.",
+  "columns": [
+    {
+      "name": "physxForce:forceEnabled",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": true,
+      "parser_default": false,
+      "absent": "false: the force is created disabled. USD's fallback is true, so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physx/plugins/usdLoad/PhysicsBody.cpp"
+      ]
+    },
+    {
+      "name": "physxForce:worldFrameEnabled",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": false,
+      "parser_default": false,
+      "absent": "false: force and torque are in the prim's local frame.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physx/plugins/usdLoad/PhysicsBody.cpp"
+      ]
+    },
+    {
+      "name": "physxForce:force",
+      "usd_type": "vector3f",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "VECTOR",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 3,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": [
+        0,
+        0,
+        0
+      ],
+      "parser_default": [
+        0,
+        0,
+        0
+      ],
+      "absent": "Zero force.",
+      "raw_fallback_diverges": false,
+      "units": "mode force: mass*length/s^2; mode acceleration: length/s^2",
+      "implemented_in": [
+        "source/omni.physx/plugins/usdLoad/PhysicsBody.cpp"
+      ]
+    },
+    {
+      "name": "physxForce:torque",
+      "usd_type": "vector3f",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "VECTOR",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 3,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": [
+        0,
+        0,
+        0
+      ],
+      "parser_default": "the physxForce:force value",
+      "absent": "The torque takes the force vector: the loader reuses one variable for both reads and keeps its value when the torque read fails (preserved from the USD loader). Write the torque, (0, 0, 0) included.",
+      "raw_fallback_diverges": true,
+      "units": "mode force: mass*length^2/s^2; mode acceleration: 1/s^2",
+      "implemented_in": [
+        "source/omni.physx/plugins/usdLoad/PhysicsBody.cpp"
+      ]
+    },
+    {
+      "name": "physxForce:mode",
+      "usd_type": "uniform token",
+      "origin": "schema",
+      "kind": "token",
+      "semantic": "TOKEN_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "acceleration",
+      "parser_default": "force",
+      "absent": "force mode: only the token acceleration selects acceleration mode, and an absent column reads as no token. USD's fallback is acceleration, so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physx/plugins/usdLoad/PhysicsBody.cpp"
+      ]
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysicsRigidBodyAPI",
+      "rule": "The force acts on the nearest rigid body or articulation link at or above the prim; its scene is that body's physics:simulationOwner. Without one the force has no body."
+    },
+    {
+      "with": "prim",
+      "rule": "The application point is this prim's world position; the local rotation relative to the body comes from both world transforms."
+    }
+  ]
+}

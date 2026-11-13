@@ -173,6 +173,9 @@ namespace physx
 		mMaxNumParticles(maxNumParticles),
 		mFlatListStartIndex(0),
 		mUniqueId(uniqueIdIndexer++)
+#if PX_SUPPORT_OMNI_PVD
+		, mOmniPvdPositionCapacity(0), mOmniPvdVelocityCapacity(0), mOmniPvdPhaseCapacity(0), mOmniPvdPhasesChanged(true)
+#endif
 	{
 		PX_ASSERT(maxNumParticles > 0);
 
@@ -211,46 +214,78 @@ namespace physx
 		mNumActiveParticles = numActiveParticles;
 	}
 
-	template<class BufferClass>
-	void PxgParticleBufferBase<BufferClass>::allocHostBuffers()
+#if PX_SUPPORT_OMNI_PVD
+	template<typename T>
+	static bool readOmniPvdParticleArray(PxCudaContextManager& manager, T*& host, PxU32& capacity,
+		const T* device, PxU32 count, PxU32 bound, PxU64& transferredBytes)
 	{
-		PX_ASSERT(mMaxNumParticles > 0);
-		if (!mPositionInvMassesH)
+		if (count > bound || capacity > bound) return false;
+		if (!count) return true;
+		if (count > capacity)
 		{
-			PX_ASSERT(!mVelocitiesH && !mPhasesH);
-			mPositionInvMassesH = PX_PINNED_MEMORY_ALLOC_FLAGS(PxVec4, mContextManager, mMaxNumParticles, CU_MEMHOSTALLOC_PORTABLE);
-			mVelocitiesH = PX_PINNED_MEMORY_ALLOC_FLAGS(PxVec4, mContextManager, mMaxNumParticles, CU_MEMHOSTALLOC_PORTABLE);
-			mPhasesH = PX_PINNED_MEMORY_ALLOC_FLAGS(PxU32, mContextManager, mMaxNumParticles, CU_MEMHOSTALLOC_PORTABLE);
+			const PxU32 grownCapacity = PxMax(count, capacity + PxMin(capacity, bound - capacity));
+			T* grown = PX_PINNED_MEMORY_ALLOC_FLAGS(T, manager, grownCapacity, CU_MEMHOSTALLOC_PORTABLE);
+			if (!grown) return false;
+			PX_PINNED_MEMORY_FREE(manager, host);
+			host = grown;
+			capacity = grownCapacity;
 		}
-
-		bool allocOk = (mPositionInvMassesH != NULL && mVelocitiesH != NULL && mPhasesH != NULL);
-
-		if(!allocOk)
-		{
-			mContextManager.getCudaContext()->setAbortMode(true);
-			PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "PxgParticleBufferBase: failed to allocate pinned host buffers");
-		}
+		if (!host || !device) return false;
+		const PxU64 bytes = PxU64(count) * sizeof(T);
+		if (manager.getCudaContext()->memcpyDtoHAsync(host, reinterpret_cast<CUdeviceptr>(device), bytes, 0) != CUDA_SUCCESS)
+			return false;
+		transferredBytes += bytes;
+		return true;
 	}
 
 	template<class BufferClass>
-	void PxgParticleBufferBase<BufferClass>::copyToHost(CUstream stream)
+	bool PxgParticleBufferBase<BufferClass>::enqueueOmniPvdData(PxU32 flags, PxU64& transferredBytes)
 	{
-		if(mPositionInvMassesH)
-		{
-			PxgCudaHelpers::copyDToHAsync(mContextManager, mPositionInvMassesH, mPositionInvMassesD, mNumActiveParticles, stream);
-		}
+		transferredBytes = 0;
+		if ((flags & ~(PxsParticleBuffer::ePOSITION | PxsParticleBuffer::eVELOCITY | PxsParticleBuffer::ePHASE))
+			|| mNumActiveParticles > mMaxNumParticles) return false;
+		if (!flags) return true;
+		if ((flags & PxsParticleBuffer::ePOSITION) && !readOmniPvdParticleArray(mContextManager,
+			mPositionInvMassesH, mOmniPvdPositionCapacity, mPositionInvMassesD, mNumActiveParticles, mMaxNumParticles, transferredBytes)) return false;
+		if ((flags & PxsParticleBuffer::eVELOCITY) && !readOmniPvdParticleArray(mContextManager,
+			mVelocitiesH, mOmniPvdVelocityCapacity, mVelocitiesD, mNumActiveParticles, mMaxNumParticles, transferredBytes)) return false;
+		if ((flags & PxsParticleBuffer::ePHASE) && !readOmniPvdParticleArray(mContextManager,
+			mPhasesH, mOmniPvdPhaseCapacity, mPhasesD, mNumActiveParticles, mMaxNumParticles, transferredBytes)) return false;
+		return true;
 	}
+
+	// Finish queued copies even after a failure before any mirror can be read or freed.
+	static bool finishOmniPvdRead(PxCudaContextManager& manager, bool ok, PxU64 transferredBytes)
+	{
+		const bool synced = !transferredBytes || manager.getCudaContext()->streamSynchronize(0) == CUDA_SUCCESS;
+		return ok && synced;
+	}
+
+	template<class BufferClass>
+	bool PxgParticleBufferBase<BufferClass>::readOmniPvdData(PxU32 flags, PxU64& transferredBytes)
+	{
+		PxScopedCudaLock lock(mContextManager);
+		const bool ok = enqueueOmniPvdData(flags, transferredBytes);
+		return finishOmniPvdRead(mContextManager, ok, transferredBytes);
+	}
+
+	template<class BufferClass>
+	void PxgParticleBufferBase<BufferClass>::trimOmniPvdData(PxU32 flags)
+	{
+		if (!(flags & PxsParticleBuffer::ePOSITION))
+		{ PX_PINNED_MEMORY_FREE(mContextManager, mPositionInvMassesH); mPositionInvMassesH = NULL; mOmniPvdPositionCapacity = 0; }
+		if (!(flags & PxsParticleBuffer::eVELOCITY))
+		{ PX_PINNED_MEMORY_FREE(mContextManager, mVelocitiesH); mVelocitiesH = NULL; mOmniPvdVelocityCapacity = 0; }
+		if (!(flags & PxsParticleBuffer::ePHASE))
+		{ PX_PINNED_MEMORY_FREE(mContextManager, mPhasesH); mPhasesH = NULL; mOmniPvdPhaseCapacity = 0; }
+	}
+#endif
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	PxgParticleBuffer::PxgParticleBuffer(PxU32 maxNumParticles, PxCudaContextManager& contextManager) :
 		PxgParticleBufferBase<PxsParticleBuffer>(maxNumParticles, contextManager)
 	{}
-
-	void PxgParticleBuffer::copyToHost(CUstream stream)
-	{
-		PxgParticleBufferBase<PxsParticleBuffer>::copyToHost(stream);
-	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
@@ -262,6 +297,10 @@ namespace physx
 		mMaxNumDiffuseParticles(0),
 		mMaxActiveDiffuseParticles(0),
 		mNumActiveDiffuseParticlesH(NULL)
+#if PX_SUPPORT_OMNI_PVD
+		, mOmniPvdDiffusePositions(NULL), mOmniPvdDiffuseVelocities(NULL),
+		mOmniPvdDiffusePositionCapacity(0), mOmniPvdDiffuseVelocityCapacity(0), mOmniPvdDiffuseCount(0)
+#endif
 	{
 		mContextManager.acquireContext();
 		PxCudaContext* cudaContext = mContextManager.getCudaContext();
@@ -296,7 +335,51 @@ namespace physx
 		PX_DEVICE_MEMORY_FREE(mContextManager, mDiffuseVelocitiesD);
 		PX_DEVICE_MEMORY_FREE(mContextManager, mNumDiffuseParticlesD);
 		PX_PINNED_MEMORY_FREE(mContextManager, mNumActiveDiffuseParticlesH);
+#if PX_SUPPORT_OMNI_PVD
+		PX_PINNED_MEMORY_FREE(mContextManager, mOmniPvdDiffusePositions);
+		PX_PINNED_MEMORY_FREE(mContextManager, mOmniPvdDiffuseVelocities);
+#endif
 	}
+
+#if PX_SUPPORT_OMNI_PVD
+	bool PxgParticleAndDiffuseBuffer::readOmniPvdData(PxU32 flags, PxU64& transferredBytes)
+	{
+		PxScopedCudaLock lock(mContextManager);
+		mOmniPvdDiffuseCount = 0;
+		const PxU32 diffuseFlags = PxsParticleBuffer::eDIFFUSE_POSITION | PxsParticleBuffer::eDIFFUSE_VELOCITY;
+		bool ok = enqueueOmniPvdData(flags & ~diffuseFlags, transferredBytes);
+		PxU32 count = 0;
+		if (ok && (flags & diffuseFlags))
+		{
+			// ps_diffuseParticleCopy writes this mapped count: read it once.
+			const volatile PxI32* mapped = mNumActiveDiffuseParticlesH;
+			const PxI32 active = mapped ? *mapped : 0;
+			ok = active >= 0 && PxU32(active) <= mMaxNumDiffuseParticles && PxU32(active) <= PX_MAX_U32 / sizeof(PxVec4);
+			if (ok)
+			{
+				count = PxU32(active);
+				ok = (!(flags & PxsParticleBuffer::eDIFFUSE_POSITION) || readOmniPvdParticleArray(mContextManager,
+					mOmniPvdDiffusePositions, mOmniPvdDiffusePositionCapacity, mDiffusePositionsLifeTimeD, count, mMaxNumDiffuseParticles, transferredBytes)) &&
+					(!(flags & PxsParticleBuffer::eDIFFUSE_VELOCITY) || readOmniPvdParticleArray(mContextManager,
+					mOmniPvdDiffuseVelocities, mOmniPvdDiffuseVelocityCapacity, mDiffuseVelocitiesD, count, mMaxNumDiffuseParticles, transferredBytes));
+			}
+		}
+		ok = finishOmniPvdRead(mContextManager, ok, transferredBytes);
+		if (ok) mOmniPvdDiffuseCount = count;
+		return ok;
+	}
+
+	void PxgParticleAndDiffuseBuffer::trimOmniPvdData(PxU32 flags)
+	{
+		PxgParticleBufferBase<PxsParticleAndDiffuseBuffer>::trimOmniPvdData(flags);
+		if (!(flags & PxsParticleBuffer::eDIFFUSE_POSITION))
+		{ PX_PINNED_MEMORY_FREE(mContextManager, mOmniPvdDiffusePositions); mOmniPvdDiffusePositions = NULL; mOmniPvdDiffusePositionCapacity = 0; }
+		if (!(flags & PxsParticleBuffer::eDIFFUSE_VELOCITY))
+		{ PX_PINNED_MEMORY_FREE(mContextManager, mOmniPvdDiffuseVelocities); mOmniPvdDiffuseVelocities = NULL; mOmniPvdDiffuseVelocityCapacity = 0; }
+		if (!(flags & (PxsParticleBuffer::eDIFFUSE_POSITION | PxsParticleBuffer::eDIFFUSE_VELOCITY)))
+			mOmniPvdDiffuseCount = 0;
+	}
+#endif
 
 	void PxgParticleAndDiffuseBuffer::setMaxActiveDiffuseParticles(PxU32 maxActiveDiffuseParticles)
 	{
@@ -309,11 +392,6 @@ namespace physx
 	{
 		mParams = params;
 		mBufferFlags |= PxParticleBufferFlag::eUPDATE_DIFFUSE_PARAM;
-	}
-
-	void PxgParticleAndDiffuseBuffer::copyToHost(CUstream stream)
-	{
-		PxgParticleBufferBase<PxsParticleAndDiffuseBuffer>::copyToHost(stream);
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2026,34 +2104,6 @@ namespace physx
 			if (result != CUDA_SUCCESS)
 				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU ps_updateBufferLaunch kernel fail!\n");
 #endif
-		}
-	}
-
-	void PxgParticleSystemCore::copyUserBufferDataToHost(PxgParticleSystem* particleSystems, PxU32* activeParticleSystems, PxU32 nbActiveParticleSystems)
-	{
-		const PxU32* particleSystemNodeIndex = mParticleSystemNodeIndexPool.begin();
-		void** bodySimsLL = mSimController->getBodySimManager().mBodies.begin();
-
-		for (PxU32 i = 0; i < nbActiveParticleSystems; ++i)
-		{
-			const PxU32 index = activeParticleSystems[i];
-			PxgParticleSystem& particleSystem = particleSystems[index];
-			Dy::ParticleSystem* dyParticleSystem = reinterpret_cast<Dy::ParticleSystem*>(bodySimsLL[particleSystemNodeIndex[index]]);
-			Dy::ParticleSystemCore& dyParticleSystemCore = dyParticleSystem->getCore();
-
-			if ((dyParticleSystem->mFlag & Dy::ParticleSystemFlag::eENABLE_GPU_DATA_SYNC) && (particleSystem.mCommonData.mNumParticles > 0))
-			{
-				for (PxU32 b = 0; b < dyParticleSystemCore.mParticleBuffers.size(); ++b)
-				{
-					PxgParticleBuffer* particleBuffer = static_cast<PxgParticleBuffer*>(dyParticleSystemCore.mParticleBuffers[b]);
-					particleBuffer->copyToHost(mFinalizeStream);
-				}
-				for (PxU32 b = 0; b < dyParticleSystemCore.mParticleDiffuseBuffers.size(); ++b)
-				{
-					PxgParticleAndDiffuseBuffer* particleDiffuseBuffer = static_cast<PxgParticleAndDiffuseBuffer*>(dyParticleSystemCore.mParticleDiffuseBuffers[b]);
-					particleDiffuseBuffer->copyToHost(mFinalizeStream);
-				}
-			}
 		}
 	}
 

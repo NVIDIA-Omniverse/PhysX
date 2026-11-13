@@ -184,7 +184,7 @@ TEST_F(SdfShapesTest, UnownedQueryIsRefusedBeforeATask)
     int64_t out4[3] = { 1, 2, 4 };
     const DLTensor points = tensorOf(storage, points3);
     DLTensor out = tensorOf(storage, out4);
-    EXPECT_TRUE(refusedBeforeATask(ovphysx_evaluate_sdf_shapes(m_handle, 0x5DF, &points, &out, kNoHandoff),
+    EXPECT_TRUE(refusedBeforeATask(ovphysx_evaluate_sdf_shapes(m_handle, m_handle, &points, &out, kNoHandoff),
                                    OVPHYSX_API_NOT_FOUND));
 }
 

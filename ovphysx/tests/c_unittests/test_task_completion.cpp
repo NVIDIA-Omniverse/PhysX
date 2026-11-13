@@ -21,10 +21,13 @@
 #include "ovphysx/experimental/ovphysx.hpp"
 #include "ovphysx/ovphysx.h"
 #include "global_test_environment.h"
+#include "ovphysxTestHelpers.h"
 
 namespace
 {
-// Use real inline producers so collection tests also exercise admission.
+// Use real producers so collection tests also exercise admission: a successful no-op
+// release completes on the calling thread, and a failing clone of a missing source is a
+// job whose task fails on the instance worker, so collect it with a blocking wait.
 ovphysx_enqueue_result_t completed_task(ovphysx_instance_handle_t handle, bool fail,
     const char* missing_source = "/World/TaskMissingSource")
 {
@@ -53,6 +56,34 @@ std::string task_error(ovphysx_instance_handle_t handle, ovphysx_enqueue_result_
     const ovphysx_string_t error = ovphysx_get_last_task_error(handle, task);
     return std::string(error.ptr, error.length);
 }
+
+struct RetainedErrorLookupProbe
+{
+    static void run(void* data)
+    {
+        RetainedErrorLookupProbe& probe = *static_cast<RetainedErrorLookupProbe*>(data);
+        probe.started.store(true, std::memory_order_release);
+        while (!probe.stop.load(std::memory_order_acquire))
+        {
+            const ovphysx_string_t error = ovphysx_get_last_task_error(probe.handle, probe.task);
+            if (error.length != probe.expected.size() ||
+                std::memcmp(error.ptr, probe.expected.data(), error.length) != 0)
+            {
+                probe.mismatches.fetch_add(1, std::memory_order_relaxed);
+            }
+            probe.lookups.fetch_add(1, std::memory_order_relaxed);
+            std::this_thread::yield();
+        }
+    }
+
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    ovphysx_enqueue_result_t task{};
+    std::string expected;
+    std::atomic<bool> started{false};
+    std::atomic<bool> stop{false};
+    std::atomic<size_t> lookups{0};
+    std::atomic<size_t> mismatches{0};
+};
 } // namespace
 
 TEST_F(PhysXTestFixture, TaskWaitReportsOnlyItsTargetAndWaitAllRetainsPriorFailure)
@@ -113,6 +144,8 @@ TEST_F(PhysXTestFixture, TaskDetachReturnsAcceptedIdentityWhenAlreadyDetached)
 // @covers AC-3
 // @implements REQ-CAPI-DETACH-001
 // @covers AC-5
+// @implements REQ-CAPI-ASYNC-003
+// @covers AC-2 AC-3
 TEST_F(PhysXTestFixture, LifecycleInvalidArgumentsAndMissingAttachmentRejectWithoutTaskIdentity)
 {
     const ovstage_ordinal_range_t range{1, 1, true};
@@ -120,7 +153,6 @@ TEST_F(PhysXTestFixture, LifecycleInvalidArgumentsAndMissingAttachmentRejectWith
     const ovphysx_enqueue_result_t rejected[] = {
         ovphysx_attach_ovstage(m_handle, nullptr, 1),
         ovphysx_update_from_ovstage(m_handle, reversed),
-        ovphysx_update_from_ovstage(m_handle, range),
         ovphysx_update_from_ovstage(0, range),
         ovphysx_detach_ovstage(0),
     };
@@ -130,6 +162,18 @@ TEST_F(PhysXTestFixture, LifecycleInvalidArgumentsAndMissingAttachmentRejectWith
         EXPECT_EQ(task.op_index, 0u);
         EXPECT_EQ(task.instance, 0u);
     }
+    // The attachment checks of an update and a step run in their jobs: without an
+    // attachment each is accepted and its task fails.
+    const ovphysx_enqueue_result_t unattached = ovphysx_update_from_ovstage(m_handle, range);
+    ASSERT_EQ(unattached.status, OVPHYSX_API_SUCCESS);
+    EXPECT_NE(unattached.op_index, 0u);
+    EXPECT_EQ(unattached.instance, m_handle);
+    EXPECT_TRUE(waitForTaskFailure(m_handle, unattached, "update_from_ovstage: no ovstage is attached"));
+    const ovphysx_enqueue_result_t stageless = ovphysx_step(m_handle, 1.0f / 60.0f);
+    ASSERT_EQ(stageless.status, OVPHYSX_API_SUCCESS);
+    EXPECT_NE(stageless.op_index, 0u);
+    EXPECT_EQ(stageless.instance, m_handle);
+    EXPECT_TRUE(waitForTaskFailure(m_handle, stageless, "No stage attached"));
     ovphysx::physx::WaitResult all;
     EXPECT_EQ(all.waitAll(m_handle), OVPHYSX_API_SUCCESS);
     EXPECT_FALSE(all.hasErrors());
@@ -170,6 +214,49 @@ TEST_F(PhysXTestFixture, TaskOutOfOrderCollectionPreservesEarlierOutcomesAndErro
     ovphysx::physx::WaitResult all;
     EXPECT_EQ(all.waitAll(m_handle), OVPHYSX_API_SUCCESS);
     EXPECT_EQ(std::string(borrowed.ptr, borrowed.length), expected);
+}
+
+TEST_F(PhysXTestFixture, TaskErrorLookupIsSafeWhileRetainedResultsGrow)
+{
+    if (!ovphysxInstancesHaveWorkers())
+        GTEST_SKIP() << kNoWorkerThread;
+    const ovphysx_enqueue_result_t first = enqueue_missing_source_clone(m_handle);
+    ASSERT_EQ(first.status, OVPHYSX_API_SUCCESS);
+    ovphysx::physx::WaitResult firstResult;
+    ASSERT_EQ(firstResult.waitTask(m_handle, first), OVPHYSX_API_ERROR);
+    const std::string expected = task_error(m_handle, first);
+    ASSERT_FALSE(expected.empty());
+
+    constexpr size_t count = 256;
+    std::vector<ovphysx_enqueue_result_t> failed;
+    failed.reserve(count);
+    for (size_t index = 0; index < count; ++index)
+    {
+        failed.push_back(enqueue_missing_source_clone(m_handle));
+        ASSERT_EQ(failed.back().status, OVPHYSX_API_SUCCESS);
+    }
+
+    RetainedErrorLookupProbe probe;
+    probe.handle = m_handle;
+    probe.task = first;
+    probe.expected = expected;
+    const ovphysx_enqueue_result_t callback =
+        ovphysx_submit_test_callback_job_for_test_internal(m_handle, &RetainedErrorLookupProbe::run, &probe);
+    ASSERT_EQ(callback.status, OVPHYSX_API_SUCCESS);
+    while (!probe.started.load(std::memory_order_acquire))
+        std::this_thread::yield();
+
+    std::vector<ovphysx::physx::WaitResult> retained;
+    retained.reserve(count);
+    for (const ovphysx_enqueue_result_t task : failed)
+    {
+        retained.emplace_back();
+        EXPECT_EQ(retained.back().waitTask(m_handle, task), OVPHYSX_API_ERROR);
+    }
+    probe.stop.store(true, std::memory_order_release);
+    EXPECT_TRUE(waitForTaskSuccess(m_handle, callback));
+    EXPECT_GT(probe.lookups.load(std::memory_order_relaxed), 0u);
+    EXPECT_EQ(probe.mismatches.load(std::memory_order_relaxed), 0u);
 }
 
 TEST_F(PhysXTestFixture, TaskErrorLifetimeEndsAtResultDestruction)
@@ -268,7 +355,8 @@ TEST_F(PhysXTestFixture, TaskWaitRejectsInvalidReceiptsAndPreservesOwnedOutput)
     wrong.op_index = UINT64_MAX;
     EXPECT_EQ(ovphysx_wait_task(m_handle, wrong, 0, &result).status, OVPHYSX_API_NOT_FOUND);
     EXPECT_EQ(ovphysx_wait_task(0, {}, 0, nullptr).status, OVPHYSX_API_NOT_FOUND);
-    ASSERT_EQ(ovphysx_wait_task(m_handle, task, 0, &result).status, OVPHYSX_API_ERROR);
+    // The failing clone runs on the instance worker, so wait for its outcome.
+    ASSERT_EQ(ovphysx_wait_task(m_handle, task, OVPHYSX_TIMEOUT_INFINITE, &result).status, OVPHYSX_API_ERROR);
     const ovphysx_enqueue_result_t* const storage = result.error_tasks;
     ASSERT_NE(storage, nullptr);
     EXPECT_EQ(ovphysx_wait_all(m_handle, 0, &result).status, OVPHYSX_API_INVALID_ARGUMENT);
@@ -297,7 +385,7 @@ TEST_F(PhysXTestFixture, TaskReceiptFromAnotherLiveInstanceIsRejected)
     EXPECT_EQ(result.waitTask(other_handle, task), OVPHYSX_API_SUCCESS);
 }
 
-TEST_F(PhysXTestFixture, TaskInlineFailureIsAcceptedButInvalidSubmissionHasNoIdentity)
+TEST_F(PhysXTestFixture, TaskExecutionFailureIsAcceptedButInvalidSubmissionHasNoIdentity)
 {
     const ovphysx_enqueue_result_t rejected = ovphysx_clone(m_handle, {}, nullptr, 0, nullptr, nullptr);
     EXPECT_EQ(rejected.status, OVPHYSX_API_INVALID_ARGUMENT);

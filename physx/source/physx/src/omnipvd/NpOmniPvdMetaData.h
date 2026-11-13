@@ -22,6 +22,8 @@ public:
 	physx::PxU32 physxVersionBugfix;
 	physx::PxU32 ovdIntegrationVersionMajor;
 	physx::PxU32 ovdIntegrationVersionMinor;
+	bool recordSecondaryData;
+	bool captureAllObjects;
 };
 
 }

@@ -42,6 +42,9 @@ Set process, instance, scene and UI options before and after their allowed phase
   completeness. `test_configuration_ovd_recording_capability_default_and_core_delegation`
   uses a clean native subprocess for the OVD default, typed delegation, dormant
   capture and lifecycle-write boundary.
+  `test_configuration_compiled_stage_cache_live_core_delegation` checks the live
+  phase of `process.compiled_stage_cache`, core delegation in both directions and
+  unchanged values after out-of-range writes.
 - [Customer-USD cases](../../../tests/test_configuration_usd.py): unit conversion, explicit default-time opinions, undo/redo, stale/invalid atomic rejection and settings sample.
 
 Six native and three customer-USD cases pass. The native resource/callback

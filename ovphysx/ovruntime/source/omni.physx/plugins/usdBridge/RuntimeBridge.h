@@ -25,7 +25,7 @@ namespace omni
 namespace physx
 {
 
-// IPhysxBenchmarks-only stage loaders. Producing or resolving a UsdUtilsStageCache id goes
+// Benchmark-only stage loaders. Producing or resolving a UsdUtilsStageCache id goes
 // through the stage-lifecycle / reparse seams; with no seam installed (production) all three
 // report "no stage" rather than silently attaching nothing.
 

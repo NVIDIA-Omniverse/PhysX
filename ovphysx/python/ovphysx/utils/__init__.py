@@ -91,8 +91,9 @@ here, so both ``ovphysx.utils.shapes.add_rigid_box`` and
 - :mod:`~ovphysx.utils.particles` - particle systems, particle sets, PBD materials
 - :mod:`~ovphysx.utils.deformable` - volume and surface deformable bodies and
   their materials
-- :mod:`~ovphysx.utils.simulation` - stepping a running simulation and writing
-  its output back to an attached ovstage Stage
+- :mod:`~ovphysx.utils.simulation` - stepping a running simulation, writing
+  its output back to an attached ovstage Stage, and splitting joint groups into
+  ovstage's one array per joint
 - :mod:`~ovphysx.utils.constants` - shared tokens and limits
 
 ``ovphysx.utils`` is the home for any supported ovphysx helper that does not
@@ -138,7 +139,7 @@ _FLATTENED = tuple(name for name in _SUBMODULES if name != "codeless")
 # unknown attribute without importing a module that needs pxr. The surface test
 # checks it against each owning module's __all__ list.
 _FLATTENED_EXPORTS = {
-    "simulation": ("OvStageOutputCache", "step_and_write_to_ovstage"),
+    "simulation": ("OvStageOutputCache", "split_joint_group", "step_and_write_to_ovstage"),
     "constants": (
         "MAX_FLOAT",
         "AXES_INDICES",

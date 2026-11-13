@@ -5,10 +5,10 @@
 
 # PhysicsCollisionGroup
 
-A named set of colliders plus the list of groups it does not collide with. Discovered by prim type, not Xformable, so it carries no transform columns. Membership comes from the colliders collection; a collider may belong to one group only.
+A named set of colliders plus the list of groups it does not collide with. Discovered by [prim](glossary.md#prim) type, not [Xformable](glossary.md#xformable), so it carries no transform columns. Membership comes from the colliders collection; a collider may belong to one group only.
 
-- **Type chain:** `Typed`
-- **Applicable APIs:** [`PhysicsMaterialAPI`](PhysicsMaterialAPI.md), [`PhysxMaterialAPI`](PhysxMaterialAPI.md), [`PhysxSceneAPI`](PhysxSceneAPI.md)
+- **Type chain:** [`Typed`](glossary.md#typed)
+- **Applicable APIs:** [`CollectionAPI`](CollectionAPI.md), [`GeomInstanceAPI`](GeomInstanceAPI.md), [`GeomInstanceRootAPI`](GeomInstanceRootAPI.md), [`GeomPrototypeAPI`](GeomPrototypeAPI.md), [`PhysicsMaterialAPI`](PhysicsMaterialAPI.md), [`PhysxMaterialAPI`](PhysxMaterialAPI.md), [`PhysxSceneAPI`](PhysxSceneAPI.md), [`PhysxVehicleAutoGearBoxAPI`](PhysxVehicleAutoGearBoxAPI.md), [`PhysxVehicleClutchAPI`](PhysxVehicleClutchAPI.md), [`PhysxVehicleDriveBasicAPI`](PhysxVehicleDriveBasicAPI.md), [`PhysxVehicleDriveStandardAPI`](PhysxVehicleDriveStandardAPI.md), [`PhysxVehicleEngineAPI`](PhysxVehicleEngineAPI.md), [`PhysxVehicleGearsAPI`](PhysxVehicleGearsAPI.md), [`PhysxVehicleNonlinearCommandResponseAPI`](PhysxVehicleNonlinearCommandResponseAPI.md), [`PhysxVehicleSuspensionAPI`](PhysxVehicleSuspensionAPI.md), [`PhysxVehicleTireAPI`](PhysxVehicleTireAPI.md), [`PhysxVehicleWheelAPI`](PhysxVehicleWheelAPI.md), [`PrototypeRootAPI`](PrototypeRootAPI.md)
 - **Discovery:** by prim_type, probe `physics:invertFilteredGroups`
 - **Transform columns:** none, not `Xformable`
 
@@ -18,13 +18,16 @@ Published whenever the prim type is PhysicsCollisionGroup. Declared attributes (
 
 ## Columns
 
-*Raw fallback* is the USD schema value. *Producer writes* is what ovstage population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
+*Raw fallback* is the [USD](glossary.md#usd) schema value. *Producer writes* is what [ovstage](glossary.md#ovstage) population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
 
 | Column | Type | Units | Raw fallback | Producer writes | Parser default | If absent |
 |---|---|---|---|---|---|---|
 | `physics:filteredGroups` | uint64 array, RELATIONSHIP_PATH_ID |  |  | not written |  | This group collides with every group (or, with physxScene:invertCollisionGroupFilter on, with none). Targets are other PhysicsCollisionGroup prims, taken verbatim: no deduplication, no validation of the target type. |
 | `collection:colliders:includes` | uint64 array, RELATIONSHIP_PATH_ID |  |  | not written |  | Empty group. Each include target is expanded through its active descendants after the excluded subtrees are removed; the flat list becomes the group's members. |
 | `collection:colliders:excludes` | uint64 array, RELATIONSHIP_PATH_ID |  |  | not written |  | Nothing excluded. Each exclude target and its descendants are removed from the include expansion. |
+| `collection:colliders` | uint64 array, RELATIONSHIP_PATH_ID |  |  | the resolved members of the colliders collection that are colliders, as relationship targets |  | Nothing: the parser resolves collection:colliders:includes and :excludes itself. |
+
+The builders do not write `collection:colliders`; another population writes it.
 
 ## Interactions
 
@@ -38,4 +41,4 @@ Published whenever the prim type is PhysicsCollisionGroup. Declared attributes (
 ## Notes
 
 - physics:mergeGroup (string) and physics:mergeGroupName are not read by the consumer on this path; they appear in a unit test only.
-- No verify block: PhysX exposes collision-group filtering only through the filter shader's PxFilterData, which the runtime encodes privately.
+- No verify block: [PhysX](glossary.md#physx) exposes collision-group filtering only through the filter shader's PxFilterData, which the runtime encodes privately.

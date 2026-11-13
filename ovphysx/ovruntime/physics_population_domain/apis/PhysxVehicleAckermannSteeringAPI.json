@@ -1,0 +1,34 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxVehicleAckermannSteeringAPI",
+  "title": "PhysxVehicleAckermannSteeringAPI",
+  "summary": "Ackermann steering for two wheels, applied on the vehicle prim. Outside the steering parse the runtime only checks that the vehicle prim lists it (or PhysxVehicleSteeringAPI), to attach the parsed steering to the vehicle.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "Xformable"
+  ],
+  "requires": [
+    "PhysxVehicleAPI"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "columns": [],
+  "interactions": [
+    {
+      "with": "PhysxVehicleSteeringAPI",
+      "rule": "Ignored without a message when PhysxVehicleSteeringAPI is listed on the same prim; the walkers parse the basic steering only."
+    },
+    {
+      "with": "PhysxVehicleAPI",
+      "rule": "When a steering API is listed on the vehicle prim but no steering was parsed for it, the vehicle is not created. A vehicle with steering needs a drive, and wheel0 and wheel1 must be below the wheel count."
+    }
+  ],
+  "notes": [
+    "The steering parse reads physxVehicleAckermannSteering:wheel0, wheel1, maxSteerAngle, wheelBase, trackWidth and strength, and the runtime applies their live changes. They are not described yet."
+  ]
+}

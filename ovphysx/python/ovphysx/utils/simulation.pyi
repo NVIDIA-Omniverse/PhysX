@@ -7,9 +7,13 @@
 # @covers AC-2
 
 from collections.abc import Mapping, Sequence
+from typing import Any
 
 from ..api import PhysX
 from ..types import SimObjectType
+
+
+def split_joint_group(stage: Any, group: Any) -> tuple[Any, list[Any]]: ...
 
 
 class OvStageOutputCache:

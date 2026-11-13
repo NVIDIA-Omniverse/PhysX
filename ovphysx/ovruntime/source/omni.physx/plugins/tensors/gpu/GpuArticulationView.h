@@ -10,6 +10,8 @@
 #include "tensors/ArticulationTendonOvStageRecord.h"
 #include "tensors/base/BaseArticulationView.h"
 #include "tensors/gpu/GpuSimulationData.h"
+#include "tensors/gpu/OvStageDeviceArgs.h"
+#include "tensors/gpu/OvStageReadPlans.h"
 #include "PxDirectGPUAPI.h"
 
 namespace omni
@@ -40,77 +42,123 @@ public:
     bool getRootTransforms(const TensorDesc* dstTensor) const override;
     bool getRootVelocities(const TensorDesc* dstTensor) const override;
 
-    // Every requested root-state column, with each DirectGPU fetch issued once -- three fetches for
-    // four columns, since only the pose pair shares one. The single-column entry points below are
-    // one-column cases of this.
-    bool getRootStateColumnsOvStage(const RootStateColumn* columns,
-                                    ::physx::PxU32 numColumns,
-                                    const ::physx::PxU32* rows,
-                                    ::physx::PxU32 count,
-                                    uint64_t rowsToken) const;
+    // The per-articulation device columns an ovstage read gathers from this view (ADR-0055): root state and centre
+    // of mass over any rows, inverse dynamics over the rows of one cohort (REQ-READ-INVDYN-001). The root pose
+    // serves both pose columns; every other column has its own PhysX copy or compute.
+    enum class OvStageArtiRead : uint8_t
+    {
+        eNone,
+        eRootPosition,
+        eRootOrientation,
+        eRootLinearVelocity,
+        eRootAngularVelocity,
+        eMassCenterWorld,
+        eMassCenterLocal,
+        eJacobian,
+        eMassMatrix,
+        eCoriolisForce,
+        eGravityForce,
+        eCentroidalMomentum
+    };
+    struct OvStageArtiReadColumn
+    {
+        OvStageArtiRead kind = OvStageArtiRead::eNone;
+        // [count, width] float32 on this view's device: 3 wide, 4 for the root orientation, or the cohort's
+        // flattened width for an inverse dynamics column.
+        float* dst = nullptr;
+        ::physx::PxU32 width = 0;
+    };
+    struct OvStageArtiReadPlan
+    {
+        ::physx::PxU32 count = 0;
+        // The view entry of the first row, whose topology every row of an inverse dynamics read shares.
+        ::physx::PxU32 firstEntryIndex = 0;
+        uint32_t sources = 0;
+    };
 
-    bool getPositionsOvStage(const TensorDesc* dstTensor,
-                             const ::physx::PxU32* rows,
-                             ::physx::PxU32 count,
-                             uint64_t rowsToken) const;
-    bool getOrientationsOvStage(const TensorDesc* dstTensor,
-                                const ::physx::PxU32* rows,
-                                ::physx::PxU32 count,
-                                uint64_t rowsToken) const;
-    bool getLinearVelocitiesOvStage(const TensorDesc* dstTensor,
-                                    const ::physx::PxU32* rows,
-                                    ::physx::PxU32 count,
-                                    uint64_t rowsToken) const;
-    bool getAngularVelocitiesOvStage(const TensorDesc* dstTensor,
-                                     const ::physx::PxU32* rows,
-                                     ::physx::PxU32 count,
-                                     uint64_t rowsToken) const;
-    bool getMassCentersWorldOvStage(const TensorDesc* dstTensor,
-                                    const ::physx::PxU32* rows,
-                                    ::physx::PxU32 count,
-                                    uint64_t rowsToken) const;
-    bool getMassCentersLocalOvStage(const TensorDesc* dstTensor,
-                                    const ::physx::PxU32* rows,
-                                    ::physx::PxU32 count,
-                                    uint64_t rowsToken) const;
+    // Plans a read of `columns` (their kinds and widths; destinations may still be unset) over `rows`: the plan,
+    // the bytes of device scratch it runs in, and the list that heads that scratch -- the rows' PhysX GPU
+    // indices -- which the caller uploads before the read whenever its content changed. A read with an inverse
+    // dynamics column must name one cohort's rows. A nonzero `rowsToken` names the content of the row list `rows`
+    // derive from (nextOvStageRowsVersion), and `rowSet` which of its derived lists they are: a plan this view
+    // already made for them and the same columns is reused without walking the rows.
+    bool planOvStageRead(const ::physx::PxU32* rows,
+                         ::physx::PxU32 count,
+                         uint64_t rowsToken,
+                         uint64_t rowSet,
+                         const OvStageArtiReadColumn* columns,
+                         ::physx::PxU32 columnCount,
+                         OvStageArtiReadPlan& plan,
+                         std::shared_ptr<const std::vector<uint8_t>>& head,
+                         size_t& scratchBytes) const;
 
-    // Inverse dynamics columns (REQ-READ-INVDYN-001). The caller supplies the cohort's flattened width in
-    // dstTensor->dims[1]; BaseArticulationView::checkInverseDynamicsColumn confirms every selected row agrees.
-    bool getJacobiansOvStage(const TensorDesc* dstTensor,
-                             const ::physx::PxU32* rows,
-                             ::physx::PxU32 count,
-                             uint64_t rowsToken) const;
-    bool getMassMatricesOvStage(const TensorDesc* dstTensor,
-                                const ::physx::PxU32* rows,
-                                ::physx::PxU32 count,
-                                uint64_t rowsToken) const;
-    bool getCoriolisForcesOvStage(const TensorDesc* dstTensor,
-                                  const ::physx::PxU32* rows,
-                                  ::physx::PxU32 count,
-                                  uint64_t rowsToken) const;
-    bool getGravityForcesOvStage(const TensorDesc* dstTensor,
-                                 const ::physx::PxU32* rows,
-                                 ::physx::PxU32 count,
-                                 uint64_t rowsToken) const;
-    bool getCentroidalMomentaOvStage(const TensorDesc* dstTensor,
-                                     const ::physx::PxU32* rows,
-                                     ::physx::PxU32 count,
-                                     uint64_t rowsToken) const;
+    // Queues a planned read on `args.stream`: one PhysX copy or compute per source into `args.scratch`, then one
+    // gather per column. It blocks nothing, allocates nothing and uploads nothing, so a capture records it.
+    // Outside a capture it then registers `args.stream` as a reader of this view's tables.
+    bool readOvStageColumns(const OvStageDeviceReadArgs& args,
+                            const OvStageArtiReadPlan& plan,
+                            const OvStageArtiReadColumn* columns,
+                            ::physx::PxU32 columnCount) const;
 
-    // Cached view-owned upload of the reader's per-read ovstage record list,
-    // replacing the per-read memAlloc + memcpyHtoD the reader used to do itself. Returns the device
-    // pointer to `count` records, re-uploading only when `token` or `count` changes; null on
-    // allocation or copy failure. `token` must identify the list content -- the reader passes its
-    // record CONTENT version, which its own cached record vector is gated on, so the two turn over
-    // together. DOF, fixed-tendon and spatial-tendon lists each have their OWN buffer, so an
-    // alternating read of any two cannot clobber the other's still-in-flight gather, and equal-count
-    // fixed/spatial lists cannot alias. The content version changes whenever the host record vector
-    // rebuilds -- including a same-cardinality rebuild that keeps the view generation -- so keying on
-    // generation would serve a stale buffer, and this token never does (see the callers).
-    const void* ovStageDofRecordsDevice(const void* records, ::physx::PxU32 count, uint64_t token) const;
-    const void* ovStageTendonRecordsDevice(const void* records, ::physx::PxU32 count, uint64_t token,
-                                           bool fixed) const;
-    const void* ovStageLinkForceRecordsDevice(const void* records, ::physx::PxU32 count, uint64_t token) const;
+    // The per-record device columns an ovstage joint, link or tendon read gathers from this view (ADR-0055). Their
+    // records may name any articulation of the view, so each source is one PhysX copy, of the whole view or of the
+    // articulations a DOF state read names, made once for every column that reads it.
+    enum class OvStageRecordRead : uint8_t
+    {
+        eNone,
+        // One value per ArticulationDofOvStageRecord.
+        eDofPosition,
+        eDofVelocity,
+        eDofPositionTarget,
+        eDofVelocityTarget,
+        eDofActuationForce,
+        // The reaction on the DOF's axis, projected from the link incoming joint force.
+        eDofProjectedForce,
+        // Six values per ArticulationLinkOvStageRecord: the inbound joint's spatial force in the joint frame USD
+        // authored.
+        eLinkIncomingJointForce,
+        // tendonPropertyComponents(tendonProperty) values per ArticulationTendonOvStageRecord.
+        eFixedTendon,
+        eSpatialTendon
+    };
+    struct OvStageRecordReadColumn
+    {
+        OvStageRecordRead kind = OvStageRecordRead::eNone;
+        TendonProperty tendonProperty = TendonProperty::eStiffness; // a tendon column's
+        // float32 on this view's device, one record's values after another.
+        float* dst = nullptr;
+    };
+    struct OvStageRecordReadPlan
+    {
+        ::physx::PxU32 numRecords = 0;
+        uint32_t sources = 0;
+        // How many articulations each copy fetches when the read fetches only its rows'; 0 for the whole view.
+        ::physx::PxU32 numFetched = 0;
+    };
+
+    // Plans a read of `columns` (their kinds; destinations may still be unset) over `numRecords` records of the
+    // one type the kinds take, `recordBytes` each: the plan and the bytes of device scratch it runs in. The records
+    // head that scratch; the caller uploads them before the read whenever they changed.
+    //
+    // With `fetchRows`, each copy fetches only those `fetchCount` view rows' articulations, and a record's
+    // viewArtiIdx names its articulation's position in `fetchRows` rather than its view row. `fetchHead` then
+    // receives their PhysX GPU indices, which follow the records in the scratch head, at the next OvStageScratch
+    // boundary. Only the DOF state kinds read this way: the others gather through a pass over the whole view.
+    bool planOvStageRecordRead(::physx::PxU32 numRecords,
+                               size_t recordBytes,
+                               const OvStageRecordReadColumn* columns,
+                               ::physx::PxU32 columnCount,
+                               const ::physx::PxU32* fetchRows,
+                               ::physx::PxU32 fetchCount,
+                               OvStageRecordReadPlan& plan,
+                               std::vector<uint8_t>& fetchHead,
+                               size_t& scratchBytes) const;
+
+    // Queues a planned record read on `args.stream`, as readOvStageColumns does.
+    bool readOvStageRecordColumns(const OvStageDeviceReadArgs& args,
+                                  const OvStageRecordReadPlan& plan,
+                                  const OvStageRecordReadColumn* columns,
+                                  ::physx::PxU32 columnCount) const;
 
     bool setRootTransforms(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
     bool setRootVelocities(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
@@ -118,71 +166,47 @@ public:
     bool getDofPositions(const TensorDesc* dstTensor) const override;
     bool getDofVelocities(const TensorDesc* dstTensor) const override;
 
-    // ovstage joint-state read (ADR-0008): gather one scalar per (joint-prim, enabled-axis) into a flat,
-    // device-resident column of `numOutputs` float32 elements. The records (source DOF plus the per-axis
-    // unit and sign facts a fold needs) are built by the ovphysx reader. Required on GPU sims, where the
-    // host getArticulationJointPosition/Velocity is stale under suppressReadback.
-    //
-    // One method per attribute so the unit/sign fold is fixed here rather than chosen by the caller.
-    bool getDofPositionsOvStage(const ArticulationDofOvStageRecord* recordsDev,
-                                ::physx::PxU32 numOutputs, const TensorDesc* dstTensor) const;
-    bool getDofVelocitiesOvStage(const ArticulationDofOvStageRecord* recordsDev,
-                                 ::physx::PxU32 numOutputs, const TensorDesc* dstTensor) const;
-    bool getDofPositionTargetsOvStage(const ArticulationDofOvStageRecord* recordsDev,
-                                      ::physx::PxU32 numOutputs, const TensorDesc* dstTensor) const;
-    bool getDofVelocityTargetsOvStage(const ArticulationDofOvStageRecord* recordsDev,
-                                      ::physx::PxU32 numOutputs, const TensorDesc* dstTensor) const;
-    bool getDofActuationForcesOvStage(const ArticulationDofOvStageRecord* recordsDev,
-                                      ::physx::PxU32 numOutputs, const TensorDesc* dstTensor) const;
-    // Not a DOF-buffer column: the reaction comes from the link incoming joint force, projected onto
-    // the axis by the same kernel the dense getDofProjectedJointForces runs, then gathered.
-    bool getDofProjectedForcesOvStage(const ArticulationDofOvStageRecord* recordsDev,
-                                      ::physx::PxU32 numOutputs, const TensorDesc* dstTensor) const;
-    // Per-LINK ovstage read: the inbound joint's spatial force in the joint frame USD authored, 6
-    // floats (force, torque) per record. Staged and gathered like the projected force above.
-    bool getLinkIncomingJointForcesOvStage(const ArticulationLinkOvStageRecord* recordsDev,
-                                           ::physx::PxU32 numOutputs, const TensorDesc* dstTensor) const;
-
-    // ovstage tendon read: gather one property per tendon prim into a flat, device-resident column of
-    // `numOutputs * comp` float32 elements. One entry point per tendon KIND rather than per attribute:
-    // every tendon attribute comes out of the same DirectGPU struct at a different float offset.
-    bool getFixedTendonPropertiesOvStage(const ArticulationTendonOvStageRecord* recordsDev,
-                                         ::physx::PxU32 numOutputs, TendonProperty prop,
-                                         const TensorDesc* dstTensor) const;
-    bool getSpatialTendonPropertiesOvStage(const ArticulationTendonOvStageRecord* recordsDev,
-                                           ::physx::PxU32 numOutputs, TendonProperty prop,
-                                           const TensorDesc* dstTensor) const;
-
-    // ovstage tendon-property WRITE (ADR-0012): the return direction of the two getters
-    // above, sharing their record list, their scratch and their struct-offset addressing.
+    // ovstage tendon-property WRITE (ADR-0012): the return direction of a tendon column of
+    // readOvStageRecordColumns above, sharing its record struct and struct-offset addressing.
     //
     // Reads the view's current tendon block first. Not optional: PhysX writes whole tendon structs,
     // so a property this call does not address must already hold its current value or the write
     // would zero its neighbours in the same struct.
+    //
+    // `mode` other than eSet is the ovstage drain's one-sided limit write: prop is eLimit and the source
+    // carries one value per row (TendonFieldWrite).
     bool setFixedTendonPropertiesOvStage(const TensorDesc* srcTensor,
                                          const ArticulationTendonOvStageRecord* recordsDev,
-                                         ::physx::PxU32 numOutputs, TendonProperty prop);
+                                         ::physx::PxU32 numOutputs, TendonProperty prop,
+                                         const OvStageDeviceWriteArgs& deviceArgs,
+                                         TendonFieldWrite mode = TendonFieldWrite::eSet);
     bool setSpatialTendonPropertiesOvStage(const TensorDesc* srcTensor,
                                            const ArticulationTendonOvStageRecord* recordsDev,
-                                           ::physx::PxU32 numOutputs, TendonProperty prop);
-    // ovstage joint-DOF WRITE (ADR-0012): the return direction of getDofAttributeOvStage, sharing its
-    // record list and its scratch, and carrying no host block.
+                                           ::physx::PxU32 numOutputs, TendonProperty prop,
+                                           const OvStageDeviceWriteArgs& deviceArgs);
+    // ovstage joint-DOF WRITE (ADR-0012): the return direction of the DOF record read, sharing its
+    // record list, and carrying no host block.
     //
     bool setDofPositionsOvStage(const TensorDesc* srcTensor,
                                 const ArticulationDofOvStageRecord* recordsDev,
-                                ::physx::PxU32 numOutputs);
+                                ::physx::PxU32 numOutputs,
+                                const OvStageDeviceWriteArgs& deviceArgs);
     bool setDofVelocitiesOvStage(const TensorDesc* srcTensor,
                                  const ArticulationDofOvStageRecord* recordsDev,
-                                 ::physx::PxU32 numOutputs);
+                                 ::physx::PxU32 numOutputs,
+                                 const OvStageDeviceWriteArgs& deviceArgs);
     bool setDofPositionTargetsOvStage(const TensorDesc* srcTensor,
                                       const ArticulationDofOvStageRecord* recordsDev,
-                                      ::physx::PxU32 numOutputs);
+                                      ::physx::PxU32 numOutputs,
+                                      const OvStageDeviceWriteArgs& deviceArgs);
     bool setDofVelocityTargetsOvStage(const TensorDesc* srcTensor,
                                       const ArticulationDofOvStageRecord* recordsDev,
-                                      ::physx::PxU32 numOutputs);
+                                      ::physx::PxU32 numOutputs,
+                                      const OvStageDeviceWriteArgs& deviceArgs);
     bool setDofActuationForcesOvStage(const TensorDesc* srcTensor,
                                       const ArticulationDofOvStageRecord* recordsDev,
-                                      ::physx::PxU32 numOutputs);
+                                      ::physx::PxU32 numOutputs,
+                                      const OvStageDeviceWriteArgs& deviceArgs);
 
     // ovstage articulation-ROOT WRITE (ADR-0012). `rows` names the view articulations the
     // query matched, output i addressing view articulation rows[i]; the column carries `comp` floats
@@ -206,24 +230,42 @@ public:
                                  // is a vec3, and conflating the two is a size mismatch at the tensor
                                  // check rather than a wrong value.
                                  bool angular,
-                                 bool pose);
+                                 bool pose,
+                                 const OvStageDeviceWriteArgs& deviceArgs);
+
+    // Session writes (ADR-0052) run in device memory the session owns, sized by this for `kind` and the
+    // group's output count. A root write's leading u32 array is its row list, uploaded at open. A joint or tendon
+    // write has no leading list.
+    enum class OvStageArtiWrite
+    {
+        eRootPose,
+        eRootVelocity,
+        eDof,
+        eFixedTendon,
+        eSpatialTendon
+    };
+    size_t ovStageWriteScratchBytes(OvStageArtiWrite kind, ::physx::PxU32 numOutputs) const;
 
     bool setRootPositionsOvStage(const TensorDesc* srcTensor,
                                  const ::physx::PxU32* rows,
                                  ::physx::PxU32 numOutputs,
-                                 uint64_t rowsToken);
+                                 uint64_t rowsToken,
+                                 const OvStageDeviceWriteArgs& deviceArgs);
     bool setRootOrientationsOvStage(const TensorDesc* srcTensor,
                                     const ::physx::PxU32* rows,
                                     ::physx::PxU32 numOutputs,
-                                    uint64_t rowsToken);
+                                    uint64_t rowsToken,
+                                    const OvStageDeviceWriteArgs& deviceArgs);
     bool setRootLinearVelocitiesOvStage(const TensorDesc* srcTensor,
                                         const ::physx::PxU32* rows,
                                         ::physx::PxU32 numOutputs,
-                                        uint64_t rowsToken);
+                                        uint64_t rowsToken,
+                                        const OvStageDeviceWriteArgs& deviceArgs);
     bool setRootAngularVelocitiesOvStage(const TensorDesc* srcTensor,
                                          const ::physx::PxU32* rows,
                                          ::physx::PxU32 numOutputs,
-                                         uint64_t rowsToken);
+                                         uint64_t rowsToken,
+                                         const OvStageDeviceWriteArgs& deviceArgs);
 
     bool setDofPositions(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
     bool setDofVelocities(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
@@ -325,15 +367,6 @@ public:
 private:
     bool resolveMask(const TensorDesc* maskTensor, ::physx::PxU32& outK) const;
 
-    // CALLER CONTRACT: `rowsToken` must change whenever `rows` does. It is the whole identity of the
-    // selection -- a cache hit reuses the uploaded GPU indices and revalidates nothing, so a token
-    // replayed over a different row list gathers the previous selection's rows and reports success.
-    bool ensureOvStageSelection(const ::physx::PxU32* rows,
-                                ::physx::PxU32 count,
-                                uint64_t rowsToken,
-                                const ::physx::PxArticulationGPUIndex*& gpuIndicesDev) const;
-    bool recordOvStageReady(CUevent waitEvent) const;
-
     // Reads the view's current DOF scalars first. That is not an optimization to remove: PhysX writes
     // whole articulation DOF blocks, so a DOF this call does not address must already hold its
     // current value or the write would zero it.
@@ -347,16 +380,16 @@ private:
                                 ::physx::PxArticulationGPUAPIWriteType::Enum writeFlag,
                                 const ArticulationDofOvStageRecord* recordsDev,
                                 ::physx::PxU32 numOutputs,
-                                // Indices into GpuSimulationData's CopyEvent and ApplyEvent arrays.
-                                // Passed separately rather than as one value: the two enums happen to
-                                // list these attributes in the same order today, and relying on that
-                                // would break silently the first time either gains an entry.
-                                int copyEvent,
+                                // Index into GpuSimulationData's ApplyEvent array: the events the
+                                // drain orders the apply with.
                                 int applyEvent,
                                 // Which folds the scatter undoes. Not derivable from the write flag:
                                 // the four state/target columns are eAngularSigned and the actuation
                                 // force is eSigned, and every one of them is a JOINT_* write type.
-                                DofScalePolicy policy);
+                                DofScalePolicy policy,
+                                const OvStageDeviceWriteArgs& deviceArgs);
+    // The ovstage drain's execution: the legacy default stream and this view's apply events for `applyEvent`.
+    OvStageDeviceWriteArgs drainDeviceWriteArgs(int applyEvent) const;
 
     // Device copy of the ovstage row list, re-uploaded only when `token` differs from the one the
     // held copy was uploaded under. Owned by this view -- the caller must not free it -- for the same
@@ -369,52 +402,13 @@ private:
     // articulation in it has a degree of freedom. Submitting a null buffer aborts the process.
     bool checkInverseDynamicsScratch(const void* scratch, const char* label, const char* funcName) const;
 
-    // Coriolis and gravity differ only in compute type and copy event.
-    bool getGeneralizedForceColumnOvStage(const TensorDesc* dstTensor,
-                                          const ::physx::PxU32* rows,
-                                          ::physx::PxU32 count,
-                                          uint64_t rowsToken,
-                                          bool gravity) const;
-
-    bool getMassCentersOvStage(const TensorDesc* dstTensor,
-                               const ::physx::PxU32* rows,
-                               ::physx::PxU32 count,
-                               uint64_t rowsToken,
-                               bool localFrame) const;
-
     bool getDofAttribute(const char* attribName,
                          const TensorDesc* dstTensor,
                          const ::physx::PxArticulationGPUAPIReadType::Enum attribFlag,
                          CUevent syncEvent) const;
 
-    // ovstage variant: one DirectGPU DOF fill into the scratch, then a flat scaled gather into
-    // `numOutputs` output slots via the caller-built records (see fetchArtiDofAttributeOvStage).
-    // `policy` is the unit/sign fold the attribute applies to the raw DOF scalar.
-    bool getDofAttributeOvStage(const char* attribName,
-                                const TensorDesc* dstTensor,
-                                const ::physx::PxArticulationGPUAPIReadType::Enum attribFlag,
-                                const DofScalePolicy policy,
-                                const ArticulationDofOvStageRecord* recordsDev,
-                                ::physx::PxU32 numOutputs,
-                                CUevent syncEvent) const;
-
-    // ovstage tendon variant: one DirectGPU tendon fill into the shared scratch, then a flat gather
-    // into `numOutputs * comp` output slots (see fetchArtiTendonPropertyOvStage). `structFloats`
-    // and `buffer` are what separate the fixed and spatial kinds.
-    bool getTendonPropertyOvStage(const char* attribName,
-                                  const TensorDesc* dstTensor,
-                                  const ::physx::PxArticulationGPUAPIReadType::Enum attribFlag,
-                                  ::physx::PxU32 buffer,
-                                  void* scratchDev,
-                                  ::physx::PxU32 structFloats,
-                                  ::physx::PxU32 maxTendons,
-                                  TendonProperty prop,
-                                  const ArticulationTendonOvStageRecord* recordsDev,
-                                  ::physx::PxU32 numOutputs,
-                                  CUevent syncEvent) const;
-
-    // Generic ovstage tendon write the two setters above pass their own engine values to, mirroring
-    // getTendonPropertyOvStage exactly: same buffer, same structFloats, same field offset.
+    // Generic ovstage tendon write the two setters above pass their own engine values to, mirroring the
+    // tendon record read exactly: same struct, same structFloats, same field offset.
     bool setTendonPropertyOvStage(const char* attribName,
                                   const TensorDesc* srcTensor,
                                   ::physx::PxArticulationGPUAPIReadType::Enum readFlag,
@@ -425,7 +419,9 @@ private:
                                   ::physx::PxU32 maxTendons,
                                   TendonProperty prop,
                                   const ArticulationTendonOvStageRecord* recordsDev,
-                                  ::physx::PxU32 numOutputs);
+                                  ::physx::PxU32 numOutputs,
+                                  const OvStageDeviceWriteArgs& deviceArgs,
+                                  TendonFieldWrite mode);
 
     // generic helper function to submit a DOF attribute tensor
     bool setDofAttribute(const char* attribName,
@@ -447,51 +443,11 @@ private:
 
     std::vector<::physx::PxArticulationGPUIndex> mArtiIndices;
 
-    // One cached, grow-only device allocation serves every whole-articulation ovstage gather. The
-    // upload is synchronous, so the staging vector is free the moment the copy returns and needs no
-    // lifetime tracking of its own. The producer mints a new token whenever the selection changes.
-    mutable void* mOvStageSelectionDev = nullptr;
-    mutable ::physx::PxArticulationGPUIndex* mOvStageGpuIndicesDev = nullptr;
-    mutable std::vector<::physx::PxArticulationGPUIndex> mOvStageSelectionHost;
-    mutable ::physx::PxU32 mOvStageSelectionCapacity = 0;
-    mutable ::physx::PxU32 mOvStageSelectionCount = 0;
-    mutable uint64_t mOvStageSelectionToken = 0;
-    mutable bool mOvStageSelectionValid = false;
-    // Each DirectGPU submission enqueues its wait on this start event before returning. Only after
-    // that call returns may the next column re-record the shared event for its own submission.
-    CUevent mOvStageSelectionReadyEvent = nullptr;
+    // The start event getArticulationMassCenter orders its zeroing ahead of the DirectGPU compute with.
+    CUevent mMassCenterStartEvent = nullptr;
 
-    // The per-read ovstage record lists -- DOF, tendon and link-force -- cached view-owned instead of
-    // allocated and uploaded by the reader every read. Each list is keyed on the reader's record
-    // CONTENT version token (recsVersion, minted by mintRecordContentVersion), NOT on view generation:
-    // a same-cardinality record rebuild remints the content version WITHOUT a new generation, so
-    // keying on generation would serve a stale list. The upload turns over only when that token or the
-    // count changes (uploadOvStageRecordsCached), in lockstep with the reader's own record cache; a
-    // token of 0 -- a fresh view -- forces the first upload. Byte-sized because the record types
-    // differ only in element size; the reader casts the returned pointer.
-    mutable void* mOvStageDofRecordsDev = nullptr;
-    mutable size_t mOvStageDofRecordsCapBytes = 0;
-    mutable uint32_t mOvStageDofRecordsCount = 0;
-    mutable uint64_t mOvStageDofRecordsToken = 0;
-    // Fixed and spatial tendon record lists get SEPARATE device buffers. They share the record
-    // struct and can have equal cardinality, so one buffer keyed on (token, count) served the second
-    // kind through the first kind's records on an equal-count read -- wrong values or an out-of-range
-    // gather (the aliasing this split fixes).
-    mutable void* mOvStageFixedTendonRecordsDev = nullptr;
-    mutable size_t mOvStageFixedTendonRecordsCapBytes = 0;
-    mutable uint32_t mOvStageFixedTendonRecordsCount = 0;
-    mutable uint64_t mOvStageFixedTendonRecordsToken = 0;
-    mutable void* mOvStageSpatialTendonRecordsDev = nullptr;
-    mutable size_t mOvStageSpatialTendonRecordsCapBytes = 0;
-    mutable uint32_t mOvStageSpatialTendonRecordsCount = 0;
-    mutable uint64_t mOvStageSpatialTendonRecordsToken = 0;
-    // Link incoming-joint-force record list: its OWN view-owned buffer, same rationale as DOF and
-    // tendon. Was a per-read memAlloc handed to the session, which returned an undersized record block
-    // to the output-column pool it never acquired from.
-    mutable void* mOvStageLinkForceRecordsDev = nullptr;
-    mutable size_t mOvStageLinkForceRecordsCapBytes = 0;
-    mutable uint32_t mOvStageLinkForceRecordsCount = 0;
-    mutable uint64_t mOvStageLinkForceRecordsToken = 0;
+    // The read plans planOvStageRead made for tokened row lists.
+    mutable OvStageReadPlans<OvStageArtiReadPlan> mOvStageReadPlans;
 
     ::physx::PxU32* mViewIndicesDev = nullptr; // view indices, the client can send a subset of these
     ::physx::PxArticulationGPUIndex* mArtiGpuIndicesDev = nullptr; // Gpu indices of all view articulations
@@ -523,15 +479,6 @@ private:
     mutable ::physx::PxU32 mMaskIndicesCapacity = 0;
     mutable SingleAllocPolicy mMaskAllocPolicy;
 
-    // Dense staging row for the ovstage link incoming-joint-force read, which is DERIVED: a
-    // link-parallel kernel resolves the joint frame into a [count x maxLinks x 6] row that the ovstage
-    // gather reorders. It cannot reuse a shared GpuSimulationData buffer because the dense pass
-    // already reads two of those as its source. (The projected DOF force stages through the shared
-    // mDofScalarsDev instead, which its dense pass does not read.)
-    //
-    // Allocated on first use -- the size is fixed for the view's life but most views never read this.
-    // Mutable for the same reason mMaskIndicesDev is: internal scratch behind a const getter.
-    mutable float* mLinkIncomingJointForceScratchDev = nullptr;
 };
 
 } // namespace tensors

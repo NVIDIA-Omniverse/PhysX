@@ -3,7 +3,7 @@
 
 /**
  * @implements REQ-CAPI-ASYNC-002
- * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7 AC-13 AC-15
  *
  * TEST-CAPI-ASYNC-002: native receipt lifecycle and CPU session ownership/order.
  * GPU producer/consumer dependencies are exercised by the device suites.
@@ -23,7 +23,7 @@
 
 namespace
 {
-ovx_string_or_token_t attribute(const char* name)
+ovx_token_or_string_t attribute(const char* name)
 {
     return { 0, { name, std::strlen(name) } };
 }
@@ -74,14 +74,15 @@ protected:
         loadScene();
         ovphysx_query_handle_t query = 0;
         openQuery(query);
-        const ovx_string_or_token_t position = attribute(OVPHYSX_ATTR_POSITION);
+        const ovx_token_or_string_t position = attribute(OVPHYSX_ATTR_POSITION);
         ovphysx_read_handle_t read = 0;
-        ASSERT_TRUE(completed(m_handle, ovphysx_read(m_handle, query, &position, 1, &read, nullptr)));
+        ASSERT_TRUE(completed(m_handle, ovphysx_read(m_handle, query, &position, 1,
+                                                     ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr)));
         const ovstage_read_group_t* readGroup = nullptr;
         ASSERT_TRUE(completed(m_handle, ovphysx_fetch_read_next(m_handle, read, &readGroup)));
         ASSERT_NE(readGroup, nullptr);
-        ASSERT_GT(readGroup->data.tensor_count, 0u);
-        const DLTensor tensor = readGroup->data.tensors[0];
+        ASSERT_GT(readGroup->columns[0].data.tensor_count, 0u);
+        const DLTensor tensor = readGroup->columns[0].data.tensors[0];
         ASSERT_EQ(tensor.device.device_type, kDLCPU);
         ASSERT_EQ(tensor.dtype.code, kDLFloat);
         ASSERT_EQ(tensor.dtype.bits, 32u);
@@ -102,11 +103,15 @@ protected:
         ASSERT_TRUE(completed(m_handle, ovphysx_detach_ovstage(m_handle)));
 
         EXPECT_EQ(std::vector<float>(values, values + count), snapshot);
+        // The detach closed the write session. Its handle stays known until it is released,
+        // so a call that names it is accepted and fails its task, whether or not the detach
+        // had run when the call was made, and its release succeeds.
+        constexpr const char* kClosed = "was closed when its stage was detached";
         ovphysx_fetched_write_group_t next{};
-        rejected(ovphysx_fetch_write_next(m_handle, write, &next));
+        EXPECT_TRUE(waitForTaskFailure(m_handle, ovphysx_fetch_write_next(m_handle, write, &next), kClosed));
         EXPECT_EQ(next.group, nullptr);
         EXPECT_EQ(next.attribute_index, SIZE_MAX);
-        rejected(ovphysx_commit_group(m_handle, write, writeGroup.group, {}));
+        EXPECT_TRUE(waitForTaskFailure(m_handle, ovphysx_commit_group(m_handle, write, writeGroup.group, {}), kClosed));
         ASSERT_TRUE(completed(m_handle, ovphysx_release_write(m_handle, write)));
         ASSERT_TRUE(completed(m_handle, ovphysx_release_read(m_handle, read)));
         ASSERT_TRUE(completed(m_handle, ovphysx_release_query(m_handle, query)));
@@ -119,9 +124,10 @@ TEST_F(AsyncApiTest, EverySessionOperationReturnsACollectableTask)
     loadScene();
     ovphysx_query_handle_t query = 0;
     openQuery(query);
-    const ovx_string_or_token_t position = attribute(OVPHYSX_ATTR_POSITION);
+    const ovx_token_or_string_t position = attribute(OVPHYSX_ATTR_POSITION);
     ovphysx_read_handle_t read = 0;
-    ASSERT_TRUE(completed(m_handle, ovphysx_read(m_handle, query, &position, 1, &read, nullptr)));
+    ASSERT_TRUE(completed(m_handle, ovphysx_read(m_handle, query, &position, 1,
+                                                 ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr)));
     size_t readGroups = 0;
     for (;;)
     {
@@ -130,8 +136,8 @@ TEST_F(AsyncApiTest, EverySessionOperationReturnsACollectableTask)
         if (!group)
             break;
         ASSERT_LT(++readGroups, 100u);
-        ASSERT_GT(group->data.tensor_count, 0u);
-        const DLTensor tensor = group->data.tensors[0];
+        ASSERT_GT(group->columns[0].data.tensor_count, 0u);
+        const DLTensor tensor = group->columns[0].data.tensors[0];
         ASSERT_NE(tensor.shape, nullptr);
         const int64_t rows = tensor.shape[0];
         ASSERT_TRUE(completed(m_handle, ovphysx_release_group(m_handle, read, group->read_group_id)));
@@ -140,7 +146,7 @@ TEST_F(AsyncApiTest, EverySessionOperationReturnsACollectableTask)
     EXPECT_GT(readGroups, 0u);
     ASSERT_TRUE(completed(m_handle, ovphysx_release_read(m_handle, read)));
 
-    const ovx_string_or_token_t velocity = attribute(OVPHYSX_ATTR_LINEAR_VELOCITY);
+    const ovx_token_or_string_t velocity = attribute(OVPHYSX_ATTR_LINEAR_VELOCITY);
     ovphysx_write_handle_t write = 0;
     ASSERT_TRUE(completed(m_handle, ovphysx_write(m_handle, query, &velocity, 1, &write, nullptr)));
     size_t writeGroups = 0;
@@ -176,7 +182,7 @@ TEST_F(AsyncApiTest, EverySessionOperationReturnsACollectableTask)
             m_handle,
             articulationQuery,
             OVPHYSX_ARTICULATION_KINEMATIC_POSITION |
-                OVPHYSX_ARTICULATION_KINEMATIC_VELOCITY)));
+                OVPHYSX_ARTICULATION_KINEMATIC_VELOCITY, ovstage_cuda_sync_t{ 0, 0 })));
     ASSERT_TRUE(completed(m_handle, ovphysx_release_query(m_handle, articulationQuery)));
     ASSERT_TRUE(completed(m_handle, ovphysx_release_query(m_handle, query)));
     ASSERT_TRUE(completed(m_handle, ovphysx_release_query(m_handle, query)));
@@ -192,20 +198,23 @@ TEST_F(AsyncApiTest, RejectionHasNoTaskAndAnAcceptedFailureSurvivesOtherWaits)
 
     ovphysx_query_handle_t query = 0;
     openQuery(query);
-    rejected(ovphysx_update_articulations_kinematic(m_handle, query, 1u << 31));
+    rejected(ovphysx_update_articulations_kinematic(m_handle, query, 1u << 31, ovstage_cuda_sync_t{ 0, 0 }));
     rejected(ovphysx_update_articulations_kinematic(
-        m_handle, query, OVPHYSX_ARTICULATION_KINEMATIC_POSITION));
+        m_handle, query, OVPHYSX_ARTICULATION_KINEMATIC_POSITION, ovstage_cuda_sync_t{ 0, 0 }));
 
-    const ovx_string_or_token_t unsupported = attribute("notAnAttribute");
+    const ovx_token_or_string_t unsupported = attribute("notAnAttribute");
     ovphysx_write_handle_t invalidWrite = 99;
     const ovphysx_enqueue_result_t failed = ovphysx_write(m_handle, query, &unsupported, 1, &invalidWrite, nullptr);
     ASSERT_EQ(failed.status, OVPHYSX_API_SUCCESS);
     ASSERT_NE(failed.op_index, 0u);
-    EXPECT_EQ(invalidWrite, 0u);
+    // Accepted, the write returned its handle, which names no session once its task failed.
+    EXPECT_NE(invalidWrite, 99u);
+    EXPECT_NE(invalidWrite, 0u);
 
-    const ovx_string_or_token_t position = attribute(OVPHYSX_ATTR_POSITION);
+    const ovx_token_or_string_t position = attribute(OVPHYSX_ATTR_POSITION);
     ovphysx_read_handle_t read = 0;
-    ASSERT_TRUE(completed(m_handle, ovphysx_read(m_handle, query, &position, 1, &read, nullptr)));
+    ASSERT_TRUE(completed(m_handle, ovphysx_read(m_handle, query, &position, 1,
+                                                 ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr)));
     ASSERT_TRUE(completed(m_handle, ovphysx_release_read(m_handle, read)));
     ASSERT_TRUE(completed(m_handle, ovphysx_release_query(m_handle, query)));
 
@@ -218,6 +227,7 @@ TEST_F(AsyncApiTest, RejectionHasNoTaskAndAnAcceptedFailureSurvivesOtherWaits)
     EXPECT_NE(message.find("notAnAttribute"), std::string::npos) << message;
     ovphysx::physx::WaitResult repeated;
     EXPECT_EQ(repeated.waitTask(m_handle, failed), OVPHYSX_API_NOT_FOUND);
+    EXPECT_TRUE(completed(m_handle, ovphysx_release_write(m_handle, invalidWrite)));
 }
 
 TEST_F(AsyncApiTest, ForeignResourcesAreRejectedWithoutEndingOwnerSessions)
@@ -228,10 +238,11 @@ TEST_F(AsyncApiTest, ForeignResourcesAreRejectedWithoutEndingOwnerSessions)
     const ovphysx_instance_handle_t other = second.handle;
     ovphysx_query_handle_t query = 0;
     openQuery(query);
-    const ovx_string_or_token_t position = attribute(OVPHYSX_ATTR_POSITION);
+    const ovx_token_or_string_t position = attribute(OVPHYSX_ATTR_POSITION);
     ovphysx_read_handle_t read = 0;
     ovphysx_write_handle_t write = 0;
-    ASSERT_TRUE(completed(m_handle, ovphysx_read(m_handle, query, &position, 1, &read, nullptr)));
+    ASSERT_TRUE(completed(m_handle, ovphysx_read(m_handle, query, &position, 1,
+                                                 ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr)));
     ASSERT_TRUE(completed(m_handle, ovphysx_write(m_handle, query, &position, 1, &write, nullptr)));
 
     rejected(ovphysx_release_query(other, query));
@@ -262,15 +273,16 @@ TEST_F(AsyncApiTest, InlineOperationsRespectStepsStartedAfterSessionCreation)
     loadScene();
     ovphysx_query_handle_t query = 0;
     openQuery(query);
-    const ovx_string_or_token_t position = attribute(OVPHYSX_ATTR_POSITION);
+    const ovx_token_or_string_t position = attribute(OVPHYSX_ATTR_POSITION);
     const ovphysx_enqueue_result_t stepBeforeRead = ovphysx_step(m_handle, 1.0f / 60.0f);
     ASSERT_EQ(stepBeforeRead.status, OVPHYSX_API_SUCCESS);
     ovphysx_read_handle_t read = 0;
-    ASSERT_TRUE(completed(m_handle, ovphysx_read(m_handle, query, &position, 1, &read, nullptr)));
+    ASSERT_TRUE(completed(m_handle, ovphysx_read(m_handle, query, &position, 1,
+                                                 ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr)));
     ASSERT_TRUE(completed(m_handle, stepBeforeRead));
     ASSERT_TRUE(completed(m_handle, ovphysx_release_read(m_handle, read)));
 
-    const ovx_string_or_token_t velocity = attribute(OVPHYSX_ATTR_LINEAR_VELOCITY);
+    const ovx_token_or_string_t velocity = attribute(OVPHYSX_ATTR_LINEAR_VELOCITY);
     ovphysx_write_handle_t write = 0;
     ASSERT_TRUE(completed(m_handle, ovphysx_write(m_handle, query, &velocity, 1, &write, nullptr)));
     ovphysx_fetched_write_group_t fetched{};
@@ -307,7 +319,7 @@ TEST_F(AsyncApiTest, InlineOperationsRespectStepsStartedAfterSessionCreation)
             m_handle,
             articulationQuery,
             OVPHYSX_ARTICULATION_KINEMATIC_POSITION |
-                OVPHYSX_ARTICULATION_KINEMATIC_VELOCITY)));
+                OVPHYSX_ARTICULATION_KINEMATIC_VELOCITY, ovstage_cuda_sync_t{ 0, 0 })));
     ASSERT_TRUE(completed(m_handle, ovphysx_step(m_handle, 1.0f / 60.0f)));
     ASSERT_TRUE(completed(m_handle, ovphysx_release_query(m_handle, articulationQuery)));
     ASSERT_TRUE(completed(m_handle, ovphysx_release_query(m_handle, query)));

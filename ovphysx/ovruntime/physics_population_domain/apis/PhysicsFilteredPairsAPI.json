@@ -1,0 +1,38 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysicsFilteredPairsAPI",
+  "title": "PhysicsFilteredPairsAPI",
+  "summary": "Suppresses collision between this prim and the listed prims.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "Xformable"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "producer_scope": "The relationship is published when authored, in USD target order, as path-dictionary ids.",
+  "columns": [
+    {
+      "name": "physics:filteredPairs",
+      "usd_type": "rel",
+      "origin": "schema",
+      "kind": "relationship",
+      "semantic": "RELATIONSHIP_PATH_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": true
+      },
+      "required": false,
+      "absent": "No pair filtering.",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseFilteredPairs.cpp"
+      ]
+    }
+  ]
+}

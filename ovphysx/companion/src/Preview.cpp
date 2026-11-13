@@ -2,15 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // @implements REQ-COMP-PREVIEW-001
-// @covers AC-1 AC-2 AC-4 AC-5 AC-6 AC-7
+// @covers AC-1 AC-2 AC-4 AC-5 AC-6 AC-7 AC-8
 // @implements REQ-CAPI-COMPANION-001
-// @covers AC-4
+// @covers AC-3 AC-4
 #include "ovphysx_companion/preview.h"
 #include "internal/sdk/ovphysxSDK.hpp"
 #include "internal/sdk/CompanionRuntime.hpp"
 #include <omni/physx/IPhysx.h>
 #include <omni/physx/IPhysxSimulation.h>
-#include <omni/physx/IPhysxStatistics.h>
+#include <omni/physx/NativeStatistics.h>
+#include <omni/physx/NativeInspection.h>
 #include <omni/physx/PhysXRuntime.h>
 #include <cmath>
 #include <limits>
@@ -79,7 +80,7 @@ bool validPreviewOverrides(const ovphysx_companion_preview_desc_t& desc) noexcep
     return true;
 }
 Status openPreview(const ovphysx_companion_preview_desc_t* d, uint64_t* output) noexcept {
-    if (!d || !output || d->size != sizeof(*d) || d->version != 1 || !d->stage || !d->read_ordinal ||
+    if (!d || !output || d->size != sizeof(*d) || d->version != 1 || !d->stage || !d->read_ordinal || d->read_ordinal > INT64_MAX ||
         !validPreviewOverrides(*d) || (d->excluded_path_count && !d->excluded_paths)) return OVPHYSX_COMPANION_INVALID_ARGUMENT;
     for (uint32_t i = 0; i < d->excluded_path_count; ++i)
         if (!d->excluded_paths[i] || d->excluded_paths[i][0] != '/') return OVPHYSX_COMPANION_INVALID_ARGUMENT;
@@ -103,8 +104,14 @@ Status openPreview(const ovphysx_companion_preview_desc_t* d, uint64_t* output) 
             p = std::make_shared<Preview>(it->second->carbonite);
         }
         if (!p->services) return OVPHYSX_COMPANION_UNAVAILABLE;
-        if (!(source ? runtime::snapshotAttachedSettings(source, settings, shared) :
-                       runtime::snapshotAttachDefaults(settings, shared))) return OVPHYSX_COMPANION_BUSY;
+        if (source) {
+            // Reading the source attachment's settings is an operation on it: the source
+            // instance's lane keeps its worker out meanwhile. The preview itself is
+            // independent and holds no core lane.
+            CompanionOwnerLane owner;
+            if (!owner.tryAcquireForAttachment(source) ||
+                !runtime::snapshotAttachedSettings(source, settings, shared)) return OVPHYSX_COMPANION_BUSY;
+        } else if (!runtime::snapshotAttachDefaults(settings, shared)) return OVPHYSX_COMPANION_BUSY;
         if ((d->overrides & OVPHYSX_COMPANION_PREVIEW_PIPELINE) && d->gpu_pipeline == 1) {
             bool cpuOnly = false;
             if (ovphysx_get_cpu_mode(&cpuOnly).status != OVPHYSX_API_SUCCESS)
@@ -133,10 +140,7 @@ Status openPreview(const ovphysx_companion_preview_desc_t* d, uint64_t* output) 
         OvstageAttachPayload payload{d->stage, d->dictionary, 0};
         PhysxAttachOptions options{d->excluded_paths, d->excluded_path_count, &settings, &shared};
         bool busy = false;
-        // A preview has no public recording owner, so it must not start the
-        // core's configured startup recording.
-        const AttachHandle attachment = runtime::attachOvstageWithAdmission(&payload, d->read_ordinal, options,
-                                                                            /*startConfiguredRecording=*/false, busy);
+        const AttachHandle attachment = runtime::attachOvstageWithAdmission(&payload, d->read_ordinal, options, busy);
         {
             std::lock_guard<std::mutex> lock(companionRuntime().previews().mutex);
             p->attachment = attachment;
@@ -196,11 +200,10 @@ Status statistics(uint64_t h, const char* path, uint32_t size, ovphysx_companion
     if (!path || path[0] != '/' || !output || size != sizeof(*output)) return OVPHYSX_COMPANION_INVALID_ARGUMENT;
     return withPreview(h, false, [=](Preview& p) -> Status {
         omni::physx::IPhysx * physics = runtime::tryGetPhysxInterface();
-        omni::physx::IPhysxStatistics * stats = runtime::tryGetPhysxStatisticsInterface();
         const omni::physics::parse::ObjectKey key = physics->resolveObjectKey(p.attachment, path);
         if (!key.valid()) return OVPHYSX_COMPANION_NOT_FOUND;
         PhysicsSceneStats counters;
-        if (!stats->getPhysXSceneStatistics(p.attachment, key.handle, counters)) return OVPHYSX_COMPANION_ERROR;
+        if (!omni::physx::getPhysXSceneStatistics(p.attachment, key.handle, counters)) return OVPHYSX_COMPANION_ERROR;
         *output = {sizeof(*output), 1, {0, p.attachment}, counters.nbDynamicRigids, counters.nbActiveDynamicRigids,
             counters.nbStaticRigids, counters.nbKinematicBodies, counters.nbArticulations, counters.nbActiveConstraints};
         return OVPHYSX_COMPANION_OK;
@@ -209,12 +212,27 @@ Status statistics(uint64_t h, const char* path, uint32_t size, ovphysx_companion
 Status rigidPose(uint64_t h, const char* path, ovphysx_companion_pose_t* output) noexcept {
     if (!path || path[0] != '/' || !output) return OVPHYSX_COMPANION_INVALID_ARGUMENT;
     return withPreview(h, false, [=](Preview& p) -> Status {
-        omni::physx::IPhysx * physics = runtime::tryGetPhysxInterface();
-        const omni::physics::parse::ObjectKey key = physics->resolveObjectKey(p.attachment, path);
-        if (!key.valid()) return OVPHYSX_COMPANION_NOT_FOUND;
-        carb::Float3 position; carb::Float4 rotation;
-        if (!physics->getRigidBodyTransformation(p.attachment, key, position, rotation)) return OVPHYSX_COMPANION_NOT_FOUND;
-        *output = {{position.x, position.y, position.z}, {rotation.x, rotation.y, rotation.z, rotation.w}};
+        // Keep body inspection scoped to this attachment and object generation.
+        native::ObjectReference reference;
+        native::BodyInspection body;
+        const auto convertInspection = [](native::InspectionResult result) -> Status {
+            switch (result) {
+            case native::InspectionResult::Success: return OVPHYSX_COMPANION_OK;
+            case native::InspectionResult::Busy: return OVPHYSX_COMPANION_BUSY;
+            case native::InspectionResult::Stale: return OVPHYSX_COMPANION_STALE;
+            case native::InspectionResult::NotFound: return OVPHYSX_COMPANION_NOT_FOUND;
+            case native::InspectionResult::Unavailable: return OVPHYSX_COMPANION_UNAVAILABLE;
+            case native::InspectionResult::Invalid: return OVPHYSX_COMPANION_INVALID_ARGUMENT;
+            default: return OVPHYSX_COMPANION_ERROR;
+            }
+        };
+        Status status = convertInspection(native::resolveObject(
+            p.attachment, path, native::ObjectKind::Body, UINT32_MAX, reference));
+        if (status != OVPHYSX_COMPANION_OK) return status;
+        status = convertInspection(native::inspectBody(reference, body));
+        if (status != OVPHYSX_COMPANION_OK) return status;
+        *output = {{body.pose[0], body.pose[1], body.pose[2]},
+                   {body.pose[3], body.pose[4], body.pose[5], body.pose[6]}};
         return OVPHYSX_COMPANION_OK;
     });
 }

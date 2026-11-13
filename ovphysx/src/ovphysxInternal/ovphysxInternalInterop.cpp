@@ -2,7 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // @implements REQ-CAPI-SESSION-001
-// @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7
+// @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7 AC-10
+
+// @implements REQ-CAPI-READ-001
+// @covers AC-1
+
+// @implements REQ-CAPI-RELEASE-001
+// @covers AC-1 AC-2
 
 /**
  * @implements REQ-CAPI-ASYNC-002
@@ -161,7 +167,7 @@ static_assert((int)OVPHYSX_DEBUG_RENDER_PARAM_SDF                      == (int)o
 static_assert((int)OVPHYSX_DEBUG_RENDER_PARAM_COUNT                    == (int)omni::physx::ePhysXNumValues,        "debug_render_parameter COUNT must equal ePhysXNumValues");
 
 // The public ovphysx output-read surface uses ovstage's own types directly
-// (ovstage_read_group_t / ovstage_query_result_t / ovx_string_or_token_t), so there
+// (ovstage_read_group_t / ovstage_query_result_t / ovx_token_or_string_t), so there
 // is no ovphysx mirror enum to keep in lock-step.
 
 // The runtime's OvxReadStatus must map cleanly onto the 1 / 0 / -1 convention
@@ -515,6 +521,8 @@ struct OvxWriteFns
     decltype(&omni::physx::ovxFetchWriteNext) fetch = nullptr;
     decltype(&omni::physx::ovxCommitGroup)    commit = nullptr;
     decltype(&omni::physx::ovxReleaseWrite)   releaseWrite = nullptr;
+    decltype(&omni::physx::ovxCommitGroupMasked) commitMasked = nullptr;
+    decltype(&omni::physx::ovxValidateCommit) validateCommit = nullptr;
 };
 
 OvxWriteFns g_ovxWrite;
@@ -569,6 +577,13 @@ extern "C" OVPHYSX_INTERNAL_API void ovphysx_internal_set_ovx_contact_accessors(
     g_ovxQueryContacts = reinterpret_cast<decltype(g_ovxQueryContacts)>(queryContacts);
 }
 
+extern "C" OVPHYSX_INTERNAL_API void ovphysx_internal_set_ovx_masked_commit_accessor(void* commitMasked,
+                                                                                    void* validateCommit)
+{
+    g_ovxWrite.commitMasked = reinterpret_cast<decltype(g_ovxWrite.commitMasked)>(commitMasked);
+    g_ovxWrite.validateCommit = reinterpret_cast<decltype(g_ovxWrite.validateCommit)>(validateCommit);
+}
+
 extern "C" OVPHYSX_INTERNAL_API void ovphysx_internal_set_ovx_write_accessors(
     void* write, void* fetch, void* commit, void* releaseWrite)
 {
@@ -579,7 +594,7 @@ extern "C" OVPHYSX_INTERNAL_API void ovphysx_internal_set_ovx_write_accessors(
 }
 
 OVPHYSX_INTERNAL_API uint64_t ovphysx_internal_write_attribute(uint64_t query,
-    const ovx_string_or_token_t* attributes, size_t attribute_count, ovphysx_write_result_t* out_summary)
+    const ovx_token_or_string_t* attributes, size_t attribute_count, ovphysx_write_result_t* out_summary)
 {
     if (out_summary)
         *out_summary = {};
@@ -688,6 +703,48 @@ OVPHYSX_INTERNAL_API int ovphysx_internal_commit_group(uint64_t write,
     }
 }
 
+OVPHYSX_INTERNAL_API int ovphysx_internal_commit_group_masked(uint64_t write,
+                                                              const ovstage_map_group_t* group,
+                                                              const DLTensor* row_mask,
+                                                              ovstage_cuda_sync_t write_done_sync,
+                                                              int32_t* out_failure)
+{
+    // As ovphysx_internal_commit_group: out_failure is written only by the runtime.
+    try
+    {
+        OvxWriteFns& f = ovxWriteFns();
+        if (!f.commitMasked)
+            return 0;
+        omni::physx::OvxCommitFailure why = omni::physx::kOvxCommitFailureNone;
+        const bool ok = f.commitMasked(write, group, row_mask, write_done_sync, &why);
+        if (!ok && out_failure)
+            *out_failure = static_cast<int32_t>(why);
+        return ok ? 1 : 0;
+    }
+    catch (...)
+    {
+        return 0;
+    }
+}
+
+OVPHYSX_INTERNAL_API int ovphysx_internal_validate_commit(uint64_t write,
+                                                          const ovstage_map_group_t* group,
+                                                          const DLTensor* row_mask,
+                                                          ovstage_cuda_sync_t write_done_sync)
+{
+    try
+    {
+        OvxWriteFns& f = ovxWriteFns();
+        if (!f.validateCommit)
+            return -1;
+        return f.validateCommit(write, group, row_mask, write_done_sync) ? 1 : 0;
+    }
+    catch (...)
+    {
+        return -1;
+    }
+}
+
 OVPHYSX_INTERNAL_API int ovphysx_internal_release_write(uint64_t write)
 {
     try
@@ -769,7 +826,8 @@ OVPHYSX_INTERNAL_API uint64_t ovphysx_internal_output_query_contacts(uint64_t at
 }
 
 OVPHYSX_INTERNAL_API uint64_t ovphysx_internal_read_outputs(uint64_t query,
-    const ovx_string_or_token_t* attributes, size_t attribute_count, ovphysx_read_result_t* out_summary)
+    const ovx_token_or_string_t* attributes, size_t attribute_count, ovstage_cuda_sync_t cuda_sync,
+    ovphysx_read_result_t* out_summary)
 {
     if (out_summary)
         *out_summary = {};
@@ -789,7 +847,7 @@ OVPHYSX_INTERNAL_API uint64_t ovphysx_internal_read_outputs(uint64_t query,
             ownership.mapped().attributes.resize(attribute_count);
         omni::physx::OvxReadResult result{};
         opened = f.read(query, attribute_count ? attributes : nullptr, attribute_count,
-                        out_summary ? &result : nullptr);
+                        out_summary ? &result : nullptr, cuda_sync);
         if (!opened)
             return 0;
         if (out_summary)
@@ -855,7 +913,7 @@ OVPHYSX_INTERNAL_API int ovphysx_internal_fetch_read_next(uint64_t read, const o
 
         // Retain the group descriptor and stage-derived prim list until release_group,
         // and hand back a stable address. Numeric storage remains read-session-owned.
-        ovstage_read_group_t& kept = (it->second.liveGroups[g.read_group_id] = g);
+        ovstage_read_group_t& kept = (it->second.liveGroups[g.read_group_id.raw_id] = g);
         *out_group = &kept;
         return 1;
     }
@@ -874,7 +932,7 @@ OVPHYSX_INTERNAL_API int ovphysx_internal_release_group(uint64_t read, ovstage_r
         const auto session = g_readSessions.find(read);
         if (session == g_readSessions.end())
             return 1;
-        const auto group = session->second.liveGroups.find(group_id);
+        const auto group = session->second.liveGroups.find(group_id.raw_id);
         if (group == session->second.liveGroups.end())
             return 1;
         if (!functions.releaseGroup)
@@ -882,6 +940,8 @@ OVPHYSX_INTERNAL_API int ovphysx_internal_release_group(uint64_t read, ovstage_r
             CARB_LOG_ERROR("Read group release API is unavailable");
             return -1;
         }
+        // Runtime admission can reject the release while leaving the group live.
+        // Retain its descriptor until cleanup is confirmed.
         if (!functions.releaseGroup(read, &group->second))
             return -1;
         session->second.liveGroups.erase(group);
@@ -936,7 +996,9 @@ OVPHYSX_INTERNAL_API int ovphysx_internal_release_query(uint64_t query)
             CARB_LOG_ERROR("Query release API is unavailable");
             return -1;
         }
-        return functions.releaseQuery(query) ? 1 : -1;
+        // Terminal failure is 0, not unconfirmed (-1); -1 is reserved for the unavailable-backend /
+        // caught-exception cases. Matches ovphysx_internal_release_read and the header contract.
+        return functions.releaseQuery(query) ? 1 : 0;
     }
     catch (const std::exception& error)
     {

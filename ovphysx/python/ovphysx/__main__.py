@@ -19,7 +19,7 @@ from ovphysx import PhysX
 print(f"ovphysx {ovphysx.__version__}")
 
 physx = PhysX()
-# step() rejects handles without an attached stage (NVBugs 6433668), and this
+# step() rejects handles without an attached stage, and this
 # smoke test has no stage to load. Constructing and destroying PhysX() already
 # verifies that the native library loaded, linked and initialized.
 physx.destroy()

@@ -44,32 +44,32 @@ namespace physx
 														}
 		
 					void								preExportDataReset();
-					virtual			void				exportExtraData(PxSerializationContext& stream);
+		virtual		void								exportExtraData(PxSerializationContext& stream);
 					void								importExtraData(PxDeserializationContext& context);
 					void								resolveReferences(PxDeserializationContext& context);
-					virtual			void				requiresObjects(PxProcessPxBaseCallback& c);
+		virtual		void								requiresObjects(PxProcessPxBaseCallback& c);
 
 		static		NpArticulationReducedCoordinate*	createObject(PxU8*& address, PxDeserializationContext& context);
 		//~PX_SERIALIZATION
 
 		// PxBase
-		virtual			void							release()	PX_OVERRIDE	PX_FINAL;
+		virtual		void								release()	PX_OVERRIDE	PX_FINAL;
 		//~PxBase
 
 		// PxArticulationReducedCoordinate
-		virtual	PxScene*	getScene() const	PX_OVERRIDE	PX_FINAL	{ return NpBase::getNpScene(); }
-		virtual	void		setSolverIterationCounts(PxU32 positionIters, PxU32 velocityIters)	PX_OVERRIDE	PX_FINAL;
-		virtual	void		getSolverIterationCounts(PxU32& positionIters, PxU32& velocityIters) const	PX_OVERRIDE	PX_FINAL;
-		virtual	bool		isSleeping() const	PX_OVERRIDE	PX_FINAL;
-		virtual	void		setSleepThreshold(PxReal threshold)	PX_OVERRIDE	PX_FINAL;
-		virtual	PxReal		getSleepThreshold() const	PX_OVERRIDE	PX_FINAL;
-		virtual	void		setStabilizationThreshold(PxReal threshold)	PX_OVERRIDE	PX_FINAL;
-		virtual	PxReal		getStabilizationThreshold() const	PX_OVERRIDE	PX_FINAL;
-		virtual	void		setWakeCounter(PxReal wakeCounterValue)	PX_OVERRIDE	PX_FINAL;
-		virtual	PxReal		getWakeCounter() const	PX_OVERRIDE	PX_FINAL;
-		virtual	void		wakeUp()	PX_OVERRIDE	PX_FINAL;
-		virtual	void		putToSleep()	PX_OVERRIDE	PX_FINAL;
-		virtual PxVec3		computeArticulationCOM(const bool rootFrame) const	PX_OVERRIDE	PX_FINAL;
+		virtual	PxScene*				getScene() const	PX_OVERRIDE	PX_FINAL	{ return NpBase::getNpScene(); }
+		virtual	void					setSolverIterationCounts(PxU32 positionIters, PxU32 velocityIters)	PX_OVERRIDE	PX_FINAL;
+		virtual	void					getSolverIterationCounts(PxU32& positionIters, PxU32& velocityIters) const	PX_OVERRIDE	PX_FINAL;
+		virtual	bool					isSleeping() const	PX_OVERRIDE	PX_FINAL;
+		virtual	void					setSleepThreshold(PxReal threshold)	PX_OVERRIDE	PX_FINAL;
+		virtual	PxReal					getSleepThreshold() const	PX_OVERRIDE	PX_FINAL;
+		virtual	void					setStabilizationThreshold(PxReal threshold)	PX_OVERRIDE	PX_FINAL;
+		virtual	PxReal					getStabilizationThreshold() const	PX_OVERRIDE	PX_FINAL;
+		virtual	void					setWakeCounter(PxReal wakeCounterValue)	PX_OVERRIDE	PX_FINAL;
+		virtual	PxReal					getWakeCounter() const	PX_OVERRIDE	PX_FINAL;
+		virtual	void					wakeUp()	PX_OVERRIDE	PX_FINAL;
+		virtual	void					putToSleep()	PX_OVERRIDE	PX_FINAL;
+		virtual PxVec3					computeArticulationCOM(const bool rootFrame) const	PX_OVERRIDE	PX_FINAL;
 		virtual PxArticulationLink*		createLink(PxArticulationLink* parent, const PxTransform& pose)	PX_OVERRIDE	PX_FINAL;
 		virtual	PxU32					getNbLinks() const	PX_OVERRIDE	PX_FINAL;
 		virtual	PxU32					getLinks(PxArticulationLink** userBuffer, PxU32 bufferSize, PxU32 startIndex) const	PX_OVERRIDE	PX_FINAL;

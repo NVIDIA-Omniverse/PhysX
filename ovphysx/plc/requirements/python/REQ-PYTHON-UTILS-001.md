@@ -103,23 +103,21 @@ original is validation, a `UsdGeom.Scope.Define`, an
 `ApplyAPI("PhysxAutoDeformableAttachmentAPI")` and two relationship sets -- already
 codeless in style and reproducible with `pxr` alone. The runtime side looks
 declarative to match: the load path discovers every prim carrying that API and
-calls `updateAutoDeformableAttachment`
-(`ovphysx/ovruntime/source/omni.physx/plugins/usdLoad/LoadStage.cpp:542`, into
-`ovphysx/ovruntime/source/omni.physx/plugins/attachment/PhysXAttachment.cpp:2852`).
+calls `updateAutoDeformableAttachment` from `refreshAutoDeformableAttachments`
+(`ovphysx/ovruntime/source/omni.physx/plugins/usdLoad/LoadStage.cpp`, into
+`ovphysx/ovruntime/source/omni.physx/plugins/attachment/PhysXAttachment.cpp`).
 
 That function recomputes attachment data into prims that already exist, hashing
 its inputs to skip the work when they have not changed. It never defines an
 attachment prim. The child prims an attachment needs are created
-exclusively by `setupAutoDeformableAttachment` (same file, line 2810), which the
+exclusively by `setupAutoDeformableAttachment` (same attachment source file), which the
 runtime never calls on its own -- outside the plugin's own translation units it
-is reachable only through
-`ovphysx/ovruntime/include/private/omni/physx/IPhysxAttachmentPrivate.h` (line
-221), wired up at
-`ovphysx/ovruntime/source/omni.physx/plugins/PhysX.cpp:2711` -- and which is
-written to create them all up front precisely so that none is created
-asynchronously. Nothing under `ovphysx/include/` surfaces it: the private
-attachment interface is not part of the ovphysx C ABI, and its only non-plugin
-callers in the tree are the runtime's own native tests.
+is declared in
+`ovphysx/ovruntime/source/omni.physx/plugins/attachment/PhysXAttachment.h` --
+and is written to create them all up front precisely so that none is created
+asynchronously. The former private attachment table has been removed; the
+runtime's native tests call the C++ functions directly. Nothing under
+`ovphysx/include/` surfaces these setup/update functions in the ovphysx C ABI.
 
 So a pure-USD helper would author an attachment root with no attachment prims
 under it, and nothing in the load path would fill them in. The result is a stage
@@ -360,18 +358,18 @@ obsolete and 43 not appropriate. The 132 useful is the first two rows together -
 plus the five dropped names that serve a viewport, an exploded-view render or a
 property window.
 
-**Surface side -- the 138 flat helper names decompose as:**
+**Surface side -- the 139 flat helper names decompose as:**
 
 | | Count |
 |---|---|
 | Recovered from `omni.physx.scripts` and public | 129 |
 | From the retired bindings rather than the scripts package: `METADATA_ATTRIBUTE_NAME_LOCALSPACEVELOCITIES` | 1 |
 | Additions the codeless conversion introduced: `TOKEN_TRIANGLE_MESH`, `TOKEN_SDF`, `TOKEN_SPHERE_FILL`, `SCENE_UPDATE_TYPE_SYNCHRONOUS`, `SCENE_UPDATE_TYPE_ASYNCHRONOUS`, `SCENE_UPDATE_TYPE_DISABLED` | 6 |
-| Additions admitted on AC-13's own terms: `step_and_write_to_ovstage`, `OvStageOutputCache` | 2 |
-| **Flat public helper names** | **138** |
+| Additions admitted on AC-13's own terms: `step_and_write_to_ovstage`, `OvStageOutputCache`, `split_joint_group` | 3 |
+| **Flat public helper names** | **139** |
 
-So `138 - 7 - 2 = 129`, matching the census's first row rather than its
-useful count. Adding the fifteen submodule names to the 138 gives the 153
+So `139 - 7 - 3 = 129`, matching the census's first row rather than its
+useful count. Adding the fifteen submodule names to the 139 gives the 154
 `__all__` entries AC-2 states. The eleven `codeless` names are outside both
 figures, the eight deprecated aliases are outside them too -- an alias is an
 alias for a name already counted -- and so are the three privatized names.
@@ -754,10 +752,10 @@ and date in this table resolves in this repository as recorded.
   `CodelessSchemaError` -- are reachable *only* as
   `ovphysx.utils.codeless.<name>` and are deliberately not flat re-exported.
   `ovphysx.utils.__all__` lists the whole flat surface -- the fifteen submodule
-  names plus the 138 flat helper names, 153 entries in all -- and contains no
+  names plus the 139 flat helper names, 154 entries in all -- and contains no
   name absent from the modules.
 
-  The dependency-free flat-export manifest names all 138 helpers and each
+  The dependency-free flat-export manifest names all 139 helpers and each
   owning submodule independently of those modules' `__all__` lists. The two
   representations are required to match exactly after the owners load, so a
   change to an owner's list fails unless its manifest entry follows, a
@@ -767,13 +765,13 @@ and date in this table resolves in this repository as recorded.
   Functions in `__all__` use `snake_case`, constants use `UPPER_SNAKE_CASE`,
   and `OvStageOutputCache` uses the class convention `UpperCamelCase`; the 51 names the original spelled `camelCase` are renamed, and the
   eight deprecated aliases AC-15 keeps under the old spelling are deliberately
-  not listed here. Eight exported names are additions rather than recoveries and
+  not listed here. Nine exported names are additions rather than recoveries and
   so have no ancestor spelling at all: `TOKEN_TRIANGLE_MESH`, `TOKEN_SDF`,
   `TOKEN_SPHERE_FILL`, `SCENE_UPDATE_TYPE_SYNCHRONOUS`,
   `SCENE_UPDATE_TYPE_ASYNCHRONOUS` and `SCENE_UPDATE_TYPE_DISABLED`, which the
   codeless conversion introduced because the `PhysxSchema.Tokens.*` lookups they
-  replace have no codeless equivalent, and `step_and_write_to_ovstage` and `OvStageOutputCache`, which
-  AC-13 admits on its own terms. The remaining 130 are 129 names recovered from
+  replace have no codeless equivalent, and `step_and_write_to_ovstage`, `OvStageOutputCache` and
+  `split_joint_group`, which AC-13 admits on its own terms. The remaining 130 are 129 names recovered from
   `omni.physx.scripts` itself plus
   `METADATA_ATTRIBUTE_NAME_LOCALSPACEVELOCITIES`, which the original imported from
   `omni.physx.bindings._physx` and this subpackage spells out as a local

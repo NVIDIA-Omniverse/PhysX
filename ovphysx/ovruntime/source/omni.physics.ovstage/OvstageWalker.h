@@ -1,6 +1,14 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-SIM-LOCALVELOCITY-001
+// @covers AC-8
+
+/**
+ * @implements REQ-SOURCE-IDENTITY-001
+ * @covers AC-1 AC-4
+ */
+
 /**
  * @implements REQ-PARSE-INSTANCER-DISPATCH-001
  * @covers AC-1 AC-2
@@ -67,6 +75,7 @@ struct OvstageScanFilter
     DescendantScope descendantScope = DescendantScope::eActiveInstanced;
     std::shared_ptr<DescriptorBatchAllocator> descriptorPool;
     DescriptorExecutionOptions descriptorExecution;
+    bool outputVelocitiesLocalSpaceDefault = false;
 };
 
 struct OvstageScanResult
@@ -182,5 +191,10 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
                               const OvstageScanFilter* filter = nullptr,
                               uint64_t usdStageId = 0,
                               OvstageSource* attached = nullptr);
+
+// The physics-input identity's read plan, generated from the population contract
+// (PopulationReads.inl): exact ovstage column names, and prefixes ending in '*'.
+// Capture audits every later read against it.
+const std::vector<std::string>& physicsInputColumns();
 
 } // namespace omni::physics::ovstage

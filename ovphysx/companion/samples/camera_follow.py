@@ -22,6 +22,7 @@ def worker(output):
     from dataclasses import asdict
     from ovphysx import PhysX
     import ovstage
+    from ovphysx.population import physics_population_descs
     from ovphysx_companion.output import capture_body_output
     from ovphysx_companion.schemas import physx_schema_paths
     ovstage.population.register_usd_schemas([str(p) for p in physx_schema_paths()])
@@ -30,7 +31,7 @@ def worker(output):
     stage = ovstage.Stage('camera-reader')
     frames = []
     try:
-        ovstage.population.open_usd(stage, str(SCENE), ordinal=1, domains=ovstage.PopulationDomain.ALL)
+        ovstage.population.open_usd_with_desc(stage, str(SCENE), ordinal=1, time=ovstage.population.DEFAULT_TIME, descs=physics_population_descs(rendering=True))
         stage.advance_write_floor(ordinal=1).wait()
         physics.wait_task(physics.attach_ovstage(stage, read_ordinal=1))
         for step in range(1, 7):

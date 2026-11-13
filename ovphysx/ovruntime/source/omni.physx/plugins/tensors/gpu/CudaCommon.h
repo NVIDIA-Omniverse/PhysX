@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-TENSOR-VIEW-001
+// @covers AC-15
+
 #pragma once
 
 #include <carb/logging/Log.h>
@@ -79,6 +82,15 @@ inline void synchronizeCuda(const char* file, int line)
 #define VALIDATE_CUDA_CONTEXT() validateCudaContext(__FILE__, __LINE__)
 #define SYNCHRONIZE_CUDA() synchronizeCuda(__FILE__, __LINE__)
 
+// Copies `bytes` from host memory to the device and waits for the copy to land. A copy from pageable memory may
+// return before it reaches the device, and work on a non-blocking stream -- a stream-ordered read or commit
+// (ADR-0052, ADR-0055) -- does not wait for the legacy default stream it runs on.
+inline bool uploadToDevice(void* dst, const void* src, size_t bytes)
+{
+    return CHECK_CUDA(cudaMemcpy(dst, src, bytes, cudaMemcpyHostToDevice)) &&
+           CHECK_CUDA(cudaStreamSynchronize(nullptr));
+}
+
 
 /**
     \brief Helper function to allocate device memory and initializing it with either existing host data or 0
@@ -91,26 +103,40 @@ inline void synchronizeCuda(const char* file, int line)
 inline bool prepareDeviceData(void** dst, const void* src, size_t size, const char* name)
 {
     if (size == 0)
-        CARB_LOG_ERROR("Zero memory size requested for %s allocation is incorrect", name);
-
-    if (!CHECK_CUDA(cudaMalloc(dst, size)))
     {
-        CARB_LOG_ERROR("Unable to allocate memory of size %zu for %s", size, name);
+        // As cudaMalloc did for zero bytes: no buffer, and not a failure.
+        CARB_LOG_ERROR("Zero memory size requested for %s allocation is incorrect", name);
+        *dst = nullptr;
+        return true;
+    }
+
+    // Allocated through the CUDA shim, like the plugin's other driver calls; the buffer is freed with cudaFree, which
+    // frees driver allocations too. A failure is reported through the result. A failed copy or fill below is also
+    // cleared from CUDA's last error: left there, the next launch check (cudaGetLastError) would report it as its own.
+    uintptr_t device = 0;
+    int status = 0;
+    if (!getCudaShim()->memAlloc(&device, size, &status) || !device)
+    {
+        CARB_LOG_ERROR("Unable to allocate memory of size %zu for %s (CUresult %d)", size, name, status);
         return false;
     }
+    *dst = reinterpret_cast<void*>(device);
     if (src)
     {
-        if (!CHECK_CUDA(cudaMemcpy(*dst, src, size, cudaMemcpyHostToDevice)))
+        if (!uploadToDevice(*dst, src, size))
         {
             CARB_LOG_ERROR("Unable to copy data from host to device for %s", name);
+            cudaGetLastError();
             return false;
         }
     }
     else if (size != 0)
     {
-        if (!CHECK_CUDA(cudaMemset(*dst, 0, size)))
+        // Waited for as an upload is (uploadToDevice).
+        if (!CHECK_CUDA(cudaMemset(*dst, 0, size)) || !CHECK_CUDA(cudaStreamSynchronize(nullptr)))
         {
             CARB_LOG_ERROR("Unable to initialize device memory for %s", name);
+            cudaGetLastError();
             return false;
         }
     }

@@ -6,6 +6,11 @@
 // reading its body pose through a session read selected by that path. basic_simulation.usda
 // places one rigid body 'table' under each env.
 
+/**
+ * @implements REQ-CAPI-ASYNC-003
+ * @covers AC-2 AC-3 AC-4
+ */
+
 #include "global_test_environment.h"  // PhysXTestFixture, waitForTaskSuccess, ovphysx.h
 #include "ovphysx/ovphysx_attributes.h"
 #include "test_utilities.h"
@@ -63,9 +68,10 @@ static bool read_selected_bodies(ovphysx_instance_handle_t handle, const ovphysx
     path_dictionary_instance_t* dictionary = test_utils::attached_ovstage_dictionary(handle);
     bool ok = dictionary != nullptr;
     ovx_path_dictionary_t* dict = static_cast<ovx_path_dictionary_t*>(dictionary);
-    const ovx_string_or_token_t position = { 0, { OVPHYSX_ATTR_POSITION, sizeof(OVPHYSX_ATTR_POSITION) - 1 } };
+    const ovx_token_or_string_t position = { 0, { OVPHYSX_ATTR_POSITION, sizeof(OVPHYSX_ATTR_POSITION) - 1 } };
     ovphysx_read_handle_t read = 0;
-    ok = ok && test_utils::complete_task(handle, ovphysx_read(handle, query, &position, 1, &read, nullptr)).status ==
+    ok = ok && test_utils::complete_task(handle, ovphysx_read(handle, query, &position, 1,
+                                                              ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr)).status ==
                    OVPHYSX_API_SUCCESS;
     while (ok)
     {
@@ -74,10 +80,10 @@ static bool read_selected_bodies(ovphysx_instance_handle_t handle, const ovphysx
              OVPHYSX_API_SUCCESS;
         if (!ok || !group)
             break;
-        const DLTensor* tensor = group->data.tensor_count ? &group->data.tensors[0] : nullptr;
+        const DLTensor* tensor = group->columns[0].data.tensor_count ? &group->columns[0].data.tensors[0] : nullptr;
         const ovx_primpath_t* paths = nullptr;
         size_t path_count = 0;
-        ok = !group->is_array && tensor && tensor->data && tensor->device.device_type == kDLCPU &&
+        ok = !group->columns[0].is_array && tensor && tensor->data && tensor->device.device_type == kDLCPU &&
              tensor->dtype.lanes == 3 &&
              ovx_path_dictionary_get_paths(dict, group->prims.list, &paths, &path_count) == OVX_OK;
         const float* values =
@@ -213,16 +219,16 @@ TEST_F(CloneTest, ErrorInvalidParameters)
     }
 }
 
+// The attachment check runs in the clone job, so a clone without a stage is accepted and
+// its task fails.
 TEST_F(CloneTest, ErrorNoStageLoaded)
 {
     ovphysx_string_t target = make_ovx_string("/World/clone1");
     ovphysx_enqueue_result_t res =
         ovphysx_clone(m_handle, make_ovx_string("/World/table"), &target, 1, nullptr, nullptr);
-    EXPECT_EQ(res.status, OVPHYSX_API_ERROR);
-    if (res.op_index != 0)
-    {
-        EXPECT_FALSE(waitForTaskSuccess(m_handle, res, 2'000'000'000ULL));
-    }
+    ASSERT_EQ(res.status, OVPHYSX_API_SUCCESS);
+    EXPECT_NE(res.op_index, 0u);
+    EXPECT_TRUE(waitForTaskFailure(m_handle, res, "clone: no ovstage is attached"));
 }
 
 TEST_F(CloneTest, ErrorSourceDoesNotExist)
@@ -372,7 +378,9 @@ TEST_F(CloneTest, CloneAfterWarmupRejectedInAllModes) {
         target_ovx.data(),
         num_targets, nullptr, nullptr);
 
-    EXPECT_EQ(clone_res.status, OVPHYSX_API_INVALID_ARGUMENT)
+    // The after-warmup check runs in the clone job, which fails the task.
+    ASSERT_EQ(clone_res.status, OVPHYSX_API_SUCCESS);
+    EXPECT_TRUE(waitForTaskFailure(m_handle, clone_res, "clone() must be called before warmup() and the first step()"))
         << "clone() after warmup must be rejected in all modes";
 }
 
@@ -878,8 +886,8 @@ TEST_F(CloneTest, ErrorTargetNotAbsolutePrimPath)
         const char* targets[] = { bad };
         ovphysx_enqueue_result_t res = enqueue_clone(m_handle, "/World/envs/env0", targets, 1);
         ASSERT_EQ(res.status, OVPHYSX_API_SUCCESS);
-        EXPECT_FALSE(waitForTaskSuccess(m_handle, res, 2'000'000'000ULL))
-            << "target '" << bad << "' must fail during inline execution";
+        EXPECT_TRUE(waitForTaskFailure(m_handle, res, "must be a non-root absolute prim path"))
+            << "target '" << bad << "' must fail its task";
     }
 }
 
@@ -989,20 +997,17 @@ TEST_F(CloneTest, ErrorTargetReusedAcrossBatches)
     ASSERT_EQ(first.status, OVPHYSX_API_SUCCESS);
     ASSERT_TRUE(waitForTaskSuccess(m_handle, first, 5'000'000'000ULL)) << "first clone failed";
 
-    // env1 now exists, so reusing it on the same attach must be rejected.
+    // env1 now exists, so reusing it on the same attach fails the second clone's task.
     ovphysx_enqueue_result_t second = enqueue_clone(m_handle, "/World/envs/env0", targets, 1);
-    EXPECT_EQ(second.status, OVPHYSX_API_INVALID_ARGUMENT);
-    if (second.op_index != 0)
-    {
-        EXPECT_FALSE(waitForTaskSuccess(m_handle, second, 2'000'000'000ULL));
-    }
+    ASSERT_EQ(second.status, OVPHYSX_API_SUCCESS);
+    EXPECT_TRUE(waitForTaskFailure(m_handle, second, "clone: target path was already cloned on this attach"));
 }
 
 // A target already populated with physics from the initial parse (not from a prior clone) must be
 // rejected before replicate(), otherwise it would add duplicate actors under an existing path.
-// Distinct from ErrorTargetReusedAcrossBatches (prior-clone targets, caught C-first by
-// cloned_target_paths as INVALID_ARGUMENT): here the runtime ObjectDb subtree check in the seam
-// catches it during accepted inline execution, before replicate() can mutate anything.
+// Distinct from ErrorTargetReusedAcrossBatches (prior-clone targets, caught by the clone job's
+// cloned_target_paths check before the runtime call): here the runtime ObjectDb subtree check in
+// the seam catches it, before replicate() can mutate anything.
 TEST_F(CloneTest, ErrorTargetAlreadyPopulated)
 {
     ovphysx_usd_handle_t usd_handle = 0;
@@ -1012,27 +1017,29 @@ TEST_F(CloneTest, ErrorTargetAlreadyPopulated)
     const char* targets[] = { "/World/envs/env0/table" };
     ovphysx_enqueue_result_t res = enqueue_clone(m_handle, "/World/envs/env0", targets, 1);
     ASSERT_EQ(res.status, OVPHYSX_API_SUCCESS);
-    EXPECT_FALSE(waitForTaskSuccess(m_handle, res, 2'000'000'000ULL));
+    EXPECT_TRUE(waitForTaskFailure(m_handle, res, "is already populated with physics"));
 }
 
-// Rejected clone admission has no receipt. A clone-before-attach rejection is
-// followed by a normal attach and clone without an intervening wait-all.
-TEST_F(CloneTest, ErrorLeavesNoOrphanOpThenRecovers)
+// A clone submitted before attach is accepted and its task fails: the attach submitted
+// after it runs after the clone job. A normal clone follows without an intervening
+// wait-all, and the earlier failure stays collectable.
+TEST_F(CloneTest, ErrorBeforeAttachFailsItsTaskThenRecovers)
 {
     const char* targets[] = { "/World/envs/env1" };
     // No ovstage is attached yet.
     ovphysx_enqueue_result_t errored = enqueue_clone(m_handle, "/World/envs/env0", targets, 1);
-    EXPECT_EQ(errored.status, OVPHYSX_API_ERROR);
-    EXPECT_EQ(errored.op_index, 0u) << "rejected admission must not issue a task";
+    ASSERT_EQ(errored.status, OVPHYSX_API_SUCCESS);
+    EXPECT_NE(errored.op_index, 0u) << "the attachment check runs in the job, so the clone has a task";
 
     ovphysx_usd_handle_t usd_handle = 0;
     ASSERT_TRUE(load_basic_usd(usd_handle)) << "USD load timed out or failed";
 
     ovphysx_enqueue_result_t ok = enqueue_clone(m_handle, "/World/envs/env0", targets, 1);
-    ASSERT_EQ(ok.status, OVPHYSX_API_SUCCESS) << "clone after a prior rejection must succeed";
+    ASSERT_EQ(ok.status, OVPHYSX_API_SUCCESS) << "clone after a prior failure must succeed";
     ASSERT_TRUE(waitForTaskSuccess(m_handle, ok, 5'000'000'000ULL));
     std::vector<std::string> tv(targets, targets + 1);
     ASSERT_TRUE(verify_clones_exist(m_handle, tv));
+    EXPECT_TRUE(waitForTaskFailure(m_handle, errored, "clone: no ovstage is attached"));
 }
 
 // A clone that fails inside replicate() (here: a non-existent source, which registers the replicator

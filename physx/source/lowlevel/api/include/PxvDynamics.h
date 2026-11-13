@@ -48,7 +48,7 @@ PX_COMPILE_TIME_ASSERT(sizeof(PxsRigidCore) == 32);
 struct PxsBodyCore : public PxsRigidCore
 {
 	PxsBodyCore() : PxsRigidCore() { fixedBaseLink = PxU8(0); }
-	PxsBodyCore(const PxEMPTY) : PxsRigidCore(PxEmpty)		{}
+	PxsBodyCore(const PxEMPTY) : PxsRigidCore(PxEmpty), lockFlags(PxEmpty)	{}
 
 	PX_FORCE_INLINE	const PxTransform& getBody2Actor()	const	{ return body2Actor;	}
 	PX_FORCE_INLINE	void setBody2Actor(const PxTransform& t)

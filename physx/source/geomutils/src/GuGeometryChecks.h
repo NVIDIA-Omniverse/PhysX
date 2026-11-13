@@ -11,8 +11,10 @@
 #include "geometry/PxCapsuleGeometry.h"
 #include "geometry/PxPlaneGeometry.h"
 #include "geometry/PxConvexMeshGeometry.h"
-#include "geometry/PxParticleSystemGeometry.h"
-#include "geometry/PxTetrahedronMeshGeometry.h"
+#if PX_SUPPORT_GPU_PHYSX
+	#include "geometry/PxParticleSystemGeometry.h"
+	#include "geometry/PxTetrahedronMeshGeometry.h"
+#endif
 #include "geometry/PxTriangleMeshGeometry.h"
 #include "geometry/PxHeightFieldGeometry.h"
 #include "geometry/PxCustomGeometry.h"
@@ -38,13 +40,15 @@ namespace physx
 	template <> struct PxcGeometryTraits<PxSphereGeometry>				{ enum { TypeID = PxGeometryType::eSPHERE }; };
 	template <> struct PxcGeometryTraits<PxCapsuleGeometry>				{ enum { TypeID = PxGeometryType::eCAPSULE }; };
 	template <> struct PxcGeometryTraits<PxPlaneGeometry>				{ enum { TypeID = PxGeometryType::ePLANE }; };
-	template <> struct PxcGeometryTraits<PxParticleSystemGeometry>		{ enum { TypeID = PxGeometryType::ePARTICLESYSTEM}; };
 	template <> struct PxcGeometryTraits<PxConvexCoreGeometry>			{ enum { TypeID = PxGeometryType::eCONVEXCORE }; };
 	template <> struct PxcGeometryTraits<PxConvexMeshGeometry>			{ enum { TypeID = PxGeometryType::eCONVEXMESH }; };
 	template <> struct PxcGeometryTraits<PxTriangleMeshGeometry>		{ enum { TypeID = PxGeometryType::eTRIANGLEMESH }; };
-	template <> struct PxcGeometryTraits<PxTetrahedronMeshGeometry>		{ enum { TypeID = PxGeometryType::eTETRAHEDRONMESH }; };
 	template <> struct PxcGeometryTraits<PxHeightFieldGeometry>			{ enum { TypeID = PxGeometryType::eHEIGHTFIELD }; };
 	template <> struct PxcGeometryTraits<PxCustomGeometry>				{ enum { TypeID = PxGeometryType::eCUSTOM }; };
+#if PX_SUPPORT_GPU_PHYSX
+	template <> struct PxcGeometryTraits<PxTetrahedronMeshGeometry>		{ enum { TypeID = PxGeometryType::eTETRAHEDRONMESH }; };
+	template <> struct PxcGeometryTraits<PxParticleSystemGeometry>		{ enum { TypeID = PxGeometryType::ePARTICLESYSTEM}; };
+#endif
 
 	template<class T> PX_CUDA_CALLABLE PX_FORCE_INLINE void checkType(const PxGeometry& geometry)
 	{

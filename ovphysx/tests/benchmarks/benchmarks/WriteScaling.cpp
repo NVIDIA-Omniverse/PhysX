@@ -10,6 +10,9 @@
  *
  * @implements REQ-CAPI-BENCHMARK-007
  * @covers AC-1 AC-2 AC-3 AC-4
+ *
+ * @implements REQ-CAPI-BENCHMARK-008
+ * @covers AC-1 AC-3 AC-4
  */
 //
 // WriteScaling.*, WriteScalingHighN.* and WriteOnly.*: bulk rigid-body velocity update
@@ -123,6 +126,7 @@
 #include <cstring>
 #include <iomanip>
 #include <map>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -263,8 +267,8 @@ bool sceneAuthorsCpuConfiguration(const std::string& usda)
 class WriteScalingBase : public BmBenchmark
 {
 public:
-    WriteScalingBase(const char* rowName, WriteLane lane, uint32_t bodyCount)
-        : mRow(rowName), mLane(lane), mBodyCount(bodyCount)
+    WriteScalingBase(const char* rowName, WriteLane lane, uint32_t bodyCount, bool retainQuery = false)
+        : mRow(rowName), mLane(lane), mBodyCount(bodyCount), mRetainQuery(retainQuery)
     {
     }
 
@@ -440,11 +444,31 @@ private:
         {
             return false;
         }
+        if (mRetainQuery)
+        {
+            ovstage_query_handle_t query = OVSTAGE_INVALID_QUERY_HANDLE;
+            const ovstage_api_status_t status = ovstage_query_from_path_list(mAttachment.stage, mPathList, &query);
+            if (status != OVSTAGE_OK || query == OVSTAGE_INVALID_QUERY_HANDLE)
+            {
+                bmRecordFailure(mRow, "retained query creation failed for N=%u: status=%d (%s)", mBodyCount,
+                                static_cast<int>(status), ovstage_get_error_string(mAttachment.stage, status));
+                return false;
+            }
+            mRetainedQuery.emplace(mAttachment.stage, query, mRow);
+        }
         return true;
     }
 
     void teardown()
     {
+        // QueryRetention owns one query across warmup, timed writes and the
+        // distinctive verification write, including a write-failure exit.
+        // Retire it while its stage and path-list storage are still alive.
+        if (mRetainedQuery)
+        {
+            mRetainedQuery->close();
+            mRetainedQuery.reset();
+        }
         // Destroy the binding before the stage reset in clearOvstageChecked():
         // a binding's lifetime is tied to the realized physics objects it was
         // created against.
@@ -580,12 +604,24 @@ private:
     bool writeThroughOvstage()
     {
         ovstage_query_handle_t query = OVSTAGE_INVALID_QUERY_HANDLE;
-        const ovstage_api_status_t queryStatus = ovstage_query_from_path_list(mAttachment.stage, mPathList, &query);
-        if (queryStatus != OVSTAGE_OK || query == OVSTAGE_INVALID_QUERY_HANDLE)
+        if (mRetainQuery)
         {
-            bmRecordFailure(mRow, "query_from_path_list failed for N=%u: status=%d (%s)", mBodyCount,
-                            static_cast<int>(queryStatus), ovstage_get_error_string(mAttachment.stage, queryStatus));
-            return false;
+            if (!mRetainedQuery || mRetainedQuery->get() == OVSTAGE_INVALID_QUERY_HANDLE)
+            {
+                bmRecordFailure(mRow, "retained query is unavailable during a velocity write");
+                return false;
+            }
+            query = mRetainedQuery->get();
+        }
+        else
+        {
+            const ovstage_api_status_t queryStatus = ovstage_query_from_path_list(mAttachment.stage, mPathList, &query);
+            if (queryStatus != OVSTAGE_OK || query == OVSTAGE_INVALID_QUERY_HANDLE)
+            {
+                bmRecordFailure(mRow, "query_from_path_list failed for N=%u: status=%d (%s)", mBodyCount,
+                                static_cast<int>(queryStatus), ovstage_get_error_string(mAttachment.stage, queryStatus));
+                return false;
+            }
         }
 
         // Object-owned payload: a bounded wait that times out returns while the
@@ -613,15 +649,17 @@ private:
         {
             bmRecordFailure(mRow, "write_attribute(%s) rejected: %d", kVelocityAttribute,
                             static_cast<int>(enqueue.status));
-            authoringbm::releaseQueryChecked(mAttachment.stage, query, mRow);
+            if (!mRetainQuery)
+            {
+                authoringbm::releaseQueryChecked(mAttachment.stage, query, mRow);
+            }
             return false;
         }
 
-        // The query is released whichever way the write went, so a failed write
-        // cannot leak a handle the pinned ovstage contract requires retired
-        // before ovstage_destroy_instance().
+        // Original rows retire this query even after a failed write. The
+        // retained variant's owner instead retires it in teardown on every exit.
         const bool writeOk = authoringbm::waitStage(mAttachment.stage, enqueue.op_index, mRow, "write_attribute");
-        const bool releaseOk = authoringbm::releaseQueryChecked(mAttachment.stage, query, mRow);
+        const bool releaseOk = mRetainQuery || authoringbm::releaseQueryChecked(mAttachment.stage, query, mRow);
         if (!writeOk || !releaseOk)
         {
             return false;
@@ -747,6 +785,7 @@ private:
     const char* mRow = nullptr;
     WriteLane mLane = WriteLane::eOvstage;
     uint32_t mBodyCount = 0;
+    bool mRetainQuery = false;
 
     ovphysx::PhysX* mPhysX = nullptr;
     ovphysx_sample_stage_attachment_t mAttachment{};
@@ -759,6 +798,7 @@ protected:
 
 private:
     uint32_t mStepIndex = 0;
+    std::optional<authoringbm::ScopedQuery> mRetainedQuery;
 
     path_dictionary_instance_t* mDictionary = nullptr;
     ovx_primpath_list_t mPathList = OVX_INVALID_PRIMPATH_LIST;
@@ -798,6 +838,20 @@ Register<WriteScalingVelocityOvstage4096Cpu, true> sWriteScalingVelocityOvstage4
     "WriteScaling.velocity_ovstage_4096_cpu");
 Register<WriteScalingVelocityTensor4096Cpu, true> sWriteScalingVelocityTensor4096Cpu(
     "WriteScaling.velocity_tensor_4096_cpu");
+
+// This separate row measures amortized setup for an unchanged prim selection.
+// The original WriteScaling, HighN and WriteOnly query lifetimes stay intact.
+struct QueryRetentionVelocityOvstage4096Cpu : WriteScalingBase
+{
+    QueryRetentionVelocityOvstage4096Cpu()
+        : WriteScalingBase("QueryRetention.velocity_ovstage_4096_cpu", WriteLane::eOvstage,
+                           kWriteScalingBodyCount, true)
+    {
+    }
+};
+
+Register<QueryRetentionVelocityOvstage4096Cpu, true> sQueryRetentionVelocityOvstage4096Cpu(
+    "QueryRetention.velocity_ovstage_4096_cpu");
 
 
 // The hidden high-N diagnostics: the identical measured sequence at 8,192 and

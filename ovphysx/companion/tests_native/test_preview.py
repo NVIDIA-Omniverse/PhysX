@@ -15,9 +15,10 @@ from ovphysx_companion.preview import PreviewSession, _PreviewApi
 @pytest.fixture
 def preview_stage(physics):
     import ovstage
+    from ovphysx.population import physics_population_descs
     stage = ovstage.Stage('independent-inspector')
-    ovstage.population.open_usd(stage, str(Path(__file__).resolve().parents[1] / 'samples/scenes/two_boxes.usda'),
-                                ordinal=1, domains=ovstage.PopulationDomain.ALL)
+    ovstage.population.open_usd_with_desc(stage, str(Path(__file__).resolve().parents[1] / 'samples/scenes/two_boxes.usda'),
+                                ordinal=1, time=ovstage.population.DEFAULT_TIME, descs=physics_population_descs(rendering=True))
     stage.advance_write_floor(ordinal=1).wait()
     yield stage
     stage.destroy()
@@ -27,6 +28,7 @@ def preview_stage(physics):
 # @covers AC-1
 def test_population_nested_transforms_preserved_by_live_and_preview(physics,tmp_path):
     import ovstage
+    from ovphysx.population import physics_population_descs
     import numpy as np
     from ovphysx_companion.inspection import Inspector
     source=tmp_path/'nested.usda'
@@ -49,7 +51,7 @@ def Xform "World" {
     preview_stage=ovstage.Stage('nested-companion-preview')
     try:
         for candidate in (stage,preview_stage):
-            ovstage.population.open_usd(candidate,str(source),ordinal=1,domains=ovstage.PopulationDomain.ALL)
+            ovstage.population.open_usd_with_desc(candidate,str(source),ordinal=1,time=ovstage.population.DEFAULT_TIME,descs=physics_population_descs(rendering=True))
             candidate.advance_write_floor(ordinal=1).wait()
             with ovstage.PathDictionary(candidate) as dictionary:
                 world=dictionary.intern_token('omni:fabric:worldMatrix')
@@ -60,8 +62,9 @@ def Xform "World" {
                             matrices=[]
                             for group in batch.groups():
                                 with group:
-                                    for i in range(group.tensor_count):
-                                        matrices.append(np.array(group.array(i),copy=True))
+                                    for column in group.columns:
+                                        for i in range(column.tensor_count):
+                                            matrices.append(np.array(column.array(i),copy=True))
             assert len(matrices)==1
             assert matrices[0].reshape(4,4)[3,:3]==pytest.approx((11,2,3))
         physics.wait_task(physics.attach_ovstage(stage,read_ordinal=1))
@@ -170,6 +173,7 @@ def test_preview_pending_isolation_and_close_preserves_playback_receipt(attached
 def test_duplicate_sources_and_independent_public_owners(attached, preview_stage):
     import ovphysx
     import ovstage
+    from ovphysx.population import physics_population_descs
     with pytest.raises(CompanionError) as error:
         PreviewSession(attached, attached._attached_ovstage, read_ordinal=1)
     assert error.value.status == Status.INVALID_ARGUMENT
@@ -184,9 +188,9 @@ def test_duplicate_sources_and_independent_public_owners(attached, preview_stage
             assert task.op_index != 0
             with pytest.raises(ovphysx.TaskError, match='already attached'):
                 peer.wait_task(task)
-            ovstage.population.open_usd(peer_stage,
+            ovstage.population.open_usd_with_desc(peer_stage,
                 str(Path(__file__).resolve().parents[1]/'samples/scenes/two_boxes.usda'),
-                ordinal=1,domains=ovstage.PopulationDomain.ALL)
+                ordinal=1,time=ovstage.population.DEFAULT_TIME,descs=physics_population_descs(rendering=True))
             peer_stage.advance_write_floor(ordinal=1).wait()
             peer.wait_task(peer.attach_ovstage(peer_stage,read_ordinal=1))
             peer.step_sync(.01)
@@ -267,10 +271,11 @@ def test_hard_cpu_policy_rejects_explicit_gpu_preview(attached, preview_stage):
 
 def test_independent_preview_threads(physics, preview_stage):
     import ovstage
+    from ovphysx.population import physics_population_descs
     from concurrent.futures import ThreadPoolExecutor
     stage2 = ovstage.Stage('second-preview-thread')
-    ovstage.population.open_usd(stage2, str(Path(__file__).resolve().parents[1] / 'samples/scenes/two_boxes.usda'),
-                                ordinal=1, domains=ovstage.PopulationDomain.ALL)
+    ovstage.population.open_usd_with_desc(stage2, str(Path(__file__).resolve().parents[1] / 'samples/scenes/two_boxes.usda'),
+                                ordinal=1, time=ovstage.population.DEFAULT_TIME, descs=physics_population_descs(rendering=True))
     stage2.advance_write_floor(ordinal=1).wait()
     try:
         with PreviewSession(physics, preview_stage, read_ordinal=1, threads=2) as first, \
@@ -294,9 +299,10 @@ def test_independent_preview_threads(physics, preview_stage):
 @pytest.mark.parametrize('retire_first', ['fetch', 'close'])
 def test_recording_gate_tracks_every_pending_preview(physics, preview_stage, retire_first):
     import ovstage
+    from ovphysx.population import physics_population_descs
     stage2 = ovstage.Stage('second-pending-preview')
-    ovstage.population.open_usd(stage2, str(Path(__file__).resolve().parents[1] / 'samples/scenes/two_boxes.usda'),
-                                ordinal=1, domains=ovstage.PopulationDomain.ALL)
+    ovstage.population.open_usd_with_desc(stage2, str(Path(__file__).resolve().parents[1] / 'samples/scenes/two_boxes.usda'),
+                                ordinal=1, time=ovstage.population.DEFAULT_TIME, descs=physics_population_descs(rendering=True))
     stage2.advance_write_floor(ordinal=1).wait()
     try:
         with PreviewSession(physics, preview_stage, read_ordinal=1) as first, \
@@ -304,13 +310,14 @@ def test_recording_gate_tracks_every_pending_preview(physics, preview_stage, ret
             first.simulate(.01)
             second.simulate(.01)
             with pytest.raises(RuntimeError, match='safe point'):
-                physics.is_recording()
+                physics.stop_recording()
             getattr(first, retire_first)()
             with pytest.raises(RuntimeError, match='safe point'):
-                physics.is_recording()
+                physics.stop_recording()
             # A rejected recording transition did not fetch this owner's work.
             second.fetch()
-            assert not physics.is_recording()
+            with pytest.raises(RuntimeError, match='no recording is active'):
+                physics.stop_recording()
     finally:
         stage2.destroy()
 
@@ -324,14 +331,15 @@ def test_preview_thread_limit_rejected_before_native_attach(physics,preview_stag
 
 def test_parallel_preview_publication_and_queue_runtime_resolution(physics,preview_stage):
     import ovstage
+    from ovphysx.population import physics_population_descs
     import time
     from concurrent.futures import ThreadPoolExecutor
     from threading import Barrier
     from ovphysx_companion.events import EventQueue,Mask
     from ovphysx_companion.native import CompanionError,Status
     peer=ovstage.Stage('publication-peer')
-    ovstage.population.open_usd(peer,str(Path(__file__).resolve().parents[1]/'samples/scenes/two_boxes.usda'),
-        ordinal=1,domains=ovstage.PopulationDomain.ALL)
+    ovstage.population.open_usd_with_desc(peer,str(Path(__file__).resolve().parents[1]/'samples/scenes/two_boxes.usda'),
+        ordinal=1,time=ovstage.population.DEFAULT_TIME,descs=physics_population_descs(rendering=True))
     peer.advance_write_floor(ordinal=1).wait()
     rendezvous=Barrier(2)
     def admitted(operation):
@@ -369,6 +377,7 @@ def test_concurrent_preview_open_reports_busy_for_configuration_admission(attach
     from threading import Event
     import ovphysx
     import ovstage
+    from ovphysx.population import physics_population_descs
     peer=ovstage.Stage('contention-peer')
     entered,release=Event(),Event()
     logger=logging.getLogger('companion.preview.contention');logger.setLevel(logging.DEBUG)
@@ -384,8 +393,8 @@ def test_concurrent_preview_open_reports_busy_for_configuration_admission(attach
         # during attach. Do not rely on optional USD-backing lookup diagnostics.
         candidate_scene.write_text(source.read_text().replace('    def PhysicsScene',
             '    def Xform "AdmissionProbe" (prepend apiSchemas = ["PhysicsRigidBodyAPI"]) {}\n    def PhysicsScene',1))
-        ovstage.population.open_usd(peer,str(source),ordinal=1,domains=ovstage.PopulationDomain.ALL)
-        ovstage.population.open_usd(preview_stage,str(candidate_scene),ordinal=2,domains=ovstage.PopulationDomain.ALL)
+        ovstage.population.open_usd_with_desc(peer,str(source),ordinal=1,time=ovstage.population.DEFAULT_TIME,descs=physics_population_descs(rendering=True))
+        ovstage.population.open_usd_with_desc(preview_stage,str(candidate_scene),ordinal=2,time=ovstage.population.DEFAULT_TIME,descs=physics_population_descs(rendering=True))
         preview_stage.advance_write_floor(ordinal=2).wait()
         peer.advance_write_floor(ordinal=1).wait()
         ovphysx.enable_python_logging(logger_name=logger.name)

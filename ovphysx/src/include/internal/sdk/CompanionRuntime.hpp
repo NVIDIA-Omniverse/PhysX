@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // @implements REQ-CAPI-COMPANION-001
-// @covers AC-4 AC-5
+// @covers AC-3 AC-4 AC-5
 #pragma once
+#include "internal/sdk/InstanceExecutor.hpp"
 #include <atomic>
 #include <cstdint>
 #include <map>
@@ -11,6 +12,7 @@
 #include <mutex>
 #include <thread>
 
+struct InstanceData;
 namespace ovphysx { class CarboniteLoader; }
 namespace omni::physx::native { struct DebugFrame; }
 namespace omni::physx::diagnostics { struct OvdDocument; }
@@ -48,7 +50,7 @@ public:
         try
         {
             std::lock_guard<std::mutex> lock(m_admissionMutex);
-            if (m_transitionDepth != 0)
+            if (m_transitionDepth != 0 || m_jobTransitions != 0)
                 return false;
             return m_operations.emplace(std::this_thread::get_id(), false).second;
         }
@@ -75,6 +77,24 @@ public:
     {
         std::lock_guard<std::mutex> lock(m_admissionMutex);
         --m_transitionDepth;
+    }
+    // A queued lifecycle transition reserves companion admission from submission
+    // until its lifecycle body returns, before task-outcome publication. Cancellation
+    // releases it when the unstarted job is destroyed. It neither refuses nor is
+    // refused by transitions of other threads: their engine work reaches the instance
+    // only through its lane, and lifecycle jobs of different instances run one at a time.
+    bool enterJobTransition()
+    {
+        std::lock_guard<std::mutex> lock(m_admissionMutex);
+        if (!m_operations.empty())
+            return false;
+        ++m_jobTransitions;
+        return true;
+    }
+    void leaveJobTransition()
+    {
+        std::lock_guard<std::mutex> lock(m_admissionMutex);
+        --m_jobTransitions;
     }
     void setNativeAccess(bool active)
     {
@@ -117,6 +137,7 @@ private:
     std::map<std::thread::id, bool> m_operations;
     std::thread::id m_transitionThread;
     uint32_t m_transitionDepth = 0;
+    uint32_t m_jobTransitions = 0;
     std::atomic<uint32_t> m_serviceLeases{0};
     bool m_admissionOpen = false;
     CompanionRegistry<ovphysx::companion::sessions::Session> m_sessions;
@@ -143,6 +164,20 @@ public:
     explicit operator bool() const { return m_admitted; }
     CompanionTransitionGuard(const CompanionTransitionGuard&) = delete;
     CompanionTransitionGuard& operator=(const CompanionTransitionGuard&) = delete;
+private:
+    CompanionRuntime& m_runtime;
+    bool m_admitted;
+};
+
+// Companion admission reserved for a queued lifecycle task (see enterJobTransition()).
+class CompanionJobTransitionGuard
+{
+public:
+    explicit CompanionJobTransitionGuard(CompanionRuntime& runtime) : m_runtime(runtime), m_admitted(runtime.enterJobTransition()) {}
+    ~CompanionJobTransitionGuard() { if (m_admitted) m_runtime.leaveJobTransition(); }
+    explicit operator bool() const { return m_admitted; }
+    CompanionJobTransitionGuard(const CompanionJobTransitionGuard&) = delete;
+    CompanionJobTransitionGuard& operator=(const CompanionJobTransitionGuard&) = delete;
 private:
     CompanionRuntime& m_runtime;
     bool m_admitted;
@@ -185,3 +220,32 @@ private:
 
 // Called under operation admission. Retain the exact facade/preview owner.
 std::shared_ptr<ovphysx::CarboniteLoader> companionRuntimeForAttachment(uint64_t attachment);
+
+// A companion operation's hold on the lane of the core instance whose attachment it
+// works on, kept for the whole operation. Companion operations never wait for core
+// work: when that lane is not free, because the instance's worker runs or has queued
+// a job or another call holds it (the calling thread too, inside a callback), the
+// operation answers Busy at once. While it is held, the instance's worker starts no
+// job, so core work queued meanwhile runs after the operation, in order, and never
+// meets it inside the runtime. Take it after resolving the owner and with no registry
+// lock held; it never waits.
+class CompanionOwnerLane
+{
+public:
+    CompanionOwnerLane() = default;
+    CompanionOwnerLane(const CompanionOwnerLane&) = delete;
+    CompanionOwnerLane& operator=(const CompanionOwnerLane&) = delete;
+
+    // Takes instance's lane. Returns false when it is not free.
+    bool tryAcquire(const std::shared_ptr<InstanceData>& instance);
+    // Takes the lane of the instance whose current attachment is attachment. Preview,
+    // retired and unknown attachments belong to no instance and need no lane: nothing is
+    // taken, and the runtime decides their admission as before. Returns false when the
+    // owner instance's lane is not free.
+    bool tryAcquireForAttachment(uint64_t attachment);
+
+private:
+    // Declared before the hold, which it outlives.
+    std::shared_ptr<ovphysx::InstanceExecutor> m_executor;
+    ovphysx::InstanceExecutor::LaneHold m_hold;
+};

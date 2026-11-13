@@ -21,6 +21,8 @@ lifetime transitions until the session is closed.
 
 - Negotiate wrong version/size, open sessions, query statistics, request destroy/shutdown, detach and reattach, then close sessions.
 - Create an independent companion preview; retire owners in both orders, with and without recording, and reject recording transitions while preview work is pending.
+- Attempt recording-owner detach with pending preview results, fetch them,
+  continue recording, then close the preview and retry detach.
 - Hold concurrent companion operations, attempt a process transition, and release the operations one at a time. Exercise two separate coordinator objects and nested transition/native-borrow scopes.
 - Inject a retryable native destroy status into Python and retry after it clears.
 
@@ -31,10 +33,17 @@ lifetime transitions until the session is closed.
 - Handles do not alias after reuse, stale generations fail, closing one session preserves peers, and copied counters report the selected owner (REQ AC-3).
 
 - Last-core retirement preserves preview stepping; preview retirement preserves core recording and task receipts. Shutdown rejects the preview lease without consuming initialization (REQ AC-4).
+- Recording-owner detach rejects pending preview work with `INVALID_STATE`
+  before issuing a task receipt or retiring the core attachment. Preview fetch
+  still succeeds, recording remains active, and detach after preview close
+  finalizes a parseable recording with object-destruction commands (REQ AC-4).
 
 - Admission and lease state do not cross coordinator objects; same-owner recursion is rejected, internal transition nesting succeeds, and a transition remains refused until both concurrent operations return (REQ AC-4, AC-5).
 
-- A build-matched C++ object borrow rejects recursive core waiting/collection without modifying output or consuming tasks (REQ AC-5).
+- A build-matched C++ object borrow rejects recursive core waiting/collection
+  without modifying output or consuming tasks. Its native-access lease holds the
+  instance lane; a step submitted during the lease remains pending until the
+  lease ends, then completes normally (REQ AC-5).
 
 ## Executable coverage
 
@@ -59,10 +68,13 @@ negotiation canaries, owned frame release and copies after native owner retireme
 
 [OVD decoder tests](../../../companion/tests_native/test_ovd.py) verify exact table
 negotiation, failed-document canaries and stopped decoding after runtime teardown.
+`test_recording_owner_detach_rejects_pending_preview` covers detach admission,
+preview fetch after rejection, and recording finalization after retry (REQ AC-4).
 
 Native-access coverage is executed and passing:
 [test_companion_access.cpp](../../../tests/c_unittests/test_companion_access.cpp),
 `CompanionNativeAccess.BuildNegotiationPreservesRejectedOutput` and
-`CompanionAccess.TypedBorrowRejectsRecursiveWaitAndStaleRecord`.
+`CompanionAccess.TypedBorrowRejectsRecursiveWaitAndStaleRecord` and
+`CompanionAccess.NativeAccessLeaseDelaysQueuedStep`.
 
 The C++ `CppWrapperRetainsBusyOwnerAcrossResetAndMove` case verifies reset rejection preserves the handle and move assignment transfers both owners without hidden destruction (AC-2).

@@ -124,10 +124,12 @@ namespace Ext
 		virtual	void*					prepareData()	PX_OVERRIDE;
 #if PX_SUPPORT_OMNI_PVD
 		virtual void updateOmniPvdProperties() const PX_OVERRIDE;
+		virtual void updateOmniPvdProperties(const PxConstraintOmniPvdState& state) const PX_OVERRIDE;
 #endif
 		//~PxConstraintConnector
 
 #if PX_SUPPORT_OMNI_PVD
+		void omniPvdDestroyDrives(OmniPvdWriter* pvdWriter, const OmniPvdPxExtensionsRegistrationData* pvdRegData) const;
 		friend void omniPvdInitJoint<D6Joint>(D6Joint& joint);
 		friend void omniPvdInitJoint<D6Joint>(OmniPvdWriter* pvdWriter, const OmniPvdPxExtensionsRegistrationData* pvdRegData, D6Joint& joint);
 #endif

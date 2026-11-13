@@ -48,6 +48,9 @@ namespace physx
 		/**
 		\brief Returns true if the geometry is valid.
 
+		\note If the PhysX SDK was built without GPU support, PxPhysics::createShape() rejects this geometry even though
+		this function returns true. PxGeometryQuery::isValid() returns false in that case.
+
 		\return  True if the current settings are valid for shape creation.
 
 		\see PxPhysics::createShape

@@ -104,6 +104,8 @@ namespace physx
 #if PX_SUPPORT_OMNI_PVD
 		,mOvdDataBuffer(allocDesc.hostAlloc, PxsHeapStats::eARTICULATION)
 		,mOvdIndexBuffer(allocDesc.hostAlloc, PxsHeapStats::eARTICULATION)
+		,mOvdReadbackDataBuffer(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION)
+		,mOvdSnapshotValidIndices(allocDesc.hostAlloc, PxsHeapStats::eARTICULATION)
 		,mOvdSnapshotIndexBuffer(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION)
 		,mOvdSnapshotDataBuffer(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION)
 #endif
@@ -135,6 +137,8 @@ namespace physx
 #if PX_SUPPORT_OMNI_PVD		
 		mOvdDataBuffer.reset();
 		mOvdIndexBuffer.reset();
+		mOvdSnapshotValidIndices.reset();
+		mOvdReadbackDataBuffer.deallocate();
 #endif
 	}
 
@@ -1225,54 +1229,130 @@ namespace physx
 		PxU32 maxLinks, PxU32 maxDofs, PxU32 maxFixedTendons, PxU32 maxTendonJoints, PxU32 maxSpatialTendons, PxU32 maxSpatialTendonAttachments)
 	{
 		PxgSimulationController* controller = mGpuContext->getSimulationController();
-		const PxsSimulationControllerOVDCallbacks* ovdCallback = controller->getOVDCallbacks();
-		if (controller->getEnableOVDReadback() && ovdCallback)
+		PxsSimulationControllerOVDCallbacks* ovdCallback = controller->getOVDCallbacks();
+		if (nbElements && controller->getOVDReadbackMode() != PxsOVDReadbackMode::eDISABLED && ovdCallback && ovdCallback->isArticulationWriteEnabled(dataType))
 		{
 			PxU32 nbrSubElementsPerBlock;
 			PxU32 blockSize;
 			ovdCallback->getArticulationDataElements(dataType, maxLinks, maxDofs, maxFixedTendons, maxTendonJoints, maxSpatialTendons, maxSpatialTendonAttachments, nbrSubElementsPerBlock, blockSize);
+			if (!blockSize || nbElements > PX_MAX_U32 / blockSize || nbElements > PX_MAX_U32 / sizeof(PxArticulationGPUIndex))
+			{ ovdCallback->reportReadbackFailure(); return; }
 
-			PxU32 dataBufferBytes = PxU32(blockSize) * PxU32(nbElements);
-			mOvdDataBuffer.resizeUninitialized(dataBufferBytes);
-
-			PxU32 indexBufferBytes = sizeof(PxArticulationGPUIndex) * nbElements;
-			mOvdIndexBuffer.resizeUninitialized(indexBufferBytes);
-
-			if (mOvdDataBuffer.begin() && mOvdIndexBuffer.begin())
+			// setArticulationData() made only mStream wait for startEvent. The copies below run on the
+			// legacy default stream, which does not wait for non-blocking streams.
+			if (mCudaContext->streamSynchronize(mStream))
+			{ ovdCallback->reportReadbackFailure(); return; }
+			mOvdIndexBuffer.resizeUninitialized(sizeof(PxArticulationGPUIndex) * nbElements);
+			if (!mOvdIndexBuffer.begin()
+				|| mCudaContext->memcpyDtoH(mOvdIndexBuffer.begin(), CUdeviceptr(gpuIndices), sizeof(PxArticulationGPUIndex) * nbElements))
+			{ ovdCallback->reportReadbackFailure(); return; }
+			PxgBodySimManager& manager = controller->getBodySimManager();
+			PxArticulationGPUIndex* indices = reinterpret_cast<PxArticulationGPUIndex*>(mOvdIndexBuffer.begin());
+			mOvdBatchPositions.clear();
+			for (PxU32 i = 0; i < nbElements; ++i)
 			{
-				////////////////////////////////////////////////////////////////////////////////
-				// Copy the forces and gpuIndices from GPU -> CPU
-				////////////////////////////////////////////////////////////////////////////////
-				PxCUresult resultData = mCudaContext->memcpyDtoH(mOvdDataBuffer.begin(), CUdeviceptr(data), dataBufferBytes);
-				PxCUresult resultIndices = mCudaContext->memcpyDtoH(mOvdIndexBuffer.begin(), CUdeviceptr(gpuIndices), indexBufferBytes);
-				if (!resultData && !resultIndices)
-				{
-					////////////////////////////////////////////////////////////////////////////////
-					// Transform from GPUIndices to indices into the PxgBodySimManager mBody array
-					////////////////////////////////////////////////////////////////////////////////
-					PxgBodySimManager& bodyManager = mGpuContext->getSimulationController()->getBodySimManager();
-					PxArticulationGPUIndex* gpuIndicesCPU = reinterpret_cast<PxArticulationGPUIndex*>(mOvdIndexBuffer.begin());
-					for (PxU32 i = 0; i < nbElements; i++)
-					{
-						gpuIndicesCPU[i] = bodyManager.mRemapToNodeMap[gpuIndicesCPU[i]];
-					}
+				if (manager.mPendingArticulationUploads.boundedTest(indices[i])) continue;
+				const PxHashMap<PxU32, PxU32>::Entry* mapping = manager.mRemapToNodeMap.find(indices[i]);
+				if (!mapping || mapping->second >= manager.mBodies.size() || !manager.mBodies[mapping->second])
+				{ ovdCallback->reportReadbackFailure(); return; }
+				if (!ovdCallback->isArticulationCaptured(*static_cast<Dy::FeatherstoneArticulation*>(manager.mBodies[mapping->second]))) continue;
+				indices[mOvdBatchPositions.size()] = mapping->second;
+				mOvdBatchPositions.pushBack(i);
+			}
+			const PxU32 count = mOvdBatchPositions.size();
+			if (!count) return;
+			mOvdDataBuffer.resizeUninitialized(blockSize * count);
+			if (!mOvdDataBuffer.begin()) { ovdCallback->reportReadbackFailure(); return; }
+			for (PxU32 first = 0; first < count;)
+			{
+				PxU32 end = first + 1;
+				while (end < count && mOvdBatchPositions[end] == mOvdBatchPositions[end - 1] + 1) ++end;
+				const PxU32 bytes = (end - first) * blockSize;
+				if (mCudaContext->memcpyDtoH(mOvdDataBuffer.begin() + first * blockSize,
+					CUdeviceptr(data) + mOvdBatchPositions[first] * blockSize, bytes))
+				{ ovdCallback->reportReadbackFailure(); return; }
+				controller->recordOmniPvdReadbackCopy(bytes);
+				first = end;
+			}
+			ovdCallback->processArticulationSet(reinterpret_cast<Dy::FeatherstoneArticulation**>(manager.mBodies.begin()),
+				mOvdDataBuffer.begin(), indices, dataType, count,
+				maxLinks, maxDofs, maxFixedTendons, maxTendonJoints, maxSpatialTendons, maxSpatialTendonAttachments);
+		}
+	}
 
-					////////////////////////////////////////////////////////////////////////////////
-					// Call NpDirectGPUAPI layer callback
-					////////////////////////////////////////////////////////////////////////////////
-					controller->getOVDCallbacks()->processArticulationSet(reinterpret_cast<Dy::FeatherstoneArticulation**>(controller->getBodySimManager().mBodies.begin()),
-						mOvdDataBuffer.begin(), reinterpret_cast<PxArticulationGPUIndex*>(mOvdIndexBuffer.begin()), dataType, nbElements,
-						maxLinks, maxDofs, maxFixedTendons, maxTendonJoints, maxSpatialTendons, maxSpatialTendonAttachments);
-				}
+	bool PxgArticulationCore::ovdReadbackArticulationData(const PxArticulationGPUIndex* gpuIndices, PxU32 nbElements,
+		PxArticulationGPUAPIReadType::Enum dataType, PxU32 maxLinks, PxU32 maxDofs)
+	{
+		PxgSimulationController* controller = mGpuContext->getSimulationController();
+		PxsSimulationControllerOVDCallbacks* callback = controller->getOVDCallbacks();
+		if (!nbElements || controller->getOVDReadbackMode() == PxsOVDReadbackMode::eDISABLED || !callback || !callback->isArticulationReadEnabled(dataType)) return true;
+		if (!gpuIndices || maxLinks > PX_MAX_U32 / sizeof(PxTransform) || maxDofs > PX_MAX_U32 / sizeof(PxReal)) return false;
+		PxU32 blockSize;
+		switch (dataType)
+		{
+		case PxArticulationGPUAPIReadType::eJOINT_POSITION:
+		case PxArticulationGPUAPIReadType::eJOINT_VELOCITY:
+		case PxArticulationGPUAPIReadType::eJOINT_ACCELERATION:
+		case PxArticulationGPUAPIReadType::eJOINT_FORCE:
+		case PxArticulationGPUAPIReadType::eJOINT_TARGET_POSITION:
+		case PxArticulationGPUAPIReadType::eJOINT_TARGET_VELOCITY: blockSize = maxDofs * sizeof(PxReal); break;
+		case PxArticulationGPUAPIReadType::eLINK_GLOBAL_POSE: blockSize = maxLinks * sizeof(PxTransform); break;
+		case PxArticulationGPUAPIReadType::eLINK_LINEAR_VELOCITY:
+		case PxArticulationGPUAPIReadType::eLINK_ANGULAR_VELOCITY:
+		case PxArticulationGPUAPIReadType::eLINK_LINEAR_ACCELERATION:
+		case PxArticulationGPUAPIReadType::eLINK_ANGULAR_ACCELERATION: blockSize = maxLinks * sizeof(PxVec3); break;
+		case PxArticulationGPUAPIReadType::eLINK_INCOMING_JOINT_FORCE: blockSize = maxLinks * 2 * sizeof(PxVec3); break;
+		default: return false;
+		}
+		if (!blockSize) return true;
+		if (nbElements > PX_MAX_U32 / blockSize || nbElements > PX_MAX_U32 / sizeof(PxArticulationGPUIndex)) return false;
+		const PxU32 resident = mGpuContext->getSimulationCore()->getNbTotalArticulations();
+		PxgBodySimManager& manager = controller->getBodySimManager();
+		mOvdSnapshotValidIndices.clear();
+		mOvdIndexBuffer.resizeUninitialized(nbElements * sizeof(PxArticulationGPUIndex));
+		if (!mOvdIndexBuffer.begin()) return false;
+		PxArticulationGPUIndex* nodes = reinterpret_cast<PxArticulationGPUIndex*>(mOvdIndexBuffer.begin());
+		for (PxU32 i = 0; i < nbElements; ++i)
+		{
+			const PxHashMap<PxU32, PxU32>::Entry* mapping = manager.mRemapToNodeMap.find(gpuIndices[i]);
+			if (gpuIndices[i] >= resident || manager.mPendingArticulationUploads.boundedTest(gpuIndices[i]) ||
+				!mapping || mapping->second >= manager.mBodies.size() || !manager.mBodies[mapping->second]) continue;
+			if (callback->isArticulationStateRequired(*static_cast<Dy::FeatherstoneArticulation*>(manager.mBodies[mapping->second]), dataType))
+			{
+				nodes[mOvdSnapshotValidIndices.size()] = mapping->second;
+				mOvdSnapshotValidIndices.pushBack(gpuIndices[i]);
 			}
 		}
+		const PxU32 count = mOvdSnapshotValidIndices.size();
+		if (!count) return true;
+		const PxU32 bytes = count * blockSize;
+		{
+			PxScopedCudaLock lock(*mCudaContextManager);
+			mOvdSnapshotIndexBuffer.allocateElements(count, PX_FL);
+			mOvdReadbackDataBuffer.allocateElements(bytes, PX_FL);
+			mOvdDataBuffer.resizeUninitialized(bytes);
+			if (!mOvdSnapshotIndexBuffer.getDevicePtr() || !mOvdReadbackDataBuffer.getDevicePtr() || !mOvdDataBuffer.begin()
+				|| mCudaContext->memcpyHtoDAsync(mOvdSnapshotIndexBuffer.getDevicePtr(), mOvdSnapshotValidIndices.begin(), count * sizeof(PxArticulationGPUIndex), mStream)) return false;
+		}
+		if (!getArticulationData(reinterpret_cast<void*>(mOvdReadbackDataBuffer.getDevicePtr()),
+			reinterpret_cast<const PxArticulationGPUIndex*>(mOvdSnapshotIndexBuffer.getDevicePtr()), dataType, count,
+			NULL, NULL, maxLinks, maxDofs, 0, 0, 0, 0)) return false;
+		{
+			PxScopedCudaLock lock(*mCudaContextManager);
+			if (mCudaContext->memcpyDtoH(mOvdDataBuffer.begin(), mOvdReadbackDataBuffer.getDevicePtr(), bytes)) return false;
+		}
+		controller->recordOmniPvdReadbackCopy(bytes);
+		callback->processArticulationRead(reinterpret_cast<Dy::FeatherstoneArticulation**>(manager.mBodies.begin()),
+			mOvdDataBuffer.begin(), nodes, dataType, count, maxLinks, maxDofs);
+		return true;
 	}
 
 	void PxgArticulationCore::ovdSnapshotArticulationForces(const PxArticulationGPUIndex* gpuIndices, PxU32 nbElements,
 		PxU32 maxLinks, PxU32 maxDofs, PxU32 maxFixedTendons, PxU32 maxTendonJoints, PxU32 maxSpatialTendons, PxU32 maxSpatialTendonAttachments)
 	{
 		PxgSimulationController* controller = mGpuContext->getSimulationController();
-		if (nbElements == 0 || maxLinks == 0 || !controller->getEnableOVDReadback() || !controller->getOVDCallbacks())
+		if (nbElements == 0 || maxLinks == 0 || controller->getOVDReadbackMode() == PxsOVDReadbackMode::eDISABLED || !controller->getOVDCallbacks()
+			|| !controller->getOVDCallbacks()->isArticulationWriteEnabled(PxArticulationGPUAPIWriteType::eLINK_FORCE))
 			return;
 
 		PxScopedCudaLock _lock(*mCudaContextManager);
@@ -1287,18 +1367,27 @@ namespace physx
 		mOvdSnapshotValidIndices.reserve(nbElements);
 		for (PxU32 i = 0; i < nbElements; ++i)
 		{
-			if (gpuIndices[i] < nbResidentArticulations)
+			const PxgBodySimManager& manager = controller->getBodySimManager();
+			const PxHashMap<PxU32, PxU32>::Entry* mapping = manager.mRemapToNodeMap.find(gpuIndices[i]);
+			if (gpuIndices[i] < nbResidentArticulations && !manager.mPendingArticulationUploads.boundedTest(gpuIndices[i]) &&
+				mapping && mapping->second < manager.mBodies.size() && manager.mBodies[mapping->second]
+				&& controller->getOVDCallbacks()->isArticulationCaptured(*static_cast<Dy::FeatherstoneArticulation*>(manager.mBodies[mapping->second])))
 				mOvdSnapshotValidIndices.pushBack(gpuIndices[i]);
 		}
 		const PxU32 nbValid = mOvdSnapshotValidIndices.size();
 		if (nbValid == 0)
 			return;
+		if (nbValid > PX_MAX_U32 / maxLinks)
+		{ controller->getOVDCallbacks()->reportReadbackFailure(); return; }
 
 		// Upload the gathered articulation GPU indices and size a per-articulation x per-link output buffer.
 		mOvdSnapshotIndexBuffer.allocateElements(nbValid, PX_FL);
 		mOvdSnapshotDataBuffer.allocateElements(nbValid * maxLinks, PX_FL);
-		if (mCudaContext->memcpyHtoD(mOvdSnapshotIndexBuffer.getDevicePtr(), mOvdSnapshotValidIndices.begin(), sizeof(PxArticulationGPUIndex) * nbValid))
-			return;
+		if (!mOvdSnapshotIndexBuffer.getDevicePtr() || !mOvdSnapshotDataBuffer.getDevicePtr())
+		{ controller->getOVDCallbacks()->reportReadbackFailure(); return; }
+		// Upload indices on the nonblocking stream that consumes them, before any gather kernel.
+		if (mCudaContext->memcpyHtoDAsync(mOvdSnapshotIndexBuffer.getDevicePtr(), mOvdSnapshotValidIndices.begin(), sizeof(PxArticulationGPUIndex) * nbValid, mStream))
+		{ controller->getOVDCallbacks()->reportReadbackFailure(); return; }
 
 		const CUdeviceptr coreDescptr = mArticulationCoreDescd.getDevicePtr();
 		const CUdeviceptr indicesDevicePtr = mOvdSnapshotIndexBuffer.getDevicePtr();
@@ -1325,11 +1414,13 @@ namespace physx
 				CUDA_KERNEL_PARAM(maxLinks)
 			};
 			CUresult result = mCudaContext->launchKernel(kernelFunction, numBlocks, 1, 1, blockDims[pass], 1, 1, 0, mStream, EPILOG);
-			if (result == CUDA_SUCCESS)
-				result = mCudaContext->streamSynchronize(mStream);
+			// Drain the index upload even if kernel launch fails, before the pinned array is reused.
+			const CUresult syncResult = mCudaContext->streamSynchronize(mStream);
+			if (result == CUDA_SUCCESS) result = syncResult;
 			if (result != CUDA_SUCCESS)
 			{
 				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "ovdSnapshotArticulationForces: CUDA error, code %u\n", result);
+				controller->getOVDCallbacks()->reportReadbackFailure();
 				return;
 			}
 
@@ -1715,12 +1806,15 @@ namespace physx
 			if (gpuIndices == NULL)
 				mNeedsKinematicUpdate = false;
 
-			CUdeviceptr coreDescptr = mArticulationCoreDescd.getDevicePtr();
 			CUfunction updateKinematicKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_UPDATE_KINEMATIC);
 
 			PxgGpuNarrowphaseCore* npCore = mGpuContext->getNarrowphaseCore();
 			PxgSimulationCore* simCore = mGpuContext->getSimulationCore();
 			const PxU32 numTotalShapes = simCore->getNumTotalShapes();
+			// The descriptor is uploaded only in steps that simulate articulations, so its articulation pointer can be older than
+			// the last growth of the buffer. The buffer and the slot count of the simulation core always match.
+			CUdeviceptr articulations = simCore->getArticulationBuffer().getDevicePtr();
+			const PxU32 nbSlots = simCore->getNbTotalArticulations();
 			CUdeviceptr bounds = mGpuContext->mGpuBp->getBoundsBuffer().getDevicePtr();
 
 			//device ptr
@@ -1733,7 +1827,7 @@ namespace physx
 
 			KERNEL_PARAM_TYPE kernelParams[] =
 			{
-				CUDA_KERNEL_PARAM(coreDescptr),
+				CUDA_KERNEL_PARAM(articulations),
 				CUDA_KERNEL_PARAM(shapeSims),
 				CUDA_KERNEL_PARAM(shapes),
 				CUDA_KERNEL_PARAM(transformCache),
@@ -1743,6 +1837,7 @@ namespace physx
 				CUDA_KERNEL_PARAM(bounds),
 				CUDA_KERNEL_PARAM(gpuIndices),
 				CUDA_KERNEL_PARAM(nbElements),
+				CUDA_KERNEL_PARAM(nbSlots),
 				CUDA_KERNEL_PARAM(zeroSimOutput)
 			};
 
@@ -1758,8 +1853,10 @@ namespace physx
 			// in the end, the tradeoff is also about not launching too many blocks that don't do anything, so a smaller
 			// grid that loops is probably better.
 
-			// but we still clamp if the number of articulations in the scene is smaller than what we would launch otherwise.
-			const PxU32 numBlockNeeded = (mArticulationCoreDesc.get().nbArticulations + numWarpPerBlock - 1) / numWarpPerBlock;
+			// but we still clamp if there are fewer articulations to visit than what we would launch otherwise.
+			// At least one block, because a grid of zero blocks fails to launch.
+			const PxU32 nbArticulations = gpuIndices ? nbElements : nbSlots;
+			const PxU32 numBlockNeeded = PxMax<PxU32>(1u, (nbArticulations + numWarpPerBlock - 1) / numWarpPerBlock);
 			const PxU32 gridDim = PxMin<PxU32>(PxgArticulationCoreKernelGridDim::UPDATE_KINEMATIC, numBlockNeeded);
 
 			const CUresult result = mCudaContext->launchKernel(updateKinematicKernelFunction, gridDim, 1, 1, numThreadPerWarp, numWarpPerBlock, 1, 0, mStream, EPILOG);

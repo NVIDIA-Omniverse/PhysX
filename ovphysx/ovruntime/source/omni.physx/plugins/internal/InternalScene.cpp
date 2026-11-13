@@ -7,6 +7,9 @@
 // @implements REQ-ATTACH-RESOLVE-001
 // @covers AC-4
 
+// @implements REQ-LOAD-JOINTLIMIT-001
+// @covers AC-3 AC-4 AC-5 AC-6
+
 /**
  * @implements REQ-WRITE-CORE-001
  * @covers AC-2 AC-6 AC-9
@@ -63,6 +66,8 @@
  * @implements REQ-BUILD-BRIDGE-001
  * @covers AC-5
  *
+ * @implements REQ-LOAD-DEFORMABLE-001
+ * @covers AC-6 AC-7
  */
 
 #include <carb/profiler/Profile.h>
@@ -85,6 +90,7 @@
 
 #include <PhysXUpdate.h>
 #include <PhysXTools.h>
+#include <JointLimitConversion.h>
 #include <PhysXSimulationCallbacks.h>
 #include <CookingDataAsync.h>
 #include <usdLoad/LoadUsd.h>
@@ -802,6 +808,11 @@ void InternalScene::resetStartProperties(bool useUsdUpdate, bool useVelocitiesUS
     for (size_t i = 0; i < mVolumeDeformableBodies.size(); i++)
     {
         InternalVolumeDeformableBody* deformableBody = mVolumeDeformableBodies[i];
+        // a disabled body is registered without an actor and has nothing to restore or write back
+        if (!deformableBody->mDeformableVolume)
+        {
+            continue;
+        }
 
         if (!deformableBody->mIsKinematic)
         {
@@ -873,6 +884,10 @@ void InternalScene::resetStartProperties(bool useUsdUpdate, bool useVelocitiesUS
     for (size_t i = 0; i < mSurfaceDeformableBodies.size(); i++)
     {
         InternalSurfaceDeformableBody* deformableBody = mSurfaceDeformableBodies[i];
+        if (!deformableBody->mDeformableSurface)
+        {
+            continue;
+        }
 
         if (!deformableBody->mIsKinematic)
         {
@@ -2021,7 +2036,7 @@ void InternalScene::updateDeformableTransforms(bool updateToUsd, bool updateVelo
     for (size_t i = 0; i < mVolumeDeformableBodies.size(); i++)
     {
         InternalVolumeDeformableBody* deformableBody = mVolumeDeformableBodies[i];
-        if (!updateToUsd)
+        if (!updateToUsd || !deformableBody->mDeformableVolume)
         {
             continue;
         }
@@ -2106,7 +2121,7 @@ void InternalScene::updateDeformableTransforms(bool updateToUsd, bool updateVelo
     for (size_t i = 0; i < mSurfaceDeformableBodies.size(); i++)
     {
         InternalSurfaceDeformableBody* deformableBody = mSurfaceDeformableBodies[i];
-        if (!updateToUsd)
+        if (!updateToUsd || !deformableBody->mDeformableSurface)
         {
             continue;
         }
@@ -2441,6 +2456,11 @@ void InternalJoint::setArticulationJointLimits(::physx::PxArticulationJointReduc
     if (usdLowLimit > usdHighLimit)
         return;
 
+    // A one-sided limit keeps its open bound at the -inf/inf schema fallback, which PhysX
+    // rejects, so clamp both bounds instead of losing the authored one.
+    usdLowLimit = toArticulationLimitBound(joint->getJointType(), usdLowLimit);
+    usdHighLimit = toArticulationLimitBound(joint->getJointType(), usdHighLimit);
+
     if (mBody0IsParentLink)
     {
         joint->setLimitParams(axis, PxArticulationLimit(usdLowLimit, usdHighLimit));
@@ -2453,6 +2473,8 @@ void InternalJoint::setArticulationJointLimits(::physx::PxArticulationJointReduc
 
 void InternalJoint::updateArticulationJointLimitLow(::physx::PxArticulationJointReducedCoordinate* joint, ::physx::PxArticulationAxis::Enum axis, float usdLowLimit) const
 {
+    // Same conversion as setArticulationJointLimits, so an open bound applies as on creation.
+    usdLowLimit = toArticulationLimitBound(joint->getJointType(), usdLowLimit);
     PxArticulationLimit limit = joint->getLimitParams(axis);
     if (mBody0IsParentLink)
     {
@@ -2475,7 +2497,8 @@ void InternalJoint::updateArticulationJointLimitLow(::physx::PxArticulationJoint
 
 void InternalJoint::updateArticulationJointLimitHigh(::physx::PxArticulationJointReducedCoordinate* joint, ::physx::PxArticulationAxis::Enum axis, float usdHighLimit) const
 {
-
+    // Same conversion as setArticulationJointLimits, so an open bound applies as on creation.
+    usdHighLimit = toArticulationLimitBound(joint->getJointType(), usdHighLimit);
     PxArticulationLimit limit = joint->getLimitParams(axis);
     if (mBody0IsParentLink)
     {

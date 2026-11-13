@@ -1,0 +1,163 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysicsMaterialAPI",
+  "title": "PhysicsMaterialAPI",
+  "summary": "Makes a prim a physics material and creates a PxMaterial for it. Enumerated by usd-schemas CONTAINS PhysicsMaterialAPI with physics:dynamicFriction as the probe column. Nothing here is units-scaled; the two friction defaults diverge from the raw schema fallback.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "Typed"
+  ],
+  "multi_apply": false,
+  "enumeration": {
+    "by": "schema",
+    "probe": "physics:dynamicFriction"
+  },
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "producer_scope": "Every declared attribute is published at its resolved value, so an unauthored friction lands as the raw fallback 0.0 and a producer-populated stage never reaches the consumer's 0.5 defaults. No column is rewritten or created by the producer.",
+  "columns": [
+    {
+      "name": "physics:staticFriction",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "verify": {
+        "target": "material",
+        "expr": "material->getStaticFriction()",
+        "kind": "float",
+        "sample": 0.7
+      },
+      "parser_default": 0.5,
+      "absent": "0.5 (PhysX convention), not the schema fallback 0.0. Writing the raw fallback literally gives a frictionless material where an omitted column gives coefficient 0.5; USD population always publishes the resolved value, so an unauthored attribute yields 0.0 there.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp"
+      ],
+      "notes": "Read without an authored gate: the column value always wins when present. No clamp; PhysX rejects negative values when the material is created."
+    },
+    {
+      "name": "physics:dynamicFriction",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "verify": {
+        "target": "material",
+        "expr": "material->getDynamicFriction()",
+        "kind": "float",
+        "sample": 0.6
+      },
+      "parser_default": 0.5,
+      "absent": "0.5, same divergence as physics:staticFriction: the raw fallback 0.0 is frictionless, the omitted column is 0.5.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp",
+        "source/omni.physics.ovstage/OvstageWalker.cpp"
+      ],
+      "notes": "Also the enumeration probe column: it is what materialises the matched prims in the walker."
+    },
+    {
+      "name": "physics:restitution",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "verify": {
+        "target": "material",
+        "expr": "material->getRestitution()",
+        "kind": "float",
+        "sample": 0.3,
+        "notes": "Valid only while physxMaterial:compliantContactStiffness is 0. A positive compliant stiffness is stored by the consumer as a NEGATIVE restitution (setRestitution(-stiffness)), which overwrites this value in PhysX."
+      },
+      "parser_default": 0.0,
+      "absent": "0.0, no bounce.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp"
+      ]
+    },
+    {
+      "name": "physics:density",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": -1.0,
+      "absent": "-1.0, the unset sentinel: mass computation ignores the material and falls back to PhysicsMassAPI density, then the consumer default density. The raw fallback 0.0 reads as unset too, so writing it literally is harmless.",
+      "raw_fallback_diverges": false,
+      "sentinel": "-1.0; any value <= 0 is treated as unset by the mass computation, which uses a material density only when it is positive.",
+      "units": "mass/length^3",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp",
+        "source/omni.physx/plugins/usdLoad/Mass.cpp"
+      ],
+      "notes": "Not a PxMaterial property; it lives on the runtime's own material record and is consumed only by mass computation of shapes bound to this material. No PhysX getter, hence no verify block; it is observable indirectly through a bound body's mass."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "Material",
+      "rule": "This API, not the prim type, is what physics enumerates. See Material for the consequences of a Material prim without it."
+    },
+    {
+      "with": "PhysxMaterialAPI",
+      "rule": "Combine modes and compliant contact live on PhysxMaterialAPI and are read only when that API is also in usd-schemas; without it every PhysX default applies (average combine, no compliance)."
+    },
+    {
+      "with": "PhysicsMassAPI",
+      "rule": "physics:density here is the second source of a shape's density, after an explicit PhysicsMassAPI density on the body and before the consumer default."
+    }
+  ],
+  "findings": [
+    {
+      "column": "physics:staticFriction",
+      "severity": "defect",
+      "side": "consumer",
+      "summary": "The consumer default 0.5 for both frictions disagrees with the schema fallback 0.0 that the producer publishes: a producer-populated Material simulates with friction 0, a hand-populated stage that omits the columns with 0.5. Observed in the material_bound_cube parity test (PxMaterial static friction 0.5 vs 0). Same for physics:dynamicFriction.",
+      "tracking": "ADR-0020 open questions",
+      "propagates_to": [
+        "physics:dynamicFriction"
+      ]
+    }
+  ]
+}

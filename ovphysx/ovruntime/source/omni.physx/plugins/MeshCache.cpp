@@ -3,6 +3,8 @@
 
 // @implements REQ-ATTACH-SERVICES-001
 // @covers AC-5
+// @implements REQ-CACHE-ATTACH-001
+// @covers AC-7
 
 #include "MeshCache.h"
 
@@ -10,7 +12,10 @@
 
 #include <private/omni/physx/IPhysxCookingServicePrivate.h>
 #include <omni/physx/IPhysxVisualization.h>
+#include <carb/logging/Log.h>
 #include <carb/profiler/Profile.h>
+
+#include <new>
 
 
 using namespace ::physx;
@@ -54,6 +59,7 @@ void MeshCache::release()
             i.second->release();
         }
         mTriangleMeshMap.clear();
+        mTriMeshCookedData.clear();
     }
 
     {
@@ -210,36 +216,65 @@ bool MeshCache::createRuntimeTriangleMesh(::physx::PxPhysics& physics,
         }
         return true;
     }
-    PxTriangleMesh* triangleMesh = nullptr;
+    // The cache takes its own reference to a new mesh. The creation reference is
+    // released on every path out, also when adding the mesh to the cache throws.
+    struct CreationReference
+    {
+        PxTriangleMesh* mesh;
+        ~CreationReference()
+        {
+            if (mesh)
+                mesh->release();
+        }
+    };
+    // Runs once the cache holds the mesh. The stream is optional: without it the
+    // mesh stays usable, and a store that needs it bypasses (see
+    // retainTriangleMeshCookedData()).
+    const auto keepCookedData = [&](const PxTriangleMesh* mesh) {
+        if (!mRetainTriangleMeshCookedData.load(std::memory_order_relaxed))
+            return;
+        try
+        {
+            const auto* bytes = static_cast<const uint8_t*>(inputCookedData.data);
+            auto cooked = std::make_shared<const std::vector<uint8_t>>(bytes, bytes + inputCookedData.sizeInBytes);
+            mTriMeshCookedData[mesh] = std::move(cooked);
+        }
+        catch (const std::bad_alloc&)
+        {
+            CARB_LOG_WARN(
+                "Compiled stage cache: out of memory keeping a triangle mesh's cooked stream; a store that needs it "
+                "bypasses");
+        }
+    };
 
     PxDefaultMemoryInputData inData((PxU8*)inputCookedData.data, (PxU32)inputCookedData.sizeInBytes);
     if (useOriginalTriangles)
     {
         if(inputTrianglesFaceMapping.size_bytes() == 0)
             return false; // We can't proceed as we don't have the original USD Prim for the remap table
-        triangleMesh = physics.createTriangleMesh(inData);
-        if (triangleMesh)
+        const CreationReference created{ physics.createTriangleMesh(inData) };
+        if (created.mesh)
         {
             if(returnedMesh)
             {
-                *returnedMesh = triangleMesh;
+                *returnedMesh = created.mesh;
             }
-            addTriangleMesh(meshCRC, triangleMesh, &inputTrianglesFaceMapping, true);
-            triangleMesh->release(); // Transfer the creation reference to the cache.
+            addTriangleMesh(meshCRC, created.mesh, &inputTrianglesFaceMapping, true);
+            keepCookedData(created.mesh);
             return true;
         }
     }
     else
     {
-        triangleMesh = physics.createTriangleMesh(inData);
-        if (triangleMesh)
+        const CreationReference created{ physics.createTriangleMesh(inData) };
+        if (created.mesh)
         {
             if(returnedMesh)
             {
-                *returnedMesh = triangleMesh;
+                *returnedMesh = created.mesh;
             }
-            addTriangleMesh(meshCRC, triangleMesh, nullptr, false);
-            triangleMesh->release();
+            addTriangleMesh(meshCRC, created.mesh, nullptr, false);
+            keepCookedData(created.mesh);
         }
         return true;
     }

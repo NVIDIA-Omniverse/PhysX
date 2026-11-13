@@ -107,8 +107,10 @@ ovphysx_enqueue_result_t PhysX::step(float step_dt) {
     return ovphysx_step(m_handle, step_dt);
 }
 
-ovphysx_enqueue_result_t PhysX::updateArticulationsKinematic(ovphysx_query_handle_t query, uint32_t flags) {
-    return ovphysx_update_articulations_kinematic(m_handle, query, flags);
+ovphysx_enqueue_result_t PhysX::updateArticulationsKinematic(ovphysx_query_handle_t query,
+                                                              uint32_t flags,
+                                                              ovstage_cuda_sync_t cudaSync) {
+    return ovphysx_update_articulations_kinematic(m_handle, query, flags, cudaSync);
 }
 
 ovphysx_enqueue_result_t PhysX::evaluateSdfShapes(ovphysx_query_handle_t query,

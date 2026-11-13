@@ -15,7 +15,7 @@ scene's stage units and up axis. USD stage metadata is not inherited from sublay
 
 ## Acceptance Criteria
 
-- AC-1: **Root metadata.** The four variants below explicitly author
+- AC-1: **Root metadata.** The five variants below explicitly author
   `metersPerUnit` and `upAxis` equal to their respective base scenes.
 
 ## Test References
@@ -28,6 +28,7 @@ scene's stage units and up axis. USD stage metadata is not inherited from sublay
 - `ovphysx/tests/data/mixed_base_articulations_gpu.usda`
 - `ovphysx/tests/data/empty_dynamic_boxes_cpu.usda`
 - `ovphysx/tests/data/simple_physics_scene_cpu.usda`
+- `ovphysx/tests/data/simple_physics_scene_gpu.usda`
 
 ## Dependencies
 

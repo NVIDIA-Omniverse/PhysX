@@ -99,9 +99,13 @@ void NpAggregate::scRemoveActor(NpActor& actor, bool reinsert)
 		
 	if(getNpScene() && reinsert)
 	{
+#if PX_SUPPORT_GPU_PHYSX
 		detachStaticElementFilters(actor);
+#endif
 		ac.reinsertShapes();
+#if PX_SUPPORT_GPU_PHYSX
 		attachStaticElementFilters(actor);
+#endif
 	}
 
 	//Update pvd status
@@ -277,8 +281,6 @@ bool NpAggregate::addActor(PxActor& actor, const PxBVH* bvh)
 
 	mNbShapes += numShapes;
 
-	OMNI_PVD_ADD(OMNI_PVD_CONTEXT_HANDLE, PxAggregate, actors, static_cast<PxAggregate&>(*this), actor);
-
 	// PT: when an object is added to a aggregate at runtime, i.e. when the aggregate has already been added to the scene,
 	// we need to immediately add the newcomer to the scene as well.
 	if(npScene)
@@ -296,6 +298,8 @@ bool NpAggregate::addActor(PxActor& actor, const PxBVH* bvh)
 			NpActor::getFromPxActor(actor).addConnector(NpConnectorType::eBvh, bvhMutable, "PxBVH already added to the PxActor!");
 		}
 	}
+	// Emit membership after scene insertion so the selection sees the actor's current scene.
+	OMNI_PVD_ADD(OMNI_PVD_CONTEXT_HANDLE, PxAggregate, actors, static_cast<PxAggregate&>(*this), actor);
 	return true;
 }
 
@@ -418,6 +422,14 @@ bool NpAggregate::addArticulation(PxArticulationReducedCoordinate& art)
 		NP_CHECK_SCENE_CUDA_ABORT_AND_SET_CORRUPTION(npScene)
 	}
 
+#if PX_SUPPORT_OMNI_PVD
+	// Emit membership after scene insertion so the selection sees each link's current scene.
+	for(PxU32 i=0; i<nbLinks; i++)
+	{
+		OMNI_PVD_ADD(OMNI_PVD_CONTEXT_HANDLE, PxAggregate, actors,
+			static_cast<PxAggregate&>(*this), static_cast<PxActor&>(*links[i]));
+	}
+#endif
 	return true;
 }
 
@@ -433,6 +445,7 @@ bool NpAggregate::removeArticulationAndReinsert(PxArticulationReducedCoordinate&
 			mNbShapes -= static_cast<NpArticulationLink*>(mActors[idx])->getNbShapes();
 			mActors[idx] = mActors[--mNbActors];
 			removeAndReinsert(*a, reinsert);
+			OMNI_PVD_REMOVE(OMNI_PVD_CONTEXT_HANDLE, PxAggregate, actors, static_cast<PxAggregate&>(*this), *a);
 			found = true;
 		}
 		else

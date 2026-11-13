@@ -38,10 +38,10 @@ using namespace test_utils;
 namespace
 {
 
-ovx_string_or_token_t makeAttr(const char* name)
+ovx_token_or_string_t makeAttr(const char* name)
 {
-    ovx_string_or_token_t a{};
-    a.token = 0;
+    ovx_token_or_string_t a{};
+    a.token = ovx_token_t{0};
     a.string.ptr = name;
     a.string.length = std::strlen(name);
     return a;
@@ -75,9 +75,9 @@ std::map<std::string, float> readMassByPath(ovphysx_instance_handle_t handle)
         return out;
     }
 
-    const ovx_string_or_token_t attr = makeAttr(OVPHYSX_ATTR_MASS);
+    const ovx_token_or_string_t attr = makeAttr(OVPHYSX_ATTR_MASS);
     ovphysx_read_handle_t rh = 0;
-    if (test_utils::complete_task(handle, ovphysx_read(handle, q, &attr, 1, &rh, nullptr)).status != OVPHYSX_API_SUCCESS)
+    if (test_utils::complete_task(handle, ovphysx_read(handle, q, &attr, 1, ovstage_cuda_sync_t{ 0, 0 }, &rh, nullptr)).status != OVPHYSX_API_SUCCESS)
     {
         test_utils::complete_task(handle, ovphysx_release_query(handle, q));
         return out;
@@ -90,12 +90,14 @@ std::map<std::string, float> readMassByPath(ovphysx_instance_handle_t handle)
         EXPECT_EQ(fetch.status, OVPHYSX_API_SUCCESS) << test_utils::last_task_error();
         if (fetch.status != OVPHYSX_API_SUCCESS || !g)
             break;
-        if (!g || g->data.tensor_count == 0 || !g->data.tensors)
+        if (!g || g->columns[0].data.tensor_count == 0 || !g->columns[0].data.tensors)
         {
-            test_utils::complete_task(handle, ovphysx_release_group(handle, rh, g ? g->read_group_id : 0));
+            test_utils::complete_task(handle,
+                                      ovphysx_release_group(handle, rh,
+                                                            g ? g->read_group_id : OVSTAGE_INVALID_READ_GROUP_ID));
             continue;
         }
-        const DLTensor& t = g->data.tensors[0];
+        const DLTensor& t = g->columns[0].data.tensors[0];
         if (t.device.device_type != kDLCPU || !t.data)
         {
             test_utils::complete_task(handle, ovphysx_release_group(handle, rh, g->read_group_id));
@@ -153,7 +155,7 @@ bool writeMassByPath(ovphysx_instance_handle_t handle, const std::map<std::strin
         return false;
     }
 
-    const ovx_string_or_token_t attr = makeAttr(OVPHYSX_ATTR_MASS);
+    const ovx_token_or_string_t attr = makeAttr(OVPHYSX_ATTR_MASS);
     ovphysx_write_handle_t w = 0;
     if (test_utils::complete_task(handle, ovphysx_write(handle, q, &attr, 1, &w, nullptr)).status != OVPHYSX_API_SUCCESS)
     {
@@ -230,7 +232,7 @@ bool writeDisableSimulationByPath(ovphysx_instance_handle_t handle, const std::m
         return false;
     }
 
-    const ovx_string_or_token_t attr = makeAttr(OVPHYSX_ATTR_DISABLE_SIMULATION);
+    const ovx_token_or_string_t attr = makeAttr(OVPHYSX_ATTR_DISABLE_SIMULATION);
     ovphysx_write_handle_t w = 0;
     if (test_utils::complete_task(handle, ovphysx_write(handle, q, &attr, 1, &w, nullptr)).status != OVPHYSX_API_SUCCESS)
     {

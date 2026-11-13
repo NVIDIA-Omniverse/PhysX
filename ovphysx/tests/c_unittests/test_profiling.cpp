@@ -274,12 +274,12 @@ bool read_rigid_body_poses(ovphysx_instance_handle_t handle, std::vector<float>&
     path_dictionary_instance_t* dictionary = test_utils::attached_ovstage_dictionary(handle);
     bool ok = dictionary != nullptr;
     ovx_path_dictionary_t* dict = static_cast<ovx_path_dictionary_t*>(dictionary);
-    const ovx_string_or_token_t attributes[] = {
+    const ovx_token_or_string_t attributes[] = {
         { 0, { OVPHYSX_ATTR_POSITION, sizeof(OVPHYSX_ATTR_POSITION) - 1 } },
         { 0, { OVPHYSX_ATTR_ORIENTATION, sizeof(OVPHYSX_ATTR_ORIENTATION) - 1 } },
     };
     ovphysx_read_handle_t read = 0;
-    ok = ok && complete_task(handle, ovphysx_read(handle, query, attributes, 2, &read, nullptr)).status == OVPHYSX_API_SUCCESS;
+    ok = ok && complete_task(handle, ovphysx_read(handle, query, attributes, 2, ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr)).status == OVPHYSX_API_SUCCESS;
     std::map<std::string, std::array<float, 7>> poses;
     while (ok)
     {
@@ -287,7 +287,7 @@ bool read_rigid_body_poses(ovphysx_instance_handle_t handle, std::vector<float>&
         ok = complete_task(handle, ovphysx_fetch_read_next(handle, read, &group)).status == OVPHYSX_API_SUCCESS;
         if (!ok || !group)
             break;
-        const DLTensor* tensor = group->data.tensor_count ? &group->data.tensors[0] : nullptr;
+        const DLTensor* tensor = group->columns[0].data.tensor_count ? &group->columns[0].data.tensors[0] : nullptr;
         const uint32_t lanes = tensor ? tensor->dtype.lanes : 0;
         const ovx_primpath_t* paths = nullptr;
         size_t path_count = 0;

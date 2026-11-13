@@ -419,6 +419,98 @@ struct SphereDefaults
     }
 };
 
+struct NewtonArticulationRootAPIDefaults
+{
+    uint8_t selfCollisionEnabled{}; // newton:selfCollisionEnabled
+
+    static NewtonArticulationRootAPIDefaults resolved(const Units& u)
+    {
+        NewtonArticulationRootAPIDefaults d;
+        d.selfCollisionEnabled = 1;
+        (void)u;
+        return d;
+    }
+};
+
+struct NewtonCollisionAPIDefaults
+{
+    float contactMargin{}; // newton:contactMargin
+    float contactGap{}; // newton:contactGap
+
+    static NewtonCollisionAPIDefaults resolved(const Units& u)
+    {
+        NewtonCollisionAPIDefaults d;
+        d.contactMargin = 0.0f;
+        d.contactGap = -std::numeric_limits<float>::infinity();
+        (void)u;
+        return d;
+    }
+};
+
+struct NewtonJointAPIDefaults
+{
+    float velocityLimit{}; // newton:velocityLimit
+    float armature{}; // newton:armature
+    float friction{}; // newton:friction
+    float damping{}; // newton:damping
+
+    static NewtonJointAPIDefaults resolved(const Units& u)
+    {
+        NewtonJointAPIDefaults d;
+        d.velocityLimit = std::numeric_limits<float>::infinity();
+        d.armature = 0.0f;
+        d.friction = 0.0f;
+        d.damping = 0.0f;
+        (void)u;
+        return d;
+    }
+};
+
+struct NewtonMeshCollisionAPIDefaults
+{
+    int32_t maxHullVertices{}; // newton:maxHullVertices
+
+    static NewtonMeshCollisionAPIDefaults resolved(const Units& u)
+    {
+        NewtonMeshCollisionAPIDefaults d;
+        d.maxHullVertices = -1;
+        (void)u;
+        return d;
+    }
+};
+
+struct NewtonMimicAPIDefaults
+{
+    uint8_t mimicEnabled{}; // newton:mimicEnabled
+    float mimicCoef0{}; // newton:mimicCoef0
+    float mimicCoef1{}; // newton:mimicCoef1
+
+    static NewtonMimicAPIDefaults resolved(const Units& u)
+    {
+        NewtonMimicAPIDefaults d;
+        d.mimicEnabled = 1;
+        d.mimicCoef0 = 0.0f;
+        d.mimicCoef1 = 1.0f;
+        (void)u;
+        return d;
+    }
+};
+
+struct NewtonSceneAPIDefaults
+{
+    int32_t timeStepsPerSecond{}; // newton:timeStepsPerSecond
+    uint8_t gravityEnabled{}; // newton:gravityEnabled
+
+    static NewtonSceneAPIDefaults resolved(const Units& u)
+    {
+        NewtonSceneAPIDefaults d;
+        d.timeStepsPerSecond = 1000;
+        d.gravityEnabled = 1;
+        (void)u;
+        return d;
+    }
+};
+
 struct PhysicsCollisionAPIDefaults
 {
     uint8_t collisionEnabled{}; // physics:collisionEnabled
@@ -652,6 +744,25 @@ struct PhysxDrivePerformanceEnvelopeAPIDefaults
     }
 };
 
+struct PhysxForceAPIDefaults
+{
+    uint8_t forceEnabled{}; // physxForce:forceEnabled
+    uint8_t worldFrameEnabled{}; // physxForce:worldFrameEnabled
+    std::array<float, 3> force{}; // physxForce:force
+    std::array<float, 3> torque{}; // physxForce:torque
+
+    static PhysxForceAPIDefaults resolved(const Units& u)
+    {
+        PhysxForceAPIDefaults d;
+        d.forceEnabled = 1;
+        d.worldFrameEnabled = 0;
+        d.force = std::array<float, 3>{ 0.0f, 0.0f, 0.0f };
+        d.torque = std::array<float, 3>{ 0.0f, 0.0f, 0.0f };
+        (void)u;
+        return d;
+    }
+};
+
 struct PhysxJointAxisAPIDefaults
 {
     float armature{}; // physxJointAxis:<inst>:armature
@@ -704,6 +815,62 @@ struct PhysxMaterialAPIDefaults
         d.compliantContactAccelerationSpring = 0;
         d.compliantContactStiffness = 0.0f;
         d.compliantContactDamping = 0.0f;
+        (void)u;
+        return d;
+    }
+};
+
+struct PhysxMimicJointAPIDefaults
+{
+    float gearing{}; // physxMimicJoint:<inst>:gearing
+    float offset{}; // physxMimicJoint:<inst>:offset
+    float naturalFrequency{}; // physxMimicJoint:<inst>:naturalFrequency
+    float dampingRatio{}; // physxMimicJoint:<inst>:dampingRatio
+
+    static PhysxMimicJointAPIDefaults resolved(const Units& u)
+    {
+        PhysxMimicJointAPIDefaults d;
+        d.gearing = 1.0f;
+        d.offset = 0.0f;
+        d.naturalFrequency = 0.0f;
+        d.dampingRatio = 0.0f;
+        (void)u;
+        return d;
+    }
+};
+
+struct PhysxPBDMaterialAPIDefaults
+{
+    float friction{}; // physxPBDMaterial:friction
+    float particleFrictionScale{}; // physxPBDMaterial:particleFrictionScale
+    float damping{}; // physxPBDMaterial:damping
+    float viscosity{}; // physxPBDMaterial:viscosity
+    float vorticityConfinement{}; // physxPBDMaterial:vorticityConfinement
+    float surfaceTension{}; // physxPBDMaterial:surfaceTension
+    float cohesion{}; // physxPBDMaterial:cohesion
+    float adhesion{}; // physxPBDMaterial:adhesion
+    float particleAdhesionScale{}; // physxPBDMaterial:particleAdhesionScale
+    float adhesionOffsetScale{}; // physxPBDMaterial:adhesionOffsetScale
+    float gravityScale{}; // physxPBDMaterial:gravityScale
+    float cflCoefficient{}; // physxPBDMaterial:cflCoefficient
+    float density{}; // physxPBDMaterial:density
+
+    static PhysxPBDMaterialAPIDefaults resolved(const Units& u)
+    {
+        PhysxPBDMaterialAPIDefaults d;
+        d.friction = 0.2f;
+        d.particleFrictionScale = 1.0f;
+        d.damping = 0.0f;
+        d.viscosity = 0.0f;
+        d.vorticityConfinement = 0.0f;
+        d.surfaceTension = 0.0f;
+        d.cohesion = 0.0f;
+        d.adhesion = 0.0f;
+        d.particleAdhesionScale = 1.0f;
+        d.adhesionOffsetScale = 0.0f;
+        d.gravityScale = 1.0f;
+        d.cflCoefficient = 1.0f;
+        d.density = 0.0f;
         (void)u;
         return d;
     }
@@ -926,6 +1093,86 @@ struct PhysxSurfaceVelocityAPIDefaults
     }
 };
 
+struct PhysxTendonAttachmentAPIDefaults
+{
+    float gearing{}; // physxTendon:<inst>:gearing
+    std::array<float, 3> localPos{}; // physxTendon:<inst>:localPos
+
+    static PhysxTendonAttachmentAPIDefaults resolved(const Units& u)
+    {
+        PhysxTendonAttachmentAPIDefaults d;
+        d.gearing = 1.0f;
+        d.localPos = std::array<float, 3>{ 0.0f, 0.0f, 0.0f };
+        (void)u;
+        return d;
+    }
+};
+
+struct PhysxTendonAttachmentLeafAPIDefaults
+{
+    float restLength{}; // physxTendon:<inst>:restLength
+    float lowerLimit{}; // physxTendon:<inst>:lowerLimit
+    float upperLimit{}; // physxTendon:<inst>:upperLimit
+
+    static PhysxTendonAttachmentLeafAPIDefaults resolved(const Units& u)
+    {
+        PhysxTendonAttachmentLeafAPIDefaults d;
+        d.restLength = -std::numeric_limits<float>::infinity();
+        d.lowerLimit = -std::numeric_limits<float>::infinity();
+        d.upperLimit = std::numeric_limits<float>::infinity();
+        (void)u;
+        return d;
+    }
+};
+
+struct PhysxTendonAttachmentRootAPIDefaults
+{
+    uint8_t tendonEnabled{}; // physxTendon:<inst>:tendonEnabled
+    float stiffness{}; // physxTendon:<inst>:stiffness
+    float limitStiffness{}; // physxTendon:<inst>:limitStiffness
+    float damping{}; // physxTendon:<inst>:damping
+    float offset{}; // physxTendon:<inst>:offset
+
+    static PhysxTendonAttachmentRootAPIDefaults resolved(const Units& u)
+    {
+        PhysxTendonAttachmentRootAPIDefaults d;
+        d.tendonEnabled = 1;
+        d.stiffness = 0.0f;
+        d.limitStiffness = 0.0f;
+        d.damping = 0.0f;
+        d.offset = 0.0f;
+        (void)u;
+        return d;
+    }
+};
+
+struct PhysxTendonAxisRootAPIDefaults
+{
+    float stiffness{}; // physxTendon:<inst>:stiffness
+    float limitStiffness{}; // physxTendon:<inst>:limitStiffness
+    float damping{}; // physxTendon:<inst>:damping
+    float offset{}; // physxTendon:<inst>:offset
+    float restLength{}; // physxTendon:<inst>:restLength
+    float lowerLimit{}; // physxTendon:<inst>:lowerLimit
+    float upperLimit{}; // physxTendon:<inst>:upperLimit
+    uint8_t tendonEnabled{}; // physxTendon:<inst>:tendonEnabled
+
+    static PhysxTendonAxisRootAPIDefaults resolved(const Units& u)
+    {
+        PhysxTendonAxisRootAPIDefaults d;
+        d.stiffness = 0.0f;
+        d.limitStiffness = 0.0f;
+        d.damping = 0.0f;
+        d.offset = 0.0f;
+        d.restLength = 0.0f;
+        d.lowerLimit = -std::numeric_limits<float>::infinity();
+        d.upperLimit = std::numeric_limits<float>::infinity();
+        d.tendonEnabled = 1;
+        (void)u;
+        return d;
+    }
+};
+
 struct PhysxTriangleMeshCollisionAPIDefaults
 {
     float weldTolerance{}; // physxTriangleMeshCollision:weldTolerance
@@ -998,6 +1245,13 @@ struct CylinderArgs
     std::optional<std::vector<double>> height; // height
     std::optional<std::vector<float>> margin; // physxConvexGeometry:margin
     std::optional<std::vector<std::string>> axis; // axis (token per prim)
+};
+
+/// A face subset of a Mesh collider. The parser reads it only to build per-face physics materials: a face GeomSubset child of a Mesh collider whose resolved material binding is a physics material takes the next material slot, and its indices stamp that slot onto the faces the cooking service sees.
+struct GeomSubsetArgs
+{
+    std::optional<std::vector<std::vector<int32_t>>> indices; // indices (elements per prim)
+    std::optional<std::vector<std::string>> elementType; // elementType (token per prim)
 };
 
 /// UsdShade Material prim. Owns no physics columns: the physics surface comes entirely from PhysicsMaterialAPI and PhysxMaterialAPI applied to it. The prim type itself is never queried by the consumer.
@@ -1158,6 +1412,21 @@ struct PhysxPhysicsGearJointArgs
     std::optional<std::vector<std::vector<std::string>>> hinge1; // physics:hinge1 (targets per prim)
 };
 
+/// Instances joints from prototype joints. The runtime's joint-instancer loader parses each prototype joint once, then creates one joint per protoIndices entry, composing the per-instance local frames with the prototype's and binding the per-instance bodies.
+struct PhysxPhysicsJointInstancerArgs
+{
+    std::optional<std::vector<std::vector<int32_t>>> protoIndices; // physics:protoIndices (elements per prim)
+    std::optional<std::vector<std::vector<int32_t>>> body0Indices; // physics:body0Indices (elements per prim)
+    std::optional<std::vector<std::vector<int32_t>>> body1Indices; // physics:body1Indices (elements per prim)
+    std::optional<std::vector<std::vector<std::array<float, 3>>>> localPos0s; // physics:localPos0s (elements per prim)
+    std::optional<std::vector<std::vector<std::array<float, 4>>>> localRot0s; // physics:localRot0s (elements per prim)
+    std::optional<std::vector<std::vector<std::array<float, 3>>>> localPos1s; // physics:localPos1s (elements per prim)
+    std::optional<std::vector<std::vector<std::array<float, 4>>>> localRot1s; // physics:localRot1s (elements per prim)
+    std::optional<std::vector<std::vector<std::string>>> prototypes; // physics:prototypes (targets per prim)
+    std::optional<std::vector<std::vector<std::string>>> body0s; // physics:body0s (targets per prim)
+    std::optional<std::vector<std::vector<std::string>>> body1s; // physics:body1s (targets per prim)
+};
+
 /// Couples the angular velocity of a revolute (hinge) joint to the linear velocity of a prismatic joint by a fixed ratio in degrees per length unit. Inherits every PhysicsJoint column and adds the ratio and the two joint relationships. Created as a native PxRackAndPinionJoint; never an articulation joint.
 struct PhysxPhysicsRackAndPinionJointArgs
 {
@@ -1183,6 +1452,27 @@ struct PlaneArgs
     std::optional<std::vector<std::string>> axis; // axis (token per prim)
 };
 
+/// Instances rigid-body prototypes. The runtime's rigid point-instancer loader reads the prototype targets and the per-instance arrays, parses each used prototype subtree once and stamps one body per active instance. It runs only when some prim on the Stage applies PhysicsRigidBodyAPI or PhysicsCollisionAPI.
+struct PointInstancerArgs
+{
+    std::optional<std::vector<std::vector<int32_t>>> protoIndices; // protoIndices (elements per prim)
+    std::optional<std::vector<std::vector<std::array<float, 3>>>> positions; // positions (elements per prim)
+    std::optional<std::vector<std::vector<std::array<float, 4>>>> orientations; // orientations (elements per prim)
+    std::optional<std::vector<std::vector<std::array<float, 3>>>> velocities; // velocities (elements per prim)
+    std::optional<std::vector<std::vector<std::array<float, 3>>>> angularVelocities; // angularVelocities (elements per prim)
+    std::optional<std::vector<std::vector<std::array<float, 3>>>> scales; // scales (elements per prim)
+    std::optional<std::vector<std::vector<int64_t>>> ids; // ids (elements per prim)
+    std::optional<std::vector<std::vector<int64_t>>> inactiveIds; // usd-metadata:inactiveIds (elements per prim)
+    std::optional<std::vector<std::vector<std::string>>> prototypes; // prototypes (targets per prim)
+    std::optional<std::vector<std::vector<std::string>>> prototypesUsdTargets; // prototypes:usd-targets (targets per prim)
+};
+
+/// A grouping prim without a transform. The parser reads no column of its own: a Scope matters only as an ancestor whose (absent) local transform composes as identity, and as a native-instancing root.
+struct ScopeArgs
+{
+    // no component-owned columns
+};
+
 /// Sphere geometry. With PhysicsCollisionAPI applied it becomes a PhysX sphere shape whose radius is |radius| times the largest component of the prim's world scale.
 struct SphereArgs
 {
@@ -1195,11 +1485,62 @@ struct XformArgs
     // no component-owned columns
 };
 
+/// USD collections, applied as CollectionAPI:<name>. The parser resolves a collection to the includes targets expanded through their descendants, minus the excludes subtrees. It does so for the colliders collection of a PhysicsCollisionGroup and the quasistaticactors collection of PhysxSceneQuasistaticAPI.
+struct CollectionAPIArgs
+{
+    std::optional<std::vector<std::vector<std::string>>> includes; // collection:<inst>:includes (targets per prim)
+    std::optional<std::vector<std::vector<std::string>>> excludes; // collection:<inst>:excludes (targets per prim)
+};
+
 /// Binds a physics material to a collision shape. The producer resolves the binding onto every material consumer; the consumer additionally walks purposes and ancestors for stages that were not produced that way.
 struct MaterialBindingAPIArgs
 {
     std::optional<std::vector<std::vector<std::string>>> materialBindingPhysics; // material:binding:physics (targets per prim)
     std::optional<std::vector<std::vector<std::string>>> materialBinding; // material:binding (targets per prim)
+};
+
+/// Newton self-collision switch, read on every articulation root when PhysxArticulationAPI carries no enabledSelfCollisions.
+struct NewtonArticulationRootAPIArgs
+{
+    std::optional<std::vector<uint8_t>> selfCollisionEnabled; // newton:selfCollisionEnabled
+};
+
+/// Newton contact margin and gap, read for every collider as fallbacks for the PhysX rest and contact offsets when those are absent.
+struct NewtonCollisionAPIArgs
+{
+    std::optional<std::vector<float>> contactMargin; // newton:contactMargin
+    std::optional<std::vector<float>> contactGap; // newton:contactGap
+};
+
+/// Newton joint-level values the PhysX parser reads as seeds for every axis of a revolute, prismatic, spherical or D6 joint: velocity limit, armature, friction and damping. A PhysxJointAxisAPI value on an axis overrides them.
+struct NewtonJointAPIArgs
+{
+    std::optional<std::vector<float>> velocityLimit; // newton:velocityLimit
+    std::optional<std::vector<float>> armature; // newton:armature
+    std::optional<std::vector<float>> friction; // newton:friction
+    std::optional<std::vector<float>> damping; // newton:damping
+};
+
+/// Newton hull vertex limit, read for convexHull and convexDecomposition approximations when the matching PhysX hullVertexLimit is absent.
+struct NewtonMeshCollisionAPIArgs
+{
+    std::optional<std::vector<int32_t>> maxHullVertices; // newton:maxHullVertices
+};
+
+/// Newton schema mimic constraint: joint = coef0 + coef1 * leader, with the leader given by newton:mimicJoint. The parser maps it onto the PhysX mimic joint as gearing = -coef1 and offset = -coef0, for single-DOF articulation joints only.
+struct NewtonMimicAPIArgs
+{
+    std::optional<std::vector<uint8_t>> mimicEnabled; // newton:mimicEnabled
+    std::optional<std::vector<float>> mimicCoef0; // newton:mimicCoef0
+    std::optional<std::vector<float>> mimicCoef1; // newton:mimicCoef1
+    std::optional<std::vector<std::vector<std::string>>> mimicJoint; // newton:mimicJoint (targets per prim)
+};
+
+/// Newton scene settings the PhysX parser reads as fallbacks on every PhysicsScene: the step rate when physxScene:timeStepsPerSecond is absent, and a switch that turns gravity off.
+struct NewtonSceneAPIArgs
+{
+    std::optional<std::vector<int32_t>> timeStepsPerSecond; // newton:timeStepsPerSecond
+    std::optional<std::vector<uint8_t>> gravityEnabled; // newton:gravityEnabled
 };
 
 /// Marks the root of a reduced-coordinate articulation. Declares no attributes: the schema token itself is the whole signal, and the consumer derives the root link, the fixed-base flag and the set of articulated bodies and joints from the joint graph under the prim. PhysX tuning lives on PhysxArticulationAPI.
@@ -1336,6 +1677,16 @@ struct PhysxDrivePerformanceEnvelopeAPIArgs
     std::optional<std::vector<float>> speedEffortGradient; // physxDrivePerformanceEnvelope:<inst>:speedEffortGradient
 };
 
+/// Applies a constant force and torque to the rigid body that owns the prim, at the body's centre of mass or at this Xformable's position. Read by the runtime's force loader when the API is listed.
+struct PhysxForceAPIArgs
+{
+    std::optional<std::vector<uint8_t>> forceEnabled; // physxForce:forceEnabled
+    std::optional<std::vector<uint8_t>> worldFrameEnabled; // physxForce:worldFrameEnabled
+    std::optional<std::vector<std::array<float, 3>>> force; // physxForce:force
+    std::optional<std::vector<std::array<float, 3>>> torque; // physxForce:torque
+    std::optional<std::vector<std::string>> mode; // physxForce:mode (token per prim)
+};
+
 /// Per-axis PhysX properties of an articulation joint (armature, maximum joint velocity, static, dynamic and viscous friction), applied as PhysxJointAxisAPI:<inst>. Only effective inside an articulation: on a standalone joint the runtime strips the API with a warning. Rotational instances are stored in degrees where the schema says so and the parser converts maxJointVelocity degrees to radians and multiplies viscousFrictionCoefficient by 57.29577951308232.
 struct PhysxJointAxisAPIArgs
 {
@@ -1364,6 +1715,35 @@ struct PhysxMaterialAPIArgs
     std::optional<std::vector<std::string>> frictionCombineMode; // physxMaterial:frictionCombineMode (token per prim)
     std::optional<std::vector<std::string>> restitutionCombineMode; // physxMaterial:restitutionCombineMode (token per prim)
     std::optional<std::vector<std::string>> dampingCombineMode; // physxMaterial:dampingCombineMode (token per prim)
+};
+
+/// Couples one degree of freedom of an articulation joint to one of a reference joint: position + gearing * referencePosition + offset = 0. Deprecated in favour of NewtonMimicAPI. Applied as PhysxMimicJointAPI:rotX, rotY or rotZ; the parser probes exactly those three instances on revolute, prismatic and D6 joints.
+struct PhysxMimicJointAPIArgs
+{
+    std::optional<std::vector<float>> gearing; // physxMimicJoint:<inst>:gearing
+    std::optional<std::vector<float>> offset; // physxMimicJoint:<inst>:offset
+    std::optional<std::vector<float>> naturalFrequency; // physxMimicJoint:<inst>:naturalFrequency
+    std::optional<std::vector<float>> dampingRatio; // physxMimicJoint:<inst>:dampingRatio
+    std::optional<std::vector<std::string>> referenceJointAxis; // physxMimicJoint:<inst>:referenceJointAxis (token per prim)
+    std::optional<std::vector<std::vector<std::string>>> referenceJoint; // physxMimicJoint:<inst>:referenceJoint (targets per prim)
+};
+
+/// Position-based-dynamics particle material. This contract covers only the read the rigid-body consumer makes: the material bound to a PhysicsScene is parsed as the scene's default PBD material, and every physxPBDMaterial:* column it carries applies whether or not the API is listed.
+struct PhysxPBDMaterialAPIArgs
+{
+    std::optional<std::vector<float>> friction; // physxPBDMaterial:friction
+    std::optional<std::vector<float>> particleFrictionScale; // physxPBDMaterial:particleFrictionScale
+    std::optional<std::vector<float>> damping; // physxPBDMaterial:damping
+    std::optional<std::vector<float>> viscosity; // physxPBDMaterial:viscosity
+    std::optional<std::vector<float>> vorticityConfinement; // physxPBDMaterial:vorticityConfinement
+    std::optional<std::vector<float>> surfaceTension; // physxPBDMaterial:surfaceTension
+    std::optional<std::vector<float>> cohesion; // physxPBDMaterial:cohesion
+    std::optional<std::vector<float>> adhesion; // physxPBDMaterial:adhesion
+    std::optional<std::vector<float>> particleAdhesionScale; // physxPBDMaterial:particleAdhesionScale
+    std::optional<std::vector<float>> adhesionOffsetScale; // physxPBDMaterial:adhesionOffsetScale
+    std::optional<std::vector<float>> gravityScale; // physxPBDMaterial:gravityScale
+    std::optional<std::vector<float>> cflCoefficient; // physxPBDMaterial:cflCoefficient
+    std::optional<std::vector<float>> density; // physxPBDMaterial:density
 };
 
 /// Spring behaviour of a distance joint: enable flag, stiffness and damping of the spring that acts when the distance leaves [minDistance, maxDistance]. Read only on a PhysicsDistanceJoint prim; inert on every other joint type.
@@ -1470,13 +1850,60 @@ struct PhysxSplinesSurfaceVelocityAPIArgs
     std::optional<std::vector<std::vector<std::string>>> surfaceVelocityCurve; // physxSplinesSurfaceVelocity:surfaceVelocityCurve (targets per prim)
 };
 
-/// Conveyor-belt surface velocity on a rigid body: contacts against the body behave as if its surface moved with the given linear and angular velocity while the body itself stays put. Read only on dynamic bodies and articulation links (parseDynamicBody); a static body ignores it.
+/// Conveyor-belt surface velocity on a rigid body: contacts against the body behave as if its surface moved with the given linear and angular velocity while the body itself stays put. Read only on dynamic bodies and articulation links; a static body ignores it.
 struct PhysxSurfaceVelocityAPIArgs
 {
     std::optional<std::vector<uint8_t>> surfaceVelocityEnabled; // physxSurfaceVelocity:surfaceVelocityEnabled
     std::optional<std::vector<uint8_t>> surfaceVelocityLocalSpace; // physxSurfaceVelocity:surfaceVelocityLocalSpace
     std::optional<std::vector<std::array<float, 3>>> surfaceVelocity; // physxSurfaceVelocity:surfaceVelocity
     std::optional<std::vector<std::array<float, 3>>> surfaceAngularVelocity; // physxSurfaceVelocity:surfaceAngularVelocity
+};
+
+/// One attachment of a spatial tendon on an articulation link, applied as PhysxTendonAttachmentAPI:<name>. The parser reads the local attachment point (scaled by the link's world scale), the parent link and the parent attachment's instance name for every attachment, root and leaf included.
+struct PhysxTendonAttachmentAPIArgs
+{
+    std::optional<std::vector<float>> gearing; // physxTendon:<inst>:gearing
+    std::optional<std::vector<std::array<float, 3>>> localPos; // physxTendon:<inst>:localPos
+    std::optional<std::vector<std::string>> parentAttachment; // physxTendon:<inst>:parentAttachment (token per prim)
+    std::optional<std::vector<std::vector<std::string>>> parentLink; // physxTendon:<inst>:parentLink (targets per prim)
+};
+
+/// Leaf attachment of a spatial tendon, applied as PhysxTendonAttachmentLeafAPI:<name>; it closes one sub-tendon and carries its rest length and limits.
+struct PhysxTendonAttachmentLeafAPIArgs
+{
+    std::optional<std::vector<float>> restLength; // physxTendon:<inst>:restLength
+    std::optional<std::vector<float>> lowerLimit; // physxTendon:<inst>:lowerLimit
+    std::optional<std::vector<float>> upperLimit; // physxTendon:<inst>:upperLimit
+};
+
+/// Root attachment of a spatial tendon, applied as PhysxTendonAttachmentRootAPI:<name>. The parser emits the spatial tendon with these settings; clamped like the fixed tendon root.
+struct PhysxTendonAttachmentRootAPIArgs
+{
+    std::optional<std::vector<uint8_t>> tendonEnabled; // physxTendon:<inst>:tendonEnabled
+    std::optional<std::vector<float>> stiffness; // physxTendon:<inst>:stiffness
+    std::optional<std::vector<float>> limitStiffness; // physxTendon:<inst>:limitStiffness
+    std::optional<std::vector<float>> damping; // physxTendon:<inst>:damping
+    std::optional<std::vector<float>> offset; // physxTendon:<inst>:offset
+};
+
+/// One joint axis of a fixed tendon, applied as PhysxTendonAxisAPI:<tendon> on a revolute or prismatic articulation joint. The parser emits one tendon axis per instance (rotX for revolute, transX for prismatic).
+struct PhysxTendonAxisAPIArgs
+{
+    std::optional<std::vector<std::vector<float>>> gearing; // physxTendon:<inst>:gearing (elements per prim)
+    std::optional<std::vector<std::vector<float>>> forceCoefficient; // physxTendon:<inst>:forceCoefficient (elements per prim)
+};
+
+/// Root axis of a fixed tendon, applied as PhysxTendonAxisRootAPI:<tendon>. Besides its axis the parser emits the tendon itself with these spring, limit and enable settings. Values are clamped and an infinite value saturates.
+struct PhysxTendonAxisRootAPIArgs
+{
+    std::optional<std::vector<float>> stiffness; // physxTendon:<inst>:stiffness
+    std::optional<std::vector<float>> limitStiffness; // physxTendon:<inst>:limitStiffness
+    std::optional<std::vector<float>> damping; // physxTendon:<inst>:damping
+    std::optional<std::vector<float>> offset; // physxTendon:<inst>:offset
+    std::optional<std::vector<float>> restLength; // physxTendon:<inst>:restLength
+    std::optional<std::vector<float>> lowerLimit; // physxTendon:<inst>:lowerLimit
+    std::optional<std::vector<float>> upperLimit; // physxTendon:<inst>:upperLimit
+    std::optional<std::vector<uint8_t>> tendonEnabled; // physxTendon:<inst>:tendonEnabled
 };
 
 /// Triangle mesh cooking parameter (weld tolerance) for a Mesh collider with physics:approximation none or sdf. Cooking input only; nothing here is verified.
@@ -1506,10 +1933,13 @@ struct RawFallback { const char* column; double value; };
 /// contract's raw_fallback_diverges). Informational: a value does not encode authoredness, so the
 /// builder never vetoes it; write the producer value, or omit the column for the parser default.
 inline constexpr RawFallback kRawFallbackDiverges[] = {
+    { "newton:timeStepsPerSecond", 1000.0 },
     { "physics:staticFriction", 0.0 },
     { "physics:dynamicFriction", 0.0 },
     { "physxConvexDecompositionCollision:maxConvexHulls", 32.0 },
     { "physxConvexDecompositionCollision:voxelResolution", 500000.0 },
+    { "physxMimicJoint:<inst>:gearing", 1.0 },
+    { "physxPBDMaterial:density", 0.0 },
     { "physxRigidBody:sleepThreshold", 5e-05 },
     { "physxRigidBody:stabilizationThreshold", 1e-05 },
     { "physxRigidBody:maxDepenetrationVelocity", 3.0 },
@@ -1521,13 +1951,21 @@ inline constexpr RawFallback kRawFallbackDiverges[] = {
     { "physxScene:frictionCorrelationDistance", 0.025 },
     { "physxScene:minPositionIterationCount", 1.0 },
     { "physxSphereFillCollision:voxelResolution", 50000.0 },
+    { "physxTendon:<inst>:restLength", 0.0 },
 };
 
 /// multiApply: applied as Name:instance, every column name carries the placeholder <inst>. An empty
 /// instances list accepts any instance name.
 struct ApiRule { const char* api; bool multiApply; std::initializer_list<const char*> appliesTo; std::initializer_list<const char*> requiresApis; std::initializer_list<const char*> instances; };
 inline const ApiRule kApiRules[] = {
-    { "MaterialBindingAPI", false, { "Gprim", "Xformable" }, {  }, {  } },
+    { "CollectionAPI", true, { "Xformable", "Imageable", "Typed" }, {  }, {  } },
+    { "MaterialBindingAPI", false, { "Gprim", "Xformable", "GeomSubset" }, {  }, {  } },
+    { "NewtonArticulationRootAPI", false, { "Xformable", "PhysicsJoint" }, { "PhysicsArticulationRootAPI" }, {  } },
+    { "NewtonCollisionAPI", false, { "Gprim" }, { "PhysicsCollisionAPI" }, {  } },
+    { "NewtonJointAPI", false, { "PhysicsJoint" }, {  }, {  } },
+    { "NewtonMeshCollisionAPI", false, { "Gprim" }, { "NewtonCollisionAPI", "PhysicsMeshCollisionAPI" }, {  } },
+    { "NewtonMimicAPI", false, { "PhysicsJoint" }, {  }, {  } },
+    { "NewtonSceneAPI", false, { "PhysicsScene" }, {  }, {  } },
     { "PhysicsArticulationRootAPI", false, { "Xformable", "PhysicsJoint" }, {  }, {  } },
     { "PhysicsCollisionAPI", false, { "Gprim" }, {  }, {  } },
     { "PhysicsDriveAPI", true, { "PhysicsJoint" }, {  }, { "transX", "transY", "transZ", "rotX", "rotY", "rotZ", "distance", "angular", "linear" } },
@@ -1544,9 +1982,12 @@ inline const ApiRule kApiRules[] = {
     { "PhysxConvexDecompositionCollisionAPI", false, { "Gprim" }, { "PhysicsCollisionAPI" }, {  } },
     { "PhysxConvexHullCollisionAPI", false, { "Gprim" }, { "PhysicsCollisionAPI" }, {  } },
     { "PhysxDrivePerformanceEnvelopeAPI", true, { "PhysicsJoint" }, { "PhysicsDriveAPI" }, { "angular", "linear", "rotX", "rotY", "rotZ" } },
+    { "PhysxForceAPI", false, { "Xformable" }, {  }, {  } },
     { "PhysxJointAxisAPI", true, { "PhysicsJoint" }, {  }, { "angular", "linear", "rotX", "rotY", "rotZ" } },
     { "PhysxLimitAPI", true, { "PhysicsJoint" }, {  }, { "angular", "linear", "cone", "distance", "transX", "transY", "transZ", "rotX", "rotY", "rotZ" } },
     { "PhysxMaterialAPI", false, { "Typed" }, { "PhysicsMaterialAPI" }, {  } },
+    { "PhysxMimicJointAPI", true, { "PhysicsJoint" }, {  }, { "rotX", "rotY", "rotZ" } },
+    { "PhysxPBDMaterialAPI", false, { "Material" }, {  }, {  } },
     { "PhysxPhysicsDistanceJointAPI", false, { "PhysicsJoint" }, {  }, {  } },
     { "PhysxRigidBodyAPI", false, { "Xformable" }, { "PhysicsRigidBodyAPI" }, {  } },
     { "PhysxSDFMeshCollisionAPI", false, { "Gprim" }, { "PhysicsCollisionAPI" }, {  } },
@@ -1554,6 +1995,11 @@ inline const ApiRule kApiRules[] = {
     { "PhysxSphereFillCollisionAPI", false, { "Gprim" }, { "PhysicsCollisionAPI" }, {  } },
     { "PhysxSplinesSurfaceVelocityAPI", false, { "Xformable" }, { "PhysicsRigidBodyAPI" }, {  } },
     { "PhysxSurfaceVelocityAPI", false, { "Xformable" }, { "PhysicsRigidBodyAPI" }, {  } },
+    { "PhysxTendonAttachmentAPI", true, { "Xformable" }, {  }, {  } },
+    { "PhysxTendonAttachmentLeafAPI", true, { "Xformable" }, {  }, {  } },
+    { "PhysxTendonAttachmentRootAPI", true, { "Xformable" }, {  }, {  } },
+    { "PhysxTendonAxisAPI", true, { "PhysicsJoint" }, {  }, {  } },
+    { "PhysxTendonAxisRootAPI", true, { "PhysicsJoint" }, {  }, {  } },
     { "PhysxTriangleMeshCollisionAPI", false, { "Gprim" }, { "PhysicsCollisionAPI" }, {  } },
     { "PhysxTriangleMeshSimplificationCollisionAPI", false, { "Gprim" }, { "PhysicsCollisionAPI" }, {  } },
     { "PhysxTriggerAPI", false, { "Gprim" }, { "PhysicsCollisionAPI" }, {  } },
@@ -1565,8 +2011,9 @@ inline const TypeRule kTypeRules[] = {
     { "Cone", { "Cone", "Gprim", "Boundable", "Xformable" } },
     { "Cube", { "Cube", "Gprim", "Boundable", "Xformable" } },
     { "Cylinder", { "Cylinder", "Gprim", "Boundable", "Xformable" } },
+    { "GeomSubset", { "GeomSubset", "Typed" } },
     { "Material", { "Material", "Typed" } },
-    { "Mesh", { "Mesh", "Gprim", "Boundable", "Xformable" } },
+    { "Mesh", { "Mesh", "PointBased", "Gprim", "Boundable", "Xformable" } },
     { "PhysicsCollisionGroup", { "PhysicsCollisionGroup", "Typed" } },
     { "PhysicsDistanceJoint", { "PhysicsDistanceJoint", "Imageable", "Typed", "PhysicsJoint" } },
     { "PhysicsFixedJoint", { "PhysicsFixedJoint", "Imageable", "Typed", "PhysicsJoint" } },
@@ -1576,8 +2023,11 @@ inline const TypeRule kTypeRules[] = {
     { "PhysicsScene", { "PhysicsScene", "Typed" } },
     { "PhysicsSphericalJoint", { "PhysicsSphericalJoint", "Imageable", "Typed", "PhysicsJoint" } },
     { "PhysxPhysicsGearJoint", { "PhysxPhysicsGearJoint", "Imageable", "Typed", "PhysicsJoint" } },
+    { "PhysxPhysicsJointInstancer", { "PhysxPhysicsJointInstancer", "PhysxPhysicsInstancer", "Imageable", "Typed" } },
     { "PhysxPhysicsRackAndPinionJoint", { "PhysxPhysicsRackAndPinionJoint", "Imageable", "Typed", "PhysicsJoint" } },
     { "Plane", { "Plane", "Gprim", "Boundable", "Xformable" } },
+    { "PointInstancer", { "PointInstancer", "Boundable", "Xformable" } },
+    { "Scope", { "Scope", "Imageable", "Typed" } },
     { "Sphere", { "Sphere", "Gprim", "Boundable", "Xformable" } },
     { "Xform", { "Xform", "Xformable" } },
 };
@@ -1689,6 +2139,70 @@ struct QueryGuard
     }
 };
 
+/// IEEE 754 binary16 bits of value, rounded to nearest even, as numpy's float16 rounds the Python
+/// builder's floats. A value beyond the half range becomes infinity; NaN stays NaN.
+inline uint16_t halfBits(float value)
+{
+    uint32_t f = 0;
+    std::memcpy(&f, &value, sizeof(f));
+    const uint32_t sign = (f >> 16) & 0x8000u;
+    const uint32_t exponent = (f >> 23) & 0xffu;
+    uint32_t mantissa = f & 0x7fffffu;
+    if (exponent == 0xffu)
+        return uint16_t(sign | 0x7c00u | (mantissa ? 0x200u : 0u));
+    const int biased = int(exponent) - 127 + 15;
+    if (biased >= 0x1f)
+        return uint16_t(sign | 0x7c00u);
+    uint32_t half = 0, rest = 0, halfway = 0;
+    if (biased > 0)
+    {
+        half = (uint32_t(biased) << 10) | (mantissa >> 13);
+        rest = mantissa & 0x1fffu;
+        halfway = 0x1000u;
+    }
+    else
+    {
+        if (biased < -10)
+            return uint16_t(sign); // below half the smallest subnormal
+        mantissa |= 0x800000u;
+        const int shift = 14 - biased;
+        half = mantissa >> shift;
+        rest = mantissa & ((1u << shift) - 1u);
+        halfway = 1u << (shift - 1);
+    }
+    if (rest > halfway || (rest == halfway && (half & 1u)))
+        ++half; // a carry into the exponent rounds up to the next binade, or to infinity
+    return uint16_t(sign | half);
+}
+
+template <class T>
+struct HalfOf;
+template <>
+struct HalfOf<float> { using type = uint16_t; };
+template <size_t L>
+struct HalfOf<std::array<float, L>> { using type = std::array<uint16_t, L>; };
+template <class T>
+struct HalfOf<std::vector<T>> { using type = std::vector<typename HalfOf<T>::type>; };
+
+template <size_t L>
+std::array<uint16_t, L> halfBits(const std::array<float, L>& values)
+{
+    std::array<uint16_t, L> out{};
+    for (size_t i = 0; i < L; ++i)
+        out[i] = halfBits(values[i]);
+    return out;
+}
+
+template <class T>
+typename HalfOf<std::vector<T>>::type halfBits(const std::vector<T>& values)
+{
+    typename HalfOf<std::vector<T>>::type out;
+    out.reserve(values.size());
+    for (const T& value : values)
+        out.push_back(halfBits(value));
+    return out;
+}
+
 } // namespace detail
 
 /// Every proper ancestor of the given paths, excluding the pseudo-root, sorted shallow to deep.
@@ -1775,6 +2289,17 @@ public:
             addFixed("physxConvexGeometry:margin", *args.margin, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
         if (args.axis)
             addTokens("axis", *args.axis, OVSTAGE_SEMANTIC_TOKEN_ID);
+        return *this;
+    }
+
+    /// A face subset of a Mesh collider. The parser reads it only to build per-face physics materials: a face GeomSubset child of a Mesh collider whose resolved material binding is a physics material takes the next material slot, and its indices stamp that slot onto the faces the cooking service sees.
+    PrimBatch& defineGeomSubset(const GeomSubsetArgs& args = {})
+    {
+        define("GeomSubset", nullptr);
+        if (args.indices)
+            addArray("indices", *args.indices, DLDataType{ kDLInt, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.elementType)
+            addTokens("elementType", *args.elementType, OVSTAGE_SEMANTIC_TOKEN_ID);
         return *this;
     }
 
@@ -2060,6 +2585,33 @@ public:
         return *this;
     }
 
+    /// Instances joints from prototype joints. The runtime's joint-instancer loader parses each prototype joint once, then creates one joint per protoIndices entry, composing the per-instance local frames with the prototype's and binding the per-instance bodies.
+    PrimBatch& definePhysxPhysicsJointInstancer(const PhysxPhysicsJointInstancerArgs& args = {})
+    {
+        define("PhysxPhysicsJointInstancer", nullptr);
+        if (args.protoIndices)
+            addArray("physics:protoIndices", *args.protoIndices, DLDataType{ kDLInt, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.body0Indices)
+            addArray("physics:body0Indices", *args.body0Indices, DLDataType{ kDLInt, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.body1Indices)
+            addArray("physics:body1Indices", *args.body1Indices, DLDataType{ kDLInt, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.localPos0s)
+            addArray("physics:localPos0s", *args.localPos0s, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_POINT);
+        if (args.localRot0s)
+            addArray("physics:localRot0s", detail::halfBits(*args.localRot0s), DLDataType{ kDLFloat, 16, 1 }, OVSTAGE_SEMANTIC_QUATERNION);
+        if (args.localPos1s)
+            addArray("physics:localPos1s", *args.localPos1s, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_POINT);
+        if (args.localRot1s)
+            addArray("physics:localRot1s", detail::halfBits(*args.localRot1s), DLDataType{ kDLFloat, 16, 1 }, OVSTAGE_SEMANTIC_QUATERNION);
+        if (args.prototypes)
+            addRel("physics:prototypes", *args.prototypes);
+        if (args.body0s)
+            addRel("physics:body0s", *args.body0s);
+        if (args.body1s)
+            addRel("physics:body1s", *args.body1s);
+        return *this;
+    }
+
     /// Couples the angular velocity of a revolute (hinge) joint to the linear velocity of a prismatic joint by a fixed ratio in degrees per length unit. Inherits every PhysicsJoint column and adds the ratio and the two joint relationships. Created as a native PxRackAndPinionJoint; never an articulation joint.
     PrimBatch& definePhysxPhysicsRackAndPinionJoint(const PhysxPhysicsRackAndPinionJointArgs& args = {})
     {
@@ -2104,6 +2656,41 @@ public:
         return *this;
     }
 
+    /// Instances rigid-body prototypes. The runtime's rigid point-instancer loader reads the prototype targets and the per-instance arrays, parses each used prototype subtree once and stamps one body per active instance. It runs only when some prim on the Stage applies PhysicsRigidBodyAPI or PhysicsCollisionAPI.
+    PrimBatch& definePointInstancer(const PointInstancerArgs& args = {}, const TransformArgs& xf = {})
+    {
+        define("PointInstancer", &xf);
+        if (args.protoIndices)
+            addArray("protoIndices", *args.protoIndices, DLDataType{ kDLInt, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.positions)
+            addArray("positions", *args.positions, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_POINT);
+        if (args.orientations)
+            addArray("orientations", detail::halfBits(*args.orientations), DLDataType{ kDLFloat, 16, 1 }, OVSTAGE_SEMANTIC_QUATERNION);
+        if (args.velocities)
+            addArray("velocities", *args.velocities, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_VECTOR);
+        if (args.angularVelocities)
+            addArray("angularVelocities", *args.angularVelocities, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_VECTOR);
+        if (args.scales)
+            addArray("scales", *args.scales, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.ids)
+            addArray("ids", *args.ids, DLDataType{ kDLInt, 64, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.inactiveIds)
+            addArray("usd-metadata:inactiveIds", *args.inactiveIds, DLDataType{ kDLInt, 64, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.prototypes)
+            addRel("prototypes", *args.prototypes);
+        if (args.prototypesUsdTargets)
+            addRel("prototypes:usd-targets", *args.prototypesUsdTargets);
+        return *this;
+    }
+
+    /// A grouping prim without a transform. The parser reads no column of its own: a Scope matters only as an ancestor whose (absent) local transform composes as identity, and as a native-instancing root.
+    PrimBatch& defineScope(const ScopeArgs& args = {})
+    {
+        define("Scope", nullptr);
+        (void)args;
+        return *this;
+    }
+
     /// Sphere geometry. With PhysicsCollisionAPI applied it becomes a PhysX sphere shape whose radius is |radius| times the largest component of the prim's world scale.
     PrimBatch& defineSphere(const SphereArgs& args = {}, const TransformArgs& xf = {})
     {
@@ -2123,6 +2710,19 @@ public:
 
     // -- applied API schemas -------------------------------------------------------------------
 
+    /// USD collections, applied as CollectionAPI:<name>. The parser resolves a collection to the includes targets expanded through their descendants, minus the excludes subtrees. It does so for the colliders collection of a PhysicsCollisionGroup and the quasistaticactors collection of PhysxSceneQuasistaticAPI.
+    /// Multi-apply: `instance` names the applied instance (`CollectionAPI:instance` in usd-schemas) and
+    /// replaces `<inst>` in every column name. Call once per instance.
+    PrimBatch& applyCollectionAPI(const std::string& instance, const CollectionAPIArgs& args = {})
+    {
+        apply("CollectionAPI", instance);
+        if (args.includes)
+            addRel(detail::instanced("collection:<inst>:includes", instance), *args.includes);
+        if (args.excludes)
+            addRel(detail::instanced("collection:<inst>:excludes", instance), *args.excludes);
+        return *this;
+    }
+
     /// Binds a physics material to a collision shape. The producer resolves the binding onto every material consumer; the consumer additionally walks purposes and ancestors for stages that were not produced that way.
     PrimBatch& applyMaterialBindingAPI(const MaterialBindingAPIArgs& args = {})
     {
@@ -2131,6 +2731,76 @@ public:
             addRel("material:binding:physics", *args.materialBindingPhysics);
         if (args.materialBinding)
             addRel("material:binding", *args.materialBinding);
+        return *this;
+    }
+
+    /// Newton self-collision switch, read on every articulation root when PhysxArticulationAPI carries no enabledSelfCollisions.
+    PrimBatch& applyNewtonArticulationRootAPI(const NewtonArticulationRootAPIArgs& args = {})
+    {
+        apply("NewtonArticulationRootAPI");
+        if (args.selfCollisionEnabled)
+            addFixed("newton:selfCollisionEnabled", *args.selfCollisionEnabled, DLDataType{ kDLBool, 8, 1 }, OVSTAGE_SEMANTIC_NONE);
+        return *this;
+    }
+
+    /// Newton contact margin and gap, read for every collider as fallbacks for the PhysX rest and contact offsets when those are absent.
+    PrimBatch& applyNewtonCollisionAPI(const NewtonCollisionAPIArgs& args = {})
+    {
+        apply("NewtonCollisionAPI");
+        if (args.contactMargin)
+            addFixed("newton:contactMargin", *args.contactMargin, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.contactGap)
+            addFixed("newton:contactGap", *args.contactGap, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        return *this;
+    }
+
+    /// Newton joint-level values the PhysX parser reads as seeds for every axis of a revolute, prismatic, spherical or D6 joint: velocity limit, armature, friction and damping. A PhysxJointAxisAPI value on an axis overrides them.
+    PrimBatch& applyNewtonJointAPI(const NewtonJointAPIArgs& args = {})
+    {
+        apply("NewtonJointAPI");
+        if (args.velocityLimit)
+            addFixed("newton:velocityLimit", *args.velocityLimit, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.armature)
+            addFixed("newton:armature", *args.armature, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.friction)
+            addFixed("newton:friction", *args.friction, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.damping)
+            addFixed("newton:damping", *args.damping, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        return *this;
+    }
+
+    /// Newton hull vertex limit, read for convexHull and convexDecomposition approximations when the matching PhysX hullVertexLimit is absent.
+    PrimBatch& applyNewtonMeshCollisionAPI(const NewtonMeshCollisionAPIArgs& args = {})
+    {
+        apply("NewtonMeshCollisionAPI");
+        if (args.maxHullVertices)
+            addFixed("newton:maxHullVertices", *args.maxHullVertices, DLDataType{ kDLInt, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        return *this;
+    }
+
+    /// Newton schema mimic constraint: joint = coef0 + coef1 * leader, with the leader given by newton:mimicJoint. The parser maps it onto the PhysX mimic joint as gearing = -coef1 and offset = -coef0, for single-DOF articulation joints only.
+    PrimBatch& applyNewtonMimicAPI(const NewtonMimicAPIArgs& args = {})
+    {
+        apply("NewtonMimicAPI");
+        if (args.mimicEnabled)
+            addFixed("newton:mimicEnabled", *args.mimicEnabled, DLDataType{ kDLBool, 8, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.mimicCoef0)
+            addFixed("newton:mimicCoef0", *args.mimicCoef0, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.mimicCoef1)
+            addFixed("newton:mimicCoef1", *args.mimicCoef1, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.mimicJoint)
+            addRel("newton:mimicJoint", *args.mimicJoint);
+        return *this;
+    }
+
+    /// Newton scene settings the PhysX parser reads as fallbacks on every PhysicsScene: the step rate when physxScene:timeStepsPerSecond is absent, and a switch that turns gravity off.
+    PrimBatch& applyNewtonSceneAPI(const NewtonSceneAPIArgs& args = {})
+    {
+        apply("NewtonSceneAPI");
+        if (args.timeStepsPerSecond)
+            addFixed("newton:timeStepsPerSecond", *args.timeStepsPerSecond, DLDataType{ kDLInt, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.gravityEnabled)
+            addFixed("newton:gravityEnabled", *args.gravityEnabled, DLDataType{ kDLBool, 8, 1 }, OVSTAGE_SEMANTIC_NONE);
         return *this;
     }
 
@@ -2361,6 +3031,23 @@ public:
         return *this;
     }
 
+    /// Applies a constant force and torque to the rigid body that owns the prim, at the body's centre of mass or at this Xformable's position. Read by the runtime's force loader when the API is listed.
+    PrimBatch& applyPhysxForceAPI(const PhysxForceAPIArgs& args = {})
+    {
+        apply("PhysxForceAPI");
+        if (args.forceEnabled)
+            addFixed("physxForce:forceEnabled", *args.forceEnabled, DLDataType{ kDLBool, 8, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.worldFrameEnabled)
+            addFixed("physxForce:worldFrameEnabled", *args.worldFrameEnabled, DLDataType{ kDLBool, 8, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.force)
+            addFixed("physxForce:force", *args.force, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_VECTOR);
+        if (args.torque)
+            addFixed("physxForce:torque", *args.torque, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_VECTOR);
+        if (args.mode)
+            addTokens("physxForce:mode", *args.mode, OVSTAGE_SEMANTIC_TOKEN_ID);
+        return *this;
+    }
+
     /// Per-axis PhysX properties of an articulation joint (armature, maximum joint velocity, static, dynamic and viscous friction), applied as PhysxJointAxisAPI:<inst>. Only effective inside an articulation: on a standalone joint the runtime strips the API with a warning. Rotational instances are stored in degrees where the schema says so and the parser converts maxJointVelocity degrees to radians and multiplies viscousFrictionCoefficient by 57.29577951308232.
     /// Multi-apply: `instance` names the applied instance (`PhysxJointAxisAPI:instance` in usd-schemas) and
     /// replaces `<inst>` in every column name. Call once per instance.
@@ -2413,6 +3100,60 @@ public:
             addTokens("physxMaterial:restitutionCombineMode", *args.restitutionCombineMode, OVSTAGE_SEMANTIC_TOKEN_ID);
         if (args.dampingCombineMode)
             addTokens("physxMaterial:dampingCombineMode", *args.dampingCombineMode, OVSTAGE_SEMANTIC_TOKEN_ID);
+        return *this;
+    }
+
+    /// Couples one degree of freedom of an articulation joint to one of a reference joint: position + gearing * referencePosition + offset = 0. Deprecated in favour of NewtonMimicAPI. Applied as PhysxMimicJointAPI:rotX, rotY or rotZ; the parser probes exactly those three instances on revolute, prismatic and D6 joints.
+    /// Multi-apply: `instance` names the applied instance (`PhysxMimicJointAPI:instance` in usd-schemas) and
+    /// replaces `<inst>` in every column name. Call once per instance.
+    PrimBatch& applyPhysxMimicJointAPI(const std::string& instance, const PhysxMimicJointAPIArgs& args = {})
+    {
+        apply("PhysxMimicJointAPI", instance);
+        if (args.gearing)
+            addFixed(detail::instanced("physxMimicJoint:<inst>:gearing", instance), *args.gearing, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE, "physxMimicJoint:<inst>:gearing");
+        if (args.offset)
+            addFixed(detail::instanced("physxMimicJoint:<inst>:offset", instance), *args.offset, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE, "physxMimicJoint:<inst>:offset");
+        if (args.naturalFrequency)
+            addFixed(detail::instanced("physxMimicJoint:<inst>:naturalFrequency", instance), *args.naturalFrequency, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE, "physxMimicJoint:<inst>:naturalFrequency");
+        if (args.dampingRatio)
+            addFixed(detail::instanced("physxMimicJoint:<inst>:dampingRatio", instance), *args.dampingRatio, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE, "physxMimicJoint:<inst>:dampingRatio");
+        if (args.referenceJointAxis)
+            addTokens(detail::instanced("physxMimicJoint:<inst>:referenceJointAxis", instance), *args.referenceJointAxis, OVSTAGE_SEMANTIC_TOKEN_ID);
+        if (args.referenceJoint)
+            addRel(detail::instanced("physxMimicJoint:<inst>:referenceJoint", instance), *args.referenceJoint);
+        return *this;
+    }
+
+    /// Position-based-dynamics particle material. This contract covers only the read the rigid-body consumer makes: the material bound to a PhysicsScene is parsed as the scene's default PBD material, and every physxPBDMaterial:* column it carries applies whether or not the API is listed.
+    PrimBatch& applyPhysxPBDMaterialAPI(const PhysxPBDMaterialAPIArgs& args = {})
+    {
+        apply("PhysxPBDMaterialAPI");
+        if (args.friction)
+            addFixed("physxPBDMaterial:friction", *args.friction, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.particleFrictionScale)
+            addFixed("physxPBDMaterial:particleFrictionScale", *args.particleFrictionScale, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.damping)
+            addFixed("physxPBDMaterial:damping", *args.damping, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.viscosity)
+            addFixed("physxPBDMaterial:viscosity", *args.viscosity, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.vorticityConfinement)
+            addFixed("physxPBDMaterial:vorticityConfinement", *args.vorticityConfinement, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.surfaceTension)
+            addFixed("physxPBDMaterial:surfaceTension", *args.surfaceTension, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.cohesion)
+            addFixed("physxPBDMaterial:cohesion", *args.cohesion, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.adhesion)
+            addFixed("physxPBDMaterial:adhesion", *args.adhesion, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.particleAdhesionScale)
+            addFixed("physxPBDMaterial:particleAdhesionScale", *args.particleAdhesionScale, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.adhesionOffsetScale)
+            addFixed("physxPBDMaterial:adhesionOffsetScale", *args.adhesionOffsetScale, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.gravityScale)
+            addFixed("physxPBDMaterial:gravityScale", *args.gravityScale, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.cflCoefficient)
+            addFixed("physxPBDMaterial:cflCoefficient", *args.cflCoefficient, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.density)
+            addFixed("physxPBDMaterial:density", *args.density, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
         return *this;
     }
 
@@ -2606,7 +3347,7 @@ public:
         return *this;
     }
 
-    /// Conveyor-belt surface velocity on a rigid body: contacts against the body behave as if its surface moved with the given linear and angular velocity while the body itself stays put. Read only on dynamic bodies and articulation links (parseDynamicBody); a static body ignores it.
+    /// Conveyor-belt surface velocity on a rigid body: contacts against the body behave as if its surface moved with the given linear and angular velocity while the body itself stays put. Read only on dynamic bodies and articulation links; a static body ignores it.
     PrimBatch& applyPhysxSurfaceVelocityAPI(const PhysxSurfaceVelocityAPIArgs& args = {})
     {
         apply("PhysxSurfaceVelocityAPI");
@@ -2618,6 +3359,95 @@ public:
             addFixed("physxSurfaceVelocity:surfaceVelocity", *args.surfaceVelocity, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_VECTOR);
         if (args.surfaceAngularVelocity)
             addFixed("physxSurfaceVelocity:surfaceAngularVelocity", *args.surfaceAngularVelocity, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_VECTOR);
+        return *this;
+    }
+
+    /// One attachment of a spatial tendon on an articulation link, applied as PhysxTendonAttachmentAPI:<name>. The parser reads the local attachment point (scaled by the link's world scale), the parent link and the parent attachment's instance name for every attachment, root and leaf included.
+    /// Multi-apply: `instance` names the applied instance (`PhysxTendonAttachmentAPI:instance` in usd-schemas) and
+    /// replaces `<inst>` in every column name. Call once per instance.
+    PrimBatch& applyPhysxTendonAttachmentAPI(const std::string& instance, const PhysxTendonAttachmentAPIArgs& args = {})
+    {
+        apply("PhysxTendonAttachmentAPI", instance);
+        if (args.gearing)
+            addFixed(detail::instanced("physxTendon:<inst>:gearing", instance), *args.gearing, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE, "physxTendon:<inst>:gearing");
+        if (args.localPos)
+            addFixed(detail::instanced("physxTendon:<inst>:localPos", instance), *args.localPos, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_POINT, "physxTendon:<inst>:localPos");
+        if (args.parentAttachment)
+            addTokens(detail::instanced("physxTendon:<inst>:parentAttachment", instance), *args.parentAttachment, OVSTAGE_SEMANTIC_TOKEN_ID);
+        if (args.parentLink)
+            addRel(detail::instanced("physxTendon:<inst>:parentLink", instance), *args.parentLink);
+        return *this;
+    }
+
+    /// Leaf attachment of a spatial tendon, applied as PhysxTendonAttachmentLeafAPI:<name>; it closes one sub-tendon and carries its rest length and limits.
+    /// Multi-apply: `instance` names the applied instance (`PhysxTendonAttachmentLeafAPI:instance` in usd-schemas) and
+    /// replaces `<inst>` in every column name. Call once per instance.
+    PrimBatch& applyPhysxTendonAttachmentLeafAPI(const std::string& instance, const PhysxTendonAttachmentLeafAPIArgs& args = {})
+    {
+        apply("PhysxTendonAttachmentLeafAPI", instance);
+        if (args.restLength)
+            addFixed(detail::instanced("physxTendon:<inst>:restLength", instance), *args.restLength, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE, "physxTendon:<inst>:restLength");
+        if (args.lowerLimit)
+            addFixed(detail::instanced("physxTendon:<inst>:lowerLimit", instance), *args.lowerLimit, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE, "physxTendon:<inst>:lowerLimit");
+        if (args.upperLimit)
+            addFixed(detail::instanced("physxTendon:<inst>:upperLimit", instance), *args.upperLimit, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE, "physxTendon:<inst>:upperLimit");
+        return *this;
+    }
+
+    /// Root attachment of a spatial tendon, applied as PhysxTendonAttachmentRootAPI:<name>. The parser emits the spatial tendon with these settings; clamped like the fixed tendon root.
+    /// Multi-apply: `instance` names the applied instance (`PhysxTendonAttachmentRootAPI:instance` in usd-schemas) and
+    /// replaces `<inst>` in every column name. Call once per instance.
+    PrimBatch& applyPhysxTendonAttachmentRootAPI(const std::string& instance, const PhysxTendonAttachmentRootAPIArgs& args = {})
+    {
+        apply("PhysxTendonAttachmentRootAPI", instance);
+        if (args.tendonEnabled)
+            addFixed(detail::instanced("physxTendon:<inst>:tendonEnabled", instance), *args.tendonEnabled, DLDataType{ kDLBool, 8, 1 }, OVSTAGE_SEMANTIC_NONE, "physxTendon:<inst>:tendonEnabled");
+        if (args.stiffness)
+            addFixed(detail::instanced("physxTendon:<inst>:stiffness", instance), *args.stiffness, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE, "physxTendon:<inst>:stiffness");
+        if (args.limitStiffness)
+            addFixed(detail::instanced("physxTendon:<inst>:limitStiffness", instance), *args.limitStiffness, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE, "physxTendon:<inst>:limitStiffness");
+        if (args.damping)
+            addFixed(detail::instanced("physxTendon:<inst>:damping", instance), *args.damping, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE, "physxTendon:<inst>:damping");
+        if (args.offset)
+            addFixed(detail::instanced("physxTendon:<inst>:offset", instance), *args.offset, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE, "physxTendon:<inst>:offset");
+        return *this;
+    }
+
+    /// One joint axis of a fixed tendon, applied as PhysxTendonAxisAPI:<tendon> on a revolute or prismatic articulation joint. The parser emits one tendon axis per instance (rotX for revolute, transX for prismatic).
+    /// Multi-apply: `instance` names the applied instance (`PhysxTendonAxisAPI:instance` in usd-schemas) and
+    /// replaces `<inst>` in every column name. Call once per instance.
+    PrimBatch& applyPhysxTendonAxisAPI(const std::string& instance, const PhysxTendonAxisAPIArgs& args = {})
+    {
+        apply("PhysxTendonAxisAPI", instance);
+        if (args.gearing)
+            addArray(detail::instanced("physxTendon:<inst>:gearing", instance), *args.gearing, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        if (args.forceCoefficient)
+            addArray(detail::instanced("physxTendon:<inst>:forceCoefficient", instance), *args.forceCoefficient, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
+        return *this;
+    }
+
+    /// Root axis of a fixed tendon, applied as PhysxTendonAxisRootAPI:<tendon>. Besides its axis the parser emits the tendon itself with these spring, limit and enable settings. Values are clamped and an infinite value saturates.
+    /// Multi-apply: `instance` names the applied instance (`PhysxTendonAxisRootAPI:instance` in usd-schemas) and
+    /// replaces `<inst>` in every column name. Call once per instance.
+    PrimBatch& applyPhysxTendonAxisRootAPI(const std::string& instance, const PhysxTendonAxisRootAPIArgs& args = {})
+    {
+        apply("PhysxTendonAxisRootAPI", instance);
+        if (args.stiffness)
+            addFixed(detail::instanced("physxTendon:<inst>:stiffness", instance), *args.stiffness, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE, "physxTendon:<inst>:stiffness");
+        if (args.limitStiffness)
+            addFixed(detail::instanced("physxTendon:<inst>:limitStiffness", instance), *args.limitStiffness, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE, "physxTendon:<inst>:limitStiffness");
+        if (args.damping)
+            addFixed(detail::instanced("physxTendon:<inst>:damping", instance), *args.damping, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE, "physxTendon:<inst>:damping");
+        if (args.offset)
+            addFixed(detail::instanced("physxTendon:<inst>:offset", instance), *args.offset, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE, "physxTendon:<inst>:offset");
+        if (args.restLength)
+            addFixed(detail::instanced("physxTendon:<inst>:restLength", instance), *args.restLength, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE, "physxTendon:<inst>:restLength");
+        if (args.lowerLimit)
+            addFixed(detail::instanced("physxTendon:<inst>:lowerLimit", instance), *args.lowerLimit, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE, "physxTendon:<inst>:lowerLimit");
+        if (args.upperLimit)
+            addFixed(detail::instanced("physxTendon:<inst>:upperLimit", instance), *args.upperLimit, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE, "physxTendon:<inst>:upperLimit");
+        if (args.tendonEnabled)
+            addFixed(detail::instanced("physxTendon:<inst>:tendonEnabled", instance), *args.tendonEnabled, DLDataType{ kDLBool, 8, 1 }, OVSTAGE_SEMANTIC_NONE, "physxTendon:<inst>:tendonEnabled");
         return *this;
     }
 
@@ -2698,7 +3528,7 @@ public:
             c.semantic = OVSTAGE_SEMANTIC_NONE;
             std::vector<uint64_t> ids;
             for (const std::string& s : mSchemas)
-                ids.push_back(internToken(s));
+                ids.push_back(internToken(s).raw_id);
             c.rowCounts.assign(size(), static_cast<int64_t>(ids.size()));
             c.rows.assign(size(), bytesOf(ids));
             structural.push_back(std::move(c));
@@ -2715,13 +3545,13 @@ public:
         for (const Column& c : columns)
             tensorCount += c.isArray ? size() : 1;
         tensors.reserve(tensorCount);
-        shapes.reserve(tensorCount);
+        shapes.reserve(columns.size()); // fixed columns only; array rows borrow their rowCounts entry
         std::vector<ovstage_attribute_write_t> writes;
         writes.reserve(columns.size());
         for (const Column& c : columns)
         {
             ovstage_attribute_write_t aw{};
-            aw.attribute.token = 0;
+            aw.attribute.token = OVX_INVALID_TOKEN; // the string names the attribute
             aw.attribute.string = detail::str(c.name);
             aw.data.is_array = c.isArray;
             aw.data.semantic = c.semantic;
@@ -2740,15 +3570,17 @@ public:
             }
             else
             {
+                // An array element's tuple width travels in dtype.lanes: ovstage stores an (n, lanes)
+                // scalar tensor as n * lanes one-lane elements, not as n tuples.
                 for (size_t i = 0; i < c.rows.size(); ++i)
                 {
-                    shapes.push_back({ c.rowCounts[i], c.lanes });
                     DLTensor t{};
                     t.data = const_cast<uint8_t*>(c.rows[i].data());
                     t.device = { kDLCPU, 0 };
                     t.dtype = c.dtype;
-                    t.ndim = c.lanes > 1 ? 2 : 1;
-                    t.shape = shapes.back().data();
+                    t.dtype.lanes = static_cast<uint16_t>(c.lanes);
+                    t.ndim = 1;
+                    t.shape = const_cast<int64_t*>(&c.rowCounts[i]);
                     tensors.push_back(t);
                 }
                 aw.data.tensor_count = static_cast<uint32_t>(size());
@@ -2857,7 +3689,7 @@ private:
             throw std::invalid_argument(column + ": expected " + std::to_string(size()) + " tokens");
         std::vector<uint64_t> ids;
         for (const std::string& t : tokens)
-            ids.push_back(internToken(t));
+            ids.push_back(internToken(t).raw_id);
         addFixed(column, ids, DLDataType{ kDLUInt, 64, 1 }, semantic);
     }
 
@@ -2874,7 +3706,7 @@ private:
         {
             std::vector<uint64_t> ids;
             for (const std::string& t : targets)
-                ids.push_back(internPath(t));
+                ids.push_back(internPath(t).raw_id);
             c.rowCounts.push_back(static_cast<int64_t>(ids.size()));
             c.rows.push_back(bytesOf(ids));
         }

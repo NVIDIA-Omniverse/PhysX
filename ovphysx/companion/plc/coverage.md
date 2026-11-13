@@ -38,6 +38,24 @@ that no external consumer exists. Optional service requirements apply when
 the capability is implemented and advertised; they do not turn an absent
 legacy header into a working provider.
 
+The legacy `IPhysxCamera`, `IPhysxUI`, `IPhysxSupportUi`,
+`IPhysxSupportUiRigidBodyManipulator`, `IPhysxStageUpdateNode`,
+`IPhysxAssetValidator`, and `IPhysxGraph` headers have been removed from
+ovruntime. Their rows below retain the migration mapping; they do not advertise
+runtime interfaces or establish full parity with the former host extensions.
+
+The `IPhysxPropertyQuery`, `IPhysxAttachmentPrivate` and `IPhysxStageUpdate`
+tables and runtime getters are also retired. Runtime regression tests use the
+underlying native C++ functions directly. The shared implementations remain;
+this does not claim companion parity for queued USD queries or stage callbacks.
+
+Additional retired tables are `IPhysxVehicle`, `IPhysxCct`, `IPhysxVehicleTesting`,
+`IPhysXPvd`, `IPhysxCookingPrivate`, `IPhysxJoint`, `IPhysxBenchmarks` and
+`IPhysxStatistics`. Companion statistics and preview call `NativeStatistics.h`;
+controller services already use their native APIs. Runtime tests and benchmarks
+use native joint, statistics and harness functions. Shared value types and SDK
+parser code remain. Legacy rows below continue to describe migration scope.
+
 | Legacy interface / operation family | Disposition | Requirements |
 |---|---|---|
 | `IPhysx`: `startSimulation`, `updateSimulation`, `updateTransformations`, `resetSimulation`, force-load/release | Core lifecycle plus managed preview | [OWNER](requirements/architecture/REQ-COMP-OWNER-001.md), [PREVIEW](requirements/live/REQ-COMP-PREVIEW-001.md), [HOST](requirements/host/REQ-COMP-HOST-001.md) |

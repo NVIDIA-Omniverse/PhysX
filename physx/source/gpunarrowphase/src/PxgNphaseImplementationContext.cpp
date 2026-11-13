@@ -428,6 +428,7 @@ PxgNphaseImplementationContext::PxgNphaseImplementationContext(
 	mContactManagerOutputs			(allocDesc.hostAlloc, PxsHeapStats::eNARROWPHASE),
 	mTotalNbPairs					(0),
 	mBounds							(bounds),
+	mHasContactDistanceChanged		(true),
 	mUseGPUBP						(useGPUBP)
 {
 #if PX_CHECKED

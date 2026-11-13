@@ -6,7 +6,7 @@
 #pragma once
 
 #include "AttachmentObjectLookup.h"
-#include <omni/physx/IPhysxJoint.h>
+#include <omni/physx/NativeJointState.h>
 #include <common/foundation/CarbPhysXCast.h>
 
 namespace omni::physx::attachmentJoint

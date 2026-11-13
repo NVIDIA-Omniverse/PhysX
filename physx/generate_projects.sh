@@ -1,4 +1,6 @@
 #!/bin/bash +x
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
 
 if [ -n "${BASH_SOURCE[0]}" ]; then
     SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")

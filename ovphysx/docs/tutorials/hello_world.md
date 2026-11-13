@@ -23,10 +23,10 @@ resources. You can use this flow as the starting point for larger integrations.
 
 ### Python
 
-Install the package first:
+Install ovphysx and the schema packages used by this sample:
 
 ```bash
-pip install ovphysx
+pip install ovphysx physx-usd-schemas newton-usd-schemas
 ```
 
 This complete sample creates a `PhysX` instance, populates an ovstage `Stage`
@@ -45,10 +45,8 @@ the external provider resource directories) and the separately installed Newton 
 (`pip install newton-usd-schemas`, located with `ovphysx.newton_schema_root()`)
 before it creates and populates the stage; ovphysx never registers them itself,
 and registration must precede the first USD schema read in the process,
-including population or export. The samples' `pyproject.toml` declares
-`newton-usd-schemas`, so `uv run` resolves it;
-install it yourself before running a sample from a plain `pip install ovphysx`
-environment.
+including population or export. The samples' `pyproject.toml` declares both
+schema packages, so `uv run` resolves them.
 
 ### C
 

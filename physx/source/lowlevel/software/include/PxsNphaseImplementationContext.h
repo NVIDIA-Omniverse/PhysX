@@ -6,10 +6,11 @@
 #ifndef PXS_NPHASE_IMPLEMENTATION_CONTEXT_H
 #define PXS_NPHASE_IMPLEMENTATION_CONTEXT_H
 
-#include "PxvNphaseImplementationContext.h" 
+#include "PxvNphaseImplementationContext.h"
 #include "PxsContactManagerState.h"
 #include "PxcNpCache.h"
 #include "CmPinnableArray.h"
+#include "foundation/PxBitMap.h"
 
 class PxsCMDiscreteUpdateTask;
 
@@ -73,6 +74,12 @@ public:
 	virtual void							registerContactManager(PxsContactManager* cm, const Sc::ShapeInteraction* shapeInteraction, PxI32 touching, PxU32 numPatches)	PX_OVERRIDE	PX_FINAL;
 //	virtual void							registerContactManagers(PxsContactManager** cm, Sc::ShapeInteraction** shapeInteractions, PxU32 nbContactManagers, PxU32 maxContactManagerId);
 	virtual void							unregisterContactManager(PxsContactManager* cm)	PX_OVERRIDE	PX_FINAL;
+	virtual void							unregisterContactManagerDeferred(PxsContactManager* cm)	PX_OVERRIDE	PX_FINAL;
+	virtual void							flushDeferredUnregisters()	PX_OVERRIDE	PX_FINAL;
+	virtual void							beginDeferredUnregistersThreadSafe()	PX_OVERRIDE	PX_FINAL;
+	virtual bool							unregisterContactManagerDeferredThreadSafe(PxsContactManager* cm, Gu::PersistentContactManifold*& manifold)	PX_OVERRIDE	PX_FINAL;
+	virtual void							addDeferredUnregisters(PxU32 nbPairs)	PX_OVERRIDE	PX_FINAL;
+	virtual void							prefetchUnregisterSlot(const PxsContactManager* cm)	const	PX_OVERRIDE	PX_FINAL;
 	virtual void							refreshContactManager(PxsContactManager* cm)	PX_OVERRIDE	PX_FINAL;
 
 	virtual void							registerShape(const PxNodeIndex& /*nodeIndex*/, const PxsShapeCore& /*shapeCore*/, const PxU32 /*transformCacheID*/, PxActor* /*actor*/, const bool /*isDeformableSurface*/) PX_OVERRIDE	PX_FINAL	{}
@@ -153,6 +160,25 @@ public:
 private:
 			//Returns false when npIndex named no live pair and nothing was removed.
 			bool							unregisterContactManagerInternal(PxU32 npIndex, PxsContactManagers& managers, PxsContactManagerOutput* cmOutputs);
+
+			//Shared by unregisterContactManagerInternal() and flushDeferredUnregisters(), so that a new per-pair array or a
+			//new side effect of moving a pair only needs one update. The outputs are handled apart because the fallback keeps
+			//them outside managers: movePair() takes them as a parameter and shrinkPairs() leaves them to the caller.
+			void							movePair(PxsContactManagers& managers, PxsContactManagerOutput* outputs, PxU32 dst, PxU32 src, PxU32 npIndex);
+			void							shrinkPairs(PxsContactManagers& managers, PxU32 newSize);
+
+			//Pair slots marked by unregisterContactManagerDeferred().
+			struct DeferredRemovals
+			{
+				DeferredRemovals() : mNbRemoved(0), mMinPos(0xFFffFFff), mMaxPos(0)	{}
+
+				PxBitMap	mMap;			//One bit per slot of the pair list. All bits are clear between flushes.
+				PxU32		mNbRemoved;
+				PxU32		mMinPos;		//Range of marked slots, so that the flush only visits the words that hold them.
+				PxU32		mMaxPos;
+			};
+
+			DeferredRemovals				mDeferredRemovals;		//For mNarrowPhasePairs.
 
 			PX_FORCE_INLINE void			unregisterAndForceSize(PxsContactManagers& cms, PxU32 index)
 			{

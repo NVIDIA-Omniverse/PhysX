@@ -5,7 +5,7 @@
 
 # Dynamic rigid body on a Capsule
 
-Convenience composition: one Capsule prim that is both the body and its only collider. Owns no columns; everything comes from the listed components.
+Convenience composition: one Capsule [prim](glossary.md#prim) that is both the body and its only collider. Owns no columns; everything comes from the listed components.
 
 - **Type:** [`Capsule`](Capsule.md)
 - **Required APIs:** [`PhysicsRigidBodyAPI`](PhysicsRigidBodyAPI.md), [`PhysicsCollisionAPI`](PhysicsCollisionAPI.md)

@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "policies": {
+    "session": {
+      "description": "Values refer to live physics, not source authoring. Group prim lists define membership; static capability does not guarantee live admission. Existing session ownership, synchronization and failure semantics apply."
+    },
+    "directgpu_warmup": {
+      "description": "Device-backed DirectGPU state requires a completed first step; a write never warms the simulation automatically."
+    },
+    "rigid_velocity": {
+      "description": "On CPU/readback, standalone kinematic velocity setters fail; other rows may already have been written. DirectGPU has different setter support."
+    },
+    "kinematic_target": {
+      "description": "Writing requires standalone kinematic bodies on CPU/readback; DirectGPU and articulation-link writes are refused. Reads fall back to current pose without a target."
+    },
+    "wake": {
+      "description": "Wake/sleep applies to the whole articulation or standalone body. DirectGPU refuses this CPU-side command."
+    },
+    "joint_limit": {
+      "description": "Finite limits require limited axes; changing a free axis to limited requires structural authoring. Invalid conditions reject before mutation."
+    },
+    "vehicle": {
+      "description": "Vehicles are unavailable on DirectGPU. Controls require compatible drive/chassis state and finite accepted values; writes preflight the group before mutation. Telemetry may omit incompatible rows."
+    },
+    "raw_wheel": {
+      "description": "Only vehicles without a managed drive accept raw-wheel controls. Commands persist until replaced; invalid controls reject before mutation."
+    },
+    "deformable": {
+      "description": "Simulation-node state requires a CUDA context; no corresponding CPU simulation. Read membership follows available simulation meshes."
+    },
+    "skin_mesh": {
+      "description": "Skinned vertices require a CUDA context; skinning is a GPU post-solve step with no CPU twin. Read membership follows skin meshes with skinned vertices, scoped by the owning body."
+    },
+    "volume_target": {
+      "description": "Volume nodes only; incompatible pre-existing kinematic control is refused, and a pinned node cannot be freed: it keeps its last target and an error is logged. w=0 drives the node; nonzero w leaves it free."
+    },
+    "surface_material": {
+      "description": "Bending and thickness exist only on concrete surface materials; volume materials contribute no row."
+    },
+    "contact_filters": {
+      "description": "Requires a contact query with filters; element ordering and companion counts identify each filter partition."
+    },
+    "contact_events": {
+      "description": "CPU/readback contact event data only; DirectGPU events are unsupported. Per-event counts partition point and anchor arrays."
+    },
+    "cct_move": {
+      "description": "Finite world displacement executes once at commit on CPU/readback. The caller supplies gravity or grounding displacement; repeated zero moves do not guarantee sustained following of a moving platform. DirectGPU is refused; backing rigid pose changes on the next simulation step."
+    },
+    "native_pointer": {
+      "description": "Borrowed native address, valid only while the object remains alive. Does not confer ownership or bypass runtime synchronization. Structural changes (adding, removing or re-inserting objects, moving them between scenes, attaching or detaching shapes) through a native PhysX pointer are not recommended: after one, ovphysx reads and writes are not guaranteed to work until the stage is re-attached."
+    },
+    "debug": {
+      "description": "Instance-level target, available without a stage. Scope uses dictionary-owned path tokens; settings persist, geometry is read-only. Scope and cullingBox have asymmetric read/write encodings."
+    }
+  }
+}

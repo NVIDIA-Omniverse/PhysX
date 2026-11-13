@@ -5,18 +5,18 @@
 
 # PhysicsFilteredPairsAPI
 
-Suppresses collision between this prim and the listed prims.
+Suppresses collision between this [prim](glossary.md#prim) and the listed prims.
 
-- **Applies to:** `Xformable`
-- **Read only when listed in `usd-schemas`.**
+- **Applies to:** [`Xformable`](glossary.md#xformable)
+- **Read only when listed in [`usd-schemas`](prim.md#columns).**
 
 ## What USD population writes
 
-The relationship is published when authored, in USD target order, as path-dictionary ids.
+The relationship is published when authored, in [USD](glossary.md#usd) target order, as path-dictionary ids.
 
 ## Columns
 
-*Raw fallback* is the USD schema value. *Producer writes* is what ovstage population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
+*Raw fallback* is the USD schema value. *Producer writes* is what [ovstage](glossary.md#ovstage) population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
 
 | Column | Type | Units | Raw fallback | Producer writes | Parser default | If absent |
 |---|---|---|---|---|---|---|

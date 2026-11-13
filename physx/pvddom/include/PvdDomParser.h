@@ -7,12 +7,18 @@
 #pragma once
 
 #include "PvdDom.h"
+#include "OmniPvdLibraryFunctions.h"
 
 class OmniPvdReader;
 class OmniPvdFileReadStream;
 
 void initPvdDomState(OmniPvdDOMState& domState);
 bool buildPvdDomStateFromFile(const char* ovdFilePath, OmniPvdDOMState& domState);
+// Reader diagnostics apply only during this synchronous load. DOM logging is separate.
+// The callback must follow the lifetime, serialization and re-entry rules
+// documented for setOmniPvdReaderDiagnostics().
+bool buildPvdDomStateFromFile(const char* ovdFilePath, OmniPvdDOMState& domState,
+                              const OmniPvdReaderDiagnostics& diagnostics);
 bool buildPvdDomState(OmniPvdReader* reader, OmniPvdDOMState& domState);
 
 /**
@@ -33,9 +39,8 @@ bool buildPvdDomState(OmniPvdReader* reader, OmniPvdDOMState& domState);
 void applyPvdDomCommand(OmniPvdReader& reader, OmniPvdDOMState& domState, OmniPvdCommand::Enum cmdType);
 
 // OVD stream messages collected during parsing.
-// Layout and buffer size must match IPhysxPvd.h when building inside ovruntime.
-// IPhysxPvd.h defines OMNI_PVD_MESSAGE_LENGTH=2048 and struct OmniPvdMessage.
-// If not already defined (standalone builds like PVD3), we provide the definition here.
+// Consumers that define OMNI_PVD_MESSAGE_LENGTH must also provide OmniPvdMessage
+// with the layout below.
 #ifndef OMNI_PVD_MESSAGE_LENGTH
 #define OMNI_PVD_MESSAGE_LENGTH 2048
 struct OmniPvdMessage {

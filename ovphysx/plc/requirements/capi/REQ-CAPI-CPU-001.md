@@ -10,10 +10,11 @@ owner: ovphysx
 
 ## Description
 
-Hard CPU-only mode is a process-wide deployment policy established by
-`ovphysx_set_cpu_mode(true)` before the first instance, or by setting
-`OVPHYSX_DISABLE_GPU` before OVPhysX initialization. Callers must be able to
-read that effective policy without inferring it from later simulation
+Hard CPU-only mode is a process-wide deployment policy established by setting
+`OVPHYSX_GLOBAL_CONFIG_CPU_ONLY` true with `ovphysx_set_global_config` before
+the first instance, or by setting `OVPHYSX_DISABLE_GPU` before OVPhysX
+initialization. `ovphysx_set_cpu_mode` forwards to that key. Callers must be
+able to read that effective policy without inferring it from later simulation
 behaviour, and instance creation must emit an INFO line naming the policy.
 
 This requirement covers the hard CPU-only policy only. It does not cover
@@ -26,15 +27,17 @@ needs attach-time confirmation of scene dynamics.
 `OVPHYSX_DISABLE_GPU` is read live before `ovphysx_initialize` (and again
 after `ovphysx_shutdown` until the next initialize). `ovphysx_initialize`
 latches the env contribution for that initialized interval so an
-observational pre-init `ovphysx_get_cpu_mode` cannot permanently miss a
-later setenv before init.
+observational pre-init `ovphysx_get_global_config` of
+`OVPHYSX_GLOBAL_CONFIG_CPU_ONLY` cannot permanently miss a later setenv
+before init. `ovphysx_get_cpu_mode` forwards to that key.
 
 ## Acceptance Criteria
 
-- AC-1: `ovphysx_get_cpu_mode(out)` returns success and writes true when hard
-  CPU-only mode is active (`ovphysx_set_cpu_mode(true)` succeeded or
-  `OVPHYSX_DISABLE_GPU` is active per the live/latched rules above), and
-  writes false when neither input is active.
+- AC-1: `ovphysx_get_global_config(OVPHYSX_GLOBAL_CONFIG_CPU_ONLY, out)` returns
+  success and writes true when hard CPU-only mode is active (that key was set
+  true, or `OVPHYSX_DISABLE_GPU` is active per the live/latched rules above),
+  and writes false when neither input is active. `ovphysx_get_cpu_mode`
+  forwards to that key and reports the same value.
 - AC-2: `ovphysx_get_cpu_mode(NULL)` returns `OVPHYSX_API_INVALID_ARGUMENT`.
 - AC-3: A successful `ovphysx_create_instance()` emits an INFO log line that
   includes `process_cpu_only=` with the effective hard CPU-only policy.
@@ -62,8 +65,8 @@ later setenv before init.
   `libcuda.so.1` at runtime — it carries no `DT_NEEDED` on the driver, so this is the
   plugin's own doing rather than link time. ovphysx neither ships nor loads that
   plugin. Until ovstage offers a way to suppress it, a deployment that needs the
-  process-wide guarantee cannot get it through `ovphysx_set_cpu_mode` alone, and the
-  public wording must not imply otherwise.
+  process-wide guarantee cannot get it through `OVPHYSX_GLOBAL_CONFIG_CPU_ONLY`
+  alone, and the public wording must not imply otherwise.
 
   Because of this, coverage of the guarantee is stated as a DELTA across the operation
   under test rather than as an absolute "never loaded". An absolute assertion is a test
@@ -88,8 +91,12 @@ later setenv before init.
 
 ## Code References
 
-- ovphysx/include/ovphysx/ovphysx.h (`ovphysx_get_cpu_mode`)
-- ovphysx/src/ovphysx/ovphysx.cpp (`ovphysx_get_cpu_mode`, `createInstanceInternal`,
+- ovphysx/include/ovphysx/ovphysx.h (`ovphysx_set_global_config`,
+  `ovphysx_get_global_config`)
+- ovphysx/include/ovphysx/ovphysx_legacy.h (`ovphysx_set_cpu_mode`,
+  `ovphysx_get_cpu_mode`)
+- ovphysx/src/ovphysx/ovphysx.cpp (`ovphysx_set_cpu_mode`, `ovphysx_get_cpu_mode`,
+  `createInstanceInternal`,
   env latch in `ovphysx_initialize` / clear in `ovphysx_shutdown`)
 - ovphysx/tests/c_unittests/test_instantiation.cpp (`CpuModeAPI`,
   `ActiveCudaGpusAttachTest.CreateLogEmptyVsMinusOneAcrossRecreate`)

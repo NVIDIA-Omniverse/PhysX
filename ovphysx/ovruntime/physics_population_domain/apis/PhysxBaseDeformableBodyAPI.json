@@ -1,0 +1,329 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxBaseDeformableBodyAPI",
+  "title": "PhysxBaseDeformableBodyAPI",
+  "summary": "PhysX tuning for a volume or surface deformable body (damping, velocity caps, sleep and settling thresholds, self collision, gravity, speculative CCD, solver iterations), read on the prim carrying OmniPhysicsDeformableBodyAPI only when PhysxBaseDeformableBodyAPI is listed in its usd-schemas. Without the API, or with a column absent, the parser keeps its descriptor defaults, several of which are units-scaled or differ from the schema fallback.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "Xformable"
+  ],
+  "requires": [
+    "OmniPhysicsDeformableBodyAPI"
+  ],
+  "multi_apply": false,
+  "uses": [
+    "stage_units"
+  ],
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "producer_scope": "Published like any applied physics API: every declared attribute at its resolved value. No column is rewritten or created by the producer, so on a producer-populated stage the raw schema fallbacks (linearDamping 0, maxDepenetrationVelocity inf, sleepThreshold 0.05, an unscaled settlingThreshold 0.1) reach the consumer instead of its defaults.",
+  "columns": [
+    {
+      "name": "physxDeformableBody:disableGravity",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": false,
+      "parser_default": false,
+      "absent": "false: gravity applies.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physics.ovstage/OvstageDeformableBatch.h",
+        "include/omni/physics/parse/Descriptors.h",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceDeformable.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXDeformablePropertiesUpdate.cpp"
+      ]
+    },
+    {
+      "name": "physxDeformableBody:enableSpeculativeCCD",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": false,
+      "parser_default": false,
+      "absent": "false: speculative CCD is off.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physics.ovstage/OvstageDeformableBatch.h",
+        "include/omni/physics/parse/Descriptors.h",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceDeformable.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXDeformablePropertiesUpdate.cpp"
+      ]
+    },
+    {
+      "name": "physxDeformableBody:linearDamping",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.005,
+      "absent": "0.005, the descriptor default (the legacy USD loader used the same), not the schema fallback 0: an omitted column damps the body slightly where a written 0 does not.",
+      "raw_fallback_diverges": true,
+      "units": "1/s",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physics.ovstage/OvstageDeformableBatch.h",
+        "include/omni/physics/parse/Descriptors.h",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceDeformable.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXDeformablePropertiesUpdate.cpp"
+      ]
+    },
+    {
+      "name": "physxDeformableBody:maxDepenetrationVelocity",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "inf",
+      "parser_default": "3 / metersPerUnit",
+      "absent": "Units-scaled default: 3 on a metre stage, 300 on a centimetre stage. The schema fallback inf leaves depenetration unlimited, so write the value you mean.",
+      "raw_fallback_diverges": true,
+      "units": "length/s",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physics.ovstage/OvstageDeformableBatch.h",
+        "source/omni.physics.parse/ParseDeformableBody.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceDeformable.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXDeformablePropertiesUpdate.cpp"
+      ]
+    },
+    {
+      "name": "physxDeformableBody:maxLinearVelocity",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "inf",
+      "parser_default": 1.844674e+19,
+      "absent": "1.844674e19 (the square root of FLT_MAX, the descriptor default), effectively unlimited. Volume creation clamps the value to [0, 1e16], so a volume body gets 1e16 whether the column is absent or holds the schema fallback inf; a surface body receives the value unclamped (1.84e19 absent, inf for the fallback), unlimited either way.",
+      "raw_fallback_diverges": false,
+      "units": "length/s",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physics.ovstage/OvstageDeformableBatch.h",
+        "include/omni/physics/parse/Descriptors.h",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceDeformable.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXDeformablePropertiesUpdate.cpp"
+      ],
+      "notes": "The property update passes a new value to PhysX unclamped for both body types. The runtime's body defaults seed 1e16, but the parsed value always replaces that seed."
+    },
+    {
+      "name": "physxDeformableBody:selfCollision",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": false,
+      "parser_default": false,
+      "absent": "false: self collision is off.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physics.ovstage/OvstageDeformableBatch.h",
+        "include/omni/physics/parse/Descriptors.h",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceDeformable.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXDeformablePropertiesUpdate.cpp"
+      ]
+    },
+    {
+      "name": "physxDeformableBody:selfCollisionFilterDistance",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "-inf",
+      "parser_default": -1.0,
+      "absent": "-1, below any valid distance, so the runtime uses its minimum: 2.5 x contact offset + 1e-5 x metersPerUnit for a volume body, 2 x rest offset + 1e-5 x metersPerUnit for a surface body, both offsets read back from the created PhysX shape. The schema fallback -inf gives the same minimum.",
+      "raw_fallback_diverges": false,
+      "sentinel": "Any value below the derived minimum (-1 and -inf included) selects the minimum; larger values are used as authored.",
+      "units": "length",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physics.ovstage/OvstageDeformableBatch.h",
+        "include/omni/physics/parse/Descriptors.h",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceDeformable.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXDeformablePropertiesUpdate.cpp"
+      ],
+      "notes": "The property update applies the same derivation. The epsilon is 1e-5 x metersPerUnit, which shrinks on a centimetre stage where a length in stage units would grow (1e-5 / metersPerUnit)."
+    },
+    {
+      "name": "physxDeformableBody:settlingDamping",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 10.0,
+      "parser_default": 10.0,
+      "absent": "10.",
+      "raw_fallback_diverges": false,
+      "units": "1/s",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physics.ovstage/OvstageDeformableBatch.h",
+        "include/omni/physics/parse/Descriptors.h",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceDeformable.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXDeformablePropertiesUpdate.cpp"
+      ]
+    },
+    {
+      "name": "physxDeformableBody:settlingThreshold",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.1,
+      "parser_default": "0.1 / metersPerUnit",
+      "absent": "Units-scaled default: 0.1 on a metre stage, 10 on a centimetre stage. The schema fallback 0.1 matches only on a metre stage.",
+      "raw_fallback_diverges": true,
+      "units": "length/s",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physics.ovstage/OvstageDeformableBatch.h",
+        "source/omni.physics.parse/ParseDeformableBody.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceDeformable.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXDeformablePropertiesUpdate.cpp"
+      ]
+    },
+    {
+      "name": "physxDeformableBody:sleepThreshold",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.05,
+      "parser_default": "5e-5 * (10 / metersPerUnit) ** 2",
+      "absent": "Units-scaled default 5e-5 x (10 / metersPerUnit)^2: 0.005 on a metre stage, 50 on a centimetre stage, not the schema fallback 0.05.",
+      "raw_fallback_diverges": true,
+      "units": "length/s",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physics.ovstage/OvstageDeformableBatch.h",
+        "source/omni.physics.parse/ParseDeformableBody.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceDeformable.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXDeformablePropertiesUpdate.cpp"
+      ],
+      "notes": "The default scales with 1/metersPerUnit^2, the rigid-body energy convention (the same formula as the legacy USD loader and the PhysX deformable core default), although PxDeformableBody documents the threshold as a speed: physically 0.005 m/s on a metre stage but 0.5 m/s on a centimetre stage, where it also exceeds the default settlingThreshold (10), which PhysX expects to be the higher of the two."
+    },
+    {
+      "name": "physxDeformableBody:solverPositionIterationCount",
+      "usd_type": "uint",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "uint",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 16,
+      "parser_default": 16,
+      "absent": "16. At creation and on update the count is clamped to the scene's [physxScene:minPositionIterationCount, physxScene:maxPositionIterationCount]; a row outside the uint32 range is ignored at parse, keeping 16.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physics.ovstage/OvstageDeformableBatch.h",
+        "include/omni/physics/parse/Descriptors.h",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceDeformable.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXDeformablePropertiesUpdate.cpp"
+      ]
+    }
+  ],
+  "interactions": [
+    {
+      "with": "OmniPhysicsDeformableBodyAPI",
+      "rule": "Read only on a prim enumerated by OmniPhysicsDeformableBodyAPI that the ovstage walker accepts as a deformable body: a Mesh, TetMesh or BasisCurves, or an Xformable that is not a Gprim, with exactly one simulation mesh (OmniPhysicsVolumeDeformableSimAPI or OmniPhysicsSurfaceDeformableSimAPI) on the prim itself or an immediate child."
+    },
+    {
+      "with": "PhysxSurfaceDeformableBodyAPI",
+      "rule": "USD applies this API as a built-in of PhysxSurfaceDeformableBodyAPI and USD population lists both names in usd-schemas. The parser checks each name on its own, so a hand-populated surface body must list PhysxBaseDeformableBodyAPI for these columns to be read."
+    }
+  ],
+  "notes": [
+    "The runtime applies a live change of any column without checking that the API is listed; a column that is absent then leaves the PhysX value unchanged."
+  ]
+}

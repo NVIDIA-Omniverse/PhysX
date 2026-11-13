@@ -1,6 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-READ-SKIN-001
+ * @covers AC-4
+ */
+
 #pragma once
 
 #include "PxPhysicsAPI.h"
@@ -47,14 +52,33 @@ namespace deformables
     {
     public:
         DeformablePostSolveCallback(CUstream stream, ::physx::PxCudaContextManager* cudaContextManager, ::physx::PxScene* scene);
-        virtual ~DeformablePostSolveCallback() {};
+        virtual ~DeformablePostSolveCallback();
 
         virtual void onPostSolve(CUevent startEvent) = 0;
 
         void synchronize();
 
+        // Recorded after each skinning launch on the non-blocking mSkinningStream. A consumer on another
+        // stream waits on it before gathering mAllSkinnedVerticesD, as the ovstage output read does for
+        // REQ-READ-SKIN-001 AC-4. Before the first launch that wait is a no-op. Null only if creation
+        // failed, and a consumer then has nothing to order against and must refuse.
+        CUevent getSkinningDoneEvent() const { return mSkinningDoneEvent; }
+
+        // The reverse edge of ADR-0008 Decision 7. A consumer calls this with its stream once its gather is
+        // enqueued, and the next onPostSolve makes mSkinningStream wait for it before rewriting the buffer.
+        // False if no event could be created or recorded, and the consumer then must not publish its gather.
+        bool recordConsumerDone(::physx::PxCudaContext* cudaContext, CUstream consumerStream);
+
     protected:
+        void recordSkinningDone(::physx::PxCudaContext* cudaContext);
+        void waitForConsumers(::physx::PxCudaContext* cudaContext);
+
         CUstream mSkinningStream;
+        CUevent mSkinningDoneEvent;
+        // One event per pending consumer, recorded on the consumer's stream. The next skinning launch waits
+        // for all of them before it rewrites the skinned vertices.
+        std::vector<CUevent> mConsumerDoneEvents;
+        std::vector<CUevent> mIdleConsumerDoneEvents;
         ::physx::PxCudaContextManager* mCudaContextManager;
         ::physx::PxDeformableSkinning* mSkinning;
         ::physx::PxScene* mScene;

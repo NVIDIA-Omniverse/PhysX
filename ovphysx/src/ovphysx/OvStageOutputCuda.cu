@@ -127,7 +127,8 @@ __global__ void composeMatrices(const float* positions,
                                 size_t positionStride,
                                 const float* orientations,
                                 size_t orientationStride,
-                                const double* scales,
+                                const float* scales,
+                                size_t scaleStride,
                                 double* matrices,
                                 size_t count,
                                 int* invalidPose)
@@ -136,17 +137,26 @@ __global__ void composeMatrices(const float* positions,
     for (size_t row = static_cast<size_t>(blockIdx.x) * blockDim.x + threadIdx.x; row < count; row += step)
     {
         if (!composeWorldMatrix(positions + row * positionStride, orientations + row * orientationStride,
-                                scales + row * 3, matrices + row * 16))
+                                scales + row * scaleStride, matrices + row * 16))
             atomicExch(invalidPose, 1);
     }
 }
 
+const float* columnData(const DLTensor& tensor)
+{
+    return reinterpret_cast<const float*>(static_cast<const uint8_t*>(tensor.data) + tensor.byte_offset);
+}
+
+size_t columnStride(const DLTensor& tensor)
+{
+    return static_cast<size_t>(tensor.strides ? tensor.strides[0] : 1) * tensor.dtype.lanes;
+}
+
 } // namespace
 
-bool OutputCudaBuffers::initialize(int device, size_t count, const double* hostScales, std::string& error)
+bool OutputCudaBuffers::initialize(int device, size_t count, std::string& error)
 {
-    if (mPrimary || device < 0 || !count || !hostScales ||
-        count > std::numeric_limits<size_t>::max() / (16 * sizeof(double)))
+    if (mPrimary || device < 0 || !count || count > std::numeric_limits<size_t>::max() / (16 * sizeof(double)))
     {
         error = "Invalid CUDA output buffer initialization";
         return false;
@@ -169,34 +179,29 @@ bool OutputCudaBuffers::initialize(int device, size_t count, const double* hostS
         error = "Could not inspect the output CUDA context";
         return false;
     }
-    if (!checkCuda(cudaStreamCreateWithFlags(&mStream, cudaStreamNonBlocking), "Create output CUDA stream", error))
-        return false;
-    StreamCompletion completion(mStream);
-    if (!(checkCuda(cudaMalloc(reinterpret_cast<void**>(&mScales), count * 3 * sizeof(double)),
-                    "Allocate CUDA world scales", error) &&
+    if (!(checkCuda(cudaStreamCreateWithFlags(&mStream, cudaStreamNonBlocking), "Create output CUDA stream", error) &&
           checkCuda(cudaMalloc(reinterpret_cast<void**>(&mMatrices), count * 16 * sizeof(double)),
                     "Allocate CUDA world matrices", error) &&
           checkCuda(cudaMalloc(reinterpret_cast<void**>(&mInvalidPose), sizeof(int)),
-                    "Allocate CUDA pose validation flag", error) &&
-          checkCuda(cudaMemcpyAsync(mScales, hostScales, count * 3 * sizeof(double), cudaMemcpyHostToDevice, mStream),
-                    "Copy authored world scales to CUDA", error) &&
-          checkCuda(cudaStreamSynchronize(mStream), "Finish CUDA world-scale copy", error)))
+                    "Allocate CUDA pose validation flag", error)))
         return false;
-    completion.completed();
     return scope.restore(error);
 }
 
-bool OutputCudaBuffers::compose(const DLTensor& positions,
-                                const DLTensor& orientations,
-                                ovstage_cuda_sync_t positionSync,
-                                ovstage_cuda_sync_t orientationSync,
+bool OutputCudaBuffers::compose(const ovstage_read_column_t& positionColumn,
+                                const ovstage_read_column_t& orientationColumn,
+                                const ovstage_read_column_t& scaleColumn,
                                 std::string& error)
 {
-    if (!mInvalidPose || positions.device.device_type != kDLCUDA || orientations.device.device_type != kDLCUDA ||
-        positions.device.device_id != mDevice || orientations.device.device_id != mDevice)
+    const ovstage_read_column_t* columns[] = { &positionColumn, &orientationColumn, &scaleColumn };
+    for (const ovstage_read_column_t* column : columns)
     {
-        error = "Pose columns do not match the CUDA output buffer device";
-        return false;
+        const DLDevice device = column->data.tensors[0].device;
+        if (!mInvalidPose || device.device_type != kDLCUDA || device.device_id != mDevice)
+        {
+            error = "Pose and scale columns do not match the CUDA output buffer device";
+            return false;
+        }
     }
     OutputCudaContextScope scope(this);
     if (!scope.active())
@@ -206,19 +211,22 @@ bool OutputCudaBuffers::compose(const DLTensor& positions,
     }
     int invalidPose = 0;
     StreamCompletion completion(mStream);
-    if (!waitInput(mStream, positionSync, error) || !waitInput(mStream, orientationSync, error) ||
-        !checkCuda(cudaMemsetAsync(mInvalidPose, 0, sizeof(int), mStream), "Reset CUDA pose validation", error))
+    for (const ovstage_read_column_t* column : columns)
+    {
+        if (!waitInput(mStream, column->data.cuda_sync, error))
+            return false;
+    }
+    if (!checkCuda(cudaMemsetAsync(mInvalidPose, 0, sizeof(int), mStream), "Reset CUDA pose validation", error))
         return false;
 
-    const float* positionData =
-        reinterpret_cast<const float*>(static_cast<const uint8_t*>(positions.data) + positions.byte_offset);
-    const float* orientationData =
-        reinterpret_cast<const float*>(static_cast<const uint8_t*>(orientations.data) + orientations.byte_offset);
-    const size_t positionStride = static_cast<size_t>(positions.strides ? positions.strides[0] : 1) * 3;
-    const size_t orientationStride = static_cast<size_t>(orientations.strides ? orientations.strides[0] : 1) * 4;
+    const DLTensor& positions = positionColumn.data.tensors[0];
+    const DLTensor& orientations = orientationColumn.data.tensors[0];
+    const DLTensor& scales = scaleColumn.data.tensors[0];
     const unsigned int blocks = static_cast<unsigned int>(std::min<size_t>((mCount + 255) / 256, 65535));
-    composeMatrices<<<blocks, 256, 0, mStream>>>(
-        positionData, positionStride, orientationData, orientationStride, mScales, mMatrices, mCount, mInvalidPose);
+    composeMatrices<<<blocks, 256, 0, mStream>>>(columnData(positions), columnStride(positions),
+                                                 columnData(orientations), columnStride(orientations),
+                                                 columnData(scales), columnStride(scales), mMatrices, mCount,
+                                                 mInvalidPose);
     if (!checkCuda(cudaGetLastError(), "Launch CUDA world-matrix composition", error) ||
         !checkCuda(cudaMemcpyAsync(&invalidPose, mInvalidPose, sizeof(int), cudaMemcpyDeviceToHost, mStream),
                    "Read CUDA pose validation", error) ||
@@ -246,8 +254,6 @@ OutputCudaBuffers::~OutputCudaBuffers()
             cudaFree(mInvalidPose);
         if (mMatrices)
             cudaFree(mMatrices);
-        if (mScales)
-            cudaFree(mScales);
         if (mStream)
             cudaStreamDestroy(mStream);
     }

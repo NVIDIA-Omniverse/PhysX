@@ -620,6 +620,7 @@ PxConstraint* NpFactory::createConstraint(PxRigidActor* actor0, PxRigidActor* ac
 		npConstraint = mConstraintPool.construct(actor0, actor1, connector, shaders, dataSize);
 	}
 	addConstraint(npConstraint);
+	OMNI_PVD_NOTIFY_ADD(npConstraint);
 	connector.connectToConstraint(npConstraint);
 	return npConstraint;
 }
@@ -893,6 +894,16 @@ NpShape* NpFactory::createShapeInternal(const PxGeometry& geometry,
 	bool isExclusive,
 	PxShapeCoreFlag::Enum flag)
 {
+#if !PX_SUPPORT_GPU_PHYSX
+	// Without GPU support these geometry types cannot be stored in a shape, so they are rejected in all build configurations.
+	const PxGeometryType::Enum type = geometry.getType();
+	if(type == PxGeometryType::eTETRAHEDRONMESH || type == PxGeometryType::ePARTICLESYSTEM)
+	{
+		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "Supplied PxGeometry type requires GPU support. Shape creation method returns NULL.");
+		return NULL;
+	}
+#endif
+
 #if PX_CHECKED
 	if(!checkShape(geometry, "Supplied PxGeometry is not valid. Shape creation method returns NULL."))
 		return NULL;

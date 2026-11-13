@@ -32,7 +32,14 @@ namespace physx
 		virtual PxU32 getFlatListStartIndex() const = 0;
 		virtual void raiseFlags(PxParticleBufferFlag::Enum flags) = 0;
 		virtual PxU32 getUniqueId() const = 0;
-		virtual void allocHostBuffers() = 0;
+
+#if PX_SUPPORT_OMNI_PVD
+		enum OmniPvdReadFlag { ePOSITION = 1, eVELOCITY = 2, ePHASE = 4, eDIFFUSE_POSITION = 8, eDIFFUSE_VELOCITY = 16 };
+		virtual bool readOmniPvdData(PxU32 flags, PxU64& transferredBytes) = 0;
+		virtual void trimOmniPvdData(PxU32 flags) = 0;
+		virtual bool getOmniPvdPhasesChanged() const = 0;
+		virtual void setOmniPvdPhasesChanged(bool changed) = 0;
+#endif
 
 	protected:
 		virtual ~PxsParticleBuffer() {}
@@ -48,6 +55,13 @@ namespace physx
 		virtual PxU32 getMaxDiffuseParticles() const = 0;
 		virtual void setDiffuseParticleParams(const PxDiffuseParticleParams& params) = 0;
 		virtual const PxDiffuseParticleParams& getDiffuseParticleParams() const = 0;
+
+#if PX_SUPPORT_OMNI_PVD
+		virtual PxVec4* getDiffusePositionLifeTimeH() const = 0;
+		virtual PxVec4* getDiffuseVelocitiesH() const = 0;
+		// Entries copied by the last successful readOmniPvdData().
+		virtual PxU32 getOmniPvdDiffuseCount() const = 0;
+#endif
 
 	protected:
 		virtual ~PxsParticleAndDiffuseBuffer() {}

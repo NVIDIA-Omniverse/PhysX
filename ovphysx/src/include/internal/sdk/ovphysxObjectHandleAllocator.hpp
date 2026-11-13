@@ -41,13 +41,16 @@ inline uint64_t allocateOpaqueObjectHandle(std::atomic<uint64_t>& nextHandle) no
     }
 }
 
-// Process-wide allocator for ovphysx-owned opaque objects: instances, tensor
-// bindings, contact bindings and SDF views. The single backing atomic is
+// Process-wide allocator for ovphysx-owned opaque objects: instances, output
+// sessions, tensor bindings, contact bindings and SDF views. The single backing atomic is
 // defined in ovphysx.cpp, next to the rationale for making it process-wide, so
 // every caller inside libovphysx draws from one namespace. Operation indices
-// and backend-owned query/read handles are not object handles and deliberately
-// do not use this allocator.
+// and backend resources hidden behind public output handles are not object
+// handles and deliberately do not use this allocator.
 uint64_t allocateOpaqueObjectHandle() noexcept;
+
+// Test-only control of the shared sequence. Returns the previous next value.
+uint64_t exchangeNextOpaqueObjectHandle(uint64_t next) noexcept;
 
 } // namespace internal
 } // namespace ovphysx

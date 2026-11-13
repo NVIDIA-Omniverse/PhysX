@@ -14,8 +14,8 @@ from .schemas import OUTPUT_NAMESPACE
 
 
 def _ordinal(value):
-    if isinstance(value,bool) or not isinstance(value,int) or not 0<value<2**64:
-        raise ValueError('Expected nonzero uint64 ordinal')
+    if isinstance(value,bool) or not isinstance(value,int) or not 0<value<2**63:
+        raise ValueError('Expected positive int64 ordinal')
     return value
 
 
@@ -117,7 +117,7 @@ class StageFlow:
         if not isinstance(owner,(ToolsSession,PreviewSession)) or not isinstance(stage,ovstage.Stage):
             raise TypeError('Pass a ToolsSession/PreviewSession and its application-owned Stage')
         self._preview=isinstance(owner,PreviewSession)
-        actual=owner._stage if self._preview else owner._owner._attached_ovstage
+        actual=owner._stage if self._preview else owner._owner._resolve_attached_stage()
         if actual is not stage:raise ValueError('Stage does not belong to the supplied owner')
         self._owner,self._stage=owner,stage;self._identity=owner.identity
         self._cursor=_ordinal(consumed_ordinal);self._thread=threading.get_ident()

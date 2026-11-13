@@ -1,10 +1,13 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-PUBLICAPI-001
+// @covers AC-52
+
 // @implements REQ-ATTACH-EXECUTION-001
 // @covers AC-1 AC-2
 
-#include <omni/physx/IPhysxJoint.h>
+#include <omni/physx/NativeJointState.h>
 #include <PxPhysicsAPI.h>
 #include <common/foundation/CarbPhysXCast.h>
 #include "OmniPhysX.h"
@@ -17,14 +20,14 @@ namespace omni
 namespace physx
 {
 
-static carb::Float4 physxJointGetJointFramePhysxToUsdQuat(AttachHandle attach, usdparser::ObjectId id)
+carb::Float4 getJointFramePhysxToUsdQuat(AttachHandle attach, usdparser::ObjectId id)
 {
     RuntimeExecutionScope operation(attach);
     const usdparser::AttachedStage* owner = operation ? usdparser::UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach) : nullptr;
     return attachmentJoint::frameCorrection(owner, id);
 }
 
-static void physxJointGetJointStateData(AttachHandle attach, usdparser::ObjectId id, JointStateData* data)
+void getJointStateData(AttachHandle attach, usdparser::ObjectId id, JointStateData* data)
 {
     RuntimeExecutionScope operation(attach);
     const usdparser::AttachedStage* owner = operation ? usdparser::UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach) : nullptr;
@@ -34,9 +37,3 @@ static void physxJointGetJointStateData(AttachHandle attach, usdparser::ObjectId
 
 } // namespace physx
 } // namespace omni
-
-void fillInterface(omni::physx::IPhysxJoint& iface)
-{
-    iface.getJointStateData = omni::physx::physxJointGetJointStateData;
-    iface.getJointFramePhysxToUsdQuat = omni::physx::physxJointGetJointFramePhysxToUsdQuat;
-}

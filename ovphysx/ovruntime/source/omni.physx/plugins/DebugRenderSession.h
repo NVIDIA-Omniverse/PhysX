@@ -24,7 +24,7 @@ struct HostColumn
     int64_t shape[2]{};
     bool isArray = false;
     ovstage_attribute_semantic_t semantic = OVSTAGE_SEMANTIC_NONE;
-    ovx_token_t attribute = 0;
+    ovx_token_t attribute = OVX_INVALID_TOKEN;
 };
 
 enum class WriteKind
@@ -62,19 +62,17 @@ SavedState take(uint64_t instanceId);
 void applyStored(const SavedState& state);
 void applyStoredHere(const SavedState& state);
 
-int writability(const char* name, size_t length);
-
 bool buildRead(uint64_t instanceId,
                uint64_t attach,
                ovx_path_dictionary_t* dictionary,
-               const ovx_string_or_token_t* attributes,
+               const ovx_token_or_string_t* attributes,
                size_t attributeCount,
                std::vector<HostColumn>& columns,
                std::string& error);
 
 bool planWrite(uint64_t instanceId,
                ovx_path_dictionary_t* dictionary,
-               const ovx_string_or_token_t* attribute,
+               const ovx_token_or_string_t* attribute,
                WritePlan& plan,
                std::string& error);
 

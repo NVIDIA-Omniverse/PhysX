@@ -1,0 +1,233 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxTendonAxisRootAPI",
+  "title": "PhysxTendonAxisRootAPI",
+  "summary": "Root axis of a fixed tendon, applied as PhysxTendonAxisRootAPI:<tendon>. Besides its axis the parser emits the tendon itself with these spring, limit and enable settings. Values are clamped and an infinite value saturates.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "PhysicsJoint"
+  ],
+  "multi_apply": true,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "producer_scope": "Every declared attribute of an applied instance is published at its resolved value; USD auto-applies PhysxTendonAxisAPI:<tendon> with it.",
+  "columns": [
+    {
+      "name": "physxTendon:<inst>:stiffness",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0.",
+      "raw_fallback_diverges": false,
+      "units": "force/length",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseFixedTendon.cpp"
+      ]
+    },
+    {
+      "name": "physxTendon:<inst>:limitStiffness",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0. A positive value without finite limits logs a warning.",
+      "raw_fallback_diverges": false,
+      "units": "force/length",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseFixedTendon.cpp"
+      ]
+    },
+    {
+      "name": "physxTendon:<inst>:damping",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0.",
+      "raw_fallback_diverges": false,
+      "units": "force*s/length",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseFixedTendon.cpp"
+      ]
+    },
+    {
+      "name": "physxTendon:<inst>:offset",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0.",
+      "raw_fallback_diverges": false,
+      "units": "length",
+      "clamp": [
+        "-FLT_MAX",
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseFixedTendon.cpp"
+      ]
+    },
+    {
+      "name": "physxTendon:<inst>:restLength",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": "-FLT_MAX",
+      "absent": "-FLT_MAX (unset). USD's fallback 0.0 is a rest length, so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "length",
+      "clamp": [
+        "-FLT_MAX",
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseFixedTendon.cpp"
+      ]
+    },
+    {
+      "name": "physxTendon:<inst>:lowerLimit",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "-inf",
+      "parser_default": "-FLT_MAX",
+      "absent": "-FLT_MAX: no lower limit.",
+      "raw_fallback_diverges": false,
+      "units": "length",
+      "clamp": [
+        "-FLT_MAX",
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseFixedTendon.cpp"
+      ]
+    },
+    {
+      "name": "physxTendon:<inst>:upperLimit",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "inf",
+      "parser_default": "FLT_MAX",
+      "absent": "FLT_MAX: no upper limit. Clamped to at least the lower limit.",
+      "raw_fallback_diverges": false,
+      "units": "length",
+      "clamp": [
+        "-FLT_MAX",
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseFixedTendon.cpp"
+      ]
+    },
+    {
+      "name": "physxTendon:<inst>:tendonEnabled",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": true,
+      "parser_default": true,
+      "absent": "true.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseFixedTendon.cpp"
+      ]
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysxTendonAxisAPI",
+      "rule": "Owns gearing and forceCoefficient, which the parser reads for the root axis as well."
+    }
+  ],
+  "notes": [
+    "Instance names are arbitrary (one per tendon), so the compiled cache declares every physxTendon:* column."
+  ]
+}

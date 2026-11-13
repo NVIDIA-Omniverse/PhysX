@@ -624,6 +624,7 @@ void PxsNphaseImplementationContext::destroy()
 void PxsNphaseImplementationContext::registerContactManager(PxsContactManager* cm, const Sc::ShapeInteraction* shapeInteraction, PxI32 touching, PxU32 patchCount)
 {
 	PX_ASSERT(cm);
+	PX_ASSERT(!mDeferredRemovals.mNbRemoved);
 
 	PxcNpWorkUnit& workUnit = cm->getWorkUnit();
 
@@ -689,6 +690,8 @@ void PxsNphaseImplementationContext::removeContactManagersFallback(PxsContactMan
 
 void PxsNphaseImplementationContext::unregisterContactManager(PxsContactManager* cm)
 {
+	PX_ASSERT(!mDeferredRemovals.mNbRemoved);
+
 	PxcNpWorkUnit& unit = cm->getWorkUnit();
 
 	PxU32 index = unit.mNpIndex;
@@ -705,6 +708,207 @@ void PxsNphaseImplementationContext::unregisterContactManager(PxsContactManager*
 	}
 }
 
+void PxsNphaseImplementationContext::unregisterContactManagerDeferred(PxsContactManager* cm)
+{
+	PxcNpWorkUnit& unit = cm->getWorkUnit();
+	const PxU32 npIndex = unit.mNpIndex;
+
+	// ### DEFENSIVE (NvBug 6163965)
+	if(npIndex == 0xFFffFFff)
+	{
+		PX_ASSERT(0);
+		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
+			"PxsNphaseImplementationContext::unregisterContactManagerDeferred: contact manager is not currently "
+			"registered with the narrowphase; skipping the unregister."); // NvBug 6163965
+		return;
+	}
+
+	// The sleep loop runs after appendContactManagers() has emptied the list of new pairs, so only another caller can
+	// get here with a new pair. Removing it right away only moves pairs of that list, which the flush doesn't touch.
+	if(npIndex & PxsContactManagerBase::NEW_CONTACT_MANAGER_MASK)
+	{
+		unregisterAndForceSize(mNewNarrowPhasePairs, npIndex);
+		return;
+	}
+
+	PxsContactManagers& managers = mNarrowPhasePairs;
+	DeferredRemovals& removals = mDeferredRemovals;
+
+	const PxU32 pos = PxsContactManagerBase::computeIndexFromId(npIndex);
+	const PxU32 size = managers.mContactManagerMapping.size();
+	// ### DEFENSIVE (NvBug 6163965)
+	if(pos >= size)
+	{
+		PX_ASSERT(0);
+		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
+			"PxsNphaseImplementationContext::unregisterContactManagerDeferred: decoded pair index %u is outside "
+			"the %u live entries; skipping the unregister.", pos, size); // NvBug 6163965
+		return;
+	}
+	PX_ASSERT(managers.mContactManagerMapping[pos] == cm);
+
+	PxBitMap& map = removals.mMap;
+	if(map.size() < size)
+		map.resize(size);
+	PX_ASSERT(!map.test(pos));
+	map.set(pos);
+	removals.mNbRemoved++;
+	removals.mMinPos = PxMin(removals.mMinPos, pos);
+	removals.mMaxPos = PxMax(removals.mMaxPos, pos);
+
+	// The slot is being touched anyway, so its cache is released now. The flush reuses or drops the slot.
+	mContext.destroyCache(managers.mCaches[pos]);
+	managers.mCaches[pos].reset();
+
+	unit.mNpIndex = 0xFFffFFff;
+}
+
+void PxsNphaseImplementationContext::flushDeferredUnregisters()
+{
+	PxsContactManagers& managers = mNarrowPhasePairs;
+	DeferredRemovals& removals = mDeferredRemovals;
+
+	const PxU32 nbRemoved = removals.mNbRemoved;
+	if(!nbRemoved)
+		return;
+
+	const PxU32 size = managers.mContactManagerMapping.size();
+	PX_ASSERT(nbRemoved <= size);
+	PX_ASSERT(removals.mMap.size() >= size);
+	const PxU32 newSize = size - nbRemoved;
+
+	PxBitMap& map = removals.mMap;
+	const PxU32* words = map.getWords();
+	const PxU32 firstWord = removals.mMinPos >> 5;
+	const PxU32 lastWord = removals.mMaxPos >> 5;
+
+	// Fill each removed slot below the new size with the live pair closest to the end. There are exactly as many of
+	// those as there are removed slots below the new size, so the tail never crosses the new size.
+	PxU32 tail = size;
+	bool done = false;
+	for(PxU32 w=firstWord; w<=lastWord && !done; w++)
+	{
+		PxU32 bits = words[w];
+		while(bits)
+		{
+			const PxU32 pos = (w << 5) + PxLowestSetBit(bits);
+			bits &= bits - 1;
+			if(pos >= newSize)
+			{
+				done = true;
+				break;
+			}
+
+			do
+			{
+				tail--;
+			}
+			while(map.test(tail));
+			PX_ASSERT(tail >= newSize);
+
+			movePair(managers, managers.mOutputContactManagers.begin(), pos, tail, managers.computeId(pos));
+		}
+	}
+
+	for(PxU32 w=firstWord; w<=lastWord; w++)
+		map.getWords()[w] = 0;
+
+	shrinkPairs(managers, newSize);
+	managers.mOutputContactManagers.forceSize_Unsafe(newSize);
+
+	removals.mNbRemoved = 0;
+	removals.mMinPos = 0xFFffFFff;
+	removals.mMaxPos = 0;
+}
+
+void PxsNphaseImplementationContext::prefetchUnregisterSlot(const PxsContactManager* cm) const
+{
+	// Skips the 0xFFffFFff sentinel, which has the mask bit set, and the new pairs, which the task-safe path doesn't handle.
+	const PxU32 npIndex = cm->getWorkUnit().mNpIndex;
+	if(npIndex & PxsContactManagerBase::NEW_CONTACT_MANAGER_MASK)
+		return;
+
+	const PxU32 pos = PxsContactManagerBase::computeIndexFromId(npIndex);
+	if(pos < mNarrowPhasePairs.mCaches.size())
+		PxPrefetchLine(&mNarrowPhasePairs.mCaches[pos]);
+}
+
+void PxsNphaseImplementationContext::beginDeferredUnregistersThreadSafe()
+{
+	// The sleep tasks run after appendContactManagers() has emptied the list of new pairs, so only mNarrowPhasePairs is
+	// handled. A task couldn't remove a new pair anyway, since the removal moves other pairs of that list.
+	PX_ASSERT(!mNewNarrowPhasePairs.mContactManagerMapping.size());
+
+	DeferredRemovals& removals = mDeferredRemovals;
+
+	const PxU32 size = mNarrowPhasePairs.mContactManagerMapping.size();
+	if(removals.mMap.size() < size)
+		removals.mMap.resize(size);
+
+	// The tasks do not track the range of marked slots, so the flush visits all the words.
+	removals.mMinPos = 0;
+	removals.mMaxPos = size ? size - 1 : 0;
+}
+
+bool PxsNphaseImplementationContext::unregisterContactManagerDeferredThreadSafe(PxsContactManager* cm, Gu::PersistentContactManifold*& manifold)
+{
+	manifold = NULL;
+
+	PxcNpWorkUnit& unit = cm->getWorkUnit();
+	const PxU32 npIndex = unit.mNpIndex;
+
+	// ### DEFENSIVE (NvBug 6163965)
+	if(npIndex == 0xFFffFFff)
+	{
+		PX_ASSERT(0);
+		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
+			"PxsNphaseImplementationContext::unregisterContactManagerDeferredThreadSafe: contact manager is not currently "
+			"registered with the narrowphase; skipping the unregister."); // NvBug 6163965
+		return false;
+	}
+
+	// See beginDeferredUnregistersThreadSafe().
+	PX_ASSERT(!(npIndex & PxsContactManagerBase::NEW_CONTACT_MANAGER_MASK));
+
+	PxsContactManagers& managers = mNarrowPhasePairs;
+	DeferredRemovals& removals = mDeferredRemovals;
+
+	const PxU32 pos = PxsContactManagerBase::computeIndexFromId(npIndex);
+	const PxU32 size = managers.mContactManagerMapping.size();
+	// ### DEFENSIVE (NvBug 6163965)
+	if(pos >= size)
+	{
+		PX_ASSERT(0);
+		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
+			"PxsNphaseImplementationContext::unregisterContactManagerDeferredThreadSafe: decoded pair index %u is outside "
+			"the %u live entries; skipping the unregister.", pos, size); // NvBug 6163965
+		return false;
+	}
+	PX_ASSERT(managers.mContactManagerMapping[pos] == cm);
+	PX_ASSERT(removals.mMap.size() >= size);
+
+	// Other tasks can set bits in the same word at the same time, so the assert checks the old value that PxAtomicOr()
+	// returns instead of reading the word with test().
+	const PxI32 bit = PxI32(1u << (pos & 31));
+	const PxI32 oldWord = PxAtomicOr(reinterpret_cast<volatile PxI32*>(removals.mMap.getWords() + (pos >> 5)), bit);
+	PX_ASSERT(!(oldWord & bit));
+	PX_UNUSED(oldWord);
+
+	Gu::Cache& cache = managers.mCaches[pos];
+	if(cache.isManifold() && !cache.isMultiManifold())
+		manifold = &cache.getManifold();
+	cache.reset();
+
+	unit.mNpIndex = 0xFFffFFff;
+	return true;
+}
+
+void PxsNphaseImplementationContext::addDeferredUnregisters(PxU32 nbPairs)
+{
+	if(nbPairs)
+		PxAtomicAdd(reinterpret_cast<volatile PxI32*>(&mDeferredRemovals.mNbRemoved), PxI32(nbPairs));
+}
+
 void PxsNphaseImplementationContext::refreshContactManager(PxsContactManager* cm)
 {
 	PxcNpWorkUnit& unit = cm->getWorkUnit();
@@ -719,7 +923,7 @@ void PxsNphaseImplementationContext::refreshContactManager(PxsContactManager* cm
 		PX_ASSERT(0);
 		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
 			"PxsNphaseImplementationContext::refreshContactManager: contact manager %p is not currently registered "
-			"with the narrowphase (see NvBug 6282005); skipping the refresh.", cm);
+			"with the narrowphase; skipping the refresh.", cm); // NvBug 6282005
 		return;
 	}
 
@@ -739,7 +943,7 @@ void PxsNphaseImplementationContext::refreshContactManager(PxsContactManager* cm
 			PX_ASSERT(0);
 			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
 				"PxsNphaseImplementationContext::refreshContactManager: contact manager %p decodes to pair index %u, "
-				"outside the %u live entries (see NvBug 6163965); skipping the refresh.",
+				"outside the %u live entries; skipping the refresh.", // NvBug 6163965
 				cm, pairIndex, nbPairs);
 			return;
 		}
@@ -758,7 +962,7 @@ void PxsNphaseImplementationContext::refreshContactManager(PxsContactManager* cm
 			PX_ASSERT(0);
 			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
 				"PxsNphaseImplementationContext::refreshContactManager: contact manager %p decodes to new-pair index "
-				"%u, outside the %u live entries (see NvBug 6163965); skipping the refresh.",
+				"%u, outside the %u live entries; skipping the refresh.", // NvBug 6163965
 				cm, pairIndex, mNewNarrowPhasePairs.mOutputContactManagers.size());
 			return;
 		}
@@ -807,7 +1011,7 @@ void PxsNphaseImplementationContext::refreshContactManagerFallback(PxsContactMan
 		PX_ASSERT(0);
 		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
 			"PxsNphaseImplementationContext::refreshContactManagerFallback: contact manager %p is not currently "
-			"registered with the narrowphase (see NvBug 6282005); skipping the refresh.", cm);
+			"registered with the narrowphase; skipping the refresh.", cm); // NvBug 6282005
 		return;
 	}
 
@@ -831,7 +1035,7 @@ void PxsNphaseImplementationContext::refreshContactManagerFallback(PxsContactMan
 			PX_ASSERT(0);
 			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
 				"PxsNphaseImplementationContext::refreshContactManagerFallback: contact manager %p decodes to pair "
-				"index %u, outside the %u live entries (see NvBug 6163965); skipping the refresh.",
+				"index %u, outside the %u live entries; skipping the refresh.", // NvBug 6163965
 				cm, pairIndex, nbPairs);
 			return;
 		}
@@ -852,7 +1056,7 @@ void PxsNphaseImplementationContext::refreshContactManagerFallback(PxsContactMan
 			PX_ASSERT(0);
 			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
 				"PxsNphaseImplementationContext::refreshContactManagerFallback: contact manager %p decodes to "
-				"new-pair index %u, outside the %u live entries (see NvBug 6163965); skipping the refresh.",
+				"new-pair index %u, outside the %u live entries; skipping the refresh.", // NvBug 6163965
 				cm, pairIndex, mNewNarrowPhasePairs.mOutputContactManagers.size());
 			return;
 		}
@@ -875,6 +1079,8 @@ void PxsNphaseImplementationContext::refreshContactManagerFallback(PxsContactMan
 
 void PxsNphaseImplementationContext::appendContactManagers()
 {
+	PX_ASSERT(!mDeferredRemovals.mNbRemoved);
+
 	//Copy new pairs to end of old pairs. Clear new flag, update npIndex on CM and clear the new pair buffer
 	const PxU32 existingSize = mNarrowPhasePairs.mContactManagerMapping.size();
 	const PxU32 nbToAdd = mNewNarrowPhasePairs.mContactManagerMapping.size();
@@ -1046,7 +1252,7 @@ bool PxsNphaseImplementationContext::unregisterContactManagerInternal(PxU32 npIn
 		PX_ASSERT(0);
 		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
 			"PxsNphaseImplementationContext::unregisterContactManagerInternal: contact manager is not currently "
-			"registered with the narrowphase (see NvBug 6163965); skipping the unregister.");
+			"registered with the narrowphase; skipping the unregister."); // NvBug 6163965
 		return false;
 	}
 
@@ -1059,7 +1265,7 @@ bool PxsNphaseImplementationContext::unregisterContactManagerInternal(PxU32 npIn
 		PX_ASSERT(0);
 		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
 			"PxsNphaseImplementationContext::unregisterContactManagerInternal: decoded pair index %u is outside "
-			"the %u live entries (see NvBug 6163965); skipping the unregister.", index, mappingSize);
+			"the %u live entries; skipping the unregister.", index, mappingSize); // NvBug 6163965
 		return false;
 	}
 
@@ -1068,44 +1274,58 @@ bool PxsNphaseImplementationContext::unregisterContactManagerInternal(PxU32 npIn
 	const PxU32 replaceIndex = mappingSize - 1;
 
 	PxsContactManager* removedManager = managers.mContactManagerMapping[index];
-	PxsContactManager* replaceManager = managers.mContactManagerMapping[replaceIndex];
 
 	mContext.destroyCache(managers.mCaches[index]);
 
-	// When removing the last element, skip only the copy from last into the removed slot.
-	if(index != replaceIndex)
-	{
-		managers.mContactManagerMapping[index] = replaceManager;
-		managers.mCaches[index] = managers.mCaches[replaceIndex];
-		cmOutputs[index] = cmOutputs[replaceIndex];
-		if(mGPU)
-		{
-			managers.mShapeInteractionsGPU[index] = managers.mShapeInteractionsGPU[replaceIndex];
-			managers.mRestDistancesGPU[index] = managers.mRestDistancesGPU[replaceIndex];
-			managers.mTorsionalPropertiesGPU[index] = managers.mTorsionalPropertiesGPU[replaceIndex];
-		}
-	}
-	managers.mCaches[replaceIndex].reset();
-
-	PxcNpWorkUnit& replaceUnit = replaceManager->getWorkUnit();
-	replaceUnit.mNpIndex = npIndex;
-
-	if(replaceUnit.mStatusFlags & PxcNpWorkUnitStatusFlag::eHAS_TOUCH)
-		processPartitionEdges(mIslandSim->mGpuData, replaceUnit);
+	// When removing the last element, movePair() skips only the copy from last into the removed slot.
+	movePair(managers, cmOutputs, index, replaceIndex, npIndex);
 
 	// Mark removed manager invalid so a later double-unregister won't use a stale index.
 	removedManager->getWorkUnit().mNpIndex = 0xFFffFFff;
 
-	managers.mContactManagerMapping.forceSize_Unsafe(replaceIndex);
-	managers.mCaches.forceSize_Unsafe(replaceIndex);
-	if(mGPU)
-	{
-		managers.mShapeInteractionsGPU.forceSize_Unsafe(replaceIndex);
-		managers.mRestDistancesGPU.forceSize_Unsafe(replaceIndex);
-		managers.mTorsionalPropertiesGPU.forceSize_Unsafe(replaceIndex);
-	}
+	shrinkPairs(managers, replaceIndex);
 
 	return true;
+}
+
+// Moves the pair in slot src to slot dst and gives it the id npIndex. When dst == src, only the copy is skipped.
+void PxsNphaseImplementationContext::movePair(PxsContactManagers& managers, PxsContactManagerOutput* outputs, PxU32 dst, PxU32 src, PxU32 npIndex)
+{
+	if(dst != src)
+	{
+		managers.mContactManagerMapping[dst] = managers.mContactManagerMapping[src];
+		managers.mCaches[dst] = managers.mCaches[src];
+		outputs[dst] = outputs[src];
+		if(mGPU)
+		{
+			managers.mShapeInteractionsGPU[dst] = managers.mShapeInteractionsGPU[src];
+			managers.mRestDistancesGPU[dst] = managers.mRestDistancesGPU[src];
+			managers.mTorsionalPropertiesGPU[dst] = managers.mTorsionalPropertiesGPU[src];
+		}
+	}
+
+	PxcNpWorkUnit& unit = managers.mContactManagerMapping[dst]->getWorkUnit();
+	unit.mNpIndex = npIndex;
+
+	if(unit.mStatusFlags & PxcNpWorkUnitStatusFlag::eHAS_TOUCH)
+		processPartitionEdges(mIslandSim->mGpuData, unit);
+}
+
+void PxsNphaseImplementationContext::shrinkPairs(PxsContactManagers& managers, PxU32 newSize)
+{
+	// The slots past the new size hold either a released cache or a stale copy of one that moved to a lower slot.
+	const PxU32 size = managers.mContactManagerMapping.size();
+	for(PxU32 i=newSize; i<size; i++)
+		managers.mCaches[i].reset();
+
+	managers.mContactManagerMapping.forceSize_Unsafe(newSize);
+	managers.mCaches.forceSize_Unsafe(newSize);
+	if(mGPU)
+	{
+		managers.mShapeInteractionsGPU.forceSize_Unsafe(newSize);
+		managers.mRestDistancesGPU.forceSize_Unsafe(newSize);
+		managers.mTorsionalPropertiesGPU.forceSize_Unsafe(newSize);
+	}
 }
 
 PxsContactManagerOutput& PxsNphaseImplementationContext::getNewContactManagerOutput(PxU32 npId)

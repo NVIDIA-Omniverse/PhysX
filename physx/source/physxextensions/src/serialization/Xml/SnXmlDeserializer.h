@@ -128,18 +128,37 @@ namespace physx { namespace Sn {
 			{
 				char* theStartData = const_cast< char*>( copyStr( &tempAllocator, theSrcData ) );
 				const char* theData = theStartData;
+				bool malformed = false;
 				while( !isEmpty(theData) )
 				{
 					//These buffers are whitespace delimited.
 					TDataType theType;
+					const char* theTokenStart = theData;
 					strtoLong( theType, theData );
+					if ( theData == theTokenStart )
+					{
+						//The token was not numeric, so the conversion consumed nothing. Looping again
+						//would never terminate, so give up on the property instead.
+						malformed = true;
+						break;
+					}
 					tempBuffer.write( &theType, sizeof(theType) );
 				}
-				outData = reinterpret_cast< TDataType* >( tempBuffer.mBuffer );
-				outCount = tempBuffer.mWriteOffset / sizeof( TDataType );
+				if ( malformed )
+				{
+					//Drop what was parsed so far: a truncated buffer paired with a separately declared
+					//element count is a hazard of its own.
+					PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "RepX: malformed numeric token in buffer property '%s'. The property is ignored.", inPropName);
+				}
+				else
+				{
+					outData = reinterpret_cast< TDataType* >( tempBuffer.mBuffer );
+					outCount = tempBuffer.mWriteOffset / sizeof( TDataType );
+					//Ownership of the buffer moves to outData.
+					tempBuffer.releaseBuffer();
+				}
 				tempAllocator.deallocate( reinterpret_cast<PxU8*>(theStartData) );
 			}
-			tempBuffer.releaseBuffer();
 		}
 	}
 	

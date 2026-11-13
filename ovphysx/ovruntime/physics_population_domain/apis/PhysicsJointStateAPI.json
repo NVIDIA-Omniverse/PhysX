@@ -1,0 +1,119 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysicsJointStateAPI",
+  "title": "PhysicsJointStateAPI",
+  "summary": "Initial joint-space position and velocity of one axis, applied as PhysicsJointStateAPI:<inst>. Effective only on articulation joints: the runtime warns and ignores it on standalone joints. Presence of the instance enables the state; rotational instances are stored in degrees and converted to radians by the parser.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "PhysicsJoint"
+  ],
+  "multi_apply": true,
+  "instances": [
+    "transX",
+    "transY",
+    "transZ",
+    "rotX",
+    "rotY",
+    "rotZ",
+    "angular",
+    "linear"
+  ],
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "producer_scope": "Both declared attributes of every applied instance are published at their resolved values (0 when unauthored). No rewrite.",
+  "columns": [
+    {
+      "name": "state:<inst>:physics:position",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "verify": {
+        "target": "linkJoint",
+        "expr": "harness::linkJointPosition(linkJoint, inst)",
+        "kind": "float",
+        "map": "harness::isRotational(inst) ? v * 0.017453292519943295 : v",
+        "sample": 15.0,
+        "state": true,
+        "notes": "Simulation state: getJointPosition(axis) after one step, negated when body0 is not the parent link. Compared between the two population paths only."
+      },
+      "parser_default": 0.0,
+      "absent": "Zero initial position when the instance is applied; without the instance no state entry is emitted at all (the state is disabled).",
+      "raw_fallback_diverges": false,
+      "units": "rot: deg; trans: length",
+      "conversion": "deg_to_rad",
+      "clamp": [
+        "-FLT_MAX",
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseJoint.cpp"
+      ],
+      "notes": "deg_to_rad on rotX/rotY/rotZ/angular only; linear and transX/Y/Z are unconverted."
+    },
+    {
+      "name": "state:<inst>:physics:velocity",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "verify": {
+        "target": "linkJoint",
+        "expr": "harness::linkJointVelocity(linkJoint, inst)",
+        "kind": "float",
+        "map": "harness::isRotational(inst) ? v * 0.017453292519943295 : v",
+        "sample": 5.0,
+        "state": true,
+        "notes": "Simulation state: getJointVelocity(axis) after one step; see position."
+      },
+      "parser_default": 0.0,
+      "absent": "Zero initial velocity when the instance is applied.",
+      "raw_fallback_diverges": false,
+      "units": "rot: deg/s; trans: length/s",
+      "conversion": "deg_to_rad",
+      "clamp": [
+        "-FLT_MAX",
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseJoint.cpp"
+      ],
+      "notes": "deg_to_rad on rotational instances only."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysicsJoint",
+      "rule": "The state is enabled by schema presence alone. On a standalone joint the runtime logs 'JointStateAPI applied to Joint ... not supported' and ignores the state."
+    },
+    {
+      "with": "PhysicsArticulationRootAPI",
+      "rule": "On an articulation joint the initial state is written into the joint's reduced-coordinate position and velocity; translational D6 states are reported unsupported by the runtime."
+    }
+  ],
+  "notes": [
+    "Per-joint-type instance matrix: Fixed none; Revolute angular (degrees to radians); Prismatic linear (no conversion); Spherical never read (the descriptor field exists but is never populated); Distance none; D6 (PhysicsJoint) transX transY transZ rotX rotY rotZ, no distance; Gear, Rack, Custom none.",
+    "D6 state entries are emitted translational-first then rotational, in the fixed order transX, transY, transZ, rotX, rotY, rotZ.",
+    "The runtime converts the parsed radians back to degrees for its own bookkeeping (it keeps the initial joint state in USD units) before seeding PhysX."
+  ]
+}

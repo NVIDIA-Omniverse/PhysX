@@ -22,6 +22,12 @@
  *
  * @implements REQ-CAPI-PROFILER-001
  * @covers AC-5
+ *
+ * @implements REQ-CAPI-LANE-001
+ * @covers AC-1
+ *
+ * @implements REQ-CAPI-REENTRY-001
+ * @covers AC-2
  */
 
 #include "ovphysx/ovphysx.h"
@@ -325,7 +331,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_create_contact_binding(
     if (filters_per_sensor > 0 && !filter_patterns)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "filters_per_sensor > 0 requires non-NULL filter_patterns");
 
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     {
         ovphysx_api_status_t attach_status = ovphysx_ensure_physics_attached(handle);
@@ -424,7 +432,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_destroy_contact_binding(
     ovphysx_contact_binding_handle_t contact_handle)
 {
     OVPHYSX_API_PROFILE_ZONE(destroy_contact_binding);
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
     InstanceData* instance = get_instance_ptr(handle);
@@ -453,7 +463,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_get_contact_binding_spec(
     if (!out_sensor_count || !out_filter_count)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "output pointers are NULL");
 
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
     InstanceData* instance = get_instance_ptr(handle);
@@ -488,7 +500,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_contact_binding_get_sensor_paths(
     if (!out_paths || !out_count)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "out_paths or out_count is NULL");
 
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
     InstanceData* instance = get_instance_ptr(handle);
@@ -534,7 +548,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_contact_binding_get_filter_paths(
     if (!out_paths || !out_count)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "out_paths or out_count is NULL");
 
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
     InstanceData* instance = get_instance_ptr(handle);
@@ -585,7 +601,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_get_contact_binding_capacity(
     if (!out_max_contact_data_count)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "out_max_contact_data_count is NULL");
 
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
     InstanceData* instance = get_instance_ptr(handle);
@@ -621,7 +639,9 @@ static ovphysx_result_t readContactNetForces(
         if (dtypeCheck.status != OVPHYSX_API_SUCCESS) return dtypeCheck;
     }
 
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     {
         ovphysx_result_t warmup = ovphysx_warmup_if_needed(handle, false);
@@ -708,7 +728,9 @@ static ovphysx_result_t readContactForceMatrix(
         if (dtypeCheck.status != OVPHYSX_API_SUCCESS) return dtypeCheck;
     }
 
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     {
         ovphysx_result_t warmup = ovphysx_warmup_if_needed(handle, false);
@@ -801,7 +823,9 @@ static ovphysx_result_t readNormalContactData(
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "out_required_contact_count is NULL");
     *out_required_contact_count = 0;
 
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     {
         ovphysx_result_t warmup = ovphysx_warmup_if_needed(handle, false);
@@ -950,7 +974,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_raw_contact_data(
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "out_required_contact_count is NULL");
     *out_required_contact_count = 0;
 
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     {
         ovphysx_result_t warmup = ovphysx_warmup_if_needed(handle, false);
@@ -1068,7 +1094,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_contact_binding_get_other_actor_paths_from_
     if (!out_paths || !out_count)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "out_paths or out_count is NULL");
 
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
     InstanceData* instance = get_instance_ptr(handle);
@@ -1143,7 +1171,9 @@ static ovphysx_result_t readFrictionContactData(
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "out_required_friction_count is NULL");
     *out_required_friction_count = 0;
 
-    omni_sdk_physx_wait_all_pending_internal(handle);
+    ovphysx::InstanceLane lane;
+    if (lane.acquire(handle) == OVPHYSX_API_INVALID_STATE)
+        return {OVPHYSX_API_INVALID_STATE};
 
     {
         ovphysx_result_t warmup = ovphysx_warmup_if_needed(handle, false);

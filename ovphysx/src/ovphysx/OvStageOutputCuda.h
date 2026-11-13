@@ -28,7 +28,7 @@ class OutputCudaBuffers;
 class OutputCudaContextScope
 {
 public:
-    // Preserve a cold stage read, which can migrate GPU-backed matrices to CPU.
+    // Preserve the caller context around work that selects a device.
     // Probes the driver when available but does not create a CUDA context.
     OutputCudaContextScope();
     // Select the output buffer context, or preserve the caller context for CPU output.
@@ -65,15 +65,15 @@ public:
     OutputCudaBuffers(OutputCudaBuffers&&) = delete;
     OutputCudaBuffers& operator=(OutputCudaBuffers&&) = delete;
 
-    bool initialize(int device, size_t count, const double* hostScales, std::string& error);
+    bool initialize(int device, size_t count, std::string& error);
 
-    // The caller validates native float32 vector columns, row coverage and strides.
-    // The read session stays alive through compose; destination writes must finish
-    // before the buffers are reused or destroyed.
-    bool compose(const DLTensor& positions,
-                 const DLTensor& orientations,
-                 ovstage_cuda_sync_t positionSync,
-                 ovstage_cuda_sync_t orientationSync,
+    // Each column is one native float32 vector column: position (3 lanes),
+    // orientation (4) and world scale (3). The caller validates row coverage and
+    // strides. The read session stays alive through compose; destination writes
+    // must finish before the buffers are reused or destroyed.
+    bool compose(const ovstage_read_column_t& positions,
+                 const ovstage_read_column_t& orientations,
+                 const ovstage_read_column_t& scales,
                  std::string& error);
 
     double* matrices() const
@@ -86,7 +86,6 @@ private:
     uintptr_t mPrimary = 0;
     int mDevice = -1;
     size_t mCount = 0;
-    double* mScales = nullptr;
     double* mMatrices = nullptr;
     int* mInvalidPose = nullptr;
     cudaStream_t mStream = nullptr;

@@ -41,6 +41,8 @@ returns an atomic undoable layer patch. The nine native and six customer-USD foc
 
 ## Code References
 
+- [Worker-only library setup](../../../python/ovphysx_companion/_worker.py) and [installed-wheel smoke](../../../tests_native/wheel_worker_smoke.py).
+
 Implemented companion subset (native/core changes retain their own PLC ownership):
 
 - [include/ovphysx_companion/companion.h](../../../include/ovphysx_companion/companion.h)

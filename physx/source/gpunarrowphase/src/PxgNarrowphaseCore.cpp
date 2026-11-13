@@ -8182,7 +8182,7 @@ void PxgGpuNarrowphaseCore::unregisterContactManagerInternal(PxsContactManager* 
 		PX_ASSERT(0);
 		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
 			"PxgGpuNarrowphaseCore::unregisterContactManagerInternal: contact manager %p is not currently "
-			"registered with the narrowphase (see NvBug 6163965); skipping the unregister.", cm);
+			"registered with the narrowphase; skipping the unregister.", cm); // NvBug 6163965
 		return;
 	}
 
@@ -8200,7 +8200,7 @@ void PxgGpuNarrowphaseCore::unregisterContactManagerInternal(PxsContactManager* 
 			PX_ASSERT(0);
 			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
 				"PxgGpuNarrowphaseCore::unregisterContactManagerInternal: contact manager %p decodes to pair index "
-				"%u, outside the %u live entries (see NvBug 6163965); skipping the unregister.",
+				"%u, outside the %u live entries; skipping the unregister.", // NvBug 6163965
 				cm, index, nbShapeInteractions);
 			unit.mNpIndex = 0xFFffFFff;
 			return;
@@ -8221,7 +8221,7 @@ void PxgGpuNarrowphaseCore::unregisterContactManagerInternal(PxsContactManager* 
 			PX_ASSERT(0);
 			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
 				"PxgGpuNarrowphaseCore::unregisterContactManagerInternal: contact manager %p decodes to new-pair "
-				"index %u, outside the %u live entries (see NvBug 6163965); skipping the unregister.",
+				"index %u, outside the %u live entries; skipping the unregister.", // NvBug 6163965
 				cm, index, newContactManagers.mGpuOutputContactManagers.size());
 			unit.mNpIndex = 0xFFffFFff;
 			return;
@@ -8291,7 +8291,7 @@ void PxgGpuNarrowphaseCore::refreshContactManagerInternal(PxsContactManager* cm,
 		PX_ASSERT(0);
 		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
 			"PxgGpuNarrowphaseCore::refreshContactManagerInternal: contact manager %p is not currently registered with "
-			"the narrowphase (see NvBug 6282005); skipping the refresh.", cm);
+			"the narrowphase; skipping the refresh.", cm); // NvBug 6282005
 		return;
 	}
 
@@ -8311,7 +8311,7 @@ void PxgGpuNarrowphaseCore::refreshContactManagerInternal(PxsContactManager* cm,
 			PX_ASSERT(0);
 			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
 				"PxgGpuNarrowphaseCore::refreshContactManagerInternal: contact manager %p decodes to pair index %u, "
-				"outside the %u live entries (see NvBug 6163965); skipping the refresh.", cm, index, nbShapeInteractions);
+				"outside the %u live entries; skipping the refresh.", cm, index, nbShapeInteractions); // NvBug 6163965
 			return;
 		}
 
@@ -8340,7 +8340,7 @@ void PxgGpuNarrowphaseCore::refreshContactManagerInternal(PxsContactManager* cm,
 			PX_ASSERT(0);
 			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
 				"PxgGpuNarrowphaseCore::refreshContactManagerInternal: contact manager %p decodes to new-pair index "
-				"%u, outside the %u live entries (see NvBug 6163965); skipping the refresh.", cm, index, itOutputs.size());
+				"%u, outside the %u live entries; skipping the refresh.", cm, index, itOutputs.size()); // NvBug 6163965
 			return;
 		}
 
@@ -9026,6 +9026,16 @@ void PxgGpuNarrowphaseCore::computeRigidsToShapes()
 	CUdeviceptr tempRigidIndiceBitsd = shapeManager.mGpuTempRigidBitIndiceBuffer.getDevicePtr();
 	CUdeviceptr rankd = shapeManager.mGpuShapeIndiceBuffer.getDevicePtr();
 
+	// The radix sort reads keys and ranks in groups of four, numOfKeys entries per buffer, but it writes only
+	// totalNumShapes of them, as do the copies below. The padding gets an invalid key and rank so that the sort never
+	// reads uninitialized memory.
+	const PxU32 paddingKeys = numOfKeys - totalNumShapes;
+	if (paddingKeys)
+	{
+		mCudaContext->memsetD32Async(tempRigidIndiceBitsd + totalNumShapes * sizeof(PxU32), 0xFFFFFFFF, paddingKeys, mStream);
+		mCudaContext->memsetD32Async(rankd + totalNumShapes * sizeof(PxU32), 0xFFFFFFFF, paddingKeys, mStream);
+	}
+
 	// always start with the state from CPU which has all the updates, and the indices are still in the right place.
 	mCudaContext->memcpyDtoDAsync(rigidIndiced, shapeManager.mGpuShapesRemapTableBuffer.getDevicePtr(), sizeof(PxNodeIndex) * totalNumShapes, mStream);
 	mCudaContext->memcpyDtoDAsync(shapeManager.mGpuShapeIndiceBuffer.getDevicePtr(), shapeManager.mGpuUnsortedShapeIndicesBuffer.getDevicePtr(), sizeof(PxU32) * totalNumShapes, mStream);
@@ -9067,6 +9077,13 @@ void PxgGpuNarrowphaseCore::computeRigidsToShapes()
 	CUdeviceptr outputKeyd = mTempGpuRigidIndiceBuf.getDevicePtr();
 	CUdeviceptr outputRankd = mTempGpuShapeIndiceBuf.getDevicePtr();
 	CUdeviceptr radixCountd = mRadixCountTotalBuf.getDevicePtr();
+
+	// The passes alternate between the two buffer pairs, so the output buffers are read as input too.
+	if (paddingKeys)
+	{
+		mCudaContext->memsetD32Async(outputKeyd + totalNumShapes * sizeof(PxU32), 0xFFFFFFFF, paddingKeys, mStream);
+		mCudaContext->memsetD32Async(outputRankd + totalNumShapes * sizeof(PxU32), 0xFFFFFFFF, paddingKeys, mStream);
+	}
 
 	mRSDesc[0].inputKeys = reinterpret_cast<PxU32*>(inputKeyd);
 	mRSDesc[0].inputRanks = reinterpret_cast<PxU32*>(inputRankd);
@@ -9321,15 +9338,17 @@ bool PxgGpuNarrowphaseCore::copyContactData(void* PX_RESTRICT data, PxU32* PX_RE
 	
 	bool success = true;
 
+	if (startEvent)
+	{
+		mCudaContext->streamWaitEvent(mStream, startEvent);
+	}
+
+	// Also without pairs, because the user buffer can still hold the count of an earlier call.
+	CUdeviceptr numPairsd = reinterpret_cast<CUdeviceptr>(numContactPairs);
+	mCudaContext->memsetD32Async(numPairsd, 0, 1, mStream);
+
 	if (mTotalNumPairs)
 	{
-		if (startEvent)
-		{
-			mCudaContext->streamWaitEvent(mStream, startEvent);
-		}
-
-		CUdeviceptr numPairsd = reinterpret_cast<CUdeviceptr>(numContactPairs);
-		mCudaContext->memsetD32Async(numPairsd, 0, 1, mStream);
 		//in fetchNarrowPhaseResults, we append all the contacts inform into a eConvex's list
 		CUdeviceptr cvxInputDeviceptr = mGpuContactManagers[GPU_BUCKET_ID::eConvex]->mContactManagers.mContactManagerInputData.getDevicePtr();
 		CUdeviceptr cvxDeviceptr = mGpuContactManagers[GPU_BUCKET_ID::eConvex]->mContactManagers.mContactManagerOutputData.getDevicePtr();
@@ -9440,19 +9459,21 @@ bool PxgGpuNarrowphaseCore::copyContactData(void* PX_RESTRICT data, PxU32* PX_RE
 #endif
 		}
 
-		if (finishEvent)
-		{
-			mCudaContext->eventRecord(finishEvent, mStream);
-		}
-		else
-		{
-			result = mCudaContext->streamSynchronize(mStream);
-			if (result != CUDA_SUCCESS)
-				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "copyContactData: CUDA error, code %u\n", result);
-			success = (result == CUDA_SUCCESS);
-		}
-
 		mIntermStackAlloc.reset();
+	}
+
+	if (finishEvent)
+	{
+		mCudaContext->eventRecord(finishEvent, mStream);
+	}
+	else
+	{
+		const CUresult result = mCudaContext->streamSynchronize(mStream);
+		if (result != CUDA_SUCCESS)
+		{
+			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "copyContactData: CUDA error, code %u\n", result);
+		}
+		success = (result == CUDA_SUCCESS);
 	}
 
 	return success;

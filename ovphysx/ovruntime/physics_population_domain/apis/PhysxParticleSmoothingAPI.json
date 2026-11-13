@@ -1,0 +1,83 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxParticleSmoothingAPI",
+  "title": "PhysxParticleSmoothingAPI",
+  "summary": "Position smoothing post-processing on a particle system: smoothed particle positions for rendering fluid particle sets, without effect on the dynamics. The system parse reads the enable flag only when the API is listed, and the post-process re-parses the API for the generator settings.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "PhysxParticleSystem"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "columns": [
+    {
+      "name": "physxParticleSmoothing:particleSmoothingEnabled",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": true,
+      "parser_default": false,
+      "absent": "false: no smoothing post-processing (the stage is not enabled at creation, and a generator, if any, is disabled). USD's fallback is true, so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/particles/PhysXParticlePost.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceParticle.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXParticlePropertiesUpdate.cpp"
+      ],
+      "notes": "Read twice: by the system parse (it selects the post-process stage when the system is created) and by the smoothing parse, which enables or disables the smoothing generator. On change the property update enables or disables the stage without checking that the API is listed."
+    },
+    {
+      "name": "physxParticleSmoothing:strength",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.8,
+      "parser_default": 0.0,
+      "absent": "0 (no smoothing) is passed to the PhysX smoothed-position generator. USD's fallback is 0.8, so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "clamp": [
+        0,
+        1
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseParticleSystem.cpp",
+        "source/omni.physx/plugins/particles/PhysXParticlePost.cpp"
+      ],
+      "notes": "Clamped to [0, 1]. Used only while the smoothing stage is enabled; re-read whenever the post-process refreshes its generator."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysxParticleSystem",
+      "rule": "The enable flag is read in the system parse when this API is listed on the system. Applying or removing the API at runtime turns the stage on or off."
+    },
+    {
+      "with": "PhysxParticleSetAPI",
+      "rule": "While smoothing is active the runtime writes the smoothed positions to points (positions on a PointInstancer) and the simulated ones to physxParticle:simulationPoints."
+    }
+  ]
+}

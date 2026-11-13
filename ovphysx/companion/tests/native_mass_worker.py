@@ -14,6 +14,7 @@ if __name__=='__main__':
     import json
     import ovphysx
     import ovstage
+    from ovphysx.population import physics_population_descs
     from ovphysx_companion.inspection import Inspector
     from ovphysx_companion.preview import PreviewSession
     from ovphysx_companion._worker import write_reply
@@ -24,7 +25,7 @@ if __name__=='__main__':
     physics=ovphysx.PhysX();stage=ovstage.Stage('native-mass-oracle')
     try:
         with open('scene.usda','w',encoding='utf-8') as scene:scene.write(request['scene'])
-        ovstage.population.open_usd(stage,str(Path('scene.usda').resolve()),ordinal=1,domains=ovstage.PopulationDomain.ALL)
+        ovstage.population.open_usd_with_desc(stage,str(Path('scene.usda').resolve()),ordinal=1,time=ovstage.population.DEFAULT_TIME,descs=physics_population_descs(rendering=True))
         stage.advance_write_floor(ordinal=1).wait()
         with PreviewSession(physics,stage,read_ordinal=1) as owner,Inspector(owner) as inspector:
             owner.step(.001)

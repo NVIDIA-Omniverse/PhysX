@@ -29,11 +29,27 @@ CPU dispatcher instead of only round-tripping the configuration store.
 - Detach the scene, then independently write 3 to `/persistent/physics/numThreads` through the raw config
   API and read the typed setting.
 - Run `test_carbonite_overrides_conflicts_typed_path` in
-  `tests/python_tests/cpu_tests/test_physxconfig_validation.py` for the canonical path.
+  `tests/python_tests/cpu_tests/test_physxconfig_validation.py` with and without
+  one leading slash. Also try typed `num_threads=2` with raw value 5 in
+  `test_num_threads_override_conflict`.
+- Run `test_carbonite_overrides_rejects_non_string_key_at_conversion` with
+  `int`, `bytes`, and `PurePosixPath` keys supplied at construction, added by
+  later dict mutation, or assigned by replacing `carbonite_overrides`.
+- Run `test_carbonite_overrides_preserves_unknown_string_key` with and without
+  one leading slash.
 
 ## Then
 
 - `PxScene::getCpuDispatcher()->getWorkerCount()` equals the request both before
   input application and after stepping, and all operations finish (REQ AC-1).
 - The typed getter returns the independently authored value 3 (REQ AC-2).
-- Python rejects a raw override of the typed setting's canonical path (REQ AC-2).
+- Python rejects either spelling of the typed setting's path with the same
+  typed-field conflict, including when the typed value is also supplied
+  (REQ AC-2).
+- `_to_c_config` rejects non-string override keys before path normalization
+  with a `TypeError` naming `PhysXConfig.carbonite_overrides` and the offending
+  type, including after construction. Unknown string keys retain their spelling
+  and their values are converted normally.
+
+The Python cases exercise configuration conversion. Runs using mock C entry
+containers do not validate native settings or the CPU dispatcher.

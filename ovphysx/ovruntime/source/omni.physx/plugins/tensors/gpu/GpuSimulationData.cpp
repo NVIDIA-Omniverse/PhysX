@@ -7,12 +7,25 @@
 /**
  * @implements REQ-PUBLICAPI-001
  * @covers AC-5
+ *
+ * @implements REQ-TENSOR-CONTACT-005
+ * @covers AC-3 AC-5
+ *
+ * @implements REQ-TENSOR-VIEW-001
+ * @covers AC-14 AC-15 AC-16 AC-17
  */
+
+// @implements REQ-INPUT-DEVICE-001
+// @covers AC-14
+//
+// @implements REQ-INPUT-COVERAGE-001
+// @covers AC-16
 
 // clang-format off
 // clang-format on
 
 #include "AttachmentObjectLookup.h"
+#include "internal/Internal.h" // recordLifetimeEpoch
 #include "tensors/gpu/GpuSimulationData.h"
 
 #include "tensors/CommonTypes.h"
@@ -39,9 +52,14 @@ namespace physx
 namespace tensors
 {
 
-GpuSimulationData::GpuSimulationData(SimulationBackend& backend, omni::physics::tensors::AttachHandle attachHandle)
+GpuSimulationData::GpuSimulationData(SimulationBackend& backend,
+                                     omni::physics::tensors::AttachHandle attachHandle,
+                                     std::shared_ptr<GpuRdDisableState> rdDisableState)
     : mBackend(backend)
     , mAttachHandle(attachHandle)
+    , mRdDisableState(std::move(rdDisableState))
+    , mRdDisableEpoch(mRdDisableState->epoch)
+    , mMayHaveDisabledRd(mRdDisableState->mayHaveDisabledRd)
 {
 }
 
@@ -132,6 +150,117 @@ bool GpuSimulationData::recordKernelDone(PxU32 buf)
     return false;
 }
 
+bool GpuSimulationData::noteTableReader(CUstream stream)
+{
+    // An operation whose event has completed no longer reads the tables.
+    for (size_t i = 0; i < mTableReaders.size();)
+    {
+        if (cudaEventQuery(mTableReaders[i]) == cudaSuccess)
+        {
+            mIdleTableReaders.push_back(mTableReaders[i]);
+            mTableReaders[i] = mTableReaders.back();
+            mTableReaders.pop_back();
+        }
+        else
+        {
+            ++i;
+        }
+    }
+
+    IOptionalCuda* const cuda = getCudaShim();
+    uintptr_t event = 0;
+    if (!mIdleTableReaders.empty())
+    {
+        event = reinterpret_cast<uintptr_t>(mIdleTableReaders.back());
+        mIdleTableReaders.pop_back();
+    }
+    int status = 0;
+    if ((event || cuda->eventCreate(&event, CU_EVENT_DISABLE_TIMING, &status)) &&
+        cuda->eventRecord(event, reinterpret_cast<uintptr_t>(stream), &status))
+    {
+        mTableReaders.push_back(reinterpret_cast<CUevent>(event));
+        return true;
+    }
+    if (event)
+        mIdleTableReaders.push_back(reinterpret_cast<CUevent>(event));
+
+    // Without the record a later rewrite cannot tell when this operation stops reading, so wait for it now.
+    CARB_LOG_ERROR_ONCE("Recording a stream-ordered commit or read for the table rewrites failed (CUresult %d); "
+                        "waiting for its stream instead, which stalls the host.",
+                        status);
+    return CHECK_CU(cuda->streamSynchronize(reinterpret_cast<uintptr_t>(stream), nullptr));
+}
+
+bool GpuSimulationData::waitForTableReaders()
+{
+    while (!mTableReaders.empty())
+    {
+        if (!CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(mTableReaders.back()), nullptr)))
+            return false;
+        mIdleTableReaders.push_back(mTableReaders.back());
+        mTableReaders.pop_back();
+    }
+    return true;
+}
+
+unsigned long long* GpuSimulationData::keptPinnedTargetsCounter()
+{
+    if (mKeptPinnedTargetsDev || !mCudaContextManager)
+        return mKeptPinnedTargetsDev;
+    PxCudaContext* const cu = mCudaContextManager->getCudaContext();
+    void* host = nullptr;
+    CUdeviceptr dev = 0;
+    if (!cu ||
+        cu->memHostAlloc(&host, sizeof(unsigned long long), CU_MEMHOSTALLOC_PORTABLE | CU_MEMHOSTALLOC_DEVICEMAP) !=
+            CUDA_SUCCESS ||
+        !host)
+    {
+        CARB_LOG_ERROR("Allocating the kinematic-target kept-pinned count failed.");
+        return nullptr;
+    }
+    if (cu->memHostGetDevicePointer(&dev, host, 0) != CUDA_SUCCESS || !dev)
+    {
+        CARB_LOG_ERROR("Mapping the kinematic-target kept-pinned count for the device failed.");
+        cu->memFreeHost(host);
+        return nullptr;
+    }
+    mKeptPinnedTargetsHost = static_cast<unsigned long long*>(host);
+    *mKeptPinnedTargetsHost = 0;
+    mKeptPinnedTargetsDev = reinterpret_cast<unsigned long long*>(dev);
+    return mKeptPinnedTargetsDev;
+}
+
+void logKeptPinnedTargets(unsigned long long count)
+{
+    if (count == 0)
+        return;
+    CARB_LOG_ERROR("Kinematic-target writes marked %llu pinned volume-deformable node(s) free; they stayed pinned at "
+                   "their last target. A pinned node cannot be freed: PhysX does not restore the inverse mass it "
+                   "zeroed to pin it.",
+                   count);
+}
+
+void GpuSimulationData::reportKeptPinnedTargets()
+{
+    if (!mKeptPinnedTargetsHost)
+        return;
+    const unsigned long long count = *static_cast<volatile unsigned long long*>(mKeptPinnedTargetsHost);
+    if (count <= mKeptPinnedTargetsReported)
+        return;
+    logKeptPinnedTargets(count - mKeptPinnedTargetsReported);
+    mKeptPinnedTargetsReported = count;
+}
+
+bool GpuSimulationData::rewriteTable(void* dst, const void* src, size_t bytes)
+{
+    if (!waitForTableReaders())
+        return false;
+    // A copy from pageable memory may return before it reaches the device, and a non-blocking stream does not
+    // wait for the legacy default stream it runs on.
+    return CHECK_CUDA(cudaMemcpy(dst, src, bytes, cudaMemcpyHostToDevice)) &&
+           CHECK_CUDA(cudaStreamSynchronize(nullptr));
+}
+
 namespace
 {
 // Resolves a PhysX actor userData id to the legacy asInt(ObjectKey)-encoded path id
@@ -151,6 +280,57 @@ bool legacyPathIdForObject(omni::physics::AttachHandle attach, size_t objectId, 
     return true;
 }
 } // namespace
+
+// Raise a DirectGPU scene's live per-articulation counts to the strides PhysX lays its DirectGPU articulation blocks
+// out with: the largest counts it has seen in the scene, never lowered on removal, so once the largest articulation
+// is removed the live counts alone misplace every articulation but the first. PhysX reports them only after the
+// scene's first step; before that, on a non-DirectGPU scene and on one without articulations, the counts are
+// unchanged. The larger of the two is kept, since the live counts can lead PhysX's between an articulation's
+// insertion and the next simulate.
+static void raiseToPhysxArticulationStrides(PxScene* scene,
+                                            PxU32& maxLinks,
+                                            PxU32& maxDofs,
+                                            PxU32& maxFixedTendons,
+                                            PxU32& maxSpatialTendons)
+{
+    // PhysX refuses the count query (with an error) until its DirectGPU API is initialized at the end of the first
+    // step. The scene timestamp starts at 1 and moves in fetchResults, after that, so above 1 means a step completed.
+    // No articulation, no stride: left at zero.
+    if (!scene || !scene->getFlags().isSet(PxSceneFlag::eENABLE_DIRECT_GPU_API) || scene->getTimestamp() <= 1 ||
+        scene->getNbArticulations() == 0)
+        return;
+    const PxArticulationGPUAPIMaxCounts counts = scene->getDirectGPUAPI().getArticulationGPUAPIMaxCounts();
+    maxLinks = PxMax(maxLinks, counts.maxLinks);
+    maxDofs = PxMax(maxDofs, counts.maxDofs);
+    maxFixedTendons = PxMax(maxFixedTendons, counts.maxFixedTendons);
+    maxSpatialTendons = PxMax(maxSpatialTendons, counts.maxSpatialTendons);
+}
+
+void articulationStrides(
+    PxScene* scene, PxU32& maxLinks, PxU32& maxDofs, PxU32& maxFixedTendons, PxU32& maxSpatialTendons)
+{
+    maxLinks = 0;
+    maxDofs = 0;
+    maxFixedTendons = 0;
+    maxSpatialTendons = 0;
+    const PxU32 numArtis = scene->getNbArticulations();
+    std::vector<PxArticulationReducedCoordinate*> artis(numArtis);
+    scene->getArticulations(artis.data(), numArtis);
+    for (PxArticulationReducedCoordinate* arti : artis)
+    {
+        if (!arti)
+            continue;
+        // getDofs() is the joint DOF total (the links' inbound DOFs; a floating base's six are not joint DOFs), and
+        // 0xffffffff for an articulation not in a scene.
+        const PxU32 numDofs = arti->getDofs();
+        maxLinks = PxMax(maxLinks, arti->getNbLinks());
+        if (numDofs != 0xffffffff)
+            maxDofs = PxMax(maxDofs, numDofs);
+        maxFixedTendons = PxMax(maxFixedTendons, arti->getNbFixedTendons());
+        maxSpatialTendons = PxMax(maxSpatialTendons, arti->getNbSpatialTendons());
+    }
+    raiseToPhysxArticulationStrides(scene, maxLinks, maxDofs, maxFixedTendons, maxSpatialTendons);
+}
 
 bool GpuSimulationData::init(PxScene* scene)
 {
@@ -172,66 +352,28 @@ bool GpuSimulationData::init(PxScene* scene)
         return false;
     }
 
-    // find maxLinks and maxDofs
+    // Sampled before the walk, so a record change racing it costs a rebuild rather than a stale map.
+    mRecordEpoch = internal::recordLifetimeEpoch(scene);
+
     PxU32 maxLinks = 0;
     PxU32 maxDofs = 0;
     PxU32 maxFixedTendons = 0;
     PxU32 maxSpatialTendons = 0;
-    PxU32 numArtis = scene->getNbArticulations();
-    PxArticulationGPUIndex maxArtiIndex = numArtis; // AD: must be at least as large as the number of articulations.
-    uint32_t maxArtiNodeIdx = 0;
+    articulationStrides(scene, maxLinks, maxDofs, maxFixedTendons, maxSpatialTendons);
 
+    // Every articulation under its root link's island node, with its GPU index.
+    PxU32 numArtis = scene->getNbArticulations();
+    uint32_t maxArtiNodeIdx = 0;
     std::vector<PxArticulationReducedCoordinate*> artis(numArtis);
     scene->getArticulations(artis.data(), numArtis);
-    for (PxU32 i = 0; i < numArtis; i++)
+    for (PxArticulationReducedCoordinate* arti : artis)
     {
-        PxArticulationReducedCoordinate* arti = artis[i];
-
-        PxU32 numLinks = arti->getNbLinks();
-
-        std::vector<PxArticulationLink*> links(numLinks);
-        arti->getLinks(links.data(), numLinks);
-        PxU32 numDofs = 0;
-        for (PxU32 j = 0; j < numLinks; j++)
-        {
-            PxU32 inboundDofCount = links[j]->getInboundJointDof();
-            if (inboundDofCount != 0xffffffff)
-            {
-                numDofs += inboundDofCount;
-            }
-        }
-
-        PxNodeIndex nodeIdx = links[0]->getInternalIslandNodeIndex();
+        PxArticulationLink* root = nullptr;
+        arti->getLinks(&root, 1);
+        const PxNodeIndex nodeIdx = root->getInternalIslandNodeIndex();
         mNodeIdx2ArtiIdxMap[nodeIdx.index()] = arti->getGPUIndex();
-        maxArtiNodeIdx = nodeIdx.index() > maxArtiNodeIdx ? nodeIdx.index() : maxArtiNodeIdx;
-
-        const PxArticulationGPUIndex artiIdx = arti->getGPUIndex();
-        PxU32 numFixedTendons = arti->getNbFixedTendons();
-        PxU32 numSpatialTendons = arti->getNbSpatialTendons();
-
-        if (numLinks > maxLinks)
-        {
-            maxLinks = numLinks;
-        }
-        if (numDofs > maxDofs)
-        {
-            maxDofs = numDofs;
-        }
-        if (numFixedTendons > maxFixedTendons)
-        {
-            maxFixedTendons = numFixedTendons;
-        }
-        if (numSpatialTendons > maxSpatialTendons)
-        {
-            maxSpatialTendons = numSpatialTendons;
-        }
-        if (artiIdx > maxArtiIndex)
-        {
-            maxArtiIndex = artiIdx;
-        }
+        maxArtiNodeIdx = PxMax(maxArtiNodeIdx, nodeIdx.index());
     }
-
-
 
     std::vector<uint32_t> nodeIdx2ArtiGpuIdx(maxArtiNodeIdx + 1, 0xffffffff);
     for(auto&item : mNodeIdx2ArtiIdxMap){
@@ -251,7 +393,6 @@ bool GpuSimulationData::init(PxScene* scene)
     mDofBufSize = numArtis * maxDofs;
     mFixedTendonBufSize = numArtis * maxFixedTendons;
     mSpatialTendonBufSize = numArtis * maxSpatialTendons;
-    mMaxArtiIndex = maxArtiIndex;
 
     PhysxCudaContextGuard ctxGuarg(mCudaContextManager);
 
@@ -301,20 +442,27 @@ bool GpuSimulationData::init(PxScene* scene)
         CARB_LOG_INFO("Physics using context %p, device %d", mCtx, mDevice);
     }
 
+    // A refused device allocation fails the build, so the backend keeps nothing half-built and the next acquire
+    // builds the data again (REQ-TENSOR-VIEW-001 AC-15). What was allocated is freed with the object. The inverse
+    // dynamics scratch below is the one exception.
     if (numArtis > 0)
     {
         // node indices to global articulation indices map
-        prepareDeviceData((void**)&mNodeIdx2ArtiGpuIdxDev, nodeIdx2ArtiGpuIdx.data(),
-                          (size_t)nodeIdx2ArtiGpuIdx.size() * sizeof(PxU32), "mNodeIdx2ArtiGpuIdxDev");
+        if (!prepareDeviceData((void**)&mNodeIdx2ArtiGpuIdxDev, nodeIdx2ArtiGpuIdx.data(),
+                               (size_t)nodeIdx2ArtiGpuIdx.size() * sizeof(PxU32), "mNodeIdx2ArtiGpuIdxDev"))
+            return false;
+        mNodeIdx2ArtiGpuIdxCount = PxU32(nodeIdx2ArtiGpuIdx.size());
     }
 
     if (mMaxDofs > 0)
     {
         // arti DOF positions/velocity/targets/etc
-        prepareDeviceData((void**)&mDofScalarsDev, nullptr, mDofBufSize * sizeof(float), "mDofScalarsDev");
+        if (!prepareDeviceData((void**)&mDofScalarsDev, nullptr, mDofBufSize * sizeof(float), "mDofScalarsDev"))
+            return false;
         // arti DOF actuation forces
-        prepareDeviceData(
-            (void**)&mDofActuationForcesDev, nullptr, mDofBufSize * sizeof(float), "mDofActuationForcesDev");
+        if (!prepareDeviceData(
+                 (void**)&mDofActuationForcesDev, nullptr, mDofBufSize * sizeof(float), "mDofActuationForcesDev"))
+            return false;
     }
 
     // The inverse dynamics matrices are ROOT-INCLUSIVE, so they exist for a zero-dof articulation and are
@@ -327,46 +475,67 @@ bool GpuSimulationData::init(PxScene* scene)
     // read had to decline rather than hand computeArticulationData a null buffer (which terminates
     // the process). The CPU path served the same scene, so one requirement answered two ways
     // depending on the backend.
+    //
+    // The scratch is optional: a scene whose state fits on the device but not this scratch keeps its other reads,
+    // and every inverse dynamics read refuses (checkInverseDynamicsScratch). It is kept whole or not at all, so no
+    // inverse dynamics read works while another refuses (REQ-TENSOR-VIEW-001 AC-15).
     if (numArtis > 0)
     {
         mJacobianMaxCols = 6 + mMaxDofs;
         mJacobianMaxRows = 6 + (mMaxLinks - 1) * 6;
         uint32_t jacobianSize = mJacobianMaxCols * mJacobianMaxRows;
         uint32_t jacobianBufSize = numArtis * jacobianSize;
-        prepareDeviceData((void**)&mJacobianDataDev, nullptr, jacobianBufSize * sizeof(float), "mJacobianDataDev");
-
         uint32_t coriolisGravityBuffSize = numArtis * (6 + mMaxDofs);
-        prepareDeviceData((void**)&mCoriolisGravityDataDev, nullptr, coriolisGravityBuffSize * sizeof(float), "mCoriolisGravityDataDev");
-
         uint32_t massMatrixBuffSize = numArtis * (6 + mMaxDofs) * (6 + mMaxDofs);
-        prepareDeviceData((void**)&mMassMatrixDataDev, nullptr, massMatrixBuffSize * sizeof(float), "mMassMatrixDataDev");
         uint32_t sizeMassMatrices = numArtis * (maxDofs + 6) * (maxDofs + 6);
         uint32_t sizeCoriolisForces = numArtis * (maxDofs + 6);
         uint32_t sizeCentroidalMomentumMatrices = numArtis * 6 * (maxDofs + 6);
         uint32_t sizeCentroidalMomentumBiasForces = numArtis * 6;
         uint32_t sizeCentroidalMomentumData =
             sizeMassMatrices + sizeCoriolisForces + sizeCentroidalMomentumMatrices + sizeCentroidalMomentumBiasForces;
-        prepareDeviceData((void**)&mCentroidalMomentumDataDev, nullptr, sizeCentroidalMomentumData * sizeof(float),
-                          "mCentroidalMomentumDataDev");
-
+        const bool scratchAllocated =
+            prepareDeviceData(
+                (void**)&mJacobianDataDev, nullptr, jacobianBufSize * sizeof(float), "mJacobianDataDev") &&
+            prepareDeviceData((void**)&mCoriolisGravityDataDev, nullptr, coriolisGravityBuffSize * sizeof(float),
+                              "mCoriolisGravityDataDev") &&
+            prepareDeviceData(
+                (void**)&mMassMatrixDataDev, nullptr, massMatrixBuffSize * sizeof(float), "mMassMatrixDataDev") &&
+            prepareDeviceData((void**)&mCentroidalMomentumDataDev, nullptr, sizeCentroidalMomentumData * sizeof(float),
+                              "mCentroidalMomentumDataDev");
+        if (!scratchAllocated)
+        {
+            for (float** scratch :
+                 { &mJacobianDataDev, &mCoriolisGravityDataDev, &mMassMatrixDataDev, &mCentroidalMomentumDataDev })
+            {
+                if (*scratch)
+                    CHECK_CUDA(cudaFree(*scratch));
+                *scratch = nullptr;
+            }
+        }
     }
     
     if (mMaxLinks > 0)
     {
-        prepareDeviceData(
-            (void**)&mLinkOrRootTransformsDev, nullptr, mLinkBufSize * sizeof(PxTransform), "mLinkOrRootTransformsDev");
+        if (!prepareDeviceData((void**)&mLinkOrRootTransformsDev, nullptr, mLinkBufSize * sizeof(PxTransform),
+                               "mLinkOrRootTransformsDev"))
+            return false;
 
-        prepareDeviceData(
-            (void**)&mLinkOrRootLinearVelAccDev, nullptr, mLinkBufSize * sizeof(PxVec3), "mLinkOrRootLinearVelAccDev");
+        if (!prepareDeviceData((void**)&mLinkOrRootLinearVelAccDev, nullptr, mLinkBufSize * sizeof(PxVec3),
+                               "mLinkOrRootLinearVelAccDev"))
+            return false;
 
-        prepareDeviceData((void**)&mLinkOrRootAngularVelAccDev, nullptr, mLinkBufSize * sizeof(PxVec3),
-                          "mLinkOrRootAngularVelAccDev");
-        prepareDeviceData((void**)&mLinkForcesDev, nullptr, mLinkBufSize * sizeof(PxVec3), "mLinkForcesDev");
+        if (!prepareDeviceData((void**)&mLinkOrRootAngularVelAccDev, nullptr, mLinkBufSize * sizeof(PxVec3),
+                               "mLinkOrRootAngularVelAccDev"))
+            return false;
+        if (!prepareDeviceData((void**)&mLinkForcesDev, nullptr, mLinkBufSize * sizeof(PxVec3), "mLinkForcesDev"))
+            return false;
 
-        prepareDeviceData((void**)&mLinkTorquesDev, nullptr, mLinkBufSize * sizeof(PxVec3), "mLinkTorquesDev");
+        if (!prepareDeviceData((void**)&mLinkTorquesDev, nullptr, mLinkBufSize * sizeof(PxVec3), "mLinkTorquesDev"))
+            return false;
 
-        prepareDeviceData((void**)&mLinkIncomingJointForceDev, nullptr, mLinkBufSize * sizeof(PhysxGpuSpatialForces),
-                          "mLinkIncomingJointForceDev");
+        if (!prepareDeviceData((void**)&mLinkIncomingJointForceDev, nullptr,
+                               mLinkBufSize * sizeof(PhysxGpuSpatialForces), "mLinkIncomingJointForceDev"))
+            return false;
     }
 
     if (numRds > 0)
@@ -376,7 +545,6 @@ bool GpuSimulationData::init(PxScene* scene)
         std::vector<PxActor*> rdActors(numRds);
         std::vector<PxRigidDynamicGPUIndex> rdGpuIndices(numRds);
         scene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC, rdActors.data(), numRds);
-        PxU32 maxRdIndex = 0;
         for (PxU32 i = 0; i < numRds; i++)
         {
             PxRigidDynamic* rd = static_cast<PxRigidDynamic*>(rdActors[i]);
@@ -390,38 +558,32 @@ bool GpuSimulationData::init(PxScene* scene)
             {
                 mMayHaveDisabledRd = true;
             }
-            PxNodeIndex nodeIdx = rd->getInternalIslandNodeIndex();
-
-            PxU32 rdIdx = nodeIdx.index();
-            // A disabled body has no island node, so its index is the invalid handle (0xffffffff) --
-            // the same sentinel seeding the hint above. It owns no GPU state row, so it must not
-            // stretch mMaxRdIndex: downstream buffer sizing computes mMaxRdIndex + 1, and 0xffffffff
-            // wraps that to a zero-length allocation the next index write runs off the end of.
-            if (rdIdx != 0xffffffffu && rdIdx > maxRdIndex)
-            {
-                maxRdIndex = rdIdx;
-            }
         }
 
-        mMaxRdIndex = maxRdIndex;
-
-        prepareDeviceData((void**)&mRdPoseDev, nullptr, mNumRds * sizeof(PxTransform), "mRdPoseDev");
-        prepareDeviceData((void**)&mRdLinearVelAccDev, nullptr, mNumRds * sizeof(PxVec3), "mRdLinearVelAccDev");
-        prepareDeviceData((void**)&mRdAngularVelAccDev, nullptr, mNumRds * sizeof(PxVec3), "mRdAngularVelAccDev");
-        prepareDeviceData((void**)&mRdForcesDev, nullptr, mNumRds * sizeof(PxVec3), "mRdForcesDev");
-        prepareDeviceData((void**)&mRdTorquesDev, nullptr, mNumRds * sizeof(PxVec3), "mRdTorquesDev");
+        if (!prepareDeviceData((void**)&mRdPoseDev, nullptr, mNumRds * sizeof(PxTransform), "mRdPoseDev"))
+            return false;
+        if (!prepareDeviceData((void**)&mRdLinearVelAccDev, nullptr, mNumRds * sizeof(PxVec3), "mRdLinearVelAccDev"))
+            return false;
+        if (!prepareDeviceData((void**)&mRdAngularVelAccDev, nullptr, mNumRds * sizeof(PxVec3), "mRdAngularVelAccDev"))
+            return false;
+        if (!prepareDeviceData((void**)&mRdForcesDev, nullptr, mNumRds * sizeof(PxVec3), "mRdForcesDev"))
+            return false;
+        if (!prepareDeviceData((void**)&mRdTorquesDev, nullptr, mNumRds * sizeof(PxVec3), "mRdTorquesDev"))
+            return false;
     }
     // fixed tendons
     if (mMaxFixedTendons > 0)
     {
-        prepareDeviceData((void**)&mFixedTendonPropertiesDev, nullptr,
-                          mFixedTendonBufSize * sizeof(PxGpuFixedTendonData), "mFixedTendonPropertiesDev");
+        if (!prepareDeviceData((void**)&mFixedTendonPropertiesDev, nullptr,
+                               mFixedTendonBufSize * sizeof(PxGpuFixedTendonData), "mFixedTendonPropertiesDev"))
+            return false;
     }
     // spatial tendons
     if (mMaxSpatialTendons > 0)
     {
-        prepareDeviceData((void**)&mSpatialTendonPropertiesDev, nullptr,
-                          mSpatialTendonBufSize * sizeof(PxGpuSpatialTendonData), "mSpatialTendonPropertiesDev");
+        if (!prepareDeviceData((void**)&mSpatialTendonPropertiesDev, nullptr,
+                               mSpatialTendonBufSize * sizeof(PxGpuSpatialTendonData), "mSpatialTendonPropertiesDev"))
+            return false;
     }
 
 
@@ -457,10 +619,12 @@ bool GpuSimulationData::init(PxScene* scene)
         CARB_LOG_WARN("Unable to determine max GPU contact pairs, using default %u", mMaxGpuContactPairs);
     }
 
-    prepareDeviceData((void**)&mGpuContactPairsDev, nullptr, (size_t)mMaxGpuContactPairs * sizeof(PxGpuContactPair),
-                      "mGpuContactPairsDev");
-    prepareDeviceData((void**)&mGpuContactPairCountDev, nullptr, sizeof(PxU32),
-                      "mGpuContactPairCountDev");
+    if (!prepareDeviceData((void**)&mGpuContactPairsDev, nullptr,
+                           (size_t)mMaxGpuContactPairs * sizeof(PxGpuContactPair), "mGpuContactPairsDev"))
+        return false;
+    if (!prepareDeviceData((void**)&mGpuContactPairCountDev, nullptr, sizeof(PxU32),
+                           "mGpuContactPairCountDev"))
+        return false;
 
     // Build global actor-to-pathId lookup for raw contact data, so contact views can identify which
     // actor a contact is with on GPU (userData holds an object ID, which is converted to a path ID here).
@@ -548,8 +712,9 @@ bool GpuSimulationData::init(PxScene* scene)
 
         if (mNumActorPathPairs > 0)
         {
-            prepareDeviceData((void**)&mActorPathLookupDev, actorPathLookup.data(),
-                              mNumActorPathPairs * sizeof(GpuActorPathIdPair), "mActorPathLookupDev");
+            if (!prepareDeviceData((void**)&mActorPathLookupDev, actorPathLookup.data(),
+                                   mNumActorPathPairs * sizeof(GpuActorPathIdPair), "mActorPathLookupDev"))
+                return false;
         }
     }
 
@@ -589,42 +754,73 @@ bool GpuSimulationData::init(PxScene* scene)
 GpuSimulationData::~GpuSimulationData()
 {
     CudaContextGuard ctxGuard(mCtx);
+    // Only what exists is freed: a build that failed part-way, out of device memory say, frees what it allocated and
+    // makes no CUDA call for the rest.
+    if (mNodeIdx2ArtiGpuIdxDev)
+        CHECK_CUDA(cudaFree(mNodeIdx2ArtiGpuIdxDev));
+    if (mGpuContactPairsDev)
+        CHECK_CUDA(cudaFree(mGpuContactPairsDev));
+    if (mGpuContactPairCountDev)
+        CHECK_CUDA(cudaFree(mGpuContactPairCountDev));
+    if (mActorPathLookupDev)
+        CHECK_CUDA(cudaFree(mActorPathLookupDev));
 
-    CHECK_CUDA(cudaFree(mNodeIdx2ArtiGpuIdxDev));
-    CHECK_CUDA(cudaFree(mGpuContactPairsDev));
-    CHECK_CUDA(cudaFree(mGpuContactPairCountDev));
-    CHECK_CUDA(cudaFree(mActorPathLookupDev));
+    if (mLinkOrRootLinearVelAccDev)
+        CHECK_CUDA(cudaFree(mLinkOrRootLinearVelAccDev));
+    if (mLinkOrRootAngularVelAccDev)
+        CHECK_CUDA(cudaFree(mLinkOrRootAngularVelAccDev));
+    if (mLinkOrRootTransformsDev)
+        CHECK_CUDA(cudaFree(mLinkOrRootTransformsDev));
+    if (mDofScalarsDev)
+        CHECK_CUDA(cudaFree(mDofScalarsDev));
+    if (mLinkForcesDev)
+        CHECK_CUDA(cudaFree(mLinkForcesDev));
+    if (mLinkTorquesDev)
+        CHECK_CUDA(cudaFree(mLinkTorquesDev));
+    if (mDofActuationForcesDev)
+        CHECK_CUDA(cudaFree(mDofActuationForcesDev));
+    if (mLinkIncomingJointForceDev)
+        CHECK_CUDA(cudaFree(mLinkIncomingJointForceDev));
+    if (mFixedTendonPropertiesDev)
+        CHECK_CUDA(cudaFree(mFixedTendonPropertiesDev));
+    if (mSpatialTendonPropertiesDev)
+        CHECK_CUDA(cudaFree(mSpatialTendonPropertiesDev));
 
-    CHECK_CUDA(cudaFree(mLinkOrRootLinearVelAccDev));
-    CHECK_CUDA(cudaFree(mLinkOrRootAngularVelAccDev));
-    CHECK_CUDA(cudaFree(mLinkOrRootTransformsDev));
-    CHECK_CUDA(cudaFree(mDofScalarsDev));
-    CHECK_CUDA(cudaFree(mLinkForcesDev));
-    CHECK_CUDA(cudaFree(mLinkTorquesDev));
-    CHECK_CUDA(cudaFree(mDofActuationForcesDev));
-    CHECK_CUDA(cudaFree(mLinkIncomingJointForceDev));
-    CHECK_CUDA(cudaFree(mFixedTendonPropertiesDev));
+
+    if (mRdPoseDev)
+        CHECK_CUDA(cudaFree(mRdPoseDev));
+    if (mRdLinearVelAccDev)
+        CHECK_CUDA(cudaFree(mRdLinearVelAccDev));
+    if (mRdAngularVelAccDev)
+        CHECK_CUDA(cudaFree(mRdAngularVelAccDev));
+    if (mRdForcesDev)
+        CHECK_CUDA(cudaFree(mRdForcesDev));
+    if (mRdTorquesDev)
+        CHECK_CUDA(cudaFree(mRdTorquesDev));
+
+    if (mJacobianDataDev)
+        CHECK_CUDA(cudaFree(mJacobianDataDev));
+    if (mMassMatrixDataDev)
+        CHECK_CUDA(cudaFree(mMassMatrixDataDev));
+    if (mCoriolisGravityDataDev)
+        CHECK_CUDA(cudaFree(mCoriolisGravityDataDev));
+    if (mCentroidalMomentumDataDev)
+        CHECK_CUDA(cudaFree(mCentroidalMomentumDataDev));
 
 
-    CHECK_CUDA(cudaFree(mRdPoseDev));
-    CHECK_CUDA(cudaFree(mRdLinearVelAccDev));
-    CHECK_CUDA(cudaFree(mRdAngularVelAccDev));
-    CHECK_CUDA(cudaFree(mRdForcesDev));
-    CHECK_CUDA(cudaFree(mRdTorquesDev));
-
-    CHECK_CUDA(cudaFree(mJacobianDataDev));
-    CHECK_CUDA(cudaFree(mMassMatrixDataDev));
-    CHECK_CUDA(cudaFree(mCoriolisGravityDataDev));
-    CHECK_CUDA(cudaFree(mCentroidalMomentumDataDev));
-
+    // The frees above waited for the device, so no commit still adds to the count.
+    if (mKeptPinnedTargetsHost)
+    {
+        reportKeptPinnedTargets();
+        if (mCudaContextManager->getCudaContext()->memFreeHost(mKeptPinnedTargetsHost) != CUDA_SUCCESS)
+            CARB_LOG_ERROR("Freeing the kinematic-target kept-pinned count failed.");
+        mKeptPinnedTargetsHost = nullptr;
+        mKeptPinnedTargetsDev = nullptr;
+    }
 
     // deformable bodies
     for (auto record : mDeformableBodyToRecord)
-    {
-        CHECK_CUDA(cudaFree(record.second.simElementIndices));
-        CHECK_CUDA(cudaFree(record.second.simNodalKinematicTargets));
-        CHECK_CUDA(cudaFree(record.second.collElementIndices));
-    }
+        DeformableBodyBufferManager::freeRecordBuffers(record.second);
     mDeformableBodyToRecord.clear();
 
     // synchronization events
@@ -657,6 +853,11 @@ GpuSimulationData::~GpuSimulationData()
     {
         CHECK_CU(getCudaShim()->eventDestroy(reinterpret_cast<uintptr_t>(mContactReadEvent), nullptr));
     }
+    for (const std::vector<CUevent>* events : { &mTableReaders, &mIdleTableReaders })
+    {
+        for (CUevent event : *events)
+            CHECK_CU(getCudaShim()->eventDestroy(reinterpret_cast<uintptr_t>(event), nullptr));
+    }
 }
 
 bool GpuSimulationData::checkApiReady(const char* function) const
@@ -667,6 +868,51 @@ bool GpuSimulationData::checkApiReady(const char* function) const
         return false;
     }
     return true;
+}
+
+bool GpuSimulationData::checkArticulationStrides(const char* function) const
+{
+    // Every DirectGPU articulation buffer is laid out with these strides, so they must be PhysX's. They differ between
+    // the insertion of an articulation larger than any PhysX has simulated and the next step, when PhysX learns it
+    // (data built in that window keeps the larger live counts), and for data built before such an insertion once that
+    // step has raised PhysX's counts past it.
+    if (mNumArtis > 0 && mScene && mScene->getTimestamp() > 1)
+    {
+        const PxArticulationGPUAPIMaxCounts counts = mScene->getDirectGPUAPI().getArticulationGPUAPIMaxCounts();
+        if (counts.maxLinks != mMaxLinks || counts.maxDofs != mMaxDofs || counts.maxFixedTendons != mMaxFixedTendons ||
+            counts.maxSpatialTendons != mMaxSpatialTendons)
+        {
+            // PhysX above the data is permanent for this data: only new data (a new simulation view) has its strides.
+            // The data above PhysX is the insertion window, which the next step closes -- unless the inserted
+            // articulation is removed before it is simulated, so the remedy names both.
+            const bool physxLarger = counts.maxLinks > mMaxLinks || counts.maxDofs > mMaxDofs ||
+                                     counts.maxFixedTendons > mMaxFixedTendons ||
+                                     counts.maxSpatialTendons > mMaxSpatialTendons;
+            CARB_LOG_ERROR("GPU tensor function %s: the articulation strides of this simulation view's data (links %u, "
+                           "DOFs %u, fixed tendons %u, spatial tendons %u) do not match PhysX's (links %u, DOFs %u, "
+                           "fixed tendons %u, spatial tendons %u). %s",
+                           function, mMaxLinks, mMaxDofs, mMaxFixedTendons, mMaxSpatialTendons, counts.maxLinks,
+                           counts.maxDofs, counts.maxFixedTendons, counts.maxSpatialTendons,
+                           physxLarger ? "PhysX simulated a larger articulation after the simulation view was created: "
+                                         "create a new simulation view and recreate the views from it." :
+                                         "An articulation larger than any simulated was inserted and not simulated "
+                                         "yet: step the simulation once; if this persists, create a new simulation "
+                                         "view and recreate the views from it.");
+            return false;
+        }
+    }
+    return true;
+}
+
+bool GpuSimulationData::describesArticulation(const PxArticulationReducedCoordinate& arti) const
+{
+    // init() records every articulation of the scene under its root link's island node, with its GPU index.
+    PxArticulationLink* root = nullptr;
+    if (arti.getLinks(&root, 1) != 1 || !root)
+        return false;
+    const std::unordered_map<uint32_t, PxArticulationGPUIndex>::const_iterator it =
+        mNodeIdx2ArtiIdxMap.find(root->getInternalIslandNodeIndex().index());
+    return it != mNodeIdx2ArtiIdxMap.end() && it->second == arti.getGPUIndex();
 }
 
 void GpuSimulationData::clearForces()
@@ -729,6 +975,15 @@ void GpuSimulationData::updateContactReports()
     mRigidContactTimestamp = timestamp;
 
     PhysxCudaContextGuard ctxGuarg(mCudaContextManager);
+
+    // copyContactData writes nothing for a step without contact pairs, which would keep the previous step's pairs.
+    // The count is cleared first, and the clear finishes before PhysX's own stream can write it.
+    if (!CHECK_CUDA(cudaMemsetAsync(mGpuContactPairCountDev, 0, sizeof(PxU32), nullptr)) ||
+        !CHECK_CUDA(cudaStreamSynchronize(nullptr)))
+    {
+        mNumContactPairs = 0;
+        return;
+    }
 
     mScene->getDirectGPUAPI().copyContactData(mGpuContactPairsDev, mGpuContactPairCountDev, mMaxGpuContactPairs, NULL, mContactReadEvent);
     CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(mContactReadEvent), 0, nullptr));
@@ -874,46 +1129,32 @@ void GpuSimulationData::dumpGpuContactData(PxGpuContactPair* contactPairsDev, Px
 }
 
 
-void DeformableBodyBufferManager::allocDevMemAndCopyH2D(void** dst, const void* src, size_t size, const char* name)
+bool DeformableBodyBufferManager::allocDevMemAndCopyH2D(void** dst, const void* src, size_t size, const char* name)
 {
     if (!CHECK_CUDA(cudaMalloc(dst, size)))
     {
         CARB_LOG_ERROR("Unable to allocate memory of size %u for %s", (::physx::PxU32)size, name);
-        return;
+        cudaGetLastError(); // reported through the result, as prepareDeviceData does
+        return false;
     }
     if (!CHECK_CUDA(cudaMemcpy(*dst, src, size, cudaMemcpyHostToDevice)))
     {
         CARB_LOG_ERROR("Unable to copy data from host to device for %s", name);
-        return;
+        cudaGetLastError();
+        return false;
     }
+    return true;
 }
 
-void DeformableBodyBufferManager::resizeDeviceData(::physx::PxU32 previousSize,
-                                             ::physx::PxU32 currentSize,
-                                             ::physx::PxU32 elementSize,
-                                             void* previousBufferDev)
+void DeformableBodyBufferManager::freeRecordBuffers(GpuDeformableBodyRecord& record)
 {
-    ::physx::PxU32 numNewElements = currentSize - previousSize;
-    ::physx::PxU32* temp = nullptr;
-    if (!CHECK_CUDA(cudaMalloc(&temp, currentSize * elementSize)))
+    for (void** buffer : { (void**)&record.simElementIndices, (void**)&record.simNodalKinematicTargets,
+                           (void**)&record.restNodalPositions, (void**)&record.collElementIndices })
     {
-        return;
+        if (*buffer)
+            CHECK_CUDA(cudaFree(*buffer));
+        *buffer = nullptr;
     }
-    if (previousBufferDev)
-    {
-        if (!CHECK_CUDA(cudaMemcpy(temp, previousBufferDev, previousSize * elementSize, cudaMemcpyDeviceToDevice)))
-        {
-            return;
-        }
-        SYNCHRONIZE_CUDA(); // D2D needs a sync
-    }
-    if (!CHECK_CUDA(cudaMemset(temp + previousSize, 0, numNewElements * elementSize)))
-    {
-        return;
-    }
-    if (previousBufferDev)
-        CHECK_CUDA(cudaFree(previousBufferDev));
-    previousBufferDev = temp;
 }
 
 void DeformableBodyBufferManager::resetDeviceMem()
@@ -932,17 +1173,20 @@ void DeformableBodyBufferManager::setMaxBufferSize()
     maxBufferSize = *std::max_element(bufferSizesH.begin(), bufferSizesH.end());
 }
 
-void DeformableBodyBufferManager::uploadDeviceData(std::string debugMessage)
+bool DeformableBodyBufferManager::uploadDeviceData(std::string debugMessage)
 {
     if (buffersD)
         CHECK_CUDA(cudaFree(buffersD));
-    allocDevMemAndCopyH2D(
-        (void**)&buffersD, buffersH.data(), sizeof(void*) * buffersH.size(), (debugMessage + " buffer").c_str());
+    buffersD = nullptr;
+    if (!allocDevMemAndCopyH2D(
+            (void**)&buffersD, buffersH.data(), sizeof(void*) * buffersH.size(), (debugMessage + " buffer").c_str()))
+        return false;
 
     if (bufferSizesD)
         CHECK_CUDA(cudaFree(bufferSizesD));
-    allocDevMemAndCopyH2D((void**)&bufferSizesD, bufferSizesH.data(), sizeof(::physx::PxU32) * bufferSizesH.size(),
-                          (debugMessage + " sizes").c_str());
+    bufferSizesD = nullptr;
+    return allocDevMemAndCopyH2D((void**)&bufferSizesD, bufferSizesH.data(),
+                                 sizeof(::physx::PxU32) * bufferSizesH.size(), (debugMessage + " sizes").c_str());
 }
 
 void DeformableBodyBufferManager::releaseDeviceMem()

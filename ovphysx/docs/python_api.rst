@@ -30,32 +30,34 @@ Task Completion
 
 ``PhysX.step()``, ``PhysX.clone()``, ``PhysX.attach_ovstage()``,
 ``PhysX.update_from_ovstage()`` and ``PhysX.detach_ovstage()`` return an
-immutable :class:`~ovphysx.api.Task` receipt. Collect one task's outcome with
+immutable :class:`~ovphysx.api.Task`. A task means the call was accepted, not
+that it succeeded. Collect one task's result with
 :meth:`ovphysx.api.PhysX.wait_task` or every uncollected task with
 :meth:`ovphysx.api.PhysX.wait_all`; both return ``None`` on success and raise
 the exceptions below on failure or timeout.
 
-Stage lifecycle tasks currently execute inline, but a returned receipt reports
-admission only. Keep the Stage alive until successful detach or instance
-destruction, and wait before consuming the result of attach or update.
-``PhysX.is_stage_attached()`` is a synchronous ownership snapshot, not a
-completion or readiness check. ``PhysX.reset_stage()`` has been removed; use
-``PhysX.detach_ovstage()`` for teardown. Neither operation restores initial poses.
+By default, a worker runs accepted calls in submission order and the Python call
+returns before the work may finish. Without a worker, the work finishes before
+the call returns. An infinite wait may run an unstarted task itself, so do not
+depend on the execution thread. During OVD recording, attach and detach also
+finish before returning.
+
+Keep the Stage alive until detach succeeds or the instance is destroyed. Use
+``PhysX.is_stage_attached()`` only to check ownership; it does not wait or prove
+that the scene is ready. ``PhysX.reset_stage()`` has been removed; use
+``PhysX.detach_ovstage()`` instead.
 
 The session API (``query()``, ``read()``, ``write()``, ``fetch_next()``,
 ``commit()`` and ``close()``) returns an :class:`~ovphysx.api.Operation` without
-waiting. ``Operation.wait()`` collects its native tasks and returns the typed
-result; ``Operation.result`` never waits. ``wait_all()`` also collects
-outstanding operations and caches their outcomes. ``read_sync()``,
+waiting. ``Operation.wait()`` waits and returns the result.
+``Operation.result`` returns an already-collected result but never waits.
+``wait_all()`` collects all outstanding operations. ``read_sync()``,
 ``read_tokens_sync()``, ``write_sync()``, ``commit_sync()``, ``close_sync()``,
 ``update_articulations_kinematic()`` and ``evaluate_sdf_shapes()`` wait for their
-native tasks internally. Waiting raises ``TaskError`` for accepted execution
-failures. ctypes exposes the complete native receipts. CUDA producer-event and consumer-stream dependencies
-remain necessary; a completed host task does not imply all GPU work is finished.
+native tasks internally. A failed accepted operation raises ``TaskError``.
 
-Run custom application code directly after the relevant task wait succeeds.
-``wait_task(task)`` collects only that task; ``wait_all()`` also collects and
-acknowledges earlier uncollected outcomes, including failures.
+A completed task does not guarantee that GPU work is finished. Keep the
+documented CUDA stream and event handoffs.
 
 .. autoclass:: ovphysx.api.Task
    :members:
@@ -123,6 +125,17 @@ whose ``newton:*`` attributes ovphysx reads as fallbacks for the PhysX spellings
 this helper locates the installed package so it can be registered in the same call.
 
 .. autofunction:: ovphysx.newton_schema_root
+
+Physics Population Description
+------------------------------
+
+OVStage populates physics data from USD only through a population description. Pass
+this one to ``ovstage.population.open_usd_with_desc`` or another ``*_with_desc`` entry
+point, alone or beside ``ovstage.population.Desc(domains=PopulationDomain.RENDERING)``.
+The :doc:`population/physics-population-description` reference lists what it selects
+and derives; the C function is ``ovphysx_get_physics_population_desc``.
+
+.. autofunction:: ovphysx.population.physics_population_desc
 
 Logging
 -------

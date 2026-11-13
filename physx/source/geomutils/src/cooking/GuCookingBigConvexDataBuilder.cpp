@@ -27,10 +27,8 @@ using namespace aos;
 static const PxU32 gSupportVersion = 0;
 static const PxU32 gVersion = 0;
 
-BigConvexDataBuilder::BigConvexDataBuilder(const Gu::ConvexHullData* hull, BigConvexData* gm, const PxVec3* hullVerts) : mHullVerts(hullVerts)
+BigConvexDataBuilder::BigConvexDataBuilder(const Gu::ConvexHullData* hull, BigConvexData* gm, const PxVec3* hullVerts) : mHull(hull), mSVM(gm), mHullVerts(hullVerts)
 {
-	mSVM = gm;
-	mHull = hull;
 }
 
 BigConvexDataBuilder::~BigConvexDataBuilder()

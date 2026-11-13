@@ -1,0 +1,221 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxLimitAPI",
+  "title": "PhysxLimitAPI",
+  "summary": "PhysX tuning of one joint limit (restitution, bounce threshold, soft-limit spring), applied as PhysxLimitAPI:<inst>. The instance is fixed by joint type: angular for revolute, linear for prismatic, cone for spherical, distance for distance joints, and the seven D6 axis names on a PhysicsJoint. The values only reach PhysX when the corresponding limit is enabled. No unit conversion is applied to any of the four columns.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "PhysicsJoint"
+  ],
+  "multi_apply": true,
+  "instances": [
+    "angular",
+    "linear",
+    "cone",
+    "distance",
+    "transX",
+    "transY",
+    "transZ",
+    "rotX",
+    "rotY",
+    "rotZ"
+  ],
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "producer_scope": "All four declared attributes of every applied instance are published at their resolved values (0 when unauthored). physxLimit:<inst>:contactDistance, when declared, is published too but never read.",
+  "columns": [
+    {
+      "name": "physxLimit:<inst>:restitution",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "verify": {
+        "target": "joint",
+        "expr": "harness::limitRestitution(joint, inst)",
+        "kind": "float",
+        "sample": 0.5,
+        "notes": "Requires an enabled limit on the instance's axis in the composition; otherwise PhysX keeps its own limit defaults. On a PhysicsDistanceJoint the column is unobservable (no PxDistanceJoint counterpart).",
+        "unobservable_on": {
+          "PhysicsDistanceJoint": "PxDistanceJoint has no limit restitution or bounce threshold"
+        }
+      },
+      "parser_default": 0.0,
+      "absent": "No bounce at the limit.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "conversion": "none",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseJoint.cpp"
+      ],
+      "notes": "The schema documents range [0, 1]; the parser clamps to [0, FLT_MAX] only."
+    },
+    {
+      "name": "physxLimit:<inst>:bounceThreshold",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "verify": {
+        "target": "joint",
+        "expr": "harness::limitBounceThreshold(joint, inst)",
+        "kind": "float",
+        "sample": 1.0,
+        "check_absent": false,
+        "notes": "Same enabled-limit precondition and PhysicsDistanceJoint unobservability as restitution. Passed to PhysX unconverted even on angular instances. Not checked when absent: the absent variants author no limit bounds, so the limit is disabled and PhysX keeps its own threshold (0.5 for angular and cone limits, 2 * tolerances length for linear ones); the absent-column parity case still compares it.",
+        "unobservable_on": {
+          "PhysicsDistanceJoint": "PxDistanceJoint has no limit restitution or bounce threshold"
+        }
+      },
+      "parser_default": 0.0,
+      "absent": "Every impact velocity at the limit bounces (threshold 0).",
+      "raw_fallback_diverges": false,
+      "units": "linear: length/s; angular: deg/s",
+      "conversion": "none",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseJoint.cpp"
+      ],
+      "notes": "No degrees-to-radians conversion is applied although the schema declares angular instances in deg/s; PhysX interprets the value in rad/s."
+    },
+    {
+      "name": "physxLimit:<inst>:stiffness",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "verify": {
+        "target": "joint",
+        "expr": "harness::limitStiffness(joint, inst)",
+        "kind": "float",
+        "sample": 100.0,
+        "notes": "A non-zero stiffness or damping turns the PhysX limit into a soft limit. distance: PxDistanceJoint::getStiffness, unless PhysxPhysicsDistanceJointAPI's spring is enabled and overwrites it."
+      },
+      "parser_default": 0.0,
+      "absent": "Hard limit (no spring).",
+      "raw_fallback_diverges": false,
+      "units": "linear: force/length; angular: torque/deg",
+      "conversion": "none",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseJoint.cpp"
+      ],
+      "notes": "Unlike drive stiffness, limit stiffness is NOT multiplied by 57.29577951308232 on angular instances; the value is passed through as authored."
+    },
+    {
+      "name": "physxLimit:<inst>:damping",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "verify": {
+        "target": "joint",
+        "expr": "harness::limitDamping(joint, inst)",
+        "kind": "float",
+        "sample": 10.0,
+        "notes": "See stiffness; distance: PxDistanceJoint::getDamping."
+      },
+      "parser_default": 0.0,
+      "absent": "No limit damping.",
+      "raw_fallback_diverges": false,
+      "units": "linear: force*s/length; angular: torque*s/deg",
+      "conversion": "none",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseJoint.cpp"
+      ],
+      "notes": "Not multiplied by 57.29577951308232 on angular instances."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysicsJoint",
+      "rule": "Read directly with no authored gate, so the resolved value always wins. The values are copied into the joint's limit descriptor and reach PhysX only when that limit is enabled (typed-joint bounds or PhysicsLimitAPI on the D6)."
+    },
+    {
+      "with": "PhysicsLimitAPI",
+      "rule": "On the D6 the instance name must match the PhysicsLimitAPI instance whose limit it tunes. rotY and rotZ share one PxJointLimitPyramid, so the pyramid's restitution, bounceThreshold, stiffness and damping come from whichever of the two was processed last."
+    },
+    {
+      "with": "PhysxPhysicsDistanceJointAPI",
+      "rule": "On a distance joint, stiffness and damping are applied as the PxDistanceJoint stiffness and damping and then overwritten by the spring values when springEnabled is true."
+    }
+  ],
+  "findings": [
+    {
+      "column": "physxLimit:<inst>:restitution",
+      "severity": "fragile",
+      "side": "consumer",
+      "summary": "Restitution is clamped to [0, FLT_MAX] although the schema documents [0, 1] and a valid PxJointLimitParameters requires restitution <= 1; a value above 1 produces an invalid PhysX limit instead of being clamped.",
+      "tracking": "follow-up to file"
+    },
+    {
+      "column": "physxLimit:<inst>:bounceThreshold",
+      "severity": "note",
+      "side": "consumer",
+      "summary": "Angular instances declare deg/s but no conversion is applied; PhysX reads the value as rad/s. Same on both backends, so parity is unaffected.",
+      "tracking": "follow-up to file"
+    },
+    {
+      "column": "physxLimit:<inst>:restitution",
+      "severity": "note",
+      "side": "consumer",
+      "summary": "physxLimit:<inst>:contactDistance is declared by the schema but is neither in the walker's column bucket nor among the columns the PhysxLimitAPI parse reads; it is never read.",
+      "tracking": "follow-up to file"
+    }
+  ],
+  "notes": [
+    "Per-joint-type instance matrix: Fixed none; Revolute angular; Prismatic linear; Spherical cone (not rotX/rotY); Distance distance; D6 (PhysicsJoint) transX transY transZ rotX rotY rotZ distance; Gear, Rack, Custom none.",
+    "angular, linear, cone and distance are pre-interned tokens; for the six D6 axis names the qualified name PhysxLimitAPI:<inst> is interned at runtime. The stage-wide presence probe covers all ten.",
+    "Standalone mapping of the tuned limit: angular/rotX -> PxD6Joint twist limit; linear/transX..Z -> linear limit on eX/eY/eZ; cone -> swing limit cone; rotY/rotZ -> pyramid swing limit; distance -> PxDistanceJoint stiffness/damping only. Articulation limits (PxArticulationLimit) carry only low/high, so none of these four columns reaches an articulation joint."
+  ]
+}

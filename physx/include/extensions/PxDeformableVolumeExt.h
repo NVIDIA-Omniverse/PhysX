@@ -146,7 +146,8 @@ public:
 	\param[in] cudaContextManager A cuda context manager
 	\param[in] density The density used to compute the mass properties
 	\param[in] scale The scaling of the deformable volume
-	\return Deformable volume instance
+	\return Deformable volume instance. NULL if deformableVolumeMesh is NULL, or if the deformable volume or its pinned
+	host buffers could not be created.
 	\see PxDeformableVolumeMesh, PxDeformableVolume
 	*/
 	static PxDeformableVolume* createDeformableVolumeFromMesh(PxDeformableVolumeMesh* deformableVolumeMesh, const PxTransform& transform,
@@ -163,7 +164,8 @@ public:
 	\param[in] density The density used to compute the mass properties
 	\param[in] numVoxelsAlongLongestAABBAxis The number of voxels to use for the simulation mesh along the longest bounding box dimension
 	\param[in] scale The scaling of the deformable volume
-	\return Deformable volume instance
+	\return Deformable volume instance. NULL if the deformable volume mesh, the deformable volume or its pinned host
+	buffers could not be created.
 	\see PxDeformableVolumeMesh, PxDeformableVolume
 	*/
 	static PxDeformableVolume* createDeformableVolumeBox(const PxTransform& transform, const PxVec3& boxDimensions, const PxDeformableVolumeMaterial& material,
@@ -178,6 +180,9 @@ public:
     \param[in] simVelocityPinned A reference to a pointer for the return value of the simVelocityPinned buffer, will be set by this function.
     \param[in] collPositionInvMassPinned A reference to a pointer for the return value of the collPositionInvMassPinned buffer, will be set by this function.
     \param[in] restPositionPinned A reference to a pointer for the return value of the restPositionPinned buffer, will be set by this function.
+
+	\note If any of the four allocations fails, the buffers already allocated are freed, all four pointers are set to NULL and
+	nothing is written. The caller has to check the pointers before using them.
 
 	\see PxDeformableVolume
 	 */

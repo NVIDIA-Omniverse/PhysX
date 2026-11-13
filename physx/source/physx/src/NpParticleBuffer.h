@@ -98,11 +98,6 @@ namespace physx
 			mParticleSystem = particleSystem;
 		}
 
-		void allocHostBuffers()
-		{
-			mGpuBuffer->allocHostBuffers();
-		}
-
 		PxsParticleBuffer*		mGpuBuffer;
 		NpPBDParticleSystem*	mParticleSystem;
 		PxU32					mBufferIndex;

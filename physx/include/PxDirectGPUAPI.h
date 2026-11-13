@@ -404,6 +404,9 @@ public:
 	/**
 	\brief Copies the simulation state for a set of PxD6Joint instances into a user-provided GPU data buffer.
 
+	\note Unlike PxConstraint::getForce(), this function does not initialize the joint forces and torques. It may return invalid
+	data for a joint that has not been simulated yet.
+
 	\param[out] data User-provided GPU data buffer which has size nbElements * sizeof(type). For the types, see the options in #PxD6JointGPUAPIReadType.
 	\param[in] gpuIndices User-provided GPU index buffer containing elements of PxD6JointGPUIndex. This buffer contains the GPU indices of the PxD6Joint objects that are part of this get operation
 	           (see #PxD6Joint::getGPUIndex()). The size of this buffer needs to be nbElements * sizeof(PxD6JointGPUIndex). The data requested for the PxD6Joint with its GPU index at position x in the

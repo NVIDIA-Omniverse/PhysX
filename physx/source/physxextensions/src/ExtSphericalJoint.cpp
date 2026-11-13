@@ -165,11 +165,17 @@ void SphericalJoint::resolveReferences(PxDeserializationContext& context)
 
 void SphericalJoint::updateOmniPvdProperties() const
 {
+	updateOmniPvdProperties(omniPvdCpuJointState(*this));
+}
+
+void SphericalJoint::updateOmniPvdProperties(const PxConstraintOmniPvdState& state) const
+{
+	if (!omniPvdJointPoseValid(state)) return;
 	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
 
     const PxSphericalJoint& j = static_cast<const PxSphericalJoint&>(*this);
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, swingYAngle, j, getSwingYAngle())
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, swingZAngle, j, getSwingZAngle())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, swingYAngle, j, omniPvdJointAngle(j, state, 1))
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, swingZAngle, j, omniPvdJointAngle(j, state, 2))
 
 	OMNI_PVD_WRITE_SCOPE_END
 }
@@ -200,8 +206,6 @@ void physx::Ext::omniPvdInitJoint<SphericalJoint>(OmniPvdWriter* pvdWriter, cons
 
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, jointFlags, j, joint.getSphericalJointFlags())
 
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, swingYAngle, j, joint.getSwingYAngle())
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, swingZAngle, j, joint.getSwingZAngle())
 }
 
 #endif

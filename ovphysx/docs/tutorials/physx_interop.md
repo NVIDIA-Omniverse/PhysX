@@ -8,6 +8,12 @@ PhysX methods directly. The sample moves a kinematic rigid body using
 `PxRigidDynamic::setKinematicTarget()`, then reads it back through ovphysx's session
 read API (`ovphysx_read`) to confirm the runtime observed the move.
 
+> **Structural changes through a native PhysX pointer are not recommended.** A
+> structural change adds, removes or re-inserts objects, moves them between scenes,
+> or attaches or detaches shapes. After one, ovphysx reads and writes are not
+> guaranteed to work.
+> Refer to [Structural changes through a pointer](../developer_guide.md#structural-changes-through-a-pointer).
+
 ## Prerequisites
 
 - Complete the [Hello World](hello_world.md) tutorial.
@@ -16,9 +22,19 @@ read API (`ovphysx_read`) to confirm the runtime observed the move.
 
 ## Setup
 
+ovphysx links PhysX internally. Using the ovphysx API requires no separate PhysX
+libraries.
+
 The ovphysx SDK ships PhysX headers under `include/physx/`. Include them in your
 project through the `ovphysx_PHYSX_INCLUDE_DIR` CMake variable (set automatically by
-`find_package(ovphysx)`). No PhysX library linking is needed.
+`find_package(ovphysx)`). This sample calls virtual methods on returned PhysX
+objects and needs no additional PhysX libraries.
+
+The shipped headers do not make every PhysX helper callable through ovphysx.
+For example, helpers in `PxCudaHelpersExt.h` that call PhysX Foundation cannot
+link with ovphysx alone on Windows. Adding a separate PhysX SDK for these
+helpers is not recommended; on Linux, initializing its Foundation can conflict
+with ovphysx.
 
 ## CMakeLists.txt
 
@@ -70,6 +86,11 @@ absent from that query.
 - Treat pointers as invalid after stage detachment or instance destruction.
 - `ovphysx_step()` does **not** invalidate pointers.
 - Do not call `release()` on returned pointers -- ovphysx owns them.
+- Structural changes (adding, removing or re-inserting objects, moving them
+  between scenes, attaching or detaching shapes) through a native PhysX pointer
+  are not recommended: after one, ovphysx reads and writes are not guaranteed to
+  work. Refer to
+  [Structural changes through a pointer](../developer_guide.md#structural-changes-through-a-pointer).
 - Objects explicitly created through `PxPhysics` follow PhysX SDK ownership rules.
 - Use the PhysX SDK headers shipped for the same ovphysx build.
 
@@ -83,9 +104,9 @@ developer guide.
 
 ## Thread Safety
 
-PhysX APIs on returned pointers must only be called **between** simulation
-steps — after `wait_task()` completes for the preceding step and before the next
-`ovphysx_step()` call. Refer to the
+Call PhysX APIs on returned pointers only while the instance has **no pending
+work** — after you collect the last task you submitted on it, and before the next
+ovphysx call on that instance. Refer to the
 [developer guide](../developer_guide.md#thread-safety) for details.
 
 ## Result

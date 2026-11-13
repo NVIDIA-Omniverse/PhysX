@@ -90,6 +90,7 @@ void PxgBodySimManager::addArticulation(Dy::FeatherstoneArticulation* articulati
 	articulation->mGPUDirtyFlags |= Dy::ArticulationDirtyFlag::eIN_DIRTY_LIST;
 
 	mNodeToRemapMap.insert(nodeIndex, index.remapIndex);
+	mPendingArticulationUploads.growAndSet(index.remapIndex);
 #if PX_SUPPORT_OMNI_PVD
 	if (OmniPVDRecordDirectGPUAPI)
 	{
@@ -369,6 +370,7 @@ bool PxgBodySimManager::removeSelfArticulationJoint(PxU32 uniqueIndex, const PxN
 
 void PxgBodySimManager::releaseArticulation(Dy::FeatherstoneArticulation* articulation, const PxU32 nodeIndex)
 {
+	mPendingArticulationUploads.reset(articulation->getCore()->gpuRemapIndex);
 	mDeferredFreeNodeIDs.pushBack(nodeIndex);
 
 	if (articulation->mGPUDirtyFlags & Dy::ArticulationDirtyFlag::eIN_DIRTY_LIST)
@@ -808,6 +810,7 @@ void PxgBodySimManager::destroy()
 
 void PxgBodySimManager::reset() 
 { 
+	mPendingArticulationUploads.clear();
 	mNewOrUpdatedBodySims.forceSize_Unsafe(0); 
 	mNewArticulationSims.forceSize_Unsafe(0);
 

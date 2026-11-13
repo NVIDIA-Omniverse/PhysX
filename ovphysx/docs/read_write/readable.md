@@ -3,6 +3,9 @@
 
 # Readable data
 
+See the [detailed I/O attribute reference](attributes/index.md) for exact request names,
+layouts, conditional units and per-attribute restrictions.
+
 The inventory of every quantity readable through the read API, per object type.
 
 Every table lists the readable attributes for one object type.
@@ -21,6 +24,7 @@ Standalone bodies (`RIGID_BODY`) emit a **fixed** group, one row per body:
 | `angularVelocity` | angular velocity | f32 × 3 | world | rad/s | device |
 | `linearAcceleration` | linear acceleration | f32 × 3 | world | length/s² | device |
 | `angularAcceleration` | angular acceleration | f32 × 3 | world | rad/s² | device |
+| `worldScale` | signed world scale the body was created with (read-only) | f32 × 3 | world | — | device |
 | `mass` | body mass | f32 × 1 | — | mass | host |
 | `inverseMass` | 1/mass | f32 × 1 | — | 1/mass | host |
 | `inertia` | inertia tensor | f32 × 9 | COM | mass·length² | host |
@@ -43,6 +47,18 @@ Per-shape columns are padded to the widest *queried* body's shape count (varies 
 cache); read `shapeCount` for the real length. A shape with several materials reports only its first
 (material 0). On DirectGPU, disabled (`eDISABLE_SIMULATION`) bodies are omitted from fixed columns
 while discovery keeps the full count.
+
+`worldScale` is the [signed scale](data_model.md#signed-scale-and-body-orientation) the parser
+decomposed off the body's world transform when the body was created (a replicated clone copies its
+source's), and the scale its collision shapes were built with. PhysX simulates no scale, so ovphysx
+stores it, on the host and, on a DirectGPU scene, as a device copy: the column is device-resident
+beside `position` / `orientation`, and the three compose the body's world matrix, except a character
+controller's (see [Character controllers](#character-controllers)). It is constant for the body's
+lifetime: a scale edit (a USD edit or an OVStage transform change) recreates a CPU-scene rigid body,
+kinematic or dynamic, but character controllers, DirectGPU rigid bodies, articulation links and
+kinematic bodies driven by time-sampled transforms keep their creation scale until the prim is
+removed and re-added or the stage is reattached (see [Known limitations](limitations.md)). It has no
+point-instancer array form; instanced bodies are omitted from it.
 
 `kinematicTargetPosition` / `kinematicTargetOrientation` return the **pending kinematic target** of a
 kinematic body; a body with no target set (non-kinematic, or an undriven kinematic body) falls back
@@ -95,6 +111,7 @@ Articulation links (`ARTICULATION_LINK`) are rigid bodies, so they read the full
 | `angularVelocity` | angular velocity | f32 × 3 | world | rad/s | device |
 | `linearAcceleration` | linear acceleration | f32 × 3 | world | length/s² | device |
 | `angularAcceleration` | angular acceleration | f32 × 3 | world | rad/s² | device |
+| `worldScale` | signed world scale the link was created with (read-only) | f32 × 3 | world | — | device |
 | `mass` | link mass | f32 × 1 | — | mass | host |
 | `inverseMass` | 1/mass | f32 × 1 | — | 1/mass | host |
 | `inertia` | inertia tensor | f32 × 9 | COM | mass·length² | host |
@@ -122,10 +139,12 @@ sleep independently; this read does not make per-link `wake` writes valid.
 
 `CHARACTER_CONTROLLER` has no readable columns. The controller prim is a row of
 `RIGID_BODY` `position` and `orientation`: the backing kinematic actor's global
-pose. That orientation includes the capsule-axis rotation and is not the
-fixup-corrected orientation written back to the prim. `move` updates the controller
+position and the controller prim's world orientation, with the capsule-axis
+correction applied as in native prim write-back. `move` updates the controller
 and its kinematic target immediately; that rigid-body pose changes on the next
-simulation step, when the target is integrated.
+simulation step, when the target is integrated. `kinematicTargetOrientation`
+uses the same capsule-axis correction. Runtime up-axis edits and authored rotations
+have [native controller limitations](limitations.md).
 
 ## SDF shapes
 
@@ -145,7 +164,7 @@ Whole articulations (`ARTICULATION`) emit one **fixed** group with one row per a
 | `rootAngularVelocity` | root angular velocity | f32 × 3 | world | rad/s | device |
 | `centerOfMassWorld` | articulation COM | f32 × 3 | world | length | device |
 | `centerOfMassLocal` | articulation COM | f32 × 3 | root-link COM | length | device |
-| `staticFriction` / `dynamicFriction` / `restitution` / `contactOffset` / `restOffset` | per-shape (all links) | f32 × per-shape | — | — | host |
+| `staticFriction` / `dynamicFriction` / `restitution` / `contactOffset` / `restOffset` | per-shape, link-major in `linkPath` order | f32 × per-shape | — | — | host |
 | `shapeCount` | total shapes across links | i32 × 1 | — | count | host |
 | `dofCount` | degrees of freedom | i32 × 1 | — | count | host |
 | `linkCount` | articulation links (not standalone rigid bodies) | i32 × 1 | — | count | host |
@@ -155,12 +174,19 @@ Whole articulations (`ARTICULATION`) emit one **fixed** group with one row per a
 | `isFixedBase` | 1 = fixed base, 0 = floating | i32 × 1 | — | — | host |
 | `dofJointPath` | owning joint prim for each DOF column (interned prim-path handle; `0` pads) | u64 × dofCount (padded) | — | — | host |
 | `dofAxisIndex` | each DOF's ordinal among its joint's unlocked axes | i32 × dofCount (padded) | — | — | host |
-| `jacobian` | dense Jacobian | f32 × rows·cols | — | angular in radians | device |
-| `jacobianShape` | (rows, cols) of `jacobian` | i32 × 2 | — | count | host |
-| `massMatrix` | generalized mass matrix | f32 × M·M | — | — | device |
-| `coriolisForce` | Coriolis + centrifugal compensation | f32 × M | — | — | device |
-| `gravityForce` | gravity compensation | f32 × M | — | — | device |
-| `centroidalMomentum` | centroidal momentum matrix (floating-base only; a fixed-base articulation contributes no row) | f32 × 6·(numDofs+7) | — | — | device |
+| `dofAxisKind` | PhysX joint-frame axis id per DOF (0 twist, 1 swing1, 2 swing2, 3 x, 4 y, 5 z); a 0 inside `dofCount` is twist, and only entries past `dofCount` are padding | i32 × dofCount (padded) | — | — | host |
+| `dofJointType` | PhysX joint type per DOF (1 prismatic, 2 revolute, 3 revolute unwrapped, 4 spherical); a 0 past `dofCount` is padding | i32 × dofCount (padded) | — | — | host |
+| `linkPath` | link prim per `getLinkIndex()` slot; slot 0 is the root link | u64 × linkCount (padded) | — | — | host |
+| `linkInboundJoint` | inbound joint prim per link index; 0 means that link has none | u64 × linkCount (padded) | — | — | host |
+| `fixedTendonRoot` | root prim of each fixed tendon | u64 × fixedTendonCount (padded) | — | — | host |
+| `fixedTendonInstance` | multi-apply instance token of each fixed tendon | u64 × fixedTendonCount (padded) | — | — | host |
+| `spatialTendonRoot` | root prim of each spatial tendon | u64 × spatialTendonCount (padded) | — | — | host |
+| `spatialTendonInstance` | multi-apply instance token of each spatial tendon | u64 × spatialTendonCount (padded) | — | — | host |
+| `jacobian` | dense Jacobian, shape `[N, R, C]` | f32 × 1 | — | angular in radians | device |
+| `massMatrix` | generalized mass matrix, shape `[N, M, M]` | f32 × 1 | — | — | device |
+| `coriolisForce` | Coriolis + centrifugal compensation, shape `[N, M]` | f32 × 1 | — | — | device |
+| `gravityForce` | gravity compensation, shape `[N, M]` | f32 × 1 | — | — | device |
+| `centroidalMomentum` | centroidal momentum matrix, shape `[N, 6, numDofs+7]` (floating-base only; a fixed-base articulation contributes no row) | f32 × 1 | — | — | device |
 | `physxPointer` | borrowed `PxArticulationReducedCoordinate` address | u64 × 1 | — | — | host |
 
 Root state and `centerOfMassWorld` are in scene-world coordinates; `centerOfMassLocal` is in the root
@@ -181,28 +207,55 @@ The `dofJointPath` / `dofAxisIndex` descriptor is the non-binding successor to t
 order) that maps inverse-dynamics column `(isFixedBase ? 0 : 6) + k` to its owning joint prim — an
 interned prim-path handle, resolved through the attached Stage's path dictionary like `prims.list` (`0` pads) — and to
 that DOF's ordinal among the joint's unlocked axes. Link and joint names are then the leaf of the
-`kOvxArticulationLink` / `kOvxArticulationJoint` prim read by `ovphysx_read`. **Limitation:** only
-DOF-bearing joints appear — a fully-locked (zero-DOF) joint has no read group or descriptor entry, so its
-name/path is not recoverable through the read API; the deprecated `ovphysx_articulation_get_joint_names`
-still lists those fixed joints.
-
-> **Note.** A group's tuple width is a 16-bit field, so a single inverse dynamics column wider than 65 535
-> (roughly a 64-link / 189-DOF articulation's Jacobian, or a mass matrix past M ≈ 256) is omitted
-> for that cohort. The read succeeds, other supported columns remain available, and the optional
-> summary reports `OVPHYSX_READ_OMISSION_UNSUPPORTED_CONFIGURATION` for the affected request.
+`kOvxArticulationLink` / `kOvxArticulationJoint` prim read by `ovphysx_read`. A fully-locked
+(zero-DOF) joint has no DOF-state rows or descriptor entry, but its path is available in the
+prim list of an `ARTICULATION_JOINT` `physxPointer` read. Resolve that prim path through the
+attached Stage's dictionary and take its leaf for the name; no pointer dereference is needed.
+Query row order is not the deprecated getter's per-articulation name order. `linkPath` is the
+link-to-Jacobian-row mapping. Slot L is `PxArticulationLink::getLinkIndex()`, slot 0 is the root
+link, and the articulation row prim may be that link, an ancestor Xform, or a fixed joint that is a
+child of slot 0. Fixed base: link 0 has no Jacobian rows, and link L>0 occupies rows `6*(L-1)` through
+`6*L-1`. Floating base: link L occupies rows `6*L` through `6*L+5`. `dofJointPath` entry k remains
+Jacobian column `(isFixedBase ? 0 : 6) + k`. Shape columns are link-major in `linkPath` order, then
+per-shape within the link; `shapeCount` is the real length. An `ARTICULATION_LINK` query is not
+guaranteed to be in `linkPath` order. `linkInboundJoint` is the inbound joint prim of that
+same slot. A 0 inside `linkCount` means the link has no inbound joint, which is slot 0. A fixed
+joint between two links is included. `dofJointPath` skips zero-DOF joints, so it is not this map.
+For unique joint leaf names, the legacy joint-name list is the leaf of each non-zero slot, in order. `dofAxisKind` uses the same order and
+padding as `dofJointPath` and stores the PhysX joint-frame axis id, not a USD axis token and not the
+unlocked-axis ordinal in `dofAxisIndex`. A revolute about Y is 0 and a prismatic along Y is 3. A
+locked twist leaves swing1 as kind 1 and ordinal 0. `dofJointType` is the PhysX joint type in those
+slots: 1 prismatic, 2 revolute, 3 revolute unwrapped, 4 spherical. A 0 past `dofCount` is padding.
+For unique joint leaf names, the legacy DOF name is the leaf of `dofJointPath`, plus `:` and `dofAxisKind`, only when the type is
+spherical. Legacy joint and DOF names disambiguate colliding joint leaves with numeric suffixes; use full prim paths for identity. Tendon identity is the
+root prim plus the multi-apply instance name (`fixedTendonRoot` / `fixedTendonInstance`, and the
+spatial pair). Slot T is the index `getFixedTendons` / `getSpatialTendons` already uses. A root prim
+alone is not unique, and that index is not database order. `dofCount`, `linkCount`,
+`fixedTendonCount`, and `spatialTendonCount` are the real lengths. Entries past those counts are
+padding; a 0 inside the count is a real value.
 
 ## Articulation joints — DOFs
 
-Articulation joints (`ARTICULATION_JOINT`) emit an **array** group with one tensor per joint prim. Each
-tensor has **one row per unlocked axis**, in `PxArticulationAxis` order — one value per row
-(`dtype.lanes` is 1), except `jointLimit`, whose row is the `(low, high)` pair (`dtype.lanes` is 2).
-Don't confuse the axis count (the tensor's shape) with lanes. A read may ask for state, control, or
-properties in any combination. Rotational axes carry the joint's body-order sign; angular DOF
-quantities are in **degrees** (as USD-authored).
+Articulation joints (`ARTICULATION_JOINT`) emit a **fixed** group with **one row per unlocked axis**:
+one tensor whose rows are every joint's DOFs. A joint's rows are consecutive, in `PxArticulationAxis`
+order, and `prims.list` names each row's joint, so a joint's path repeats once per axis and
+`prims.count` is the row count. Each row is one value (`dtype.lanes` is 1), except `jointLimit`, whose
+row is the `(low, high)` pair (`dtype.lanes` is 2). Don't confuse the axis count (rows) with lanes. A
+read may ask for state, control, or properties in any combination. Rotational axes carry the joint's
+body-order sign; angular DOF quantities are in **degrees** (as USD-authored).
 
-> **Note.** A requested attribute produces **one** array group whose `tensors[i]` holds joint *i*'s
-> axis values — *not* one group per joint. Code that reads `tensors[0]` and advances to the next
-> group sees only the first joint, and does so silently on a single-joint scene.
+> **Note.** A requested attribute produces **one** group with **one** tensor over every joint's DOFs —
+> *not* one group or one tensor per joint, so a consumer gets one array however many joints the read
+> covers. To key values by joint, take each run of equal paths in the prim list as one joint: joint
+> *j*'s values start at the row where its path first appears. The rows follow the runtime's joint
+> order, not an articulation's DOF order: the *k*-th row of a joint's run is the DOF whose
+> `dofJointPath` entry is that joint and whose `dofAxisIndex` is *k*, which places it among the
+> articulation's DOFs.
+
+This layout is chosen for speed, not to match ovstage's one array per joint prim. To hand joint values
+to ovstage, regroup the group per joint with `ovphysx_create_joint_arrays_from_read_group` (C,
+`<ovphysx/ovphysx_utils.h>`) or `ovphysx.utils.split_joint_group` (Python): one view per joint over the
+same memory and a path list naming each joint once, with nothing copied.
 
 State / control (device on DirectGPU):
 
@@ -232,6 +285,9 @@ Properties (authoring inputs — **host-resident even on DirectGPU**):
 | `jointVelocityDependentResistance` | envelope resistance per rate | f32 × 1 | effort/rate |
 | `jointDriveType` | 0 none / 1 force / 2 accel | u8 × 1 | enum |
 | `physxPointer` | borrowed `PxArticulationJointReducedCoordinate` address | u64 × 1 | — |
+
+Unlike the DOF columns, `physxPointer` emits a **fixed**, host-resident group with one row per
+matched joint, including fixed (zero-DOF) joints. Its prim list supplies those joint identities.
 
 `jointLimit` is reported as the authored `(lower, upper)` pair, in order, regardless of the joint's
 body order — unlike `jointPosition`, which negates when `body0` is the child.
@@ -324,6 +380,9 @@ Length, force and torque follow the [stage's units](data_model.md#units).
 Deformable volumes / surfaces (`DEFORMABLE_VOLUME`, `DEFORMABLE_SURFACE`) emit an **array** group with one tensor per sim-mesh prim. **GPU-only** — with no CUDA context the read emits no
 deformable groups.
 
+> **Note.** A body's skinned render meshes are not in these groups. Read them as
+> `DEFORMABLE_SKIN_MESH`, see [Deformable skin meshes](#deformable-skin-meshes).
+
 | Attribute | Meaning | dtype × lanes | Frame | Residency | Applies to |
 | --- | --- | --- | --- | --- | --- |
 | `points` | current nodal positions | f32 × 3 | **sim-mesh-local** | device | volume + surface |
@@ -337,14 +396,27 @@ A surface body's simulation mesh *is* its collision mesh, so it has no separate
 `collisionElementIndices` — discovery omits it for surfaces, and a surface query for it returns no
 group.
 
-`kinematicTarget` is served **only for bodies actually being driven** (through
-`setKinematicTargetBufferD`); an undriven body contributes no tensor, so its group covers a subset of
-the `points` prims. The `.w` lane is an active-flag with **inverted** polarity: `w == 0` drives the
-node to its `xyz` target, `w != 0` leaves it free.
+`kinematicTarget` is served **for the bodies a kinematic-target write session has set up** (through
+`setKinematicTargetBufferD`); a body no such session has covered contributes no tensor, so its group
+covers a subset of the `points` prims. A node never pinned reads `w = 1` at the position it had when
+set up, or at the last target written to it. The `.w` lane is an active-flag with **inverted**
+polarity: `w == 0` drives the node to its `xyz` target, `w != 0` leaves it free.
 
 > **Note.** `points` and `restPoints` share the sim-mesh-local frame (their difference is
 > meaningful), but `velocities` is in **world** space. Do not difference `points` against a
 > time-integrated `velocities`.
+
+## Deformable skin meshes
+
+Deformable skin meshes (`DEFORMABLE_SKIN_MESH`) emit an **array** group with one tensor per skin mesh
+prim, the render meshes skinned to a volume or surface body after every step. **GPU-only.**
+
+| Attribute | Meaning | dtype × lanes | Frame | Residency |
+| --- | --- | --- | --- | --- |
+| `points` | skinned vertex positions | f32 × 3 | **skin-mesh-local** | device |
+
+The column is **read-only** because skinning rewrites it every step. To move a skin mesh, write the
+owning body's `points`. `ACTIVE` scope follows the owning body.
 
 ## Particle sets
 
@@ -361,8 +433,10 @@ discovery advertises only `points`. Requesting both spellings is a duplicate and
 
 ## Fixed / spatial tendons
 
-Fixed / spatial tendons (`FIXED_TENDON`, `SPATIAL_TENDON`) emit a **fixed** group with one row per tendon-root prim. Authoring values, but **device-resident on GPU** /
-host on CPU.
+Fixed / spatial tendons (`FIXED_TENDON`, `SPATIAL_TENDON`) emit a **fixed** group with one row per tendon.
+A prim that roots several tendons repeats. Property columns are device-resident on GPU and host on CPU.
+`tendonInstance` is host-resident on every device. Pair that token with the row prim to match
+`fixedTendonInstance` or `spatialTendonInstance`. The row order is database order, not the PhysX tendon index.
 
 | Attribute | Meaning | dtype × lanes | Fixed | Spatial |
 |---|---|---|---|---|
@@ -372,6 +446,7 @@ host on CPU.
 | `tendonOffset` | offset | f32 × 1 | yes | yes |
 | `tendonLimit` | (low, high) length limit | f32 × 2 | yes | — |
 | `tendonRestLength` | rest length | f32 × 1 | yes | — |
+| `tendonInstance` | multi-apply instance token | u64 × 1, host | yes | yes |
 
 ## Deformable materials
 
@@ -419,7 +494,7 @@ The simulated body state is not delayed.
 
 In C, pass `&OVPHYSX_NAME_DEBUG_*`. In Python, pass the string names above. With a stage
 attached, each returned group's attribute token resolves to that name. With no stage the
-token is 0, because there is no path dictionary to intern it. A token-only read then fails.
+token is `OVX_INVALID_TOKEN`, because there is no path dictionary to intern it. A token-only read then fails.
 
 ## Contact sensors
 
@@ -428,7 +503,7 @@ Contact sensors (`CONTACT_SENSOR`) include rigid bodies and articulation links c
 dynamics with CPU readback, each collider carrying the schema is also a sensor. A body row aggregates
 all of its shapes' contacts and each collider row reads only its own shape's, so the two **overlap**:
 do not sum net forces or count contacts/events across a body and its own colliders, or they double-count.
-Collider rows are host-only — a DirectGPU scene enumerates only reporting bodies (a selection naming
+Separate child-collider rows are host-only — a DirectGPU scene enumerates only reporting bodies (a selection naming
 only a separate child collider discovers no rows there). Every attribute is **read-only** and describes
 the last step; each scene's sensors come back as
 their own groups, reduced with that scene's step dt. Three query forms select them — the whole set
@@ -544,7 +619,8 @@ every pair the sensor is in, whatever the other body:
 | `rawContactSeparation` | per point: its separation | f32 × 1 | — | length | device |
 | `rawContactOtherBody` | per point: the other body's prim | u64 prim handle | — | — | device |
 
-**Events** — **array** groups, one array per sensor, on every query form over a **CPU scene only**:
+**Events** — **array** groups, one array per sensor, on every query form on **CPU simulation or GPU
+dynamics with CPU readback**:
 each contact-report pair the sensor is a side of — found, persisting or lost — as seen from the sensor,
 in report order. A pair between two sensors appears under each.
 
@@ -579,7 +655,7 @@ How to read these values:
   scene — negated when the sensor is the pair's second body, and normals are never flipped. So
   `force × normal` is the force on the sensor.
 - **Identities** are prim-path handles interned in the attached Stage's dictionary; obtain it through
-  `stage->vtable->get_path_dictionary(stage->context)` in C and resolve through the ovx path-dictionary API,
+  `ovstage_get_path_dictionary(stage)` in C and resolve through the ovx path-dictionary API,
   or use `ovstage.PathDictionary.path_to_string` in Python. An
   identity with no prim reads 0.
 - **Exact sizing.** Each array holds the step's elements — no capacity, no truncation. A sensor with no

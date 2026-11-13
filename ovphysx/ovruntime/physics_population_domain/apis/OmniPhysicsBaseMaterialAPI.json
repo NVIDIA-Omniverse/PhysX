@@ -1,0 +1,101 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "OmniPhysicsBaseMaterialAPI",
+  "title": "OmniPhysicsBaseMaterialAPI (deformable material friction and density)",
+  "summary": "Friction and density of an OmniPhysics deformable material. Read on a material the walker enumerates through OmniPhysicsDeformableMaterialAPI or OmniPhysicsSurfaceDeformableMaterialAPI (USD lists this API as their built-in) and on the material bound to a PhysicsScene, in both cases only when OmniPhysicsBaseMaterialAPI is listed in usd-schemas.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "Material"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "columns": [
+    {
+      "name": "omniphysics:density",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": -1.0,
+      "absent": "-1.0, the material descriptor's unset sentinel: a bound body without omniphysics:mass gets the default density. The raw fallback 0.0 reads as unset too, so writing it literally is harmless.",
+      "raw_fallback_diverges": false,
+      "sentinel": "-1.0; any value <= 0 is treated as unset by the deformable mass computation, which then uses 1000 kg/m^3 (volume) or 100 kg/m^3 (surface) converted to stage units.",
+      "units": "mass/length^3",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceDeformable.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXDeformablePropertiesUpdate.cpp"
+      ],
+      "notes": "Not a PhysX material property; it lives on the runtime's own deformable material record and only feeds the per-vertex masses of bodies bound to this material. Re-read on change, which recomputes those masses."
+    },
+    {
+      "name": "omniphysics:staticFriction",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0 (the material descriptor's default). The value is never used: a PhysX deformable material has no static friction.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXDeformablePropertiesUpdate.cpp"
+      ],
+      "notes": "A change only logs 'Static friction is not supported on deformable bodies'."
+    },
+    {
+      "name": "omniphysics:dynamicFriction",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0, frictionless, on a material the walker enumerates. The material bound to the PhysicsScene, which also becomes the scene's default deformable material, starts from the consumer default instead: 0.25.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterface.cpp",
+        "source/omni.physx/plugins/usdLoad/Material.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXDeformablePropertiesUpdate.cpp"
+      ],
+      "notes": "Re-read on change and applied as the PxDeformableMaterial dynamic friction."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "OmniPhysicsDeformableMaterialAPI",
+      "rule": "A material prim becomes a deformable material only through OmniPhysicsDeformableMaterialAPI or OmniPhysicsSurfaceDeformableMaterialAPI. With this API alone only a material bound to a PhysicsScene is read, into the scene's default deformable materials."
+    }
+  ]
+}

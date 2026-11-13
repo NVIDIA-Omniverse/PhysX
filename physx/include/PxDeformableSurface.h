@@ -42,9 +42,10 @@ The current limit is 1'048'575.
 /**
 \brief The maximum number of deformable surfaces supported in a scene
 
-The current limit is 4095.
+The current limit is 65'535. A removed deformable surface counts toward the limit until the next simulation
+step completes.
 */
-#define PX_MAX_NB_DEFORMABLE_SURFACE 0xfff
+#define PX_MAX_NB_DEFORMABLE_SURFACE 0xffff
 
 /**
 \brief Represents a deformable surface

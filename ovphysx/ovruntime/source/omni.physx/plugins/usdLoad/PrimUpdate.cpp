@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-PARSE-FEED-006
+ * @covers AC-7
+ */
+
 // @implements REQ-REPLICATE-002
 // @covers AC-6
 
@@ -64,6 +68,8 @@
  */
 
 #include <atomic>
+#include <internal/InternalActor.h>
+#include <unordered_map>
 #include <cmath>
 
 #include <carb/Types.h>
@@ -379,7 +385,7 @@ void movePointInstancer(AttachedStage& attachedStage, omni::physics::parse::Obje
 
     std::vector<omni::physics::parse::ObjectKey> targets;
     internal::getRelationshipValue(attachedStage, key, tok.prototypes, targets);
-    std::vector<ObjectIdMap::const_iterator> targetEntries;
+    std::vector<std::unordered_map<uint32_t, ObjectId>> targetEntries;
 
     std::vector<int32_t> indices;
     std::vector<carb::Float3> positions;
@@ -417,7 +423,15 @@ void movePointInstancer(AttachedStage& attachedStage, omni::physics::parse::Obje
             structChange = true;
             break;
         }
-        targetEntries.push_back(entries->begin());
+        std::unordered_map<uint32_t, ObjectId> instances;
+        for (const ObjectIdMap::value_type& entry : *entries)
+        {
+            const internal::InternalActor* actor = static_cast<const internal::InternalActor*>(
+                attachedStage.getInternalPhysXDatabase().getInternalTypedRecord(ePTActor, entry.second));
+            if (actor && actor->mInstanceKey == key)
+                instances.emplace(actor->mInstanceIndex, entry.second);
+        }
+        targetEntries.push_back(std::move(instances));
     }
 
     if (!structChange)
@@ -446,14 +460,16 @@ void movePointInstancer(AttachedStage& attachedStage, omni::physics::parse::Obje
                 fcTransform.position = { float(transfPos.x), float(transfPos.y), float(transfPos.z) };
                 fcTransform.orientation = toFloat4(transfOrient);
 
-                ObjectIdMap::const_iterator& it = targetEntries[indices[i]];
+                const std::unordered_map<uint32_t, ObjectId>& instances = targetEntries[indices[i]];
+                const std::unordered_map<uint32_t, ObjectId>::const_iterator it = instances.find(uint32_t(i));
+                if (it == instances.end())
+                    continue; // inactive instance, or an actor owned by another instancer
                 if (!attachedStage.getPhysXPhysicsInterface()->updateTransform(attachedStage,
                     targets[indices[i]], it->second, fcTransform))
                 {
                     structChange = true;
                     break;
                 }
-                it++;
 
                 if (structChange)
                     break;
@@ -531,6 +547,13 @@ void PrimChangeMap::handleTransformChange(AttachedStage& attachedStage, omni::ph
                         if (resetXformOpStack)
                             return true;
 
+                        if (src->isA(childKey, tok.pointInstancerType))
+                        {
+                            movePointInstancer(attachedStage, childKey);
+                            // Instance actors are indexed by prototype keys. Do not
+                            // overwrite their poses by walking the prototype subtree.
+                            return true;
+                        }
                         if (isMovableBody(attachedStage, childKey))
                         {
                             moveBody(attachedStage, childKey);
@@ -615,7 +638,7 @@ bool checkForStructuralSchemaAPIChanges(AttachedStage& attachedStage, omni::phys
             }
             appliedCategories.push_back(eParticleSet);
         }
-        else if (apiSchema == tok.omniphysicsDeformableBodyAPI)
+        else if (apiSchema == tok.omniPhysicsDeformableBodyAPI)
         {
             if (!(categories & SchemaAPIFlag::eDeformableBodyAPI))
             {
@@ -623,7 +646,7 @@ bool checkForStructuralSchemaAPIChanges(AttachedStage& attachedStage, omni::phys
             }
             appliedCategories.push_back(eDeformableBody);
         }
-        else if (apiSchema == tok.OmniPhysicsSurfaceDeformableSimAPI)
+        else if (apiSchema == tok.omniPhysicsSurfaceDeformableSimAPI)
         {
             if (!(categories & SchemaAPIFlag::eSurfaceDeformableSimAPI))
             {
@@ -631,7 +654,7 @@ bool checkForStructuralSchemaAPIChanges(AttachedStage& attachedStage, omni::phys
             }
             appliedCategories.push_back(eSurfaceDeformableBody);
         }
-        else if (apiSchema == tok.OmniPhysicsVolumeDeformableSimAPI)
+        else if (apiSchema == tok.omniPhysicsVolumeDeformableSimAPI)
         {
             if (!(categories & SchemaAPIFlag::eVolumeDeformableSimAPI))
             {
@@ -659,7 +682,7 @@ bool checkForStructuralSchemaAPIChanges(AttachedStage& attachedStage, omni::phys
             }
 
             // NewtonMimicAPI is single-apply; add/remove is treated as structural change.
-            if (apiSchema == tok.NewtonMimicAPI)
+            if (apiSchema == tok.newtonMimicAPI)
             {
                 if (!(categories & SchemaAPIFlag::eNewtonMimicAPI))
                 {
@@ -808,7 +831,7 @@ void processNonstructuralSchemaAPIChanges(AttachedStage& attachedStage, omni::ph
                 }
             }
 
-            if (apiSchema == tok.NewtonMimicAPI)
+            if (apiSchema == tok.newtonMimicAPI)
             {
                 // note: adding is treated as structural change, thus no call to
                 // attachedStage.getPhysXPhysicsInterface()->changeSchemaAPI(attachedStage, key, SchemaAPIFlag::eNewtonMimicAPI, false);
@@ -1176,7 +1199,7 @@ void PrimChangeMap::processPostTransformVelocityChanges(AttachedStage& attachedS
 bool PrimUpdateMap::needsSceneReset(const AttachedStage& attachedStage, omni::physics::parse::ObjectKey key)
 {
     const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
-    return source && source->isA(key, attachedStage.getKnownTokens().physicsScene);
+    return source && source->isA(key, attachedStage.getKnownTokens().physicsSceneType);
 }
 
 void PrimUpdateMap::addPrim(const AttachedStage& attachedStage, omni::physics::parse::ObjectKey key)
@@ -1299,19 +1322,19 @@ void processChangeMap(AttachedStage& attachedStage, bool includeFlushChanges)
     attachedStage.getPrimChangeMap().clearMap(/*preserveQueuedProperties=*/true);
 }
 
-void flushBufferedChanges(AttachedStage& attachedStage, float currentTime)
+bool flushBufferedChanges(AttachedStage& attachedStage, float currentTime)
 {
     // No stage guard: nothing below reads USD, and this is the body of the public
     // IPhysxSimulation::flushChanges(), which was a silent no-op on a stageless attach.
 
     if (attachedStage.getPrimUpdateMap().isEmptyScene())
     {
-        attachedStage.getPrimUpdateMap().clearMap();
-        attachedStage.getPrimChangeMap().clearMap();
-
         // Rebuild using this attachment's copied exclusions. Replication is an explicit
         // operation after loading; callbacks never trigger a recursive attach/scan.
-        loadFromStage(attachedStage);
+        if (!loadFromStage(attachedStage))
+            return false;
+        attachedStage.getPrimUpdateMap().clearMap();
+        attachedStage.getPrimChangeMap().clearMap();
         attachedStage.getPrimUpdateMap().setEmptyScene(false);
     }
 
@@ -1328,7 +1351,10 @@ void flushBufferedChanges(AttachedStage& attachedStage, float currentTime)
         updateRoots.reserve(attachedStage.getPrimUpdateMap().getMap().size());
         for (const omni::physics::parse::ObjectKey primKey : attachedStage.getPrimUpdateMap().getMap())
             updateRoots.push_back(std::string(attachedStage.textFor(primKey)));
-        loadPhysicsFromPrimitive(attachedStage, updateRoots);
+        // A failed scan has not instantiated these roots. Retain them and the
+        // deferred property changes so the same update can retry after sealing.
+        if (!loadPhysicsFromPrimitive(attachedStage, updateRoots))
+            return false;
 
         // it is safe to allow updates again
         }
@@ -1337,6 +1363,8 @@ void flushBufferedChanges(AttachedStage& attachedStage, float currentTime)
     }
 
     processChangeMap(attachedStage, true);
+    attachedStage.consumeDrainedChanges();
+    return true;
 }
 
 void processUpdates(AttachedStage& attachedStage, float currentTime)

@@ -20,8 +20,9 @@ Systems capture, correlated with CUDA activity, which is what lets you attribute
 host-device transfers. Neither needs a rebuild and no backend is selected by
 default. Refer to [Profiling](../tutorials/profiling.md).
 
-Note that `ovphysx_step` only enqueues work: in a capture the simulation cost shows
-up under the matching wait, not the step.
+By default, `ovphysx_step` returns before simulation finishes. A profile shows
+submission time in `ovphysx_step` and blocking time in `ovphysx_wait_task`.
+Without a worker thread, the full step appears in `ovphysx_step`.
 
 ## Solver Iterations
 
@@ -68,10 +69,10 @@ is no scoped `GlobalConfigKey` for it.
 dispatcher limit, not the Carb pool size. With the default Carb dispatcher it
 caps how many PhysX tasks may run at once on that pool (effective concurrency
 is also bounded by `carb.tasking` `threadCount`). With `physxDispatcher=true`
-it is the size of PhysX's own dispatcher. `num_threads=0` means no extra
-PhysX dispatcher workers: those tasks run on the calling thread. For small
-scenes that is often faster. Set it before constructing the instance; it is
-not authored in USD:
+it is the size of PhysX's own dispatcher. `num_threads=0` creates no extra
+PhysX dispatcher workers. PhysX tasks then run on the thread that runs the step.
+For small scenes that is often faster. Set it before constructing the
+instance; it is not authored in USD:
 
 ```python
 from ovphysx import GlobalConfigKey, PhysX, set_global_config
@@ -81,12 +82,10 @@ physx = PhysX()
 ```
 
 `/plugins/carb.tasking.plugin/threadCount` and
-`/plugins/omni.tbb.globalcontrol/maxThreadCount` size the process-wide Carb
-and TBB pools. ovphysx treats these as startup-only settings and writes no
-count of its own, so an unconfigured pool sizes itself to the machine. TBB is
-not the PhysX CPU dispatcher. Run each pool-size experiment in a fresh process
-and pass the overrides to the first constructor through the legacy
-`PhysXConfig` carbonite path:
+`/plugins/omni.tbb.globalcontrol/maxThreadCount` set process-wide limits for
+two shared worker pools: Carbonite tasking and oneTBB (Threading Building
+Blocks). They do not set the PhysX dispatcher count. Configure them before the
+first instance, and test each pool size in a fresh process:
 
 ```python
 from ovphysx import PhysX, PhysXConfig
@@ -115,12 +114,30 @@ a tasking pool well above the logical CPU count measured faster than one
 sized at or below it, so treat that count as something to measure for your
 own workload rather than a value to minimize.
 
+By default, each ovphysx instance creates its own one-thread Carbonite pool for
+[queued API calls](../developer_guide.md#execution-model). It does not share
+workers with the PhysX dispatcher or the process-wide pools above. If Carbonite
+cannot create the worker, calls run synchronously. To disable the worker
+explicitly, set `ASYNC_EXECUTION` to false before creating the instance:
+
+```python
+from ovphysx import GlobalConfigKey, PhysX, set_global_config
+
+set_global_config(GlobalConfigKey.ASYNC_EXECUTION, False)
+physx = PhysX()
+```
+
 ## Stepping Cadence
 
 ovphysx steps explicitly through `step()` / `step_sync()`, so you control how often
 physics runs relative to any rendering or control loop — there is no Kit-style
 asynchronous scene-update mode to configure. Keep any per-step Python work light,
 since it runs inline with your loop and can become the bottleneck.
+
+## Creating Instances
+
+The first `attach_ovstage` or `clone` on a new worker may allocate memory.
+Reuse instances to avoid paying this startup cost repeatedly.
 
 ## Avoid Unintended Collision Overlap in RL Scenes
 

@@ -5,7 +5,7 @@
 # session read/write API (PhysX.read / PhysX.write).
 
 # @implements REQ-PYTHON-SAMPLE-001
-# @covers AC-1 AC-2
+# @covers AC-1 AC-2 AC-3
 
 # NOTE: This file is included verbatim in documentation via literalinclude.
 
@@ -45,6 +45,7 @@ _physx_schemas_registered = False
 
 def attach_scene(physx, usd_path, stage_name):
     import ovstage
+    from ovphysx.population import physics_population_descs
 
     if not ovstage.population.available():
         raise RuntimeError("ovstage population bridge is unavailable")
@@ -59,7 +60,7 @@ def attach_scene(physx, usd_path, stage_name):
     stage = ovstage.Stage(stage_name)
     ordinal = 1
     try:
-        ovstage.population.open_usd(stage, str(usd_path), ordinal=ordinal, domains=ovstage.PopulationDomain.ALL)
+        ovstage.population.open_usd_with_desc(stage, str(usd_path), ordinal=ordinal, time=ovstage.population.DEFAULT_TIME, descs=physics_population_descs(rendering=True))
         stage.advance_write_floor(ordinal=ordinal).wait()
         physx.wait_task(physx.attach_ovstage(stage, read_ordinal=ordinal))
         return stage
@@ -139,6 +140,10 @@ def main():
         initial_printed_position = None
         max_abs_position_delta = 0.0
         motion_tolerance = 1.0e-3
+        y_angle_count = 0
+        min_printed_y_deg = None
+        max_printed_y_deg = None
+        y_angle_tolerance_deg = 1.0e-3
 
         dt = 0.01
         for i in range(1000):
@@ -164,22 +169,43 @@ def main():
 
                 px, py, pz = position
                 qx, qy, qz, qw = displayed_pose[3:7]
+                # World-frame tip rotation about X and Y. Every revolute in this fixture is
+                # physics:axis = "Y", so rotation_x stays near zero while rotation_y shows the drive.
                 roll_x_rad = math.atan2(
                     2.0 * (qw * qx + qy * qz), 1.0 - 2.0 * (qx * qx + qy * qy)
                 )
                 deg_x = roll_x_rad * 180.0 / math.pi
+                sin_y = max(-1.0, min(1.0, 2.0 * (qw * qy - qz * qx)))
+                deg_y = math.asin(sin_y) * 180.0 / math.pi
+                if not math.isfinite(deg_y):
+                    raise RuntimeError(
+                        f"Selected link {link_index_to_print} has a non-finite rotation_y at step {i}: {deg_y}"
+                    )
+                if min_printed_y_deg is None:
+                    min_printed_y_deg = deg_y
+                    max_printed_y_deg = deg_y
+                else:
+                    min_printed_y_deg = min(min_printed_y_deg, deg_y)
+                    max_printed_y_deg = max(max_printed_y_deg, deg_y)
+                y_angle_count += 1
 
                 print(
                     f"  Step {i:4d}, link {link_index_to_print}: "
                     f"pos=({px:.6f}, {py:.6f}, {pz:.6f}), "
                     f"quat(xyzw)=({qx:.6f}, {qy:.6f}, {qz:.6f}, {qw:.6f}), "
-                    f"rotation_x={deg_x:.2f} deg"
+                    f"rotation_x={deg_x:.2f} deg, rotation_y={deg_y:.2f} deg"
                 )
 
         if max_abs_position_delta <= motion_tolerance:
             raise RuntimeError(
                 f"Printed link {link_index_to_print} max position delta {max_abs_position_delta:.6f} "
                 f"did not exceed motion tolerance {motion_tolerance:.6f}"
+            )
+        y_angle_span = 0.0 if min_printed_y_deg is None else max_printed_y_deg - min_printed_y_deg
+        if y_angle_count < 2 or y_angle_span <= y_angle_tolerance_deg:
+            raise RuntimeError(
+                f"Printed rotation_y span {y_angle_span:.6f} deg across {y_angle_count} checkpoints "
+                f"did not exceed {y_angle_tolerance_deg:.6f} deg"
             )
 
         print(

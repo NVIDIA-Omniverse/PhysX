@@ -17,10 +17,11 @@ from ovphysx_companion.native import CompanionError,Status
 @pytest.fixture
 def vehicle_stage(physics):
     import ovstage
+    from ovphysx.population import physics_population_desc
     from ovphysx_companion.vehicle import population_desc
     stage=ovstage.Stage('native-vehicle')
     ovstage.population.open_usd_with_desc(stage,str(Path(__file__).resolve().parents[1]/'samples/scenes/vehicle.usda'),
-        ordinal=1,time=float("nan"),descs=[population_desc()])
+        ordinal=1,time=float("nan"),descs=[physics_population_desc(),population_desc()])
     stage.advance_write_floor(ordinal=1).wait()
     yield stage
     stage.destroy()
@@ -119,9 +120,10 @@ def test_vehicle_math_bounds_frames_and_units(physics):
 
 def test_vehicle_peer_isolation(physics,vehicle_stage):
     import ovstage
+    from ovphysx.population import physics_population_desc
     from ovphysx_companion.vehicle import population_desc
     peer=ovstage.Stage('vehicle-peer')
-    ovstage.population.open_usd_with_desc(peer,str(Path(__file__).resolve().parents[1]/'samples/scenes/vehicle.usda'),ordinal=1,time=float("nan"),descs=[population_desc()])
+    ovstage.population.open_usd_with_desc(peer,str(Path(__file__).resolve().parents[1]/'samples/scenes/vehicle.usda'),ordinal=1,time=float("nan"),descs=[physics_population_desc(),population_desc()])
     peer.advance_write_floor(ordinal=1).wait()
     try:
         with PreviewSession(physics,vehicle_stage,read_ordinal=1) as first,PreviewSession(physics,peer,read_ordinal=1) as second:
@@ -145,6 +147,7 @@ def test_vehicle_sample_and_stopped_math_in_workers():
 
 def test_vehicle_forward_speed_uses_world_center_of_mass_frame(physics,tmp_path):
     import ovstage
+    from ovphysx.population import physics_population_desc
     from ovphysx_companion.vehicle import population_desc
     from ovphysx_companion.inspection import Inspector
     source=Path(__file__).resolve().parents[1]/'samples/scenes/vehicle.usda'
@@ -153,7 +156,7 @@ def test_vehicle_forward_speed_uses_world_center_of_mass_frame(physics,tmp_path)
     scene=tmp_path/'vehicle-com.usda';scene.write_text(text)
     stage=ovstage.Stage('vehicle-com-frame')
     try:
-        ovstage.population.open_usd_with_desc(stage,str(scene),ordinal=1,time=float('nan'),descs=[population_desc()])
+        ovstage.population.open_usd_with_desc(stage,str(scene),ordinal=1,time=float('nan'),descs=[physics_population_desc(),population_desc()])
         stage.advance_write_floor(ordinal=1).wait()
         with PreviewSession(physics,stage,read_ordinal=1) as preview:
             preview.step(.001)
@@ -171,3 +174,37 @@ def test_vehicle_forward_speed_uses_world_center_of_mass_frame(physics,tmp_path)
                 inputs=controller.pre_step(VehicleInput(throttle=.8),dt=.01).inputs
                 assert inputs.throttle==0 and inputs.brake==pytest.approx(.8)
     finally:stage.destroy()
+
+
+def test_vehicle_shipped_tank_is_unavailable_and_standard_drives(physics):
+    import ovstage
+    from ovphysx.population import physics_population_descs
+    from ovphysx_companion.vehicle import _api
+
+    scene = Path(__file__).resolve().parents[2] / "tests/data/vehicle_read_write.usda"
+    stage = ovstage.Stage("companion-tank-refusal")
+    try:
+        ovstage.population.open_usd_with_desc(stage, str(scene), ordinal=1, time=ovstage.population.DEFAULT_TIME, descs=physics_population_descs(rendering=True))
+        stage.advance_write_floor(ordinal=1).wait()
+        with PreviewSession(physics, stage, read_ordinal=1) as preview:
+            api = _api(physics._lib)
+            command = _Command()
+            output = _State()
+            for path in (b"/World/Tank", b"/World/Raw"):
+                C.memset(C.byref(output), 0xa5, C.sizeof(output))
+                before = bytes(output)
+                assert api.execute(
+                    preview.identity.attachment, path, C.byref(command), C.sizeof(command),
+                    C.byref(output), C.sizeof(output),
+                ) == Status.UNAVAILABLE
+                assert bytes(output) == before
+            with VehicleController(preview, "/World/Basic") as basic, \
+                    VehicleController(preview, "/World/Standard") as standard:
+                basic.pre_step(VehicleInput(1), dt=1/60)
+                standard.pre_step(VehicleInput(1), dt=1/60)
+                for _ in range(120):
+                    preview.step(1/60)
+                assert basic.state.forward_velocity > 1
+                assert standard.state.forward_velocity > 1
+    finally:
+        stage.destroy()

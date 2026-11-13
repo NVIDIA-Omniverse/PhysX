@@ -13,6 +13,9 @@ namespace physx
 {
 class PxShape;
 class PxsContactManagerOutputIterator;
+#if PX_SUPPORT_OMNI_PVD
+class PxsSimulationController;
+#endif
 
 namespace Sc
 {
@@ -73,8 +76,15 @@ namespace Sc
 				PxActor*					mActor1;
 			};
 
-			ContactIterator() {}
+			ContactIterator() : mCurrent(NULL), mLast(NULL), mOffset(0), mOutputs(NULL)
+#if PX_SUPPORT_OMNI_PVD
+				, mOvdController(NULL), mOvdReadbackError(false)
+#endif
+			{}
 			explicit ContactIterator(ElementSimInteraction** first, ElementSimInteraction** last, PxsContactManagerOutputIterator& outputs): mCurrent(first), mLast(last), mOffset(0), mOutputs(&outputs)
+#if PX_SUPPORT_OMNI_PVD
+				, mOvdController(NULL), mOvdReadbackError(false)
+#endif
 			{
 				if ((!first) || (!last) || (first == last))
 				{
@@ -82,16 +92,37 @@ namespace Sc
 					mLast = NULL;
 				}
 			}
-			Pair* getNextPair();			
+			Pair* getNextPair();
+#if PX_SUPPORT_OMNI_PVD
+			void enableOmniPvdReadback(PxsSimulationController& controller);
+			bool hadOmniPvdReadbackError() const { return mOvdReadbackError; }
+#endif
 		private:
 			ElementSimInteraction**			mCurrent;
 			ElementSimInteraction**			mLast;
 			Pair							mCurrentPair;
 			PxU32							mOffset;
 			PxsContactManagerOutputIterator* mOutputs;
+#if PX_SUPPORT_OMNI_PVD
+			PxsSimulationController* mOvdController;
+			bool mOvdReadbackError;
+#endif
 
 	private:
 	};
+
+#if PX_SUPPORT_OMNI_PVD
+	// Visits overlap pairs that were deactivated while touching, such as a body asleep on the ground.
+	class SleepingTouchIterator
+	{
+	public:
+		SleepingTouchIterator(ElementSimInteraction** first, ElementSimInteraction** last) : mCurrent(first), mLast(last) {}
+		bool getNextPair(PxActor*& actor0, PxActor*& actor1);
+	private:
+		ElementSimInteraction** mCurrent;
+		ElementSimInteraction** mLast;
+	};
+#endif
 
 }  // namespace Sc
 

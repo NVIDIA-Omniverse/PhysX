@@ -5,7 +5,7 @@
 
 # Dynamic rigid body on a Sphere
 
-Convenience composition: one Sphere prim that is both the body and its only collider. Owns no columns; everything comes from the listed components.
+Convenience composition: one Sphere [prim](glossary.md#prim) that is both the body and its only collider. Owns no columns; everything comes from the listed components.
 
 - **Type:** [`Sphere`](Sphere.md)
 - **Required APIs:** [`PhysicsRigidBodyAPI`](PhysicsRigidBodyAPI.md), [`PhysicsCollisionAPI`](PhysicsCollisionAPI.md)

@@ -16,7 +16,7 @@ from pathlib import Path
 import ovphysx_companion
 from ovphysx_companion.mass import Result
 from ovphysx_companion.native import MassProperties
-from ovphysx_companion._worker import run_worker, write_reply
+from ovphysx_companion._worker import load_library, run_worker, write_reply
 
 
 def compute_in_worker(request):
@@ -46,12 +46,11 @@ def run():
     return stage
 
 def worker():
-    import ctypes
     from ovphysx_companion.mass import Shape, Overrides, Request, compute_mass_properties
     value=json.load(sys.stdin)
     value['shapes']=tuple(Shape(**(shape|{'overrides':Overrides(**shape['overrides'])})) for shape in value['shapes'])
     value['overrides']=Overrides(**value['overrides'])
-    result=compute_mass_properties(ctypes.CDLL(os.environ['OVPHYSX_LIB']),Request(**value))
+    result=compute_mass_properties(load_library(),Request(**value))
     write_reply(asdict(result.properties))
 
 

@@ -20,6 +20,8 @@ replacement, concurrency, and reentrant-call conditions.
 ## When
 
 - Levels are set through DEFAULT, the four delivery levels, and NONE.
+- Python `set_log_level` receives negative, above-NONE, and oversized integers
+  that would wrap to ERROR through a 32-bit unsigned argument.
 - `omni_physx_sdk` test records, a real `ovphysx_internal` invalid-path record,
   and a real `omni.physx` runtime warning are emitted at visible levels and
   while the ovphysx source level is NONE.
@@ -32,6 +34,12 @@ replacement, concurrency, and reentrant-call conditions.
 - A terminal shutdown is started while an accepted callback and a concurrent
   replacement transition are blocked.
 - Shutdown is also called while a live handle remains for explicit destruction.
+  Its accepted callback attempts destruction and reads retained attach identity.
+- In `GlobalLifecycle.LiveInstanceShutdownDrainDoesNotHoldInstanceMapLock`,
+  destroy a never-issued handle from another client while the callback remains
+  parked. This path takes exclusive instance-map access and returns before any
+  teardown or logging. Assert the documented `ERROR` result for the
+  unregistered handle.
 - `GlobalLifecycle.CallbackAfterLiveShutdownWaitsForNextBootstrap` installs a new
   callback after live-handle shutdown. Test records are emitted before and after
   the next bootstrap; only the latter reach the pending callback.
@@ -46,6 +54,9 @@ replacement, concurrency, and reentrant-call conditions.
 ## Then
 
 - Enum values and delivery match AC-1 and AC-2.
+- Invalid Python levels raise `ValueError` naming the log-level range and leave
+  the previous threshold unchanged (`test_invalid_log_level_preserves_threshold`,
+  REQ AC-1). Validation occurs before native integer narrowing.
 - The ovphysx source level suppresses all three named target sources at NONE and
   restores their configured delivery without changing Carbonite's
   process-global threshold or enablement. A host-global disable remains in
@@ -67,8 +78,13 @@ replacement, concurrency, and reentrant-call conditions.
   satisfying AC-3 and the shutdown half of AC-6.
 - Live-handle shutdown also disables and drains callback delivery before the
   retained handle is explicitly destroyed, pinning the callback/user-data
-  lifetime boundary in AC-3 and AC-6. Shutdown closes logger registration until
-  bootstrap, so a late replacement cannot attach to the retiring framework and
+  lifetime boundary in AC-3 and AC-6.
+  Callback destruction returns `INVALID_STATE` before transition admission;
+  `ovphysx_is_stage_attached` completes during the drain and the caller destroys the
+  handle after the callback finishes (REQ-CAPI-OMNIPVD-LATE-001 AC-11).
+  The never-issued destroy also completes before callback release, proving the
+  shutdown drain holds neither shared nor exclusive instance-map ownership.
+  Shutdown closes logger registration until bootstrap, so a late replacement cannot attach to the retiring framework and
   leave stale registration state for the next lifecycle. The live-handle regression
   checks this gate on both retained-framework and release-capable platforms.
 - A focused Linux debugger probe additionally installs a callback through the public
@@ -89,3 +105,13 @@ replacement, concurrency, and reentrant-call conditions.
   A process that attaches first at NONE and then at WARNING still emits that
   GPU-broadphase warning once -- a muted `WARN_ONCE` must not consume the latch.
   Synthetic production emitters are not used.
+
+
+## Retained-framework default output
+
+- Given default output disabled and a live instance retained across SDK shutdown,
+  change the preference while stopped, destroy the retained instance, then start
+  a new lifecycle and create two instances.
+- `test_default_output_preference_replayed_after_retained_framework_shutdown`
+  emits one warning/error pair. Enabled output contains exactly one of each;
+  disabled output contains neither (REQ AC-8).

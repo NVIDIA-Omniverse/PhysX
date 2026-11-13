@@ -12,11 +12,12 @@
  * @covers AC-3
  *
  * @implements REQ-ATTACH-EXECUTION-001
- * @covers AC-1 AC-2 AC-3 AC-4
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-6
  */
 
 #include "PhysXUpdate.h"
 #include "RuntimeExecution.h"
+#include "RuntimeCallbackStorage.h"
 #include "OmniPhysX.h"
 
 #include "internal/InternalScene.h"
@@ -48,6 +49,8 @@
 
 #include "utils/Profile.h"
 
+#include <atomic>
+#include <memory>
 #include <optional>
 #include <stdexcept>
 
@@ -788,23 +791,29 @@ RuntimeResult physXUpdateSceneNonRender(AttachHandle attach, uint64_t scenePath,
 
 namespace
 {
-carb::tasking::TaskStorageKey gCallbackStorage = carb::tasking::kInvalidTaskStorageKey;
+// @implements REQ-ATTACH-EXECUTION-001
+// @covers AC-4
+std::shared_ptr<RuntimeCallbackStorage> gCallbackStorage;
 thread_local RuntimeCallbackState* gNativeCallbackState = nullptr;
 
 RuntimeCallbackState* callbackState()
 {
-    carb::tasking::ITasking* tasking = carb::getCachedInterface<carb::tasking::ITasking>();
-    if (tasking->getTaskContext() != carb::tasking::kInvalidTaskContext)
-        return static_cast<RuntimeCallbackState*>(tasking->getTaskStorage(gCallbackStorage));
+    const std::shared_ptr<RuntimeCallbackStorage> storage =
+        std::atomic_load_explicit(&gCallbackStorage, std::memory_order_acquire);
+    if (!storage)
+        return gNativeCallbackState;
+    if (storage->tasking->getTaskContext() != carb::tasking::kInvalidTaskContext)
+        return static_cast<RuntimeCallbackState*>(storage->tasking->getTaskStorage(storage->key));
     return gNativeCallbackState;
 }
 
 void setCallbackState(RuntimeCallbackState* state)
 {
-    carb::tasking::ITasking* tasking = carb::getCachedInterface<carb::tasking::ITasking>();
-    if (tasking->getTaskContext() != carb::tasking::kInvalidTaskContext)
+    const std::shared_ptr<RuntimeCallbackStorage> storage =
+        std::atomic_load_explicit(&gCallbackStorage, std::memory_order_acquire);
+    if (storage && storage->tasking->getTaskContext() != carb::tasking::kInvalidTaskContext)
     {
-        if (!tasking->setTaskStorage(gCallbackStorage, state))
+        if (!storage->tasking->setTaskStorage(storage->key, state))
             std::terminate(); // Continuing without callback protection is unsafe.
     }
     else
@@ -814,17 +823,46 @@ void setCallbackState(RuntimeCallbackState* state)
 
 void initializeRuntimeCallbacks()
 {
-    CARB_ASSERT(gCallbackStorage == carb::tasking::kInvalidTaskStorageKey);
-    gCallbackStorage = carb::getCachedInterface<carb::tasking::ITasking>()->allocTaskStorage(nullptr);
-    if (gCallbackStorage == carb::tasking::kInvalidTaskStorageKey)
+    CARB_ASSERT(!std::atomic_load_explicit(&gCallbackStorage, std::memory_order_acquire));
+    carb::tasking::ITasking* tasking = carb::getCachedInterface<carb::tasking::ITasking>();
+    if (!tasking)
+        throw std::runtime_error("Unable to acquire runtime callback task storage interface");
+    const std::shared_ptr<RuntimeCallbackStorage> storage = std::make_shared<RuntimeCallbackStorage>(tasking);
+    storage->key = tasking->allocTaskStorage(nullptr);
+    if (storage->key == carb::tasking::kInvalidTaskStorageKey)
         throw std::runtime_error("Unable to allocate runtime callback task storage");
+    std::atomic_store_explicit(&gCallbackStorage, storage, std::memory_order_release);
 }
 
 void shutdownRuntimeCallbacks()
 {
-    // Runtime shutdown drains all owners and their callbacks before releasing this slot.
-    carb::getCachedInterface<carb::tasking::ITasking>()->freeTaskStorage(gCallbackStorage);
-    gCallbackStorage = carb::tasking::kInvalidTaskStorageKey;
+    // Owners/callbacks are drained before unpublishing. Wait for earlier
+    // frontend storage observations before allowing tasking to shut down.
+    const std::shared_ptr<RuntimeCallbackStorage> retired = std::atomic_exchange_explicit(
+        &gCallbackStorage, std::shared_ptr<RuntimeCallbackStorage>{}, std::memory_order_acq_rel);
+    retireRuntimeCallbackStorage(retired);
+}
+
+// Unlike callbackState(), this observation also runs outside the runtime lifetime.
+// Acquiring the cached interface here could start tasking before pool configuration
+// or return null after shutdown. Use only the pointer published with the callback
+// storage; live-runtime callback mutation keeps its existing accessor.
+bool runtimeCallbackActive() noexcept
+{
+    const std::shared_ptr<RuntimeCallbackStorage> storage =
+        std::atomic_load_explicit(&gCallbackStorage, std::memory_order_acquire);
+    return runtimeCallbackActive(storage ? storage->tasking->getTaskContext() : carb::tasking::kInvalidTaskContext);
+}
+
+bool runtimeCallbackActive(uint64_t taskContext) noexcept
+{
+    const std::shared_ptr<RuntimeCallbackStorage> storage =
+        std::atomic_load_explicit(&gCallbackStorage, std::memory_order_acquire);
+    if (!storage || taskContext == carb::tasking::kInvalidTaskContext)
+        return gNativeCallbackState != nullptr && gNativeCallbackState->depth != 0;
+    const RuntimeCallbackState* state =
+        static_cast<const RuntimeCallbackState*>(storage->tasking->getTaskStorage(storage->key));
+    return state != nullptr && state->depth != 0;
 }
 
 RuntimeCallbackScope::RuntimeCallbackScope(AttachHandle attach, bool preStep)
@@ -894,6 +932,11 @@ RuntimeAuthoringScope::~RuntimeAuthoringScope()
 }
 
 RuntimeExecutionScope::RuntimeExecutionScope(AttachHandle attach, bool allowPendingOwner, bool preStepForce)
+    : RuntimeExecutionScope(attach, allowPendingOwner, preStepForce, false)
+{
+}
+
+RuntimeExecutionScope::RuntimeExecutionScope(AttachHandle attach, bool allowPendingOwner, bool preStepForce, bool output)
 {
     if (getRuntimeCallbackDepth() != 0)
     {
@@ -903,7 +946,16 @@ RuntimeExecutionScope::RuntimeExecutionScope(AttachHandle attach, bool allowPend
         return;
     }
     if (attach == omni::physics::kNoAttach)
+    {
+        // No scene or configuration state is accessed by unattached debug output.
+        // Its host snapshots and settings already have their own storage locks.
+        if (output)
+        {
+            mAllowed = true;
+            return;
+        }
         mState = &getRuntimeExecutionState();
+    }
     else
     {
         mOwner = UsdLoad::getUsdLoad()->acquireAttachment(attach);

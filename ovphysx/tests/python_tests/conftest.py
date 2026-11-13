@@ -25,6 +25,9 @@ from datetime import datetime
 
 import pytest
 
+# Re-arms the hung-test watchdog after a failure (REQ-PACKAGING-TESTHANG-001 AC-4).
+pytest_plugins = ("_watchdog_rearm",)
+
 # Exercise the application-side schema recipe, including fresh subprocesses.
 _schema_samples = os.path.join(os.path.dirname(__file__), "..", "python_samples")
 sys.path.insert(0, _schema_samples)
@@ -723,6 +726,33 @@ def native_log_callback_factory():
     return wrap
 
 
+@pytest.fixture(scope="session", autouse=True)
+def _test_execution_mode():
+    """Apply OVPHYSX_TEST_EXECUTION ("queue" or "noworker") before this process creates an instance.
+
+    The library reads no environment for it. "queue" reaches its private test hook here, so a
+    run covers the queued path of short calls the tests make on an idle instance; "noworker"
+    creates every instance without a worker thread (``GlobalConfigKey.ASYNC_EXECUTION``).
+    """
+    mode = os.environ.get("OVPHYSX_TEST_EXECUTION")
+    if not mode:
+        return
+    if mode == "noworker":
+        from ovphysx import GlobalConfigKey, set_global_config
+
+        set_global_config(GlobalConfigKey.ASYNC_EXECUTION, False)
+        return
+    import ctypes
+
+    from ovphysx import _bindings
+
+    hook = _bindings._lib["ovphysx_set_test_execution_for_test_internal"]
+    hook.argtypes = [ctypes.c_int]
+    hook.restype = ctypes.c_bool
+    if not hook({"queue": 1}.get(mode, -1)):
+        pytest.exit(f"OVPHYSX_TEST_EXECUTION must be queue or noworker, got {mode}", returncode=1)
+
+
 @pytest.fixture(scope="session")
 def _gpu_session_instance():
     """Session-wide GPU PhysX instance (internal).
@@ -776,28 +806,9 @@ def physx_sdk(_gpu_session_instance):
     Teardown is deliberately resilient: if a test leaves the instance
     with failed pending operations (e.g. error-path tests), the teardown
     drains and resets on a best-effort basis to prevent cascading failures.
+    A task failure the test left uncollected is reported once the instance is reset.
     """
+    from test_utils import reset_shared_instance
+
     yield _gpu_session_instance
-    try:
-        _gpu_session_instance.wait_all()
-    except RuntimeError:
-        pass
-    try:
-        from test_utils import destroy_ovstage_test_attachments
-
-        destroy_ovstage_test_attachments(_gpu_session_instance)
-    except Exception:
-        pass
-    try:
-        _gpu_session_instance.detach_ovstage()
-        _gpu_session_instance.wait_all()
-    except RuntimeError:
-        logging.getLogger(__name__).warning(
-            "physx_sdk teardown: detach_ovstage() failed -- instance may be degraded for subsequent tests"
-        )
-    try:
-        from test_utils import destroy_ovstage_test_attachments
-
-        destroy_ovstage_test_attachments(_gpu_session_instance)
-    except Exception:
-        pass
+    reset_shared_instance(_gpu_session_instance)

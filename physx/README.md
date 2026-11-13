@@ -3,7 +3,8 @@
 Copyright (c) 2008-2026 NVIDIA Corporation & Affiliates. All rights reserved.
 
 PhysX is licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
-The complete license is provided in `LICENSE.md`.
+The complete license is provided in [LICENSE.md](LICENSE.md).
+Third-party code retains its respective terms; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## Introduction
 
@@ -28,7 +29,8 @@ Note that the PhysX distribution downloads binary content, such as the PhysX GPU
 ## Acknowledgements
 
 This depot references packages of third party open source software copyright their respective owners.
-For copyright details, please refer to the license files included in the packages.
+For downloaded packages, refer to the license files included in those packages.
+For the bundled GLEW, Mesa, and Khronos code, see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 | Software                  | Copyright Holder                                                                    | Package                          |
 |---------------------------|-------------------------------------------------------------------------------------|----------------------------------|

@@ -100,12 +100,13 @@ def verify():
     print('tools-exit-clean')
 atexit.register(verify)
 import ovstage, ovphysx, sys
+from ovphysx.population import physics_population_descs
 from ovphysx_companion.schemas import physx_schema_paths
 schemas=[str(p) for p in physx_schema_paths()]
 if ovphysx.newton_schema_root():schemas.append(str(ovphysx.newton_schema_root()))
 ovstage.population.register_usd_schemas(schemas)
 stage=ovstage.Stage('tools-exit')
-ovstage.population.open_usd(stage,sys.argv[1],ordinal=1,domains=ovstage.PopulationDomain.ALL)
+ovstage.population.open_usd_with_desc(stage,sys.argv[1],ordinal=1,time=ovstage.population.DEFAULT_TIME,descs=physics_population_descs(rendering=True))
 stage.advance_write_floor(ordinal=1).wait()
 physics.wait_task(physics.attach_ovstage(stage,read_ordinal=1))
 session=ToolsSession(physics)

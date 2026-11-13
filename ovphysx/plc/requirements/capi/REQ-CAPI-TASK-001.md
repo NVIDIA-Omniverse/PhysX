@@ -36,6 +36,8 @@ Wait results own collected failure receipts and text.
   reject zero, rejected or wrong-owner receipts with `INVALID_ARGUMENT`, and
   return `NOT_FOUND` for never-issued or collected identities. Output is required
   and must be empty; nonempty reuse is rejected without overwriting ownership.
+  These receipt checks precede timed waiting for task completion; task waits do
+  not acquire runtime admission.
 - **AC-5: Retained causes.** Caller-owned wait results expose failed receipts,
   their count and the pending task, with ownership bookkeeping kept internal.
   Live wait results own `error_tasks` and error strings; returned fields must
@@ -49,8 +51,9 @@ Wait results own collected failure receipts and text.
 - **AC-6: Execution retirement.** Internal drains preserve uncollected failures,
   while otherwise-valid later work may proceed. Task identity and failure
   fallback storage are reserved before accepted work starts. Each instance tracks
-  at most one unfinished simulation, finalized through `fetchResults`; completed
-  inline operations need no execution event.
+  one running job, with later jobs queued in order. A step job performs simulation
+  and `fetchResults` before publishing its terminal outcome; waits collect that
+  outcome rather than finalizing a pending simulation themselves.
   Failures retain specific execution/finalization causes independently of log
   filtering. Custom application code runs directly after the relevant wait;
   it is not submitted as a task callback.
@@ -59,9 +62,22 @@ Wait results own collected failure receipts and text.
   and completed outcomes retryable. Collection commits only after result storage
   and retained-error ownership are ready. No C++ exception crosses these C APIs.
 - **AC-8: Readiness timeout.** Zero polls, `UINT64_MAX` waits indefinitely, and a
-  finite value bounds readiness, with ready-at-deadline winning. Finalization
-  may take longer. Unfinished timed-out tasks stay retryable. Calls remain
+  finite value bounds readiness, with ready-at-deadline winning. Outcome
+  collection and result allocation can extend total call duration. Unfinished timed-out tasks stay retryable. Calls remain
   externally serialized, including when the calling thread changes.
+- **AC-9: Job completion.** Queued tasks remain unfinished until their executor
+  publishes an outcome. Polls and finite waits never execute jobs and leave
+  unfinished outcomes collectible. An infinite native wait may execute unstarted
+  jobs through its target or wait-all cutoff; earlier outcomes remain uncollected
+  by a target-only wait. Carbonite-task waits suspend rather than run jobs.
+  `ovphysx_wait_all` reports the earliest unfinished task at timeout.
+  Takeover restrictions follow REQ-CAPI-EXECUTOR-001 AC-6.
+- **AC-10: Non-collecting status.** `ovphysx_query_task_status` reports `PENDING`
+  (queued, not started), `RUNNING` (executing, including simulation finalization), `SUCCEEDED` or `FAILED` (finished, not yet collected) and
+  `NOT_FOUND` (never issued or already collected). It never runs, finishes or
+  collects work. A null output or a zero, rejected or wrong-instance receipt
+  returns `INVALID_ARGUMENT`; an invalid instance returns `NOT_FOUND`; every failure
+  sets a non-null output to `NOT_FOUND`.
 
 ## Test References
 
@@ -69,6 +85,7 @@ Wait results own collected failure receipts and text.
 - [TEST-CAPI-TASK-002](../../tests/capi/TEST-CAPI-TASK-002.md)
 - [TEST-CAPI-TASK-003](../../tests/capi/TEST-CAPI-TASK-003.md)
 - [TEST-CAPI-TASK-004](../../tests/capi/TEST-CAPI-TASK-004.md)
+- [TEST-CAPI-TASK-005](../../tests/capi/TEST-CAPI-TASK-005.md)
 
 ## Code References
 
@@ -77,7 +94,8 @@ Wait results own collected failure receipts and text.
 - `ovphysx/src/ovphysx/ovphysx.cpp`: admission, drains, collection and lookup.
 - `ovphysx/src/include/internal/sdk/ovphysxSDK.hpp`: instance tracking and errors.
 - `ovphysx/src/include/internal/sdk/TaskContext.hpp`: task creation and outcome recording.
-- `ovphysx/src/include/internal/sdk/ovphysxAsyncWait.hpp`: readiness and shared-deadline helpers.
+- `ovphysx/src/include/internal/sdk/InstanceExecutor.hpp` and
+  `ovphysx/src/ovphysx/InstanceExecutor.cpp`: task table, worker-job outcomes and waits.
 - `ovphysx/include/ovphysx/experimental/ovphysx.hpp` and
   `ovphysx/src/ovphysx/PhysXWrapper.cpp`: receipt and move-only result wrappers.
 - `ovphysx/include/ovphysx/experimental/Helpers.hpp`: wait-result ownership and status.

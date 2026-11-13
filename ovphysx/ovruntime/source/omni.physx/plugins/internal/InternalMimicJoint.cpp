@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-CACHE-ATTACH-001
+// @covers AC-11
+
 #include <carb/logging/Log.h>
 
 #include <common/utilities/MemoryMacros.h>
@@ -132,11 +135,16 @@ InternalMimicJoint::InternalMimicJoint(InternalScene& internalScene,
 
 
 // Constructor used by replicator, it cant call the internalScene.addMimicJoint(*this);, this is not thread safe, will be called after creation
-InternalMimicJoint::InternalMimicJoint(InternalScene& internalScene, ::physx::PxArticulationMimicJoint& pxMimicJoint,
-    usdparser::ObjectType objectType)
-    : mInternalScene(internalScene)
-    , mPhysXMimicJoint(&pxMimicJoint)
-    , mObjectType(objectType)
+InternalMimicJoint::InternalMimicJoint(InternalScene& internalScene,
+                                       ::physx::PxArticulationMimicJoint& pxMimicJoint,
+                                       usdparser::ObjectType objectType,
+                                       float gearingSign,
+                                       float offsetSign)
+    : mInternalScene(internalScene),
+      mPhysXMimicJoint(&pxMimicJoint),
+      mObjectType(objectType),
+      mGearingSign(gearingSign),
+      mOffsetSign(offsetSign)
 {    
 }
 

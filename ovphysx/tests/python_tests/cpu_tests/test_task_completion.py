@@ -10,7 +10,11 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from ovphysx import ApiStatus, PhysX, Task, TaskError
+import os
+import sys
+import time
+
+from ovphysx import ApiStatus, GlobalConfigKey, PhysX, Task, TaskError, TaskStatus, get_global_config, set_global_config
 from test_utils import data_path, load_usd_with_ovstage
 
 
@@ -23,7 +27,7 @@ def _fail_clone(sdk, name):
     return sdk.clone(f"/World/missing_{name}", [f"/World/clone_{name}"])
 
 
-def test_failed_inline_clone_returns_task_and_survives_waiting_for_step(physx_sdk):
+def test_failed_clone_returns_task_and_survives_waiting_for_step(physx_sdk):
     sdk = physx_sdk
     _load(sdk)
     failed = _fail_clone(sdk, "a")
@@ -48,7 +52,8 @@ def test_discarded_receipts_and_multiple_errors_remain_in_submission_order(physx
     _fail_clone(sdk, "first")
     _fail_clone(sdk, "second")
     succeeded = sdk.clone("/World/envs/env0", ["/World/success"])
-    assert sdk.wait_task(succeeded, timeout_ns=0) is None
+    # The clones are queued: wait for the successful one instead of polling it.
+    assert sdk.wait_task(succeeded) is None
     with pytest.raises(TaskError) as caught:
         sdk.wait_all()
 
@@ -78,14 +83,14 @@ def test_direct_wait_collects_only_its_failure(physx_sdk):
     assert sdk.wait_all() is None
 
 
-def test_successful_inline_clone_returns_immutable_task(physx_sdk):
+def test_successful_clone_returns_immutable_task(physx_sdk):
     sdk = physx_sdk
     _load(sdk)
     task = sdk.clone("/World/envs/env0", ["/World/clone"])
     assert isinstance(task, Task)
     with pytest.raises(FrozenInstanceError):
         task.instance = 0
-    assert sdk.wait_task(task, timeout_ns=0) is None
+    assert sdk.wait_task(task) is None
     with pytest.raises(RuntimeError, match="already collected"):
         sdk.wait_task(task)
 
@@ -131,7 +136,7 @@ def test_sync_step_retires_execution_without_collecting_async_receipts(physx_sdk
     assert sdk.wait_all() is None
 
 
-def test_inline_failure_cause_survives_disabled_logging(physx_sdk):
+def test_execution_failure_cause_survives_disabled_logging(physx_sdk):
     from ovphysx import LogLevel, get_log_level, set_log_level
 
     sdk = physx_sdk
@@ -186,3 +191,54 @@ def test_waiting_session_calls_collect_only_their_own_tasks(physx_sdk, monkeypat
         sdk.wait_all()
     assert [task for task, message in caught.value.errors] == [earlier]
     assert sdk.wait_all() is None
+
+
+def _status_once_finished(sdk, task, deadline_s=30.0):
+    deadline = time.monotonic() + deadline_s
+    status = sdk.task_status(task)
+    while status in (TaskStatus.PENDING, TaskStatus.RUNNING) and time.monotonic() < deadline:
+        time.sleep(0.001)
+        status = sdk.task_status(task)
+    return status
+
+
+def test_instance_without_a_worker_thread_finishes_each_call_before_it_returns(physx_sdk):
+    # physx_sdk keeps the runtime up, so creating an instance starts no thread but its worker.
+    threads = len(os.listdir("/proc/self/task")) if sys.platform.startswith("linux") else None
+    previous = get_global_config(GlobalConfigKey.ASYNC_EXECUTION)
+    set_global_config(GlobalConfigKey.ASYNC_EXECUTION, False)
+    try:
+        assert get_global_config(GlobalConfigKey.ASYNC_EXECUTION) is False
+        sdk = PhysX()
+    finally:
+        set_global_config(GlobalConfigKey.ASYNC_EXECUTION, previous)
+    try:
+        if threads is not None:
+            assert len(os.listdir("/proc/self/task")) == threads
+        _load(sdk)
+        step = sdk.step(1.0 / 60.0)
+        assert sdk.task_status(step) == TaskStatus.SUCCEEDED
+        assert sdk.wait_task(step) is None
+    finally:
+        sdk.destroy()
+
+
+def test_task_status_reports_without_collecting(physx_sdk):
+    sdk = physx_sdk
+    _load(sdk)
+    # Clones must precede the first step, so the failing clone comes first.
+    failed = _fail_clone(sdk, "status")
+    assert _status_once_finished(sdk, failed) == TaskStatus.FAILED
+    assert sdk.task_status(failed) == TaskStatus.FAILED, "a status query never collects"
+    with pytest.raises(TaskError):
+        sdk.wait_task(failed)
+    assert sdk.task_status(failed) == TaskStatus.NOT_FOUND
+
+    step = sdk.step(1.0 / 60.0)
+    assert sdk.task_status(step) in (TaskStatus.PENDING, TaskStatus.RUNNING, TaskStatus.SUCCEEDED)
+    assert sdk.wait_task(step) is None
+    assert sdk.task_status(step) == TaskStatus.NOT_FOUND
+    with pytest.raises(TypeError, match="task must be a Task"):
+        sdk.task_status(object())
+    with pytest.raises(RuntimeError, match="task_status failed"):
+        sdk.task_status(Task(ApiStatus.SUCCESS, 0, sdk.handle))

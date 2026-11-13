@@ -700,6 +700,7 @@ extern "C" __global__ void computeArtiCentrifugalForces(
 				const PxTransform& body2World = arti.linkBody2Worlds[link];
 				const PxU32 parentLink = arti.parents[link];
 				const ArticulationJointCoreData& jointData = arti.jointData[link];
+				const Dy::ArticulationJointCore& joint = arti.joints[link];
 				const PxTransform& parentBody2World = arti.linkBody2Worlds[parentLink];
 				const PxVec3 rw = computeLinkRwInvDyn(arti, link, parentBody2World.q, body2World.q);
 				const Cm::UnAlignedSpatialVector pVel = motionVelocities[parentLink];
@@ -709,7 +710,8 @@ extern "C" __global__ void computeArtiCentrifugalForces(
 				Cm::UnAlignedSpatialVector deltaV = Cm::UnAlignedSpatialVector::Zero();
 				for (PxU32 dof = 0; dof < jointData.nbDof; ++dof)
 				{
-					const PxReal maxJointVelocity = arti.joints[link].maxJointVelocity[dof];
+					// The limits are stored per axis, and dofIds maps each dof of the joint to its axis.
+					const PxReal maxJointVelocity = joint.maxJointVelocity[joint.dofIds[dof]];
 					const PxReal jointVelocity = jointVelocities[jointData.jointOffset + dof];
 					const PxReal jVel = PxMin(jointVelocity, maxJointVelocity);
 					Cm::UnAlignedSpatialVector dofMotion = arti.motionMatrix[link][dof].rotate(body2World);

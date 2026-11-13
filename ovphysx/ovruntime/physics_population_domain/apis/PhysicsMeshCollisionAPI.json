@@ -1,0 +1,85 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysicsMeshCollisionAPI",
+  "title": "PhysicsMeshCollisionAPI",
+  "summary": "Chooses how a Mesh collider is approximated for PhysX. Its single token column selects the descriptor kind and which cooking API's columns are consulted; without the API a Mesh is a plain triangle mesh.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "Gprim"
+  ],
+  "requires": [
+    "PhysicsCollisionAPI"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "producer_scope": "Every declared attribute of an applied collision API is published at its resolved value, so physics:approximation lands as none when unauthored. The API is part of the producer's physics schema set; applying it to a non-Mesh Gprim publishes the column but the consumer ignores it there.",
+  "columns": [
+    {
+      "name": "physics:approximation",
+      "usd_type": "token",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "TOKEN_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "none",
+      "parser_default": "none",
+      "absent": "none: a triangle mesh collider with SDF cooking disabled (sdfResolution 0). The same result as not applying the API. Accepted tokens: none, convexHull, convexDecomposition, boundingSphere, boundingCube, meshSimplification, sphereFill, sdf. Any other token also resolves to none (the parser's safe fallback; the consumer's routing site logs and rejects an unsupported combination).",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseShape.cpp",
+        "source/omni.physics.ovstage/OvstageWalker.cpp"
+      ],
+      "notes": "Read as a token id and compared against the interned token set. Shape descriptor per token: none -> triangle mesh; convexHull -> convex mesh; convexDecomposition -> convex decomposition; boundingSphere -> bounding sphere with pre-scaled points; boundingCube -> bounding box with pre-scaled points; meshSimplification -> triangle mesh with quadric simplification; sphereFill -> sphere points; sdf -> triangle mesh with SDF cooking params. Not verified: a token sample cannot be written by the generated test and the resulting PhysX kind also depends on the body (see the promotion interaction) and on real mesh data."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysicsRigidBodyAPI",
+      "rule": "Silent promotion: none or meshSimplification on a collider whose rigid body has physics:rigidBodyEnabled true and physics:kinematicEnabled false is rewritten to convexHull before the descriptor is built, because PhysX rejects a non-SDF triangle mesh as a dynamic simulation shape. The column keeps its authored value; only the descriptor changes."
+    },
+    {
+      "with": "Mesh",
+      "rule": "Meaningful only on a Mesh. Cube, Sphere, Capsule, Cylinder, Cone and Plane dispatch by prim type before the approximation is consulted."
+    },
+    {
+      "with": "PhysxConvexHullCollisionAPI",
+      "rule": "Consulted only for convexHull (including the promoted case)."
+    },
+    {
+      "with": "PhysxConvexDecompositionCollisionAPI",
+      "rule": "Consulted only for convexDecomposition."
+    },
+    {
+      "with": "PhysxTriangleMeshCollisionAPI",
+      "rule": "Consulted for none and sdf."
+    },
+    {
+      "with": "PhysxTriangleMeshSimplificationCollisionAPI",
+      "rule": "Consulted only for meshSimplification."
+    },
+    {
+      "with": "PhysxSphereFillCollisionAPI",
+      "rule": "Consulted only for sphereFill."
+    },
+    {
+      "with": "PhysxSDFMeshCollisionAPI",
+      "rule": "Consulted only for sdf, and only when that API is applied with a positive sdfResolution; otherwise the sdf mesh cooks as a plain triangle mesh."
+    },
+    {
+      "with": "NewtonMeshCollisionAPI",
+      "rule": "Read for convexHull and convexDecomposition approximations without checking usd-schemas, when the matching PhysX hullVertexLimit is absent."
+    }
+  ]
+}

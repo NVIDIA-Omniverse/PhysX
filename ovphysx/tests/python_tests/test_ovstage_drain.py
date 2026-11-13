@@ -16,11 +16,15 @@ so a correct read-back is attributable to the backend drain alone.
 # @implements REQ-SIM-OVSTAGE-WRITEAPPLY-001
 # @covers AC-1 AC-2 AC-6 AC-7 AC-8 AC-13
 # @maps_to TEST-SIM-OVSTAGE-WRITEAPPLY-001
+# @implements REQ-INPUT-CORE-001
+# @covers AC-15
+# @maps_to TEST-INPUT-CORE-003
 
 import numpy as np
 import ovstage
 from ovstage._src.dlpack import DLDataType, DLDataTypeCode, make_dltensor
 from ovphysx.types import ObjectScope, SimObjectType
+from session_helpers import write_uniform
 from test_utils import attach_usd_with_ovstage, data_path
 
 
@@ -148,6 +152,26 @@ def test_drain_rigid_velocity(physx_sdk, tmp_path):
     _drain_scalar(physx_sdk, stage, "/World/Body", "physics:angularVelocity", [1, 2, 3], 3)
     got = _read(physx_sdk, SimObjectType.RIGID_BODY, "angularVelocity", 3)[0]
     assert np.allclose(got, np.array([1, 2, 3]) * (np.pi / 180.0), atol=1e-3)  # authored deg -> read rad
+
+
+def test_drained_center_of_mass_reaches_a_wrench(physx_sdk, tmp_path):
+    """A DirectGPU wrench turns its force about the centre of mass the view keeps in a table. A centre of mass the
+    drain changes after that table was built makes it stale, so the next wrench turns about the new one."""
+    stage = attach_usd_with_ovstage(physx_sdk, _rigid_usda(tmp_path))
+    for _ in range(2):
+        physx_sdk.step(1.0 / 60.0)
+    physx_sdk.wait_all()
+    write_uniform(physx_sdk, stage, SimObjectType.RIGID_BODY, "wrench", [0.0] * 9)  # builds the table
+    _drain_scalar(physx_sdk, stage, "/World/Body", "physics:centerOfMass", [0.0, 1.0, 0.0], 4)
+    physx_sdk.step(1.0 / 60.0)  # the drained mass frame is applied at the next step
+    physx_sdk.wait_all()
+    assert np.allclose(_read(physx_sdk, SimObjectType.RIGID_BODY, "centerOfMassPosition", 3)[0], [0, 1, 0], atol=1e-4)
+    # A +x force at the body's origin, one unit below the new centre of mass, turns it about +z.
+    origin = _read(physx_sdk, SimObjectType.RIGID_BODY, "position", 3)[0]
+    write_uniform(physx_sdk, stage, SimObjectType.RIGID_BODY, "wrench", [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, *origin])
+    physx_sdk.step(1.0 / 60.0)
+    physx_sdk.wait_all()
+    assert _read(physx_sdk, SimObjectType.RIGID_BODY, "angularVelocity", 3)[0][2] > 1e-4
 
 
 def test_drain_rigid_mass_frame_not_scattered(physx_sdk, tmp_path):

@@ -1,8 +1,11 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# @implements REQ-PYTHON-OMNIPVD-CAPTURE-001
+# @covers AC-1
+
 # @implements REQ-PYTHON-TASK-001
-# @covers AC-1 AC-2 AC-3 AC-4 AC-5
+# @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-8
 
 # @implements REQ-PYTHON-OMNIPVD-LATE-001
 # @covers AC-1
@@ -11,6 +14,8 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
+
+from . import attributes as attributes
 
 from .api import (
     Operation as Operation,
@@ -41,6 +46,7 @@ from .api import (
     set_log_level as set_log_level,
 )
 from .config import OmniPvdDestination as OmniPvdDestination
+from .config import OmniPvdFilter as OmniPvdFilter
 from .config import PhysXConfig as PhysXConfig
 from .dlpack import (
     DLPACK_VERSION as DLPACK_VERSION,
@@ -54,7 +60,9 @@ from .dlpack import (
 from .schemas import newton_schema_root as newton_schema_root
 from .types import (
     ApiStatus as ApiStatus,
+    ArticulationKinematicFlag as ArticulationKinematicFlag,
     BindingPrimMode as BindingPrimMode,
+    CompiledStageCacheMode as CompiledStageCacheMode,
     ConfigKey as ConfigKey,
     ConfigBool as ConfigBool,
     ConfigFloat as ConfigFloat,
@@ -65,6 +73,7 @@ from .types import (
     ProfilerBackend as ProfilerBackend,
     SceneQueryGeometryType as SceneQueryGeometryType,
     SceneQueryMode as SceneQueryMode,
+    TaskStatus as TaskStatus,
     TensorType as TensorType,
 )
 

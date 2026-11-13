@@ -76,7 +76,7 @@ DEPRECATED_PARAMETERS = {
 # expectation from the submodules' own `__all__` lists, so a helper deleted from
 # a submodule's `__all__` and from the flat surface together fails none of them.
 # These two counts are what notices it.
-FLAT_HELPER_COUNT = 138
+FLAT_HELPER_COUNT = 139
 ALL_ENTRY_COUNT = FLAT_HELPER_COUNT + len(SUBMODULES)
 
 # The public surface of `codeless`, which AC-2 requires to be reachable only
@@ -425,7 +425,7 @@ def test_all_is_resolvable_and_complete():
 
 
 def test_surface_size_is_pinned():
-    """AC-2's 138 flat helpers and 153 `__all__` entries, asserted.
+    """AC-2's 139 flat helpers and 154 `__all__` entries, asserted.
 
     The counterpart of the length assertions on EXCLUDED_NAMES and
     DROPPED_NAMES: those keep a name from drifting back onto the surface, and

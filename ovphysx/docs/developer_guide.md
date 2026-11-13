@@ -40,6 +40,7 @@ Use ovphysx when you need USD-based physics simulation outside of Omniverse Kit 
   described in the [SDK Quickstart](tutorials/quickstart.md), keep the package
   roots separate, and link through CMake
 - Porting a 0.6 application: [Migration from 0.6](migrating_0_6_to_0_7.md)
+- Porting a 0.7 application: [Migration from 0.7](migrating_0_7_to_0_8.md)
 
 **CPU note (x86_64):** pre-built ovphysx binaries require **AVX**. Missing AVX is
 detected at `ovphysx_initialize()` with a clear error. Refer to
@@ -78,6 +79,7 @@ The ovphysx samples are runnable references for SDK and wheel usage, designed to
 | `clone.py` | [Cloning](tutorials/cloning.md) | Clone a subtree before the first step and read rigid-body positions |
 | `profiling.py` | [Profiling](tutorials/profiling.md) | Chrome trace and NVTX profiler backends |
 | `vehicle_read_write.py` | [Vehicles](read_write/vehicles.md) | Read and write vehicle controls and wheel state |
+| `rl_step_capture.py` | [Capturing a read in a CUDA graph](read_write/device.md#capturing-a-read-in-a-cuda-graph) | IsaacLab-style control step over cloned Ants: read root and joint state, evaluate a Warp policy, write joint position targets, all replayed from one CUDA graph between physics steps |
 
 **Extra Python Samples** (`tests/python_samples_extra/`):
 
@@ -111,28 +113,50 @@ Canonical enum-level definitions are in `include/ovphysx/ovphysx_legacy_types.h`
 
 ## Execution Model
 
-ovphysx preserves submission and data ordering. Existing task-producing calls
-return a receipt: `ovphysx_enqueue_result_t` in C and `Task` in Python. Keep the
-whole receipt and use `ovphysx_wait_task()` / `PhysX.wait_task()` to collect that
-operation's outcome. A receipt reports admission, not execution success.
+Calls on one instance run in submission order. By default, a dedicated worker
+thread runs queued work.
 
-`step()` / `ovphysx_step()` starts asynchronous simulation. `clone()`,
-`attach_ovstage()`, `update_from_ovstage()` and `detach_ovstage()` currently
-finish inline but still return receipts; their execution
-failures are reported when collected. Native query, read/write session open,
-fetch, commit, release and articulation-kinematic update also return receipts and
-currently execute inline. No host-nonblocking guarantee follows from a task receipt.
-Keep caller-owned inputs and output slots alive until completion; inspect output
-handles and groups only after a successful wait. A successful fetch with a null
-group is EOF. Rejected submissions instead return no
-task and expose an immediate error. `step_sync()` / `ovphysx_step_sync()` steps
-and waits in one call. Repeat it in a local loop when a workload uses decimation.
+Task-producing calls return `ovphysx_enqueue_result_t` in C and `Task` in
+Python. A receipt means that the call was accepted; it does not mean that the
+work succeeded. Wait for the receipt to get the result.
 
-In-stream ovphysx operations preserve their existing synchronization and data
-ordering. Before external CPU access, rendering, logging or other consumers need
-the result, wait on the relevant task. Explicit CUDA producer-event and
-consumer-stream dependencies remain necessary where documented; collecting a
-task does not replace those handoffs.
+Where calls run:
+
+- `step`, attach, update, detach, and clone normally queue work and return.
+- Query, read, write, fetch, commit, and release run immediately when the
+  instance is idle. Otherwise they queue behind earlier work.
+- Operations that must use the caller's CUDA stream wait for earlier work, then
+  run on the calling thread.
+- `step_sync` waits for earlier work, then runs the step on the calling thread.
+- During OmniPVD recording, attach and detach also run on the calling thread.
+
+Set `ASYNC_EXECUTION` to false before creating an instance to disable its worker
+thread. Calls then finish before returning. ovphysx also falls back to this mode
+when Carbonite cannot provide a worker.
+
+An infinite wait may run an unstarted job on the waiting thread. A finite wait
+or poll only observes progress. Do not depend on which thread runs callbacks.
+
+A call can fail in two ways:
+
+- Invalid arguments, invalid handles, callback re-entry, a full queue, or a
+  stopped worker reject the call immediately. No task is created.
+- Errors found after acceptance fail the task. The wait reports them.
+
+One failed task does not stop later valid tasks. Waiting for task B does not
+collect an earlier failure from task A; use `wait_all()` when you want every
+earlier result.
+
+Keep buffers, masks, fetched groups, output slots, CUDA streams, and CUDA events
+alive until the task finishes. Strings, attribute arrays, and selections may be
+released after the call returns. Before CUDA graph capture, finish pending work
+on every instance that uses that CUDA context.
+
+Wait before code outside the instance uses a result. A completed host task does
+not replace the CUDA stream and event handoffs documented by the data API.
+
+Destroying a native instance waits for running work and cancels work that has
+not started. Python `destroy()` waits for all outstanding tasks first.
 
 Python tensor-binding, contact-binding, and SDF calls that accept caller-owned
 CUDA device or managed-memory buffers finish pending work on the current Warp
@@ -144,25 +168,22 @@ host buffers, callers must finish pending CUDA work before the call. Raw
 or pass the API's explicit stream/event arguments where available. Session write
 commits still use their explicit CUDA stream/event arguments.
 
-A failed task does not automatically make a later task fail. Waiting on successful
-B reports only B; an earlier failed A remains reportable through its own wait or
-`wait_all()`, even when A's original receipt was discarded. Later calls still
-validate actual simulation state and prerequisites.
-
-Run custom application code directly after successfully waiting on the relevant
-task. Use `wait_all()` when that code needs every earlier outcome collected;
-it also acknowledges earlier failures. The task API exposes completion of native
-operations and does not schedule application callbacks. Log,
-object-change and contact callbacks keep their own documented contracts.
+Run application code after the relevant task wait succeeds. The task API does
+not schedule application callbacks. Log, object-change, and contact callbacks
+keep their separate contracts.
 
 ### Stage lifecycle completion
 
-Attach, update and detach use the same admission and completion contract as
-other tasks. Invalid arguments, an already-attached instance or an update without
-an attachment reject before changing the attachment. Detach also rejects
-conflicting companion transitions before task admission. Runtime failures after
-admission belong to the task's outcome.
-Wait successfully before using a newly attached scene or the result of an update.
+Attach rejects when schema registration fails or a companion operation is
+active. Detach also rejects while a companion operation is active. After either
+call is accepted, later companion calls report busy until the lifecycle work
+finishes.
+
+An already-attached instance, an update without an attachment, or a runtime
+failure fails the accepted task. Calls on the instance remain ordered, so you
+may submit attach, clone, and step without waits between them. Wait before code
+outside the instance uses the new scene or update.
+
 Keep the Stage and the sealed ordinal data needed by attach/update alive until
 the task finishes. An attached Stage stays alive until successful detach or
 instance destruction. A failed teardown may still own the Stage and may already
@@ -198,7 +219,11 @@ Environment variables stay authoritative over the matching global setter.
 Known overrides: `OVPHYSX_DISABLE_GPU` (`CPU_ONLY`),
 `OVPHYSX_PROFILER` (`PROFILER_BACKEND`), and
 `OVPHYSX_PROFILER_OUTPUT` (`PROFILER_OUTPUT_PATH`).
-`get_global_config` reports the effective value.
+`get_global_config` reports the effective value, except that
+`COOKED_COLLIDER_CACHE_DIRECTORY` reports the current setting rather than querying
+the active datastore location (see [Cooked-Collider Cache](#cooked-collider-cache-ujitso)),
+and `COMPILED_STAGE_CACHE` reports the configured mode rather than the mode an attach
+resolved (see [Compiled Stage Cache](#compiled-stage-cache-experimental)).
 
 `PhysXConfig`, typed config-entry arrays, and `ovphysx_create_args` /
 `ovphysx_create_instance_with_args` are the legacy path. New code uses the
@@ -301,13 +326,22 @@ In C, set `OVPHYSX_GLOBAL_CONFIG_COOKED_COLLIDER_CACHE_DIRECTORY` before
 a given cache cooks and stores the result; later runs with an unchanged scene are served from the
 cache without re-cooking.
 
-With no directory configured, nothing is persisted: cooked colliders go to a **process-private**
-directory under the OS temp directory, so every run re-cooks. After all instances are destroyed,
-`ovphysx_shutdown()` stops the datastore and removes that directory on Linux. Windows retains
-the datastore until normal process exit. Its framework release callback attempts removal
-after the datastore stops, but Windows cleanup remains best-effort: another dependency's
-terminating exit hook can prevent that callback from running. Leftover private directories
-may require normal temporary-directory cleanup. Python destroys still-live
+The compiled stage cache (below) stores in the same directory, and PhysX deserializes its
+results in place. Their checksum detects corruption but does not authenticate them, so anyone
+who can write the directory can corrupt the memory of a process that uses it. Keep the
+directory private to the user and on a local disk: ovphysx cannot tell a network share from a
+local directory. On Linux, ovphysx creates missing directories with owner-only permissions, and
+the compiled stage cache's default `AUTOMATIC` mode uses only a private directory (see below).
+A directory that other users could write earlier may still hold what they changed, so give the
+cache a new directory, or let ovphysx create one.
+
+With no usable directory configured and local caching and cooking enabled, ovphysx attempts
+to create a **process-private** directory under the OS temp directory. If creation fails,
+local caching is disabled. A private cache does not persist cooked colliders across runs,
+so every run re-cooks. After all instances are destroyed, `ovphysx_shutdown()` stops the
+datastore and removes that directory on Linux. Windows retains the datastore until process
+exit. The packaged Windows exit path bypasses framework-release callbacks, so private
+directories can remain for host temporary-directory cleanup. Python destroys still-live
 `PhysX` instances from `atexit`, including after
 an uncaught Ctrl-C (`KeyboardInterrupt`), then shuts down the process lifecycle even if a
 `read()` Warp array is still globally reachable, so cleanup follows the same last-instance
@@ -321,9 +355,12 @@ instances would run the parent's `atexit` teardown against native state it does
 not own. Start workers with `spawn`, or use a process that never constructed
 `PhysX`. The cache needs a real path while the datastore is active. Its background writers and
 open files must be released before directory removal. Filesystem removal
-errors are reported on stderr. The temp location follows the platform's `TMPDIR`/`TMP`/`TEMP` convention; what
-ovphysx will not do is derive a *persistent* cache location from the environment. The same
-process-private fallback is used when a configured directory cannot be created or written.
+errors are reported on stderr. The temp location follows the platform's `TMPDIR`/`TMP`/`TEMP` convention as the OS resolves
+it (on Windows through `GetTempPath2`, which places a process running as SYSTEM under
+`C:\Windows\SystemTemp` regardless of `TMP`/`TEMP`); read the directory actually in use back
+through `COOKED_COLLIDER_CACHE_DIRECTORY` rather than recomputing it. What
+ovphysx will not do is derive a *persistent* cache location from the environment. Startup also
+attempts this fallback when a configured directory cannot be created or written.
 
 The configured directory is applied when the framework first creates its datastore.
 On Linux, destroy all instances and call `ovphysx_shutdown()`, then initialize and configure
@@ -331,21 +368,112 @@ the next lifecycle to change directories. Windows retains its datastore until pr
 use a separate process for a different directory. Python's final `PhysX.destroy()` completes
 SDK shutdown when no other lifecycle owners remain.
 
+`get_global_config(COOKED_COLLIDER_CACHE_DIRECTORY)` observes the current
+`/UJITSO/datastore/localCachePath` setting, not user intent, persistence, or the
+active datastore location. Before runtime startup, it returns the configured value
+or `None` (`OVPHYSX_API_NOT_FOUND` in C) if unset. Successful private-cache creation
+writes the fallback path into this setting, so the getter then returns that path.
+If local caching or cooking is disabled, or private-directory creation fails,
+startup does not replace the setting. A later accepted change is reported even
+though the datastore continues using its original directory.
+
 Cooked colliders are **not** reused across runs when:
 
 - No cooked-collider cache directory is configured: cooking still runs, but nothing is persisted, so it re-cooks every run.
-- ovphysx cannot create or write the configured directory: it falls back to the process-private cache, so nothing is persisted (a warning is logged).
+- ovphysx cannot create or write the configured directory: it attempts a process-private cache, so nothing is persisted (a warning is logged); if no private directory can be created, local caching is disabled.
 - The mesh, the cooking parameters/type, or the PhysX build changed: the key differs, so the shape is re-cooked (this is correct, not a fault).
 - Collision cooking has been disabled (it is enabled by default).
 
 ovphysx uses UJITSO as a local, in-process cache. (UJITSO can also operate as a distributed cache;
-ovphysx does not use that.) The cache is per-machine, shared only through the directory you
-configure. It is bounded: the datastore runs disk garbage collection against
+ovphysx does not use that.) Processes share the cache only when they use the same directory, and
+any process or user that can write it supplies the results the others load. It is bounded: the datastore runs disk garbage collection against
 `/UJITSO/datastore/localDataStore/largeChunkDiskBudgetMB` (default 102,400 MB) and
 `smallChunkDiskBudgetMB` (default 1,024 MB), evicting toward the budget once it is exceeded.
 Raise those settings for a larger cache, or delete the directory to reclaim space immediately. If
 collision cooking is enabled but the required UJITSO cache plugins are not loaded, instance creation
 fails fast with a clear error rather than silently cooking uncached.
+
+### Compiled Stage Cache (experimental)
+
+The compiled stage cache stores the result of a whole-stage `attach_ovstage()`, and of
+physics subtrees that a later `update_from_ovstage()` adds, in the same UJITSO datastore as
+cooked colliders. Results are keyed by the stage's physics inputs and the ovphysx build. When a
+later attach or insertion has the same inputs, the stored result is restored instead of parsing
+the stage again. Changed inputs miss and load normally, as does content the cache does not
+support. When a stored result that matches fails while it is applied, the attach loads the stage
+normally and reports `restore failed`. The result is removed from the cache if it is itself
+defective, and kept if the process failed (for example, ran out of memory). `READ_ONLY` removes
+such a result too; it only never stores new ones. Other instances keep stepping while an attach or
+insertion uses the cache, and several instances can use it at the same time.
+
+Select the mode with `GlobalConfigKey.COMPILED_STAGE_CACHE` /
+`OVPHYSX_GLOBAL_CONFIG_COMPILED_STAGE_CACHE` and a `CompiledStageCacheMode` /
+`ovphysx_compiled_stage_cache_mode_t` value. Every later attach reads it, so you can change it
+at any time; an attached stage keeps the mode it attached with. The getter reports the
+configured mode, not the mode an attach resolved.
+
+| Mode | Behavior |
+|---|---|
+| `AUTOMATIC` (default) | `READ_WRITE` while cooked colliders persist in a private cooked-collider cache directory you configured, otherwise `DISABLED` |
+| `DISABLED` | Never looks up or stores |
+| `READ_ONLY` | Looks up and removes a defective result that fails; never stores |
+| `READ_WRITE` | Looks up, and stores on a miss |
+
+`AUTOMATIC` stores only into a directory you configured with `COOKED_COLLIDER_CACHE_DIRECTORY`,
+and only while cooked colliders persist there. That must be the directory the datastore was built
+from: a later instance's directory does not move a datastore that already runs. On Linux the
+directory must also be private: not a symlink, owned by you and closed to your group and others,
+so that nothing in it is within their reach, and every directory above it must be owned by you or
+root and writable by no one else unless it is sticky, as `/tmp` is, so that no one else can replace
+it. Otherwise `AUTOMATIC`
+resolves to `DISABLED` and logs why at `INFO`; `READ_WRITE` uses the datastore anyway.
+Without a configured directory, the datastore is the process-private directory described above.
+It is deleted at shutdown, so every run would pay the cost of storing and reuse results only
+within that process. `READ_WRITE` without a configured directory stores there anyway, and reuse
+ends at shutdown. When no local datastore is usable, the attach loads normally and the cache
+reports `unavailable`. A datastore that also reaches Hub or network stores is not used; the
+attach loads normally.
+
+```python
+from ovphysx import CompiledStageCacheMode, GlobalConfigKey, PhysX, set_global_config
+
+
+def create_physx_with_compiled_cache(cache_directory: str) -> PhysX:
+    # Startup-only: set the directory before the first instance. The default
+    # AUTOMATIC mode then reads and writes the compiled stage cache there.
+    set_global_config(GlobalConfigKey.COOKED_COLLIDER_CACHE_DIRECTORY, cache_directory)
+    return PhysX()
+
+
+def attach_without_compiled_cache(physx: PhysX, stage, read_ordinal: int) -> None:
+    # Applies to this and every later attach until the mode changes again.
+    set_global_config(GlobalConfigKey.COMPILED_STAGE_CACHE, CompiledStageCacheMode.DISABLED)
+    physx.wait_task(physx.attach_ovstage(stage, read_ordinal=read_ordinal))
+```
+
+Once an instance exists, set the `LOG_LEVEL` key to `INFO` (see [Logging](#logging)) to see the outcome of each attach,
+for example `compiled stage cache: hit (mode read-write, automatic)`. Other outcomes are `miss`,
+`stored`, `bypassed` (content or options the cache does not support; the line before names
+what: physics it cannot store, such as particles, deformables, vehicles, character controllers or
+triggers, or a plugin's custom geometry or joints, never render prims or schemas the physics
+parser does not read), `unavailable` (no usable
+local datastore), `restore failed` (see above), `store failed` (the stage loaded, but its result
+was not stored, for example because a collider failed to cook or PhysX's material table was
+full) and `disabled`.
+
+**Trust.** Stored results are deserialized in place, as cooked colliders are; who may write the
+directory is described under [Cooked-Collider Cache](#cooked-collider-cache-ujitso).
+
+**Triangle meshes.** A stored result carries each triangle-mesh collider as its cooked data, and
+a restore creates the mesh from it. Once an attach that can store starts, the process keeps a
+copy of the cooked data of every triangle mesh it cooks from then on, for as long as it keeps the
+mesh. A stage with a triangle mesh that the process cooked before then is not stored: the attach
+reports `bypassed`.
+
+**Environment ids.** Attaches that assign replicator environment ids for `clone()` (see
+[Scene Cloning](#scene-cloning)) are cached too. A restored stage carries the environment ids
+that loading it normally assigns, so a later `clone()` isolates copies from their source as it
+does without the cache.
 
 ## Process-Global Lifecycle
 
@@ -363,6 +491,12 @@ released immediately. A handle retained across shutdown is supported only for
 explicit destruction; do not step it or start other instance work, and do not
 expect its destruction-time records through the disabled callback.
 
+Native runtime, object-change and application log callbacks cannot destroy
+instances or detach stages. These calls return `OVPHYSX_API_INVALID_STATE`
+before teardown, including for an idle, stageless instance. No detach receipt
+is issued; the instance and attachment remain available for retry after the
+callback returns. Python `PhysX.destroy()` also rejects native log callbacks.
+
 ## Multi-Instance Support
 
 The SDK exposes a per-instance handle (`ovphysx_instance_handle_t`). Wrapper-owned state -- tensor and contact bindings, output query/read/write sessions, object-change subscriptions, task errors, debug-render settings, and scene-query hit buffers -- is isolated per handle. Foreign subordinate handles return `OVPHYSX_API_NOT_FOUND` and leave the owner untouched. Debug rendering is `OVPHYSX_QUERY_TARGET_DEBUG_RENDER` on that handle (settings and geometry through the read/write sessions); geometry is limited to scenes of the instance's attach.
@@ -374,7 +508,7 @@ Concretely, this means:
 - Multiple `ovphysx_instance_handle_t` values can coexist. Instance operations take that handle first (`ovphysx_subscribe_object_changes`, `ovphysx_get_last_task_error`, and the rest of the instance surface).
 - Process-global functions omit the handle: initialize/shutdown, `ovphysx_create_instance`, version queries, CPU-mode and global config, logging, `ovphysx_get_last_error`, `ovphysx_destroy_wait_task_result`, `ovphysx_writability`.
 - The hard CPU-only policy, process-global config, logging, the SDK tolerance scale, and the recording transport are process-wide. Each attachment captures its own dispatcher and CUDA options at attach. Outside hard CPU-only mode, CPU/GPU dynamics are authored per scene.
-- A single instance is not thread-safe: serialize calls on one handle. Different instances may step their own attachments at the same time. A recording start/stop needs every attached instance idle and returns an error if one is still stepping.
+- A single instance is not thread-safe: serialize calls on one handle. Different instances may step, attach, detach and destroy concurrently; the SDK serializes their lifecycle work internally. Recording start and stop wait for the pending work of every instance before accessing the shared recording state. Overlapping destruction and recording transitions can return a retryable error; see [OmniPVD Recording](#omnipvd-recording).
 - The same ovstage instance must not be attached to two ovphysx instances. Use a separate stage per instance.
 
 Multiple `UsdPhysicsScene` prims within the same loaded stage **are** supported. `ovphysx_step()` advances all scenes together; per-scene independent stepping is not currently exposed through the ovphysx C API.
@@ -418,10 +552,20 @@ C and C++ callers use `ovphysx_timeout_t`, a `uint64_t` nanosecond type. Pass
 or `OVPHYSX_TIMEOUT_INFINITE` for an infinite wait. Python uses `timeout_ns=0`,
 a positive integer, or `None`. Ready-at-deadline wins. Finalization may take
 longer than a finite readiness timeout. Timeout leaves unfinished tasks retryable.
+Normal steps and waits on different instances may run concurrently. Recording
+start, stop and pending receiver selections wait for earlier work across all
+instances without collecting its outcomes. This does not provide global
+exclusion for native calls. On an idle instance, cached-query validation,
+recording-status queries, completed-receipt collection and already-absent
+releases may progress during another instance's lifecycle callback. Task waits
+observe executor completion directly; they do not acquire runtime admission.
 
 C waits require a non-null, zero-initialized `ovphysx_wait_task_result_t`.
-`error_tasks` contains full failed receipts, and `pending_task` is zero when
-nothing is pending. Check the returned `ovphysx_result_t` separately: `TIMEOUT`
+`error_tasks` contains full failed receipts. `wait_all` captures its cutoff
+before timed waiting. On `TIMEOUT`, `pending_task` identifies the earliest
+unfinished task within that cutoff; it is nonzero and remains retryable. When
+nothing is pending, the receipt is zero. Check the returned `ovphysx_result_t`
+separately: `TIMEOUT`
 takes precedence over collected errors, `ERROR` reports execution or internal
 failure, and `SUCCESS` means no collected task failed. Destroy every output with
 `ovphysx_destroy_wait_task_result()`, including timeout outputs. Destruction
@@ -441,6 +585,8 @@ Wait using `physx.wait_task(task, timeout_ns=None)` or
 contains immutable `(Task, message)` entries in `errors`. `TaskTimeoutError`
 contains `errors` collected before the timeout and `pending_task`. Python copies
 those values before native cleanup, so exception details remain valid afterwards.
+Native timeouts always supply a pending task. Retry that task with `wait_task`
+or call `wait_all` again to collect the remaining tasks.
 
 The Python session API returns an `Operation` from `query`, `read`, `write`,
 `fetch_next`, `commit`, and `close` / `release`, without waiting. An operation holds
@@ -463,9 +609,12 @@ waiting conveniences.
 Closing a session or query, leaving its `with` block, and cleanup of an abandoned
 object submit releases without waiting; `wait_all()` or instance destruction observes
 their failures. A session returned by `read_sync` or `write_sync` waits for the
-releases it submits when its `with` block exits. Read storage that arrays still
-borrow is released only after the result and every alias are dropped, and a later
-`wait_all()` collects that release. CUDA stream/event dependencies still apply.
+releases it submits when its `with` block exits. Closing a read invalidates its
+arrays, even if Python still references them. If a result is abandoned instead,
+its storage remains alive until the last array alias is dropped. The owning
+thread submits that deferred release during a later instance call, and
+`wait_all()` collects it. Process-exit cleanup also ends these borrows;
+see [Ownership and Lifetimes](#ownership-and-lifetimes). CUDA stream/event dependencies still apply.
 Context exit preserves an exception from the body and chains cleanup failures.
 Deferred finalization never calls native session release from a garbage-collector
 thread; the owning thread drains it.
@@ -492,7 +641,7 @@ def poll_step(physx: PhysX, dt: float) -> bool:
 
 - A single instance is **not** thread-safe. Serialize access externally.
 - Calls may move between threads when externally serialized; do not wait on the same task concurrently.
-- Different instances may step their own attachments at the same time. A recording start/stop needs every attached instance idle.
+- Different instances may step, attach, detach and destroy concurrently. The SDK serializes lifecycle work internally. Recording calls are synchronous and wait for every instance's pending work; see [OmniPVD Recording](#omnipvd-recording) for retryable transition conflicts.
 
 ### Python: concurrent `step()` and tensor I/O
 
@@ -564,12 +713,10 @@ wait; cross-thread use always requires external serialization.
 - In Python, close a binding deterministically with a `with` block or an explicit `binding.destroy()`. New code should exchange simulation state through the session read/write API, whose queries and sessions are context managers (`with physx.read_sync(...) as result:` / `with physx.write_sync(...) as session:`, or the `Query`, `ReadResult` and `WriteSession` returned by the default `query` / `read` / `write` operations); the tensor-binding form `with physx.create_tensor_binding("/World/robot*", tensor_type=TensorType.RIGID_BODY_POSE) as binding:` is **deprecated** but still works during the deprecation window. Contact bindings — `with physx.create_contact_binding(["/World/sensor*"]) as binding:` — are a **deprecated** compatibility surface (C declarations live in `ovphysx_legacy.h`). If garbage collection cleans up a `TensorBinding` or `ContactBinding` first, ovphysx emits `ResourceWarning`. Python suppresses this warning category by default; run with `-W default` or set `PYTHONWARNINGS=default` to show it.
 - Create tensor and contact bindings once outside simulation loops and reuse them across steps. Creating a new binding every step allocates new native resources and is slower than reusing the existing binding.
 - Tensor and contact bindings are views of the currently realized physics objects. `step()` and `step_sync()` do not invalidate them, but application-owned stage lifecycle changes do. Before `detach_ovstage()`, before removing USD data that contains bound objects, or before replacing/reparsing the stage so bound objects are destroyed and recreated, destroy cached bindings when practical. If a stale binding survives one of those lifecycle operations, only destroy it; do not read or write through it. Create replacement bindings after the operation has completed. Do not keep cached bindings across topology changes and probe them defensively; the application knows when it changed the stage.
-- For admission or synchronous API failures, read `ovphysx_get_last_error()` before
-  the next call on that thread. Accepted task failures belong to their wait result.
-- Native session release transfers ownership only when admitted. A rejected release
-  can be retried; an accepted release must never be resubmitted even if its wait
-  reports execution failure. The SDK owns remaining cleanup. Finish external buffer
-  consumers before releasing their read session.
+- If the call itself fails, read `ovphysx_get_last_error()` before the next call
+  on that thread. If an accepted task fails, read the error from its wait result.
+- Stop using a session once its release is accepted. Retry a rejected release,
+  but never resubmit an accepted one. Finish external buffer consumers first.
 - A `physxPointer` value is a borrowed address. Do not call `release()` on it. Refer to [PhysX Pointer Interop](#physx-pointer-interop) for lifetime details.
 - **PhysX instance lifecycle (Python)**: call `physx.destroy()` explicitly,
   normally from a `finally` block, to guarantee deterministic cleanup of native
@@ -586,8 +733,11 @@ wait; cross-thread use always requires external serialization.
   and mirrors Python file-object semantics. If both best-effort native cleanup
   attempts fail before returning a status, the finalizer emits a default-visible
   `RuntimeWarning`; the native instance may remain registered and unreachable.
-  A process-exit hook applies the same non-throwing finalizer policy to
-  still-live instances before interpreter finalization. This is a safety net
+  A process-exit hook registered by `import ovphysx` applies the same
+  non-throwing finalizer policy to still-live instances before interpreter
+  finalization. Application exit handlers registered after the import run first
+  and may read retained output arrays. Handlers registered before the import run
+  after cleanup and must use an owned CPU copy made before cleanup instead. This is a safety net
   for normal exit, not a replacement for deterministic `destroy()`: abrupt
   termination, a `fork` after construction, and cleanup failures can still leave
   native or disk resources.
@@ -645,7 +795,8 @@ application authors with is loaded and owned separately by that application.
 **For C:**
 - Check `result.status` on every call. For an accepted task, wait on the whole
   receipt and check that result before consuming any outputs.
-- On admission or synchronous API failure, call `ovphysx_get_last_error()` on the same thread to retrieve the error string (valid until the next ovphysx call on that thread).
+- If the call itself fails, call `ovphysx_get_last_error()` on the same thread
+  before the next ovphysx call.
 - For task waits, inspect `error_tasks` even on timeout, retrieve each cause with `ovphysx_get_last_task_error(instance, task)`, then free the output with `ovphysx_destroy_wait_task_result()`. Retain the result for as long as borrowed causes are needed.
 
 **For Python:**
@@ -668,10 +819,10 @@ scene attachment and before the first legacy tensor-binding read.
 > **Ordering constraint:** all `clone()` calls must happen **before** warmup.
 > Calling `clone()` after `warmup()` or after the first `step()` /
 > `step_sync()` reallocates physics structures and corrupts already-initialized
-> solver state. The C runtime rejects this ordering with
-> `OVPHYSX_API_INVALID_ARGUMENT`, surfaced in Python as `RuntimeError`. If you
-> need to clone after warmup, call `detach_ovstage()`, wait for it to complete,
-> then reload the source scene or reattach its ovstage before cloning again.
+> solver state. Such a clone fails its task, and the wait reports the error
+> (`TaskError` in Python). If you need to clone after warmup, call
+> `detach_ovstage()`, wait for it to complete, then reload the source scene or
+> reattach its ovstage before cloning again.
 
 GPU dynamics and DirectGPU TensorAPI are separate choices.
 
@@ -757,7 +908,7 @@ placement from `active_cuda_gpus` or `/physics/suppressReadback`.
 
 ## Scene Cloning
 
-Two paths duplicate a scene subtree for large-scale parallel simulation:
+Stage data and runtime physics objects are cloned separately:
 
 1. **Direct ovphysx API.** After an ovstage-backed scene has been attached and
    drained, callers may use `ovphysx_clone()` (C), `PhysX::clone()` (C++), or
@@ -775,14 +926,19 @@ Two paths duplicate a scene subtree for large-scale parallel simulation:
    `EnvIds requested but gpu dynamic is disabled` when the isolation asked for is
    not in effect; that record reaches the Carbonite log rather than Python's
    `warnings` module, so observe it through `enable_python_logging()` or
-   `ovphysx_set_log_callback()` ([Logging](#logging)). Replication executes
-   inline. C and Python return an
-   already-complete task receipt, also returned directly by the C++ wrapper.
-   Wait on the receipt to collect completion and any execution failure. Cloning is
+   `ovphysx_set_log_callback()` ([Logging](#logging)). The call returns a task
+   receipt at once in C, C++ and Python, and replication runs after earlier
+   work on the instance. Wait on the receipt to collect completion and any
+   execution failure. Cloning is
    driven by the PhysX replicator: each target becomes a
    real physics object — articulations are reconstructed, not flattened —
    addressable by its target path. It happens in the simulation's internal
    representation only; no USD prims are authored at the target paths.
+   Do not use authored-ancestor deletion to remove runtime clones. In a
+   sibling-environment layout, cloning `/World/envs/env0` to `/World/envs/env1`
+   and then deleting `/World/envs` through ovstage removes the authored source
+   bodies but leaves the runtime clone addressable. This is not a general
+   guarantee that clones survive ancestor deletion in other layouts.
    When one logical environment is assembled from **several** clone calls (a
    heterogeneous ClonePlan: first every environment's robot, then every
    environment's object), pass the optional per-target `env_ids` with the same
@@ -793,20 +949,27 @@ Two paths duplicate a scene subtree for large-scale parallel simulation:
    [cloning tutorial](tutorials/cloning.md) includes the complete Python and C
    examples.
 
-2. **Build the scene up front through ovstage.** Apps that own the ovstage
-   `Stage` can duplicate the source subtree on that Stage (`ovstage_clone`)
-   *before* `update_from_ovstage()`, then hand the populated scene to ovphysx.
-   This is scenegraph-level authoring that keeps all scene edits in one
-   producer-owned stream and sidesteps the "clone before warmup" ordering hazard.
+2. **Copies on the ovstage Stage.** If other consumers also need the cloned
+   stage data, wait for the attach to complete, then call `Stage.clone()`
+   (`ovstage_clone` in C) separately, with the same source and target paths.
+   Keep these writes on a dedicated ordinal, seal it, and exclude it from
+   every `update_from_ovstage()` range. Create
+   the runtime physics copies with `PhysX.clone()` before warmup or the first
+   step. Stage cloning does not call the PhysX replicator; forwarding its
+   ordinal can instead ingest the copied physics data as new scene objects.
 
-Use whichever fits your call-site. The direct API provides inline multi-target
-convenience after the scene has been attached and builds full physics (including
-articulations) for each clone; up-front ovstage duplication is the choice when
-your app already orchestrates every scene edit through ovstage.
+Excluding the ordinal does not hide the copies permanently: a later update
+that adds or removes physics prims, or changes their physics schemas, can
+rescan the stage and ingest those copies as new scene objects.
+
+For example, after attaching the source at ordinal 1, stage cloning can use
+ordinal 2. Call `PhysX.clone()` separately for the same targets. Author later
+source physics edits at ordinal 3 or above, seal them, and update from ordinal
+3; do not include ordinal 2 in that range.
 
 Neither cloning nor `step()` implicitly drains later ovstage edits. Applications
-must seal those edit ordinals and call `ovphysx_update_from_ovstage()` before
-cloning or stepping.
+must seal and drain ordinary physics edit ordinals before cloning or stepping,
+while keeping stage-clone ordinals out of those ranges.
 
 
 ## Remote USD Loading
@@ -843,6 +1006,7 @@ placeholder strings; do not commit real credentials in source code.
 import ovphysx
 from ovphysx.samples.python_samples.schema_support import physx_schema_paths
 import ovstage
+from ovphysx.population import physics_population_descs
 
 def step_remote_scene(scene_url: str) -> None:
     # Register external PhysX and Newton schemas before population.
@@ -855,11 +1019,12 @@ def step_remote_scene(scene_url: str) -> None:
         # For a private URL, configure OmniClient credentials here. Creating
         # the Stage has loaded the client, and population has not started yet.
         physx = ovphysx.PhysX()
-        ovstage.population.open_usd(
+        ovstage.population.open_usd_with_desc(
             stage,
             scene_url,
             ordinal=1,
-            domains=ovstage.PopulationDomain.ALL,
+            time=ovstage.population.DEFAULT_TIME,
+            descs=physics_population_descs(rendering=True),
         )
         # attach_ovstage() reads at a sealed ordinal.
         stage.advance_write_floor(ordinal=1).wait()
@@ -876,11 +1041,11 @@ def step_remote_scene(scene_url: str) -> None:
 
 - OmniClient credentials are **process-global** — configure them **before** ovstage
   population of the remote URL.
-- The `domains` mask in the `step_remote_scene` example is `ALL` (equivalently
-  `PHYSICS | RENDERING`), the choice for arbitrary content. `PHYSICS` alone, as in
-  the shipped samples, is enough when the USD is known not to put physics under
-  native scene-graph instances — refer to
-  [Population domains](ovstage_integration.md#population-domains).
+- The `step_remote_scene` example populates the physics population description
+  with RENDERING beside it, the choice for arbitrary content. The description
+  alone is enough when the USD is known not to put physics under native
+  scene-graph instances — refer to
+  [Populating physics](ovstage_integration.md#populating-physics-the-physics-population-description).
 - OmniClient must be loaded before credentials are configured. Kit-hosted
   Python can import the host-provided `omni.client` module. Standalone callers
   create the ovstage `Stage` first, then bind the client API that ovstage loaded
@@ -981,6 +1146,10 @@ and read that attribute. The column is a host `uint64`, one borrowed address
 per matched object. Python reads it through `PhysX.read` as a Warp `uint64`
 array. There is no separate pointer lookup.
 
+> **Structural changes through a native PhysX pointer are not recommended.** After
+> one, ovphysx reads and writes are not guaranteed to work. See
+> [Structural changes through a pointer](#structural-changes-through-a-pointer).
+
 | Query type | Address |
 |---|---|
 | `OVPHYSX_QUERY_TARGET_SCENE` | `PxScene` |
@@ -1020,11 +1189,38 @@ from that query. `ovphysx_physx_type_t` names the kind carried by
 object-change callbacks.
 
 Casting requires the PhysX SDK C++ headers shipped under `include/physx/`.
-`find_package(ovphysx)` sets `ovphysx_PHYSX_INCLUDE_DIR`. No PhysX library
-linking is needed.
+`find_package(ovphysx)` sets `ovphysx_PHYSX_INCLUDE_DIR`. Calling virtual methods
+on returned objects needs no additional PhysX libraries. The shipped headers do
+not make every PhysX helper callable through ovphysx; see the
+[limitations of direct SDK access](tutorials/physx_interop.md#setup).
 
 Refer to the [PhysX Interop tutorial](tutorials/physx_interop.md) for a
 sample that reads `physxPointer` and calls `setKinematicTarget()`.
+
+### Structural changes through a pointer
+
+Structural changes through a native PhysX pointer are not recommended.
+Structural means changing which PhysX objects exist in, or belong to, a scene
+ovphysx manages:
+
+- adding objects to it: actors, aggregates, articulations, shapes, joints and
+  other constraints, including objects you create through `PxPhysics`;
+- removing or re-inserting objects ovphysx created, or moving them to another
+  scene;
+- attaching shapes to, or detaching them from, ovphysx's actors.
+
+ovphysx cannot detect such a change: it tracks its objects through its own
+records, and checking PhysX's scene contents on every call would make every
+read and write slower in proportion to the scene. So after a structural change
+through a native PhysX pointer, **ovphysx reads and writes are not guaranteed to
+work until you detach and re-attach the stage**: a query, read, write or commit may
+fail, read or write the wrong object without any error, or crash.
+
+To change the structure and keep reads and writes working, author the change
+in ovstage and apply it with `ovphysx_update_from_ovstage()`, use
+`ovphysx_clone()`, or detach and re-attach the stage. Objects you create through
+`PxPhysics` and keep outside the scenes ovphysx manages follow the PhysX SDK's
+ownership rules and do not affect ovphysx.
 
 ### Pointer Lifetime
 
@@ -1046,17 +1242,17 @@ completes.
 
 ### Thread Safety
 
-PhysX APIs on returned pointers must only be called between simulation
-steps — specifically after `wait_task()` completes for the preceding step
-and before the next `ovphysx_step()` call. Calling PhysX APIs while a
-step is in-flight is a data race.
+Call PhysX APIs on returned pointers only while the instance has no pending
+work: after you collect the last task you submitted on it, and before the next
+ovphysx call on that instance. Calling PhysX APIs while a step or other
+queued work runs is a data race.
 
 ### Disabling simulation
 
 Do not set or clear `PxActorFlag::eDISABLE_SIMULATION` on a
-`PxRigidDynamic*` read from `physxPointer`. That path is
-unsupported: ovphysx does not observe the change, and on DirectGPU scenes
-the next read or write may address the wrong body without error.
+`PxRigidDynamic*` read from `physxPointer`. ovphysx does not observe it, and on
+DirectGPU scenes the next read or write may address the wrong body without
+error.
 
 Use the official path instead: ovstage `disableSimulation` through `ovphysx_write()` /
 `OVPHYSX_ATTR_DISABLE_SIMULATION`.
@@ -1167,6 +1363,14 @@ callback. Destroying the C++ handle there closes that subscription without
 waiting, skips later callbacks, and frees its state after that callback has
 unwound, including when the callback throws.
 
+`ovphysx_detach_ovstage()` and `ovphysx_destroy_instance()` run
+`on_all_objects_destroyed` without providing global exclusion for other
+instances. On an idle instance, cached-query validation, recording-status
+queries, completed-receipt collection and already-absent query/read/write
+releases may progress while the callback runs. The callback must not wait for
+another thread's ovphysx call, directly or through an application lock or event
+that thread holds.
+
 **Clone and population:** `ovphysx_clone()` does not emit `on_object_created`.
 Pointer caches that need to track cloned objects must be refreshed after the
 clone task wait succeeds. The initial ovstage attach/update population is also
@@ -1237,6 +1441,8 @@ walkthrough. Key points:
   successful `step()` or `step_sync()` call that simulated. A zero-dt step
   simulates nothing: it leaves both the contacts and that `dt` unchanged, so
   reads across it are identical.
+- Failed steps do not roll back simulation results. Contact forces read after
+  a failed step are not guaranteed to be valid.
 
 ## Running With Other Carbonite Users
 
@@ -1296,9 +1502,9 @@ Important process rules:
 - If another Carbonite user already set the app directory, ovphysx preserves it.
 
 Schema-path registration governs coexistence in the *process*. If the subsystems
-also share one ovstage Stage, that Stage must be populated with `ALL` (or
-`PHYSICS | RENDERING`) — refer to
-[Population domains](ovstage_integration.md#population-domains).
+also share one ovstage Stage, that Stage must be populated with RENDERING beside
+the physics population description — refer to
+[Populating physics](ovstage_integration.md#populating-physics-the-physics-population-description).
 
 ## Logging
 
@@ -1517,9 +1723,56 @@ Native callers use `ovphysx_instance_handle_t` and the
 are unchanged. Python retains `start_recording`, `stop_recording`, and
 `is_recording`.
 
+Recording start and stop wait for queued and running work on every instance.
+They do not collect task results; those results remain available to later waits.
+`is_recording()` does not wait.
+
+Serialize calls on each handle. Different instances may run lifecycle calls at
+the same time, but overlapping recording and lifecycle transitions can return
+`OVPHYSX_API_INVALID_STATE`. Retry after the other transition finishes.
+
+During a recording, attach and detach finish all pending instance work and run
+on the calling thread. Detaching the recording owner, or the last live
+attachment, also tries to finish the recording. Call `stop_recording()` first
+if the application must receive finalization errors. Detaching a non-owner
+keeps the recording alive while another attachment remains. Reattaching never
+starts recording automatically.
+
+Detach still rejects with `OVPHYSX_API_INVALID_STATE` before native teardown
+while a companion preview has pending results and a recording is active.
+The rejection does not fetch the preview or end the recording; fetch or close
+the preview before retrying.
+
+Start returns `OVPHYSX_API_INVALID_STATE` when recording is unavailable, no
+physics stage is live, or a recording already exists. Stop returns it when the
+calling instance owns no recording. Start and stop can also return it for
+callback re-entry, pending preview results, or another active runtime
+transition. Fetch or close pending previews, wait for the conflicting activity,
+and retry. Invalid destinations return `OVPHYSX_API_INVALID_ARGUMENT`; open or
+sampling failures return `OVPHYSX_API_ERROR`.
+
 The [recording tutorial](tutorials/omnipvd_recording.md) contains complete
 examples and the dormant capability cost. Existing startup-output callers
 should follow the [migration guide](ovd_api_migration.md).
+
+Pass `OmniPvdFilter` to `start_recording(..., filter=...)` to select exact
+scene and supported object paths plus optional secondary data for either
+FILE or TCP. Native callers pass optional recording options to
+`ovphysx_ovd_start_recording`. Updated native TCP receivers
+can request new filters using streamed object handles; OvPhysX validates them
+against the recording attachment and applies them before an idle owner step.
+See [selective recording and receiver control](tutorials/omnipvd_recording.md#select-objects-and-data)
+for the scope, acknowledgment and restart rules.
+
+`start_recording(..., wait_for_selection=True)` in Python, or
+`ovphysx_ovd_start_recording` with `options.wait_for_selection=true` in C, opens a TCP session that
+first streams a lightweight identity catalog of this instance's attachment,
+limited to the optional filter's scene and object lists, so that a receiver can
+choose what to record before the first detailed snapshot. `is_recording()`
+reports the waiting session, and stop or owner detach ends it. A receiver
+selection takes effect at the owner's next public `step()` or `step_sync()`,
+before simulation. Warmup does not poll receiver requests; keep stepping the
+owner while waiting for a selection.
 
 ## Profiling
 
@@ -1562,10 +1815,12 @@ Like all Carbonite settings, `/physics/profilerBackend` is process-global and st
 
 Notes:
 
-- The trace file is written when the **last** instance in the process shuts down, because that is when the profiler is released. It is plain JSON, not gzip.
+- The trace JSON is finalized when the **last** instance in the process shuts down, because that is when the profiler is released. The file can appear and grow during recording; wait for teardown before reading it. It is plain JSON, not gzip.
 - The PhysX SDK zones depend on the profile zones being compiled into the PhysX SDK that ovphysx links, which is the case for the shipped `checked` PhysX libraries. A build against a PhysX `release` package has no zones to forward, and that group stays silent while the others still work.
 - The SDK's twelve cross-thread phases (`Basic.simulate`, `Basic.collision`, ...) are not reported at all, under any backend. The Carbonite profiler interface models a zone as a per-thread begin/end pair and cannot express a range closing on another thread, so the runtime discards them rather than corrupt a thread's zone stack. `Basic.simulate` spans the same work as `ovphysx_step` through `ovphysx_wait_task`, which is the closest substitute for the outermost one.
-- `ovphysx_step` only enqueues work, so its zone is short and the simulation cost appears under `ovphysx_wait_task`. That is the asynchronous execution model, not a measurement artifact.
+- With a worker, `ovphysx_step` shows only submission time; blocking time appears
+  under `ovphysx_wait_task`. Without a worker, the full step appears under
+  `ovphysx_step`.
 - The runtime zones include Carbonite's own task-system zones (`Running fiber`, `Executing task`), which wrap everything else and so dominate a summary sorted by total time. They are also not free to record: several build their names per prim, so a profiled stage attach is measurably slower than an unprofiled one.
 - If the surrounding process already bound a Carbonite profiler backend, that one keeps the zones and ovphysx logs which backend bound, at `INFO`.
 - The SDK zones reach the Carbonite profiler (`/physics/exposeProfilerData`, on by default) and from there whichever backend is bound, so they follow the same one route as every other zone.

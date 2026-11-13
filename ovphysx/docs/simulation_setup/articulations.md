@@ -89,6 +89,11 @@ UsdPhysics.ArticulationRootAPI.Apply(fixed.GetPrim())
 
 For a floating-base articulation, apply `ArticulationRootAPI` directly to the
 root link instead; initial pose and velocity can be set on the root link only.
+A root velocity authored with `physics:localSpaceVelocities` is reframed into
+world space only at load; a later live velocity edit is applied raw (and, on a
+DirectGPU scene after its first step, not at all), so drive the root at runtime
+with the world-space root-velocity session write (see
+[limitations](../read_write/limitations.md)).
 
 The `links_chain_sample.usda` scene used by [Hello World](../tutorials/hello_world.md)
 and [Tensor Bindings (deprecated)](../tutorials/tensor_bindings.md) is a ready articulation to
@@ -145,8 +150,9 @@ controller output and any user-defined joint effort. These drive-model parameter
 are also exposed at runtime through the `ARTICULATION_DOF_DRIVE_MODEL` tensor type.
 
 > Distinguish `maxActuatorVelocity` (envelope; clamps drive effort) from
-> `maxJointVelocity` on `PhysxJointAxisAPI` (below; clamps the joint velocity
-> itself).
+> `maxJointVelocity` on `PhysxJointAxisAPI` (below; limits joint velocity through
+> solver impulses). The latter is not an exact clamp: with finite solver
+> iterations, a driven joint can exceed the configured limit.
 
 ## Articulation Joint Friction and Armature
 
@@ -241,12 +247,12 @@ tensor types — refer to [Tensor Bindings (deprecated)](../tutorials/tensor_bin
 
 ## Inverse Dynamics Queries
 
-For control algorithms, ovphysx exposes read-only articulation inverse dynamics through
-tensor bindings: the `ARTICULATION_JACOBIAN`, `ARTICULATION_MASS_MATRIX`,
-`ARTICULATION_CORIOLIS_AND_CENTRIFUGAL_FORCE`, `ARTICULATION_GRAVITY_FORCE`, and
-`ARTICULATION_LINK_INCOMING_JOINT_FORCE` tensor types (plus
-`ARTICULATION_CENTROIDAL_MOMENTUM` for floating-base articulations). Refer to
-[Tensor Bindings (deprecated)](../tutorials/tensor_bindings.md).
+For control algorithms, ovphysx exposes read-only articulation inverse dynamics through the read
+API: `jacobian`, `massMatrix`, `coriolisForce`, `gravityForce` and, for floating-base articulations,
+`centroidalMomentum` on whole articulations, and `linkIncomingJointForce` on articulation links. Each
+matrix keeps its own dimensions, for example `[N, R, C]` for the Jacobian. Refer to
+[Whole articulations](../read_write/readable.md#whole-articulations) and
+[Articulation links](../read_write/readable.md#articulation-links).
 
 ## Limitations and Differences
 

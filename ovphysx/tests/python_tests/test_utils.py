@@ -204,11 +204,12 @@ def register_physx_schemas_with_ovstage():
     _physx_schemas_registered = True
 
 
-def attach_usd_with_ovstage(physx, usd_path: str, ordinal: int = 1, domains=None):
+def attach_usd_with_ovstage(physx, usd_path: str, ordinal: int = 1, rendering: bool = True):
     """Populate an ovstage Stage and attach it at the populated ordinal.
 
-    ALL is the default so population resolves world transforms. A test may
-    explicitly select another domain to exercise its population boundary.
+    The physics population description is populated with RENDERING beside it by default, the
+    compatibility path for native instancing. A test may pass ``rendering=False`` to exercise
+    physics-only population; the seal composes world transforms either way.
 
     The returned Stage is owned by the caller, but this helper also keeps it
     alive on the PhysX instance so fixture teardown can detach and destroy it.
@@ -221,6 +222,7 @@ def attach_usd_with_ovstage(physx, usd_path: str, ordinal: int = 1, domains=None
         destroy_ovstage_test_attachments(physx)
 
     import ovstage
+    from ovphysx.population import physics_population_descs
 
     if not ovstage.population.available():
         raise RuntimeError("ovstage population bridge is unavailable")
@@ -230,11 +232,12 @@ def attach_usd_with_ovstage(physx, usd_path: str, ordinal: int = 1, domains=None
     # The population bridge owns the backing USD stage.
     stage = ovstage.Stage("ovphysx-test-stage")
     try:
-        ovstage.population.open_usd(
+        ovstage.population.open_usd_with_desc(
             stage,
             str(usd_path),
             ordinal=ordinal,
-            domains=ovstage.PopulationDomain.ALL if domains is None else domains,
+            time=ovstage.population.DEFAULT_TIME,
+            descs=physics_population_descs(rendering=rendering),
         )
         stage.advance_write_floor(ordinal=ordinal).wait()
         physx.wait_task(physx.attach_ovstage(stage, read_ordinal=ordinal))
@@ -259,7 +262,7 @@ def attach_usd_with_ovstage(physx, usd_path: str, ordinal: int = 1, domains=None
     return stage
 
 
-def load_usd_with_ovstage(physx, usd_path: str, path_prefix: str = "", ordinal: int = 1, domains=None):
+def load_usd_with_ovstage(physx, usd_path: str, path_prefix: str = "", ordinal: int = 1, rendering: bool = True):
     """Test helper that populates ovstage and attaches it to ovphysx.
 
     This helper collects the attach task and returns None. Call
@@ -267,7 +270,7 @@ def load_usd_with_ovstage(physx, usd_path: str, path_prefix: str = "", ordinal: 
     """
     if path_prefix:
         raise RuntimeError("ovstage population helper does not support path_prefix")
-    attach_usd_with_ovstage(physx, usd_path, ordinal=ordinal, domains=domains)
+    attach_usd_with_ovstage(physx, usd_path, ordinal=ordinal, rendering=rendering)
 
 
 # The contact sensor's two net contact-force components (OVPHYSX_ATTR_NET_*_CONTACT_FORCE).
@@ -443,7 +446,8 @@ def read_contact_columns(physx, stage, attributes, **read_kwargs):
                 for path, tensor in zip(prims, group.tensors):
                     values = tensor.numpy().reshape(-1)
                     if values.dtype == numpy.uint64:  # prim-path handles
-                        rows.append((path, [paths.path_to_string(int(h)) if h else "" for h in values]))
+                        names = [paths.path_to_string(ovstage.PrimPath(int(h))) if h else "" for h in values]
+                        rows.append((path, names))
                     else:
                         rows.append((path, [float(v) for v in values]))
                 continue
@@ -533,6 +537,45 @@ def destroy_ovstage_test_attachments(physx) -> None:
         pass
 
 
+def reset_shared_instance(physx) -> None:
+    """Return a session-wide test instance to a clean state after a test.
+
+    Best effort, so that one error-path test cannot cascade, except that a task
+    failure the test left uncollected fails it: long calls fail as tasks, and a
+    dropped failing receipt must not pass silently.
+    """
+    import logging
+
+    from ovphysx import TaskError
+
+    uncollected = None
+    try:
+        # Waits submit nothing, so submit the releases of outputs the test dropped first.
+        physx._drain_pending_read_releases()
+        physx.wait_all()
+    except TaskError as error:
+        uncollected = error
+    except RuntimeError:
+        pass
+    try:
+        destroy_ovstage_test_attachments(physx)
+    except Exception:
+        pass
+    try:
+        physx.detach_ovstage()
+        physx.wait_all()
+    except RuntimeError:
+        logging.getLogger(__name__).warning(
+            "physx_sdk teardown: detach_ovstage() failed -- instance may be degraded for subsequent tests"
+        )
+    try:
+        destroy_ovstage_test_attachments(physx)
+    except Exception:
+        pass
+    if uncollected is not None:
+        pytest.fail(f"test left uncollected task failures: {uncollected}", pytrace=False)
+
+
 # DEPRECATED (tensor-binding-deprecation): a TensorBinding-only helper used solely by
 # test_tensor_bindings.py, removed with the binding. The rest of this module stays.
 def verify_tensor_shape(binding, expected_count, expected_components):
@@ -593,7 +636,8 @@ def read_rigid_body_poses(sdk):
             )
             slot = by_partition.setdefault(group.prim_list, {})
             for tensor in group.tensors:
-                column = tensor if isinstance(tensor, np.ndarray) else tensor.numpy()
+                # Copied: a CPU column's NumPy view is invalid once the read is closed.
+                column = tensor if isinstance(tensor, np.ndarray) else tensor.numpy().copy()
                 if column.shape[1] == 3:
                     slot["position"] = column
                 elif column.shape[1] == 4:

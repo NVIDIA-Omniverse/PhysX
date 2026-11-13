@@ -4,29 +4,14 @@
 # @implements REQ-PACKAGING-OVSTAGE-001
 # @covers AC-5
 
-"""Build and run the installed basic-workflow skill's C example."""
+"""Build and run the installed basic_workflow_c sample."""
 
 import argparse
 import os
 from pathlib import Path
 import re
-import shlex
 import shutil
 import subprocess
-
-
-def recipe(text):
-    c = next(block for block in re.findall(r"^```c\n(.*?)^```", text, re.M | re.S)
-             if "int main(" in block)
-    section = text.split("### Build and run the C sample\n", 1)[1].split("\n## ", 1)[0]
-    cmake = next(block for block in re.findall(r"^```cmake\n(.*?)^```", section, re.M | re.S)
-                 if "add_executable(my_app main.c)" in block)
-    commands = re.findall(r"^cmake (.+)$", section, re.M)
-    if len(commands) != 2:
-        raise ValueError("Expected one CMake configure and one build command")
-    launchers = dict(re.findall(r"^- (Windows, [^:]+): `([^`]+)`", section, re.M))
-    launchers["Linux"] = re.search(r"^\./[^\s]+/my_app$", section, re.M).group(0)
-    return c, cmake, commands, launchers
 
 
 def read_cache(path):
@@ -69,43 +54,37 @@ def run(args):
     sdk = args.sdk_root.resolve()
     build_root = args.build_root.resolve()
     consumer = build_root / "basic_workflow"
-    c, cmake, commands, launchers = recipe(
-        (sdk / "skills/basic-workflow/SKILL.md").read_text(encoding="utf-8")
-    )
     cache = read_cache(build_root / "CMakeCache.txt")
 
     if not args.run_only:
+        if consumer.resolve().parent != build_root:
+            raise ValueError(f"Consumer build directory escapes build root: {consumer}")
         if consumer.exists():
             shutil.rmtree(consumer)
         consumer.mkdir(parents=True)
-        (consumer / "main.c").write_text(c, encoding="utf-8")
-        (consumer / "CMakeLists.txt").write_text(cmake, encoding="utf-8")
-        shutil.copytree(sdk / "samples/c_samples/common", consumer / "common")
-        (consumer / "samples/data").mkdir(parents=True)
-        shutil.copy2(sdk / "samples/data/simple_physics_scene.usda", consumer / "samples/data")
-
-        configure = shlex.split(commands[0])
-        configure = [arg.replace("/path/to/ovphysx", sdk.as_posix())
-                     .replace("/path/to/ovstage", args.ovstage_root.resolve().as_posix())
-                     for arg in configure]
-        configure.extend(toolchain_args(cache))
-        subprocess.run([args.cmake, *configure], cwd=consumer, check=True)
-        subprocess.run([args.cmake, *shlex.split(commands[1])], cwd=consumer, check=True)
+        sample = sdk / "samples/c_samples/basic_workflow_c"
+        configure = [
+            args.cmake, "-S", str(sample), "-B", str(consumer), "-DCMAKE_BUILD_TYPE=Release",
+            f"-DCMAKE_PREFIX_PATH={sdk.as_posix()};{args.ovstage_root.resolve().as_posix()}",
+            *toolchain_args(cache),
+        ]
+        subprocess.run(configure, cwd=consumer, check=True)
+        subprocess.run([args.cmake, "--build", str(consumer), "--config", "Release"],
+                       cwd=consumer, check=True)
 
     if not args.build_only:
-        label = "Linux"
+        launcher = consumer / "basic_workflow_c"
         if os.name == "nt":
-            label = ("Windows, Visual Studio generator" if cache["CMAKE_GENERATOR"].startswith("Visual Studio ")
-                     else "Windows, Ninja generator")
-        launcher = consumer / launchers[label].replace("\\", "/")
+            output = consumer / "Release" if cache["CMAKE_GENERATOR"].startswith("Visual Studio ") else consumer
+            launcher = output / "run_basic_workflow_c.cmd"
         if not launcher.is_file():
-            raise FileNotFoundError(f"Documented launcher not found: {launcher}")
+            raise FileNotFoundError(f"Sample launcher not found: {launcher}")
         env = runtime_env(os.environ)
         command = [str(launcher)]
         if os.name == "nt":
             command = [env["COMSPEC"], "/d", "/c", str(launcher)]
         subprocess.run(command, cwd=consumer, env=env, check=True, timeout=60)
-        print(f"basic-workflow passed with {cache['CMAKE_GENERATOR']}")
+        print(f"basic_workflow_c passed with {cache['CMAKE_GENERATOR']}")
 
 
 def main():

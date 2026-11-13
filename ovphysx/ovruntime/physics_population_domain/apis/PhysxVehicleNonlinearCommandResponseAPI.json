@@ -1,0 +1,33 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxVehicleNonlinearCommandResponseAPI",
+  "title": "PhysxVehicleNonlinearCommandResponseAPI",
+  "summary": "A nonlinear response to a vehicle command, applied as PhysxVehicleNonlinearCommandResponseAPI:drive, :steer, :brakes0 or :brakes1: command values, and per command value a graph of the response over speed. The walkers parse every applied instance on a prim that lists one of the four, reading physxVehicleNonlinearCommandResponse:<inst>:commandValues, speedResponsesPerCommandValue and speedResponses.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "Typed"
+  ],
+  "multi_apply": true,
+  "instances": [
+    "drive",
+    "steer",
+    "brakes0",
+    "brakes1"
+  ],
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "columns": [],
+  "interactions": [
+    {
+      "with": "PhysxVehicleBrakesAPI",
+      "rule": "The brakes0 and brakes1 instances shape the response of the braking system of the same instance name."
+    }
+  ],
+  "notes": [
+    "Its columns are not described yet."
+  ]
+}

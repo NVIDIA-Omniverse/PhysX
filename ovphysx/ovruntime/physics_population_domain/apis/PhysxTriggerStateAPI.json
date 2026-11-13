@@ -1,0 +1,31 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxTriggerStateAPI",
+  "title": "PhysxTriggerStateAPI",
+  "summary": "Asks the runtime to report a trigger's current overlaps back to the stage; only its presence is checked and no column is read. Together with PhysxTriggerAPI it marks the shape for overlap output, and the runtime then writes the overlapping colliders to physxTrigger:triggeredCollisions through the data-write sink.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "Gprim"
+  ],
+  "requires": [
+    "PhysicsCollisionAPI",
+    "PhysxTriggerAPI"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "columns": [],
+  "interactions": [
+    {
+      "with": "PhysxTriggerAPI",
+      "rule": "Without PhysxTriggerAPI on the same collider the API has no effect: only a trigger's overlaps are written."
+    }
+  ],
+  "notes": [
+    "physxTrigger:triggeredCollisions is output only: the runtime writes it through the data-write sink (to USD on the USD backend) and the parser never reads it, so it is not a column of this contract. Without a write sink nothing is written."
+  ]
+}

@@ -1,0 +1,202 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxMaterialAPI",
+  "title": "PhysxMaterialAPI",
+  "summary": "PhysX tuning for a physics material: combine modes and compliant contact. Read only when the prim also carries PhysicsMaterialAPI (that API is what enumerates materials) and only when PhysxMaterialAPI is listed in usd-schemas.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "Typed"
+  ],
+  "requires": [
+    "PhysicsMaterialAPI"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "producer_scope": "Every declared attribute is published at its resolved value. Token attributes are published as token-id columns (TOKEN_ID semantic); the consumer reads them as token ids. Nothing is rewritten or created by the producer.",
+  "columns": [
+    {
+      "name": "physxMaterial:frictionCombineMode",
+      "usd_type": "token",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "TOKEN_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "average",
+      "parser_default": "average",
+      "absent": "average. Accepted tokens: average, min, max, multiply. An unrecognised token or an invalid token id silently resolves to average.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterface.cpp"
+      ],
+      "notes": "PhysX: the material's friction combine mode, PxCombineMode eAVERAGE=0 eMIN=1 eMULTIPLY=2 eMAX=3; the runtime's own combine-mode enum has the same ordinals and is cast directly. No verify block: the generator turns a sample into a numeric C++ literal and cannot express a token string, and a token-id sample would not be portable across stages."
+    },
+    {
+      "name": "physxMaterial:restitutionCombineMode",
+      "usd_type": "token",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "TOKEN_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "average",
+      "parser_default": "average",
+      "absent": "average. Same tokens and unrecognised-token rule as physxMaterial:frictionCombineMode.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterface.cpp"
+      ],
+      "notes": "PhysX: the material's restitution combine mode. No verify block, see physxMaterial:frictionCombineMode."
+    },
+    {
+      "name": "physxMaterial:dampingCombineMode",
+      "usd_type": "token",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "TOKEN_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "average",
+      "parser_default": "average",
+      "absent": "average. Same tokens and unrecognised-token rule as physxMaterial:frictionCombineMode.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterface.cpp"
+      ],
+      "notes": "PhysX: the material's damping combine mode. No verify block, see physxMaterial:frictionCombineMode."
+    },
+    {
+      "name": "physxMaterial:compliantContactAccelerationSpring",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": false,
+      "verify": {
+        "target": "material",
+        "expr": "material->getFlags().isSet(::physx::PxMaterialFlag::eCOMPLIANT_ACCELERATION_SPRING)",
+        "kind": "bool",
+        "sample": true,
+        "notes": "The flag is set regardless of stiffness; PhysX ignores it while restitution is non-negative."
+      },
+      "parser_default": false,
+      "absent": "Off: compliant stiffness and damping are force-based. On, they are interpreted as accelerations.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterface.cpp"
+      ]
+    },
+    {
+      "name": "physxMaterial:compliantContactStiffness",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "verify": {
+        "target": "material",
+        "expr": "material->getRestitution() < 0.0f ? -material->getRestitution() : 0.0f",
+        "kind": "float",
+        "notes": "No sample: a positive stiffness is stored as a negative restitution and would invalidate the physics:restitution check on the same material. The absent check still holds (0 means the restitution is left as authored)."
+      },
+      "parser_default": 0.0,
+      "absent": "0.0: compliant contact off; physics:restitution reaches PhysX unchanged. Any positive value switches the material to compliant contact by storing -stiffness as the PhysX restitution.",
+      "raw_fallback_diverges": false,
+      "units": "force/length (acceleration/length when the acceleration spring flag is set)",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterface.cpp"
+      ],
+      "notes": "Lower-clamped to 0 on read (a negative value becomes 0, i.e. off); no upper bound."
+    },
+    {
+      "name": "physxMaterial:compliantContactDamping",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "verify": {
+        "target": "material",
+        "expr": "material->getDamping()",
+        "kind": "float",
+        "notes": "No sample: a non-zero damping is only meaningful with a positive compliant stiffness, which the restitution check forbids in the same test. The absent check holds."
+      },
+      "parser_default": 0.0,
+      "absent": "0.0, no compliant damping.",
+      "raw_fallback_diverges": false,
+      "units": "force*s/length (acceleration*s/length when the acceleration spring flag is set)",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterface.cpp"
+      ],
+      "notes": "Lower-clamped to 0 on read. The consumer always sets the damping on the PhysX material so that PhysX reports damping-without-stiffness itself."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysicsMaterialAPI",
+      "rule": "physics:restitution and compliantContactStiffness share one PhysX slot: stiffness > 0 replaces the restitution with -stiffness. The scene default material never receives the compliant-contact fields, only the three combine modes."
+    }
+  ],
+  "notes": [
+    "physxMaterial:improvePatchFriction is neither in the current PhysxMaterialAPI schema fallback inventory nor read anywhere by the consumer; it is not a column of this contract.",
+    "The runtime's own combine-mode enum (average=0, min, multiply, max) matches PxCombineMode ordinal for ordinal; token order in the schema (average, min, max, multiply) differs from the enum order, which only matters if a future contract maps tokens to integers."
+  ]
+}

@@ -162,27 +162,28 @@ TEST_F(DebugRenderE2E, AttributeTokenRoundTripsThroughTheStageDictionary)
     auto* paths = static_cast<path_dictionary_instance_t*>(stageDictionary);
 
     const ovx_string_t name{ OVPHYSX_ATTR_DEBUG_BODY_AXES, sizeof(OVPHYSX_ATTR_DEBUG_BODY_AXES) - 1 };
-    ovx_token_t token = 0;
+    ovx_token_t token{0};
     const ovx_api_result_t interned = path_dictionary_create_tokens_from_strings(paths, &name, 1, &token);
     if (interned.error.ptr)
         path_dictionary_release_error(paths, interned.error);
     ASSERT_EQ(interned.status, OVX_API_SUCCESS);
-    ASSERT_NE(token, 0u);
+    ASSERT_NE(token.raw_id, 0u);
 
-    ovx_string_or_token_t byToken{};
+    ovx_token_or_string_t byToken{};
     byToken.token = token;
-    const ovx_string_or_token_t attributes[] = { byToken, OVPHYSX_NAME_DEBUG_SCALE };
+    const ovx_token_or_string_t attributes[] = { byToken, OVPHYSX_NAME_DEBUG_SCALE };
     ovphysx_read_handle_t read = 0;
-    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_read(m_handle, query, attributes, 2, &read, nullptr)).status,
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_read(m_handle, query, attributes, 2,
+                                                               ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr)).status,
               OVPHYSX_API_SUCCESS);
     const ovstage_read_group_t* bodyAxes = nullptr;
     ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_fetch_read_next(m_handle, read, &bodyAxes)).status,
               OVPHYSX_API_SUCCESS);
     ASSERT_NE(bodyAxes, nullptr);
-    EXPECT_EQ(bodyAxes->attribute, token);
+    EXPECT_EQ(bodyAxes->columns[0].attribute, token);
     ovx_string_t resolved{};
     const ovx_api_result_t lookedUp =
-        path_dictionary_get_strings_from_tokens(paths, &bodyAxes->attribute, 1, &resolved);
+        path_dictionary_get_strings_from_tokens(paths, &bodyAxes->columns[0].attribute, 1, &resolved);
     if (lookedUp.error.ptr)
         path_dictionary_release_error(paths, lookedUp.error);
     ASSERT_EQ(lookedUp.status, OVX_API_SUCCESS);
@@ -193,8 +194,8 @@ TEST_F(DebugRenderE2E, AttributeTokenRoundTripsThroughTheStageDictionary)
     ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_fetch_read_next(m_handle, read, &scale)).status,
               OVPHYSX_API_SUCCESS);
     ASSERT_NE(scale, nullptr);
-    EXPECT_NE(scale->attribute, 0u);
-    EXPECT_NE(scale->attribute, bodyAxes->attribute);
+    EXPECT_NE(scale->columns[0].attribute.raw_id, 0u);
+    EXPECT_NE(scale->columns[0].attribute, bodyAxes->columns[0].attribute);
     ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_release_group(m_handle, read, bodyAxes->read_group_id)).status,
               OVPHYSX_API_SUCCESS);
     ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_release_group(m_handle, read, scale->read_group_id)).status,

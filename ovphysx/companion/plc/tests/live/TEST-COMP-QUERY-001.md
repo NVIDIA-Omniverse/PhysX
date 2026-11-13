@@ -11,7 +11,7 @@ type: integration
 
 Executed: nine native C/Python integration scenarios (including the Inspector
 sample and convex geometry) and the native lifecycle case on both source backends. Covers
-[REQ-COMP-QUERY-001](../../requirements/live/REQ-COMP-QUERY-001.md) AC-1 through AC-4.
+[REQ-COMP-QUERY-001](../../requirements/live/REQ-COMP-QUERY-001.md) AC-1 through AC-5.
 
 ## Scenario
 
@@ -32,6 +32,7 @@ Query and inspect a scene containing instanced colliders, a back-facing triangle
 - Hits identify the correct instance and expected geometric values/step (REQ AC-2).
 - Inspection returns typed state and frame conversion with no acquisition of a unit-test API (REQ AC-3).
 - Results are collected after completion and the deleted-object read fails safely (REQ AC-4).
+- A ray onto a GPU-dynamics scene returns the expected hit; the same query on a DirectGPU scene reports unavailable with an empty result (REQ AC-5).
 
 ## Executable coverage
 
@@ -39,5 +40,6 @@ Query and inspect a scene containing instanced colliders, a back-facing triangle
 - [test_inspection.py](../../../tests_native/test_inspection.py): typed mass/material/body state, joint world-frame conversion, moving articulation DOF/link state, copied lifetime, owner retirement, ABI sizing and the executable Inspector sample.
 - [test_camera.py](../../../tests_native/test_camera.py): existing supported core read-session body output.
 
-CPU is qualified. No GPU query/inspection capability is advertised; the native
-service rejects GPU/DirectGPU live state. Material inspection is host metadata.
+Python query and inspection cases run CPU scenes. GPU-dynamics queries are covered
+natively; live inspection rejects GPU-dynamics and DirectGPU state. Material
+inspection is host metadata.

@@ -4,7 +4,7 @@
 """Failure-injection tests for the public PhysX destruction contract."""
 
 # @implements REQ-PYTHON-LIFECYCLE-001
-# @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-8
+# @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7 AC-8
 
 import gc
 import threading
@@ -258,9 +258,14 @@ def test_finalizer_abandons_ownership_after_persistent_invocation_exceptions(mon
     assert "native instance may still be registered" in str(runtime_warnings[0].message)
 
 
+@pytest.mark.parametrize("callback_context", ["_python_log_callback_context", "_object_change_callback_context"])
 @pytest.mark.parametrize("initial_refcount", [1, 2])
-def test_callback_context_finalizer_defers_cleanup_without_joining(monkeypatch, initial_refcount):
-    """GC cleanup must retain self and finish off the native callback thread."""
+def test_callback_context_finalizer_defers_cleanup_without_joining(monkeypatch, initial_refcount, callback_context):
+    """GC cleanup must retain self and finish off the native callback thread.
+
+    Log and object-change callbacks can both run on an instance worker inside a job.
+    """
+    context = getattr(api, callback_context)
     fake_lib = _FakeLib([ApiStatus.SUCCESS])
     physx = _make_physx(fake_lib)
     worker_entered = threading.Event()
@@ -282,7 +287,7 @@ def test_callback_context_finalizer_defers_cleanup_without_joining(monkeypatch, 
         worker_observations.append(
             (
                 threading.get_ident(),
-                getattr(api._python_log_callback_context, "active", False),
+                api._in_native_callback(),
             )
         )
         worker_entered.set()
@@ -306,7 +311,7 @@ def test_callback_context_finalizer_defers_cleanup_without_joining(monkeypatch, 
 
     callback_thread = threading.get_ident()
     physx_ref = weakref.ref(physx)
-    api._python_log_callback_context.active = True
+    context.active = True
     try:
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
@@ -318,7 +323,7 @@ def test_callback_context_finalizer_defers_cleanup_without_joining(monkeypatch, 
         assert workers[0].is_alive(), "Finalizer joined its worker from the callback"
         assert physx_ref() is not None, "Deferred worker did not retain the unreachable instance"
     finally:
-        api._python_log_callback_context.active = False
+        context.active = False
         release_worker.set()
         for worker in workers:
             worker.join(timeout=5)
@@ -332,6 +337,26 @@ def test_callback_context_finalizer_defers_cleanup_without_joining(monkeypatch, 
     assert api._PROCESS_LIFECYCLE_REFCOUNT == initial_refcount - 1
     assert shutdown_calls == ([True] if initial_refcount == 1 else [])
     assert sum(issubclass(item.category, ResourceWarning) for item in caught) == 1
+
+
+def test_explicit_destroy_inside_object_change_callback_is_refused_before_teardown(monkeypatch):
+    """The callback may run on the instance worker inside a job that destroy would wait for."""
+    fake_lib = _FakeLib([ApiStatus.SUCCESS])
+    physx = _make_physx(fake_lib)
+    stage = physx._attached_ovstage
+    releases = []
+    monkeypatch.setattr(api, "_release_process_lifecycle", lambda: releases.append(True))
+    api._object_change_callback_context.active = True
+    try:
+        with pytest.raises(RuntimeError, match="object-change callback"):
+            physx.destroy()
+    finally:
+        api._object_change_callback_context.active = False
+    assert fake_lib.destroy_calls == []
+    assert physx._omni_physx_sdk_handle.value == 17
+    assert physx._attached_ovstage is stage and physx._lifecycle_acquired and not releases
+    physx.destroy()
+    assert fake_lib.destroy_calls == [17] and releases == [True]
 
 
 def test_partial_construction_destroy_needs_no_initialized_attributes():

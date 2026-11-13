@@ -1,0 +1,5 @@
+t=0 s  platform x = 1.00 m  box x = 1.00 m
+t=1 s  platform x = 1.50 m  box x = 1.50 m
+t=2 s  platform x = 2.00 m  box x = 2.00 m
+t=3 s  platform x = 1.50 m  box x = 1.50 m
+t=4 s  platform x = 1.00 m  box x = 1.00 m

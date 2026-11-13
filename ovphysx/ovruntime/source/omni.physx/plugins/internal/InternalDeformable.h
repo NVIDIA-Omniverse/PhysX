@@ -145,14 +145,14 @@ public:
     // Runtime-owned per-sim-node kinematic-target buffer (one PxVec4 per sim-mesh vertex: xyz target +
     // w active-flag). PhysX's setKinematicTargetBufferD ADOPTS this pointer and reads it every step, so
     // it must outlive any single write -- hence the runtime owns it here, for the body's lifetime, rather
-    // than an ovstage write session (whose column is freed at release). Lazily allocated on the first
-    // kinematic-target write (undriven bodies never pay); freed in the dtor. Null when the body is not
-    // driven. See OvxPhysicsWrite (populate + setKinematicTargetBufferD) and OvxPhysicsRead (gather).
+    // than an ovstage write session (whose column is freed at release). Allocated when the first kinematic-target
+    // write session over the body opens (a body no such session covers never pays); freed in the dtor. Null until
+    // then. See OvxPhysicsWrite (prepareKinematicTargetGroup, the commit) and OvxPhysicsRead (gather).
     ::physx::PxVec4* mSimMeshKinematicTargetsD;
-    // True once this body has been kinematically driven (setKinematicTargetBufferD handed a non-null buffer +
-    // ePARTIALLY_KINEMATIC raised). Raised on the first driving write and NEVER cleared: driving is monotonic
-    // (a node goes free->driven but never back), so a body, once driven, stays driven for its life. The read
-    // omits a body that has never been driven (REQ-READ-ATTRS-001 AC-9).
+    // True once a kinematic-target write session has set this body up (setKinematicTargetBufferD handed the buffer
+    // above, every node free, and ePARTIALLY_KINEMATIC raised). Raised when the first such session opens and NEVER
+    // cleared: pinning is monotonic (a node goes free->pinned but never back), so the setup stays for the body's
+    // life. The read omits a body never set up (REQ-READ-ATTRS-001 AC-9).
     bool mKinematicTargetActive;
 };
 

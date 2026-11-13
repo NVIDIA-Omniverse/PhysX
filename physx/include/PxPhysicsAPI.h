@@ -193,4 +193,7 @@ Alternatively, one can instead directly #include a subset of the below files.
 #include "pvd/PxPvdSceneClient.h"
 #include "pvd/PxPvd.h"
 #include "pvd/PxPvdTransport.h"
+
+//Connecting the SDK to OmniPVD
+#include "omnipvd/PxOmniPvd.h"
 #endif

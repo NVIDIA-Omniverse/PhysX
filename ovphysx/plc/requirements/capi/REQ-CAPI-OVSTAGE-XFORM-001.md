@@ -11,19 +11,21 @@ owner: ovphysx
 ## Description
 
 ovphysx's USD population helpers and samples own the producer's transform
-resolution. Their ALL population includes rendering, which resolves world
-matrices before handing the sealed ordinal to ovphysx. PHYSICS alone seeds
-world matrices with local values in the pinned release.
-This baseline records the nested-environment force regression exposed by the
-OVStage 0.3 dependency update.
+resolution: they seal the population ordinal before handing it to ovphysx, and
+the seal composes world matrices (OVStage runs its hierarchy computation when a
+write-floor advance covers `omni:fabric:worldMatrix`), with or without RENDERING.
+OVStage 0.3 left physics-only world matrices at their local values; this baseline
+records the nested-environment force regression that exposed it.
 
 ## Acceptance Criteria
 
-- AC-1: **Resolve before sealing.** C and Python USD population helpers and
-  samples default to `OVSTAGE_POPULATION_DOMAIN_ALL` / `PopulationDomain.ALL` so
-  the rendering domain resolves world transforms before advancing the write
-  floor. Resolved world matrices remain available for simulation output
-  publication, as well as the initial attach.
+- AC-1: **Resolve before attach.** C and Python USD population helpers and
+  samples default to the physics population description with a RENDERING
+  description beside it (`physics_population_descs(rendering=True)` in Python),
+  the compatibility path for native instancing, and seal the population ordinal
+  before attach. The sealed ordinal holds composed world matrices with or without
+  RENDERING, and they remain available for simulation output publication as well
+  as the initial attach.
 - AC-2: **Preserve separated environments.** Attaching populated cart-pole
   environments under different translated parents preserves their separation:
   after warmup, a prismatic actuation of 10 produces projected joint force
@@ -33,6 +35,7 @@ OVStage 0.3 dependency update.
 
 - [TEST-CAPI-OVSTAGE-XFORM-001](../../tests/capi/TEST-CAPI-OVSTAGE-XFORM-001.md)
 - [TEST-CAPI-OVSTAGE-XFORM-002](../../tests/capi/TEST-CAPI-OVSTAGE-XFORM-002.md)
+- [TEST-CAPI-OVSTAGE-XFORM-003](../../tests/capi/TEST-CAPI-OVSTAGE-XFORM-003.md)
 
 ## Code References
 

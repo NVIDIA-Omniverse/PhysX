@@ -3,7 +3,7 @@
 
 /**
  * @implements REQ-SIM-PARTICLESET-001
- * @covers AC-1 AC-2
+ * @covers AC-1 AC-2 AC-3
  *
  * @implements REQ-SIM-PARTICLESET-002
  * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6
@@ -303,10 +303,21 @@ void InternalParticleSet::resize(uint32_t newNumParticles)
         //update active particles and initialize phases if necessary
         if (newNumParticles > mNumParticles)
         {
+            // Promoted rows may be spare capacity a reallocating grow sized but never seeded (its seed
+            // loop stops at the then-active count). Seed them here and raise ePOSITIONS/eVELOCITIES so the
+            // values reach the device: this path otherwise touches only phases, so a single-column grow
+            // would promote uninitialized positions or velocities to active particles. Raising the flags
+            // re-uploads every active row (uploadParticles copies the whole column), so existing particles
+            // are restored from the host rows -- the same seed-and-re-upload behavior and readback caveat
+            // as the reallocating grow (REQ-SIM-PARTICLESET-001 AC-3).
             for (uint32_t i = mNumParticles; i < newNumParticles; ++i)
+            {
                 mPhases[i] = mPhase;
+                mPositions[i] = PxVec4(0.0f, 0.0f, 0.0f, mParticleInvMass);
+                mVelocities[i] = PxVec4(0.0f);
+            }
 
-            mUploadDirtyFlags |= ParticleBufferFlags::ePHASES;
+            mUploadDirtyFlags |= ParticleBufferFlags::ePHASES | ParticleBufferFlags::ePOSITIONS | ParticleBufferFlags::eVELOCITIES;
         }
         mParticleBuffer->setNbActiveParticles(newNumParticles);
         mNumParticles = newNumParticles;
@@ -324,13 +335,29 @@ void InternalParticleSet::resize(uint32_t newNumParticles)
     if (!cudaContextManager)
         return;
 
-    // resize all the pinned buffers: we skip copying the old data because this will be loaded from USD anyway.
-    // A set created without points has none yet, so they are allocated here rather than only regrown.
-    PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mPositions);
-    mPositions = PxCudaHelpersExt::allocPinnedHostBuffer<PxVec4>(*cudaContextManager, newMaxParticles);
-
-    PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mVelocities);
-    mVelocities = PxCudaHelpersExt::allocPinnedHostBuffer<PxVec4>(*cudaContextManager, newMaxParticles);
+    // Reallocate the pinned position/velocity buffers, keeping the existing rows and seeding the new
+    // ones: the device buffer is recreated zero-initialized below, so the host rows are re-uploaded
+    // (ePOSITIONS/eVELOCITIES raised with the phases flag) rather than left to a reload that a
+    // velocities-only growth never sends. A set created without points gets its rows from the seed.
+    PxVec4* newPositions = PxCudaHelpersExt::allocPinnedHostBuffer<PxVec4>(*cudaContextManager, newMaxParticles);
+    PxVec4* newVelocities = PxCudaHelpersExt::allocPinnedHostBuffer<PxVec4>(*cudaContextManager, newMaxParticles);
+    if (mNumParticles > 0 && mPositions)
+        std::memcpy(newPositions, mPositions, mNumParticles * sizeof(PxVec4));
+    if (mNumParticles > 0 && mVelocities)
+        std::memcpy(newVelocities, mVelocities, mNumParticles * sizeof(PxVec4));
+    // A new row gets a valid inverse mass so an added particle is not frozen; its position/velocity
+    // default to the origin/zero until an authored points/velocities write overwrites them.
+    for (PxU32 i = mNumParticles; i < newNumParticles; ++i)
+    {
+        newPositions[i] = PxVec4(0.0f, 0.0f, 0.0f, mParticleInvMass);
+        newVelocities[i] = PxVec4(0.0f);
+    }
+    if (mPositions)
+        PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mPositions);
+    mPositions = newPositions;
+    if (mVelocities)
+        PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mVelocities);
+    mVelocities = newVelocities;
 
     PxU32* newPhases = PxCudaHelpersExt::allocPinnedHostBuffer<PxU32>(*cudaContextManager, newMaxParticles);
 
@@ -343,7 +370,7 @@ void InternalParticleSet::resize(uint32_t newNumParticles)
 
     PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mPhases);
     mPhases = newPhases;
-    mUploadDirtyFlags |= ParticleBufferFlags::ePHASES;
+    mUploadDirtyFlags |= ParticleBufferFlags::ePHASES | ParticleBufferFlags::ePOSITIONS | ParticleBufferFlags::eVELOCITIES;
 
     // Sized for the new capacity, like the buffer createUserBuffer() makes below. A set created without points
     // has no diffuse host buffer yet, so growing it sets up what creation does for a set with diffuse capacity.

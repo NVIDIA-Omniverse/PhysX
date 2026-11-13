@@ -10,7 +10,7 @@
 // @implements REQ-COMP-GEOMETRY-001
 // @covers AC-1 AC-3 AC-4
 // @implements REQ-CAPI-COMPANION-001
-// @covers AC-4
+// @covers AC-3 AC-4
 // @implements REQ-COMP-OVSTAGE-001
 // @covers AC-2
 #include "ovphysx_companion/native.h"
@@ -281,6 +281,8 @@ Status jointControl(uint64_t handle, uint64_t owner, const char* path, uint32_t 
     try {
         CompanionOperationGuard admission(companionRuntime());
         if (!admission) return OVPHYSX_COMPANION_BUSY;
+        CompanionOwnerLane ownerLane;
+        if (!ownerLane.tryAcquireForAttachment(owner)) return OVPHYSX_COMPANION_BUSY;
         std::unique_lock<std::mutex> lock(companionRuntime().modules().mutex, std::try_to_lock);
         if (!lock.owns_lock()) return OVPHYSX_COMPANION_BUSY;
         const std::map<uint64_t, std::shared_ptr<Module>>::iterator found = companionRuntime().modules().entries.find(handle);

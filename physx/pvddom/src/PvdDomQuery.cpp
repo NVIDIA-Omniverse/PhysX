@@ -215,7 +215,7 @@ bool readTransform(const OmniPvdAttributeSample* sample, float outPos[3], float 
     {
         return false;
     }
-    std::memcpy(outPos,  sample->mData,                      sizeof(float) * 3);
-    std::memcpy(outQuat, sample->mData + sizeof(float) * 3,  sizeof(float) * 4);
+    std::memcpy(outQuat, sample->mData, sizeof(float) * 4);
+    std::memcpy(outPos, sample->mData + sizeof(float) * 4, sizeof(float) * 3);
     return true;
 }

@@ -95,6 +95,8 @@ that child row; select the owning body or articulation link instead.
   nor clears contacts, and it does not change the conversion `dt`. Every read
   after it returns what it returned before it -- the contacts and forces of the
   last step with a positive `dt`.
+- Failed steps do not roll back simulation results. Contact forces read after
+  a failed step are not guaranteed to be valid.
 - Result tensor shapes:
   - Net normal or net friction forces: `[S, 3]` -- one 3-D force vector per sensor.
   - Normal or friction force matrix: `[S, F, 3]` — force vectors per (sensor, filter) pair.

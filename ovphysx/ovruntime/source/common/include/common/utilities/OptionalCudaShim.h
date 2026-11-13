@@ -258,6 +258,40 @@ static inline bool CARB_ABI stub_streamWaitEvent(uintptr_t, uintptr_t, unsigned 
     return false;
 }
 
+static inline bool CARB_ABI stub_streamIsCapturing(uintptr_t, bool* outCapturing, int* outStatus)
+{
+    if (outCapturing)
+        *outCapturing = false;
+    if (outStatus)
+        *outStatus = kCudaErrorNotInitialized;
+    return false;
+}
+
+static inline bool CARB_ABI stub_streamGetCtx(uintptr_t, uintptr_t* outCtx, int* outStatus)
+{
+    if (outCtx)
+        *outCtx = 0;
+    if (outStatus)
+        *outStatus = kCudaErrorNotInitialized;
+    return false;
+}
+
+static inline bool CARB_ABI stub_eventRecordWithFlags(uintptr_t, uintptr_t, unsigned int, int* outStatus)
+{
+    if (outStatus)
+        *outStatus = kCudaErrorNotInitialized;
+    return false;
+}
+
+static inline bool CARB_ABI stub_driverGetVersion(int* outVersion, int* outStatus)
+{
+    if (outVersion)
+        *outVersion = 0;
+    if (outStatus)
+        *outStatus = kCudaErrorNotInitialized;
+    return false;
+}
+
 static inline omni::physx::IOptionalCuda& getStubInterface()
 {
     static omni::physx::IOptionalCuda iface = [] {
@@ -284,6 +318,10 @@ static inline omni::physx::IOptionalCuda& getStubInterface()
         i.streamDestroy = stub_streamDestroy;
         i.streamSynchronize = stub_streamSynchronize;
         i.streamWaitEvent = stub_streamWaitEvent;
+        i.streamIsCapturing = stub_streamIsCapturing;
+        i.streamGetCtx = stub_streamGetCtx;
+        i.eventRecordWithFlags = stub_eventRecordWithFlags;
+        i.driverGetVersion = stub_driverGetVersion;
         i.memcpy2DDeviceToDevice = stub_memcpy2DDeviceToDevice;
         return i;
     }();

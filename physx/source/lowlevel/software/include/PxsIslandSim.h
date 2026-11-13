@@ -9,6 +9,7 @@
 #include "foundation/PxAssert.h"
 #include "foundation/PxBitMap.h"
 #include "foundation/PxArray.h"
+#include "foundation/PxIntrinsics.h"
 #include "CmPriorityQueue.h"
 #include "CmBlockArray.h"
 #include "PxNodeIndex.h"
@@ -567,6 +568,13 @@ public:
 		return node.mObject;
 	}
 
+	PX_FORCE_INLINE void prefetchNode(PxNodeIndex nodeIndex) const
+	{
+		const Node& node = mNodes[nodeIndex.index()];
+		PxPrefetchLine(&node);
+		PxPrefetchLine(&node.mObject);
+	}
+
 	PX_FORCE_INLINE void clearDeactivations()
 	{
 		for (PxU32 i = 0; i < Node::eTYPE_COUNT; ++i)
@@ -669,6 +677,7 @@ private:
 	void activateIsland(IslandId island);
 
 	void deactivateIsland(IslandId island);
+	PX_FORCE_INLINE void deactivateIslandEdge(EdgeIndex edgeIndex);
 
 #if IG_SANITY_CHECKS
 	bool canFindRoot(PxNodeIndex startNode, PxNodeIndex targetNode, PxArray<PxNodeIndex>* visitedNodes);
@@ -681,7 +690,6 @@ private:
 	bool isPathTo(PxNodeIndex startNode, PxNodeIndex targetNode)	const;
 #endif
 	void activateNodeInternal(PxNodeIndex index);
-	void deactivateNodeInternal(PxNodeIndex index);
 
 	PX_FORCE_INLINE void makeEdgeActive(EdgeInstanceIndex index, bool testEdgeType);
 

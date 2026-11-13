@@ -13,6 +13,9 @@
  *
  * @implements REQ-SIM-AUTOATTACH-001
  * @covers AC-4
+ *
+ * @implements REQ-SIM-ATTACH-ARRAYS-001
+ * @covers AC-1 AC-2 AC-3
  */
 
 #include <omni/physics/parse/KnownTokens.h>
@@ -133,8 +136,11 @@ void convertVtxToPhysx(const usdparser::AttachedStage& attachedStage, InternalDe
     }
 }
 
-void convertTriToPhysx(InternalDeformableAttachment::AttachmentData& attachmentData, const std::vector<int32_t>& triIds, const std::vector<carb::Float3>& triBarycentrics)
+bool convertTriToPhysx(InternalDeformableAttachment::AttachmentData& attachmentData, const std::vector<int32_t>& triIds, const std::vector<carb::Float3>& triBarycentrics)
 {
+    if (triIds.size() != triBarycentrics.size())
+        return false;
+
     if (attachmentData.physxType == ePTDeformableSurface)
     {
         // PhysX SDK does not support distance attachment for surface deformable. Set w component is 0.
@@ -150,10 +156,14 @@ void convertTriToPhysx(InternalDeformableAttachment::AttachmentData& attachmentD
 
         attachmentData.targetType = PxDeformableAttachmentTargetType::eTRIANGLE;
     }
+    return true;
 }
 
-void convertTetToPhysx(InternalDeformableAttachment::AttachmentData& attachmentData, const std::vector<int32_t>& tetIds, const std::vector<carb::Float3>& tetBarycentrics)
+bool convertTetToPhysx(InternalDeformableAttachment::AttachmentData& attachmentData, const std::vector<int32_t>& tetIds, const std::vector<carb::Float3>& tetBarycentrics)
 {
+    if (tetIds.size() != tetBarycentrics.size())
+        return false;
+
     if (attachmentData.physxType == ePTDeformableVolume)
     {
         attachmentData.indices.resize(tetIds.size());
@@ -168,6 +178,7 @@ void convertTetToPhysx(InternalDeformableAttachment::AttachmentData& attachmentD
 
         attachmentData.targetType = PxDeformableAttachmentTargetType::eTETRAHEDRON;
     }
+    return true;
 }
 
 bool readGeneratedAttachmentArray(const GeneratedDeformableAttachmentData& data,
@@ -275,11 +286,21 @@ ObjectId PhysXUsdPhysicsInterface::createDeformableAttachment(usdparser::Attache
         return generatedChild ? generatedChild->type == generatedType : src->isA(attachmentKey, typeToken);
     };
 
+    auto rejectArrayMismatch = [&](const char* indicesAttr, size_t indexCount, const char* coordsAttr, size_t coordCount)
+    {
+        const std::string errorStr = "Failed to create Physics Deformable Attachment " +
+            std::string(src->sourceKeyToString(attachmentKey)) + ": " + indicesAttr + " has " + std::to_string(indexCount) +
+            " entries but " + coordsAttr + " has " + std::to_string(coordCount) + "; counts must match.";
+        reportLoadError(usdparser::ErrorCode::eError, errorStr.c_str());
+        SAFE_DELETE_SINGLE(internalDeformableAttachment);
+        return kInvalidObjectId;
+    };
+
     switch (desc.type)
     {
         case eAttachmentVtxXform:
         {
-            if (!isAttachmentType(tok.OmniPhysicsVtxXformAttachment, eAttachmentVtxXform))
+            if (!isAttachmentType(tok.omniPhysicsVtxXformAttachmentType, eAttachmentVtxXform))
             {
                 return kInvalidObjectId;
             }
@@ -304,7 +325,7 @@ ObjectId PhysXUsdPhysicsInterface::createDeformableAttachment(usdparser::Attache
 
         case eAttachmentTetXform:
         {
-            if (!isAttachmentType(tok.OmniPhysicsTetXformAttachment, eAttachmentTetXform))
+            if (!isAttachmentType(tok.omniPhysicsTetXformAttachmentType, eAttachmentTetXform))
             {
                 return kInvalidObjectId;
             }
@@ -320,7 +341,9 @@ ObjectId PhysXUsdPhysicsInterface::createDeformableAttachment(usdparser::Attache
             std::vector<carb::Float3> tetCoords;
             readArray(tok.omniphysicsTetIndicesSrc0, tetIndices);
             readArray(tok.omniphysicsTetCoordsSrc0, tetCoords);
-            convertTetToPhysx(internalDeformableAttachment->mData[0], tetIndices, tetCoords);
+            if (!convertTetToPhysx(internalDeformableAttachment->mData[0], tetIndices, tetCoords))
+                return rejectArrayMismatch("omniphysics:tetIndicesSrc0", tetIndices.size(),
+                                           "omniphysics:tetCoordsSrc0", tetCoords.size());
 
             std::vector<carb::Float3> localPositions;
             readArray(tok.omniphysicsLocalPositionsSrc1, localPositions);
@@ -331,7 +354,7 @@ ObjectId PhysXUsdPhysicsInterface::createDeformableAttachment(usdparser::Attache
 
         case eAttachmentVtxVtx:
         {
-            if (!isAttachmentType(tok.OmniPhysicsVtxVtxAttachment, eAttachmentVtxVtx))
+            if (!isAttachmentType(tok.omniPhysicsVtxVtxAttachmentType, eAttachmentVtxVtx))
             {
                 return kInvalidObjectId;
             }
@@ -357,7 +380,7 @@ ObjectId PhysXUsdPhysicsInterface::createDeformableAttachment(usdparser::Attache
 
         case eAttachmentVtxTri:
         {
-            if (!isAttachmentType(tok.OmniPhysicsVtxTriAttachment, eAttachmentVtxTri))
+            if (!isAttachmentType(tok.omniPhysicsVtxTriAttachmentType, eAttachmentVtxTri))
             {
                 return kInvalidObjectId;
             }
@@ -378,14 +401,16 @@ ObjectId PhysXUsdPhysicsInterface::createDeformableAttachment(usdparser::Attache
             std::vector<carb::Float3> triCoords;
             readArray(tok.omniphysicsTriIndicesSrc1, triIndices);
             readArray(tok.omniphysicsTriCoordsSrc1, triCoords);
-            convertTriToPhysx(internalDeformableAttachment->mData[1], triIndices, triCoords);
+            if (!convertTriToPhysx(internalDeformableAttachment->mData[1], triIndices, triCoords))
+                return rejectArrayMismatch("omniphysics:triIndicesSrc1", triIndices.size(),
+                                           "omniphysics:triCoordsSrc1", triCoords.size());
 
             break;
         }
 
         case eAttachmentVtxTet:
         {
-            if (!isAttachmentType(tok.OmniPhysicsVtxTetAttachment, eAttachmentVtxTet))
+            if (!isAttachmentType(tok.omniPhysicsVtxTetAttachmentType, eAttachmentVtxTet))
             {
                 return kInvalidObjectId;
             }
@@ -406,7 +431,9 @@ ObjectId PhysXUsdPhysicsInterface::createDeformableAttachment(usdparser::Attache
             std::vector<carb::Float3> tetCoords;
             readArray(tok.omniphysicsTetIndicesSrc1, tetIndices);
             readArray(tok.omniphysicsTetCoordsSrc1, tetCoords);
-            convertTetToPhysx(internalDeformableAttachment->mData[1], tetIndices, tetCoords);
+            if (!convertTetToPhysx(internalDeformableAttachment->mData[1], tetIndices, tetCoords))
+                return rejectArrayMismatch("omniphysics:tetIndicesSrc1", tetIndices.size(),
+                                           "omniphysics:tetCoordsSrc1", tetCoords.size());
 
             break;
         }
@@ -615,7 +642,7 @@ ObjectId PhysXUsdPhysicsInterface::createDeformableCollisionFilter(usdparser::At
     // A generated (in-memory) auto-attachment child has no prim behind its key.
     const GeneratedAutoAttachmentChild* generatedChild = attachedStage.findGeneratedAutoAttachmentChild(collisionFilterKey);
     const bool isFilterType = generatedChild ? generatedChild->type == eDeformableCollisionFilter
-                                             : src->isA(collisionFilterKey, tok.OmniPhysicsElementCollisionFilter);
+                                             : src->isA(collisionFilterKey, tok.omniPhysicsElementCollisionFilterType);
     if (!isFilterType)
     {
         return kInvalidObjectId;

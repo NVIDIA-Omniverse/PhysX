@@ -1,11 +1,24 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-CAPI-EXECUTOR-001
+ * @covers AC-8
+ *
+ * @implements REQ-CAPI-ASYNC-002
+ * @covers AC-16
+ */
+// @implements REQ-CAPI-OMNIPVD-CAPTURE-001
+// @covers AC-6
+
 #include "ovphysxTestHelpers.h"
 #include "CarboniteLoader/CarboniteLoader.hpp"
 #include "ovphysx/ovphysx_attributes.h"
+#include "ovphysx/ovphysx_config.h"
 
+#include <omni/physx/IPhysx.h>
 #include <omni/physx/PhysXRuntime.h>
+#include <omni/physx/RuntimeError.h>
 
 #include <carb/Framework.h>
 #include <carb/settings/ISettings.h>
@@ -19,13 +32,16 @@
 #include <array>
 #include <atomic>
 #include <chrono>
+#include <memory>
 #include <mutex>
 #include <new>
+#include <string>
 #include <thread>
 #include <vector>
 
 #include "internal/sdk/ovphysxSDK.hpp"
 #include "internal/sidecar/ovphysxInternalInterop.h"
+
 
 namespace {
 
@@ -234,18 +250,19 @@ OVPHYSX_API bool ovphysx_create_extensions_fixture_for_test_internal(
     if (!waitOk(opened))
         return false;
 
-    ovx_string_or_token_t name{};
+    ovx_token_or_string_t name{};
     name.string.ptr = OVPHYSX_ATTR_PHYSX_POINTER;
     name.string.length = sizeof(OVPHYSX_ATTR_PHYSX_POINTER) - 1;
     ovphysx_read_handle_t read = 0;
-    if (waitOk(ovphysx_read(handle, query, &name, 1, &read, nullptr)))
+    if (waitOk(ovphysx_read(handle, query, &name, 1, ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr)))
     {
         const ovstage_read_group_t* group = nullptr;
         ovphysx_enqueue_result_t fetched = ovphysx_fetch_read_next(handle, read, &group);
         if (waitOk(fetched) && group)
         {
-            if (group->data.tensors && group->data.tensors[0].data)
-                physicsPtr = reinterpret_cast<void*>(static_cast<const uint64_t*>(group->data.tensors[0].data)[0]);
+            const ovstage_data_t& data = group->columns[0].data;
+            if (data.tensors && data.tensors[0].data)
+                physicsPtr = reinterpret_cast<void*>(static_cast<const uint64_t*>(data.tensors[0].data)[0]);
             waitOk(ovphysx_release_group(handle, read, group->read_group_id));
         }
         waitOk(ovphysx_release_read(handle, read));
@@ -267,6 +284,18 @@ OVPHYSX_API bool ovphysx_create_extensions_fixture_for_test_internal(
 OVPHYSX_API void ovphysx_destroy_extensions_fixture_for_test_internal(void* fixture)
 {
     delete static_cast<PhysXExtensionsFixture*>(fixture);
+}
+
+OVPHYSX_API void* ovphysx_create_d6_joint_at_path_for_test_internal(
+    ovphysx_instance_handle_t handle, const char* joint_path, const char* body0_path, const char* body1_path)
+{
+    const std::shared_ptr<InstanceData> instance = get_instance(handle);
+    omni::physx::IPhysx* runtime = omni::physx::runtime::tryGetPhysxInterface();
+    if (!instance || !runtime || !runtime->createD6JointAtPath || !runtime->resolveObjectKey)
+        return nullptr;
+    const auto body0 = runtime->resolveObjectKey(instance->attachHandle, body0_path);
+    const auto body1 = runtime->resolveObjectKey(instance->attachHandle, body1_path);
+    return const_cast<void*>(runtime->createD6JointAtPath(instance->attachHandle, joint_path, body0, body1));
 }
 
 OVPHYSX_API bool ovphysx_get_worker_pool_counts_for_test_internal(
@@ -392,6 +421,322 @@ OVPHYSX_API bool ovphysx_with_suspended_carbonite_task_for_test_internal(
 
     const bool bodyFinished = tasks[0].wait_for(std::chrono::seconds(10));
     return probesFinished && bodyFinished;
+}
+
+OVPHYSX_API bool ovphysx_set_worker_hold_for_test_internal(ovphysx_instance_handle_t handle, bool hold)
+{
+    std::shared_ptr<InstanceData> instance = get_instance(handle);
+    if (!instance || !instance->executor)
+        return false;
+    instance->executor->setHold(hold);
+    return true;
+}
+
+OVPHYSX_API ovphysx_enqueue_result_t ovphysx_submit_test_job_for_test_internal(
+    ovphysx_instance_handle_t handle,
+    const char* failure,
+    uint32_t sleep_ms)
+{
+    std::shared_ptr<InstanceData> instance = get_instance(handle);
+    if (!instance)
+        return {OVPHYSX_API_NOT_FOUND, 0, 0};
+    std::string cause;
+    const bool fails = failure != nullptr;
+    if (fails)
+        cause = failure;
+    InstanceData& owner = *instance;
+    std::unique_ptr<ovphysx::InstanceJob> job(new ovphysx::InstanceJob(
+        "test_job", handle, std::move(instance),
+        [cause, fails, sleep_ms](ovphysx::InstanceJob& self) {
+            if (sleep_ms)
+                std::this_thread::sleep_for(std::chrono::milliseconds(sleep_ms));
+            if (fails)
+                self.fail(cause);
+        }));
+    return ovphysx::submitInstanceJob(owner, handle, std::move(job));
+}
+
+OVPHYSX_API ovphysx_enqueue_result_t ovphysx_submit_test_callback_job_for_test_internal(
+    ovphysx_instance_handle_t handle,
+    ovphysx_test_task_fn fn,
+    void* user)
+{
+    std::shared_ptr<InstanceData> instance = get_instance(handle);
+    if (!instance || !fn)
+        return {OVPHYSX_API_NOT_FOUND, 0, 0};
+    InstanceData& owner = *instance;
+    std::unique_ptr<ovphysx::InstanceJob> job(new ovphysx::InstanceJob(
+        "test_callback_job", handle, std::move(instance), [fn, user](ovphysx::InstanceJob&) { fn(user); }));
+    return ovphysx::submitInstanceJob(owner, handle, std::move(job));
+}
+
+OVPHYSX_API uint64_t ovphysx_subscribe_step_event_for_test_internal(
+    ovphysx_instance_handle_t handle,
+    bool pre_step,
+    ovphysx_test_step_event_fn fn,
+    void* user)
+{
+    const std::shared_ptr<InstanceData> instance = get_instance(handle);
+    omni::physx::IPhysx* physx = omni::physx::runtime::tryGetPhysxInterface();
+    if (!instance || !physx || !fn || instance->attachHandle == omni::physics::kNoAttach)
+        return 0;
+    const omni::physx::SubscriptionId subscription =
+        physx->subscribePhysicsOnStepEvents(instance->attachHandle, pre_step, 0, fn, user);
+    return subscription == omni::physx::kInvalidSubscriptionId ? 0 : static_cast<uint64_t>(subscription) + 1;
+}
+
+OVPHYSX_API bool ovphysx_unsubscribe_step_event_for_test_internal(uint64_t subscription)
+{
+    omni::physx::IPhysx* physx = omni::physx::runtime::tryGetPhysxInterface();
+    if (!physx || subscription == 0)
+        return false;
+    physx->unsubscribePhysicsOnStepEvents(static_cast<omni::physx::SubscriptionId>(subscription - 1));
+    return true;
+}
+
+OVPHYSX_API void ovphysx_record_runtime_error_for_test_internal(const char* message)
+{
+    omni::physx::recordRuntimeError(message);
+}
+
+OVPHYSX_API bool ovphysx_hold_worker_after_next_submit_for_test_internal(ovphysx_instance_handle_t handle)
+{
+    std::shared_ptr<InstanceData> instance = get_instance(handle);
+    if (!instance || !instance->executor)
+        return false;
+    instance->executor->holdAfterNextSubmit();
+    return true;
+}
+
+OVPHYSX_API bool ovphysx_worker_exited_for_test_internal(ovphysx_instance_handle_t handle, bool* out_exited)
+{
+    std::shared_ptr<InstanceData> instance = get_instance(handle);
+    if (!instance || !instance->executor || !out_exited)
+        return false;
+    *out_exited = instance->executor->workerExited();
+    return true;
+}
+
+OVPHYSX_API void ovphysx_with_lifecycle_lock_for_test_internal(ovphysx_test_task_fn fn, void* user)
+{
+    if (fn)
+        ovphysx_run_under_lifecycle_lock(fn, user);
+}
+
+OVPHYSX_API bool ovphysx_lane_waits_and_destroy_from_saturated_carbonite_pool_for_test_internal(
+    ovphysx_instance_handle_t handle,
+    ovphysx_instance_handle_t victim,
+    uint32_t* out_waiters)
+{
+    if (out_waiters)
+        *out_waiters = 0;
+    std::shared_ptr<InstanceData> instance = get_instance(handle);
+    if (!instance || !instance->executor)
+        return false;
+    {
+        std::shared_ptr<InstanceData> doomed = get_instance(victim);
+        if (!doomed || !doomed->executor)
+            return false;
+        doomed->executor->setHold(true);
+    }
+    if (ovphysx_submit_test_job_for_test_internal(victim, nullptr, 0).status != OVPHYSX_API_SUCCESS)
+        return false;
+    carb::Framework* framework = carb::getFramework();
+    carb::tasking::ITasking* tasking =
+        framework ? framework->tryAcquireExistingInterface<carb::tasking::ITasking>() : nullptr;
+    if (!tasking)
+        return false;
+
+    const uint32_t waiterCount = 2 * tasking->getDesc().threadCount + 2;
+    struct Shared
+    {
+        std::unique_ptr<std::atomic<int>[]> statuses;
+        std::atomic<int> destroyStatus{-1};
+    };
+    // Tasks capture the shared state, so an early return stays memory safe.
+    std::shared_ptr<Shared> shared = std::make_shared<Shared>();
+    shared->statuses.reset(new std::atomic<int>[waiterCount]);
+    for (uint32_t index = 0; index < waiterCount; ++index)
+        shared->statuses[index].store(-1);
+
+    // A held worker with a queued job keeps the lane busy until the hold is released.
+    instance->executor->setHold(true);
+    struct ReleaseHold
+    {
+        ovphysx::InstanceExecutor& executor;
+        ~ReleaseHold() { executor.setHold(false); }
+    } releaseHold{*instance->executor};
+    const ovphysx_enqueue_result_t held = ovphysx_submit_test_job_for_test_internal(handle, nullptr, 0);
+    if (held.status != OVPHYSX_API_SUCCESS)
+        return false;
+
+    std::vector<carb::tasking::Future<void>> waiters;
+    waiters.reserve(waiterCount);
+    for (uint32_t index = 0; index < waiterCount; ++index)
+    {
+        waiters.push_back(tasking->addTask(carb::tasking::Priority::eDefault, {}, [handle, shared, index]() {
+            const ovphysx_result_t result = ovphysx_set_config(
+                handle, OVPHYSX_CONFIG_ACTIVE_CUDA_GPUS, ovphysx_config_value_string(OVPHYSX_LITERAL("")));
+            shared->statuses[index].store(static_cast<int>(result.status));
+        }));
+    }
+
+    // Every waiter is suspended as a task inside the executor; one that blocked its OS
+    // thread would never be counted.
+    const std::chrono::steady_clock::time_point suspendDeadline =
+        std::chrono::steady_clock::now() + std::chrono::seconds(10);
+    while (instance->executor->waitingTaskCount() < waiterCount &&
+           std::chrono::steady_clock::now() < suspendDeadline)
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    const bool allSuspended = instance->executor->waitingTaskCount() == waiterCount &&
+                              instance->executor->waitingThreadCount() == 0;
+
+    // With more waiters than workers, the destroying task runs only if waiting tasks
+    // released their threads, and it must finish while they still wait.
+    carb::tasking::Future<void> destroyer = tasking->addTask(carb::tasking::Priority::eDefault, {}, [victim, shared]() {
+        shared->destroyStatus.store(static_cast<int>(ovphysx_destroy_instance(victim).status));
+    });
+    const bool destroyed = destroyer.wait_for(std::chrono::seconds(10)) &&
+                           shared->destroyStatus.load() == static_cast<int>(OVPHYSX_API_SUCCESS);
+    bool stillWaiting = true;
+    for (uint32_t index = 0; index < waiterCount; ++index)
+        stillWaiting = stillWaiting && shared->statuses[index].load() == -1;
+
+    instance->executor->setHold(false);
+    bool waitersFinished = true;
+    for (carb::tasking::Future<void>& waiter : waiters)
+        waitersFinished = waiter.wait_for(std::chrono::seconds(30)) && waitersFinished;
+    bool allSucceeded = waitersFinished;
+    for (uint32_t index = 0; allSucceeded && index < waiterCount; ++index)
+        allSucceeded = shared->statuses[index].load() == static_cast<int>(OVPHYSX_API_SUCCESS);
+    ovphysx_wait_task_result_t collected{};
+    const bool heldJobSucceeded =
+        ovphysx_wait_task(handle, held, OVPHYSX_TIMEOUT_INFINITE, &collected).status == OVPHYSX_API_SUCCESS;
+    ovphysx_destroy_wait_task_result(&collected);
+
+    if (out_waiters)
+        *out_waiters = waiterCount;
+    return allSuspended && destroyed && stillWaiting && allSucceeded && heldJobSucceeded;
+}
+
+OVPHYSX_API bool ovphysx_wait_from_saturated_carbonite_pool_for_test_internal(
+    ovphysx_instance_handle_t handle,
+    uint32_t* out_waiters)
+{
+    if (out_waiters)
+        *out_waiters = 0;
+    std::shared_ptr<InstanceData> instance = get_instance(handle);
+    if (!instance || !instance->executor)
+        return false;
+    carb::Framework* framework = carb::getFramework();
+    carb::tasking::ITasking* tasking =
+        framework ? framework->tryAcquireExistingInterface<carb::tasking::ITasking>() : nullptr;
+    if (!tasking)
+        return false;
+
+    const uint32_t waiterCount = 2 * tasking->getDesc().threadCount + 2;
+    struct Shared
+    {
+        std::vector<ovphysx_enqueue_result_t> receipts;
+        std::unique_ptr<std::atomic<int>[]> statuses;
+    };
+    // Waiting tasks capture the shared state, so an early return stays memory safe.
+    std::shared_ptr<Shared> shared = std::make_shared<Shared>();
+    shared->statuses.reset(new std::atomic<int>[waiterCount]);
+    for (uint32_t index = 0; index < waiterCount; ++index)
+        shared->statuses[index].store(-1);
+
+    instance->executor->setHold(true);
+    struct ReleaseHold
+    {
+        ovphysx::InstanceExecutor& executor;
+        ~ReleaseHold() { executor.setHold(false); }
+    } releaseHold{*instance->executor};
+
+    for (uint32_t index = 0; index < waiterCount; ++index)
+    {
+        const ovphysx_enqueue_result_t receipt = ovphysx_submit_test_job_for_test_internal(handle, nullptr, 0);
+        if (receipt.status != OVPHYSX_API_SUCCESS)
+            return false;
+        shared->receipts.push_back(receipt);
+    }
+
+    std::vector<carb::tasking::Future<void>> waiters;
+    waiters.reserve(waiterCount);
+    for (uint32_t index = 0; index < waiterCount; ++index)
+    {
+        waiters.push_back(tasking->addTask(carb::tasking::Priority::eDefault, {}, [handle, shared, index]() {
+            ovphysx_wait_task_result_t result{};
+            const ovphysx_result_t waited =
+                ovphysx_wait_task(handle, shared->receipts[index], OVPHYSX_TIMEOUT_INFINITE, &result);
+            ovphysx_destroy_wait_task_result(&result);
+            shared->statuses[index].store(static_cast<int>(waited.status));
+        }));
+    }
+
+    // Every job is still held. Wait until each waiter is suspended as a task inside
+    // the executor; a waiter that blocked its OS thread would never be counted.
+    const std::chrono::steady_clock::time_point suspendDeadline =
+        std::chrono::steady_clock::now() + std::chrono::seconds(10);
+    while (instance->executor->waitingTaskCount() < waiterCount &&
+           std::chrono::steady_clock::now() < suspendDeadline)
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    const bool allSuspended = instance->executor->waitingTaskCount() == waiterCount &&
+                              instance->executor->waitingThreadCount() == 0;
+    // With more waiters than workers, a probe can run only if waiting tasks released
+    // their worker threads.
+    carb::tasking::Future<void> probe = tasking->addTask(carb::tasking::Priority::eDefault, {}, []() {});
+    const bool probeRan = probe.wait_for(std::chrono::seconds(10));
+    bool stillWaiting = true;
+    for (uint32_t index = 0; index < waiterCount; ++index)
+        stillWaiting = stillWaiting && shared->statuses[index].load() == -1;
+
+    instance->executor->setHold(false);
+    bool waitersFinished = true;
+    for (carb::tasking::Future<void>& waiter : waiters)
+        waitersFinished = waiter.wait_for(std::chrono::seconds(30)) && waitersFinished;
+    bool allSucceeded = waitersFinished;
+    for (uint32_t index = 0; allSucceeded && index < waiterCount; ++index)
+        allSucceeded = shared->statuses[index].load() == static_cast<int>(OVPHYSX_API_SUCCESS);
+
+    if (out_waiters)
+        *out_waiters = waiterCount;
+    return allSuspended && probeRan && stillWaiting && allSucceeded;
+}
+
+OVPHYSX_API uint64_t ovphysx_worker_cuda_calls_for_test_internal(void)
+{
+    return ovphysx_worker_cuda_calls();
+}
+
+OVPHYSX_API uint64_t ovphysx_exchange_next_output_handle_for_test_internal(uint64_t next)
+{
+    return ovphysx::internal::exchangeNextOpaqueObjectHandle(next);
+}
+
+OVPHYSX_API bool ovphysx_set_test_execution_for_test_internal(ovphysx_test_execution_t mode)
+{
+    switch (mode)
+    {
+    case OVPHYSX_TEST_EXECUTION_NATURAL:
+        ovphysx_set_test_execution(ovphysx::TestExecution::kNatural);
+        return true;
+    case OVPHYSX_TEST_EXECUTION_QUEUE:
+        ovphysx_set_test_execution(ovphysx::TestExecution::kQueue);
+        return true;
+    }
+    return false;
+}
+
+OVPHYSX_API bool ovphysx_read_step_bookkeeping_for_test_internal(
+    ovphysx_instance_handle_t handle, float* simulation_time, float* last_step_dt)
+{
+    const std::shared_ptr<InstanceData> instance = get_instance(handle);
+    if (!instance || !simulation_time || !last_step_dt)
+        return false;
+    *simulation_time = instance->sim_time;
+    *last_step_dt = instance->last_step_dt;
+    return true;
 }
 
 } // extern "C"

@@ -1,0 +1,129 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "OmniPhysicsSurfaceDeformableMaterialAPI",
+  "title": "OmniPhysicsSurfaceDeformableMaterialAPI",
+  "summary": "Surface (cloth) properties of an OmniPhysics deformable material. A material that lists it becomes a PxDeformableSurfaceMaterial; its elasticity, friction and density come from OmniPhysicsDeformableMaterialAPI and OmniPhysicsBaseMaterialAPI (USD lists both as its built-ins).",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "Material"
+  ],
+  "multi_apply": false,
+  "enumeration": {
+    "by": "schema",
+    "probe": "omniphysics:youngsModulus"
+  },
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "columns": [
+    {
+      "name": "omniphysics:surfaceThickness",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0 on a material the walker enumerates: PhysX gets zero thickness, and without omniphysics:mass the density-derived vertex mass uses max(thickness, FLT_EPSILON), so it is nearly zero. The material bound to the PhysicsScene, which also becomes the scene's default deformable material, starts from the consumer default instead: 0.001 m in stage units (0.001 / metersPerUnit).",
+      "raw_fallback_diverges": false,
+      "units": "length",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterface.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceDeformable.cpp",
+        "source/omni.physx/plugins/usdLoad/Material.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXDeformablePropertiesUpdate.cpp"
+      ],
+      "notes": "Re-read on change and applied to the PhysX material, followed by a mass update of the bound bodies."
+    },
+    {
+      "name": "omniphysics:surfaceStretchStiffness",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0. Parsed onto the descriptor but never passed to PhysX.",
+      "raw_fallback_diverges": false,
+      "units": "mass/(length*s^2)",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXDeformablePropertiesUpdate.cpp"
+      ],
+      "notes": "A change only logs 'Surface Stretch Stiffness is currently not supported'."
+    },
+    {
+      "name": "omniphysics:surfaceShearStiffness",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0. Parsed onto the descriptor but never passed to PhysX.",
+      "raw_fallback_diverges": false,
+      "units": "mass/(length*s^2)",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXDeformablePropertiesUpdate.cpp"
+      ],
+      "notes": "A change only logs 'Surface Shear Stiffness is currently not supported'."
+    },
+    {
+      "name": "omniphysics:surfaceBendStiffness",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0: the PxDeformableSurfaceMaterial is created with bending stiffness 0, the PhysX default; the schema's derivation from youngsModulus and surfaceThickness is not done by the runtime.",
+      "raw_fallback_diverges": false,
+      "units": "mass/(length*s^2)",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterface.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXDeformablePropertiesUpdate.cpp"
+      ],
+      "notes": "Re-read on change and applied to the PhysX material."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "OmniPhysicsDeformableMaterialAPI",
+      "rule": "The surface columns are read only when this API is listed; the material's other columns follow OmniPhysicsDeformableMaterialAPI and OmniPhysicsBaseMaterialAPI and their own usd-schemas gates."
+    }
+  ]
+}

@@ -24,19 +24,21 @@ def _write_wake(physx_sdk, value):
 
 
 def test_sleeping_state_changes_leave_retained_python_snapshot_unchanged(physx_sdk):
-    """Fresh reads follow sleep/wake while borrowed arrays retain the previous state."""
+    """Fresh reads follow sleep/wake while the borrowed arrays of a result dropped without a close retain the
+    previous state."""
     load_usd_with_ovstage(physx_sdk, data_path("boxes_falling_on_groundplane.usda"))
     physx_sdk.step_sync(1.0 / 60.0)
     _write_wake(physx_sdk, 0)
 
-    with physx_sdk.read_sync(SimObjectType.RIGID_BODY, ["isSleeping"]) as result:
-        assert len(result.groups) == 1
-        group = result.groups[0]
-        asleep = group.tensors[0]
-        assert asleep.dtype == wp.uint8 and not asleep.device.is_cuda
-        assert group.prim_count > 0
-        assert np.all(asleep.numpy() == 1)
-        token = group.attribute
+    result = physx_sdk.read_sync(SimObjectType.RIGID_BODY, ["isSleeping"])
+    assert len(result.groups) == 1
+    group = result.groups[0]
+    asleep = group.tensors[0]
+    assert asleep.dtype == wp.uint8 and not asleep.device.is_cuda
+    assert group.prim_count > 0
+    assert np.all(asleep.numpy() == 1)
+    token = group.attribute
+    del result, group
 
     _write_wake(physx_sdk, 1)
     with physx_sdk.read_tokens_sync(SimObjectType.RIGID_BODY, [token]) as result:

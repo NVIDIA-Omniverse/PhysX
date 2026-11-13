@@ -107,7 +107,8 @@ endif()
 
 if(NEED_REBUILD)
     # Stage the install tree under a component-named root so the archive unpacks into one directory.
-    set(TEMP_PACKAGE_DIR "${PROJECT_ROOT}/_package_temp")
+    set(TEMP_PACKAGE_DIR "${BUILD_PATH}/package_temp")
+    ovphysx_require_build_path("${TEMP_PACKAGE_DIR}")
     file(REMOVE_RECURSE "${TEMP_PACKAGE_DIR}")
     file(MAKE_DIRECTORY "${TEMP_PACKAGE_DIR}")
 

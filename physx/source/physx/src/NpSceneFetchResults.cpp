@@ -98,7 +98,7 @@ void NpScene::fetchResultsParticleSystem()
 
 void NpScene::fetchResultsPreContactCallbacks()
 {
-#if PX_SUPPORT_PVD	
+#if PX_SUPPORT_PVD
 	mScenePvdClient.updateContacts();
 #endif
 
@@ -147,7 +147,7 @@ void NpScene::fetchResultsPostContactCallbacks()
 		PX_PROFILE_ZONE("Sim.buildActiveActors", getContextId());
 
 		const bool buildActiveActors = (mScene.getFlags() & PxSceneFlag::eENABLE_ACTIVE_ACTORS) || OMNI_PVD_ACTIVE;
-		
+
 		if (buildActiveActors && mBuildFrozenActors)
 			mScene.buildActiveAndFrozenActors();
 		else if (buildActiveActors)
@@ -161,6 +161,9 @@ void NpScene::fetchResultsPostContactCallbacks()
 		mTaskManager->stopSimulation();
 
 	setSimulationStage(Sc::SimulationStage::eCOMPLETE);
+#if PX_SUPPORT_OMNI_PVD
+	mSceneOvdClient.setContactsValid(true);
+#endif
 	setAPIWriteToAllowed();
 
 	mPhysicsDone.reset();				// allow Physics to run again
@@ -171,8 +174,12 @@ void NpScene::fetchResultsPostContactCallbacks()
 void NpScene::fetchResultsOmniPvd()
 {
 		OmniPvdPxSampler* omniPvdSampler = NpPhysics::getInstance().mOmniPvdSampler;
-		if (omniPvdSampler && omniPvdSampler->isSampling())
+		if (omniPvdSampler && omniPvdSampler->isSampling()) omniPvdSampler->streamSceneContacts(*this);
+		if (omniPvdSampler && NpOmniPvdCaptureScene(*this))
 		{
+			if (!streamGPUStateToOmniPvd(false)) return;
+			const bool directGpu = getFlags().isSet(PxSceneFlag::eENABLE_DIRECT_GPU_API);
+			const bool selectiveDirectGpu = directGpu && NpOmniPvdCaptureIsSelective();
 			OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
 
 			//send all xforms updated by the sim:
@@ -181,60 +188,68 @@ void NpScene::fetchResultsOmniPvd()
 			while (nActiveActors--)
 			{
 				PxActor * a = *activeActors++;
-				if ((a->getType() == PxActorType::eRIGID_STATIC) || (a->getType() == PxActorType::eRIGID_DYNAMIC))
+				const bool capturePayload = NpOmniPvdCaptureActor(*a) &&
+					!(selectiveDirectGpu && (a->getType() == PxActorType::eRIGID_DYNAMIC || a->getType() == PxActorType::eARTICULATION_LINK));
+				if (capturePayload)
 				{
-					PxRigidActor* ra = static_cast<PxRigidActor*>(a);
-					PxTransform t = ra->getGlobalPose();
-					OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidActor, globalPose, *ra, t);
-
-					if (a->getType() == PxActorType::eRIGID_DYNAMIC)
+					if ((a->getType() == PxActorType::eRIGID_STATIC) || (a->getType() == PxActorType::eRIGID_DYNAMIC))
 					{
-						PxRigidDynamic* rdyn = static_cast<PxRigidDynamic*>(a);
-						PxRigidBody& rb = *static_cast<PxRigidBody*>(a);
-						
-						const PxVec3 linVel = rdyn->getLinearVelocity();
-						OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, linearVelocity, rb, linVel)
+						PxRigidActor* ra = static_cast<PxRigidActor*>(a);
+						OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidActor, globalPose, *ra, ra->getGlobalPose());
 
-						const PxVec3 angVel = rdyn->getAngularVelocity();
-						OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, angularVelocity, rb, angVel)
+						if (a->getType() == PxActorType::eRIGID_DYNAMIC)
+						{
+							PxRigidDynamic* rdyn = static_cast<PxRigidDynamic*>(a);
+							PxRigidBody& rb = *static_cast<PxRigidBody*>(a);
 
-						const PxRigidBodyFlags rFlags = rdyn->getRigidBodyFlags();
-						OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, rigidBodyFlags, rb, rFlags)
+							OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, linearVelocity, rb, rdyn->getLinearVelocity())
 
-						OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidDynamic, wakeCounter, *rdyn, rdyn->getWakeCounter());
+							OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, angularVelocity, rb, rdyn->getAngularVelocity())
+
+							OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, rigidBodyFlags, rb, rdyn->getRigidBodyFlags())
+
+							OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidDynamic, wakeCounter, *rdyn, rdyn->getWakeCounter());
+						}
+
 					}
-					
-				}
-				else if (a->getType() == PxActorType::eARTICULATION_LINK)
-				{
-					PxArticulationLink* pxArticulationLink = static_cast<PxArticulationLink*>(a);
-					PxArticulationJointReducedCoordinate* pxArticulationJoint = pxArticulationLink->getInboundJoint();
-					if (pxArticulationJoint)
+					else if (a->getType() == PxActorType::eARTICULATION_LINK)
 					{
-						PxArticulationJointReducedCoordinate& jcord = *pxArticulationJoint;
-						PxReal vals[PxArticulationAxis::eCOUNT];
-						for (PxU32 ax = 0; ax < PxArticulationAxis::eCOUNT; ++ax)
-							vals[ax] = jcord.getJointPosition(static_cast<PxArticulationAxis::Enum>(ax));
-						OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, jointPosition, jcord, vals, PxArticulationAxis::eCOUNT);
-						for (PxU32 ax = 0; ax < PxArticulationAxis::eCOUNT; ++ax)
-							vals[ax] = jcord.getJointVelocity(static_cast<PxArticulationAxis::Enum>(ax));
-						OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, jointVelocity, jcord, vals, PxArticulationAxis::eCOUNT);
+						PxArticulationLink* pxArticulationLink = static_cast<PxArticulationLink*>(a);
+						PxArticulationJointReducedCoordinate* pxArticulationJoint = pxArticulationLink->getInboundJoint();
+						if (pxArticulationJoint)
+						{
+							PxArticulationJointReducedCoordinate& jcord = *pxArticulationJoint;
+							PxReal vals[PxArticulationAxis::eCOUNT];
+							if (NpOmniPvdSampling())
+							{
+								for (PxU32 ax = 0; ax < PxArticulationAxis::eCOUNT; ++ax) vals[ax] = jcord.getJointPosition(static_cast<PxArticulationAxis::Enum>(ax));
+								OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, jointPosition, jcord, vals, PxArticulationAxis::eCOUNT);
+							}
+							if (NpOmniPvdSampling())
+							{
+								for (PxU32 ax = 0; ax < PxArticulationAxis::eCOUNT; ++ax) vals[ax] = jcord.getJointVelocity(static_cast<PxArticulationAxis::Enum>(ax));
+								OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, jointVelocity, jcord, vals, PxArticulationAxis::eCOUNT);
+							}
+						}
+
+						OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidActor, globalPose, static_cast<PxRigidActor&>(*a), pxArticulationLink->getGlobalPose());
+
+						OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, linearVelocity, static_cast<PxRigidBody&>(*a), pxArticulationLink->getLinearVelocity())
+
+						OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, angularVelocity, static_cast<PxRigidBody&>(*a), pxArticulationLink->getAngularVelocity())
+
+						OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, rigidBodyFlags, static_cast<PxRigidBody&>(*a), pxArticulationLink->getRigidBodyFlags())
 					}
 
-					OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidActor, globalPose, static_cast<PxRigidActor&>(*a), pxArticulationLink->getGlobalPose());
+					OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxActor, worldBounds, *a, a->getWorldBounds())
+					if (!directGpu && (getFlags() & PxSceneFlag::eENABLE_BODY_ACCELERATIONS))
+						if (const PxRigidBody* body = a->is<PxRigidBody>())
+						{
+							OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, linearAcceleration, *body, body->getLinearAcceleration());
+							OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, angularAcceleration, *body, body->getAngularAcceleration());
+						}
 
-					const PxVec3 linVel = pxArticulationLink->getLinearVelocity();
-					OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, linearVelocity, static_cast<PxRigidBody&>(*a), linVel)
-
-					const PxVec3 angVel = pxArticulationLink->getAngularVelocity();
-					OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, angularVelocity, static_cast<PxRigidBody&>(*a), angVel)
-
-					const PxRigidBodyFlags rFlags = pxArticulationLink->getRigidBodyFlags();
-					OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, rigidBodyFlags, static_cast<PxRigidBody&>(*a), rFlags)
 				}
-
-				const PxBounds3 worldBounds = a->getWorldBounds();
-				OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxActor, worldBounds, *a, worldBounds)
 
 				// update active actors' joints
 				const PxRigidActor* ra = a->is<PxRigidActor>();
@@ -249,11 +264,12 @@ void NpScene::fetchResultsOmniPvd()
 						for (PxU32 i = 0; i < count; ++i)
 						{
 							const NpConstraint& c = static_cast<const NpConstraint&>(*constraints[i]);
+							if (!omniPvdSampler->isObjectRecorded(c) || !c.getCore().getPxConnector()) continue;
 							PxRigidActor *ra0, *ra1; c.getActors(ra0, ra1);
 							bool ra0static = !ra0 || !!ra0->is<PxRigidStatic>(), ra1static = !ra1 || !!ra1->is<PxRigidStatic>();
 							// this check is to not update a joint twice
 							if ((ra == ra0 && (ra1static || ra0 > ra1)) || (ra == ra1 && (ra0static || ra1 > ra0)))
-								c.getCore().getPxConnector()->updateOmniPvdProperties();
+								omniPvdSampler->updateConstraintOmniPvdProperties(c);
 						}
 						if (count == MAX_CONSTRAINTS)
 						{
@@ -270,212 +286,34 @@ void NpScene::fetchResultsOmniPvd()
 			for( PxU32 i = 0 ; i < nbArticulations ;i++)
 			{
 				PxArticulationReducedCoordinate* articulation = (articulations[i]);
+				if (!NpOmniPvdCaptureArticulation(*articulation) || selectiveDirectGpu) continue;
 				OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationReducedCoordinate, wakeCounter, *articulation, articulation->getWakeCounter());
-				const PxBounds3 worldBounds = articulation->getWorldBounds();
-				OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationReducedCoordinate, worldBounds, *articulation, worldBounds);
+				OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationReducedCoordinate, worldBounds, *articulation, articulation->getWorldBounds());
 				OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationReducedCoordinate, isSleeping, *articulation, articulation->isSleeping());
+				if (!directGpu) omniPvdSampler->streamArticulationReactions(pvdWriter, pvdRegData, *articulation);
 			}
-			// send contacts info
-			omniPvdSampler->streamSceneContacts(*this);
-
 #if PX_SUPPORT_GPU_PHYSX
-			// process particle data
-			if (mPBDParticleSystems.size() > 0)
-			{
-				fetchResultsParticleSystem();
-				const PxPBDParticleSystem* const* particleSystems = mPBDParticleSystems.getEntries();
-				const PxU32 particleSystemCount = mPBDParticleSystems.size();
-				for (PxU32 i = 0; i < particleSystemCount; i++)
-				{
-					const NpPBDParticleSystem* npPs = static_cast<const NpPBDParticleSystem*>(particleSystems[i]);
-					{
-						const PxBounds3 worldBounds = npPs->getWorldBounds();
-						OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxActor, worldBounds, *npPs, worldBounds);
-
-						const PxArray<PxsParticleBuffer*>& pxsBuffers = npPs->getCore().getShapeCore().getLLCore().mParticleBuffers;
-						const PxArray<NpParticleBuffer*>& npBuffers = npPs->mParticleBuffers;
-						for (PxU32 b = 0; b < pxsBuffers.size(); ++b)
-						{
-							const PxsParticleBuffer& pxsBuffer = *pxsBuffers[b];
-							if (pxsBuffer.getPositionInvMassesH())
-							{
-								PxParticleBuffer* pxBuffer = npBuffers[b];
-								PxReal* values = reinterpret_cast<PxReal*>(pxsBuffer.getPositionInvMassesH());
-								PxU32 nbValues = pxsBuffer.getNbActiveParticles() * 4;
-								OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxParticleBuffer, positionInvMasses, *pxBuffer, values, nbValues);
-								OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxParticleBuffer, flatListStartIndex, *pxBuffer, pxsBuffer.getFlatListStartIndex());
-							}
-						}
-					}
-					{
-						const PxArray<PxsParticleBuffer*>& pxsBuffers = npPs->getCore().getShapeCore().getLLCore().mParticleDiffuseBuffers;
-						const PxArray<NpParticleAndDiffuseBuffer*>& npBuffers = npPs->mParticleDiffuseBuffers;
-						for (PxU32 b = 0; b < pxsBuffers.size(); ++b)
-						{
-							const PxsParticleBuffer& pxsBuffer = *pxsBuffers[b];
-							if (pxsBuffer.getPositionInvMassesH())
-							{
-								PxParticleBuffer* pxBuffer = npBuffers[b];
-								PxReal* values = reinterpret_cast<PxReal*>(pxsBuffer.getPositionInvMassesH());
-								PxU32 nbValues = pxsBuffer.getNbActiveParticles() * 4;
-								OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxParticleBuffer, positionInvMasses, *pxBuffer, values, nbValues);
-							}
-							//TODO add diffuse particles
-						}
-					}
-				}
-
-			}
-
-			// Stream deformable volume mesh positions and velocities to mesh objects
-			if (mDeformableVolumes.size() > 0)
-			{
-				PxDeformableVolume* const* dvEntries = mDeformableVolumes.getEntries();
-				const PxU32 nbDeformableVolumes = mDeformableVolumes.size();
-				for (PxU32 i = 0; i < nbDeformableVolumes; i++)
-				{
-					PxDeformableVolume* dv = dvEntries[i];
-					if (!dv->getShape())
-						continue;
-
-					// Re-stream attributes (shape hierarchy) now that the shape is available.
-					streamDeformableVolumeAttributes(*dv);
-
-					// Stream collision mesh positions
-					PxTetrahedronMesh* collMesh = dv->getCollisionMesh();
-					if (collMesh)
-					{
-						const PxU32 nbVerts = collMesh->getNbVertices();
-						PxVec4* gpuPositions = dv->getPositionInvMassBufferD();
-						if (nbVerts > 0 && gpuPositions)
-						{
-							const PxU32 bufferSize = nbVerts * sizeof(PxVec4);
-							PxVec4* hostPositions = reinterpret_cast<PxVec4*>(PX_ALLOC(bufferSize, "OmniPvdDeformableVolumeCollPositions"));
-							if (hostPositions)
-							{
-								PxScopedCudaLock lock(*mCudaContextManager);
-								auto copyResult = mCudaContextManager->getCudaContext()->memcpyDtoH(hostPositions, reinterpret_cast<CUdeviceptr>(gpuPositions), bufferSize);
-								if (copyResult.value == 0)
-								{
-									OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxTetrahedronMesh, positions, *collMesh, reinterpret_cast<PxReal*>(hostPositions), nbVerts * 4);
-								}
-								PX_FREE(hostPositions);
-							}
-						}
-					}
-
-					// Stream simulation mesh positions and velocities
-					PxTetrahedronMesh* simMesh = dv->getSimulationMesh();
-					if (simMesh)
-					{
-						const PxU32 nbSimVerts = simMesh->getNbVertices();
-
-						// Simulation positions
-						PxVec4* gpuSimPositions = dv->getSimPositionInvMassBufferD();
-						if (nbSimVerts > 0 && gpuSimPositions)
-						{
-							const PxU32 bufferSize = nbSimVerts * sizeof(PxVec4);
-							PxVec4* hostPositions = reinterpret_cast<PxVec4*>(PX_ALLOC(bufferSize, "OmniPvdDeformableVolumeSimPositions"));
-							if (hostPositions)
-							{
-								PxScopedCudaLock lock(*mCudaContextManager);
-								auto copyResult = mCudaContextManager->getCudaContext()->memcpyDtoH(hostPositions, reinterpret_cast<CUdeviceptr>(gpuSimPositions), bufferSize);
-								if (copyResult.value == 0)
-								{
-									OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxTetrahedronMesh, positions, *simMesh, reinterpret_cast<PxReal*>(hostPositions), nbSimVerts * 4);
-								}
-								PX_FREE(hostPositions);
-							}
-						}
-
-						// Simulation velocities
-						PxVec4* gpuSimVelocities = dv->getSimVelocityBufferD();
-						if (nbSimVerts > 0 && gpuSimVelocities)
-						{
-							const PxU32 bufferSize = nbSimVerts * sizeof(PxVec4);
-							PxVec4* hostVelocities = reinterpret_cast<PxVec4*>(PX_ALLOC(bufferSize, "OmniPvdDeformableVolumeSimVelocities"));
-							if (hostVelocities)
-							{
-								PxScopedCudaLock lock(*mCudaContextManager);
-								auto copyResult = mCudaContextManager->getCudaContext()->memcpyDtoH(hostVelocities, reinterpret_cast<CUdeviceptr>(gpuSimVelocities), bufferSize);
-								if (copyResult.value == 0)
-								{
-									OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxTetrahedronMesh, velocities, *simMesh, reinterpret_cast<PxReal*>(hostVelocities), nbSimVerts * 4);
-								}
-								PX_FREE(hostVelocities);
-							}
-						}
-					}
-				}
-			}
-
-			// Stream deformable surface mesh positions and velocities to mesh objects
-			if (mDeformableSurfaces.size() > 0)
-			{
-				PxDeformableSurface* const* dsEntries = mDeformableSurfaces.getEntries();
-				const PxU32 nbDeformableSurfaces = mDeformableSurfaces.size();
-				for (PxU32 i = 0; i < nbDeformableSurfaces; i++)
-				{
-					PxDeformableSurface* ds = dsEntries[i];
-					if (!ds->getShape())
-						continue;
-
-					// Re-stream attributes (shape hierarchy) now that the shape is available.
-					streamDeformableSurfaceAttributes(*ds);
-
-					const PxGeometry& geom = ds->getShape()->getGeometry();
-					if (geom.getType() != PxGeometryType::eTRIANGLEMESH)
-						continue;
-					const PxTriangleMeshGeometry& triGeom = static_cast<const PxTriangleMeshGeometry&>(geom);
-					if (!triGeom.triangleMesh)
-						continue;
-					PxTriangleMesh* triMesh = const_cast<PxTriangleMesh*>(triGeom.triangleMesh);
-					const PxU32 nbVerts = triMesh->getNbVertices();
-					if (nbVerts == 0)
-						continue;
-
-					// Surface positions
-					PxVec4* gpuPositions = ds->getPositionInvMassBufferD();
-					if (gpuPositions)
-					{
-						const PxU32 bufferSize = nbVerts * sizeof(PxVec4);
-						PxVec4* hostPositions = reinterpret_cast<PxVec4*>(PX_ALLOC(bufferSize, "OmniPvdDeformableSurfacePositions"));
-						if (hostPositions)
-						{
-							PxScopedCudaLock lock(*mCudaContextManager);
-							auto copyResult = mCudaContextManager->getCudaContext()->memcpyDtoH(hostPositions, reinterpret_cast<CUdeviceptr>(gpuPositions), bufferSize);
-							if (copyResult.value == 0)
-							{
-								OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxTriangleMesh, positions, *triMesh, reinterpret_cast<PxReal*>(hostPositions), nbVerts * 4);
-							}
-							PX_FREE(hostPositions);
-						}
-					}
-
-					// Surface velocities
-					PxVec4* gpuVelocities = ds->getVelocityBufferD();
-					if (gpuVelocities)
-					{
-						const PxU32 bufferSize = nbVerts * sizeof(PxVec4);
-						PxVec4* hostVelocities = reinterpret_cast<PxVec4*>(PX_ALLOC(bufferSize, "OmniPvdDeformableSurfaceVelocities"));
-						if (hostVelocities)
-						{
-							PxScopedCudaLock lock(*mCudaContextManager);
-							auto copyResult = mCudaContextManager->getCudaContext()->memcpyDtoH(hostVelocities, reinterpret_cast<CUdeviceptr>(gpuVelocities), bufferSize);
-							if (copyResult.value == 0)
-							{
-								OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxTriangleMesh, velocities, *triMesh, reinterpret_cast<PxReal*>(hostVelocities), nbVerts * 4);
-							}
-							PX_FREE(hostVelocities);
-						}
-					}
-				}
-			}
+			omniPvdSampler->beginSceneGpuReadback(*this);
+			const PxPBDParticleSystem* const* particleSystems = mPBDParticleSystems.getEntries();
+			for (PxU32 i = 0; i < mPBDParticleSystems.size(); ++i)
+				if (!omniPvdSampler->streamParticleSystemState(pvdWriter, pvdRegData, *particleSystems[i])) break;
+			PxDeformableVolume* const* volumes = mDeformableVolumes.getEntries();
+			for (PxU32 i = 0; i < mDeformableVolumes.size(); ++i)
+				if (!omniPvdSampler->streamDeformableState(pvdWriter, pvdRegData, *volumes[i])) break;
+			PxDeformableSurface* const* surfaces = mDeformableSurfaces.getEntries();
+			for (PxU32 i = 0; i < mDeformableSurfaces.size(); ++i)
+				if (!omniPvdSampler->streamDeformableState(pvdWriter, pvdRegData, *surfaces[i])) break;
 #endif
 
 			NpOmniPvdSceneClient& ovdClient = getSceneOvdClientInternal();
 			ovdClient.resetForces();
-			ovdClient.incrementFrame(*pvdWriter, true);
+			OMNI_PVD_WRITE_SCOPE_END
+		}
+		if (omniPvdSampler && omniPvdSampler->isSampling())
+		{
+			OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+			PX_UNUSED(pvdRegData);
+			getSceneOvdClientInternal().incrementFrame(*pvdWriter, true);
 			OMNI_PVD_WRITE_SCOPE_END
 		}
 }
@@ -649,7 +487,7 @@ void NpScene::fetchResultsFinish(PxU32* errorState)
 
 		mBetweenFetchResults = false;
 		NP_WRITE_CHECK(this);
-		
+
 		fetchResultsPostContactCallbacks();
 
 		if (errorState)

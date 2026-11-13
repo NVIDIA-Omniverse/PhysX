@@ -39,8 +39,7 @@ PX_FORCE_INLINE void streamRigidBodyForceCallToOmniPvd(
 	const PxVec3* force,
 	const PxVec3* torque)
 {
-	// NpArticulationLink force/torque APIs can reach here after reporting Direct GPU misuse; leave recording to the Direct GPU path.
-	if(!scene || ((scene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && scene->isDirectGPUAPIInitialized()))
+	if(!scene)
 		return;
 
 	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)

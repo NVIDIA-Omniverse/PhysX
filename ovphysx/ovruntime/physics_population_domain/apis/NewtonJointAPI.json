@@ -1,0 +1,142 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "NewtonJointAPI",
+  "title": "NewtonJointAPI (joint-level seeds)",
+  "summary": "Newton joint-level values the PhysX parser reads as seeds for every axis of a revolute, prismatic, spherical or D6 joint: velocity limit, armature, friction and damping. A PhysxJointAxisAPI value on an axis overrides them.",
+  "status": "draft",
+  "compiled_cache": "reads",
+  "usd_schemas_gate": false,
+  "applies_to": [
+    "PhysicsJoint"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "producer_scope": "Published like any applied API when the Newton schema is registered for population; without the registration its attributes are lost (see the ovphysx Newton schema notes).",
+  "columns": [
+    {
+      "name": "newton:velocityLimit",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "inf",
+      "parser_default": "FLT_MAX",
+      "sentinel": "A value >= FLT_MAX (inf included) is no Newton opinion; a finite legacy velocity limit may supply the fallback.",
+      "absent": "A finite legacy physxJoint:maxJointVelocity supplies the fallback, otherwise FLT_MAX. A finite PhysxJointAxisAPI maxJointVelocity has highest precedence.",
+      "raw_fallback_diverges": false,
+      "units": "rot: deg/s; trans: length/s",
+      "conversion": "deg_to_rad",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "include/omni/physics/parse/PreparedJoint.h",
+        "source/omni.physics.ovstage/OvstageJointBatch.h",
+        "source/omni.physics.parse/ParseJoint.cpp"
+      ],
+      "notes": "Newton schema attribute (newton-usd-schemas, not shipped with ovphysx). The parser reads it on every revolute, prismatic, spherical and D6 joint without checking usd-schemas; fixed, distance, gear and rack-and-pinion joints never read it. A finite Newton value overrides the legacy joint velocity limit and seeds maxJointVelocity of every supported axis; deg_to_rad on angular axes except the unlimited sentinel."
+    },
+    {
+      "name": "newton:armature",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0, unless a positive PhysxJointAxisAPI armature overrides it.",
+      "raw_fallback_diverges": false,
+      "units": "rot: mass*length^2; trans: mass",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "include/omni/physics/parse/PreparedJoint.h",
+        "source/omni.physics.ovstage/OvstageJointBatch.h",
+        "source/omni.physics.parse/ParseJoint.cpp"
+      ],
+      "notes": "Newton schema attribute (newton-usd-schemas, not shipped with ovphysx). The parser reads it on every revolute, prismatic, spherical and D6 joint without checking usd-schemas; fixed, distance, gear and rack-and-pinion joints never read it. Seeds armature of every supported axis."
+    },
+    {
+      "name": "newton:friction",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0 for both friction efforts, unless a positive PhysxJointAxisAPI friction effort overrides them.",
+      "raw_fallback_diverges": false,
+      "units": "force or torque",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "include/omni/physics/parse/PreparedJoint.h",
+        "source/omni.physics.ovstage/OvstageJointBatch.h",
+        "source/omni.physics.parse/ParseJoint.cpp"
+      ],
+      "notes": "Newton schema attribute (newton-usd-schemas, not shipped with ovphysx). The parser reads it on every revolute, prismatic, spherical and D6 joint without checking usd-schemas; fixed, distance, gear and rack-and-pinion joints never read it. Seeds both staticFrictionEffort and dynamicFrictionEffort."
+    },
+    {
+      "name": "newton:damping",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0, unless a positive PhysxJointAxisAPI viscousFrictionCoefficient overrides it.",
+      "raw_fallback_diverges": false,
+      "units": "rot: torque*s/deg; trans: force*s/length",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "include/omni/physics/parse/PreparedJoint.h",
+        "source/omni.physics.ovstage/OvstageJointBatch.h",
+        "source/omni.physics.parse/ParseJoint.cpp"
+      ],
+      "notes": "Newton schema attribute (newton-usd-schemas, not shipped with ovphysx). The parser reads it on every revolute, prismatic, spherical and D6 joint without checking usd-schemas; fixed, distance, gear and rack-and-pinion joints never read it. Seeds viscousFrictionCoefficient; x 180/pi on angular axes."
+    }
+  ],
+  "notes": [
+    "The parser reads these columns without checking that NewtonJointAPI is listed in usd-schemas. The compiled cache reads them but does not support the API: a prim that lists NewtonJointAPI makes the cache bypass."
+  ]
+}

@@ -1,0 +1,643 @@
+{
+  "$schema": "../contract.schema.json",
+  "schema_version": 1,
+  "attributes": [
+    {
+      "id": "accelerator",
+      "name": "accelerator",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE",
+          "description": "persistent accelerator input",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "CONDITIONAL",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ],
+            "applicability": "DriveBasic / DriveStandard.",
+            "value_constraints": {
+              "finite": true,
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": [],
+            "applicability": "DriveBasic / DriveStandard.",
+            "value_constraints": {
+              "finite": true,
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "brake0",
+      "name": "brake0",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE",
+          "description": "persistent brake-channel input",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "CONDITIONAL",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ],
+            "applicability": "DriveBasic / DriveStandard.",
+            "value_constraints": {
+              "finite": true,
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": [],
+            "applicability": "DriveBasic / DriveStandard.",
+            "value_constraints": {
+              "finite": true,
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "brake1",
+      "name": "brake1",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE",
+          "description": "persistent brake-channel input",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "CONDITIONAL",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ],
+            "applicability": "DriveBasic / DriveStandard.",
+            "value_constraints": {
+              "finite": true,
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": [],
+            "applicability": "DriveBasic / DriveStandard.",
+            "value_constraints": {
+              "finite": true,
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "steer",
+      "name": "steer",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE",
+          "description": "persistent steering input",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "CONDITIONAL",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ],
+            "applicability": "DriveBasic / DriveStandard.",
+            "value_constraints": {
+              "finite": true,
+              "minimum": -1,
+              "maximum": 1
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": [],
+            "applicability": "DriveBasic / DriveStandard.",
+            "value_constraints": {
+              "finite": true,
+              "minimum": -1,
+              "maximum": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "requested_gear",
+      "name": "requestedGear",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE",
+          "description": "persistent gear request (write-only)",
+          "dtype": "i32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "CONDITIONAL",
+          "read": false,
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": [],
+            "applicability": "DriveBasic / DriveStandard.",
+            "value_constraints": {
+              "minimum": -1,
+              "maximum": 30,
+              "additional_values": [
+                255
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "thrust0",
+      "name": "thrust0",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE",
+          "description": "persistent track thrust (write-only)",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "CONDITIONAL",
+          "read": false,
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": [],
+            "applicability": "Tank drive only.",
+            "value_constraints": {
+              "finite": true,
+              "minimum": -1,
+              "maximum": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "thrust1",
+      "name": "thrust1",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE",
+          "description": "persistent track thrust (write-only)",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "CONDITIONAL",
+          "read": false,
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": [],
+            "applicability": "Tank drive only.",
+            "value_constraints": {
+              "finite": true,
+              "minimum": -1,
+              "maximum": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "clutch",
+      "name": "clutch",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE",
+          "description": "native clutch command state",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ],
+            "applicability": "DriveStandard.",
+            "value_constraints": {
+              "finite": true,
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "current_gear",
+      "name": "currentGear",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE",
+          "description": "engaged gear",
+          "dtype": "i32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ],
+            "applicability": "DriveStandard."
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "target_gear",
+      "name": "targetGear",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE",
+          "description": "internal transmission target, distinct from the requested control",
+          "dtype": "i32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ],
+            "applicability": "DriveStandard."
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "engine_rotation_speed",
+      "name": "engineRotationSpeed",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE",
+          "description": "engine angular speed",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "angular_velocity",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ],
+            "applicability": "DriveStandard."
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "automatic_transmission",
+      "name": "automaticTransmission",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE",
+          "description": "automatic transmission enabled",
+          "dtype": "u8",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ],
+            "applicability": "DriveStandard."
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "gear_switch_time",
+      "name": "gearSwitchTime",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE",
+          "description": "elapsed time in current gear change; negative when no change is active",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "time",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ],
+            "applicability": "DriveStandard."
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "autobox_time_since_last_shift",
+      "name": "autoboxTimeSinceLastShift",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE",
+          "description": "automatic-gearbox time since the last shift; zero without an autobox",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "time",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ],
+            "applicability": "DriveStandard."
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "reset_to_rest_state",
+      "name": "resetToRestState",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "VEHICLE",
+          "description": "execute native rest reset (write-only)",
+          "dtype": "u8",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "CONDITIONAL",
+          "read": false,
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "vehicle"
+            ],
+            "effect": "command",
+            "persistence": "once",
+            "visibility": "commit",
+            "preserves": [],
+            "applicability": "Every addressed chassis must have simulation enabled, including rows containing 0.",
+            "value_constraints": {
+              "values": [
+                0,
+                1
+              ]
+            }
+          },
+          "notes": "A value of 0 leaves the row unchanged; 1 resets it. Other values reject the entire group before mutation."
+        }
+      ]
+    }
+  ]
+}

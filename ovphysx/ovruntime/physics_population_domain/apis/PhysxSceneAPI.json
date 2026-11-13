@@ -1,0 +1,1229 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxSceneAPI",
+  "title": "PhysxSceneAPI",
+  "summary": "PhysX tuning for a PhysicsScene prim: solver, broadphase, flags, friction thresholds, iteration bounds and GPU memory budgets. Read only when PhysxSceneAPI is listed in usd-schemas of a PhysicsScene prim. Two friction columns have units-scaled defaults that the raw schema fallback does not reproduce; the producer creates them even without the API.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "Typed"
+  ],
+  "multi_apply": false,
+  "uses": [
+    "stage_units"
+  ],
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "producer_scope": "Every declared attribute is published at its resolved value on a PhysicsScene prim that applies the API. Two columns are rewritten when unauthored and CREATED on every PhysicsScene prim even when this API is not applied: physxScene:frictionOffsetThreshold = 0.04 / metersPerUnit and physxScene:frictionCorrelationDistance = 0.025 / metersPerUnit. Those values equal the consumer's absent-column defaults, so on a producer-populated stage the raw schema fallbacks never reach the consumer.",
+  "columns": [
+    {
+      "name": "physxScene:timeStepsPerSecond",
+      "usd_type": "uint",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "uint",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 60,
+      "parser_default": 60,
+      "absent": "60 Hz. An absent or out-of-range value also lets newton:timeStepsPerSecond on the same prim take over (see PhysicsScene notes).",
+      "raw_fallback_diverges": false,
+      "units": "1/s",
+      "clamp": [
+        1,
+        4294967295
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ],
+      "notes": "Drives the runtime's fixed substep, not a PxScene property: no PhysX getter, no verify block. +inf clamps to UINT_MAX, -inf to 1; an out-of-range value is written clamped but does not count as authored for the Newton fallback gate."
+    },
+    {
+      "name": "physxScene:solverType",
+      "usd_type": "token",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "TOKEN_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "TGS",
+      "parser_default": "TGS",
+      "absent": "TGS. Accepted tokens: TGS, PGS. An unrecognised token leaves TGS.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ],
+      "notes": "PhysX: the scene's solver type as an integer, PxSolverType ePGS=0 eTGS=1. No verify block: the generator cannot express a token-string sample as a numeric literal (see PhysxMaterialAPI). A process-wide solver override in the runtime settings wins over this column."
+    },
+    {
+      "name": "physxScene:broadphaseType",
+      "usd_type": "token",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "TOKEN_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "GPU",
+      "parser_default": "GPU",
+      "absent": "GPU. Accepted tokens: SAP, MBP, GPU. An unrecognised token leaves GPU. GPU broadphase falls back to PxBroadPhaseType::ePABP when no CUDA context manager exists (CPU-only process or CPU mode), with a warning.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ],
+      "notes": "PhysX: the scene's broad-phase type as an integer, PxBroadPhaseType eSAP=0 eMBP=1 eABP=2 ePABP=3 eGPU=4. The consumer maps SAP to eSAP, MBP to ePABP (not eMBP) and GPU to eGPU. No verify block (token sample), and on the CPU test scene the default resolves to ePABP anyway. Also gates the physxScene:envIdInBoundsBitCount read."
+    },
+    {
+      "name": "physxScene:collisionSystem",
+      "usd_type": "token",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "TOKEN_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "PCM",
+      "parser_default": "PCM",
+      "absent": "PCM. Only the token SAT is tested; PCM is the default and any other token is a no-op that leaves PCM.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ],
+      "notes": "PhysX: the scene flag PxSceneFlag::eENABLE_PCM is set for PCM and clear for SAT. No verify block (token sample)."
+    },
+    {
+      "name": "physxScene:updateType",
+      "usd_type": "token",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "TOKEN_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "Synchronous",
+      "parser_default": "Synchronous",
+      "absent": "Synchronous. Accepted tokens: Synchronous, Asynchronous, Disabled (capitalised, as the schema declares them). An unrecognised token leaves Synchronous.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "include/omni/physics/parse/Descriptors.h"
+      ],
+      "notes": "Runtime update scheduling, not a PxScene property: no PhysX getter, no verify block. Disabled means the scene is created but never stepped by the runtime's update loop."
+    },
+    {
+      "name": "physxScene:enableCCD",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": false,
+      "verify": {
+        "target": "scene",
+        "expr": "scene->getFlags().isSet(::physx::PxSceneFlag::eENABLE_CCD)",
+        "kind": "bool",
+        "sample": true
+      },
+      "parser_default": false,
+      "absent": "Off.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ],
+      "notes": "Cleared again by the runtime when GPU dynamics runs with readback suppressed (DirectGPU), with a warning."
+    },
+    {
+      "name": "physxScene:enableStabilization",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": false,
+      "verify": {
+        "target": "scene",
+        "expr": "scene->getFlags().isSet(::physx::PxSceneFlag::eENABLE_STABILIZATION)",
+        "kind": "bool",
+        "sample": true
+      },
+      "parser_default": false,
+      "absent": "Off.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ]
+    },
+    {
+      "name": "physxScene:enableGPUDynamics",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": true,
+      "verify": {
+        "target": "scene",
+        "expr": "scene->getFlags().isSet(::physx::PxSceneFlag::eENABLE_GPU_DYNAMICS)",
+        "kind": "bool",
+        "sample": false,
+        "check_absent": false,
+        "notes": "The contract test scene runs on CPU, where the default true is forced off: the absent check is skipped and the sample is the CPU-valid false."
+      },
+      "parser_default": true,
+      "absent": "On. The runtime honours it only when a CUDA context manager exists; on a CPU-only process the PhysX flag is forced off with a warning (silently when CPU mode was requested explicitly).",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ],
+      "notes": "A process-wide GPU pipeline override in the runtime settings wins over this column in both directions."
+    },
+    {
+      "name": "physxScene:enableEnhancedDeterminism",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": false,
+      "verify": {
+        "target": "scene",
+        "expr": "scene->getFlags().isSet(::physx::PxSceneFlag::eENABLE_ENHANCED_DETERMINISM)",
+        "kind": "bool",
+        "sample": true
+      },
+      "parser_default": false,
+      "absent": "Off.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ]
+    },
+    {
+      "name": "physxScene:enableExternalForcesEveryIteration",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": true,
+      "verify": {
+        "target": "scene",
+        "expr": "scene->getFlags().isSet(::physx::PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS)",
+        "kind": "bool",
+        "sample": true,
+        "notes": "Sample valid because the default solver is TGS."
+      },
+      "parser_default": true,
+      "absent": "On. Deprecated: applying gravity and other external forces in every TGS position iteration is the default and the only TGS behavior once the attribute is removed. Silently forced to off when physxScene:solverType is PGS (no effect there).",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ]
+    },
+    {
+      "name": "physxScene:invertCollisionGroupFilter",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": false,
+      "parser_default": false,
+      "absent": "Off: collision groups list the groups they do NOT collide with. On, physics:filteredGroups lists the groups a group DOES collide with, for every group in the scene.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ],
+      "notes": "Consumed by the runtime's filter shader configuration, not a PxScene property: no PhysX getter, no verify block. This scene-level switch, not the per-group physics:invertFilteredGroups, is what the consumer honours (see PhysicsCollisionGroup)."
+    },
+    {
+      "name": "physxScene:reportKinematicKinematicPairs",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": false,
+      "verify": {
+        "target": "scene",
+        "expr": "scene->getKinematicKinematicFilteringMode() == ::physx::PxPairFilteringMode::eKEEP",
+        "kind": "bool",
+        "sample": true,
+        "notes": "PxSceneDesc default eDEFAULT resolves to eSUPPRESS, so the absent expectation is false."
+      },
+      "parser_default": false,
+      "absent": "Off: kinematic-kinematic pairs are suppressed before the filter shader and never reported.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ]
+    },
+    {
+      "name": "physxScene:reportKinematicStaticPairs",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": false,
+      "verify": {
+        "target": "scene",
+        "expr": "scene->getStaticKinematicFilteringMode() == ::physx::PxPairFilteringMode::eKEEP",
+        "kind": "bool",
+        "sample": true
+      },
+      "parser_default": false,
+      "absent": "Off: kinematic-static pairs are suppressed before the filter shader and never reported.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ]
+    },
+    {
+      "name": "physxScene:enableSceneQuerySupport",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": true,
+      "verify": {
+        "target": "scene",
+        "expr": "scene->getSceneQueryUpdateMode() != ::physx::PxSceneQueryUpdateMode::eBUILD_DISABLED_COMMIT_DISABLED",
+        "kind": "bool",
+        "sample": false,
+        "notes": "getSceneQueryUpdateMode is inherited from PxSceneSQSystem."
+      },
+      "parser_default": true,
+      "absent": "On. Off sets the scene query update mode to eBUILD_DISABLED_COMMIT_DISABLED: no scene query structure is built, raycasts and overlaps see nothing.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ]
+    },
+    {
+      "name": "physxScene:solveArticulationContactLast",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": false,
+      "verify": {
+        "target": "scene",
+        "expr": "scene->getFlags().isSet(::physx::PxSceneFlag::eSOLVE_ARTICULATION_CONTACT_LAST)",
+        "kind": "bool",
+        "sample": true
+      },
+      "parser_default": false,
+      "absent": "Off.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ]
+    },
+    {
+      "name": "physxScene:disableSleeping",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": false,
+      "verify": {
+        "target": "scene",
+        "expr": "scene->getFlags().isSet(::physx::PxSceneFlag::eDISABLE_SLEEPING)",
+        "kind": "bool",
+        "sample": true
+      },
+      "parser_default": false,
+      "absent": "Off. The runtime also raises the PhysX flag on its own when GPU dynamics runs with readback suppressed.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ]
+    },
+    {
+      "name": "physxScene:bounceThreshold",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "verify": {
+        "target": "scene",
+        "expr": "scene->getBounceThresholdVelocity()",
+        "kind": "float",
+        "sample": 0.5
+      },
+      "parser_default": 1e-06,
+      "absent": "1e-6, effectively every contact bounces. NOT units-scaled: the same 1e-6 on a meter and on a centimeter stage (PhysX's own default would be 0.2 * tolerances speed). The raw fallback 0 is clamped up to the same 1e-6, so writing it literally is harmless.",
+      "raw_fallback_diverges": false,
+      "units": "length/s",
+      "clamp": [
+        1e-06,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ]
+    },
+    {
+      "name": "physxScene:frictionOffsetThreshold",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.04,
+      "producer": {
+        "writes": "0.04 / metersPerUnit",
+        "via": "derive",
+        "on": {
+          "is_a": [
+            "PhysicsScene"
+          ]
+        },
+        "when": "unauthored",
+        "creates_column": true
+      },
+      "verify": {
+        "target": "scene",
+        "expr": "scene->getFrictionOffsetThreshold()",
+        "kind": "float",
+        "sample": 0.1
+      },
+      "parser_default": "0.04 / metersPerUnit",
+      "absent": "Units-scaled default: 0.04 on a meter stage, 4 on a centimeter stage. Writing the raw fallback 0.04 on a centimeter stage makes friction anchors 100 times too short-lived. The producer writes the scaled value and creates the column even without PhysxSceneAPI applied; the consumer ignores it unless PhysxSceneAPI is in usd-schemas.",
+      "raw_fallback_diverges": true,
+      "units": "length",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ]
+    },
+    {
+      "name": "physxScene:frictionCorrelationDistance",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.025,
+      "producer": {
+        "writes": "0.025 / metersPerUnit",
+        "via": "derive",
+        "on": {
+          "is_a": [
+            "PhysicsScene"
+          ]
+        },
+        "when": "unauthored",
+        "creates_column": true
+      },
+      "verify": {
+        "target": "scene",
+        "expr": "scene->getFrictionCorrelationDistance()",
+        "kind": "float",
+        "sample": 0.05
+      },
+      "parser_default": "0.025 / metersPerUnit",
+      "absent": "Units-scaled default: 0.025 on a meter stage, 2.5 on a centimeter stage. Writing the raw fallback literally on a non-meter stage diverges the same way as frictionOffsetThreshold. Created by the producer even without PhysxSceneAPI applied.",
+      "raw_fallback_diverges": true,
+      "units": "length",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ]
+    },
+    {
+      "name": "physxScene:maxBiasCoefficient",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "inf",
+      "verify": {
+        "target": "scene",
+        "expr": "scene->getMaxBiasCoefficient()",
+        "kind": "float",
+        "notes": "No sample: the value only reaches PxScene::getMaxBiasCoefficient with the PGS solver or GPU dynamics. The PhysX CPU TGS context ignores PxSceneDesc::maxBiasCoefficient (DyTGSDynamics.cpp hard-codes PX_MAX_F32 in DynamicsTGSContext), and the contract test's authored variant runs CPU TGS (enableGPUDynamics sample false, default solverType TGS), where an authored 10 read back as FLT_MAX. The absent check (FLT_MAX) holds on every path."
+      },
+      "parser_default": "FLT_MAX",
+      "absent": "FLT_MAX, no cap on the constraint bias. +inf clamps to FLT_MAX, so writing the raw fallback literally is harmless.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ]
+    },
+    {
+      "name": "physxScene:minPositionIterationCount",
+      "usd_type": "uint",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "uint",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 1,
+      "parser_default": 0,
+      "absent": "0: no lower bound on a body's solverPositionIterationCount. The raw fallback is 1, so a producer-populated stage clamps bodies authored with 0 position iterations up to 1 while an omitted column does not. Silently clamped down to physxScene:maxPositionIterationCount when it exceeds it.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "clamp": [
+        0,
+        255
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "include/omni/physics/parse/Descriptors.h"
+      ],
+      "notes": "Bounds applied by the runtime to per-body iteration counts, not a PxScene property: no PhysX getter, no verify block."
+    },
+    {
+      "name": "physxScene:maxPositionIterationCount",
+      "usd_type": "uint",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "uint",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 255,
+      "parser_default": 255,
+      "absent": "255: no upper bound in practice.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "clamp": [
+        0,
+        255
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "include/omni/physics/parse/Descriptors.h"
+      ],
+      "notes": "No PhysX getter, no verify block."
+    },
+    {
+      "name": "physxScene:minVelocityIterationCount",
+      "usd_type": "uint",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "uint",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 0,
+      "parser_default": 0,
+      "absent": "0. Silently clamped down to physxScene:maxVelocityIterationCount when it exceeds it.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "clamp": [
+        0,
+        255
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "include/omni/physics/parse/Descriptors.h"
+      ],
+      "notes": "No PhysX getter, no verify block."
+    },
+    {
+      "name": "physxScene:maxVelocityIterationCount",
+      "usd_type": "uint",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "uint",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 255,
+      "parser_default": 255,
+      "absent": "255.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "clamp": [
+        0,
+        255
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "include/omni/physics/parse/Descriptors.h"
+      ],
+      "notes": "No PhysX getter, no verify block."
+    },
+    {
+      "name": "physxScene:gpuTempBufferCapacity",
+      "usd_type": "uint64",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 16777216,
+      "verify": {
+        "target": "scene",
+        "expr": "static_cast<int>(scene->getGpuDynamicsConfig().tempBufferCapacity)",
+        "kind": "int",
+        "sample": 8388608
+      },
+      "parser_default": 16777216,
+      "absent": "16777216. Read unclamped and written unconditionally (the schema fallback lands in the descriptor when the column is absent).",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ],
+      "notes": "GPU dynamics memory budget; copied to the PxSceneDesc GPU dynamics memory configuration on every scene, also a CPU one, where it has no effect."
+    },
+    {
+      "name": "physxScene:gpuMaxRigidContactCount",
+      "usd_type": "uint",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "uint",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 524288,
+      "verify": {
+        "target": "scene",
+        "expr": "static_cast<int>(scene->getGpuDynamicsConfig().maxRigidContactCount)",
+        "kind": "int",
+        "sample": 262144
+      },
+      "parser_default": 524288,
+      "absent": "524288. Read unclamped and written unconditionally (the schema fallback lands in the descriptor when the column is absent).",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ],
+      "notes": "GPU dynamics memory budget; copied to the PxSceneDesc GPU dynamics memory configuration on every scene, also a CPU one, where it has no effect."
+    },
+    {
+      "name": "physxScene:gpuMaxRigidPatchCount",
+      "usd_type": "uint",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "uint",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 81920,
+      "verify": {
+        "target": "scene",
+        "expr": "static_cast<int>(scene->getGpuDynamicsConfig().maxRigidPatchCount)",
+        "kind": "int",
+        "sample": 40960
+      },
+      "parser_default": 81920,
+      "absent": "81920. Read unclamped and written unconditionally (the schema fallback lands in the descriptor when the column is absent).",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ],
+      "notes": "GPU dynamics memory budget; copied to the PxSceneDesc GPU dynamics memory configuration on every scene, also a CPU one, where it has no effect."
+    },
+    {
+      "name": "physxScene:gpuHeapCapacity",
+      "usd_type": "uint",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "uint",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 67108864,
+      "verify": {
+        "target": "scene",
+        "expr": "static_cast<int>(scene->getGpuDynamicsConfig().heapCapacity)",
+        "kind": "int",
+        "sample": 33554432,
+        "notes": "The runtime rounds the value up to the next power of two before handing it to PhysX; the sample is already one, so map stays v."
+      },
+      "parser_default": 67108864,
+      "absent": "67108864. Read unclamped and written unconditionally (the schema fallback lands in the descriptor when the column is absent).",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ],
+      "notes": "GPU heap budget, rounded up to the next power of two by the runtime."
+    },
+    {
+      "name": "physxScene:gpuFoundLostPairsCapacity",
+      "usd_type": "uint",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "uint",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 262144,
+      "verify": {
+        "target": "scene",
+        "expr": "static_cast<int>(scene->getGpuDynamicsConfig().foundLostPairsCapacity)",
+        "kind": "int",
+        "sample": 131072
+      },
+      "parser_default": 262144,
+      "absent": "262144. Read unclamped and written unconditionally (the schema fallback lands in the descriptor when the column is absent).",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ],
+      "notes": "GPU dynamics memory budget; copied to the PxSceneDesc GPU dynamics memory configuration on every scene, also a CPU one, where it has no effect."
+    },
+    {
+      "name": "physxScene:gpuFoundLostAggregatePairsCapacity",
+      "usd_type": "uint",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "uint",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 1024,
+      "verify": {
+        "target": "scene",
+        "expr": "static_cast<int>(scene->getGpuDynamicsConfig().foundLostAggregatePairsCapacity)",
+        "kind": "int",
+        "sample": 2048
+      },
+      "parser_default": 1024,
+      "absent": "1024. Read unclamped and written unconditionally (the schema fallback lands in the descriptor when the column is absent).",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ],
+      "notes": "GPU dynamics memory budget; copied to the PxSceneDesc GPU dynamics memory configuration on every scene, also a CPU one, where it has no effect."
+    },
+    {
+      "name": "physxScene:gpuTotalAggregatePairsCapacity",
+      "usd_type": "uint",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "uint",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 1024,
+      "verify": {
+        "target": "scene",
+        "expr": "static_cast<int>(scene->getGpuDynamicsConfig().totalAggregatePairsCapacity)",
+        "kind": "int",
+        "sample": 2048
+      },
+      "parser_default": 1024,
+      "absent": "1024. Read unclamped and written unconditionally (the schema fallback lands in the descriptor when the column is absent).",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ],
+      "notes": "GPU dynamics memory budget; copied to the PxSceneDesc GPU dynamics memory configuration on every scene, also a CPU one, where it has no effect."
+    },
+    {
+      "name": "physxScene:gpuMaxDeformableVolumeContacts",
+      "usd_type": "uint",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "uint",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 1048576,
+      "verify": {
+        "target": "scene",
+        "expr": "static_cast<int>(scene->getGpuDynamicsConfig().maxDeformableVolumeContacts)",
+        "kind": "int",
+        "sample": 524288
+      },
+      "parser_default": 1048576,
+      "absent": "1048576. Read unclamped and written unconditionally (the schema fallback lands in the descriptor when the column is absent).",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ],
+      "notes": "GPU dynamics memory budget; copied to the PxSceneDesc GPU dynamics memory configuration on every scene, also a CPU one, where it has no effect."
+    },
+    {
+      "name": "physxScene:gpuMaxDeformableSurfaceContacts",
+      "usd_type": "uint",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "uint",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 1048576,
+      "verify": {
+        "target": "scene",
+        "expr": "static_cast<int>(scene->getGpuDynamicsConfig().maxDeformableSurfaceContacts)",
+        "kind": "int",
+        "sample": 524288
+      },
+      "parser_default": 1048576,
+      "absent": "1048576. Read unclamped and written unconditionally (the schema fallback lands in the descriptor when the column is absent).",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ],
+      "notes": "GPU dynamics memory budget; copied to the PxSceneDesc GPU dynamics memory configuration on every scene, also a CPU one, where it has no effect."
+    },
+    {
+      "name": "physxScene:gpuMaxParticleContacts",
+      "usd_type": "uint",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "uint",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 1048576,
+      "verify": {
+        "target": "scene",
+        "expr": "static_cast<int>(scene->getGpuDynamicsConfig().maxParticleContacts)",
+        "kind": "int",
+        "sample": 524288
+      },
+      "parser_default": 1048576,
+      "absent": "1048576. Read unclamped and written unconditionally (the schema fallback lands in the descriptor when the column is absent).",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ],
+      "notes": "GPU dynamics memory budget; copied to the PxSceneDesc GPU dynamics memory configuration on every scene, also a CPU one, where it has no effect."
+    },
+    {
+      "name": "physxScene:gpuCollisionStackSize",
+      "usd_type": "uint",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "uint",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 67108864,
+      "verify": {
+        "target": "scene",
+        "expr": "static_cast<int>(scene->getGpuDynamicsConfig().collisionStackSize)",
+        "kind": "int",
+        "sample": 33554432
+      },
+      "parser_default": 67108864,
+      "absent": "67108864. Read unclamped and written unconditionally (the schema fallback lands in the descriptor when the column is absent).",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ],
+      "notes": "GPU dynamics memory budget; copied to the PxSceneDesc GPU dynamics memory configuration on every scene, also a CPU one, where it has no effect."
+    },
+    {
+      "name": "physxScene:gpuMaxNumPartitions",
+      "usd_type": "uint",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "uint",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 8,
+      "parser_default": 8,
+      "absent": "8. Clamped to [1, 32], then any value that is not a power of two is silently reset to 8.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "clamp": [
+        1,
+        32
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ],
+      "notes": "Copied to the PxSceneDesc field of the same name, which PxScene does not expose through a getter: no verify block. Valid values are therefore exactly 1, 2, 4, 8, 16, 32."
+    },
+    {
+      "name": "physxScene:envIdInBoundsBitCount",
+      "schema_declared": false,
+      "usd_type": "int",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "int",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "parser_default": -1,
+      "absent": "-1, the unset sentinel: the GPU broadphase environment-id bit layout is left at the PhysX default. Read ONLY when the resolved broadphase is GPU, and then regardless of whether PhysxSceneAPI is applied; under SAP or MBP the column is ignored.",
+      "sentinel": "-1 (and any negative value): no PxGpuBroadPhaseDesc is attached to the scene.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/PhysXScene.cpp"
+      ],
+      "notes": "Not declared by the PhysxSceneAPI schema (absent from the schema fallback inventory); the consumer addresses it by name. Whether the producer publishes this free attribute is not confirmed. No PhysX getter, no verify block."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysicsScene",
+      "rule": "Enumeration is by the PhysicsScene prim type (see that component); this API only adds columns to a scene that already exists. The gravity columns stay on PhysicsScene."
+    },
+    {
+      "with": "PhysxRigidBodyAPI",
+      "rule": "min/max position and velocity iteration counts bound every body's physxRigidBody:solverPositionIterationCount / solverVelocityIterationCount in this scene."
+    },
+    {
+      "with": "PhysicsCollisionGroup",
+      "rule": "physxScene:invertCollisionGroupFilter flips the meaning of physics:filteredGroups for every group; the per-group physics:invertFilteredGroups is not read."
+    },
+    {
+      "with": "stage_units",
+      "rule": "frictionOffsetThreshold and frictionCorrelationDistance default to 0.04 and 0.025 times the tolerances length (1 / metersPerUnit). bounceThreshold does not scale."
+    }
+  ],
+  "findings": [
+    {
+      "column": "physxScene:bounceThreshold",
+      "severity": "fragile",
+      "side": "consumer",
+      "summary": "The consumer default 1e-6 is not units-scaled while every neighbouring length default is, and the raw schema fallback 0 is clamped up to it. A centimeter stage therefore bounces on contacts 100 times slower (relative to its units) than a meter stage would.",
+      "tracking": "follow-up to file"
+    },
+    {
+      "column": "physxScene:minPositionIterationCount",
+      "severity": "note",
+      "side": "consumer",
+      "summary": "Raw schema fallback 1 versus consumer absent default 0: only bodies authored with 0 position iterations observe the difference. When min exceeds max (either pair) min is silently clamped down to max; the diagnostic is emitted by the USD schema parser only, so an ovstage-populated stage gets no warning.",
+      "tracking": "ADR-0020 open questions"
+    },
+    {
+      "column": "physxScene:enableExternalForcesEveryIteration",
+      "severity": "note",
+      "side": "consumer",
+      "summary": "Deprecated, and on by default. Silently cleared when solverType is PGS; the warning exists only on the USD path.",
+      "tracking": "ADR-0020 open questions"
+    },
+    {
+      "column": "physxScene:gpuMaxNumPartitions",
+      "severity": "note",
+      "side": "consumer",
+      "summary": "A value in [1, 32] that is not a power of two is silently replaced by 8 rather than rounded.",
+      "tracking": "ADR-0020 open questions"
+    },
+    {
+      "column": "physxScene:timeStepsPerSecond",
+      "severity": "fragile",
+      "side": "consumer",
+      "summary": "The authored-bit gates are no-ops on ovstage where every column reads as authored, so the resolved value always wins and a value equal to the raw fallback is indistinguishable from unauthored. This is what makes the newton:timeStepsPerSecond fallback unreachable on a producer-populated stage: the published 60 counts as authored.",
+      "tracking": "ADR-0020 open questions"
+    },
+    {
+      "column": "physxScene:maxBiasCoefficient",
+      "severity": "fragile",
+      "side": "consumer",
+      "summary": "Whether the authored value takes effect depends on the solver configuration, not on the stage: PhysX applies the PxSceneDesc maximum bias coefficient in the PGS and GPU dynamics contexts but the CPU TGS context constructs with PX_MAX_F32, so with solverType TGS and enableGPUDynamics false the column is silently ignored and the PxScene reports a maximum bias coefficient of FLT_MAX. Observed in the population contract test (authored 10, read FLT_MAX).",
+      "tracking": "follow-up to file (PhysX SDK)"
+    }
+  ],
+  "notes": [
+    "physxScene:frictionType (token, fallback patch) is declared by the schema and prefetched by the walker but never read: PhysX has a single friction model now and the attribute is deprecated. It is not a column of this contract.",
+    "Token columns (solverType, broadphaseType, collisionSystem, updateType) carry no verify block because the generator turns a sample into a numeric literal; the PhysX observation for each is given in the column notes so a later generator extension can pick them up.",
+    "The contract test scene runs on CPU: enableGPUDynamics is observed as forced off and broadphaseType GPU resolves to ePABP there. Samples that require a GPU (GPU broadphase, GPU dynamics on) are deliberately not given.",
+    "physxScene:maxIterationCount does not exist in the schema or the consumer.",
+    "Process-wide runtime settings (solver type override, GPU pipeline override, suppress readback, multi-GPU mode) can override solverType, broadphaseType, enableGPUDynamics, enableCCD and disableSleeping after parsing; the contract describes the un-overridden path."
+  ]
+}

@@ -28,6 +28,7 @@ def test_module_all_exports():
         "ApiStatus",
         "OmniPvdDestination",
         "LogLevel",
+        "CompiledStageCacheMode",
         "BindingPrimMode",
         "SceneQueryMode",
         "SceneQueryGeometryType",
@@ -48,12 +49,19 @@ def test_intenum_types_importable_without_native():
         ApiStatus,
         ArticulationKinematicFlag,
         BindingPrimMode,
+        CompiledStageCacheMode,
+        GlobalConfigKey,
         LogLevel,
         SceneQueryGeometryType,
         SceneQueryMode,
         TensorType,
     )
 
+    assert GlobalConfigKey.COMPILED_STAGE_CACHE == 0x0000000E
+    assert CompiledStageCacheMode.AUTOMATIC == 0
+    assert CompiledStageCacheMode.DISABLED == 1
+    assert CompiledStageCacheMode.READ_ONLY == 2
+    assert CompiledStageCacheMode.READ_WRITE == 3
     assert TensorType.ARTICULATION_ROOT_POSE == 10
     assert ArticulationKinematicFlag.POSITION == 1
     assert ArticulationKinematicFlag.VELOCITY == 2

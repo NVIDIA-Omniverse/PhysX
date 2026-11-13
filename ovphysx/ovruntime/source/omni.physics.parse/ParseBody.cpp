@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-PROPS-THRESHOLD-001
+ * @covers AC-1 AC-3
+ *
  * @implements REQ-PARSE-PARALLEL-001
  * @covers AC-1 AC-2
  *
@@ -119,7 +122,7 @@ PreparedDynamicBody prepareDynamicBody(ParseContext& ctx, ObjectKey key)
     if (input.physxSplinesSurfaceVelocityAPI && input.physxSplinesSurfaceVelocityEnabled.valueOr(true))
     {
         std::vector<ObjectKey> targets;
-        src.getRelationshipTargets(key, tok.physxSplinesSurfaceVelocityCurve, targets);
+        src.getRelationshipTargets(key, tok.physxSplinesSurfaceVelocitySurfaceVelocityCurve, targets);
         if (!targets.empty() && src.isA(targets[0], tok.basisCurvesType))
         {
             ObjectKey parent = src.getParent(targets[0]);

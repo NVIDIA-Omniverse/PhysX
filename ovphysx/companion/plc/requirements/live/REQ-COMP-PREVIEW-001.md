@@ -22,9 +22,11 @@ Inspector owns a separate native ovruntime attachment and a distinct preview ovs
 - AC-6: **Configuration admission.** Preview passes copied attachment/resource options without changing global defaults. Shared tolerance/provider incompatibility fails before candidate publication; owner-local thread/device choices are capability-checked and hard CPU-only policy remains effective. Failure leaves A's settings, objects and output unchanged.
 - AC-7: **Lifetime integration.** The bridge retains process services through both owners' work and supports teardown in either order without invalidating the survivor. Preview retirement drains only its resources and does not stop an unrelated recording. Preview attachment never starts or restarts recording; the core owner must start it explicitly. An open preview keeps its ovstage Stage alive independently of its Python owner until native close succeeds, so a cyclic garbage collection without explicit close cannot finalize the Stage first. Shared recording transitions and final shutdown are coordinated across core and companion users before the in-process preview capability is advertised.
 
+- AC-8: **Rigid-pose inspection.** Preview rigid-pose inspection uses the existing generation-checked native body snapshot, including static actors and articulation links, and reports the snapshot's world position and xyzw rotation. A relative path is an invalid argument; a missing path or a non-body object is not found. Busy, stale and unavailable snapshots, and every other failure, preserve the caller's output.
+
 ## Test References
 
-- [TEST-COMP-PREVIEW-001](../../tests/live/TEST-COMP-PREVIEW-001.md) - Inspector snapshot/output and host transitions, AC-1 through AC-4; rigid-body snapshot/commit subset executed.
+- [TEST-COMP-PREVIEW-001](../../tests/live/TEST-COMP-PREVIEW-001.md) - Inspector snapshot/output and host transitions, AC-1 through AC-4 and AC-8; rigid-body snapshot/commit subset executed.
 - [TEST-COMP-PREVIEW-002](../../tests/live/TEST-COMP-PREVIEW-002.md) - independent execution and candidate compatibility, AC-1, AC-5 and AC-6; native CPU stepping/configuration subset executed.
 - [TEST-COMP-PREVIEW-003](../../tests/live/TEST-COMP-PREVIEW-003.md) - mixed core/companion lifetime and recording, AC-1 and AC-7; both retirement orders and recording subset executed.
 

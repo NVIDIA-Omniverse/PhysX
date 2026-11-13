@@ -91,7 +91,7 @@ The C++ benchmark harness accepts `--profiler=<backend>` and `--profiler-output=
 OVPHYSX_PROFILER=trace OVPHYSX_PROFILER_OUTPUT=run.json python my_workload.py
 ```
 
-The file is written when the **last** ovphysx instance in the process shuts down, because that is when the profiler is released. It will not exist while a simulation is still alive, and a process that never destroys its instances never produces one. With no output path set, the trace lands in the working directory as `ct-profile <date> <time>.json`.
+The trace is finalized when the **last** ovphysx instance in the process shuts down, because that is when the profiler is released. The file can appear and grow while recording, but its JSON may be incomplete. Destroy every instance before reading the completed trace or exiting; path existence alone does not indicate completion. Do not rely on process exit in place of instance cleanup: exiting without cleanup can leave the trace incomplete. With no output path set, the trace lands in the working directory as `ct-profile <date> <time>.json`.
 
 The output is plain JSON, not gzip, so a script can read it directly. Traces grow quickly: a 120-step run of the sample scene produces roughly 20 MB, so budget accordingly on a long run and compress the file yourself if you need to keep it.
 
@@ -138,7 +138,9 @@ The host-side zones are not free to record. Several of the busiest ones build th
 
 Two things commonly surprise people reading a first capture:
 
-- `ovphysx_step` looks almost free. It only enqueues the step; the simulation cost appears under `ovphysx_wait_task`. That is the asynchronous execution model, not a measurement error.
+- `ovphysx_step` looks almost free. With a worker, it shows only submission
+  time; blocking time appears under `ovphysx_wait_task`. Without a worker, the
+  full step appears under `ovphysx_step`.
 - The first capture of a scene looks nothing like the second. Cooking zones only do work on a cold cooked-collider cache, so a warm run collapses them to almost nothing.
 
 ## What No Capture Contains
@@ -164,7 +166,7 @@ Two related questions belong to other tools: how saturated device DRAM is comes 
 | Symptom | Cause | Fix |
 |---|---|---|
 | Capture or trace is empty | No backend selected, or selected after instance creation | Set `OVPHYSX_PROFILER` before the process starts, or call `set_global_config` / `ovphysx_set_global_config` before create |
-| No trace file appeared | The process still holds a live instance, or never destroyed one | The file is written at last-instance shutdown; destroy every instance |
+| Trace JSON is empty or incomplete | Trace finalization has not completed, for example because an instance is still live or the process terminated before instance cleanup | Destroy every instance to finalize the trace before reading it or exiting |
 | A capture came back in the wrong format | Another instance already bound a different backend | The first selection wins process-wide; check the ovphysx log at `WARN` for the line naming the bound backend |
 | API and runtime zones appear but SDK ones do not | ovphysx built against a PhysX `release` package, where the SDK's profile zones are compiled out | Use the shipped build; the packaged PhysX is the `checked` config, which keeps its zones |
 | A simulation phase seems absent | The SDK's twelve cross-thread phases are not reported under any backend | Use `ovphysx_step` through `ovphysx_wait_task` for the outermost span, and the SDK's thread-local zones for the detail |

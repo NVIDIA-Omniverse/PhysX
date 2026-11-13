@@ -24,6 +24,10 @@
  * @implements REQ-PARSE-FEED-003
  * @covers AC-12
  */
+/**
+ * @implements REQ-CACHE-ATTACH-001
+ * @covers AC-8
+ */
 
 #include <cstring>
 #include <vector>
@@ -47,11 +51,73 @@ using namespace omni::physx::usdparser;
 using namespace carb;
 using namespace ::physx;
 
+namespace
+{
+// Nested-rigid-body detection for the children of `parent`: is an ancestor at or above it an
+// enabled rigid body, and is it actually composed over them (no resetXformStack in between)?
+// Walks ancestors via IPhysicsSource::getParent.
+bool nestedUnderEnabledBody(AttachedStage& as,
+                            const omni::physics::parse::IPhysicsSource& src,
+                            omni::physics::parse::ObjectKey parent)
+{
+    // getKnownTokens() is interned once per attach on the serial setup thread, so
+    // it is safe to read from a replicator worker thread. A fresh
+    // KnownTokens::intern(*src) here would instead mutate the source's shared token
+    // tables with no lock, racing sibling workers.
+    const omni::physics::parse::KnownTokens& tok = as.getKnownTokens();
+
+    // The ancestor chain first (getParent is a path operation), then ONE batched
+    // existence query for the whole chain instead of one round trip per level; both
+    // walks below stop at the first ancestor that is not live, as before.
+    std::vector<omni::physics::parse::ObjectKey> chain;
+    for (omni::physics::parse::ObjectKey k = parent; k.valid(); k = src.getParent(k))
+        chain.push_back(k);
+    std::vector<bool> live;
+    src.existsBatch(chain, live);
+    size_t liveDepth = 0;
+    while (liveDepth < chain.size() && live[liveDepth])
+        ++liveDepth;
+
+    bool bodyParentFound = false;
+    size_t bodyParentDepth = 0;
+    for (size_t depth = 0; depth < liveDepth; ++depth)
+    {
+        const omni::physics::parse::ObjectKey bodyParentKey = chain[depth];
+        if (src.hasSchema(bodyParentKey, tok.physicsRigidBodyAPI))
+        {
+            // UsdPhysicsRigidBodyAPI's rigidBodyEnabled schema default is true;
+            // getAttribute leaves a preseeded out-param untouched on a miss (see
+            // IPhysicsSource.h's "read with default" idiom), matching a real
+            // UsdAttribute::Get() resolving the schema fallback when unauthored.
+            bool bodyEnabled = true;
+            src.getAttribute(bodyParentKey, tok.physicsRigidBodyEnabled, bodyEnabled);
+            if (bodyEnabled)
+            {
+                bodyParentFound = true;
+                bodyParentDepth = depth;
+                break;
+            }
+        }
+    }
+    if (!bodyParentFound)
+        return false;
+    for (size_t depth = 0; depth < bodyParentDepth; ++depth)
+    {
+        bool resetsXformStack = false;
+        getLocalTransform(as, chain[depth], omni::physics::parse::ReadTime::defaultTime(), resetsXformStack);
+        if (resetsXformStack)
+            return false;
+    }
+    return true;
+}
+} // namespace
+
 InternalActor::InternalActor(PhysXScene* ps,
                              bool dynamicActor,
                              const ObjectInstance* instance,
                              bool localSpaceVelocities,
-                             omni::physics::parse::ObjectKey key)
+                             omni::physics::parse::ObjectKey key,
+                             NestedBodyMemo* nestedBodies)
     : mKey(key),
       mActor(nullptr),
       mID(-1),
@@ -161,71 +227,25 @@ InternalActor::InternalActor(PhysXScene* ps,
         mInstanceIndex = kInvalidUint32_t;
 
         // Nested-rigid-body detection: is `key` a descendant of another enabled rigid
-        // body, and if so, is it actually composed under that ancestor's transform (no
-        // resetXformStack break in between)? Walks ancestors via IPhysicsSource::getParent.
+        // body, and if so, is it actually composed under that ancestor's transform?
         AttachedStage* as = &mPhysXScene->getAttachedStage();
         if (as)
         {
             if (const omni::physics::parse::IPhysicsSource* src = as->getSource())
             {
-                // getKnownTokens() is interned once per attach on the serial setup thread, so
-                // it is safe to read from a replicator worker thread. A fresh
-                // KnownTokens::intern(*src) here would instead mutate the source's shared token
-                // tables with no lock, racing sibling workers.
-                const omni::physics::parse::KnownTokens& tok = as->getKnownTokens();
-
-                // The ancestor chain first (getParent is a path operation), then ONE batched
-                // existence query for the whole chain instead of one round trip per level; both
-                // walks below stop at the first ancestor that is not live, as before.
-                std::vector<omni::physics::parse::ObjectKey> chain;
-                for (omni::physics::parse::ObjectKey k = src->getParent(key); k.valid(); k = src->getParent(k))
-                    chain.push_back(k);
-                std::vector<bool> live;
-                src->existsBatch(chain, live);
-                size_t liveDepth = 0;
-                while (liveDepth < chain.size() && live[liveDepth])
-                    ++liveDepth;
-
-                bool bodyParentFound = false;
-                size_t bodyParentDepth = 0;
-                for (size_t depth = 0; depth < liveDepth; ++depth)
+                const omni::physics::parse::ObjectKey parent = src->getParent(key);
+                const auto known = nestedBodies ? nestedBodies->find(parent) : NestedBodyMemo::iterator();
+                bool nested;
+                if (nestedBodies && known != nestedBodies->end())
+                    nested = known->second;
+                else
                 {
-                    const omni::physics::parse::ObjectKey bodyParentKey = chain[depth];
-                    if (src->hasSchema(bodyParentKey, tok.physicsRigidBodyAPI))
-                    {
-                        // UsdPhysicsRigidBodyAPI's rigidBodyEnabled schema default is true;
-                        // getAttribute leaves a preseeded out-param untouched on a miss (see
-                        // IPhysicsSource.h's "read with default" idiom), matching a real
-                        // UsdAttribute::Get() resolving the schema fallback when unauthored.
-                        bool bodyEnabled = true;
-                        src->getAttribute(bodyParentKey, tok.physicsRigidBodyEnabled, bodyEnabled);
-                        if (bodyEnabled)
-                        {
-                            bodyParentFound = true;
-                            bodyParentDepth = depth;
-                            break;
-                        }
-                    }
+                    nested = nestedUnderEnabledBody(*as, *src, parent);
+                    if (nestedBodies)
+                        nestedBodies->emplace(parent, nested);
                 }
-
-                if (bodyParentFound)
-                {
-                    bool hasResetXformStack = false;
-                    for (size_t depth = 0; depth < bodyParentDepth; ++depth)
-                    {
-                        bool resetsXformStack = false;
-                        getLocalTransform(*as, chain[depth], omni::physics::parse::ReadTime::defaultTime(), resetsXformStack);
-                        if (resetsXformStack)
-                        {
-                            hasResetXformStack = true;
-                            break;
-                        }
-                    }
-                    if (!hasResetXformStack)
-                    {
-                        db.setNestedBodiesUsed(true);
-                    }
-                }
+                if (nested)
+                    db.setNestedBodiesUsed(true);
             }
         }
 

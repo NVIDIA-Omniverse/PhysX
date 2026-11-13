@@ -1,0 +1,239 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxAutoDeformableAttachmentAPI",
+  "title": "PhysxAutoDeformableAttachmentAPI",
+  "summary": "An authoring container that generates vertex attachments and element collision filters between its two attachables, a deformable body and a second deformable body or an Xformable's colliders. The runtime finds it by the applied API at load; on an ovstage attach the attachment and filter children are generated in memory and their data is computed from these columns.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "Xformable",
+    "Imageable"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "producer_scope": "Published like any applied physics API: every declared attribute at its resolved value, relationships only when authored; a prim carrying this API is in physics scope on its own. No column is rewritten or created by the producer.",
+  "columns": [
+    {
+      "name": "physxAutoDeformableAttachment:attachable0",
+      "usd_type": "rel",
+      "origin": "schema",
+      "kind": "relationship",
+      "semantic": "RELATIONSHIP_PATH_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": true
+      },
+      "required": true,
+      "absent": "No attachment: both attachable relationships must exist with exactly one target each, otherwise attachable parsing fails with a warning and nothing is generated. A target is a deformable body (OmniPhysicsDeformableBodyAPI) or an Xformable whose colliders are used; supported pairs are volume-volume, volume-surface and deformable-Xformable, in either order.",
+      "implemented_in": [
+        "source/omni.physx/plugins/attachment/PhysXAttachment.cpp"
+      ]
+    },
+    {
+      "name": "physxAutoDeformableAttachment:attachable1",
+      "usd_type": "rel",
+      "origin": "schema",
+      "kind": "relationship",
+      "semantic": "RELATIONSHIP_PATH_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": true
+      },
+      "required": true,
+      "absent": "Same as attachable0: without exactly one target on each relationship nothing is generated.",
+      "implemented_in": [
+        "source/omni.physx/plugins/attachment/PhysXAttachment.cpp"
+      ]
+    },
+    {
+      "name": "physxAutoDeformableAttachment:collisionFilteringOffset",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "-inf",
+      "parser_default": 0.0,
+      "absent": "0: elements are filtered only where they overlap the other actor. A non-finite value (the schema fallback -inf) selects the heuristic, 10% of the smaller average dimension of the two actors, so write the value you mean.",
+      "raw_fallback_diverges": true,
+      "units": "length",
+      "implemented_in": [
+        "source/omni.physx/plugins/attachment/PhysXAttachment.cpp"
+      ]
+    },
+    {
+      "name": "physxAutoDeformableAttachment:deformableVertexOverlapOffset",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0: a deformable vertex is attached only where it lies inside the other actor.",
+      "raw_fallback_diverges": false,
+      "units": "length",
+      "implemented_in": [
+        "source/omni.physx/plugins/attachment/PhysXAttachment.cpp"
+      ]
+    },
+    {
+      "name": "physxAutoDeformableAttachment:enableCollisionFiltering",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": true,
+      "parser_default": false,
+      "absent": "false: no collision filtering is computed and the generated filter children are published disabled. USD's fallback is true, so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physx/plugins/attachment/PhysXAttachment.cpp"
+      ]
+    },
+    {
+      "name": "physxAutoDeformableAttachment:enableDeformableFilteringPairs",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": false,
+      "parser_default": false,
+      "absent": "false: between two deformable bodies every overlapping element of one is filtered against every overlapping element of the other, instead of per overlapping element pair. Not used with an Xformable attachable.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physx/plugins/attachment/PhysXAttachment.cpp"
+      ]
+    },
+    {
+      "name": "physxAutoDeformableAttachment:enableDeformableVertexAttachments",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": true,
+      "parser_default": false,
+      "absent": "false: no vertex attachments are computed and the generated attachment children are published disabled. USD's fallback is true, so write the value.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physx/plugins/attachment/PhysXAttachment.cpp"
+      ]
+    },
+    {
+      "name": "physxAutoDeformableAttachment:enableRigidSurfaceAttachments",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": false,
+      "parser_default": false,
+      "absent": "false. The flag has no effect in this runtime: rigid surface sampling is compiled out, so the value only enters the attachment input CRC.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physx/plugins/attachment/PhysXAttachment.cpp"
+      ]
+    },
+    {
+      "name": "physxAutoDeformableAttachment:maskShapes",
+      "usd_type": "rel",
+      "origin": "schema",
+      "kind": "relationship",
+      "semantic": "RELATIONSHIP_PATH_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": true
+      },
+      "required": false,
+      "absent": "No mask: every vertex and element is a candidate. Sphere, Cube and Capsule targets restrict attachments to points inside them (filtering to points within collisionFilteringOffset of them); other targets are ignored.",
+      "implemented_in": [
+        "source/omni.physx/plugins/attachment/PhysXAttachment.cpp"
+      ]
+    },
+    {
+      "name": "physxAutoDeformableAttachment:rigidSurfaceSamplingDistance",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "-inf",
+      "parser_default": 0.0,
+      "absent": "0. The value has no effect in this runtime (rigid surface sampling is compiled out); it only enters the attachment input CRC, so the schema fallback -inf and an omitted column generate the same attachment.",
+      "raw_fallback_diverges": false,
+      "units": "length",
+      "implemented_in": [
+        "source/omni.physx/plugins/attachment/PhysXAttachment.cpp"
+      ]
+    }
+  ],
+  "interactions": [
+    {
+      "with": "OmniPhysicsDeformableBodyAPI",
+      "rule": "An attachable carrying OmniPhysicsDeformableBodyAPI is re-parsed as a deformable body (and auto-cooked when it enables PhysxAutoDeformableBodyAPI generation) before the attachment data is computed."
+    }
+  ],
+  "notes": [
+    "The parameters are read when the attachment is set up or refreshed at load; the runtime does not watch them for live changes, and a refresh recomputes the data only when the input CRC over the parameters, the mask shapes and the attachables' cooked mesh data changed.",
+    "With a stage the runtime can author, the input CRC is stored in and read back from physxAutoDeformableAttachment:inputCrc, a runtime bookkeeping attribute no schema declares; on an ovstage attach it is kept in memory. It is not described here."
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxVehicleBrakesAPI",
+  "title": "PhysxVehicleBrakesAPI",
+  "summary": "Up to two braking systems of a vehicle, applied on the vehicle prim as PhysxVehicleBrakesAPI:brakes0 and PhysxVehicleBrakesAPI:brakes1; brakes0 is commanded by physxVehicleController:brake0 and brakes1 by brake1. The walkers parse each recognised instance, and the runtime looks up the API and its two instances in the vehicle prim's usd-schemas to attach the parsed systems to the vehicle.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "Xformable"
+  ],
+  "requires": [
+    "PhysxVehicleAPI"
+  ],
+  "multi_apply": true,
+  "instances": [
+    "brakes0",
+    "brakes1"
+  ],
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "columns": [
+    {
+      "name": "physxVehicleBrakes:<inst>:maxBrakeTorque",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": true,
+      "raw_fallback": 0.0,
+      "parser_default": "none: the braking system is rejected",
+      "absent": "The braking system is rejected with the error that maxBrakeTorque must be defined, and the vehicle is not created. A present value must lie in [0, FLT_MAX), otherwise the same happens.",
+      "raw_fallback_diverges": true,
+      "units": "mass*length^2/s^2",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseVehicleBrakes.cpp",
+        "include/omni/physics/parse/PreparedVehicleSupport.h"
+      ],
+      "notes": "USD resolves the unauthored attribute to 0 and USD population publishes it, so only a Stage that omits the column hits the error. The parser builds the instance column name from the template."
+    },
+    {
+      "name": "physxVehicleBrakes:<inst>:wheels",
+      "usd_type": "int[]",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "int",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": true
+      },
+      "required": false,
+      "absent": "Every wheel of the vehicle receives the brake torque with multiplier 1. A negative entry rejects the braking system; an index not below the wheel count, or more entries than wheels, makes the vehicle invalid. Either way the vehicle is not created.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physics.parse/ParseVehicleBrakes.cpp",
+        "source/omni.physx/plugins/usdLoad/Vehicle.cpp",
+        "source/omni.physx/plugins/VehicleGenerator.cpp"
+      ],
+      "notes": "Entries are physxVehicleWheelAttachment:index values. An empty array reads like an absent column."
+    },
+    {
+      "name": "physxVehicleBrakes:<inst>:torqueMultipliers",
+      "usd_type": "float[]",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": true
+      },
+      "required": false,
+      "absent": "Multiplier 1 for every connected wheel. When present it must have as many entries as wheels and none may be negative, otherwise the braking system is rejected and the vehicle is not created.",
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physics.parse/ParseVehicleBrakes.cpp",
+        "source/omni.physx/plugins/VehicleGenerator.cpp"
+      ],
+      "notes": "The brake torque on wheels[i] is maxBrakeTorque * torqueMultipliers[i] * the brake command."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysxVehicleAPI",
+      "rule": "Only the braking systems on the vehicle prim itself are used. If the API is listed but neither brakes0 nor brakes1 yields a braking system, or an applied instance was rejected, the vehicle is not created. A vehicle with braking systems needs a drive."
+    },
+    {
+      "with": "PhysxVehicleControllerAPI",
+      "rule": "brake0 commands brakes0 and brake1 commands brakes1. Without this API the vehicle uses the deprecated brakes setup driven by physxVehicleController:brake and handbrake."
+    }
+  ],
+  "notes": [
+    "The ovstage and USD walkers both honour only the instance names brakes0 and brakes1 and ignore any other instance silently.",
+    "All three columns are change-tracked for both instances: the runtime applies new values for brakes0 and brakes1 while simulating.",
+    "PhysxVehicleNonlinearCommandResponseAPI:brakes0 and :brakes1 can add a nonlinear response to a braking system; that component's columns are not described yet."
+  ]
+}

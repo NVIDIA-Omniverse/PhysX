@@ -46,6 +46,8 @@ _GLOBAL={
     'cooked_collider_cache_directory':('COOKED_COLLIDER_CACHE_DIRECTORY','before-first-instance','Process cooked-cache destination.'),
     'log_level':('LOG_LEVEL','live','Process logging threshold.'),
     'default_log_output':('DEFAULT_LOG_OUTPUT','live','Core default log sink enabled state.'),
+    'async_execution':('ASYNC_EXECUTION','instance-creation','Bool, default true. Read when an instance is created: true gives it a dedicated worker thread when Carbonite IThreadPool is available and the carb.tasking pool has more than one thread; otherwise, or when false, it has none, so each call runs on the calling thread.'),
+    'compiled_stage_cache':('COMPILED_STAGE_CACHE','live','Experimental compiled ovstage cache mode (ovphysx CompiledStageCacheMode; core default AUTOMATIC). Each later core attach reads it; live attachments keep the mode they attached with. PreviewSession attachments do not use it.'),
 }
 _entries=[Setting('process.'+name,Scope.PROCESS,False if name=='ovd_recording_capable' else None,phase,'application startup/configuration',
     description+' get_global returns the retained/effective value, falling back to the core default. Only unset string keys return None.')

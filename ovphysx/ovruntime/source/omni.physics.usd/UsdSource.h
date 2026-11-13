@@ -44,6 +44,7 @@ public:
     std::string_view sourceKeyToString(ObjectKey key) const override;
     TokenId internToken(std::string_view token) const override;
     std::string_view tokenToString(TokenId id) const override;
+    const KnownTokens* knownTokens() const override;
 
     ObjectKey getRootKey() const override;
     void forEachChild(ObjectKey parent, std::function<void(ObjectKey)> cb) const override;
@@ -260,6 +261,10 @@ private:
     // Bidirectional TfToken <-> TokenId intern table
     mutable std::unordered_map<PXR_NS::TfToken, TokenId, PXR_NS::TfToken::HashFunctor> mTokenToId;
     mutable std::vector<PXR_NS::TfToken> mIdToToken;
+    // See knownTokens(). Built once; TokenIds are permanent for this source, so the
+    // batch is never reset. unique_ptr keeps KnownTokens.h out of this header.
+    mutable std::once_flag mKnownTokensOnce;
+    mutable std::unique_ptr<KnownTokens> mKnownTokens;
 
     // Lazily-built xform cache for getLocalToWorldTransform. mutable because
     // the cache populates on read but the source itself is logically const.

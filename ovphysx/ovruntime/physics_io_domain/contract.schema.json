@@ -1,0 +1,545 @@
+{
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "attributes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[A-Za-z][A-Za-z0-9]*$"
+          },
+          "c_symbol": {
+            "type": "string",
+            "pattern": "^OVPHYSX_ATTR_[A-Z0-9_]+$"
+          },
+          "cpp_symbol": {
+            "type": "string",
+            "pattern": "^k[A-Za-z0-9]+$"
+          },
+          "public": {
+            "type": "boolean"
+          },
+          "semantic": {
+            "enum": [
+              "NONE",
+              "POINT",
+              "VECTOR",
+              "NORMAL",
+              "QUATERNION",
+              "MATRIX"
+            ]
+          },
+          "uses": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "target": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "representation": {
+                  "enum": [
+                    "default",
+                    "instancer"
+                  ]
+                },
+                "description": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "dtype": {
+                  "enum": [
+                    "f32",
+                    "f64",
+                    "i32",
+                    "u32",
+                    "u8",
+                    "u64"
+                  ]
+                },
+                "frame": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "units": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "writability": {
+                  "enum": [
+                    "UNCLASSIFIED",
+                    "WRITABLE",
+                    "CONDITIONAL",
+                    "WRITE_ONLY",
+                    "READ_ONLY"
+                  ]
+                },
+                "read": {
+                  "oneOf": [
+                    {
+                      "const": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "supported": {
+                          "const": true
+                        },
+                        "residency": {
+                          "enum": [
+                            "host",
+                            "scene_device",
+                            "cuda"
+                          ]
+                        },
+                        "layout": {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "enum": [
+                                "fixed",
+                                "array",
+                                "padded",
+                                "cohort"
+                              ]
+                            },
+                            "lanes": {
+                              "oneOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 65535
+                                },
+                                {
+                                  "type": "string",
+                                  "minLength": 1
+                                }
+                              ]
+                            },
+                            "shape": {
+                              "type": "array",
+                              "minItems": 1,
+                              "items": {
+                                "oneOf": [
+                                  {
+                                    "type": "integer",
+                                    "minimum": 0
+                                  },
+                                  {
+                                    "type": "string",
+                                    "minLength": 1
+                                  }
+                                ]
+                              }
+                            },
+                            "order": {
+                              "enum": [
+                                "row_major",
+                                "column_major",
+                                "xyzw"
+                              ]
+                            },
+                            "count": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "padding": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "lanes",
+                            "shape"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "conditions": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "uniqueItems": true
+                        },
+                        "effect": {
+                          "enum": [
+                            "set_input",
+                            "set_state",
+                            "apply_force",
+                            "command"
+                          ]
+                        },
+                        "persistence": {
+                          "enum": [
+                            "until_replaced",
+                            "simulation_state",
+                            "one_step",
+                            "once"
+                          ]
+                        },
+                        "visibility": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "preserves": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "uniqueItems": true
+                        },
+                        "request_name": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "aliases": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "uniqueItems": true
+                        },
+                        "value_constraints": {
+                          "type": "object",
+                          "minProperties": 1,
+                          "properties": {
+                            "finite": {
+                              "const": true
+                            },
+                            "minimum": {
+                              "type": "number"
+                            },
+                            "maximum": {
+                              "type": "number"
+                            },
+                            "values": {
+                              "type": "array",
+                              "minItems": 1,
+                              "uniqueItems": true,
+                              "items": {
+                                "type": "number"
+                              }
+                            },
+                            "additional_values": {
+                              "type": "array",
+                              "minItems": 1,
+                              "uniqueItems": true,
+                              "items": {
+                                "type": "number"
+                              }
+                            }
+                          },
+                          "additionalProperties": false,
+                          "dependentRequired": {
+                            "maximum": [
+                              "minimum"
+                            ],
+                            "additional_values": [
+                              "minimum",
+                              "maximum"
+                            ]
+                          },
+                          "not": {
+                            "required": [
+                              "values",
+                              "minimum"
+                            ]
+                          }
+                        },
+                        "applicability": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "units": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "layout"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "write": {
+                  "oneOf": [
+                    {
+                      "const": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "supported": {
+                          "const": true
+                        },
+                        "residency": {
+                          "enum": [
+                            "host",
+                            "scene_device",
+                            "cuda"
+                          ]
+                        },
+                        "layout": {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "enum": [
+                                "fixed",
+                                "array",
+                                "padded",
+                                "cohort"
+                              ]
+                            },
+                            "lanes": {
+                              "oneOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 65535
+                                },
+                                {
+                                  "type": "string",
+                                  "minLength": 1
+                                }
+                              ]
+                            },
+                            "shape": {
+                              "type": "array",
+                              "minItems": 1,
+                              "items": {
+                                "oneOf": [
+                                  {
+                                    "type": "integer",
+                                    "minimum": 0
+                                  },
+                                  {
+                                    "type": "string",
+                                    "minLength": 1
+                                  }
+                                ]
+                              }
+                            },
+                            "order": {
+                              "enum": [
+                                "row_major",
+                                "column_major",
+                                "xyzw"
+                              ]
+                            },
+                            "count": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "padding": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "lanes",
+                            "shape"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "conditions": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "uniqueItems": true
+                        },
+                        "effect": {
+                          "enum": [
+                            "set_input",
+                            "set_state",
+                            "apply_force",
+                            "command"
+                          ]
+                        },
+                        "persistence": {
+                          "enum": [
+                            "until_replaced",
+                            "simulation_state",
+                            "one_step",
+                            "once"
+                          ]
+                        },
+                        "visibility": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "preserves": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "uniqueItems": true
+                        },
+                        "request_name": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "aliases": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "uniqueItems": true
+                        },
+                        "value_constraints": {
+                          "type": "object",
+                          "minProperties": 1,
+                          "properties": {
+                            "finite": {
+                              "const": true
+                            },
+                            "minimum": {
+                              "type": "number"
+                            },
+                            "maximum": {
+                              "type": "number"
+                            },
+                            "values": {
+                              "type": "array",
+                              "minItems": 1,
+                              "uniqueItems": true,
+                              "items": {
+                                "type": "number"
+                              }
+                            },
+                            "additional_values": {
+                              "type": "array",
+                              "minItems": 1,
+                              "uniqueItems": true,
+                              "items": {
+                                "type": "number"
+                              }
+                            }
+                          },
+                          "additionalProperties": false,
+                          "dependentRequired": {
+                            "maximum": [
+                              "minimum"
+                            ],
+                            "additional_values": [
+                              "minimum",
+                              "maximum"
+                            ]
+                          },
+                          "not": {
+                            "required": [
+                              "values",
+                              "minimum"
+                            ]
+                          }
+                        },
+                        "applicability": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "units": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "layout"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "aliases": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "uniqueItems": true
+                },
+                "population": {
+                  "type": "object",
+                  "properties": {
+                    "component": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "column": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "conversion": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "component",
+                    "column",
+                    "conversion"
+                  ],
+                  "additionalProperties": false
+                },
+                "notes": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "target",
+                "description",
+                "dtype",
+                "frame",
+                "units",
+                "writability",
+                "read",
+                "write"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "public",
+          "semantic",
+          "uses"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1
+    }
+  },
+  "required": [
+    "$schema",
+    "schema_version",
+    "attributes"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

@@ -12,6 +12,9 @@
  *
  * @implements REQ-SIM-SCENEQUERY-001
  * @covers AC-1 AC-2
+ *
+ * @implements REQ-LOAD-DEFORMABLE-001
+ * @covers AC-7
  */
 
 #include "Raycast.h"
@@ -251,7 +254,8 @@ static bool raycastSingle(const usdparser::AttachedStage& owner, const PxVec3& o
         {
             internal::InternalVolumeDeformableBody* body = intScene->mVolumeDeformableBodies[i];
 
-            if (isInvisible(source, tok, body->mBodyKey))
+            // a disabled body is registered without an actor or keys, so it is skipped before its key is read
+            if (!body->mDeformableVolume || isInvisible(source, tok, body->mBodyKey))
                 continue;
 
             const PxBounds3 bounds = body->mDeformableVolume->getWorldBounds();
@@ -296,7 +300,7 @@ static bool raycastSingle(const usdparser::AttachedStage& owner, const PxVec3& o
         {
             internal::InternalSurfaceDeformableBody* body = intScene->mSurfaceDeformableBodies[i];
 
-            if (isInvisible(source, tok, body->mBodyKey))
+            if (!body->mDeformableSurface || isInvisible(source, tok, body->mBodyKey))
                 continue;
 
             const PxBounds3 bounds = body->mDeformableSurface->getWorldBounds();

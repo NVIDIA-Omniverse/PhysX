@@ -1,0 +1,102 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "OmniPhysicsDeformableBodyAPI",
+  "title": "OmniPhysicsDeformableBodyAPI",
+  "summary": "Makes a prim the root of a volume or surface deformable body. Enumerated by usd-schemas CONTAINS OmniPhysicsDeformableBodyAPI. The prim must be a Mesh, TetMesh or BasisCurves, or an Xformable that is not a Gprim, and its point-based subtree must hold exactly one simulation mesh (OmniPhysicsVolumeDeformableSimAPI or OmniPhysicsSurfaceDeformableSimAPI) on the prim itself or an immediate child, plus an enabled PhysicsCollisionAPI mesh; otherwise no body is created.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "Xformable"
+  ],
+  "multi_apply": false,
+  "enumeration": {
+    "by": "schema",
+    "probe": "omni:xform"
+  },
+  "population": {
+    "physics": true,
+    "row": true,
+    "material_consumer": true
+  },
+  "columns": [
+    {
+      "name": "omniphysics:deformableBodyEnabled",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": true,
+      "parser_default": false,
+      "absent": "false (the parser's default), not USD's true: the body gets a runtime record but no PhysX deformable, and its PhysicsCollisionAPI meshes are no longer excluded from the rigid collider scan. Write true.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseDeformableBody.cpp",
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceDeformable.cpp"
+      ],
+      "notes": "A change releases and re-parses the body; the column has no in-place update."
+    },
+    {
+      "name": "omniphysics:mass",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0: no explicit mass; see the sentinel rule.",
+      "raw_fallback_diverges": false,
+      "sentinel": "Any value <= 0 (the schema fallback 0 included) means no explicit mass: the walker stores -1 and the per-vertex masses come from the bound deformable material's omniphysics:density, or, when that is <= 0 or there is no material, from a default density of 1000 kg/m^3 (volume) or 100 kg/m^3 (surface) converted to stage units.",
+      "units": "mass",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseDeformableBody.cpp",
+        "source/omni.physics.ovstage/OvstageDeformableBatch.h",
+        "source/omni.physx/plugins/usdInterface/UsdInterfaceDeformable.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXDeformablePropertiesUpdate.cpp"
+      ],
+      "notes": "Re-read on change; the deformable body update stores the new value and recomputes the per-vertex masses."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "OmniPhysicsBodyAPI",
+      "rule": "kinematicEnabled, startsAsleep and simulationOwner are read on this prim only when OmniPhysicsBodyAPI is listed in usd-schemas as well."
+    },
+    {
+      "with": "OmniPhysicsVolumeDeformableSimAPI",
+      "rule": "The single simulation mesh in the subtree decides the body kind: volume for OmniPhysicsVolumeDeformableSimAPI, surface for OmniPhysicsSurfaceDeformableSimAPI. A second simulation mesh, or one below an immediate child, drops the body silently."
+    },
+    {
+      "with": "PhysicsCollisionAPI",
+      "rule": "The first point-based prim in the subtree with PhysicsCollisionAPI (physics:collisionEnabled not false) is the collision mesh. None logs 'No UsdPhysics.CollisionAPI found on deformable body prim or sub-tree' and no body is created; a volume body needs a tet collision mesh, a surface body its simulation mesh as collision mesh."
+    },
+    {
+      "with": "OmniPhysicsDeformableMaterialAPI",
+      "rule": "The material bound to the simulation mesh supplies the PhysX deformable material and the density for the mass when it was created as the matching kind: a volume material (OmniPhysicsDeformableMaterialAPI without the surface API) for a volume body, a surface material (OmniPhysicsSurfaceDeformableMaterialAPI) for a surface body. Otherwise the scene's default deformable material of that kind is used."
+    },
+    {
+      "with": "OmniPhysicsDeformablePoseAPI",
+      "rule": "The walker looks for a bindPose instance on the simulation, collision, skin and cooking-source meshes of the subtree."
+    }
+  ],
+  "notes": [
+    "The runtime also reads physics:filteredPairs and the PhysxBaseDeformableBodyAPI, PhysxSurfaceDeformableBodyAPI and PhysxAutoDeformableBodyAPI columns on this prim; those belong to their own components.",
+    "Body creation also requires a scene with the full GPU pipeline; otherwise it logs an error and creates no body."
+  ]
+}

@@ -1,0 +1,6 @@
+One read returns 16 boxes.
+Box heights after 1 s, laid out like the grid:
+  env0  0.500 m   env1  0.500 m   env2  0.500 m   env3  0.500 m
+  env4  0.500 m   env5  0.500 m   env6  0.500 m   env7  0.500 m
+  env8  0.500 m   env9  0.500 m   env10 0.500 m   env11 0.500 m
+  env12 0.500 m   env13 0.500 m   env14 0.500 m   env15 0.500 m

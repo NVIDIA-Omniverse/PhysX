@@ -147,6 +147,26 @@ def compose_world_xforms(
 
 
 @wp.kernel
+def compose_world_xforms_with_world_scales(
+    positions: wp.array2d(dtype=wp.float32),
+    orientations: wp.array2d(dtype=wp.float32),
+    scales: wp.array2d(dtype=wp.float32),
+    matrices: wp.array(dtype=wp.mat44d),
+):
+    # `scales` is the physics read's worldScale column, on the pose's device.
+    row = wp.tid()
+    position = wp.vec3f(positions[row, 0], positions[row, 1], positions[row, 2])
+    orientation = wp.quatf(
+        orientations[row, 0],
+        orientations[row, 1],
+        orientations[row, 2],
+        orientations[row, 3],
+    )
+    scale = wp.vec3d(wp.float64(scales[row, 0]), wp.float64(scales[row, 1]), wp.float64(scales[row, 2]))
+    matrices[row] = _compose_world_xform(position, orientation, scale)
+
+
+@wp.kernel
 def compose_world_xforms_from_matrices(
     positions: wp.array2d(dtype=wp.float32),
     orientations: wp.array2d(dtype=wp.float32),

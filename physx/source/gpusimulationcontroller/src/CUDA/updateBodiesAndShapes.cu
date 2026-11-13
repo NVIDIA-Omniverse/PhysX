@@ -230,6 +230,16 @@ extern "C" __global__ void updateShapesLaunch(const PxgNewShapeSim* PX_RESTRICT 
 	}
 }
 
+// The kinematic update without an index list skips a slot whose data.index is not the slot.
+extern "C" __global__ void markArticulationSlotsEmptyLaunch(PxgArticulation* gArticulations, const PxU32* slots, const PxU32 nbSlots)
+{
+	const PxU32 i = blockIdx.x * blockDim.x + threadIdx.x;
+	if (i < nbSlots)
+	{
+		gArticulations[slots[i]].data.index = 0xFFFFFFFF;
+	}
+}
+
 //one warp to deal with one articulation
 extern "C" __global__ void newArticulationsLaunch(const PxgUpdateArticulationDesc* scDesc, const PxReal* dofData)
 {
@@ -487,9 +497,9 @@ extern "C" __global__ void newArticulationsLaunch(const PxgUpdateArticulationDes
 		warpCopy<uint4>(sleepData, zero4, totalSize);
 
 		//initialize joint data to zero
-		const PxU8 dofs = msArticulation.data.numJointDofs;
+		const PxU32 numDofs = msArticulation.data.numJointDofs;
 
-		totalSize = (sizeof(PxReal) * dofs);
+		totalSize = (sizeof(PxReal) * numDofs);
 
 		//KS - these *may* be non-zero on the host. We really need to make sure that these are set up correctly!!!
 		float* jv = msArticulation.jointVelocities;
@@ -502,9 +512,12 @@ extern "C" __global__ void newArticulationsLaunch(const PxgUpdateArticulationDes
 
 		__syncwarp(); 
 
-		//Now we need to see if there was any dof data that required updating!!!
-		const PxU32 numDofs = msArticulation.data.numJointDofs;
+		// A fixed base does not move, so the CPU root velocity in the copied root link record is cleared. The sync above orders the clear
+		// after the copy.
+		if((msArtiData.flags & PxArticulationFlag::eFIX_BASE) && (threadIdx.x & 31) == 0)
+			clearRootVelocity(msArticulation);
 
+		//Now we need to see if there was any dof data that required updating!!!
 		PxU32 offset = dofStartIndex;
 
 		if (dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_POSITIONS)
@@ -749,72 +762,88 @@ extern "C" __global__ void updateArticulationsLaunch(const PxgUpdateArticulation
 			}
 		}
 
-		if ((flags & Dy::ArticulationDirtyFlag::eDIRTY_LINKS) || (flags & Dy::ArticulationDirtyFlag::eDIRTY_ROOT_VELOCITIES))
+		if (flags & Dy::ArticulationDirtyFlag::eDIRTY_LINKS)
 		{
 			const PxU32 nbLinks = msArticulation.data.numLinks;
 
-			uint4* sLinks = reinterpret_cast<uint4*>(&gNewLinks[msUpdate.linkStartIndex]);
-			uint4* dLinks = reinterpret_cast<uint4*>(msArticulation.links);
-
-			//each PxgArticulationLink is 74 bytes, each thread read 16 bytes
-			warpCopy<uint4>(dLinks, sLinks, (sizeof(PxgArticulationLink) * nbLinks));
-
-			if(flags & Dy::ArticulationDirtyFlag::eDIRTY_LINKS)
+			if (directAPI)
 			{
-				//copy link properties
-				uint4* sLinkProp = reinterpret_cast<uint4*>(&gNewLinkProps[msUpdate.linkStartIndex]);
-				uint4* dLinkProp = reinterpret_cast<uint4*>(msArticulation.linkProps);
-
-				warpCopy<uint4>(dLinkProp, sLinkProp, sizeof(uint4) * nbLinks);
-
-				//read link parent
-				uint* sParents = &gNewLinkParents[msUpdate.linkStartIndex];
-				uint* dParents = msArticulation.parents;
-
-				warpCopy<uint>(dParents, sParents, sizeof(uint) * nbLinks);
-
-				uint* sChildren = reinterpret_cast<uint*>(&gNewLinkChildren[msUpdate.linkStartIndex]);
-				uint* dChildren = reinterpret_cast<uint*>(msArticulation.children);
-
-				warpCopy<uint>(dChildren, sChildren, sizeof(ArticulationBitField)*nbLinks);
-
-				// we update all body2Worlds to a potentially updated CMassLocalPose.
-				if (directAPI)
+				// With the direct GPU API, the GPU holds the current link velocities and the staged ones can be stale.
+				// Only the xyz components of the GPU velocities are kept, because the w components hold the penetration bias
+				// clamp and the inverse mass, which are set on the CPU. Each link record is accessed by one lane only in this
+				// kernel, so no warp synchronization is needed.
+				const PxU32 idxInWarp = threadIdx.x & (WARP_SIZE - 1);
+				for (PxU32 linkIndex = idxInWarp; linkIndex < nbLinks; linkIndex += WARP_SIZE)
 				{
-					// AD: this should be flag-guarded because we're doing quite a bit of work here.
-					// But currently impossible because we lose track of that information going down the 
-					// layers and then just mark the entire body dirty.
-					const uint idxInWarp = threadIdx.x & (WARP_SIZE - 1);
-					for (uint linkIndex = idxInWarp; linkIndex < nbLinks; linkIndex += WARP_SIZE)
-					{
-						const PxTransform oldBody2Actor = msArticulation.linkBody2Actors[linkIndex];
-						const PxTransform newBody2Actor = gNewLinkBody2Actors[msUpdate.linkStartIndex + linkIndex];
-
-						if (!(oldBody2Actor == newBody2Actor))
-						{
-							const PxTransform actor2World = msArticulation.linkBody2Worlds[linkIndex] * oldBody2Actor.getInverse();
-							msArticulation.linkBody2Worlds[linkIndex] = actor2World * newBody2Actor;
-						}
-					}
-					__syncwarp(); // should be fine, direct-API is always same for everyone!
+					PxgArticulationLink link = gNewLinks[msUpdate.linkStartIndex + linkIndex];
+					const float4 angVel = msArticulation.links[linkIndex].initialAngVelXYZ_penBiasClamp;
+					const float4 linVel = msArticulation.links[linkIndex].initialLinVelXYZ_invMassW;
+					link.initialAngVelXYZ_penBiasClamp = make_float4(angVel.x, angVel.y, angVel.z, link.initialAngVelXYZ_penBiasClamp.w);
+					link.initialLinVelXYZ_invMassW = make_float4(linVel.x, linVel.y, linVel.z, link.initialLinVelXYZ_invMassW.w);
+					msArticulation.links[linkIndex] = link;
 				}
-				else
-				{
-					//read link body2World
-					uint* sBody2Worlds = reinterpret_cast<uint*>(&gNewLinkBody2Worlds[msUpdate.linkStartIndex]);
-					uint* dBody2Worlds = reinterpret_cast<uint*>(msArticulation.linkBody2Worlds);
-
-					// each PxTransform is 28 bytes, each thread read 4 bytes
-					warpCopy<uint>(dBody2Worlds, sBody2Worlds, sizeof(PxTransform) * nbLinks);
-				}
-
-				//read link body2actor
-				uint* sBody2Actors = reinterpret_cast<uint*>(&gNewLinkBody2Actors[msUpdate.linkStartIndex]);
-				uint* dBody2Actors = reinterpret_cast<uint*>(msArticulation.linkBody2Actors);
-
-				//each PxTransform is 28 bytes, each thread read 4 bytes
-				warpCopy<uint>(dBody2Actors, sBody2Actors, sizeof(PxTransform) * nbLinks);
 			}
+			else
+			{
+				uint4* sLinks = reinterpret_cast<uint4*>(&gNewLinks[msUpdate.linkStartIndex]);
+				uint4* dLinks = reinterpret_cast<uint4*>(msArticulation.links);
+
+				warpCopy<uint4>(dLinks, sLinks, (sizeof(PxgArticulationLink) * nbLinks));
+			}
+
+			//copy link properties
+			uint4* sLinkProp = reinterpret_cast<uint4*>(&gNewLinkProps[msUpdate.linkStartIndex]);
+			uint4* dLinkProp = reinterpret_cast<uint4*>(msArticulation.linkProps);
+
+			warpCopy<uint4>(dLinkProp, sLinkProp, sizeof(uint4) * nbLinks);
+
+			//read link parent
+			uint* sParents = &gNewLinkParents[msUpdate.linkStartIndex];
+			uint* dParents = msArticulation.parents;
+
+			warpCopy<uint>(dParents, sParents, sizeof(uint) * nbLinks);
+
+			uint* sChildren = reinterpret_cast<uint*>(&gNewLinkChildren[msUpdate.linkStartIndex]);
+			uint* dChildren = reinterpret_cast<uint*>(msArticulation.children);
+
+			warpCopy<uint>(dChildren, sChildren, sizeof(ArticulationBitField)*nbLinks);
+
+			// we update all body2Worlds to a potentially updated CMassLocalPose.
+			if (directAPI)
+			{
+				// AD: this should be flag-guarded because we're doing quite a bit of work here.
+				// But currently impossible because we lose track of that information going down the 
+				// layers and then just mark the entire body dirty.
+				const uint idxInWarp = threadIdx.x & (WARP_SIZE - 1);
+				for (uint linkIndex = idxInWarp; linkIndex < nbLinks; linkIndex += WARP_SIZE)
+				{
+					const PxTransform oldBody2Actor = msArticulation.linkBody2Actors[linkIndex];
+					const PxTransform newBody2Actor = gNewLinkBody2Actors[msUpdate.linkStartIndex + linkIndex];
+
+					if (!(oldBody2Actor == newBody2Actor))
+					{
+						const PxTransform actor2World = msArticulation.linkBody2Worlds[linkIndex] * oldBody2Actor.getInverse();
+						msArticulation.linkBody2Worlds[linkIndex] = actor2World * newBody2Actor;
+					}
+				}
+				__syncwarp(); // should be fine, direct-API is always same for everyone!
+			}
+			else
+			{
+				//read link body2World
+				uint* sBody2Worlds = reinterpret_cast<uint*>(&gNewLinkBody2Worlds[msUpdate.linkStartIndex]);
+				uint* dBody2Worlds = reinterpret_cast<uint*>(msArticulation.linkBody2Worlds);
+
+				// each PxTransform is 28 bytes, each thread read 4 bytes
+				warpCopy<uint>(dBody2Worlds, sBody2Worlds, sizeof(PxTransform) * nbLinks);
+			}
+
+			//read link body2actor
+			uint* sBody2Actors = reinterpret_cast<uint*>(&gNewLinkBody2Actors[msUpdate.linkStartIndex]);
+			uint* dBody2Actors = reinterpret_cast<uint*>(msArticulation.linkBody2Actors);
+
+			//each PxTransform is 28 bytes, each thread read 4 bytes
+			warpCopy<uint>(dBody2Actors, sBody2Actors, sizeof(PxTransform) * nbLinks);
 		}
 		// I think we need to guard here anyway because updateKinematic now writes directly into the persistent data.
 		else if (flags & Dy::ArticulationDirtyFlag::eDIRTY_POSITIONS && !directAPI)
@@ -889,6 +918,15 @@ extern "C" __global__ void updateArticulationsLaunch(const PxgUpdateArticulation
 		{
 			scDesc->mArticulationPool[articIndex].data.flags = msUpdate.userFlags;
 			scDesc->mArticulationPool[articIndex].data.confiDirty = true;
+
+			// A fixed base does not move, but the GPU data can still hold a root velocity from before eFIX_BASE was set, also when the flag
+			// was cleared and set again in the same step. The sync orders the clear after the link record copy.
+			if(msUpdate.userFlags & PxArticulationFlag::eFIX_BASE)
+			{
+				__syncwarp();
+				if((threadIdx.x & 31) == 0)
+					clearRootVelocity(msArticulation);
+			}
 		}
 
 		if (!directAPI)
@@ -908,7 +946,10 @@ extern "C" __global__ void updateArticulationsLaunch(const PxgUpdateArticulation
 		//recreation of the articulation block data format.
 		//scDesc->mArticulationPool[articIndex].data.dataDirty = (flags & (~(Dy::ArticulationDirtyFlag::eDIRTY_FORCES | Dy::ArticulationDirtyFlag::eIN_DIRTY_LIST))) != 0;
 		
-		scDesc->mArticulationPool[articIndex].data.updateDirty = flags & (~(Dy::ArticulationDirtyFlag::eDIRTY_FORCES | Dy::ArticulationDirtyFlag::eIN_DIRTY_LIST));
+		// The solver clears the flags after it has read them, and it doesn't run for sleeping
+		// articulations, so the flags of every upload until then are kept.
+		if ((threadIdx.x & 31) == 0)
+			scDesc->mArticulationPool[articIndex].data.updateDirty |= flags & (~(Dy::ArticulationDirtyFlag::eDIRTY_FORCES | Dy::ArticulationDirtyFlag::eIN_DIRTY_LIST));
 	}
 }
 
@@ -1384,15 +1425,8 @@ static PX_FORCE_INLINE __device__  void getD6JointForceOrTorque(
 		}
 		else
 		{
-			assert(index < constraintIdMapSize);
-			// with correct usage the above should always hold but a user might, for example, add
-			// joints and directly get some parameter via direct GPU API without simulating first.
-
-			// the joint might be inactive/sleeping (note that at the time of writing this, joints could not
-			// go to sleep with direct GPU API enabled since the sleep state of rigid bodies did not get sent
-			// back to the host). Nonetheless, this case is covered here already and the only valid scenario
-			// to reach the else-statement.
-
+			// The joint has no solver output: no simulation step has processed it since it was added, or it is inactive.
+			// Its index can be beyond the constraint ID map, which only grows during a simulation step.
 			data[globalThreadIndex] = PxVec3(0.0f);
 		}
 	}

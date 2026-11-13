@@ -155,6 +155,8 @@ namespace physx
 		if (g_PxCreatePhysXGpu_Func == NULL || g_PxCreateCudaContextManager_Func == NULL || g_PxGetSuggestedCudaDeviceOrdinal_Func == NULL ||
 			g_PxSetPhysXGpuProfilerCallback_Func == NULL || g_PxSetPhysXGpuFoundationInstance_Func == NULL)
 		{
+			// The exports it does have may come from another PhysX version with a different ABI.
+			PxUnloadPhysxGPUModule();
 			reportError(PX_FL, "PhysXGpu dll is incompatible with this version of PhysX!\n");
 			return;
 		}
@@ -207,8 +209,11 @@ namespace physx
 			reportError(PX_FL, "Failed to load %s!: %s\n", gPhysXGpuLibraryName, error);
 			return;
 		}
-		if (g_PxCreatePhysXGpu_Func == NULL || g_PxCreateCudaContextManager_Func == NULL || g_PxGetSuggestedCudaDeviceOrdinal_Func == NULL)
+		if (g_PxCreatePhysXGpu_Func == NULL || g_PxCreateCudaContextManager_Func == NULL || g_PxGetSuggestedCudaDeviceOrdinal_Func == NULL ||
+			g_PxSetPhysXGpuProfilerCallback_Func == NULL || g_PxSetPhysXGpuFoundationInstance_Func == NULL)
 		{
+			// The exports it does have may come from another PhysX version with a different ABI.
+			PxUnloadPhysxGPUModule();
 			reportError(PX_FL, "%s is incompatible with this version of PhysX!\n", gPhysXGpuLibraryName);
 			return;
 		}

@@ -311,12 +311,13 @@ class VehicleController:
 def population_desc():
     """Resolved population plus vehicle suspension reference-frame metadata.
 
-    Pass this descriptor to ovstage.population.open_usd_with_desc. No customer USD
-    is imported. Omitting the metadata preserves the runtime's legacy COM default.
-    ALL population resolves nested world transforms in OVStage 0.3.
+    Pass this descriptor to ovstage.population.open_usd_with_desc beside ovphysx's
+    physics description: ``descs=[ovphysx.population.physics_population_desc(), population_desc()]``.
+    No customer USD is imported. Omitting the metadata preserves the runtime's legacy COM
+    default. It also selects the RENDERING domain.
     """
     import ovstage
     from ovstage.population import Desc, Selector, PrimPredicate
-    return Desc(domains=ovstage.PopulationDomain.ALL,selectors=[Selector(
+    return Desc(domains=ovstage.PopulationDomain.RENDERING,selectors=[Selector(
         PrimPredicate.has_applied_schema('PhysxVehicleAPI'),
         prim_metadata_paths=['customData:physxVehicle:referenceFrameIsCenterOfMass'])])

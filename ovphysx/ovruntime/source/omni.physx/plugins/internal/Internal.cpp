@@ -42,6 +42,8 @@ InternalDatabase::~InternalDatabase() = default;
 ObjectId InternalDatabase::addRecord(PhysXType type, void* ptr, void* internalPtr, omni::physics::parse::ObjectKey key)
 {
     const uint32_t index = uint32_t(mRecords.size());
+    for (auto* journal = mCreationJournal; journal; journal = journal->mPrevious)
+        journal->records.push_back(index);
     mRecords.push_back(Record(ptr, type, internalPtr, key, mRecordEpoch));
     mRecordEpoch->fetch_add(1, std::memory_order_relaxed);
     return index;
@@ -49,9 +51,45 @@ ObjectId InternalDatabase::addRecord(PhysXType type, void* ptr, void* internalPt
 
 ObjectId InternalDatabase::addRecordAtIndex(size_t index, PhysXType type, void* ptr, void* internalPtr, omni::physics::parse::ObjectKey key)
 {
+    // The replicator fills slots past the records' previous end from parallel
+    // workers, so this writes only its own slot: hasLiveRecord indexes it later,
+    // and no creation journal is open while the replicator runs.
+    CARB_ASSERT(!mCreationJournal);
     mRecords[index] = Record(ptr, type, internalPtr, key, mRecordEpoch);
     mRecordEpoch->fetch_add(1, std::memory_order_relaxed);
     return index;
+}
+
+bool InternalDatabase::hasLiveRecord(omni::physics::parse::ObjectKey key) const
+{
+    // Records only grow, and both add paths write at or past the indexed end, so
+    // indexing up to the current end finds every record written since the last call.
+    if (mIndexedRecords > mRecords.size())
+    {
+        mIndicesByKey.clear();
+        mIndexedRecords = 0;
+    }
+    for (; mIndexedRecords < mRecords.size(); ++mIndexedRecords)
+    {
+        if (mRecords[mIndexedRecords].mKey.valid())
+            mIndicesByKey.emplace(mRecords[mIndexedRecords].mKey, mIndexedRecords);
+    }
+    // A removed record never comes back, so its entry is dropped on the way: a
+    // path deleted and inserted again keeps its lookup short.
+    auto [entry, last] = mIndicesByKey.equal_range(key);
+    bool live = false;
+    while (entry != last)
+    {
+        const Record& record = mRecords[entry->second];
+        if (record.mType == ePTRemoved || !(record.mKey == key))
+            entry = mIndicesByKey.erase(entry);
+        else
+        {
+            live = true;
+            ++entry;
+        }
+    }
+    return live;
 }
 
 void* InternalDatabase::getTypedRecord(PhysXType type, ObjectId objectId) const

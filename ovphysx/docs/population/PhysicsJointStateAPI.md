@@ -7,9 +7,9 @@
 
 Initial joint-space position and velocity of one axis, applied as PhysicsJointStateAPI:<inst>. Effective only on articulation joints: the runtime warns and ignores it on standalone joints. Presence of the instance enables the state; rotational instances are stored in degrees and converted to radians by the parser.
 
-- **Applies to:** `PhysicsJoint`
+- **Applies to:** [`PhysicsJoint`](glossary.md#physicsjoint)
 - **Multi-apply:** applied as `PhysicsJointStateAPI:<instance>`; `<inst>` in a column name is the instance. Instances: `transX`, `transY`, `transZ`, `rotX`, `rotY`, `rotZ`, `angular`, `linear`.
-- **Read only when listed in `usd-schemas`.**
+- **Read only when listed in [`usd-schemas`](prim.md#columns).**
 
 ## What USD population writes
 
@@ -17,20 +17,20 @@ Both declared attributes of every applied instance are published at their resolv
 
 ## Columns
 
-*Raw fallback* is the USD schema value. *Producer writes* is what ovstage population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
+*Raw fallback* is the [USD](glossary.md#usd) schema value. *Producer writes* is what [ovstage](glossary.md#ovstage) population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
 
 | Column | Type | Units | Raw fallback | Producer writes | Parser default | If absent |
 |---|---|---|---|---|---|---|
-| `state:<inst>:physics:position` | float32 | rot: deg; trans: length (deg_to_rad) | 0.0 | resolved USD value (authored, else raw fallback) | 0.0 | Zero initial position when the instance is applied; without the instance no state entry is emitted at all (state.enabled false). |
+| `state:<inst>:physics:position` | float32 | rot: deg; trans: length (deg_to_rad) | 0.0 | resolved USD value (authored, else raw fallback) | 0.0 | Zero initial position when the instance is applied; without the instance no state entry is emitted at all (the state is disabled). |
 | `state:<inst>:physics:velocity` | float32 | rot: deg/s; trans: length/s (deg_to_rad) | 0.0 | resolved USD value (authored, else raw fallback) | 0.0 | Zero initial velocity when the instance is applied. |
 
 ## Interactions
 
-- **[`PhysicsJoint`](PhysicsJoint.md):** state.enabled is set by schema presence alone. On a standalone joint the runtime logs 'JointStateAPI applied to Joint ... not supported' and ignores the state.
+- **[`PhysicsJoint`](PhysicsJoint.md):** The state is enabled by schema presence alone. On a standalone joint the runtime logs 'JointStateAPI applied to Joint ... not supported' and ignores the state.
 - **[`PhysicsArticulationRootAPI`](PhysicsArticulationRootAPI.md):** On an articulation joint the initial state is written into the joint's reduced-coordinate position and velocity; translational D6 states are reported unsupported by the runtime.
 
 ## Notes
 
 - Per-joint-type instance matrix: Fixed none; Revolute angular (degrees to radians); Prismatic linear (no conversion); Spherical never read (the descriptor field exists but is never populated); Distance none; D6 (PhysicsJoint) transX transY transZ rotX rotY rotZ, no distance; Gear, Rack, Custom none.
 - D6 state entries are emitted translational-first then rotational, in the fixed order transX, transY, transZ, rotX, rotY, rotZ.
-- The runtime converts the parsed radians back to degrees for its own bookkeeping (initialState is kept in USD units) before seeding PhysX.
+- The runtime converts the parsed radians back to degrees for its own bookkeeping (it keeps the initial joint state in USD units) before seeding [PhysX](glossary.md#physx).

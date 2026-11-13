@@ -17,7 +17,7 @@ attribute tokens, and fixed/array column layout. The session write API
 see the `ovphysx-session-write` skill (the deprecated tensor-binding API also covered this);
 raycast, sweep, and overlap are geometry queries.
 
-The prim list and attribute token a result carries are **interned integers**, not paths or
+The prim list and attribute token a result carries are **interned handles**, not paths or
 names. Resolve them through the attached Stage's dictionary: `ovstage.PathDictionary(stage)` or
 `result.dictionary` in Python — `get_path_strings(group.prim_list)` for the prim paths and
 `token_to_string(group.attribute)` for the emitted attribute name (C:
@@ -42,7 +42,7 @@ names. Resolve them through the attached Stage's dictionary: `ovstage.PathDictio
    explicit.
 
 2. Keep an ovstage Stage attached and alive. When attachment and process
-   lifecycle are not already established, invoke the `basic-workflow` skill by
+   lifecycle are not already established, invoke the `ovphysx-basic-workflow` skill by
    name.
 
    **Complete when:** the attached Stage owns the shared path dictionary for the
@@ -76,20 +76,20 @@ names. Resolve them through the attached Stage's dictionary: `ovstage.PathDictio
      [Closed-loop ovstage write-back](references/closed_loop.md), then complete
      the write while the group's identity and borrowed data remain valid.
 
-   **Complete when:** retained Warp arrays keep their session lease, retained
-   copies are caller-owned, or the ovstage write completed before releasing its
+   **Complete when:** retained data is a caller-owned copy, or the Warp arrays of
+   a result not closed, or the ovstage write completed before releasing its
    source read session.
 
 6. Release resources and validate the selected branch. Python closes the
    `ReadResult` and any explicit `Query` with their context managers and collects
-   the submitted releases with `wait_all()` after dropping retained arrays (a
-   `read_sync()` result waits for the releases it submits on exit). C releases
+   the submitted releases with `wait_all()`; a closed result's arrays are invalid
+   (a `read_sync()` result waits for the releases it submits on exit). C releases
    every fetched group, then the read and query
    handles on success and error paths. Exercise an integration test that checks
    values and, for write-back, ordinal separation.
 
-   **Complete when:** every retained array is deliberate and dropped before
-   `PhysX.destroy()`, supported `ACTIVE` reads are reopened per frame, structural
+   **Complete when:** every retained array is a deliberate copy, or belongs to a
+   result not closed and is dropped before `PhysX.destroy()`, supported `ACTIVE` reads are reopened per frame, structural
    changes trigger fresh query and downstream layout setup, and the test observes
    the expected output.
 
@@ -113,6 +113,11 @@ names. Resolve them through the attached Stage's dictionary: `ovstage.PathDictio
   than assuming device-resident f32. Per-shape properties (`contactOffset`,
   `staticFriction`, ...) are padded to the widest selected object in the read; pair them
   with `shapeCount` to find where each row's real values stop.
+- Rigid bodies and articulation links also serve read-only `worldScale`: the
+  signed world scale stored when the body was created (PhysX simulates no
+  scale). It shares the pose's residency, so `position`, `orientation` and
+  `worldScale` compose the world matrix on the same device. It has no
+  point-instancer array form.
 - Read `isSleeping` with `ALL` scope to inspect current rigid-body sleep state, including
   sleepers. It is a read-only host uint8 scalar: 1 asleep, 0 awake. Articulation links
   report their owning articulation's state; no point-instancer array form exists.
@@ -120,7 +125,7 @@ names. Resolve them through the attached Stage's dictionary: `ovstage.PathDictio
   bodies. Sleeping-disabled scenes, including DirectGPU, report 0 for emitted rows;
   DirectGPU still omits pre-step partitions and disabled rows. Use `disableSimulation`
   separately for participation. ACTIVE membership, zero velocity and the last `wake`
-  command do not determine sleep state. Re-read for fresh values; retained arrays are snapshots.
+  command do not determine sleep state. Re-read for fresh values; copied arrays are snapshots.
 - Deformable bodies serve `points` and `velocities` as device columns on a
   DirectGPU scene, plus `restPoints` and the **int32** `simElementIndices`
   (`collisionElementIndices` too, on the volume type only). The topology three
@@ -141,12 +146,21 @@ names. Resolve them through the attached Stage's dictionary: `ovstage.PathDictio
 - Character controllers use `SimObjectType.CHARACTER_CONTROLLER`, keyed by the
   capsule prim carrying `PhysxCharacterControllerAPI`. The type has no readable
   columns. Read the controller prim as `RIGID_BODY` `position` and `orientation`:
-  the backing actor's global pose, which updates on the step after `move`.
+  the backing actor's global position and the controller prim's world orientation,
+  with the capsule-axis correction applied. The pose updates on the step after `move`.
 - SDF collision shapes use `SimObjectType.SDF_SHAPE` and have no readable
   columns. Evaluate them with `physx.evaluate_sdf_shapes(points, out, pattern=...)`:
   points `[N, Q, 3]` in mesh-local space, out `[N, Q, 4]` (gradient, then
   distance), float32 on the CUDA device, DirectGPU only. Row *i* is the *i*-th
   matched shape in pattern order.
+- Deformable skin meshes are their own **read-only** type,
+  `SimObjectType.DEFORMABLE_SKIN_MESH`, keyed by the skinned render `Mesh` prim under
+  a deformable body (volume or surface): one array group, one `points` tensor per skin
+  mesh prim, skin-mesh-local and device-resident, ordered after the step's skinning
+  through the group's completion event. `points` is the only attribute -- skinning
+  produces no velocities -- and the skin prims exist in an ovstage instance only when
+  the rendering domain was populated. To move a skin mesh, write the owning body's
+  sim-mesh `points`; the skin follows.
 - In ovphysx 0.6.0 and later, whole articulations use
   `SimObjectType.ARTICULATION` and report the
   articulation-root API prim. They serve root pose/velocity as `rootPosition`,
@@ -177,17 +191,16 @@ names. Resolve them through the attached Stage's dictionary: `ovstage.PathDictio
   degree, and efforts, inertia and the drive type are unconverted. Do not
   apply a blanket radian conversion to a joint column.
 - Whole articulations also serve `jacobian`, `massMatrix`, `coriolisForce`,
-  `gravityForce` and `centroidalMomentum`, row-major flattened into `dtype.lanes`.
-  These groups cover topology-based subsets of a type's rows: their width
-  depends on each articulation's topology, so rows are split into cohorts of
-  structurally identical articulations and each cohort is its own group. Read `lanes`
-  per group -- one group for a homogeneous fleet, one per topology otherwise -- and
-  match a cohort by its prim list. `massMatrix` is square, the two force columns are
-  `[lanes]`, `centroidalMomentum` has six rows with the bias in its last column, and
-  `jacobian` carries its `[rows, cols]` in the companion `jacobianShape`, which is
-  emitted per cohort too -- same prims, same order -- so pair the two groups by prim
-  list and read any row. `centroidalMomentum` is floating-base only and a fixed-base
-  cohort simply omits it.
+  `gravityForce` and `centroidalMomentum`. Unlike every other column, each row's
+  dimensions are tensor axes and `dtype.lanes` is 1: `jacobian` `[N, R, C]`,
+  `massMatrix` `[N, M, M]`, the two force columns `[N, M]`, `centroidalMomentum`
+  `[N, 6, numDofs + 7]` with the bias in its last column. These groups cover
+  topology-based subsets of a type's rows: the dimensions depend on each
+  articulation's topology, so rows are split into cohorts of structurally identical
+  articulations and each cohort is its own group. Read the shape per group -- one
+  group for a homogeneous fleet, one per topology otherwise -- and match a cohort by
+  its prim list. `centroidalMomentum` is floating-base only and a fixed-base cohort
+  simply omits it.
 - Treat a whole-type query as a selector evaluated at each session open. A read
   observes the most recently completed step, not a snapshot captured when the
   query was opened. The optional query result is a creation-time snapshot, and a

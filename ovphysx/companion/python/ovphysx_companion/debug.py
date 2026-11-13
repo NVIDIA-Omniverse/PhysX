@@ -119,6 +119,11 @@ class DebugDraw:
     this adapter does not restore other clients' settings. Host code must serialize
     policy ownership. Frames contain immutable copies and outlive this object.
     Native C++ performs all debug extraction; Python only copies/presents results.
+
+    A captured frame with step n holds actor/shape primitives at their poses from
+    the start of native step n, so they can trail post-step bodies, and step n's
+    contact/friction primitives. step counts every scene's substeps; it is not a
+    host frame number.
     """
     def __init__(self,owner):
         global _registered

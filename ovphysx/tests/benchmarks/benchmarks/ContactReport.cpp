@@ -368,14 +368,14 @@ private:
             return fail("ovphysx_query(CONTACT_SENSOR) failed");
         }
 
-        static const ovx_string_or_token_t attrs[] = {
+        static const ovx_token_or_string_t attrs[] = {
             { 0, { OVPHYSX_ATTR_NET_NORMAL_CONTACT_FORCE, sizeof(OVPHYSX_ATTR_NET_NORMAL_CONTACT_FORCE) - 1 } },
             { 0, { OVPHYSX_ATTR_NET_FRICTION_CONTACT_FORCE, sizeof(OVPHYSX_ATTR_NET_FRICTION_CONTACT_FORCE) - 1 } },
         };
         ovphysx_read_handle_t read = 0;
         const bool readOk =
-            bmCompleteTask(handle(), ovphysx_read(handle(), query, attrs, sizeof(attrs) / sizeof(attrs[0]), &read,
-                                                  nullptr))
+            bmCompleteTask(handle(), ovphysx_read(handle(), query, attrs, sizeof(attrs) / sizeof(attrs[0]),
+                                                  ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr))
                     .status == OVPHYSX_API_SUCCESS &&
             read != 0;
 
@@ -418,7 +418,8 @@ private:
                 return fail("ovphysx_fetch_read_next failed after %u groups", groups);
             }
             const DLTensor* tensor =
-                (group->data.tensors && group->data.tensor_count > 0) ? &group->data.tensors[0] : nullptr;
+                (group->columns[0].data.tensors
+                 && group->columns[0].data.tensor_count > 0) ? &group->columns[0].data.tensors[0] : nullptr;
             if (tensor && tensor->device.device_type != (mGpu ? kDLCUDA : kDLCPU))
             {
                 return fail("expected %s contact-sensor tensor, got device type %d", mGpu ? "CUDA" : "CPU",
@@ -503,15 +504,15 @@ private:
 #if defined(OVPHYSX_BENCHMARK_HAS_CUDA)
     bool waitForGroup(const ovstage_read_group_t& group)
     {
-        if (group.data.cuda_sync.wait_event != 0)
+        if (group.columns[0].data.cuda_sync.wait_event != 0)
         {
-            return cudaEventSynchronize(reinterpret_cast<cudaEvent_t>(group.data.cuda_sync.wait_event)) == cudaSuccess;
+            return cudaEventSynchronize(reinterpret_cast<cudaEvent_t>(group.columns[0].data.cuda_sync.wait_event)) == cudaSuccess;
         }
-        if (group.data.cuda_sync.stream != 0)
+        if (group.columns[0].data.cuda_sync.stream != 0)
         {
-            const cudaStream_t stream = group.data.cuda_sync.stream == 1 ?
+            const cudaStream_t stream = group.columns[0].data.cuda_sync.stream == 1 ?
                                             cudaStream_t{} :
-                                            reinterpret_cast<cudaStream_t>(group.data.cuda_sync.stream);
+                                            reinterpret_cast<cudaStream_t>(group.columns[0].data.cuda_sync.stream);
             return cudaStreamSynchronize(stream) == cudaSuccess;
         }
         return true;

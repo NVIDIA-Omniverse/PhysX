@@ -6,6 +6,7 @@
 
 # Read the same release pin used by the source fetcher and Python dependency.
 # OVStage's native CMake package version contains only major.minor.patch.
+# A dev build's pin is its PEP 440 version, major.minor.patch.devN+label.githash.
 function(ovphysx_read_ovstage_version fetch_script out_version out_cmake_version)
     if(NOT EXISTS "${fetch_script}")
         message(FATAL_ERROR "OVStage version source is missing: ${fetch_script}")
@@ -16,7 +17,7 @@ function(ovphysx_read_ovstage_version fetch_script out_version out_cmake_version
         message(FATAL_ERROR "Expected one OVSTAGE_VERSION assignment in ${fetch_script}")
     endif()
     if(NOT _ovstage_pins MATCHES
-        "^OVSTAGE_VERSION[ \t]*=[ \t]*\"(([0-9]+[.][0-9]+[.][0-9]+)([.][0-9]+([.][0-9A-Za-z]+)?)?)\"[ \t]*$")
+        "^OVSTAGE_VERSION[ \t]*=[ \t]*\"(([0-9]+[.][0-9]+[.][0-9]+)([.][0-9]+([.][0-9A-Za-z]+)?|[.]dev[0-9]+[+][0-9A-Za-z]+[.][0-9A-Za-z]+)?)\"[ \t]*$")
         message(FATAL_ERROR "Invalid OVSTAGE_VERSION in ${fetch_script}")
     endif()
     set(${out_version} "${CMAKE_MATCH_1}" PARENT_SCOPE)

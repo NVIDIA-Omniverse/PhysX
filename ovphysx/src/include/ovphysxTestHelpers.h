@@ -1,6 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-CAPI-ASYNC-002
+ * @covers AC-16
+ */
+
 #pragma once
 
 // Internal test helpers used by the unit tests. Not part of the public API.
@@ -90,6 +95,10 @@ OVPHYSX_API bool ovphysx_create_extensions_fixture_for_test_internal(
 /** @brief Destroy a fixture created by ovphysx_create_extensions_fixture_for_test_internal. */
 OVPHYSX_API void ovphysx_destroy_extensions_fixture_for_test_internal(void* fixture);
 
+/** @brief Create an attachment-owned runtime D6 joint without a population record. */
+OVPHYSX_API void* ovphysx_create_d6_joint_at_path_for_test_internal(
+    ovphysx_instance_handle_t handle, const char* joint_path, const char* body0_path, const char* body1_path);
+
 /**
  * @brief Report the process-wide worker pool sizes ovphysx started with.
  *
@@ -109,6 +118,11 @@ OVPHYSX_API bool ovphysx_get_worker_pool_counts_for_test_internal(
     uint32_t* out_hardware_concurrency);
 
 typedef void (*ovphysx_test_task_fn)(void* user);
+
+/** Read issued-step bookkeeping after the test has joined its client threads. */
+OVPHYSX_API bool ovphysx_read_step_bookkeeping_for_test_internal(
+    ovphysx_instance_handle_t handle, float* simulation_time, float* last_step_dt);
+
 
 /**
  * @brief Block the calling Carbonite task until probes have run.
@@ -134,6 +148,172 @@ OVPHYSX_API bool ovphysx_with_suspended_carbonite_task_for_test_internal(
     ovphysx_test_task_fn body,
     ovphysx_test_task_fn probe,
     void* user);
+
+/**
+ * @brief Hold or release an instance worker for tests.
+ *
+ * While held, the worker starts no job; submissions still queue, so their
+ * receipts stay pending. Release before destroying the instance or before any
+ * call that waits for the worker to drain.
+ *
+ * @return false for an unknown instance
+ */
+OVPHYSX_API bool ovphysx_set_worker_hold_for_test_internal(ovphysx_instance_handle_t handle, bool hold);
+
+/**
+ * @brief Queue a job on an instance worker for tests.
+ *
+ * The job sleeps @p sleep_ms milliseconds on the worker, then succeeds, or fails
+ * with @p failure when it is non-null. The failure is reported as
+ * "test_job (task <index>): <failure>". The job touches no engine state.
+ *
+ * @return the accepted receipt, or a rejection with zero identity
+ */
+OVPHYSX_API ovphysx_enqueue_result_t ovphysx_submit_test_job_for_test_internal(
+    ovphysx_instance_handle_t handle,
+    const char* failure,
+    uint32_t sleep_ms);
+
+/**
+ * @brief Wait for held worker jobs from more Carbonite tasks than there are workers.
+ *
+ * Holds the worker, queues one test job per waiter, and starts twice the
+ * carb.tasking thread count plus two tasks that each call ovphysx_wait_task()
+ * with an infinite timeout on their own job. Every waiter must then be counted as
+ * a task suspended inside the executor, none as a blocked thread, and one more
+ * probe task must still run, which proves that waiting tasks release their worker
+ * threads. Then the worker is released and every wait must return SUCCESS.
+ *
+ * @param[out] out_waiters Receives the number of waiting tasks; may be NULL.
+ * @return false when tasking is not running, the probe cannot run within ten
+ *         seconds, or a wait does not succeed within thirty seconds
+ */
+OVPHYSX_API bool ovphysx_wait_from_saturated_carbonite_pool_for_test_internal(
+    ovphysx_instance_handle_t handle,
+    uint32_t* out_waiters);
+
+/**
+ * @brief Queue a job on an instance worker that calls @p fn with @p user.
+ *
+ * The job runs @p fn on the instance worker and then succeeds; destruction and
+ * shutdown cancel it while it is still queued. The job touches no engine state
+ * itself. @p fn must not block forever.
+ *
+ * @return the accepted receipt, or a rejection with zero identity
+ */
+OVPHYSX_API ovphysx_enqueue_result_t ovphysx_submit_test_callback_job_for_test_internal(
+    ovphysx_instance_handle_t handle,
+    ovphysx_test_task_fn fn,
+    void* user);
+
+/** Callback for a test-only pre- or post-step subscription. */
+typedef void (*ovphysx_test_step_event_fn)(float elapsed_time, void* user);
+
+/**
+ * @brief Subscribe a test callback to one instance's exact live attachment.
+ *
+ * @return a nonzero subscription id, or zero when the instance, attachment,
+ *         callback or runtime interface is unavailable
+ */
+OVPHYSX_API uint64_t ovphysx_subscribe_step_event_for_test_internal(
+    ovphysx_instance_handle_t handle,
+    bool pre_step,
+    ovphysx_test_step_event_fn fn,
+    void* user);
+
+/** @brief Remove a subscription returned by ovphysx_subscribe_step_event_for_test_internal. */
+OVPHYSX_API bool ovphysx_unsubscribe_step_event_for_test_internal(uint64_t subscription);
+
+/** @brief Record text in the active runtime error scope, if any. */
+OVPHYSX_API void ovphysx_record_runtime_error_for_test_internal(const char* message);
+
+/**
+ * @brief Hold an instance worker as soon as the next job is queued on it.
+ *
+ * Unlike @ref ovphysx_set_worker_hold_for_test_internal this leaves the instance
+ * idle until that submission, so an ovphysx_step() on it still starts its
+ * simulation on the calling thread, and its fetch job then stays queued. Release
+ * with ovphysx_set_worker_hold_for_test_internal(handle, false).
+ *
+ * @return false for an unknown instance
+ */
+OVPHYSX_API bool ovphysx_hold_worker_after_next_submit_for_test_internal(ovphysx_instance_handle_t handle);
+
+/**
+ * @brief Report whether an instance's worker thread has left its loop for good.
+ *
+ * @return false for an unknown instance
+ */
+OVPHYSX_API bool ovphysx_worker_exited_for_test_internal(ovphysx_instance_handle_t handle, bool* out_exited);
+
+/**
+ * @brief Call @p fn with @p user while holding the process-wide lifecycle lock.
+ *
+ * Attach and detach jobs and instance destruction take the same lock around their
+ * lifecycle work, so they block while @p fn runs.
+ */
+OVPHYSX_API void ovphysx_with_lifecycle_lock_for_test_internal(ovphysx_test_task_fn fn, void* user);
+
+/**
+ * @brief Wait for an instance lane from more Carbonite tasks than there are workers,
+ * and destroy another instance from one more task meanwhile.
+ *
+ * Holds @p handle's worker with one queued job, so its lane is busy, then starts
+ * twice the carb.tasking thread count plus two tasks that each make a synchronous
+ * lane-taking call on @p handle (ovphysx_set_config of an empty active_cuda_gpus,
+ * so @p handle must not be attached). Every waiter must be counted as a task
+ * suspended inside the executor, none as a blocked thread. Then one more task
+ * destroys @p victim, whose worker is held with a queued job, and must finish
+ * while the waiters still wait. Then the hold is released and every call must
+ * return SUCCESS.
+ *
+ * @param[out] out_waiters Receives the number of waiting tasks; may be NULL.
+ * @return false when tasking is not running, a condition above does not hold
+ *         within ten seconds, or a call does not succeed within thirty seconds
+ */
+OVPHYSX_API bool ovphysx_lane_waits_and_destroy_from_saturated_carbonite_pool_for_test_internal(
+    ovphysx_instance_handle_t handle,
+    ovphysx_instance_handle_t victim,
+    uint32_t* out_waiters);
+
+/**
+ * @brief Count the CUDA driver calls ovphysx made to run long calls on instance workers.
+ *
+ * Counts the capture of the submitting thread's CUDA context for an attach, its push
+ * and pop on the instance worker, and each worker's stream-capture mode call, across
+ * the process. In hard CPU-only mode none of them happens, so the count never changes.
+ */
+OVPHYSX_API uint64_t ovphysx_worker_cuda_calls_for_test_internal(void);
+
+/**
+ * @brief Set the next shared ovphysx opaque-object handle.
+ *
+ * Lets output-session tests reach the end of the shared handle space. Returns
+ * the previous next value, which the test restores before creating any other
+ * opaque object.
+ */
+OVPHYSX_API uint64_t ovphysx_exchange_next_output_handle_for_test_internal(uint64_t next);
+
+/** Where instances run their short async calls (see ovphysx_set_test_execution_for_test_internal). */
+typedef enum
+{
+    /** On the calling thread of an idle instance, queued behind its work otherwise (the normal behaviour). */
+    OVPHYSX_TEST_EXECUTION_NATURAL = 0,
+    /** Every short async call queued as a job on the instance worker, even on an idle instance. */
+    OVPHYSX_TEST_EXECUTION_QUEUE = 1,
+} ovphysx_test_execution_t;
+
+/**
+ * @brief Choose where the instances created from now on run their short async calls.
+ *
+ * For tests only, so a test suite covers the path it does not take by itself, such as the
+ * queued path of calls it makes on an idle instance; never a user setting. Calls that always
+ * run on the calling thread, and synchronous calls, are not affected. Instances that already
+ * exist keep their mode.
+ *
+ * @return false for an unknown mode, which changes nothing
+ */
+OVPHYSX_API bool ovphysx_set_test_execution_for_test_internal(ovphysx_test_execution_t mode);
 
 #ifdef __cplusplus
 }

@@ -31,23 +31,45 @@ cold launch performs many convex-hull cooks.
 # @covers AC-8
 
 import argparse
+import atexit
 import os
 from pathlib import Path
 import signal
 import subprocess
 import sys
-import tempfile
 import time
 
 import pytest
-from test_utils import load_usd_with_ovstage
 
 _COOK_OK = "OVPHYSX_UJITSO_COOK_OK"
 _PYTHON_ATEXIT_OK = "OVPHYSX_PYTHON_ATEXIT_OK"
 _NATIVE_SHUTDOWN_OK = "OVPHYSX_NATIVE_SHUTDOWN_OK"
 _NATIVE_DESTROY_OK = "OVPHYSX_NATIVE_DESTROY_OK"
+_READ_ARRAY_OK = "OVPHYSX_EXIT_READ_ARRAY_OK"
 _WINDOWS_CONTROL_C_EXIT = 0xC000013A
 _WORKER_KEEPALIVE = None
+
+
+def _print_python_atexit_ok() -> None:
+    """Witness that the library atexit callback already ran (atexit is LIFO)."""
+    import ovphysx.api as api
+
+    _ = _WORKER_KEEPALIVE
+    if api._PROCESS_LIFECYCLE_REFCOUNT != 0:
+        sys.stderr.write(
+            "process-lifecycle refcount still "
+            f"{api._PROCESS_LIFECYCLE_REFCOUNT} after library atexit\n"
+        )
+        return
+    print(_PYTHON_ATEXIT_OK, flush=True)
+
+
+# Register before test_utils imports ovphysx so this witnesses completed cleanup.
+if __name__ == "__main__" and "--worker" in sys.argv:
+    atexit.register(_print_python_atexit_ok)
+
+from test_utils import load_usd_with_ovstage  # noqa: E402
+
 
 # data/ lives in tests/, one directory up from tests/python_tests/.
 _DATA_USD = os.path.join(
@@ -139,6 +161,11 @@ def _private_cache_env(temp_root: os.PathLike[str] | str) -> dict[str, str]:
     env = dict(os.environ)
     for var in ("TMPDIR", "TMP", "TEMP"):
         env[var] = str(temp_root)
+    if sys.platform == "win32":
+        # A process running as SYSTEM resolves its temp root through GetTempPath2W, which
+        # ignores TMP/TEMP and reads SystemTemp instead (CI runners that execute jobs as
+        # LocalSystem do this). Redirect it too, so the redirect reaches the SDK on every account.
+        env["SystemTemp"] = str(temp_root)
     return env
 
 
@@ -236,8 +263,13 @@ def test_private_cache_outlives_native_instance_destruction(tmp_path):
         assert not list(temp_root.glob("ovphysx-cache-*"))
 
 
-def test_unset_cache_dir_shuts_down_with_live_read_array(tmp_path):
-    """A globally reachable read() array still reaches native ovphysx_shutdown()."""
+@pytest.mark.parametrize("device", ["cpu", pytest.param("cuda", marks=pytest.mark.cuda)])
+def test_unset_cache_dir_shuts_down_with_live_read_array(tmp_path, device):
+    """Exit handlers consume retained arrays before native destruction and shutdown."""
+    if device == "cuda":
+        import warp as wp
+        if os.environ.get("OVPHYSX_DISABLE_GPU") == "1" or not wp.is_cuda_available():
+            pytest.skip("CUDA read requires an enabled CUDA device")
     temp_root = tmp_path / "tmp"
     temp_root.mkdir()
 
@@ -245,7 +277,7 @@ def test_unset_cache_dir_shuts_down_with_live_read_array(tmp_path):
         None,
         enable_cooking=True,
         env=_private_cache_env(temp_root),
-        mode="read-array-exit",
+        mode="read-array-exit" if device == "cpu" else "read-array-exit-cuda",
     )
 
     assert _PYTHON_ATEXIT_OK in proc.stdout, (
@@ -261,6 +293,9 @@ def test_unset_cache_dir_shuts_down_with_live_read_array(tmp_path):
         "cache removal alone does not prove direct-runtime teardown\n"
         f"STDOUT:\n{proc.stdout}\nSTDERR:\n{proc.stderr}"
     )
+    assert _READ_ARRAY_OK in proc.stdout, proc.stdout + proc.stderr
+    assert proc.stdout.index(_READ_ARRAY_OK) < proc.stdout.index(_NATIVE_DESTROY_OK)
+    assert proc.stdout.index(_NATIVE_DESTROY_OK) < proc.stdout.index(_NATIVE_SHUTDOWN_OK)
     leftovers = list(temp_root.glob("ovphysx-cache-*"))
     if sys.platform != "win32":
         assert not leftovers, f"live read-array exit left cache dirs behind: {leftovers}"
@@ -446,31 +481,6 @@ def _retain_for_atexit(*objects) -> None:
     _WORKER_KEEPALIVE = objects
 
 
-def _print_python_atexit_ok() -> None:
-    """Witness that the library atexit callback already ran (atexit is LIFO)."""
-    import ovphysx.api as api
-
-    _ = _WORKER_KEEPALIVE
-    if api._PROCESS_LIFECYCLE_REFCOUNT != 0:
-        sys.stderr.write(
-            "process-lifecycle refcount still "
-            f"{api._PROCESS_LIFECYCLE_REFCOUNT} after library atexit\n"
-        )
-        return
-    print(_PYTHON_ATEXIT_OK, flush=True)
-
-
-def _install_python_atexit_ok_marker() -> None:
-    """Register the witness before the first PhysX() so LIFO runs the library first.
-
-    Does not unregister ``_destroy_process_instances_at_exit``. Printing after
-    that callback attests that ``_track_process_instance`` registered it.
-    """
-    import atexit
-
-    atexit.register(_print_python_atexit_ok)
-
-
 def _install_native_shutdown_witness() -> None:
     """Witness native instance destruction before the real process shutdown."""
     import ovphysx.api as api
@@ -486,7 +496,8 @@ def _install_native_shutdown_witness() -> None:
 
     def _witness_shutdown(*args, **kwargs):
         result = original_shutdown(*args, **kwargs)
-        print(_NATIVE_SHUTDOWN_OK, flush=True)
+        if result.status == 0:
+            print(_NATIVE_SHUTDOWN_OK, flush=True)
         return result
 
     api._lib.ovphysx_destroy_instance = _witness_destroy
@@ -510,8 +521,6 @@ def _worker(cache_dir: str | None, enable_cooking: bool, interrupt: bool = False
         carbonite_overrides={"/physics/cooking/ujitsoCollisionCooking": enable_cooking},
     )
     PhysX.set_cpu_mode(True)
-    if cache_dir is None:
-        _install_python_atexit_ok_marker()
     physx = PhysX(config=config)
     load_usd_with_ovstage(physx, _DATA_USD)
     physx.wait_all()  # drain async collision cooking
@@ -535,7 +544,6 @@ def _worker_two_live_exit() -> None:
     from ovphysx import PhysX, PhysXConfig
 
     PhysX.set_cpu_mode(True)
-    _install_python_atexit_ok_marker()
     first = PhysX(config=PhysXConfig())
     second = PhysX(config=PhysXConfig())
     load_usd_with_ovstage(first, _DATA_USD)
@@ -544,23 +552,38 @@ def _worker_two_live_exit() -> None:
     print(_COOK_OK, flush=True)
 
 
-def _worker_read_array_exit() -> None:
-    """Retain a read() Warp array through exit so shutdown cannot wait for its deleter."""
+def _worker_read_array_exit(device: str) -> None:
+    """Register the reader after package import but before native bootstrap."""
+    import numpy as np
+
+    retained_arrays = []
+    snapshots = []
+
+    def read_at_exit():
+        for array, snapshot in zip(retained_arrays, snapshots):
+            np.testing.assert_array_equal(array.numpy(), snapshot)
+        print(_READ_ARRAY_OK, flush=True)
+
+    atexit.register(read_at_exit)
     from ovphysx import PhysX, PhysXConfig
     from ovphysx.types import SimObjectType
 
-    PhysX.set_cpu_mode(True)
-    _install_python_atexit_ok_marker()
+    if device == "cpu":
+        PhysX.set_cpu_mode(True)
     _install_native_shutdown_witness()
-    physx = PhysX(config=PhysXConfig())
+    physx = PhysX(config=PhysXConfig(carbonite_overrides={"/physics/suppressReadback": device == "cuda"}))
     load_usd_with_ovstage(physx, _DATA_USD)
-    physx.wait_all()
-    retained_arrays = []
-    with physx.read_sync(SimObjectType.RIGID_BODY, ["position"]) as result:
-        if not result.groups:
-            raise RuntimeError("read() returned no groups; cannot retain a process-lifecycle borrow")
-        for group in result.groups:
-            retained_arrays.extend(group.tensors)
+    physx.step_sync(1.0 / 60.0)
+    # Not closed: a closed result's arrays are invalid, and only an unclosed one's keep their read alive.
+    result = physx.read_sync(SimObjectType.RIGID_BODY, ["position"])
+    if not result.groups:
+        raise RuntimeError("read() returned no groups; cannot retain a process-lifecycle borrow")
+    for group in result.groups:
+        for array in group.tensors:
+            assert array.device.is_cuda == (device == "cuda")
+            retained_arrays.append(array)
+            snapshots.append(array.numpy().copy())
+    del result, group, array
     if not retained_arrays:
         raise RuntimeError("read() returned empty tensors; cannot retain a process-lifecycle borrow")
     _retain_for_atexit(physx, retained_arrays)
@@ -590,15 +613,23 @@ def _worker_release_then_cook() -> None:
 
 
 def _worker_cache_lifetime() -> None:
-    from ovphysx import PhysX
-    from ovphysx import api
+    from ovphysx import GlobalConfigKey, PhysX, api, get_global_config
 
     PhysX.set_cpu_mode(True)
     physx = PhysX()
     load_usd_with_ovstage(physx, _DATA_USD)
     physx.wait_all()
-    cache_dirs = list(Path(tempfile.gettempdir()).glob("ovphysx-cache-*"))
-    assert cache_dirs, "the test must create a private datastore"
+    # Ask the SDK where its process-private datastore is instead of globbing Python's temp
+    # directory: the two roots can differ. ovphysx resolves the OS temp root natively
+    # (std::filesystem::temp_directory_path, i.e. GetTempPath2W on Windows), which places a
+    # process running as SYSTEM under C:\Windows\SystemTemp whatever TMP/TEMP say, while
+    # tempfile.gettempdir() follows the redirected variables. A CI runner that executes jobs as
+    # LocalSystem therefore cooks into a directory this glob would never see.
+    reported = get_global_config(GlobalConfigKey.COOKED_COLLIDER_CACHE_DIRECTORY)
+    assert reported, "the test must create a private datastore"
+    cache_dir = Path(reported)
+    assert cache_dir.name.startswith("ovphysx-cache-"), f"not a process-private datastore: {cache_dir}"
+    assert cache_dir.is_dir(), f"the private datastore directory does not exist: {cache_dir}"
     original_destroy = api._lib.ovphysx_destroy_instance
 
     def witness_destroy(*args):
@@ -606,7 +637,7 @@ def _worker_cache_lifetime() -> None:
         assert result.status == 0
         # The datastore still exists at this boundary even though its last instance is gone.
         # Check the lifetime directly; no sleep or lucky background-write timing is needed.
-        assert all(path.is_dir() for path in cache_dirs), "cache removed before datastore shutdown"
+        assert cache_dir.is_dir(), "cache removed before datastore shutdown"
         print("OVPHYSX_CACHE_ALIVE_BEFORE_SHUTDOWN", flush=True)
         return result
 
@@ -633,6 +664,8 @@ def _worker_reconfigure(first_dir: str, second_dir: str) -> None:
     second = PhysX(config=PhysXConfig(cooked_collider_cache_dir=second_dir))
     load_usd_with_ovstage(second, _DATA_USD)
     second.wait_all()
+    if sys.platform != "win32":
+        _wait_for_cache_bytes(second_dir)
     print(_COOK_OK, flush=True)
 
 
@@ -651,6 +684,7 @@ if __name__ == "__main__":
                 "keyboardinterrupt",
                 "two-live-exit",
                 "read-array-exit",
+                "read-array-exit-cuda",
                 "cache-before-shutdown",
             ],
             default="cook",
@@ -663,8 +697,8 @@ if __name__ == "__main__":
             _worker_release_then_cook()
         elif ns.mode == "two-live-exit":
             _worker_two_live_exit()
-        elif ns.mode == "read-array-exit":
-            _worker_read_array_exit()
+        elif ns.mode in ("read-array-exit", "read-array-exit-cuda"):
+            _worker_read_array_exit("cuda" if ns.mode.endswith("cuda") else "cpu")
         elif ns.mode == "reconfigure":
             if ns.cache_dir is None or ns.second_cache_dir is None:
                 parser.error("--mode reconfigure requires --cache-dir and --second-cache-dir")

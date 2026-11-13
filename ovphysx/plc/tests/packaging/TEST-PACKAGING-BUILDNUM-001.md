@@ -43,6 +43,9 @@ precedence and rejection rules without running five publish paths.
   instance. It covers unnumbered/numbered pairs in both directions, different
   build numbers, matching builds, branch-local suffixes, and differing release
   components. Warning cases capture the Python logger.
+- `test_bindings_internal.py` starts fresh Python processes with a missing
+  required native symbol, reporting an older version, the matching version,
+  or an unavailable version export. No instance is constructed.
 
 ## Then
 
@@ -71,6 +74,11 @@ precedence and rejection rules without running five publish paths.
   matching builds do not warn, including a Python branch-local suffix.
   Different major, minor or patch components raise, including `0.6.3` versus
   `0.6.4`, even when the build numbers match (REQ AC-7).
+- A missing required native symbol raises `RuntimeError` during native loading,
+  before the constructor version check. The error names the library, symbol, Python
+  version, native version (or `unavailable`), and the matching-library remedy.
+  This diagnostic also covers an incomplete library that reports the matching
+  version; it does not claim that the version strings differ (REQ AC-7).
 
 ## Known gaps
 
@@ -85,6 +93,7 @@ disagrees with the computed version.
 
 - ovphysx/tests/python_tests/test_build_number.py
 - ovphysx/tests/python_tests/test_version_mismatch.py
+- ovphysx/tests/python_tests/test_bindings_internal.py
 - ovphysx/tests/python_tests/test_publish_release_artifacts.py
 - ovphysx/tests/python_tests/test_relay_ci_wheel_to_ngc.py
 - ovphysx/scripts/read_artifact_version.cmake

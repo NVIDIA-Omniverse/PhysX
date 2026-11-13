@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-PUBLICAPI-001
+// @covers AC-52
+
 // @implements REQ-ATTACH-EXECUTION-001
 // @covers AC-3 AC-4
 // @implements REQ-ATTACH-VIEWS-001
@@ -22,7 +25,6 @@
 #include <omni/physx/IPhysx.h>
 #include <omni/physx/IPhysxFoundation.h>
 #include <private/omni/physx/IPhysxPrivate.h>
-#include <omni/physx/IPhysxJoint.h>
 #include <omni/physx/IPhysxSimulation.h>
 #include <omni/physics/tensors/TensorApi.h>
 
@@ -48,7 +50,6 @@ namespace tensors
 omni::physx::IPhysx* g_physx = nullptr;
 omni::physx::IPhysxSimulation* g_physxSimulation = nullptr;
 omni::physx::IPhysxPrivate* g_physxPrivate = nullptr;
-omni::physx::IPhysxJoint* g_physxJoint = nullptr;
 
 // private stuff
 namespace
@@ -153,13 +154,6 @@ void tensorsInit()
         return;
     }
 
-    g_physxJoint = omni::physx::runtime::tryGetPhysxJointInterface();
-    if (!g_physxJoint)
-    {
-        CARB_LOG_ERROR("PhysX Joint runtime interface is not started");
-        return;
-    }
-
     if (!OmniPhysX::getInstance().tensorBackend)
     {
         OmniPhysX::getInstance().tensorBackend = std::make_shared<omni::physx::tensors::SimulationBackend>();
@@ -196,7 +190,6 @@ void tensorsShutdown()
     g_physx = nullptr;
     g_physxSimulation = nullptr;
     g_physxPrivate = nullptr;
-    g_physxJoint = nullptr;
 
     // Finally, destroy the simulation backend once all external references
     // (stage update nodes, PhysX callbacks) have been removed.

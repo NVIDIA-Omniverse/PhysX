@@ -1,0 +1,809 @@
+{
+  "$schema": "../contract.schema.json",
+  "schema_version": 1,
+  "attributes": [
+    {
+      "id": "joint_position",
+      "name": "jointPosition",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION_JOINT",
+          "description": "generalized position",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "joint_coordinate",
+          "writability": "WRITABLE",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "effect": "set_state",
+            "persistence": "simulation_state",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "One row per unlocked axis, a joint's rows consecutive in PhysX axis order, each row's prim the joint. Angular state follows the authored body-order sign; jointLimit retains the authored lower/upper order."
+        }
+      ]
+    },
+    {
+      "id": "joint_velocity",
+      "name": "jointVelocity",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION_JOINT",
+          "description": "generalized velocity",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "joint_rate",
+          "writability": "WRITABLE",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "effect": "set_state",
+            "persistence": "simulation_state",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "One row per unlocked axis, a joint's rows consecutive in PhysX axis order, each row's prim the joint. Angular state follows the authored body-order sign; jointLimit retains the authored lower/upper order."
+        }
+      ]
+    },
+    {
+      "id": "joint_position_target",
+      "name": "jointPositionTarget",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION_JOINT",
+          "description": "drive position target",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "joint_coordinate",
+          "writability": "WRITABLE",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "One row per unlocked axis, a joint's rows consecutive in PhysX axis order, each row's prim the joint. Angular state follows the authored body-order sign; jointLimit retains the authored lower/upper order."
+        }
+      ]
+    },
+    {
+      "id": "joint_velocity_target",
+      "name": "jointVelocityTarget",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION_JOINT",
+          "description": "drive velocity target",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "joint_rate",
+          "writability": "WRITABLE",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "One row per unlocked axis, a joint's rows consecutive in PhysX axis order, each row's prim the joint. Angular state follows the authored body-order sign; jointLimit retains the authored lower/upper order."
+        }
+      ]
+    },
+    {
+      "id": "joint_actuation_force",
+      "name": "jointActuationForce",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION_JOINT",
+          "description": "applied actuation effort",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "joint_effort",
+          "writability": "WRITABLE",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "One row per unlocked axis, a joint's rows consecutive in PhysX axis order, each row's prim the joint. Angular state follows the authored body-order sign; jointLimit retains the authored lower/upper order."
+        }
+      ]
+    },
+    {
+      "id": "joint_projected_force",
+      "name": "jointProjectedForce",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION_JOINT",
+          "description": "inbound joint force on this axis",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "joint_effort",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": false,
+          "notes": "One row per unlocked axis, a joint's rows consecutive in PhysX axis order, each row's prim the joint. Angular state follows the authored body-order sign; jointLimit retains the authored lower/upper order."
+        }
+      ]
+    },
+    {
+      "id": "joint_stiffness",
+      "name": "jointStiffness",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION_JOINT",
+          "description": "drive effort per unit position error",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "joint_stiffness",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "One row per unlocked axis, a joint's rows consecutive in PhysX axis order, each row's prim the joint. Angular state follows the authored body-order sign; jointLimit retains the authored lower/upper order."
+        }
+      ]
+    },
+    {
+      "id": "joint_damping",
+      "name": "jointDamping",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION_JOINT",
+          "description": "drive effort per unit rate error",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "joint_damping",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "One row per unlocked axis, a joint's rows consecutive in PhysX axis order, each row's prim the joint. Angular state follows the authored body-order sign; jointLimit retains the authored lower/upper order."
+        }
+      ]
+    },
+    {
+      "id": "joint_limit",
+      "name": "jointLimit",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION_JOINT",
+          "description": "(low, high) motion limit",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "joint_coordinate",
+          "writability": "CONDITIONAL",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 2,
+              "shape": [
+                "dofs"
+              ]
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 2,
+              "shape": [
+                "dofs"
+              ]
+            },
+            "conditions": [
+              "session",
+              "joint_limit"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "One row per unlocked axis, a joint's rows consecutive in PhysX axis order, each row's prim the joint. Angular state follows the authored body-order sign; jointLimit retains the authored lower/upper order."
+        }
+      ]
+    },
+    {
+      "id": "joint_max_velocity",
+      "name": "jointMaxVelocity",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION_JOINT",
+          "description": "joint rate bound",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "joint_rate",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "One row per unlocked axis, a joint's rows consecutive in PhysX axis order, each row's prim the joint. Angular state follows the authored body-order sign; jointLimit retains the authored lower/upper order."
+        }
+      ]
+    },
+    {
+      "id": "joint_max_force",
+      "name": "jointMaxForce",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION_JOINT",
+          "description": "drive effort bound",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "joint_effort",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "One row per unlocked axis, a joint's rows consecutive in PhysX axis order, each row's prim the joint. Angular state follows the authored body-order sign; jointLimit retains the authored lower/upper order."
+        }
+      ]
+    },
+    {
+      "id": "joint_armature",
+      "name": "jointArmature",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION_JOINT",
+          "description": "added rotor inertia",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "joint_armature",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "One row per unlocked axis, a joint's rows consecutive in PhysX axis order, each row's prim the joint. Angular state follows the authored body-order sign; jointLimit retains the authored lower/upper order."
+        }
+      ]
+    },
+    {
+      "id": "joint_static_friction",
+      "name": "jointStaticFriction",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION_JOINT",
+          "description": "break-away / sliding effort",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "joint_effort",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "One row per unlocked axis, a joint's rows consecutive in PhysX axis order, each row's prim the joint. Angular state follows the authored body-order sign; jointLimit retains the authored lower/upper order."
+        }
+      ]
+    },
+    {
+      "id": "joint_dynamic_friction",
+      "name": "jointDynamicFriction",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION_JOINT",
+          "description": "break-away / sliding effort",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "joint_effort",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "One row per unlocked axis, a joint's rows consecutive in PhysX axis order, each row's prim the joint. Angular state follows the authored body-order sign; jointLimit retains the authored lower/upper order."
+        }
+      ]
+    },
+    {
+      "id": "joint_viscous_friction",
+      "name": "jointViscousFriction",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION_JOINT",
+          "description": "effort per unit rate",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "effort_per_rate",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "One row per unlocked axis, a joint's rows consecutive in PhysX axis order, each row's prim the joint. Angular state follows the authored body-order sign; jointLimit retains the authored lower/upper order."
+        }
+      ]
+    },
+    {
+      "id": "joint_speed_effort_gradient",
+      "name": "jointSpeedEffortGradient",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION_JOINT",
+          "description": "drive-envelope rate per effort",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "rate_per_effort",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "One row per unlocked axis, a joint's rows consecutive in PhysX axis order, each row's prim the joint. Angular state follows the authored body-order sign; jointLimit retains the authored lower/upper order."
+        }
+      ]
+    },
+    {
+      "id": "joint_max_actuator_velocity",
+      "name": "jointMaxActuatorVelocity",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION_JOINT",
+          "description": "actuator rate bound",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "joint_rate",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "One row per unlocked axis, a joint's rows consecutive in PhysX axis order, each row's prim the joint. Angular state follows the authored body-order sign; jointLimit retains the authored lower/upper order."
+        }
+      ]
+    },
+    {
+      "id": "joint_velocity_dependent_resistance",
+      "name": "jointVelocityDependentResistance",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION_JOINT",
+          "description": "envelope resistance per rate",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "effort_per_rate",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "One row per unlocked axis, a joint's rows consecutive in PhysX axis order, each row's prim the joint. Angular state follows the authored body-order sign; jointLimit retains the authored lower/upper order."
+        }
+      ]
+    },
+    {
+      "id": "joint_drive_type",
+      "name": "jointDriveType",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "ARTICULATION_JOINT",
+          "description": "0 none / 1 force / 2 accel",
+          "dtype": "u8",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            }
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "dofs"
+              ]
+            },
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          },
+          "notes": "One row per unlocked axis, a joint's rows consecutive in PhysX axis order, each row's prim the joint. Angular state follows the authored body-order sign; jointLimit retains the authored lower/upper order."
+        }
+      ]
+    }
+  ]
+}

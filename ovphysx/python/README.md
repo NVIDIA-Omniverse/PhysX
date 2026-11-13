@@ -28,6 +28,7 @@ from pathlib import Path
 import ovphysx
 from ovphysx.samples.python_samples.schema_support import physx_schema_paths
 import ovstage
+from ovphysx.population import physics_population_descs
 from ovphysx import PhysX
 
 usd_path = (
@@ -44,8 +45,12 @@ ovstage.population.register_usd_schemas(
     [*[str(p) for p in physx_schema_paths()], str(ovphysx.newton_schema_root())]
 )
 stage = ovstage.Stage("scene")
-ovstage.population.open_usd(
-    stage, str(usd_path), ordinal=1, domains=ovstage.PopulationDomain.ALL
+ovstage.population.open_usd_with_desc(
+    stage,
+    str(usd_path),
+    ordinal=1,
+    time=ovstage.population.DEFAULT_TIME,
+    descs=physics_population_descs(rendering=True),
 )
 # attach_ovstage() reads at a sealed ordinal.
 stage.advance_write_floor(ordinal=1).wait()

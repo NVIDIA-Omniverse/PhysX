@@ -534,14 +534,14 @@ extern "C" {
      *   floating-translation dimensions retain their linear units.
      *
      *   OVPHYSX_TENSOR_ARTICULATION_JACOBIAN_F32
-     *     Shape: [N, R, C] where R, C come from getJacobianShape()
+     *     Shape: [N, R, C]; ovphysx_get_tensor_binding_spec() reports R and C
      *       Fixed-base:    R = (numLinks - 1) * 6,     C = numDofs
      *       Floating-base: R = (numLinks - 1) * 6 + 6, C = numDofs + 6
      *       Floating-base columns: base 6 DOFs at indices 0..5, joint DOFs at 6..C-1
      *     DType: float32
      *
      *   OVPHYSX_TENSOR_ARTICULATION_MASS_MATRIX_F32
-     *     Shape: [N, M, M] where M comes from getGeneralizedMassMatrixShape()
+     *     Shape: [N, M, M] with M = numDofs (fixed base) or numDofs + 6 (floating base)
      *     Layout: Generalized (joint-space) mass matrix
      *     DType: float32
      *
@@ -797,12 +797,12 @@ extern "C" {
         OVPHYSX_TENSOR_ARTICULATION_BODY_DISABLE_GRAVITY_BOOL = 65, /**< [N, L] uint8/bool. Nonzero disables PxActorFlag::eDISABLE_GRAVITY per link at runtime */
 
         /* Inverse dynamics query tensors (READ-ONLY) */
-        /** [N, R, C] from getJacobianShape().
+        /** [N, R, C].
          *  For fixed-base: R = (numLinks-1)*6, C = numDofs.
          *  For floating-base: R = (numLinks-1)*6 + 6, C = numDofs + 6.
          *  Floating-base columns: base 6 DOFs at indices 0..5, joint DOFs at 6..C-1. */
         OVPHYSX_TENSOR_ARTICULATION_JACOBIAN_F32 = 70,
-        OVPHYSX_TENSOR_ARTICULATION_MASS_MATRIX_F32 = 71,                /**< [N, M, M] from getGeneralizedMassMatrixShape() */
+        OVPHYSX_TENSOR_ARTICULATION_MASS_MATRIX_F32 = 71,                /**< [N, M, M] generalized mass matrix */
         OVPHYSX_TENSOR_ARTICULATION_CORIOLIS_AND_CENTRIFUGAL_FORCE_F32 = 72, /**< [N, M] Coriolis + centrifugal forces (both terms, from getCoriolisAndCentrifugalCompensationForces()) */
         OVPHYSX_TENSOR_ARTICULATION_GRAVITY_FORCE_F32 = 73,              /**< [N, M] gravity compensation */
         OVPHYSX_TENSOR_ARTICULATION_LINK_INCOMING_JOINT_FORCE_F32 = 74,  /**< [N, L, 6] per-link incoming joint force */
@@ -823,16 +823,16 @@ extern "C" {
         OVPHYSX_TENSOR_ARTICULATION_SPATIAL_TENDON_OFFSET_F32 = 93,          /**< [N, T] spatial tendon offset */
 
         /* Shape-level property tensors (per collision shape on each rigid body or link).
-           S = max collision shapes per body/link. Bodies with fewer shapes
-           have zero-padded trailing entries. */
+           S = max collision shapes per rigid body, or per articulation summed over all its
+           links. Bodies with fewer shapes have zero-padded trailing entries. */
         OVPHYSX_TENSOR_RIGID_BODY_SHAPE_FRICTION_AND_RESTITUTION_F32 = 100, /**< [N, S, 3] (static friction, dynamic friction, restitution) per shape */
         OVPHYSX_TENSOR_RIGID_BODY_CONTACT_OFFSET_F32 = 101,            /**< [N, S] contact offset per shape */
         OVPHYSX_TENSOR_RIGID_BODY_REST_OFFSET_F32 = 102,               /**< [N, S] rest offset per shape */
         OVPHYSX_TENSOR_RIGID_BODY_DISABLE_GRAVITY_BOOL = 103,          /**< [N] uint8/bool. Nonzero disables PxActorFlag::eDISABLE_GRAVITY at runtime */
 
-        OVPHYSX_TENSOR_ARTICULATION_SHAPE_FRICTION_AND_RESTITUTION_F32 = 110, /**< [N, S, 3] (static friction, dynamic friction, restitution) per link shape */
-        OVPHYSX_TENSOR_ARTICULATION_CONTACT_OFFSET_F32 = 111,          /**< [N, S] contact offset per link shape */
-        OVPHYSX_TENSOR_ARTICULATION_REST_OFFSET_F32 = 112,             /**< [N, S] rest offset per link shape */
+        OVPHYSX_TENSOR_ARTICULATION_SHAPE_FRICTION_AND_RESTITUTION_F32 = 110, /**< [N, S, 3] (static friction, dynamic friction, restitution) per articulation shape (all links) */
+        OVPHYSX_TENSOR_ARTICULATION_CONTACT_OFFSET_F32 = 111,          /**< [N, S] contact offset per articulation shape (all links) */
+        OVPHYSX_TENSOR_ARTICULATION_REST_OFFSET_F32 = 112,             /**< [N, S] rest offset per articulation shape (all links) */
 
         /* Volume deformable body tensors */
         OVPHYSX_TENSOR_DEFORMABLE_SIM_NODAL_POSITION_F32 = 120,    /**< [N, V, 3] simulation node positions */

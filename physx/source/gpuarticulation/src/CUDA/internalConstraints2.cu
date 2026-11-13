@@ -1530,23 +1530,25 @@ static __device__ void artiSolveInternalConstraints1T(PxgArticulationCoreDesc* P
 		Cm::UnAlignedSpatialVector parentDeltaV(PxVec3(0.f), PxVec3(0.f)), storeParentDeltaV(PxVec3(0.f), PxVec3(0.f));
 		Cm::UnAlignedSpatialVector parentImp(PxVec3(0.f), PxVec3(0.f));	
 
-		if (!fixBase && doStaticContactsAnd1dConstraints)
+		if (!fixBase)
 		{
-			const PxU32 constraintCounts0 = data[0].mNbStaticJoints[threadIdx.x];
-
 			Dy::SpatialMatrix spatialMatrix;
 			loadSpatialMatrix(blockData.mInvSpatialArticulatedInertia, threadIdx.x, spatialMatrix);
 
-			const Cm::UnAlignedSpatialVector motionVelocity0 = loadSpatialVector(data[0].mMotionVelocity, threadIdx.x);
-
 			parentDeltaV = spatialMatrix * -rootDeferredZ;
 
-			Cm::UnAlignedSpatialVector rootVel = motionVelocity0 + parentDeltaV;
 			storeParentDeltaV = parentDeltaV;
-			
-			//Solve constraints...
-			solveStaticConstraints(scDesc, data[0], sharedDesc, rootVel, parentImp, parentDeltaV, threadIdx.x,
-				doFriction, minPen, elapsedTime, 0, constraintCounts0, rigidContactBiasCoefficient);
+
+			if (doStaticContactsAnd1dConstraints)
+			{
+				const PxU32 constraintCounts0 = data[0].mNbStaticJoints[threadIdx.x];
+				const Cm::UnAlignedSpatialVector motionVelocity0 = loadSpatialVector(data[0].mMotionVelocity, threadIdx.x);
+				Cm::UnAlignedSpatialVector rootVel = motionVelocity0 + parentDeltaV;
+
+				//Solve constraints...
+				solveStaticConstraints(scDesc, data[0], sharedDesc, rootVel, parentImp, parentDeltaV, threadIdx.x,
+					doFriction, minPen, elapsedTime, 0, constraintCounts0, rigidContactBiasCoefficient);
+			}
 		}
 		
 		PxgArticulationTraversalStackData* PX_RESTRICT stack = scDesc->mArticulationTraversalStackBlocks + scDesc->mMaxLinksPerArticulation * blockIdx.x;

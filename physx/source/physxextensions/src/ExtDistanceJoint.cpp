@@ -280,8 +280,14 @@ void DistanceJoint::resolveReferences(PxDeserializationContext& context)
 
 void DistanceJoint::updateOmniPvdProperties() const
 {
+	updateOmniPvdProperties(omniPvdCpuJointState(*this));
+}
+
+void DistanceJoint::updateOmniPvdProperties(const PxConstraintOmniPvdState& state) const
+{
+	if (!omniPvdJointPoseValid(state)) return;
 	const PxDistanceJoint& j = static_cast<const PxDistanceJoint&>(*this);
-	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDistanceJoint, distance, j, getDistance())
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDistanceJoint, distance, j, omniPvdRelativeTransform(j, state).p.magnitude())
 }
 
 template<> void physx::Ext::omniPvdInitJoint<DistanceJoint>(OmniPvdWriter* pvdWriter, const OmniPvdPxExtensionsRegistrationData* pvdRegData, DistanceJoint& joint); // declared before the wrapper so the wrapper binds the explicit form below instead of implicitly instantiating it
@@ -306,7 +312,6 @@ void physx::Ext::omniPvdInitJoint<DistanceJoint>(OmniPvdWriter* pvdWriter, const
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxDistanceJoint, stiffness, j, joint.getStiffness())
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxDistanceJoint, damping, j, joint.getDamping())
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxDistanceJoint, jointFlags, j, joint.getDistanceJointFlags())
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxDistanceJoint, distance, j, joint.getDistance())
 }
 
 #endif

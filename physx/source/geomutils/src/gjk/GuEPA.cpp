@@ -583,7 +583,8 @@ namespace Gu
 			facetManager.freeID(facet->m_FacetId);
 
 		}
-		while((heap.size() > 0) && FAllGrtr(upper_bound, heap.top()->getPlaneDist()) && numVertsLocal != MaxSupportPoints);
+		// Candidates at the upper bound still require convergence or obsolete-facet handling.
+		while((heap.size() > 0) && FAllGrtrOrEq(upper_bound, heap.top()->getPlaneDist()) && numVertsLocal != MaxSupportPoints);
 
 		calculateContactInformation(aBuf, bBuf, facet, a, b, takeCoreShape, output);
 		return EPA_DEGENERATE;

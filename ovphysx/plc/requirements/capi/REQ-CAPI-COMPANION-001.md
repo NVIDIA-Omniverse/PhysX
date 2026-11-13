@@ -27,7 +27,8 @@ create another public facade attachment.
 
 - AC-4: **Owned service lifetime.** Stopped cooking services, native modules and preview attachments retain shared runtime services independently of core instances. Shutdown rejects them before consuming initialization. Core recording transitions reject pending previews without collecting their work; preview retirement drains only its own attachment and leaves core recording and uncollected tasks intact. Destroying the last core instance preserves a live preview or module; module close retires the registration before releasing code/context/services. Process transition admission excludes executing preview operations without serializing independent preview steps. One SDK-owned companion coordinator owns all companion synchronization, reentry state and handle registries; distinct coordinator objects do not share admission or lease state. Pending work is read from the retained previews, so fetching or closing one preview cannot clear another preview's recording gate.
 
-- AC-5: **Scoped native access.** The build-matched native-access table validates SDK/compiler compatibility before publishing callbacks. While a read-only native-access callback holds owner admission, core wait/collection calls return INVALID_STATE before waiting or collecting a receipt. No SDK pointer is exposed in Python.
+- AC-5: **Scoped native access.** The build-matched native-access table validates SDK/compiler compatibility before publishing callbacks. While a read-only native-access callback holds owner admission, core wait/collection calls return INVALID_STATE before waiting or collecting a receipt. The callback holds the instance lane, so a queued step cannot execute until
+  that native-access lease ends. No SDK pointer is exposed in Python.
 
 ## Test References
 

@@ -1,0 +1,190 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxConvexDecompositionCollisionAPI",
+  "title": "PhysxConvexDecompositionCollisionAPI",
+  "summary": "Convex decomposition cooking parameters for a Mesh collider with physics:approximation convexDecomposition. Cooking inputs only; nothing here is verified. Two schema fallbacks differ from the consumer's absent-column seeds.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "Gprim"
+  ],
+  "requires": [
+    "PhysicsCollisionAPI"
+  ],
+  "usd_schemas_gate": false,
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "producer_scope": "Every declared attribute of an applied collision API is published at its resolved value; all six columns land as their raw fallbacks when unauthored. No derivation.",
+  "columns": [
+    {
+      "name": "physxConvexDecompositionCollision:minThickness",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.001,
+      "parser_default": 0.001,
+      "absent": "0.001, the convex decomposition cooking default.",
+      "raw_fallback_diverges": false,
+      "units": "length",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseCollision.cpp"
+      ]
+    },
+    {
+      "name": "physxConvexDecompositionCollision:maxConvexHulls",
+      "usd_type": "int",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "int",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 32,
+      "parser_default": 16,
+      "absent": "16, the cooking default. The USD schema fallback is 32 and the producer publishes it, so a hand-populated stage that omits the column decomposes into at most half as many hulls as USD population.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseCollision.cpp"
+      ]
+    },
+    {
+      "name": "physxConvexDecompositionCollision:hullVertexLimit",
+      "usd_type": "int",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "int",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 64,
+      "parser_default": 64,
+      "absent": "64, the cooking default, unless the free attribute newton:maxHullVertices is present with a value > 0, which then supplies the limit.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseCollision.cpp"
+      ]
+    },
+    {
+      "name": "physxConvexDecompositionCollision:voxelResolution",
+      "usd_type": "int",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "int",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false,
+        "accepts": [
+          "int64"
+        ]
+      },
+      "required": false,
+      "raw_fallback": 500000,
+      "parser_default": 100000,
+      "absent": "100000, the cooking default. The USD schema fallback is 500000 and the producer publishes it, so a hand-populated stage that omits the column voxelises five times coarser than USD population.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseCollision.cpp"
+      ]
+    },
+    {
+      "name": "physxConvexDecompositionCollision:errorPercentage",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 10.0,
+      "parser_default": 10.0,
+      "absent": "10.0, the cooking default.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseCollision.cpp"
+      ]
+    },
+    {
+      "name": "physxConvexDecompositionCollision:shrinkWrap",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": false,
+      "parser_default": false,
+      "absent": "false: hull points are not projected back onto the source surface.",
+      "raw_fallback_diverges": false,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseCollision.cpp"
+      ]
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysicsMeshCollisionAPI",
+      "rule": "Read only when the descriptor kind is convexDecomposition. Unlike PhysxConvexHullCollisionAPI there is no usd-schemas gate: the six columns are read whenever they exist on the collider, so free attributes authored without applying the API are honoured."
+    }
+  ],
+  "findings": [
+    {
+      "column": "physxConvexDecompositionCollision:maxConvexHulls",
+      "severity": "note",
+      "side": "consumer",
+      "summary": "Absent column seeds 16, the runtime's default cooked hull count, while the USD schema fallback published by the producer is 32. Only a hand-populated stage that omits the column is affected; it is a cooking input, not a PhysX default, so the divergence changes the cooked hull count rather than a PhysX object field.",
+      "tracking": "follow-up to file"
+    },
+    {
+      "column": "physxConvexDecompositionCollision:voxelResolution",
+      "severity": "note",
+      "side": "consumer",
+      "summary": "Absent column seeds the cooking default 100000 while the USD schema fallback published by the producer is 500000. Same class as maxConvexHulls.",
+      "tracking": "follow-up to file"
+    }
+  ],
+  "notes": [
+    "Cooking APIs on a Mesh cannot be verified by the generated tests: the parameters are consumed by the cooking service and PhysX exposes no getter for them, and the builder writes no mesh arrays."
+  ]
+}

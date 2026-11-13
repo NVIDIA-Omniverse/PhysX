@@ -12,7 +12,7 @@
 #pragma once
 
 #include "internal/sidecar/ovphysxInternalExport.h"
-#include "ovphysx/ovphysx_types.h" // ovstage_read_group_t / ovstage_query_result_t / ovx_string_or_token_t
+#include "ovphysx/ovphysx_types.h" // ovstage_read_group_t / ovstage_query_result_t / ovx_token_or_string_t
 
 #include <atomic>
 #include <cstddef>
@@ -76,7 +76,7 @@ OVPHYSX_INTERNAL_API void ovphysx_internal_debug_render_copy(
 // exported by the runtime (ovxQuery, ovxReadAttributes,
 // ovxFetchReadNext, ovxReleaseGroup, ovxReleaseRead, ovxReleaseQuery,
 // with optional creation summaries). The public ovphysx surface uses ovstage's own types
-// directly (ovstage_read_group_t / ovstage_query_result_t / ovx_string_or_token_t),
+// directly (ovstage_read_group_t / ovstage_query_result_t / ovx_token_or_string_t),
 // so the sidecar passes them straight through. It retains each live group by
 // read_group_id so the group struct and prim list stay valid until
 // ovphysx_internal_release_group. Numeric storage remains owned by the read
@@ -103,11 +103,13 @@ OVPHYSX_INTERNAL_API uint64_t ovphysx_internal_output_query_contacts(uint64_t at
                                                                      size_t selectionCount,
                                                                      uint32_t filterCount,
                                                                      ovstage_query_result_t* out_summary);
-// Attributes are ovstage's ovx_string_or_token_t (string name or interned token per
-// entry), forwarded straight to the runtime read with no translation.
+// Attributes are ovstage's ovx_token_or_string_t (string name or interned token per
+// entry), forwarded straight to the runtime read with no translation, as is the caller's
+// producer handoff `cuda_sync` (ADR-0055).
 OVPHYSX_INTERNAL_API uint64_t ovphysx_internal_read_outputs(uint64_t query,
-                                                            const ovx_string_or_token_t* attributes,
+                                                            const ovx_token_or_string_t* attributes,
                                                             size_t attribute_count,
+                                                            ovstage_cuda_sync_t cuda_sync,
                                                             ovphysx_read_result_t* out_summary);
 // Returns 1 and points *out_group at a producer-owned ovstage_read_group_t (valid
 // until ovphysx_internal_release_group / _release_read), 0 at end of iteration, -1 on
@@ -116,7 +118,7 @@ OVPHYSX_INTERNAL_API uint64_t ovphysx_internal_read_outputs(uint64_t query,
 OVPHYSX_INTERNAL_API int  ovphysx_internal_fetch_read_next(uint64_t read, const ovstage_read_group_t** out_group);
 // Release status (including release_write below): 1 confirms terminal success,
 // 0 confirms terminal failure, and -1 means cleanup completion is unconfirmed
-// (unavailable backend or caught exception). The SDK retains cleanup responsibility;
+// (unavailable backend, caught exception, or rejected group release). The SDK retains cleanup responsibility;
 // a failed accepted public release does not permit the caller to retry it.
 OVPHYSX_INTERNAL_API int ovphysx_internal_release_group(uint64_t read, ovstage_read_group_id_t group_id);
 OVPHYSX_INTERNAL_API int ovphysx_internal_release_read(uint64_t read);
@@ -128,7 +130,7 @@ OVPHYSX_INTERNAL_API int ovphysx_internal_release_query(uint64_t query);
 // by the address the runtime handed out. The group pointer therefore travels back unchanged
 // rather than being copied into sidecar-side storage as the read's groups are.
 OVPHYSX_INTERNAL_API uint64_t ovphysx_internal_write_attribute(uint64_t query,
-                                                               const ovx_string_or_token_t* attributes, size_t attribute_count,
+                                                               const ovx_token_or_string_t* attributes, size_t attribute_count,
                                                                ovphysx_write_result_t* out_summary);
 // Returns 1 and points *out_group at a producer-owned ovstage_map_group_t (valid until
 // ovphysx_internal_release_write), 0 at end of iteration, -1 on error.
@@ -138,6 +140,19 @@ OVPHYSX_INTERNAL_API int  ovphysx_internal_commit_group(uint64_t write,
                                                         const ovstage_map_group_t* group,
                                                         ovstage_cuda_sync_t write_done_sync,
                                                         int32_t* out_failure);
+// As ovphysx_internal_commit_group, writing only the rows `row_mask` selects (ADR-0052).
+OVPHYSX_INTERNAL_API int  ovphysx_internal_commit_group_masked(uint64_t write,
+                                                               const ovstage_map_group_t* group,
+                                                               const DLTensor* row_mask,
+                                                               ovstage_cuda_sync_t write_done_sync,
+                                                               int32_t* out_failure);
+// Whether the commit of `group` -- masked by `row_mask`, or unmasked when it is null -- on `write_done_sync` would
+// be accepted, changing nothing: 1 when it would, 0 when it would be refused with the group left live (the cause in
+// the runtime error scope), -1 when the check is unavailable.
+OVPHYSX_INTERNAL_API int  ovphysx_internal_validate_commit(uint64_t write,
+                                                           const ovstage_map_group_t* group,
+                                                           const DLTensor* row_mask,
+                                                           ovstage_cuda_sync_t write_done_sync);
 OVPHYSX_INTERNAL_API int ovphysx_internal_release_write(uint64_t write);
 
 // SDK-side function-pointer typedefs (mirror the above exports) for dlsym use.
@@ -152,27 +167,34 @@ typedef void     (*OvphysxSidecarDebugRenderApplyFn)(const ovphysx_internal_debu
 typedef void     (*OvphysxSidecarDebugRenderCopyFn)(uint64_t, void*, uint32_t*, void*, uint32_t*, void*, uint32_t*);
 typedef uint64_t (*OvphysxSidecarOutputQueryFn)(uint64_t, uint32_t, uint32_t, ovstage_query_result_t*);
 typedef uint64_t (*OvphysxSidecarOutputQuerySelectedFn)(uint64_t, uint32_t, const ovx_primpath_t*, size_t, const ovx_string_t*, ovstage_query_result_t*);
-typedef uint64_t (*OvphysxSidecarReadOutputsFn)(uint64_t, const ovx_string_or_token_t*, size_t, ovphysx_read_result_t*);
+typedef uint64_t (*OvphysxSidecarReadOutputsFn)(uint64_t, const ovx_token_or_string_t*, size_t, ovstage_cuda_sync_t,
+                                                ovphysx_read_result_t*);
 typedef uint64_t (*OvphysxSidecarOutputQueryContactsFn)(uint64_t, const void*, size_t, uint32_t, ovstage_query_result_t*);
 typedef int      (*OvphysxSidecarFetchReadNextFn)(uint64_t, const ovstage_read_group_t**);
 typedef int      (*OvphysxSidecarReleaseGroupFn)(uint64_t, ovstage_read_group_id_t);
 typedef int      (*OvphysxSidecarReleaseReadFn)(uint64_t);
 typedef int      (*OvphysxSidecarReleaseQueryFn)(uint64_t);
-typedef uint64_t (*OvphysxSidecarWriteAttributeFn)(uint64_t, const ovx_string_or_token_t*, size_t, ovphysx_write_result_t*);
+typedef uint64_t (*OvphysxSidecarWriteAttributeFn)(uint64_t, const ovx_token_or_string_t*, size_t, ovphysx_write_result_t*);
 typedef int      (*OvphysxSidecarFetchWriteNextFn)(uint64_t, ovphysx_fetched_write_group_t*);
 // Mirrors omni::physx::OvxCommitFailure. Duplicated rather than included because this side of the
 // sidecar boundary does not depend on the ovruntime headers. ovphysxSidecarLoader.cpp sees both
-// and static_asserts that the two agree, so the copy cannot drift silently.
+// and compares the numeric value of each known mirrored member at compile time.
 enum OvphysxSidecarCommitFailure : int32_t
 {
     kOvphysxCommitFailureNone    = 0,
     kOvphysxCommitFailureNotLive = 1, //!< Rejected before any publish. Nothing was written.
     kOvphysxCommitFailurePublish = 2, //!< The group was live and the publish failed, possibly partway.
+    kOvphysxCommitFailureBusy    = 3, //!< Retryable; the live group remains uncommitted.
+    kOvphysxCommitFailureInvalidArgument = 4, //!< Refused before the group was accepted; the group is still live.
 };
 
 // The trailing int32_t* is ovxCommitGroup's optional OvxCommitFailure out-param: it separates a
 // group that was never live from one whose publish failed, which the bool cannot.
 typedef int      (*OvphysxSidecarCommitGroupFn)(uint64_t, const ovstage_map_group_t*, ovstage_cuda_sync_t, int32_t*);
+typedef int      (*OvphysxSidecarCommitGroupMaskedFn)(uint64_t, const ovstage_map_group_t*, const DLTensor*,
+                                                      ovstage_cuda_sync_t, int32_t*);
+typedef int      (*OvphysxSidecarValidateCommitFn)(uint64_t, const ovstage_map_group_t*, const DLTensor*,
+                                                   ovstage_cuda_sync_t);
 typedef int      (*OvphysxSidecarReleaseWriteFn)(uint64_t);
 
 } // extern "C"
@@ -200,4 +222,6 @@ extern std::atomic<OvphysxSidecarReleaseQueryFn>     g_sidecarReleaseQuery;
 extern std::atomic<OvphysxSidecarWriteAttributeFn>   g_sidecarWriteAttribute;
 extern std::atomic<OvphysxSidecarFetchWriteNextFn>   g_sidecarFetchWriteNext;
 extern std::atomic<OvphysxSidecarCommitGroupFn>      g_sidecarCommitGroup;
+extern std::atomic<OvphysxSidecarCommitGroupMaskedFn> g_sidecarCommitGroupMasked;
+extern std::atomic<OvphysxSidecarValidateCommitFn>   g_sidecarValidateCommit;
 extern std::atomic<OvphysxSidecarReleaseWriteFn>     g_sidecarReleaseWrite;

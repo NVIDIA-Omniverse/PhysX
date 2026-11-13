@@ -8,6 +8,7 @@
 
 #include "OmniPvdSocketWriteStream.h"
 #include "OmniPvdSocket.h"
+#include <vector>
 
 //
 // Streams the OmniPVD command stream over a TCP connection. This stream is the TCP
@@ -29,16 +30,24 @@ public:
 	bool OMNI_PVD_CALL flush() override;
 	bool OMNI_PVD_CALL openStream() override;
 	bool OMNI_PVD_CALL closeStream() override;
+	OmniPvdCaptureRequestResult::Enum OMNI_PVD_CALL pollCaptureRequest(OmniPvdCaptureRequest& request) override;
+	uint64_t OMNI_PVD_CALL getCaptureSessionId() const override { return mSocket.isOpen() ? mCaptureSessionId : 0; }
 
 private:
 	bool sendAll(const uint8_t* bytes, uint64_t nbrBytes);
 	bool sendHandshake();
+	OmniPvdCaptureRequestResult::Enum decodeCaptureRequest(OmniPvdCaptureRequest& request);
 
 	OmniPvdSocket mSocket;
 	char*         mAddress;        // listening reader address (fixed at creation)
 	uint16_t      mPort;           // listening reader port (fixed at creation)
 	uint32_t      mSendTimeoutMs;  // upper bound on a blocked send, in ms (fixed at creation)
 	bool          mDead;           // a send failed/timed out; subsequent writes short-count
+	bool          mControlClosed;  // receiver half-closed control; forward telemetry continues
+	std::vector<uint8_t> mControlScratch;
+	std::vector<uint8_t> mControlBytes;
+	std::vector<OmniPvdObjectHandle> mControlSelectors;
+	uint64_t mCaptureSessionId;
 };
 
 #endif

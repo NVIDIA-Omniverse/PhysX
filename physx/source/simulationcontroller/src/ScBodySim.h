@@ -66,6 +66,17 @@ namespace Sc
 						void					updateCached(const UpdateCachedParams& params, Cm::PinnableBitMap* shapeChangedMap, bool fromTask, bool useAtomics);
 						void					updateCached_NotThreadSafe(const UpdateCachedParams& params, Cm::PinnableBitMap* shapeChangedMap, bool fromTask, bool useAtomics);
 						void					updateCached_ThreadSafe(const UpdateCachedParams& params);
+						bool					updateCachedIfChanged(const UpdateCachedParams& params, Cm::PinnableBitMap* shapeChangedMap);	// see ShapeSimBase::updateCachedIfChanged()
+
+		// Software prefetch for the deactivation loops in Scene. Each function is issued fewer bodies ahead than the
+		// previous one, in this order, since it dereferences what the previous one fetched. Loops that don't read the
+		// interactions call prefetchCoreAndShapeArray() instead of prefetchCoreAndArrays().
+		PX_FORCE_INLINE	void					prefetchSelf()					const;	// this object
+		PX_FORCE_INLINE	void					prefetchCoreAndArrays()			const;	// body core, interaction and shape arrays
+		PX_FORCE_INLINE	void					prefetchCoreAndShapeArray()		const;	// body core and shape array
+		PX_FORCE_INLINE	void					prefetchInteractions()			const;
+		PX_FORCE_INLINE	void					prefetchShapes()				const;
+						void					prefetchShapesForUpdateCached(const UpdateCachedParams& params, bool bounds)	const;	// what updateCached() reads and writes per shape, the bounds entry optionally
 						void					updateContactDistance(PxReal* contactDistance, PxReal dt, const Bp::BoundsArray& boundsArray);
 
 		// hooks for actions in body core when it's attached to a sim object. Generally
@@ -155,6 +166,23 @@ namespace Sc
 
 						void					createSqBounds();
 						void					destroySqBounds();
+
+		// Deactivation split for the parallel sleep path in ScSleep.cpp. deactivateThreadSafe() does the part that writes
+		// only to this body: it takes the body out of the active list index-wise, returning the index it had, and zeroes
+		// velocities and forces. It returns the work that touches shared scene data as DeactivationWork bits, which the
+		// caller passes to finishDeactivation() from a single thread. Together the two do what setActive(false) does.
+		enum DeactivationWork
+		{
+			eDEACTIVATE_INTERACTIONS	= 1 << 0,	// constraint, trigger or articulation joint interactions to deactivate
+			eSLEEP_NOTIFICATION			= 1 << 1,	// the scene reports sleep events and this body needs one
+			ePOSE_PREVIEW				= 1 << 2,	// the body is in the pose preview list
+			eSQ_BOUNDS					= 1 << 3,	// at least one shape has scene query bounds to destroy
+			eSPECULATIVE_CCD			= 1 << 4,	// the body is in the speculative CCD bitmap
+			eCOMPOUND					= 1 << 5	// the body is in the active compound body list
+		};
+						PxU32					deactivateThreadSafe(PxU32& activeListIndex);
+						void					finishDeactivation(PxU32 work);
+
 						void					freezeTransforms(const UpdateCachedParams& params, Cm::PinnableBitMap* shapeChangedMap);
 						void					freezeTransforms(PxsTransformCache& transformCache);
 
@@ -200,6 +228,58 @@ namespace Sc
 #endif
 
 } // namespace Sc
+
+PX_FORCE_INLINE void Sc::BodySim::prefetchSelf() const
+{
+	PxPrefetchLine(&mShapes);
+	PxPrefetchLine(&mActiveListIndex);
+	PxPrefetchLine(&mLLBody.mInternalFlags);
+	PxPrefetchLine(&mArticulation);
+}
+
+PX_FORCE_INLINE void Sc::BodySim::prefetchCoreAndShapeArray() const
+{
+	const PxsBodyCore& core = *mLLBody.mCore;
+	PxPrefetchLine(&core.body2World);
+	PxPrefetchLine(&core.linearVelocity);
+	PxPrefetchLine(&core.mFlags);
+
+	// A single shape is stored in this object.
+	if(getNbElements() > 1)
+		PxPrefetchLine(getElements());
+}
+
+PX_FORCE_INLINE void Sc::BodySim::prefetchCoreAndArrays() const
+{
+	prefetchCoreAndShapeArray();
+
+	// The interaction array starts in this object and moves out for good once it outgrows INLINE_INTERACTION_CAPACITY,
+	// so test where it is rather than its size.
+	const PxU32 nbInteractions = getActorInteractionCount();
+	Interaction*const* interactions = getActorInteractions();
+	if(nbInteractions && interactions != mInlineInteractionMem)
+	{
+		PxPrefetchLine(interactions);
+		if(nbInteractions > 8)
+			PxPrefetchLine(interactions, 64);
+	}
+}
+
+PX_FORCE_INLINE void Sc::BodySim::prefetchInteractions() const
+{
+	const PxU32 nbInteractions = getActorInteractionCount();
+	Interaction*const* interactions = getActorInteractions();
+	for(PxU32 i=0; i<nbInteractions; i++)
+		PxPrefetchLine(interactions[i]);
+}
+
+PX_FORCE_INLINE void Sc::BodySim::prefetchShapes() const
+{
+	const PxU32 nbShapes = getNbElements();
+	ElementSim*const* shapes = getElements();
+	for(PxU32 i=0; i<nbShapes; i++)
+		PxPrefetchLine(shapes[i]);
+}
 
 PX_FORCE_INLINE void Sc::BodySim::setForcesToDefaults(bool enableGravity)
 {

@@ -5,23 +5,23 @@
 
 # PhysxMaterialAPI
 
-PhysX tuning for a physics material: combine modes and compliant contact. Read only when the prim also carries PhysicsMaterialAPI (that API is what enumerates materials) and only when PhysxMaterialAPI is listed in usd-schemas.
+[PhysX](glossary.md#physx) tuning for a physics material: combine modes and compliant contact. Read only when the [prim](glossary.md#prim) also carries PhysicsMaterialAPI (that API is what enumerates materials) and only when PhysxMaterialAPI is listed in [usd-schemas](prim.md#columns).
 
-- **Applies to:** `Typed`
+- **Applies to:** [`Typed`](glossary.md#typed)
 - **Requires on the same prim:** [`PhysicsMaterialAPI`](PhysicsMaterialAPI.md)
 - **Read only when listed in `usd-schemas`.**
 
 ## What USD population writes
 
-Every declared attribute is published at its resolved value. Token attributes are published as token-id columns (TOKEN_ID semantic); the consumer reads them through the typed TokenId overload. Nothing is rewritten or created by the producer.
+Every declared attribute is published at its resolved value. Token attributes are published as token-id columns (TOKEN_ID semantic); the consumer reads them as token ids. Nothing is rewritten or created by the producer.
 
 ## Columns
 
-*Raw fallback* is the USD schema value. *Producer writes* is what ovstage population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
+*Raw fallback* is the [USD](glossary.md#usd) schema value. *Producer writes* is what [ovstage](glossary.md#ovstage) population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
 
 | Column | Type | Units | Raw fallback | Producer writes | Parser default | If absent |
 |---|---|---|---|---|---|---|
-| `physxMaterial:frictionCombineMode` | uint64, TOKEN_ID | none | average | resolved USD value (authored, else raw fallback) | average | average. Accepted tokens: average, min, max, multiply. An unrecognised token or an invalid token id silently resolves to average. |
+| `physxMaterial:frictionCombineMode` | uint64, TOKEN_ID | none | average | resolved USD value (authored, else raw fallback) | average | average. Accepted tokens: average, min, max, multiply. An unrecognised token or an invalid [token id](glossary.md#token-id) silently resolves to average. |
 | `physxMaterial:restitutionCombineMode` | uint64, TOKEN_ID | none | average | resolved USD value (authored, else raw fallback) | average | average. Same tokens and unrecognised-token rule as physxMaterial:frictionCombineMode. |
 | `physxMaterial:dampingCombineMode` | uint64, TOKEN_ID | none | average | resolved USD value (authored, else raw fallback) | average | average. Same tokens and unrecognised-token rule as physxMaterial:frictionCombineMode. |
 | `physxMaterial:compliantContactAccelerationSpring` | bool8 | none | false | resolved USD value (authored, else raw fallback) | false | Off: compliant stiffness and damping are force-based. On, they are interpreted as accelerations. |
@@ -35,4 +35,4 @@ Every declared attribute is published at its resolved value. Token attributes ar
 ## Notes
 
 - physxMaterial:improvePatchFriction is neither in the current PhysxMaterialAPI schema fallback inventory nor read anywhere by the consumer; it is not a column of this contract.
-- The runtime CombineMode enum (eAverage=0, eMin, eMultiply, eMax) matches PxCombineMode ordinal for ordinal; token order in the schema (average, min, max, multiply) differs from the enum order, which only matters if a future contract maps tokens to integers.
+- The runtime's own combine-mode enum (average=0, min, multiply, max) matches PxCombineMode ordinal for ordinal; token order in the schema (average, min, max, multiply) differs from the enum order, which only matters if a future contract maps tokens to integers.

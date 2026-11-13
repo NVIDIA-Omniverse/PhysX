@@ -34,6 +34,9 @@ ovphysx_companion_status_t visit(const ovphysx_companion_object_t* ref,uint32_t 
 {
     if(!ref || size!=sizeof(*ref) || !callback)return OVPHYSX_COMPANION_INVALID_ARGUMENT;
     CompanionOperationGuard guard(companionRuntime());if(!guard)return OVPHYSX_COMPANION_BUSY;
+    // The lease holds the owner instance's lane until the visitor returns: jobs queued
+    // on that instance meanwhile, a step included, start only after the lease ends.
+    CompanionOwnerLane owner;if(!owner.tryAcquireForAttachment(ref->attachment))return OVPHYSX_COMPANION_BUSY;
     Context context{*ref,callback,user};
     const rt::ObjectReference reference{ref->attachment,ref->object,ref->key,ref->generation,ref->kind,ref->instance};
     switch(rt::visitNativeObject(reference,rt::LeaseKind(kind),invoke,&context)) {

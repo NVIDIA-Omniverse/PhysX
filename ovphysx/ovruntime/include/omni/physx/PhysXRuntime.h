@@ -2,7 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // @implements REQ-ATTACH-EXECUTION-001
-// @covers AC-4
+// @covers AC-4 AC-6
+
+// @implements REQ-OMNIPVD-LATE-001
+// @covers AC-9
+
+// @implements REQ-PUBLICAPI-001
+// @covers AC-51
 
 #pragma once
 
@@ -24,21 +30,15 @@ namespace physx
 {
 struct IOptionalCuda;
 struct IPhysx;
-struct IPhysxAttachmentPrivate;
-struct IPhysxBenchmarks;
 struct IPhysxCooking;
 struct IPhysxCookingService;
 struct IPhysxCookingServicePrivate;
 struct IPhysxCustomGeometry;
 struct IPhysxCustomJoint;
 struct IPhysxFoundation;
-struct IPhysxJoint;
-struct IPhysxPropertyQuery;
 struct IPhysxPrivate;
 struct IPhysxReplicator;
 struct IPhysxSceneQuery;
-struct IPhysxStageUpdate;
-struct IPhysxStatistics;
 struct IPhysxUnitTests;
 struct IPhysxVisualization;
 
@@ -70,13 +70,12 @@ OMNI_PHYSX_RUNTIME_API bool snapshotAttachDefaults(PhysxAttachmentSettings& atta
 
 /// Attach through the same runtime path while distinguishing retryable
 /// configuration admission from an invalid payload or construction failure.
-/// startConfiguredRecording starts legacy startup OmniPVD output after a
-/// successful attach; attachments without a public recording owner pass false.
+/// Attachment publication does not start OmniPVD recording.
 /// @implements REQ-ATTACH-EXECUTION-001
 /// @covers AC-4
 OMNI_PHYSX_RUNTIME_API AttachHandle attachOvstageWithAdmission(const void* payload, uint64_t ordinal,
                                                                const PhysxAttachOptions& options,
-                                                               bool startConfiguredRecording, bool& busy);
+                                                               bool& busy);
 
 /// Copy the settings retained by one exact live attachment. These are the
 /// requested shared values, not a claim that a GPU context was realized.
@@ -99,8 +98,6 @@ OMNI_PHYSX_RUNTIME_API IPhysx& getPhysxInterface();
 OMNI_PHYSX_RUNTIME_API IPhysx* tryGetPhysxInterface();
 OMNI_PHYSX_RUNTIME_API IPhysxPrivate& getPhysxPrivateInterface();
 OMNI_PHYSX_RUNTIME_API IPhysxPrivate* tryGetPhysxPrivateInterface();
-OMNI_PHYSX_RUNTIME_API IPhysxJoint& getPhysxJointInterface();
-OMNI_PHYSX_RUNTIME_API IPhysxJoint* tryGetPhysxJointInterface();
 OMNI_PHYSX_RUNTIME_API IPhysxReplicator& getPhysxReplicatorInterface();
 OMNI_PHYSX_RUNTIME_API IPhysxReplicator* tryGetPhysxReplicatorInterface();
 OMNI_PHYSX_RUNTIME_API IPhysxCustomJoint& getPhysxCustomJointInterface();
@@ -111,18 +108,8 @@ OMNI_PHYSX_RUNTIME_API IPhysxVisualization& getPhysxVisualizationInterface();
 OMNI_PHYSX_RUNTIME_API IPhysxVisualization* tryGetPhysxVisualizationInterface();
 OMNI_PHYSX_RUNTIME_API IPhysxSceneQuery& getPhysxSceneQueryInterface();
 OMNI_PHYSX_RUNTIME_API IPhysxSceneQuery* tryGetPhysxSceneQueryInterface();
-OMNI_PHYSX_RUNTIME_API IPhysxPropertyQuery& getPhysxPropertyQueryInterface();
-OMNI_PHYSX_RUNTIME_API IPhysxPropertyQuery* tryGetPhysxPropertyQueryInterface();
-OMNI_PHYSX_RUNTIME_API IPhysxAttachmentPrivate& getPhysxAttachmentPrivateInterface();
-OMNI_PHYSX_RUNTIME_API IPhysxAttachmentPrivate* tryGetPhysxAttachmentPrivateInterface();
-OMNI_PHYSX_RUNTIME_API IPhysxStageUpdate& getPhysxStageUpdateInterface();
-OMNI_PHYSX_RUNTIME_API IPhysxStageUpdate* tryGetPhysxStageUpdateInterface();
-OMNI_PHYSX_RUNTIME_API IPhysxStatistics& getPhysxStatisticsInterface();
-OMNI_PHYSX_RUNTIME_API IPhysxStatistics* tryGetPhysxStatisticsInterface();
 OMNI_PHYSX_RUNTIME_API IPhysxUnitTests& getPhysxUnitTestsInterface();
 OMNI_PHYSX_RUNTIME_API IPhysxUnitTests* tryGetPhysxUnitTestsInterface();
-OMNI_PHYSX_RUNTIME_API IPhysxBenchmarks& getPhysxBenchmarksInterface();
-OMNI_PHYSX_RUNTIME_API IPhysxBenchmarks* tryGetPhysxBenchmarksInterface();
 OMNI_PHYSX_RUNTIME_API IPhysxCooking& getPhysxCookingInterface();
 OMNI_PHYSX_RUNTIME_API IPhysxCooking* tryGetPhysxCookingInterface();
 OMNI_PHYSX_RUNTIME_API IPhysxCookingService& getPhysxCookingServiceInterface();
@@ -137,10 +124,25 @@ OMNI_PHYSX_RUNTIME_API IOptionalCuda* tryGetOptionalCudaInterface();
 // startup. It does not reserve execution or replace the externally serialized
 // caller contract; native dispatch still checks pending attachment ownership.
 OMNI_PHYSX_RUNTIME_API bool isRuntimeExecuting() noexcept;
+// Task-aware callback observation for frontend reentry rejection, safe before
+// startup and after shutdown without starting tasking or plugins. Execution on
+// another client thread does not make the current caller a runtime callback.
+OMNI_PHYSX_RUNTIME_API bool isRuntimeCallback() noexcept;
 // Admission observation before frontend cleanup/settings mutation. This is not
 // a reservation: callers still obey external serialization, and native entries
 // take their own execution scope. Retirement may drain its own pending interval.
 OMNI_PHYSX_RUNTIME_API bool isRuntimeBusy(omni::physics::AttachHandle attach, bool allowPendingOwner = false) noexcept;
+// True while the calling thread, or the calling Carbonite task, runs a runtime
+// application callback. Unlike isRuntimeExecuting() and isRuntimeBusy() it ignores
+// operations on other threads, so a frontend can refuse callback reentry while
+// another thread executes. Never blocks; safe before startup and after shutdown.
+// Runtime callbacks can run before a frontend installs its tasking hooks and after
+// it removes them; this form resolves the caller context within the runtime.
+OMNI_PHYSX_RUNTIME_API bool isInRuntimeCallback() noexcept;
+// The same for a caller that already asked carb.tasking for its task context:
+// taskContext is ITasking::getTaskContext() of the calling task, zero on a native thread.
+// Reusing that context avoids a second tasking query on each frontend API entry.
+OMNI_PHYSX_RUNTIME_API bool isInRuntimeCallback(uint64_t taskContext) noexcept;
 OMNI_PHYSX_RUNTIME_API IPhysxSimulation& getPhysxSimulationInterface();
 OMNI_PHYSX_RUNTIME_API IPhysxSimulation* tryGetPhysxSimulationInterface();
 OMNI_PHYSX_RUNTIME_API omni::physics::tensors::TensorApi& getTensorApiInterface();

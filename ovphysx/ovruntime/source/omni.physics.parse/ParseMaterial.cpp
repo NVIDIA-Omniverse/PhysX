@@ -57,19 +57,21 @@ PreparedMaterial prepareMaterial(ParseContext& ctx, ObjectKey key)
     input.min = tok.min;
     input.max = tok.max;
     input.multiply = tok.multiply;
-    input.staticFriction = prepareAttribute<float>(source, key, tok.staticFriction);
-    input.dynamicFriction = prepareAttribute<float>(source, key, tok.dynamicFriction);
-    input.restitution = prepareAttribute<float>(source, key, tok.restitution);
-    input.density = prepareAttribute<float>(source, key, tok.density);
+    input.staticFriction = prepareAttribute<float>(source, key, tok.physicsStaticFriction);
+    input.dynamicFriction = prepareAttribute<float>(source, key, tok.physicsDynamicFriction);
+    input.restitution = prepareAttribute<float>(source, key, tok.physicsRestitution);
+    input.density = prepareAttribute<float>(source, key, tok.physicsDensity);
     input.physxMaterialAPI = source.hasSchema(key, tok.physxMaterialAPI);
     if (input.physxMaterialAPI)
     {
-        input.frictionCombineMode = prepareAttribute<TokenId>(source, key, tok.frictionCombineMode);
-        input.restitutionCombineMode = prepareAttribute<TokenId>(source, key, tok.restitutionCombineMode);
-        input.dampingCombineMode = prepareAttribute<TokenId>(source, key, tok.dampingCombineMode);
-        input.compliantContactAccelerationSpring = prepareAttribute<bool>(source, key, tok.compliantContactAccelerationSpring);
-        input.compliantContactStiffness = prepareAttribute<float>(source, key, tok.compliantContactStiffness);
-        input.compliantContactDamping = prepareAttribute<float>(source, key, tok.compliantContactDamping);
+        input.frictionCombineMode = prepareAttribute<TokenId>(source, key, tok.physxMaterialFrictionCombineMode);
+        input.restitutionCombineMode = prepareAttribute<TokenId>(source, key, tok.physxMaterialRestitutionCombineMode);
+        input.dampingCombineMode = prepareAttribute<TokenId>(source, key, tok.physxMaterialDampingCombineMode);
+        input.compliantContactAccelerationSpring =
+            prepareAttribute<bool>(source, key, tok.physxMaterialCompliantContactAccelerationSpring);
+        input.compliantContactStiffness =
+            prepareAttribute<float>(source, key, tok.physxMaterialCompliantContactStiffness);
+        input.compliantContactDamping = prepareAttribute<float>(source, key, tok.physxMaterialCompliantContactDamping);
     }
     input.prepared = true;
     return input;

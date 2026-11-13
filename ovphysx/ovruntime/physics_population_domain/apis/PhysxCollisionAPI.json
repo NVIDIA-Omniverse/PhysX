@@ -1,0 +1,165 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxCollisionAPI",
+  "title": "PhysxCollisionAPI",
+  "summary": "PhysX contact tuning for a collision shape. Offsets use a value sentinel instead of the authored bit because ovstage reports every column as authored.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "Gprim"
+  ],
+  "requires": [
+    "PhysicsCollisionAPI"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "producer_scope": "Every declared attribute is published at its resolved value. The only derivation is contactOffset on a Plane collider (0.02 / metersPerUnit when unauthored). For every other shape the raw -inf fallbacks of contactOffset and restOffset reach the consumer, which treats them as unset through its value sentinel. The producer documents the non-plane -1 auto sentinel and the Newton contactMargin/contactGap cascade as unimplemented.",
+  "columns": [
+    {
+      "name": "physxCollision:contactOffset",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "-inf",
+      "producer": {
+        "writes": "0.02 / metersPerUnit",
+        "via": "derive",
+        "on": {
+          "and": [
+            {
+              "type": [
+                "Plane"
+              ]
+            },
+            {
+              "ref": "collider"
+            }
+          ]
+        },
+        "builder_default": false,
+        "when": "unauthored",
+        "creates_column": true,
+        "notes": "On a Plane collider only, whether or not it applies PhysxCollisionAPI. Every other shape keeps the schema fallback -inf."
+      },
+      "verify": {
+        "target": "shape",
+        "expr": "shape->getContactOffset()",
+        "kind": "float",
+        "sample": 0.05,
+        "check_absent": false,
+        "notes": "Absent means computed from shape size; only the authored value is checked."
+      },
+      "parser_default": -1.0,
+      "absent": "-1, meaning the PhysX layer computes the offset from shape size. Writing the raw fallback -inf is equivalent to omitting the column.",
+      "raw_fallback_diverges": false,
+      "sentinel": "value < -0.5e38 means unset (same as absent); +inf means authored auto (-1); finite is authored and clamped to [0, FLT_MAX]",
+      "units": "length",
+      "clamp": [
+        0,
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseCollision.cpp",
+        "source/omni.physics.parse/ParseShape.cpp"
+      ],
+      "notes": "Automatic contact offset is preserved until the runtime computes the distance from shape size and adds any positive rest offset. A concrete contact offset is committed only when contactOffset >= restOffset. For a plane shape the absent default is instead 0.02 / metersPerUnit."
+    },
+    {
+      "name": "physxCollision:restOffset",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "-inf",
+      "verify": {
+        "target": "shape",
+        "expr": "shape->getRestOffset()",
+        "kind": "float",
+        "sample": 0.01
+      },
+      "parser_default": 0.0,
+      "absent": "0 for a collider, 0.02 / metersPerUnit for a deformable body. An authored rest offset is preserved when contact offset is automatic. With a concrete contact offset, colliders require restOffset < contactOffset; deformable bodies accept restOffset <= contactOffset, with equality diagnosed and the contact offset increased during shape creation.",
+      "raw_fallback_diverges": false,
+      "sentinel": "value < -0.5e38 means unset; +inf means authored 0; finite is authored",
+      "units": "length",
+      "clamp": [
+        "-FLT_MAX",
+        "FLT_MAX"
+      ],
+      "implemented_in": [
+        "source/omni.physics.parse/ParseCollision.cpp"
+      ]
+    },
+    {
+      "name": "physxCollision:torsionalPatchRadius",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "verify": {
+        "target": "shape",
+        "expr": "shape->getTorsionalPatchRadius()",
+        "kind": "float",
+        "sample": 0.2
+      },
+      "parser_default": 0.0,
+      "absent": "0.",
+      "raw_fallback_diverges": false,
+      "units": "length",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseCollision.cpp"
+      ]
+    },
+    {
+      "name": "physxCollision:minTorsionalPatchRadius",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "verify": {
+        "target": "shape",
+        "expr": "shape->getMinTorsionalPatchRadius()",
+        "kind": "float",
+        "sample": 0.1
+      },
+      "parser_default": 0.0,
+      "absent": "0.",
+      "raw_fallback_diverges": false,
+      "units": "length",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseCollision.cpp"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "OmniPhysicsDeformableMaterialAPI",
+  "title": "OmniPhysicsDeformableMaterialAPI",
+  "summary": "Elasticity of an OmniPhysics deformable material. The walker enumerates a material by usd-schemas CONTAINS OmniPhysicsDeformableMaterialAPI or OmniPhysicsSurfaceDeformableMaterialAPI and creates a PxDeformableVolumeMaterial for it (a PxDeformableSurfaceMaterial when the surface API is listed). Every column is gated by its own API being listed; absent columns keep the material descriptor's defaults.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "Material"
+  ],
+  "multi_apply": false,
+  "enumeration": {
+    "by": "schema",
+    "probe": "omniphysics:youngsModulus"
+  },
+  "population": {
+    "physics": true,
+    "row": true
+  },
+  "columns": [
+    {
+      "name": "omniphysics:youngsModulus",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.0,
+      "parser_default": 0.0,
+      "absent": "0.0 on a material the walker enumerates: PhysX gets a material with zero Young's modulus, without elastic stiffness. The material bound to the PhysicsScene, which also becomes the scene's default deformable material, starts from the consumer default instead: 5e5 Pa in stage units.",
+      "raw_fallback_diverges": false,
+      "units": "mass/(length*s^2)",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp",
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physx/plugins/usdInterface/UsdInterface.cpp",
+        "source/omni.physx/plugins/usdLoad/Material.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXDeformablePropertiesUpdate.cpp"
+      ],
+      "notes": "Scene default: 5.0e5 * metersPerUnit / kilogramsPerUnit. Also the walker's enumeration probe for the deformable material schemas. Re-read on change and applied to the PhysX material."
+    },
+    {
+      "name": "omniphysics:poissonsRatio",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": 0.25,
+      "parser_default": 0.0,
+      "absent": "0.0 (the material descriptor's default), not USD's 0.25: no volume preservation. The material bound to the PhysicsScene, which also becomes the scene's default deformable material, starts from the consumer default instead: 0.45. Every parsed value is clamped to at most 0.4999.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseMaterial.cpp",
+        "source/omni.physics.ovstage/OvstageWalker.cpp",
+        "source/omni.physx/plugins/usdLoad/Material.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXDeformablePropertiesUpdate.cpp"
+      ],
+      "notes": "Re-read on change, where the value is applied to the PhysX material without the 0.4999 clamp."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "OmniPhysicsBaseMaterialAPI",
+      "rule": "Friction and density are read only when OmniPhysicsBaseMaterialAPI is listed in usd-schemas as well (USD lists it as a built-in of this API)."
+    },
+    {
+      "with": "PhysicsScene",
+      "rule": "For the material bound to a PhysicsScene the consumer applies its own defaults first (staticFriction 0.5, dynamicFriction 0.25, youngsModulus 5e5 * metersPerUnit / kilogramsPerUnit, poissonsRatio 0.45, surfaceThickness 0.001 / metersPerUnit) and creates the scene's default deformable materials from it; a body bound to that material uses them."
+    }
+  ],
+  "notes": [
+    "The ovstage walker enumerates OmniPhysicsDeformableMaterialAPI, OmniPhysicsSurfaceDeformableMaterialAPI and OmniPhysicsCurveDeformableMaterialAPI; the last name is not the schema's OmniPhysicsCurvesDeformableMaterialAPI, so a curves material is found only through its OmniPhysicsDeformableMaterialAPI built-in."
+  ]
+}

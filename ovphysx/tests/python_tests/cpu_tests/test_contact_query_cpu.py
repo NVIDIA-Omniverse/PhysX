@@ -97,7 +97,7 @@ def test_cpu_contact_query_unpairable_filter_raises(physx_sdk_cpu, tmp_path):
          "same number of filters"),
         ({"contacts": [ContactSelection("")]}, "non-empty"),
         ({"contacts": [ContactSelection("/World/Heavy", "/World/Ground")]}, "wrap a single pattern in a list"),
-        ({"contacts": [ContactSelection(["/World/Heavy"])]}, "holds a non-integer"),
+        ({"contacts": [ContactSelection(["/World/Heavy"])]}, "holds something else"),
     ],
 )
 def test_cpu_malformed_contacts_are_refused(physx_sdk_cpu, tmp_path, kwargs, message):

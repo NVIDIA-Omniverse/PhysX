@@ -55,7 +55,7 @@ def read_rigid_body_poses(sdk):
             )
             slot = by_partition.setdefault(group.prim_list, {})
             for tensor in group.tensors:
-                column = tensor.numpy()
+                column = tensor.numpy().copy()  # the read's arrays are invalid once it is closed
                 if column.shape[1] == 3:  # the position attribute
                     slot["position"] = column
                 elif column.shape[1] == 4:  # the orientation quaternion
@@ -76,6 +76,7 @@ def read_rigid_body_poses(sdk):
 
 def attach_scene(physx, usd_path, stage_name):
     import ovstage
+    from ovphysx.population import physics_population_descs
 
     if not ovstage.population.available():
         raise RuntimeError("ovstage population bridge is unavailable")
@@ -90,7 +91,7 @@ def attach_scene(physx, usd_path, stage_name):
     stage = ovstage.Stage(stage_name)
     ordinal = 1
     try:
-        ovstage.population.open_usd(stage, str(usd_path), ordinal=ordinal, domains=ovstage.PopulationDomain.PHYSICS)
+        ovstage.population.open_usd_with_desc(stage, str(usd_path), ordinal=ordinal, time=ovstage.population.DEFAULT_TIME, descs=physics_population_descs())
         stage.advance_write_floor(ordinal=ordinal).wait()
         physx.wait_task(physx.attach_ovstage(stage, read_ordinal=ordinal))
         return stage

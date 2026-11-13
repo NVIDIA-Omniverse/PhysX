@@ -1,0 +1,535 @@
+{
+  "$schema": "../contract.schema.json",
+  "schema_version": 1,
+  "attributes": [
+    {
+      "id": "points",
+      "name": "points",
+      "public": true,
+      "semantic": "POINT",
+      "uses": [
+        {
+          "target": "DEFORMABLE_VOLUME",
+          "description": "current nodal positions",
+          "dtype": "f32",
+          "frame": "sim-mesh-local",
+          "units": "length",
+          "writability": "WRITABLE",
+          "read": {
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup",
+              "deformable"
+            ]
+          },
+          "write": {
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup",
+              "deformable"
+            ],
+            "effect": "set_state",
+            "persistence": "simulation_state",
+            "visibility": "commit",
+            "preserves": [
+              "inverse_mass"
+            ]
+          }
+        },
+        {
+          "target": "DEFORMABLE_SURFACE",
+          "description": "current nodal positions",
+          "dtype": "f32",
+          "frame": "sim-mesh-local",
+          "units": "length",
+          "writability": "WRITABLE",
+          "read": {
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup",
+              "deformable"
+            ]
+          },
+          "write": {
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup",
+              "deformable"
+            ],
+            "effect": "set_state",
+            "persistence": "simulation_state",
+            "visibility": "commit",
+            "preserves": [
+              "inverse_mass"
+            ]
+          }
+        },
+        {
+          "target": "PARTICLE_SET",
+          "description": "particle positions",
+          "dtype": "f32",
+          "frame": "particle-set-prim-local",
+          "units": "length",
+          "writability": "WRITABLE",
+          "read": {
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "aliases": [
+              "positions"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "effect": "set_state",
+            "persistence": "simulation_state",
+            "visibility": "staging_at_commit_device_at_next_step",
+            "preserves": [
+              "inverse_mass"
+            ]
+          },
+          "aliases": [
+            "positions"
+          ]
+        },
+        {
+          "target": "DEFORMABLE_SKIN_MESH",
+          "description": "current skinned vertex positions",
+          "dtype": "f32",
+          "frame": "skin-mesh-local",
+          "units": "length",
+          "writability": "READ_ONLY",
+          "read": {
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup",
+              "skin_mesh"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "velocities",
+      "name": "velocities",
+      "public": true,
+      "semantic": "VECTOR",
+      "uses": [
+        {
+          "target": "DEFORMABLE_VOLUME",
+          "description": "nodal velocities",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "velocity",
+          "writability": "WRITABLE",
+          "read": {
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup",
+              "deformable"
+            ]
+          },
+          "write": {
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup",
+              "deformable"
+            ],
+            "effect": "set_state",
+            "persistence": "simulation_state",
+            "visibility": "commit",
+            "preserves": [
+              "inverse_mass"
+            ]
+          }
+        },
+        {
+          "target": "DEFORMABLE_SURFACE",
+          "description": "nodal velocities",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "velocity",
+          "writability": "WRITABLE",
+          "read": {
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup",
+              "deformable"
+            ]
+          },
+          "write": {
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup",
+              "deformable"
+            ],
+            "effect": "set_state",
+            "persistence": "simulation_state",
+            "visibility": "commit",
+            "preserves": [
+              "inverse_mass"
+            ]
+          }
+        },
+        {
+          "target": "PARTICLE_SET",
+          "description": "particle velocities",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "velocity",
+          "writability": "WRITABLE",
+          "read": {
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "effect": "set_state",
+            "persistence": "simulation_state",
+            "visibility": "staging_at_commit_device_at_next_step",
+            "preserves": [
+              "inverse_mass"
+            ]
+          }
+        },
+        {
+          "target": "RIGID_BODY",
+          "representation": "instancer",
+          "description": "Point-instancer COM linear velocity",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "velocity",
+          "writability": "UNCLASSIFIED",
+          "read": {
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "instance_slots"
+              ],
+              "padding": 0
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup"
+            ],
+            "request_name": "linearVelocity"
+          },
+          "write": {
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "instance_slots"
+              ],
+              "padding": 0
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup",
+              "rigid_velocity"
+            ],
+            "effect": "set_state",
+            "persistence": "simulation_state",
+            "visibility": "commit",
+            "preserves": [],
+            "request_name": "linearVelocity"
+          },
+          "notes": "Request this column using `linearVelocity`; the plural name is the emitted read-group name and is not accepted as a request. The emitted name follows UsdGeomPointInstancer, which uses velocities and accelerations for the linear quantities."
+        }
+      ]
+    },
+    {
+      "id": "rest_points",
+      "name": "restPoints",
+      "public": true,
+      "semantic": "POINT",
+      "uses": [
+        {
+          "target": "DEFORMABLE_VOLUME",
+          "description": "rest nodal positions",
+          "dtype": "f32",
+          "frame": "sim-mesh-local",
+          "units": "length",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "deformable"
+            ]
+          },
+          "write": false
+        },
+        {
+          "target": "DEFORMABLE_SURFACE",
+          "description": "rest nodal positions",
+          "dtype": "f32",
+          "frame": "sim-mesh-local",
+          "units": "length",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "deformable"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "sim_element_indices",
+      "name": "simElementIndices",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEFORMABLE_VOLUME",
+          "description": "sim-mesh connectivity",
+          "dtype": "i32",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "array",
+              "lanes": 4,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "deformable"
+            ]
+          },
+          "write": false
+        },
+        {
+          "target": "DEFORMABLE_SURFACE",
+          "description": "sim-mesh connectivity",
+          "dtype": "i32",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "array",
+              "lanes": 3,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "deformable"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "collision_element_indices",
+      "name": "collisionElementIndices",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEFORMABLE_VOLUME",
+          "description": "collision-mesh connectivity",
+          "dtype": "i32",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "array",
+              "lanes": 4,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "deformable"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "kinematic_target",
+      "name": "kinematicTarget",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEFORMABLE_VOLUME",
+          "description": "pending sim-node kinematic target (`.w` active-flag)",
+          "dtype": "f32",
+          "frame": "sim-mesh-local",
+          "units": "kinematic_target",
+          "writability": "CONDITIONAL",
+          "read": {
+            "layout": {
+              "kind": "array",
+              "lanes": 4,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup",
+              "deformable",
+              "volume_target"
+            ]
+          },
+          "write": {
+            "layout": {
+              "kind": "array",
+              "lanes": 4,
+              "shape": [
+                "elements"
+              ]
+            },
+            "conditions": [
+              "session",
+              "directgpu_warmup",
+              "deformable",
+              "volume_target"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    }
+  ]
+}

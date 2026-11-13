@@ -39,7 +39,7 @@ def drive_one_car(physx):
         print_column(physx, chassis, "position")
         print_column(physx, vehicle, "engineRotationSpeed")
         print_column(physx, wheels, "rotationSpeed")
-    # Collect the releases, including read storage after print_column drops its aliases.
+    # Collect the releases the closed reads submitted.
     physx.wait_all()
 
 

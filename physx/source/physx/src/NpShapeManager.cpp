@@ -132,9 +132,13 @@ static PX_INLINE void onShapeAttach(NpActor& ro, NpShape& shape)
 	if(!(ro.getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION)))
 	{
 		// The pairs are removed for the shapes present before the change and rebuilt for those after it.
+#if PX_SUPPORT_GPU_PHYSX
 		detachStaticElementFilters(ro);
+#endif
 		ro.getScRigidCore().addShapeToScene(shape.getCore());
+#if PX_SUPPORT_GPU_PHYSX
 		attachStaticElementFilters(ro);
+#endif
 	}
 
 #if PX_SUPPORT_PVD
@@ -158,9 +162,13 @@ static PX_INLINE void onShapeDetach(NpActor& ro, NpShape& shape, bool wakeOnLost
 	if(!(ro.getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION)))
 	{
 		// The pairs are removed while the shape still has its transform cache id and rebuilt for the rest.
+#if PX_SUPPORT_GPU_PHYSX
 		detachStaticElementFilters(ro);
+#endif
 		ro.getScRigidCore().removeShapeFromScene(shape.getCore(), wakeOnLostTouch);
+#if PX_SUPPORT_GPU_PHYSX
 		attachStaticElementFilters(ro);
+#endif
 	}
 
 	shape.setSceneIfExclusive(NULL);

@@ -6,6 +6,7 @@
 #ifndef PXG_FEM_CORE_H
 #define PXG_FEM_CORE_H
 
+#include "PxgCommonDefines.h"
 #include "PxgNonRigidCoreCommon.h"
 #include "PxgSimulationCoreDesc.h"
 #include "PxgDeformableContactWriters.h"
@@ -22,6 +23,11 @@ namespace physx
 
 	// The rigid material buffers store the index as a PxU16.
 	PX_COMPILE_TIME_ASSERT(sizeof(PxMaterialTableIndex) <= sizeof(PxU16));
+
+	// The volume and surface cores launch their per-deformable kernels with the number of active deformables
+	// as the grid's y dimension.
+	PX_COMPILE_TIME_ASSERT(PX_MAX_NB_DEFORMABLE_VOLUME <= PXG_MAX_GRID_DIM_YZ);
+	PX_COMPILE_TIME_ASSERT(PX_MAX_NB_DEFORMABLE_SURFACE <= PXG_MAX_GRID_DIM_YZ);
 
 	class PxgFEMCore : public PxgNonRigidCore
 	{

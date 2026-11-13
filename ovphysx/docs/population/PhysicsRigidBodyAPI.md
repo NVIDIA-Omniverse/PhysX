@@ -5,7 +5,7 @@
 
 # PhysicsRigidBodyAPI
 
-Makes an Xformable prim a rigid body. Enumerated by usd-schemas CONTAINS PhysicsRigidBodyAPI. Colliders are the prim itself if it is a Gprim with PhysicsCollisionAPI, plus descendant Gprims with PhysicsCollisionAPI.
+Makes an [Xformable](glossary.md#xformable) [prim](glossary.md#prim) a rigid body. Enumerated by [usd-schemas](prim.md#columns) CONTAINS PhysicsRigidBodyAPI. Colliders are the prim itself if it is a [Gprim](glossary.md#gprim) with PhysicsCollisionAPI, plus descendant Gprims with PhysicsCollisionAPI.
 
 - **Applies to:** `Xformable`
 - **Read only when listed in `usd-schemas`.**
@@ -17,7 +17,7 @@ Every declared attribute is published at its resolved value; relationships only 
 
 ## Columns
 
-*Raw fallback* is the USD schema value. *Producer writes* is what ovstage population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
+*Raw fallback* is the [USD](glossary.md#usd) schema value. *Producer writes* is what [ovstage](glossary.md#ovstage) population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
 
 | Column | Type | Units | Raw fallback | Producer writes | Parser default | If absent |
 |---|---|---|---|---|---|---|
@@ -26,11 +26,15 @@ Every declared attribute is published at its resolved value; relationships only 
 | `physics:startsAsleep` | bool8 | none | false | resolved USD value (authored, else raw fallback) | false | Body starts awake. |
 | `physics:velocity` | float32[3], VECTOR | length/s | (0, 0, 0) | resolved USD value (authored, else raw fallback) | (0, 0, 0) | Zero initial linear velocity. |
 | `physics:angularVelocity` | float32[3], VECTOR | deg/s (deg_to_rad) | (0, 0, 0) | resolved USD value (authored, else raw fallback) | (0, 0, 0) | Zero initial angular velocity. |
-| `usd-metadata:customData:physics:localSpaceVelocities` | bool8 | none |  | the nested customData value physics -> localSpaceVelocities when present on any prim the physics selector matched | consumer setting outputVelocitiesLocalSpace | Velocities are interpreted per the consumer-wide setting. When true, the linear velocity is multiplied by the prim's decomposed world scale in local axes, then both velocities are rotated into world space, at load and on supported later edits. On a PointInstancer prototype the same rule governs the instancer's `velocities` and `angularVelocities` arrays: each is rotated into that instance's own world frame, and the linear one is scaled by the instancer's decomposed world scale -- the per-instance `scales` entry and the prototype's own scale do not take part -- see [Local-space instance velocities](../simulation_setup/rigid_bodies.md#local-space-instance-velocities). After the scene's first DirectGPU step, live ovstage velocity edits do not update dynamic (non-kinematic) bodies; use world-space session writes instead, with angular velocity in rad/s rather than the USD deg/s. See [limitations](../read_write/limitations.md). |
+| `usd-metadata:customData:physics:localSpaceVelocities` | bool8 | none |  | the nested customData value physics -> localSpaceVelocities when present on any prim the physics selector matched | consumer setting outputVelocitiesLocalSpace | Velocities are interpreted per the consumer-wide setting. When true, the linear velocity is multiplied by the prim's decomposed world scale in local axes, then both velocities are rotated into world space, at load and on supported later edits. On a [PointInstancer](glossary.md#pointinstancer) prototype the same rule governs the instancer's `velocities` and `angularVelocities` arrays: each is rotated into that instance's own world frame, and the linear one is scaled by the instancer's decomposed world scale -- the per-instance `scales` entry and the prototype's own scale do not take part -- see [Local-space instance velocities](../simulation_setup/rigid_bodies.md#local-space-instance-velocities). After the scene's first DirectGPU step, live ovstage velocity edits do not update dynamic (non-kinematic) bodies; use world-space session writes instead, with angular velocity in rad/s rather than the USD deg/s. Articulation roots and links are out of scope: a root is reframed at load but a live velocity edit is applied raw (and, on a DirectGPU scene after its first step, not at all), so drive it with the world-space root-velocity session write instead. See [limitations](../read_write/limitations.md). |
 | `physics:simulationOwner` | uint64 array, RELATIONSHIP_PATH_ID |  |  | not written |  | Body joins the default scene. A non-empty list whose targets resolve to no PhysicsScene drops the body. |
 
 ## Interactions
 
-- **[`prim`](prim.md):** World translation and rotation, composed from omni:xform up the chain (or omni:fabric:worldMatrix when present), become the body pose.
+- **[`prim`](prim.md):** World translation and rotation, composed from omni:xform up the chain (or omni:fabric:worldMatrix when present), become the initial body pose. Later world-matrix-only edits do not trigger a physics transform update; see [Transform inputs](../ovstage_integration.md#transform-inputs).
 - **[`PhysicsScene`](PhysicsScene.md):** No scene relationship is required; see PhysicsScene for the consumer's synthetic default.
 - **[`PhysxRigidBodyAPI`](PhysxRigidBodyAPI.md):** The producer creates sleepThreshold, stabilizationThreshold, maxDepenetrationVelocity, maxLinearVelocity and maxContactImpulse columns on every rigid body when unauthored. Without PhysxRigidBodyAPI in usd-schemas the consumer ignores them.
+
+## Notes
+
+- The dynamic-body scalar batch also requests physxSplinesSurfaceVelocity:surfaceVelocityEnabled and :surfaceVelocityMagnitude for every dynamic body, applied API or not; the values are used only when PhysxSplinesSurfaceVelocityAPI is listed. That component owns the columns; the compiled cache reads them without supporting it.

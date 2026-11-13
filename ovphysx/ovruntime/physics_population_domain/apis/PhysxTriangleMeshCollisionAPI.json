@@ -1,0 +1,54 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxTriangleMeshCollisionAPI",
+  "title": "PhysxTriangleMeshCollisionAPI",
+  "summary": "Triangle mesh cooking parameter (weld tolerance) for a Mesh collider with physics:approximation none or sdf. Cooking input only; nothing here is verified.",
+  "status": "draft",
+  "compiled_cache": true,
+  "applies_to": [
+    "Gprim"
+  ],
+  "requires": [
+    "PhysicsCollisionAPI"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "producer_scope": "Every declared attribute of an applied collision API is published at its resolved value; the column lands as -inf when unauthored. No derivation.",
+  "columns": [
+    {
+      "name": "physxTriangleMeshCollision:weldTolerance",
+      "usd_type": "float",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "float",
+        "bits": 32,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": "-inf",
+      "parser_default": "-FLT_MAX",
+      "absent": "-FLT_MAX, the triangle mesh cooking default: no vertex welding. A published -inf (the raw fallback) is also negative and has the same effect. A NaN is rewritten to -FLT_MAX unconditionally. In the cooking task a positive value is used as the weld distance and exactly 0 selects an automatic tolerance.",
+      "raw_fallback_diverges": false,
+      "units": "length",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseCollision.cpp"
+      ]
+    }
+  ],
+  "interactions": [
+    {
+      "with": "PhysicsMeshCollisionAPI",
+      "rule": "Read for descriptor kinds none and sdf. No usd-schemas gate: the column is read whenever it exists on the collider."
+    }
+  ],
+  "notes": [
+    "Cooking APIs on a Mesh cannot be verified by the generated tests: the weld tolerance only changes the cooked PxTriangleMesh, which exposes no getter for it, and the builder writes no mesh arrays."
+  ]
+}

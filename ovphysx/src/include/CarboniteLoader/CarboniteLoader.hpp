@@ -28,6 +28,18 @@ struct BoundProfilerState
 };
 
 BoundProfilerState boundProfilerState();
+// True when the local UJITSO datastore is enabled with a non-empty directory that is
+// not the process-private fallback, i.e. an application-configured cooked-collider
+// cache directory that persists across runs; the datastore was built from the directory
+// the setting names now; and, on POSIX, that directory is private: the directory it was
+// then, not a symlink, owned by this user, closed to its group and others, and inside
+// directories that no other user can replace it in. Logs why at INFO when a configured
+// directory fails either check. Safe to call without loader locks.
+bool usesConfiguredCookedColliderCache();
+// True when an explicitly enabled compiled stage cache has no datastore it may use:
+// collision cooking is off, no cache directory is configured and a host owns the
+// framework. Safe to call without loader locks.
+bool compiledStageCacheUnavailable();
 // Called after the last instance and the direct runtime have drained.
 void shutdownCarbonite();
 

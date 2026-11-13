@@ -9,13 +9,13 @@ type: integration
 
 ## Coverage status
 
-Automated cases exist for AC-1 through AC-5 and AC-7 through AC-9. AC-6 is
+Automated cases exist for AC-1 through AC-5 and AC-7 through AC-10. AC-6 is
 specification only; see *Why not fully covered* below.
 
 ## Scenario
 
 Query, read and write creation publish immutable summaries only after successful
-completion; invalid requests publish nothing; equal-shaped write attributes stay
+completion; failed accepted requests retain failed handles; equal-shaped write attributes stay
 distinguishable by original request index; sessions outlive their query but not
 their attachment.
 
@@ -24,7 +24,7 @@ their attachment.
 - A CPU instance attached through OVStage to
   `tests/data/boxes_falling_on_groundplane.usda` and stepped once.
 - The attached Stage's path dictionary, from
-  `stage->vtable->get_path_dictionary(stage->context)`.
+  `ovstage_get_path_dictionary(stage)`.
 
 ## When
 
@@ -42,8 +42,11 @@ their attachment.
 - Open a write for `position`, an unknown name and `linearVelocity`.
 - Create a selected query whose pattern matches nothing, open a read and a write
   over it, release the query and fetch the write.
-- Open a query, a read and a write; reset the stage and reattach the same file; use
+- Open a query, a read and a write; detach the stage and reattach the same file; use
   the old query, read and write; create a new query.
+- Read position and orientation, which share their prim rows; fetch every group,
+  record its column, release the group, and read each recorded column again before
+  releasing the read.
 
 ## Then
 
@@ -54,21 +57,28 @@ their attachment.
   unsupported-attribute bit (REQ AC-3, AC-5).
 - Fetching after query release succeeds, and the groups fetched per emitted token
   equal each row's group count (REQ AC-3, AC-8, AC-9).
-- The token-bearing entry is admitted despite its malformed string and reports that
-  token (REQ AC-5, AC-9).
-- Duplicate string/token requests and the invalid token are accepted, fail at wait,
-  and leave the handle zero and the summary zeroed (REQ AC-1, AC-5).
+- The token-bearing entry with a NULL string is admitted despite its string length and
+  reports that token (REQ AC-5, AC-9).
+- Duplicate string and token-only requests and an unresolvable token-only request are
+  accepted, fail at wait, and leave a failed nonzero handle and the summary zeroed; the
+  unresolvable token-only write fails the same way; a known string beside that unresolvable
+  token opens a read and a write, because the string wins (REQ AC-1, AC-5).
 - The multi-attribute write reports two distinct tokens; every fetched group has an
   index below two; per-index group counts equal the summary; reverse-order commits
   of the retained original pointers succeed; the read-back values follow the index
   each group was filled for; exhaustion reports `NULL` and `SIZE_MAX`
   (REQ AC-4, AC-7, AC-8).
-- The write naming an unknown middle attribute fails at wait and publishes no
-  handle or summary (REQ AC-5).
+- The write naming an unknown middle attribute fails at wait, keeps its failed handle and publishes no
+  summary (REQ AC-5).
 - The no-match selection reports zero in every summary with zero omission bits, and
   the write fetched after query release reaches exhaustion (REQ AC-2, AC-3, AC-4,
   AC-5, AC-7, AC-8).
-- After reattachment, reading from the old query fails with zeroed outputs, fetches on
+- Every fetched group has `column_count == 1` and a `columns[0]` naming one of the two
+  requested tokens, not deleted, not an array, at ordinal zero, with one host tensor; the
+  groups fetched equal the summary's two group counts, so the shared prim rows did not
+  merge the attributes. After each group's release its column descriptor, tensor pointer
+  and first value are unchanged until the read is released (REQ AC-10).
+- After reattachment, reading from the old query fails with a failed handle and zeroed summary, fetches on
   the old read and write fail with `NULL` / `SIZE_MAX` outputs, the new query differs
   from the old handle and reports matches, and every old handle still releases
   (REQ AC-7, AC-8).
@@ -78,11 +88,18 @@ their attachment.
 `ovphysx/tests/c_unittests/test_session_results.cpp`:
 
 - `SessionResultsTest.ReadMetadataPreservesRequestIdentityAndQueryIndependence`
+- `SessionResultsTest.ReadGroupsCarryOneColumnOwnedByTheReadSession`
 - `SessionResultsTest.CanonicalDuplicatesAndInvalidTokensFailWithoutPublishedOutputs`
 - `SessionResultsTest.MultiAttributeWriteUsesOriginalRequestIndexAndOriginalGroupPointer`
 - `SessionResultsTest.InvalidMiddleWriteAttributePublishesNothing`
 - `SessionResultsTest.SelectedEmptyQueryReturnsValidEmptySessionSummaries`
 - `SessionResultsTest.ReattachingEqualPathsDoesNotReviveOldSessions`
+
+`ovphysx/tests/c_unittests/test_session_physics.cpp`:
+
+- `SessionPhysicsCpuTest.SessionArticulationCentroidalMomentumServedFloatingOmittedFixed`
+  reads `centroidalMomentum` and checks its group's shape is `[1, 6, numDofs + 7]`, the
+  inverse-dynamics layout of REQ AC-10.
 
 Evidence status: no execution result is recorded in this specification.
 

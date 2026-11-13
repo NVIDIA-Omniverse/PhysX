@@ -50,6 +50,9 @@ from both artifacts. Packaging documentation does not change runtime behavior.
 
 - ovphysx/repo.toml
 - ovphysx/scripts/preprocess_docs.cmake
+- ovphysx/scripts/stage_documentation.cmake
+- ovphysx/scripts/test_documentation_package.py
+- ovphysx/cmake/public_headers.cmake
 - ovphysx/scripts/build_wheel.cmake
 - ovphysx/scripts/install.cmake
 - ovphysx/scripts/test_python_wheel.cmake

@@ -47,12 +47,12 @@ capability tables and typed errors remain authoritative.
 | Surface/volume particle sampling | Separate sampling bits; cancellable copied-input jobs | Smoothing, anisotropy, isosurface and GPU sampling unavailable |
 | Preview/validation attachment | Independent native owner, resources and ordinals | Qualified hard CPU mode; explicit GPU preview rejected under hard CPU policy; GPU qualification absent |
 | Typed body/joint/material/articulation inspection | Copied records and generation-aware references | Live service rejects unsupported pipeline; no raw GPU/SDK addresses |
-| Raycast, sweep, overlap | CPU queries with declared geometry/filters/capacity | No DirectGPU query contract advertised |
-| Force/impulse, torque, wake/sleep, default force grab and explicit D6 drag | CPU live owner; exact instances; restoration on retirement; force grabs also support links with preserve velocity | GPU/DirectGPU actions unavailable |
+| Raycast, sweep, overlap | CPU and GPU-dynamics queries with declared geometry/filters/capacity | No DirectGPU query contract advertised |
+| Force/impulse, torque, wake/sleep, default force grab and explicit D6 drag | CPU or GPU-dynamics live owner; exact instances; restoration on retirement; force grabs also support links with preserve velocity | DirectGPU actions unavailable |
 | Native CCT, vehicle controls and telemetry | CPU service bits, host input policy | No GPU/DirectGPU controller capability advertised |
 | Follow/drone camera | Copied CPU state; optional USD publication | Backend independent after explicit state transfer |
 | Event queues | Copied bounded owner/step/object/contact/error events | No automatic device-memory delivery; configured event support still applies |
-| Debug points/lines/triangles and stopped overlays/normals | Completed copied frames, culling and declared units | Live CPU draw; RepX and legacy PVD unavailable separately from OVD |
+| Debug points/lines/triangles and stopped overlays/normals | Frames copied after step completion, with culling and declared units. A frame with step n holds actor/shape primitives at their poses from the start of native step n and step n's contact/friction primitives; step counts every scene's substeps | Live CPU draw; RepX and legacy PVD unavailable separately from OVD |
 | OVD recording/decode/conversion | Core recording coordination; stopped CPU decoder; Python USD conversion | Decoder is CPU; recording does not grant GPU inspection or PVD connectivity |
 | Settings and StageFlow | Classified settings, sealed inputs, explicit output columns | Setting a requested pipeline does not qualify a provider; ready CPU publication only |
 | Custom joint | CPU rigid constraints, refresh/dirty/flags, native callbacks | GPU/DirectGPU, articulation/tensor DOFs unavailable; articulation actors rejected before create |

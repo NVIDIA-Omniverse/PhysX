@@ -56,7 +56,10 @@ The cooked-collider cache location is **application-provided**.
    best-effort. This is temporary working storage, not a persistent application cache;
    the directory exists because the datastore requires a valid writable path. The OS temp root itself follows the platform
    `TMPDIR`/`TMP`/`TEMP` convention — that is temp-file placement, not a persistent cache
-   location, and is the one exception to (2).
+   location, and is the one exception to (2). The root is whatever the OS resolves: on
+   Windows `GetTempPath2` places a process running as SYSTEM under `C:\Windows\SystemTemp`
+   regardless of `TMP`/`TEMP`, so anything that needs the directory actually in use reads it
+   back through `COOKED_COLLIDER_CACHE_DIRECTORY` instead of recomputing the temp root.
 4. The same process-private fallback is used when a configured directory cannot be created
    or written, so an unusable configuration degrades quietly instead of being handed back to
    the datastore to fail on.
@@ -114,3 +117,10 @@ default location (see Open questions).
 - NVBug 6262606 — why UJITSO is loaded in the kitless loader at all
 - `omni/ovphysx/src/CarboniteLoader/CarboniteLoader.cpp` — `configureUjitsoLocalCache()`
 - `omni/ovphysx/docs/developer_guide.md` — "Cooked-Collider Cache (UJITSO)"
+
+## Amendment — 2026-10-16
+
+The packaged Windows exit path itself bypasses framework-release callbacks.
+Private cache removal is therefore not attempted on that ordinary exit path;
+leftover directories require host temporary-directory cleanup. Framework
+retention and the best-effort cleanup contract remain unchanged.

@@ -144,10 +144,10 @@ class _BorrowHolder:
         self.retains = 0
         self.releases = 0
 
-    def retain(self):
+    def retain(self, host=False):
         self.retains += 1
 
-    def release_borrow(self, *_ignored):
+    def release_borrow(self, *_ignored, host=False):
         self.releases += 1
 
 

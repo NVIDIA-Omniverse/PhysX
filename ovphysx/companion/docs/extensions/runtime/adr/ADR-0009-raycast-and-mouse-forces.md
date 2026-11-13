@@ -5,7 +5,7 @@
 title: ADR-0009 — Migrate ray picking and mouse-force computation into the runtime adapter
 status: accepted
 date: 2026-09-18
-last_updated: 2026-10-01
+last_updated: 2026-11-09
 supersedes: none
 ---
 
@@ -77,6 +77,7 @@ Push retains its independent impulse contract; the host may use companion force-
 ## Open questions
 
 1. DirectGPU parity needs a verified route for temporary angular damping, mass/COM/velocity reads and nonpersistent point impulses. The proposed initial behavior is explicit mode unavailability until all components are supported, not reduced force behavior.
+   - Note (2026-11-09): GPU dynamics without DirectGPU already meets these conditions: the SDK keeps the CPU actor API and reads poses and velocities back after each step. Force picking, explicit D6 drag, force-at-point and scene queries therefore accept GPU-dynamics scenes with unchanged equations. DirectGPU remains explicitly unavailable.
 
 ## References
 

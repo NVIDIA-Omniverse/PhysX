@@ -33,6 +33,13 @@ namespace Sc
 		};
 	};
 
+	// Overlaps and markers are activated and deactivated by island generation. The other types follow the activation
+	// state of their actors, see Sc::activateInteractions() and Sc::deactivateInteractions().
+	PX_FORCE_INLINE bool isIslandGenControlled(InteractionType::Enum type)
+	{
+		return type == InteractionType::eOVERLAP || type == InteractionType::eMARKER;
+	}
+
 	// Interactions are used for connecting actors into activation groups. An interaction always connects exactly two actors. 
 	// An interaction is implicitly active if at least one of the two actors it connects is active.
 

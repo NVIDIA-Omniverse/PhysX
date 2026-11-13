@@ -967,7 +967,7 @@ void immArticulation::complete()
 	mImmDirty = false;
 
 	const PxU32 linkSize = mLinks.size();
-	setupLinks(linkSize, const_cast<ArticulationLink*>(mLinks.begin()));
+	setupLinks(linkSize, const_cast<ArticulationLink*>(mLinks.begin()), false);
 	jcalc<true>(mArticulationData);
 	mJCalcDirty = false;
 	initPathToRoot();
@@ -1756,7 +1756,7 @@ namespace
 		virtual	PxU64						getContextID()														const	PX_OVERRIDE	PX_FINAL;
 		virtual	void						setScratchBlock(void* scratchBlock, PxU32 size)								PX_OVERRIDE	PX_FINAL;
 		virtual	void						update(const PxBroadPhaseUpdateData& updateData, PxBaseTask* continuation)	PX_OVERRIDE	PX_FINAL;
-		virtual	void						fetchResults(PxBroadPhaseResults& results)									PX_OVERRIDE	PX_FINAL;
+		virtual	void						fetchResults(PxBroadPhaseResults& results)									PX_OVERRIDE;
 		//~PxBroadPhase
 
 		// PxBroadPhaseRegions
@@ -1902,6 +1902,7 @@ void ImmCPUBP::fetchResults(PxBroadPhaseResults& results)
 	PX_ASSERT(mBroadPhase);
 
 	// PT: TODO: flags to skip the copies (PX-2929)
+	// ImmGPUBP::fetchResults() removes the duplicate pairs from the copies, so the GPU broadphase needs them.
 	if(0)
 	{
 		results.mCreatedPairs = reinterpret_cast<const PxBroadPhasePair*>(mBroadPhase->getCreatedPairs(results.mNbCreatedPairs));
@@ -1993,6 +1994,7 @@ const PxU32* ImmCPUBP::getOutOfBoundsObjects()	const
 
 #if PX_SUPPORT_GPU_PHYSX
 #include "PxPhysXGpu.h"
+#include "CmRadixSort.h"
 
 namespace
 {
@@ -2008,7 +2010,8 @@ namespace
 		//~PxAllocatorCallback
 
 		// PxBroadPhase
-		virtual	PxAllocatorCallback*			getAllocator()	PX_OVERRIDE	PX_FINAL;
+		virtual	PxAllocatorCallback*			getAllocator()								PX_OVERRIDE	PX_FINAL;
+		virtual	void							fetchResults(PxBroadPhaseResults& results)	PX_OVERRIDE	PX_FINAL;
 		//~PxBroadPhase
 
 		// ImmCPUBP
@@ -2020,6 +2023,8 @@ namespace
 				PxsKernelWranglerManager*		mGpuWranglerManagers;
 				PxsHeapMemoryAllocatorManager*	mHeapMemoryAllocationManager;
 				PxCudaContextManager*			mContextManager;
+
+				void							purgeDuplicatePairs(PxArray<PxBroadPhasePair>& pairs);
 	};
 }
 
@@ -2067,6 +2072,76 @@ void ImmGPUBP::deallocate(void* ptr)
 PxAllocatorCallback* ImmGPUBP::getAllocator()
 {
 	return this;
+}
+
+// Sorts the pairs and removes duplicates. The GPU broadphase stores each pair with the smaller index first,
+// so the duplicates of a pair are identical.
+void ImmGPUBP::purgeDuplicatePairs(PxArray<PxBroadPhasePair>& pairs)
+{
+	const PxU32 nbPairs = pairs.size();
+	if(nbPairs<2)
+		return;
+
+	// The scratch allocator takes 32-bit sizes, so larger buffers come from the heap. Its free() releases heap memory as well.
+	const size_t bufferSize = sizeof(PxU32)*nbPairs*4;
+	void* buffer = bufferSize<=PX_MAX_U32 ? mScratchAllocator.alloc(PxU32(bufferSize), true) : PX_ALLOC(bufferSize, "ImmGPUBP::purgeDuplicatePairs");
+	// The allocator reports a failure. The duplicates are then kept.
+	if(!buffer)
+		return;
+
+	PxU32* keys0 = reinterpret_cast<PxU32*>(buffer);
+	PxU32* keys1 = keys0 + nbPairs;
+	PxU32* ranks0 = keys1 + nbPairs;
+	PxU32* ranks1 = ranks0 + nbPairs;
+	for(PxU32 i=0;i<nbPairs;i++)
+	{
+		PX_ASSERT(pairs[i].mID0<pairs[i].mID1);
+		keys0[i] = pairs[i].mID0;
+		keys1[i] = pairs[i].mID1;
+	}
+
+	// The second sort is stable and starts from the order of the first one, so the pairs are sorted by mID0, then by mID1.
+	Cm::RadixSort rs;
+	PxU32 histogram[1024];
+	PxU32* links[256];
+	rs.SetBuffers(ranks0, ranks1, histogram, links);
+	const PxU32* sorted = rs.Sort(keys1, nbPairs, Cm::RADIX_UNSIGNED).Sort(keys0, nbPairs, Cm::RADIX_UNSIGNED).GetRanks();
+
+	// The keys are a copy of the pairs, so the unique pairs are written back in place.
+	PxU32 nbUniquePairs = 0;
+	for(PxU32 i=0;i<nbPairs;i++)
+	{
+		const PxU32 id0 = keys0[sorted[i]];
+		const PxU32 id1 = keys1[sorted[i]];
+		if(!nbUniquePairs || id0!=pairs[nbUniquePairs-1].mID0 || id1!=pairs[nbUniquePairs-1].mID1)
+		{
+			pairs[nbUniquePairs].mID0 = id0;
+			pairs[nbUniquePairs].mID1 = id1;
+			nbUniquePairs++;
+		}
+	}
+	pairs.forceSize_Unsafe(nbUniquePairs);
+
+	mScratchAllocator.free(keys0);
+}
+
+void ImmGPUBP::fetchResults(PxBroadPhaseResults& results)
+{
+	ImmCPUBP::fetchResults(results);
+
+	// The results point to the copies of the pairs, from which the duplicates are removed below.
+	PX_ASSERT(results.mCreatedPairs==mCreatedPairs.begin() && results.mDeletedPairs==mDeletedPairs.begin());
+
+	// The GPU broadphase can report a pair twice in an update, for example when both objects moved a long
+	// distance. The scene's AABB manager removes these duplicates as well.
+	{
+		PX_PROFILE_ZONE("ImmGPUBP::purgeDuplicatePairs", mContextID);
+		purgeDuplicatePairs(mCreatedPairs);
+		purgeDuplicatePairs(mDeletedPairs);
+	}
+
+	results.mNbCreatedPairs = mCreatedPairs.size();
+	results.mNbDeletedPairs = mDeletedPairs.size();
 }
 
 bool ImmGPUBP::init(const PxBroadPhaseDesc& desc)

@@ -3,7 +3,7 @@
 
 /**
  * @implements REQ-TENSOR-VIEW-001
- * @covers AC-7 AC-11 AC-12
+ * @covers AC-7 AC-11 AC-12 AC-15 AC-17
  *
  * @implements REQ-READ-CORE-001
  * @covers AC-8
@@ -46,6 +46,43 @@ namespace physx
 {
 namespace tensors
 {
+
+namespace
+{
+
+// A simulation view keeps the data it was created with, which does not describe an articulation inserted after it: a
+// view over one would ask PhysX for more articulation blocks than the data's buffers hold. Refused at creation, naming
+// the first such articulation.
+bool refuseUndescribedArticulation(const GpuSimulationData& data, PxArticulationReducedCoordinate* arti,
+                                   const std::string& path, const char* view)
+{
+    if (!arti || data.describesArticulation(*arti))
+        return false;
+    CARB_LOG_ERROR("Failed to create %s: the articulation of '%s' was added after this simulation view was created. "
+                   "Create a new simulation view and create the view from it.",
+                   view, path.c_str());
+    return true;
+}
+
+bool hasUndescribedArticulation(const GpuSimulationData& data, const std::vector<ArticulationEntry>& entries)
+{
+    for (const ArticulationEntry& e : entries)
+        if (refuseUndescribedArticulation(data, e.arti, e.path, "articulation view"))
+            return true;
+    return false;
+}
+
+bool hasUndescribedArticulation(const GpuSimulationData& data, const std::vector<RigidBodyEntry>& entries)
+{
+    for (const RigidBodyEntry& e : entries)
+        if (e.type == RigidBodyType::eArticulationLink && e.body &&
+            refuseUndescribedArticulation(data, &static_cast<PxArticulationLink*>(e.body)->getArticulation(), e.path,
+                                          "rigid body view"))
+            return true;
+    return false;
+}
+
+} // namespace
 
 GpuSimulationView::GpuSimulationView(usdparser::AttachedStage* attachedStage,
                                      PxScene* scene,
@@ -98,6 +135,8 @@ GpuArticulationView* GpuSimulationView::createArticulationView(const std::vector
         }
         return nullptr;
     }
+    if (hasUndescribedArticulation(*mGpuSimData, entries))
+        return nullptr;
     GpuArticulationView* aview = new GpuArticulationView(this, entries, mDevice);
     mArtiViews.push_back(aview);
     return aview;
@@ -151,6 +190,8 @@ GpuRigidBodyView* GpuSimulationView::createRigidBodyView(const std::vector<std::
         }
         return nullptr;
     }
+    if (hasUndescribedArticulation(*mGpuSimData, entries))
+        return nullptr;
     GpuRigidBodyView* rbview = new GpuRigidBodyView(this, entries, mDevice);
     mRbViews.push_back(rbview);
     return rbview;
@@ -164,7 +205,7 @@ GpuArticulationView* GpuSimulationView::createArticulationViewFromEntries(const 
         CARB_LOG_ERROR("Failed to create articulation view from entries: GPU data not initialized");
         return nullptr;
     }
-    if (entries.empty())
+    if (entries.empty() || hasUndescribedArticulation(*mGpuSimData, entries))
     {
         return nullptr;
     }
@@ -181,7 +222,7 @@ GpuRigidBodyView* GpuSimulationView::createRigidBodyViewFromEntries(const std::v
         CARB_LOG_ERROR("Failed to create rigid body view from entries: GPU data not initialized");
         return nullptr;
     }
-    if (entries.empty())
+    if (entries.empty() || hasUndescribedArticulation(*mGpuSimData, entries))
     {
         return nullptr;
     }
@@ -236,6 +277,12 @@ GpuVolumeDeformableBodyView* GpuSimulationView::createVolumeDeformableBodyView(c
         return nullptr;
     }
     GpuVolumeDeformableBodyView* view = new GpuVolumeDeformableBodyView(this, entries, mDevice);
+    // Checked here, as for the point-instancer view, so a view missing its device buffers never escapes.
+    if (!view->isUsable())
+    {
+        view->release();
+        return nullptr;
+    }
     mVolumeDeformableBodyViews.push_back(view);
     return view;
 }
@@ -256,6 +303,11 @@ GpuSurfaceDeformableBodyView* GpuSimulationView::createSurfaceDeformableBodyView
         return nullptr;
     }
     GpuSurfaceDeformableBodyView* view = new GpuSurfaceDeformableBodyView(this, entries, mDevice);
+    if (!view->isUsable())
+    {
+        view->release();
+        return nullptr;
+    }
     mSurfaceDeformableBodyViews.push_back(view);
     return view;
 }

@@ -5,7 +5,9 @@
 
 This page is for an application that already runs against ovphysx 0.6.
 A new project should start at the [Quickstart](tutorials/quickstart.md) and the
-[read/write contract](read_write/index.md). Those pages describe 0.7 as it is.
+[read/write contract](read_write/index.md). Those pages describe the current
+release. After porting to 0.7, continue with
+[Migration from 0.7 to 0.8](migrating_0_7_to_0_8.md).
 
 Removal of recording-only startup settings is covered in the
 [OVD migration guide](ovd_api_migration.md). The 0.7
@@ -47,7 +49,7 @@ waiting, and config.
 | `set_config(entry)`, `set_config_bool` / `set_config_int32` / `set_config_float`, `get_config_bool` / `get_config_int32` / `get_config_float` / `get_config_string` | `set_global_config(key, value)` and `get_global_config(key)` for process settings. `PhysX.set_config(key, value)` is the per-instance setting |
 | `update_articulations_kinematic()` | the same method, with component flags and a selection (`scope`, `prim_paths`, or `pattern`) |
 | `query_shared_dictionary(query)` | `query.dictionary`, or `ovstage.PathDictionary(stage)` on the stage you attached |
-| `get_contact_report()` and the raw-report types | Read `contactEvent*` attributes through a `SimObjectType.CONTACT_SENSOR` query; see [Contact sensors](read_write/readable.md#contact-sensors) |
+| `get_contact_report()` and the raw-report types | Read `contactEvent*` attributes through a `SimObjectType.CONTACT_SENSOR` query; see [Contact reports and attachment identity](#contact-reports-and-attachment-identity) |
 
 `prim_paths` and `pattern` select prims on `query()`, `read_sync()`,
 `read_tokens_sync()`, and `write_sync()`. They are interned path handles when
@@ -77,6 +79,41 @@ with physx.read_sync(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.A
 The async form opens the query yourself and waits on each receipt. See
 [Read/write](read_write/index.md).
 
+### Contact reports and attachment identity
+
+The Python types `ContactEventHeader`, `ContactPoint`, and `FrictionAnchor`
+have been removed, including their imports from `ovphysx`. Instead of the flat
+report returned by `get_contact_report()`, read arrays for each sensor with
+`PhysX.read_sync(SimObjectType.CONTACT_SENSOR, attribute_names, ...)`, or use
+the query and read-session steps above. Enable contact reporting on the relevant
+prims before stepping; see [Contact sensors](read_write/readable.md#contact-sensors).
+
+| Removed 0.6 Python API | 0.7 migration |
+|---|---|
+| `ContactEventHeader` | Read event columns such as `contactEventType`, `contactEventSensorSide`, `contactEventCollider`, `contactEventOtherBody`, and `contactEventOtherCollider`. Use `contactEventPointCount` and `contactEventAnchorCount` to find each event's points and anchors in the sensor's combined arrays. |
+| `ContactPoint` | Read `contactEventPointPosition`, `contactEventPointNormal`, `contactEventPointImpulse`, and `contactEventPointSeparation`; face-index and material columns are listed in [Contact sensors](read_write/readable.md#contact-sensors). |
+| `FrictionAnchor` | Read `contactEventAnchorPosition` and `contactEventAnchorImpulse`. |
+| `ContactEventHeader.attachHandle` | This field identified the attachment that produced the report. A contact query and its read session belong to the `PhysX` instance and attachment that created them; there is no matching event column. |
+| `PhysX.get_attach_handle()` | There is no public Python replacement that returns an integer attachment ID. Use `physx.is_stage_attached()` (optionally passing the Stage) to check whether a Stage is currently attached. |
+
+The old attach handle was created for each attachment; it was not a Stage ID.
+`is_stage_attached()` returns a boolean. It cannot tell whether the same Stage
+was detached and attached again, or whether an existing query or session is
+still valid. Create new queries and sessions after reattaching a Stage.
+Operations on queries or sessions from an earlier attachment are rejected.
+Do not use private attachment-ID helpers as replacements for the removed APIs.
+
+Each selected sensor receives its own event arrays. A contact between two
+selected sensors therefore appears in both sensors' arrays. The body and
+collider IDs are reported from each sensor's point of view. Point and anchor
+impulses keep their reported sign; they are not converted to forces. An event
+reporting lost contact can have no points or anchors. DirectGPU does not provide
+detailed contact events; net-force reads do not provide detailed event data.
+Follow the session
+[ownership and lifetime rules](read_write/device.md#dlpack-ownership-and-lifetime),
+including the Python array lifetime rules, to determine how long you can use
+the returned arrays.
+
 ### Stage lifecycle
 
 In 0.7, `attach_ovstage()` requires an owner-aware `ovstage.Stage`.
@@ -84,9 +121,9 @@ Passing `None` or a raw native handle raises `TypeError`. Replace raw handles
 accepted in 0.6 with the owning Stage object; raw-handle integrations use the
 C API.
 
-Attach, update and detach currently execute inline. Their task-returning API
-allows execution to be deferred later: a successful submission is not proof
-that execution succeeded. For example, with a populated and sealed Stage:
+Attach, update and detach return a `Task`, and their work can finish after the
+call returns: a successful submission is not proof that execution succeeded.
+For example, with a populated and sealed Stage:
 
 ```python
 from ovphysx import PhysX
@@ -308,8 +345,11 @@ They were not removed in 0.7.
 
 ## USD and schema
 
-`PhysxJointAPI` is no longer parsed. Authored `physxJoint:maxJointVelocity`,
-`physxJoint:armature`, and `physxJoint:jointFriction` are ignored.
+`PhysxJointAPI` is removed from the schema. Authored `physxJoint:maxJointVelocity`
+is supported for legacy assets with a one-time deprecation warning; migrate to
+`newton:velocityLimit` from `NewtonJointAPI`. Finite per-axis velocity limits
+win over finite Newton limits, which win over legacy limits.
+`physxJoint:armature` and `physxJoint:jointFriction` are ignored.
 `PrimBatch::applyPhysxJointAPI()` and `apply_physx_joint_api()` are removed.
 Use `NewtonJointAPI` for a value that applies to every degree of freedom of a
 joint, and `PhysxJointAxisAPI` for one axis. `physxJoint:jointFriction` has no
@@ -324,7 +364,7 @@ that either required PhysX
 schema family was missing when its registry was built, attach fails at admission
 without a task or Stage ownership. Restart the process and register before
 populating or exporting; a late registration cannot recover lost settings. The
-legacy Carbonite setting `/ovphysx/schemas/requireRegistration = false` permits attach
+raw Carbonite setting `/ovphysx/schemas/requireRegistration = false` permits attach
 with a warning but does not repair the data. See
 [Physics Schemas](physics_schemas.md#attach-time-registration-guard).
 

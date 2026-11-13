@@ -18,6 +18,9 @@ struct DebugConfig
     float minimum[3]{}, maximum[3]{}; // World stage units.
 };
 struct DebugVertex { float position[3]; uint32_t color; }; // Native packed 0xAARRGGBB.
+// step is the owner's native execution counter, which counts every scene's substeps.
+// A frame with step n holds actor/shape primitives at their poses from the start of
+// native step n and step n's contact/friction primitives.
 struct DebugFrame
 {
     uint64_t attachment = 0, step = 0;

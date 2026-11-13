@@ -15,6 +15,7 @@ LIST(APPEND CMAKE_MODULE_PATH ${PHYSX_CMAKE_MODULES_PATH})
 project(PhysXSDK C CXX)
 
 OPTION(PX_BUILDSNIPPETS "Generate the snippets" OFF)
+OPTION(PX_BUILDUNITTESTS "Build the public SDK unit tests" OFF)
 OPTION(PX_BUILDPVDRUNTIME "Generate the OmniPVD project" OFF)
 OPTION(PX_CMAKE_SUPPRESS_REGENERATION "Disable zero_check projects" OFF)
 
@@ -95,3 +96,10 @@ IF(PX_BUILDSNIPPETS)
 	MESSAGE("Added Snippets")
 ENDIF()
 
+IF(PX_BUILDUNITTESTS)
+	IF(NOT EXISTS "${PHYSX_ROOT_DIR}/test/public/CMakeLists.txt")
+		MESSAGE(FATAL_ERROR "This source distribution does not include the public unit tests.")
+	ENDIF()
+	ENABLE_TESTING()
+	ADD_SUBDIRECTORY(${PHYSX_ROOT_DIR}/test/public ${CMAKE_CURRENT_BINARY_DIR}/public_ut)
+ENDIF()

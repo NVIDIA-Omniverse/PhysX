@@ -22,6 +22,9 @@ Validate OVStage lock integrity, channel switching, and CMake's uv source settin
 - The validator reads HTTPS registries, local paths, and missing or malformed hashes.
 - Pin and source-only edits run against temporary projects.
 - The CMake helper emits settings for locked and package-only installs.
+- A temporary project that does not name the `ovstage` index is passed to the helper.
+- Every `scripts/*.cmake`, and `ci/ovphysx-nogpu/run_python_smoke.cmake` when present, that runs
+  uv with `UV_NO_CONFIG=1` is read as text, without its comment lines.
 
 ## Then
 
@@ -32,9 +35,11 @@ Validate OVStage lock integrity, channel switching, and CMake's uv source settin
   pinned version; combined edits preserve both changes (AC-5, AC-6).
 - The NGC relay uses the OVPhysX wheel's exact dependency pin and the source
   lock without requiring an OVStage wheel filename in the build log (AC-1).
-- Locked settings include PyPI and the selected project's OVStage index.
-  Package-only settings expose only its `/ovstage/` page and clear the extra
-  index, preserving PyPI for unrelated dependencies (AC-2, AC-3, AC-4).
+- Locked settings supply PyPI, an empty extra index and an empty `UV_INDEX`. Package-only settings add only
+  the selected project's `/ovstage/` page. Neither exports the whole index as an extra
+  index, and a project that does not name the `ovstage` index is rejected (AC-2, AC-3, AC-4).
+- Every uv driver that uses the helper splices its output, and no driver sets an index
+  variable or `UV_HTTP_RETRIES` itself (AC-2).
 
 ## Not Covered
 

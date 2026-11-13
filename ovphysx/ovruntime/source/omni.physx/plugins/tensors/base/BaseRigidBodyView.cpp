@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-READ-CCT-001
+ * @covers AC-3
+ *
  * @implements REQ-TENSOR-INDEX-001
  * @covers AC-3
  *
@@ -467,6 +470,7 @@ bool BaseRigidBodyView::setCOMs(const TensorDesc* srcTensor, const TensorDesc* i
     }
 
     setComsCacheStateValid(false);
+    centerOfMassChanged();
     return true;
 }
 
@@ -524,7 +528,7 @@ bool BaseRigidBodyView::setInertias(const TensorDesc* srcTensor, const TensorDes
             mEntries[idx].body->setCMassLocalPose(comPose);
         }
     }
-
+    centerOfMassChanged();
     return true;
 }
 
@@ -1658,7 +1662,8 @@ bool BaseRigidBodyView::getBodyPropertyOvStage(const BodyProperty prop,
         }
         case BodyProperty::eKinematicTargetOrientation:
         {
-            const PxQuat q = currentKinematicTargetOrPose(mEntries[recIdx]).q;
+            const RigidBodyEntry& entry = mEntries[recIdx];
+            const PxQuat q = entry.orientationFixup * currentKinematicTargetOrPose(entry).q;
             *fdst++ = q.x;
             *fdst++ = q.y;
             *fdst++ = q.z;
@@ -2052,6 +2057,8 @@ bool BaseRigidBodyView::setBodyPropertyOvStage(const BodyProperty prop,
             break; // the read-only and per-shape cases returned above
         }
     }
+    if (prop == BodyProperty::eComPosition || prop == BodyProperty::eComOrientation || prop == BodyProperty::eInertia)
+        centerOfMassChanged();
     return true;
 }
 

@@ -24,7 +24,8 @@ without inferring it from velocity or query membership.
   ownership rules. 1 means asleep, 0 awake; an articulation link reports its
   articulation's state. On scenes with sleeping disabled, including DirectGPU,
   emitted values are 0; normal readiness and disabled-row omissions still apply.
-  Retained Python arrays preserve their read snapshot across later state changes.
+  The retained Python arrays of a result dropped without a close preserve their read
+  snapshot across later state changes.
 
 ## Test References
 

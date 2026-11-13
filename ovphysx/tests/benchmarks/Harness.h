@@ -7,6 +7,9 @@
 /**
  * @implements REQ-CAPI-BENCHMARK-002
  * @covers AC-1 AC-3
+ *
+ * @implements REQ-CAPI-BENCHMARK-004
+ * @covers AC-6
  */
 
 #ifndef HARNESS_H
@@ -29,6 +32,7 @@ struct CmdLineParameters
     const char* filterString; // prefix filter string
     const char* reportFile; // output file for reports
     const char* timingDiagnosticsFile; // optional untrimmed timing diagnostics JSONL output
+    const char* contactAffinityFds; // optional Linux Contact runner synchronization pipes
     const char* dataFolder; // data folder for the benchmarks
     const char* goldenFilePath; // the path of goldenFiles
     const char* kitArguments; // arguments to pass into kit on startup
@@ -58,6 +62,7 @@ struct CmdLineParameters
         : filterString(NULL),
           reportFile("_report.txt"),
           timingDiagnosticsFile(NULL),
+          contactAffinityFds(NULL),
           dataFolder(NULL),
           goldenFilePath(NULL),
           kitArguments(NULL),

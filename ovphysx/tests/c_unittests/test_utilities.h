@@ -113,7 +113,7 @@ inline path_dictionary_instance_t* attached_ovstage_dictionary(ovphysx_instance_
     if (it == ovstage_test_attachments().end() || it->second.empty() || !it->second.back().stage)
         return nullptr;
     ovstage_instance_t* stage = it->second.back().stage;
-    return stage->vtable->get_path_dictionary(stage->context);
+    return ovstage_get_path_dictionary(stage);
 }
 
 inline void destroy_ovstage_test_stages(ovphysx_instance_handle_t handle)
@@ -188,16 +188,16 @@ inline bool attach_usd_with_ovstage(
     path.ptr = usd_path;
     path.length = std::strlen(usd_path);
 
-    ovstage_population_enqueue_result_t enqueue = ovstage_population_open_usd_from_file(
+    ovstage_population_enqueue_result_t enqueue = ovphysx_sample_open_usd_from_file(
         stage,
         path,
         ordinal,
         0.0,
-        OVSTAGE_POPULATION_DOMAIN_ALL);
+        /*with_rendering=*/true);
     if (enqueue.status != OVSTAGE_OK)
     {
         ovx_string_t err = ovstage_population_get_last_error();
-        std::cerr << "ovstage_population_open_usd_from_file failed: "
+        std::cerr << "ovstage_population_open_usd_from_file_with_desc failed: "
                   << static_cast<int>(enqueue.status) << " " << ovx_to_string(err) << std::endl;
         ovstage_destroy_instance(stage);
         return false;
@@ -410,19 +410,26 @@ inline std::map<std::string, void*> read_physx_pointers(ovphysx_instance_handle_
     std::map<std::string, void*> out;
     ovphysx_query_handle_t query = 0;
     if (complete_task(handle, ovphysx_query(handle, type, OVPHYSX_SCOPE_ALL, &query, nullptr)).status != OVPHYSX_API_SUCCESS)
+    {
+        if (query)
+            complete_task(handle, ovphysx_release_query(handle, query));
         return out;
+    }
     ovx_path_dictionary_t* dict = attached_ovstage_dictionary(handle);
     if (!dict)
     {
         complete_task(handle, ovphysx_release_query(handle, query));
         return out;
     }
-    ovx_string_or_token_t name{};
+    ovx_token_or_string_t name{};
     name.string.ptr = OVPHYSX_ATTR_PHYSX_POINTER;
     name.string.length = std::strlen(OVPHYSX_ATTR_PHYSX_POINTER);
     ovphysx_read_handle_t read = 0;
-    if (complete_task(handle, ovphysx_read(handle, query, &name, 1, &read, nullptr)).status != OVPHYSX_API_SUCCESS)
+    if (complete_task(handle, ovphysx_read(handle, query, &name, 1,
+                                           ovstage_cuda_sync_t{ 0, 0 }, &read, nullptr)).status != OVPHYSX_API_SUCCESS)
     {
+        if (read)
+            complete_task(handle, ovphysx_release_read(handle, read));
         complete_task(handle, ovphysx_release_query(handle, query));
         return out;
     }
@@ -430,9 +437,9 @@ inline std::map<std::string, void*> read_physx_pointers(ovphysx_instance_handle_
     {
         const ovstage_read_group_t* group = nullptr;
         const ovphysx_result_t fetched = complete_task(handle, ovphysx_fetch_read_next(handle, read, &group));
-        if (fetched.status != OVPHYSX_API_SUCCESS || !group || !group->data.tensors)
+        if (fetched.status != OVPHYSX_API_SUCCESS || !group || !group->columns[0].data.tensors)
             break;
-        const DLTensor& tensor = group->data.tensors[0];
+        const DLTensor& tensor = group->columns[0].data.tensors[0];
         const ovx_primpath_t* paths = nullptr;
         size_t pathCount = 0;
         if (tensor.data && tensor.dtype.code == kDLUInt && tensor.dtype.bits == 64 &&

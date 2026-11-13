@@ -408,7 +408,7 @@ def test_articulation_prestep_write_applies_without_directgpu(object_type, attri
                 w.commit_sync(g, cuda_stream=int(wp.get_stream(cuda.device).cuda_stream or 1))
         with physx.read_sync(object_type, [{attribute!r}], pattern={pattern!r}) as r:
             assert len(r.groups) == 1, "GPU-with-readback can read before the first step"
-            got = r.groups[0].tensors[0].numpy().reshape(-1)
+            got = r.groups[0].tensors[0].numpy().reshape(-1).copy()
         assert np.allclose(got, target, rtol=0, atol=1e-5), got
         print("GPU_ARTICULATION_PRESTEP_WRITE_OK")
     """)

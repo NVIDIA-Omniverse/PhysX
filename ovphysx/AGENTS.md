@@ -127,8 +127,8 @@ Details in `docs/developer_guide.md` unless noted.
 - **A task outcome is collected once.** `wait_task()` collects only that task;
   `wait_all()` collects every uncollected task in submission order. Repeating a
   collected wait returns `NOT_FOUND`.
-- **Settings and hard CPU-only mode are per-process.** `ovphysx_set_cpu_mode(true)`
-  cannot be reverted in that process.
+- **Settings and hard CPU-only mode are per-process.** Setting `OVPHYSX_GLOBAL_CONFIG_CPU_ONLY`
+  to true cannot be reverted in that process.
 - **No OpenUSD in the shipped product.** `libovphysx` links no USD (ADR-0027).
   ovstage ingests USD; the app owns whatever USD it authors with. Register
   PhysX codeless schemas before the first population call. Never load two USD

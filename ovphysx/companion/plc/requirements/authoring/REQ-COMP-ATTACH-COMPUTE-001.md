@@ -59,7 +59,7 @@ Implemented companion subset (native/core changes retain their own PLC ownership
 
 Historical integration anchors:
 
-- [ovphysx/ovruntime/include/private/omni/physx/IPhysxAttachmentPrivate.h](../../../../ovruntime/include/private/omni/physx/IPhysxAttachmentPrivate.h)
+- [ovphysx/ovruntime/source/omni.physx/plugins/attachment/PhysXAttachment.h](../../../../ovruntime/source/omni.physx/plugins/attachment/PhysXAttachment.h)
 - [ovphysx/ovruntime/source/omni.physx/plugins/usdBridge/AttachmentAuthoringBridge.cpp](../../../../ovruntime/source/omni.physx/plugins/usdBridge/AttachmentAuthoringBridge.cpp)
 
 - [Typed proposals](../../../python/ovphysx_companion/attachments.py)

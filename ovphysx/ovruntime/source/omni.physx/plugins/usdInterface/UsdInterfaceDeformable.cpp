@@ -13,6 +13,9 @@
  *
  * @implements REQ-PUBLICAPI-001
  * @covers AC-27
+ *
+ * @implements REQ-LOAD-DEFORMABLE-001
+ * @covers AC-1 AC-4 AC-5 AC-6 AC-7
  */
 
 #include <omni/physics/parse/KnownTokens.h>
@@ -267,7 +270,7 @@ PxMat44d sourceLocalToWorld(const usdparser::AttachedStage& attachedStage, omni:
 
 // Source-routed single-apply HasAPI check (no direct USD prim access).
 // `schemaToken` is the already-interned applied-API-schema name (e.g.
-// tok.OmniPhysicsSurfaceDeformableSimAPI) -- the same TokenId convention
+// tok.omniPhysicsSurfaceDeformableSimAPI) -- the same TokenId convention
 // IPhysicsSource::hasSchema is queried with everywhere else in the runtime.
 bool sourceHasAPI(const usdparser::AttachedStage& attachedStage,
                   omni::physics::parse::ObjectKey key,
@@ -586,7 +589,7 @@ bool PhysXUsdPhysicsInterface::updateDeformableBodyPositions(usdparser::Attached
 
         if (deformableSurface &&
             internalDeformableBody &&
-            sourceHasAPI(attachedStage, objectFullRecord->mKey, tok.OmniPhysicsSurfaceDeformableSimAPI))
+            sourceHasAPI(attachedStage, objectFullRecord->mKey, tok.omniPhysicsSurfaceDeformableSimAPI))
         {
             PxDeformableSurfaceDataFlags flags = PxDeformableSurfaceDataFlags(0);
             flags.raise(PxDeformableSurfaceDataFlag::ePOSITION_INVMASS);
@@ -603,7 +606,7 @@ bool PhysXUsdPhysicsInterface::updateDeformableBodyPositions(usdparser::Attached
 
         if (deformableVolume &&
             internalVolumeDeformableBody &&
-            sourceHasAPI(attachedStage, objectFullRecord->mKey, tok.OmniPhysicsVolumeDeformableSimAPI))
+            sourceHasAPI(attachedStage, objectFullRecord->mKey, tok.omniPhysicsVolumeDeformableSimAPI))
         {
             PxDeformableVolumeDataFlags flags = PxDeformableVolumeDataFlags(0);
             flags.raise(PxDeformableVolumeDataFlag::eSIM_POSITION_INVMASS);
@@ -663,7 +666,7 @@ bool PhysXUsdPhysicsInterface::updateDeformableBodyVelocities(usdparser::Attache
 
         if (deformableSurface &&
             internalDeformableBody &&
-            sourceHasAPI(attachedStage, objectFullRecord->mKey, tok.OmniPhysicsSurfaceDeformableSimAPI))
+            sourceHasAPI(attachedStage, objectFullRecord->mKey, tok.omniPhysicsSurfaceDeformableSimAPI))
         {
             PxDeformableSurfaceDataFlags flags = PxDeformableSurfaceDataFlags(0);
             flags.raise(PxDeformableSurfaceDataFlag::eVELOCITY);
@@ -680,7 +683,7 @@ bool PhysXUsdPhysicsInterface::updateDeformableBodyVelocities(usdparser::Attache
 
         if (deformableVolume &&
             internalVolumeDeformableBody &&
-            sourceHasAPI(attachedStage, objectFullRecord->mKey, tok.OmniPhysicsVolumeDeformableSimAPI))
+            sourceHasAPI(attachedStage, objectFullRecord->mKey, tok.omniPhysicsVolumeDeformableSimAPI))
         {
             PxDeformableVolumeDataFlags flags = PxDeformableVolumeDataFlags(0);
             flags.raise(PxDeformableVolumeDataFlag::eSIM_VELOCITY);
@@ -961,15 +964,6 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
         return kInvalidObjectId;
     }
 
-    std::vector<uint32_t> collMeshSurfaceTriToTetMap;
-    PxDefaultMemoryInputData inData(outData.getData(), outData.getSize());
-    PxDeformableVolumeMesh* deformableVolumeMesh = cookingDataAsync->createDeformableVolumeMesh(collMeshSurfaceTriToTetMap, inData);
-    if (!deformableVolumeMesh || collMeshSurfaceTriangles.size() != collMeshSurfaceTriToTetMap.size())
-    {
-        CARB_LOG_WARN("Failed to create PxDeformableVolumeMesh from cooked data! Prim(%s)\n", attachedStage.textFor(bodyKey));
-        return kInvalidObjectId;
-    }
-
     // create internal deformable body, and store/copy some data
     InternalVolumeDeformableBody* internalBody = ICE_NEW(InternalVolumeDeformableBody)();
     if (!internalBody)
@@ -985,6 +979,17 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
 
         scene->getInternalScene()->mVolumeDeformableBodies.push_back(internalBody);
         return objectId;
+    }
+
+    std::vector<uint32_t> collMeshSurfaceTriToTetMap;
+    PxDefaultMemoryInputData inData(outData.getData(), outData.getSize());
+    PxDeformableVolumeMesh* deformableVolumeMesh = cookingDataAsync->createDeformableVolumeMesh(collMeshSurfaceTriToTetMap, inData);
+    internalBody->mDeformableVolumeMesh = deformableVolumeMesh;
+    if (!deformableVolumeMesh || collMeshSurfaceTriangles.size() != collMeshSurfaceTriToTetMap.size())
+    {
+        CARB_LOG_WARN("Failed to create PxDeformableVolumeMesh from cooked data! Prim(%s)\n", attachedStage.textFor(bodyKey));
+        SAFE_DELETE_SINGLE(internalBody);
+        return kInvalidObjectId;
     }
 
     internalBody->mBodyKey = bodyKey;
@@ -1074,7 +1079,7 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
             tri.z >= (int)internalBody->mNumCollMeshVertices)
         {
             CARB_LOG_WARN("createVolumeDeformableBody(): Each surface face vertex index of collision mesh should be smaller than mNumCollMeshVertices!");
-            ICE_FREE(internalBody);
+            SAFE_DELETE_SINGLE(internalBody);
             return kInvalidObjectId;
         }
     }
@@ -1088,17 +1093,18 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
     if (!material)
     {
         CARB_LOG_WARN("Failed to aquire material for volume deformable! Prim(%s)\n", attachedStage.textFor(bodyKey));
-        ICE_FREE(internalBody);
+        SAFE_DELETE_SINGLE(internalBody);
         return kInvalidObjectId;
     }
     internalBody->mMaterialId = materialId;
 
     // Create physx deformable volume
     PxDeformableVolume* deformableVolume = physics->createDeformableVolume(*cudaContextManager);
+    internalBody->mDeformableVolume = deformableVolume;
     if (!deformableVolume)
     {
         CARB_LOG_WARN("Failed to create PxDeformableVolume! Prim(%s)\n", attachedStage.textFor(bodyKey));
-        ICE_FREE(internalBody);
+        SAFE_DELETE_SINGLE(internalBody);
         return kInvalidObjectId;
     }
 
@@ -1132,8 +1138,7 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
     if (!scene->getScene()->addActor(*deformableVolume))
     {
         CARB_LOG_WARN("Failed to add PxDeformableVolume to scene: %s\n", attachedStage.textFor(bodyKey));
-        ICE_FREE(internalBody);
-        deformableVolume->release();
+        SAFE_DELETE_SINGLE(internalBody);
         return kInvalidObjectId;
     }
 
@@ -1142,6 +1147,14 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
         *deformableVolume, cudaContextManager, internalBody->mSimMeshPositionInvMassH,
         internalBody->mSimMeshVelocityH, internalBody->mCollMeshPositionInvMassH,
         collMeshRestPositionH);
+    if (!internalBody->mSimMeshPositionInvMassH || !internalBody->mSimMeshVelocityH ||
+        !internalBody->mCollMeshPositionInvMassH || !collMeshRestPositionH)
+    {
+        CARB_LOG_WARN("Failed to allocate pinned host memory for volume deformable body, "
+                      "GPU memory may be exhausted! Prim(%s)\n", attachedStage.textFor(bodyKey));
+        SAFE_DELETE_SINGLE(internalBody);
+        return kInvalidObjectId;
+    }
 
     {
         float metersPerUnit = attachedStage.getSource()->getSourceUnits().metersPerUnit;
@@ -1185,7 +1198,7 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
         internalBody->mBodyMass, internalMaterial ? &internalMaterial->mDensity : nullptr))
     {
         CARB_LOG_WARN("Failed to aquire mass/density for volume deformable body! Prim(%s)\n", attachedStage.textFor(bodyKey));
-        ICE_FREE(internalBody);
+        SAFE_DELETE_SINGLE(internalBody);
         PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, collMeshRestPositionH);
         return kInvalidObjectId;
     }
@@ -1230,9 +1243,6 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
         internalBody->mSimMeshPositionInvMassH, internalBody->mSimMeshVelocityH,
         internalBody->mCollMeshPositionInvMassH, collMeshRestPositionH,
         internalBody->mPhysXScene->getInternalScene()->getDeformableCopyStream());
-
-    internalBody->mDeformableVolume = deformableVolume;
-    internalBody->mDeformableVolumeMesh = deformableVolumeMesh;
 
     // Store initial properties for reset of deformables created during simulation
     copyBuffer(internalBody->mSimMeshPointsSaveRestoreBuf, simMeshPoints.data(), uint32_t(simMeshPoints.size()));
@@ -1290,14 +1300,28 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
 
         internalBody->mAllSkinnedVerticesH = PxCudaHelpersExt::allocPinnedHostBuffer<PxVec3>(*cudaContextManager, numAllSkinMeshPoints);
         internalBody->mAllSkinnedVerticesD = PxCudaHelpersExt::allocDeviceBuffer<PxVec3>(*cudaContextManager, numAllSkinMeshPoints);
-        if (internalBody->mAllSkinnedVerticesH && internalBody->mAllSkinnedVerticesD)
-        {
-            std::memcpy(internalBody->mAllSkinnedVerticesH, allSkinMeshBindPointsWorld.data(), sizeof(PxVec3)*numAllSkinMeshPoints);
-            PxCudaHelpersExt::copyHToD(*cudaContextManager, internalBody->mAllSkinnedVerticesD, internalBody->mAllSkinnedVerticesH, numAllSkinMeshPoints);
-        }
-
         PxTetrahedronMeshEmbeddingInfo* skinningEmbeddingInfoH = PxCudaHelpersExt::allocPinnedHostBuffer<PxTetrahedronMeshEmbeddingInfo>(*cudaContextManager, numAllSkinMeshPoints);
         internalBody->mSkinningEmbeddingInfoD = PxCudaHelpersExt::allocDeviceBuffer<PxTetrahedronMeshEmbeddingInfo>(*cudaContextManager, numAllSkinMeshPoints);
+
+        // the post solve callback launches kernels on these every step without checking them
+        const bool skinningBuffersValid = skinningEmbeddingInfoH && internalBody->mAllSkinnedVerticesH &&
+                                          internalBody->mAllSkinnedVerticesD && internalBody->mSimMeshTetIndicesD &&
+                                          internalBody->mSkinningEmbeddingInfoD;
+        if (!skinningBuffersValid)
+        {
+            CARB_LOG_WARN("Failed to allocate skinning buffers for volume deformable body, skin meshes will not be "
+                          "updated (GPU memory may be exhausted)! Prim(%s)\n", attachedStage.textFor(bodyKey));
+
+            // the write back, reset and exported data consumers check the skin mesh count and key list, not the buffers
+            PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, internalBody->mAllSkinnedVerticesH);
+            PxCudaHelpersExt::freeDeviceBuffer(*cudaContextManager, internalBody->mAllSkinnedVerticesD);
+            PxCudaHelpersExt::freeDeviceBuffer(*cudaContextManager, internalBody->mSimMeshTetIndicesD);
+            PxCudaHelpersExt::freeDeviceBuffer(*cudaContextManager, internalBody->mSkinningEmbeddingInfoD);
+            internalBody->mSkinMeshKeys.clear();
+            internalBody->mSkinMeshRanges.clear();
+            internalBody->mWorldToSkinMeshTransforms.clear();
+            internalBody->mNumSkinMeshVertices = 0;
+        }
 
         PxArray<PxU32> simMeshTetIndices(numTetIndices);
         if (uses16bit)
@@ -1329,25 +1353,32 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
                 toPhysXf(gfmath::transformPoint(worldToCooking, toPhysXd(allSkinMeshBindPointsWorld[i])));
         }
 
-        PxDeformableSkinningExt::initializeInterpolatedVertices(
-            skinningEmbeddingInfoH, guideVertices.begin(), simMeshTetIndices.begin(), nbTetrahedra,
-            embeddedVertices.begin(), (PxU32)embeddedVertices.size());
+        if (skinningBuffersValid)
+        {
+            std::memcpy(internalBody->mAllSkinnedVerticesH, allSkinMeshBindPointsWorld.data(), sizeof(PxVec3) * numAllSkinMeshPoints);
+            PxDeformableSkinningExt::initializeInterpolatedVertices(
+                skinningEmbeddingInfoH, guideVertices.begin(), simMeshTetIndices.begin(), nbTetrahedra,
+                embeddedVertices.begin(), (PxU32)embeddedVertices.size());
 
-        PxCudaHelpersExt::copyHToD(*cudaContextManager, internalBody->mSimMeshTetIndicesD, simMeshTetIndices.begin(), numTetIndices);
-        PxCudaHelpersExt::copyHToD(*cudaContextManager, internalBody->mAllSkinnedVerticesD, internalBody->mAllSkinnedVerticesH, numAllSkinMeshPoints);
-        PxCudaHelpersExt::copyHToD(*cudaContextManager, internalBody->mSkinningEmbeddingInfoD, skinningEmbeddingInfoH, numAllSkinMeshPoints);
+            PxCudaHelpersExt::copyHToD(*cudaContextManager, internalBody->mSimMeshTetIndicesD, simMeshTetIndices.begin(), numTetIndices);
+            PxCudaHelpersExt::copyHToD(*cudaContextManager, internalBody->mAllSkinnedVerticesD, internalBody->mAllSkinnedVerticesH, numAllSkinMeshPoints);
+            PxCudaHelpersExt::copyHToD(*cudaContextManager, internalBody->mSkinningEmbeddingInfoD, skinningEmbeddingInfoH, numAllSkinMeshPoints);
+        }
 
         if (skinningEmbeddingInfoH)
             PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, skinningEmbeddingInfoH);
 
         // Add skinning data after the volume deformable body is created
-        deformables::VolumeDeformableSkinningData skinningData;
-        skinningData.mDeformableVolume = deformableVolume;
-        skinningData.mGuideTetrahedraD = internalBody->mSimMeshTetIndicesD;
-        skinningData.mSkinningEmbeddingInfoD = internalBody->mSkinningEmbeddingInfoD;
-        skinningData.mAllSkinnedVerticesD = internalBody->mAllSkinnedVerticesD;
-        skinningData.mNumSkinnedVertices = internalBody->mNumSkinMeshVertices;
-        scene->getInternalScene()->mVolumeDeformablePostSolveCallback->addVolumeDeformableSkinningData(skinningData);
+        if (skinningBuffersValid)
+        {
+            deformables::VolumeDeformableSkinningData skinningData;
+            skinningData.mDeformableVolume = deformableVolume;
+            skinningData.mGuideTetrahedraD = internalBody->mSimMeshTetIndicesD;
+            skinningData.mSkinningEmbeddingInfoD = internalBody->mSkinningEmbeddingInfoD;
+            skinningData.mAllSkinnedVerticesD = internalBody->mAllSkinnedVerticesD;
+            skinningData.mNumSkinnedVertices = internalBody->mNumSkinMeshVertices;
+            scene->getInternalScene()->mVolumeDeformablePostSolveCallback->addVolumeDeformableSkinningData(skinningData);
+        }
     }
 
     scene->getInternalScene()->mVolumeDeformableBodies.push_back(internalBody);
@@ -1418,7 +1449,7 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
         return kInvalidObjectId;
     }
 
-    if (!sourceHasAPI(attachedStage, simMeshKey, tok.OmniPhysicsSurfaceDeformableSimAPI))
+    if (!sourceHasAPI(attachedStage, simMeshKey, tok.omniPhysicsSurfaceDeformableSimAPI))
     {
         CARB_LOG_WARN("PhysX Deformable Body creation failed due to missing SurfaceDeformableSimAPI on simulation mesh, %s.",
                       attachedStage.textFor(simMeshKey));
@@ -1502,7 +1533,7 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
             CARB_LOG_WARN("Surface deformable body creation failed. Mismatch between OmniPhysicsSurfaceDeformableSimAPI "
                           "rest shape attributes and UsdGeomMesh topology detected, %s",
                           attachedStage.textFor(simMeshKey));
-            ICE_FREE(internalBody);
+            SAFE_DELETE_SINGLE(internalBody);
             return kInvalidObjectId;
         }
     }
@@ -1539,7 +1570,7 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
     if (!material)
     {
         CARB_LOG_WARN("Failed to aquire material for surface deformable body! Prim(%s)\n", attachedStage.textFor(bodyKey));
-        ICE_FREE(internalBody);
+        SAFE_DELETE_SINGLE(internalBody);
         return kInvalidObjectId;
     }
     internalBody->mMaterialId = materialId;
@@ -1585,7 +1616,7 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
         if (!PxValidateTriangleMesh(ckParams, meshDesc))
         {
             CARB_LOG_WARN("PxValidateTriangleMesh for PxDeformableSurface failed, %s", attachedStage.textFor(simMeshKey));
-            ICE_FREE(internalBody);
+            SAFE_DELETE_SINGLE(internalBody);
             return kInvalidObjectId;
         }
 
@@ -1595,33 +1626,33 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
         if (!status)
         {
             CARB_LOG_WARN("PxCookTriangleMesh for PxDeformableSurface failed, %s", attachedStage.textFor(simMeshKey));
-            ICE_FREE(internalBody);
+            SAFE_DELETE_SINGLE(internalBody);
             return kInvalidObjectId;
         }
 
         PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());
         triangleMesh = physxSetup.getPhysics()->createTriangleMesh(readBuffer);
+        internalBody->mTriangleMesh = triangleMesh;
         if (!triangleMesh)
         {
             CARB_LOG_WARN("PxTriangleMesh creation failed: %s\n", attachedStage.textFor(bodyKey));
-            ICE_FREE(internalBody);
+            SAFE_DELETE_SINGLE(internalBody);
             return kInvalidObjectId;
         }
 
         if (triangleMesh->getNbVertices() != uint32_t(simMeshPoints.size()))
         {
             CARB_LOG_WARN("PxTriangleMesh vertices don't align with simulation mesh vertices: %s\n", attachedStage.textFor(bodyKey));
-            ICE_FREE(internalBody);
-            triangleMesh->release();
+            SAFE_DELETE_SINGLE(internalBody);
             return kInvalidObjectId;
         }
 
         deformableSurface = physxSetup.getPhysics()->createDeformableSurface(*cudaContextManager);
+        internalBody->mDeformableSurface = deformableSurface;
         if (!deformableSurface)
         {
             CARB_LOG_WARN("Failed to create PxDeformableSurface: %s\n", attachedStage.textFor(bodyKey));
-            ICE_FREE(internalBody);
-            triangleMesh->release();
+            SAFE_DELETE_SINGLE(internalBody);
             return kInvalidObjectId;
         }
 
@@ -1663,8 +1694,7 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
         if (!scene->getScene()->addActor(*deformableSurface))
         {
             CARB_LOG_WARN("Failed to add PxDeformableSurface to scene: %s\n", attachedStage.textFor(bodyKey));
-            ICE_FREE(internalBody);
-            deformableSurface->release();  // also releases attached shape and triangleMesh
+            SAFE_DELETE_SINGLE(internalBody);
             return kInvalidObjectId;
         }
     }
@@ -1713,9 +1743,18 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
     internalBody->mNumSimMeshVertices = uint32_t(simMeshPoints.size());
     internalBody->mNumSkinMeshVertices = uint32_t(numAllSkinMeshPoints);
 
-    internalBody->mSimMeshPositionInvMassH = PxCudaHelpersExt::allocPinnedHostBuffer<PxVec4>(*cudaContextManager, triangleMesh->getNbVertices());
-    internalBody->mSimMeshVelocityH = PxCudaHelpersExt::allocPinnedHostBuffer<PxVec4>(*cudaContextManager, triangleMesh->getNbVertices());
-    PxVec4* simMeshRestPositionH = PxCudaHelpersExt::allocPinnedHostBuffer<PxVec4>(*cudaContextManager, triangleMesh->getNbVertices());
+    const PxU32 nbSimMeshVertices = triangleMesh->getNbVertices();
+    internalBody->mSimMeshPositionInvMassH = PxCudaHelpersExt::allocPinnedHostBuffer<PxVec4>(*cudaContextManager, nbSimMeshVertices);
+    internalBody->mSimMeshVelocityH = PxCudaHelpersExt::allocPinnedHostBuffer<PxVec4>(*cudaContextManager, nbSimMeshVertices);
+    PxVec4* simMeshRestPositionH = PxCudaHelpersExt::allocPinnedHostBuffer<PxVec4>(*cudaContextManager, nbSimMeshVertices);
+    if (!internalBody->mSimMeshPositionInvMassH || !internalBody->mSimMeshVelocityH || !simMeshRestPositionH)
+    {
+        CARB_LOG_WARN("Failed to allocate pinned host memory for surface deformable body, "
+                      "GPU memory may be exhausted! Prim(%s)\n", attachedStage.textFor(bodyKey));
+        PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, simMeshRestPositionH);
+        SAFE_DELETE_SINGLE(internalBody);
+        return kInvalidObjectId;
+    }
 
     bool zeroVelocities = desc.startsAsleep || simMeshVelocities.empty() ||
                           simMeshVelocities.size() != internalBody->mNumSimMeshVertices;
@@ -1743,10 +1782,8 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
         internalBody->mBodyMass, internalMaterial ? &internalMaterial->mDensity : nullptr, material->getThickness()))
     {
         CARB_LOG_WARN("Failed to aquire mass/density for surface deformable body! Prim(%s)\n", attachedStage.textFor(bodyKey));
-        ICE_FREE(internalBody);
-        deformableSurface->release();
-        triangleMesh->release();
         PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, simMeshRestPositionH);
+        SAFE_DELETE_SINGLE(internalBody);
         return kInvalidObjectId;
     }
 
@@ -1756,9 +1793,6 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
     PxDeformableSurfaceExt::copyToDevice(*deformableSurface, PxDeformableSurfaceDataFlag::eALL,
         internalBody->mNumSimMeshVertices, internalBody->mSimMeshPositionInvMassH, internalBody->mSimMeshVelocityH, simMeshRestPositionH,
         internalBody->mPhysXScene->getInternalScene()->getDeformableCopyStream());
-
-    internalBody->mTriangleMesh = triangleMesh;
-    internalBody->mDeformableSurface = deformableSurface;
 
     // compute and store map to get physx triangle indexing from sim triangle ordering
     // (vertices are in same order)
@@ -1821,15 +1855,30 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
 
         internalBody->mAllSkinnedVerticesH = PxCudaHelpersExt::allocPinnedHostBuffer<PxVec3>(*cudaContextManager, numAllSkinMeshPoints);
         internalBody->mAllSkinnedVerticesD = PxCudaHelpersExt::allocDeviceBuffer<PxVec3>(*cudaContextManager, numAllSkinMeshPoints);
-        if (internalBody->mAllSkinnedVerticesH && internalBody->mAllSkinnedVerticesD)
-        {
-            std::memcpy(internalBody->mAllSkinnedVerticesH, allSkinMeshBindPointsWorld.data(), sizeof(PxVec3) * numAllSkinMeshPoints);
-            PxCudaHelpersExt::copyHToD(*cudaContextManager, internalBody->mAllSkinnedVerticesD, internalBody->mAllSkinnedVerticesH, numAllSkinMeshPoints);
-        }
-
         PxTriangleMeshEmbeddingInfo* skinningEmbeddingInfoH = PxCudaHelpersExt::allocPinnedHostBuffer<PxTriangleMeshEmbeddingInfo>(*cudaContextManager, numAllSkinMeshPoints);
         internalBody->mSkinningEmbeddingInfoD = PxCudaHelpersExt::allocDeviceBuffer<PxTriangleMeshEmbeddingInfo>(*cudaContextManager, numAllSkinMeshPoints);
         internalBody->mNormalVectorsD = PxCudaHelpersExt::allocDeviceBuffer<PxVec3>(*cudaContextManager, triangleMeshGeom.triangleMesh->getNbVertices());
+
+        // the post solve callback launches kernels on these every step without checking them
+        const bool skinningBuffersValid = skinningEmbeddingInfoH && internalBody->mAllSkinnedVerticesH &&
+                                          internalBody->mAllSkinnedVerticesD && internalBody->mSimMeshTriIndicesD &&
+                                          internalBody->mSkinningEmbeddingInfoD && internalBody->mNormalVectorsD;
+        if (!skinningBuffersValid)
+        {
+            CARB_LOG_WARN("Failed to allocate skinning buffers for surface deformable body, skin meshes will not be "
+                          "updated (GPU memory may be exhausted)! Prim(%s)\n", attachedStage.textFor(bodyKey));
+
+            // the write back, reset and exported data consumers check the skin mesh count and key list, not the buffers
+            PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, internalBody->mAllSkinnedVerticesH);
+            PxCudaHelpersExt::freeDeviceBuffer(*cudaContextManager, internalBody->mAllSkinnedVerticesD);
+            PxCudaHelpersExt::freeDeviceBuffer(*cudaContextManager, internalBody->mSimMeshTriIndicesD);
+            PxCudaHelpersExt::freeDeviceBuffer(*cudaContextManager, internalBody->mSkinningEmbeddingInfoD);
+            PxCudaHelpersExt::freeDeviceBuffer(*cudaContextManager, internalBody->mNormalVectorsD);
+            internalBody->mSkinMeshKeys.clear();
+            internalBody->mSkinMeshRanges.clear();
+            internalBody->mWorldToSkinMeshTransforms.clear();
+            internalBody->mNumSkinMeshVertices = 0;
+        }
 
         PxArray<PxU32> simMeshTriIndices(numTriIndices);
         if (uses16bit)
@@ -1861,33 +1910,40 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
                 toPhysXf(gfmath::transformPoint(worldToCooking, toPhysXd(allSkinMeshBindPointsWorld[i])));
         }
 
-        PxDeformableSkinningExt::initializeInterpolatedVertices(
-            skinningEmbeddingInfoH, guideVertices.begin(), nullptr, simMeshTriIndices.begin(), nbTriangles,
-            embeddedVertices.begin(), (PxU32)embeddedVertices.size());
+        if (skinningBuffersValid)
+        {
+            std::memcpy(internalBody->mAllSkinnedVerticesH, allSkinMeshBindPointsWorld.data(), sizeof(PxVec3) * numAllSkinMeshPoints);
+            PxDeformableSkinningExt::initializeInterpolatedVertices(
+                skinningEmbeddingInfoH, guideVertices.begin(), nullptr, simMeshTriIndices.begin(), nbTriangles,
+                embeddedVertices.begin(), (PxU32)embeddedVertices.size());
 
-        PxCudaHelpersExt::copyHToD(*cudaContextManager, internalBody->mSimMeshTriIndicesD, simMeshTriIndices.begin(), numTriIndices);
-        PxCudaHelpersExt::copyHToD(*cudaContextManager, internalBody->mAllSkinnedVerticesD, internalBody->mAllSkinnedVerticesH, numAllSkinMeshPoints);
-        PxCudaHelpersExt::copyHToD(*cudaContextManager, internalBody->mSkinningEmbeddingInfoD, skinningEmbeddingInfoH, numAllSkinMeshPoints);
+            PxCudaHelpersExt::copyHToD(*cudaContextManager, internalBody->mSimMeshTriIndicesD, simMeshTriIndices.begin(), numTriIndices);
+            PxCudaHelpersExt::copyHToD(*cudaContextManager, internalBody->mAllSkinnedVerticesD, internalBody->mAllSkinnedVerticesH, numAllSkinMeshPoints);
+            PxCudaHelpersExt::copyHToD(*cudaContextManager, internalBody->mSkinningEmbeddingInfoD, skinningEmbeddingInfoH, numAllSkinMeshPoints);
+        }
 
         if (skinningEmbeddingInfoH)
             PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, skinningEmbeddingInfoH);
 
-        PxShape* surfaceShape = deformableSurface->getShape();
-        const PxReal halfThickness = surfaceShape->getRestOffset();
-
         // Add skinning data after the surface deformable body is created
-        deformables::SurfaceDeformableSkinningData skinningData;
-        skinningData.mDeformableSurface = deformableSurface;
-        skinningData.mGuideTrianglesD = internalBody->mSimMeshTriIndicesD;
-        skinningData.mNumGuideTriangles = nbTriangles;
-        skinningData.mGuideNormalsD = internalBody->mNormalVectorsD;
-        skinningData.mNumGuideVertices = triangleMeshGeom.triangleMesh->getNbVertices();
-        skinningData.mSkinningEmbeddingInfoD = internalBody->mSkinningEmbeddingInfoD;
-        skinningData.mSkinnedVerticesD = internalBody->mAllSkinnedVerticesD;
-        skinningData.mNumSkinnedVertices = internalBody->mNumSkinMeshVertices;
-        skinningData.mHalfThickness = halfThickness;
+        if (skinningBuffersValid)
+        {
+            PxShape* surfaceShape = deformableSurface->getShape();
+            const PxReal halfThickness = surfaceShape->getRestOffset();
 
-        scene->getInternalScene()->mSurfaceDeformablePostSolveCallback->addSurfaceDeformableSkinningData(skinningData);
+            deformables::SurfaceDeformableSkinningData skinningData;
+            skinningData.mDeformableSurface = deformableSurface;
+            skinningData.mGuideTrianglesD = internalBody->mSimMeshTriIndicesD;
+            skinningData.mNumGuideTriangles = nbTriangles;
+            skinningData.mGuideNormalsD = internalBody->mNormalVectorsD;
+            skinningData.mNumGuideVertices = triangleMeshGeom.triangleMesh->getNbVertices();
+            skinningData.mSkinningEmbeddingInfoD = internalBody->mSkinningEmbeddingInfoD;
+            skinningData.mSkinnedVerticesD = internalBody->mAllSkinnedVerticesD;
+            skinningData.mNumSkinnedVertices = internalBody->mNumSkinMeshVertices;
+            skinningData.mHalfThickness = halfThickness;
+
+            scene->getInternalScene()->mSurfaceDeformablePostSolveCallback->addSurfaceDeformableSkinningData(skinningData);
+        }
     }
 
     scene->getInternalScene()->mSurfaceDeformableBodies.push_back(internalBody);

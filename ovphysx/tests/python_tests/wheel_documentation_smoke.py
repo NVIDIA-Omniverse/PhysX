@@ -17,6 +17,7 @@ from urllib.parse import unquote, urlsplit
 _PUBLIC_DOC_SUFFIXES = {".jpg", ".md", ".png", ".rst"}
 _MARKDOWN_LINK_RE = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
 _MARKDOWN_FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
+_IMAGE_FORMATS = {".png": "PNG", ".jpg": "JPEG", ".jpeg": "JPEG"}
 
 # Sphinx publishes the C headers as download artifacts under hashed directories,
 # so they are checked by name rather than by path.
@@ -26,6 +27,8 @@ _RENDERED_DOC_HEADERS = (
     "ovphysx_types.h",
     "ovphysx_config.h",
     "ovphysx_geometry_query.h",
+    "ovphysx_population.h",
+    "ovphysx_utils.h",
     "ovphysx_legacy.h",
     "ovphysx_legacy_config.h",
     "ovphysx_legacy_types.h",
@@ -140,6 +143,44 @@ def _rendered_docs_findings(package_docs: Path) -> list[str]:
     return findings
 
 
+def _image_findings(package_docs: Path) -> list[str]:
+    """Decode portable and rendered images, even when source bytes match."""
+    paths = sorted(path for path in package_docs.rglob("*")
+                   if path.is_file() and path.suffix.lower() in _IMAGE_FORMATS)
+    if not paths:
+        return []
+    try:
+        from PIL import Image
+    except ImportError as error:
+        raise RuntimeError(
+            "Documentation image validation requires Pillow; install "
+            "scripts/documentation_requirements.txt in the test environment."
+        ) from error
+
+    findings: list[str] = []
+    for path in paths:
+        label = path.relative_to(package_docs).as_posix()
+        with path.open("rb") as image_file:
+            if image_file.read(64).startswith(b"version https://git-lfs.github.com/spec/v1"):
+                findings.append(f"{label}: Git LFS pointer; hydrate the documentation assets before staging")
+                continue
+        try:
+            expected_format = _IMAGE_FORMATS[path.suffix.lower()]
+            with Image.open(path) as decoded:
+                if decoded.format != expected_format:
+                    findings.append(f"{label}: expected {expected_format}, found {decoded.format}")
+                    continue
+                # verify() checks container integrity; reopen to decode pixels too.
+                decoded.verify()
+            with Image.open(path) as decoded:
+                for frame in range(getattr(decoded, "n_frames", 1)):
+                    decoded.seek(frame)
+                    decoded.load()
+        except (OSError, ValueError, SyntaxError, Image.DecompressionBombError) as error:
+            findings.append(f"{label}: image cannot be decoded: {error}")
+    return findings
+
+
 def validate(
     package_root: Path,
     source_docs: Path,
@@ -194,6 +235,11 @@ def validate(
     if mismatched_raw:
         mismatch_lines = "\n".join(f"  {path.as_posix()}" for path in mismatched_raw)
         raise RuntimeError(f"RST or image content differs from its public source:\n{mismatch_lines}")
+
+    image_findings = _image_findings(package_docs)
+    if image_findings:
+        image_lines = "\n".join(f"  {finding}" for finding in image_findings)
+        raise RuntimeError(f"Invalid documentation images in the artifact:\n{image_lines}")
 
     broken = _broken_relative_links(package_root, allow_unbundled_header_links=allow_unbundled_header_links)
     if broken:

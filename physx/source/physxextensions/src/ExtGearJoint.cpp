@@ -63,9 +63,15 @@ bool GearJoint::setHinges(const PxBase* hinge0, const PxBase* hinge1)
 	markDirty();
 
 #if PX_SUPPORT_OMNI_PVD
-	const PxBase* joints[] ={ hinge0, hinge1 };
-	const PxU32 hingeCount = sizeof(joints) / sizeof(joints[0]);
-	OMNI_PVD_SET_ARRAY(OMNI_PVD_CONTEXT_HANDLE, PxGearJoint, hinges, static_cast<PxGearJoint&>(*this), joints, hingeCount)
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+	PxGearJoint& joint = static_cast<PxGearJoint&>(*this);
+	if (OmniPvdShouldRecordValue("PxGearJoint", "hinges", pvdRegData->pvdPxGearJoint.getObjectHandle(joint)))
+	{
+		OmniPvdCacheJointReferences(joint, hinge0, hinge1);
+		const PxBase* joints[] = { OmniPvdCaptureJointReference(hinge0, pvdWriter), OmniPvdCaptureJointReference(hinge1, pvdWriter) };
+		OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxGearJoint, hinges, joint, joints, PxU32(sizeof(joints) / sizeof(joints[0])))
+	}
+	OMNI_PVD_WRITE_SCOPE_END
 #endif
 		
 	return true;
@@ -297,10 +303,14 @@ void physx::Ext::omniPvdInitJoint<GearJoint>(OmniPvdWriter* pvdWriter, const Omn
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxGearJoint, ratio, j , joint.getGearRatio())
 
 	// Re-emit the linked hinge references (set live by setHinges) so a late attach reconstructs them.
-	const PxBase* hinge0 = NULL; const PxBase* hinge1 = NULL;
-	joint.getHinges(hinge0, hinge1);
-	const PxBase* hinges[] = { hinge0, hinge1 };
-	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxGearJoint, hinges, j, hinges, PxU32(sizeof(hinges) / sizeof(hinges[0])))
+	if (OmniPvdShouldRecordValue("PxGearJoint", "hinges", pvdRegData->pvdPxGearJoint.getObjectHandle(j)))
+	{
+		const PxBase* hinge0 = NULL; const PxBase* hinge1 = NULL;
+		joint.getHinges(hinge0, hinge1);
+		OmniPvdCacheJointReferences(j, hinge0, hinge1);
+		const PxBase* hinges[] = { OmniPvdCaptureJointReference(hinge0, pvdWriter), OmniPvdCaptureJointReference(hinge1, pvdWriter) };
+		OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxGearJoint, hinges, j, hinges, PxU32(sizeof(hinges) / sizeof(hinges[0])))
+	}
 }
 
 #endif

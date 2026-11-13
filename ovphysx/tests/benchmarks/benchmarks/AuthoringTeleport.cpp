@@ -465,7 +465,7 @@ protected:
             bmRecordFailure(mRowName, "query %s failed", kAuthoringBodyPath);
             return false;
         }
-        ovx_token_t token = 0;
+        ovx_token_t token{0};
         if (!authoringbm::internAttr(mStageAttachment.stage, "omni:xform", &token))
         {
             bmRecordFailure(mRowName, "intern omni:xform failed");
@@ -543,7 +543,7 @@ private:
     }
 
     ovstage_query_handle_t mQuery = OVSTAGE_INVALID_QUERY_HANDLE;
-    ovx_string_or_token_t mXformAttr{};
+    ovx_token_or_string_t mXformAttr{};
     ovstage_ordinal_t mOrdinal = 0;
     ovstage_ordinal_t mLastDrained = 0;
     double mMatrix[16] = { 0.0 };

@@ -2,11 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-READ-CCT-001
+ * @covers AC-3
+ *
  * @implements REQ-READ-CORE-001
  * @covers AC-1
  *
  * @implements REQ-READ-ATTRS-001
- * @covers AC-1, AC-3, AC-5
+ * @covers AC-1, AC-3, AC-5, AC-30
  *
  * @implements REQ-TENSOR-INDEX-001
  * @covers AC-1 AC-2 AC-3
@@ -174,6 +177,33 @@ bool CpuRigidBodyView::getAngularAccelerationsOvStage(const TensorDesc* dstTenso
 {
     return gatherVelAccColumnOvStage(/*wantAngular=*/true, /*wantAcceleration=*/true, outRecordIdx, numOutputs,
                                      dstTensor);
+}
+
+bool CpuRigidBodyView::getWorldScalesOvStage(const TensorDesc* dstTensor,
+                                             const PxU32* outRecordIdx,
+                                             const PxU32 numOutputs,
+                                             uint64_t) const
+{
+    CHECK_VALID_DATA_SIM_RETURN(mCpuSimData, mSim, false);
+    if (!dstTensor || !dstTensor->data)
+        return false;
+    if (!checkTensorDevice(*dstTensor, -1, "world scale", __FUNCTION__) ||
+        !checkTensorFloat32(*dstTensor, "world scale", __FUNCTION__) ||
+        !checkTensorSizeExact(*dstTensor, numOutputs * 3u, "world scale", __FUNCTION__) ||
+        !checkRecordIndices(outRecordIdx, numOutputs, mEntries.size(), "world scale", __FUNCTION__))
+    {
+        return false;
+    }
+
+    float* dst = static_cast<float*>(dstTensor->data);
+    for (PxU32 i = 0; i < numOutputs; i++)
+    {
+        const PxVec3& scale = mEntries[outRecordIdx ? outRecordIdx[i] : i].worldScale;
+        *dst++ = scale.x;
+        *dst++ = scale.y;
+        *dst++ = scale.z;
+    }
+    return true;
 }
 
 bool CpuRigidBodyView::setPositionsOvStage(const TensorDesc* srcTensor,
@@ -436,10 +466,11 @@ bool CpuRigidBodyView::gatherPoseColumnOvStage(const bool wantOrientation,
         const PxTransform pose = mEntries[recIdx].body->getGlobalPose();
         if (wantOrientation)
         {
-            *dst++ = pose.q.x;
-            *dst++ = pose.q.y;
-            *dst++ = pose.q.z;
-            *dst++ = pose.q.w;
+            const PxQuat q = mEntries[recIdx].orientationFixup * pose.q;
+            *dst++ = q.x;
+            *dst++ = q.y;
+            *dst++ = q.z;
+            *dst++ = q.w;
         }
         else
         {
@@ -733,7 +764,7 @@ bool CpuRigidBodyView::applyForces(const TensorDesc* srcTensor, const TensorDesc
 {
     CHECK_VALID_DATA_SIM_RETURN(mCpuSimData, mSim, false);
 
-    CARB_LOG_WARN("Deprecated function IArticulationView::applyForces, please use IArticulationView::applyForcesAndTorquesAtPosition instead.");
+    CARB_LOG_WARN("Deprecated function IRigidBodyView::applyForces, please use IRigidBodyView::applyForcesAndTorquesAtPosition instead.");
     return applyForcesAndTorquesAtPosition(srcTensor, nullptr, nullptr, indexTensor, true);
 }
 

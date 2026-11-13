@@ -1,0 +1,41 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+def Xform "World"
+{
+    def PhysicsScene "scene"
+    {
+        vector3f physics:gravityDirection = (0, -1, 0)
+        float physics:gravityMagnitude = 9.81
+    }
+    def Material "material" (prepend apiSchemas = ["PhysicsMaterialAPI"])
+    {
+        float physics:staticFriction = 0.6
+        float physics:dynamicFriction = 0.5
+        float physics:restitution = 0.1
+    }
+    def Xform "body" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+    )
+    {
+        float physics:mass = 1
+        double3 xformOp:translate = (0, 5, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        def Cube "collider" (prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"])
+        {
+            double size = 1
+            rel material:binding:physics = </World/material>
+        }
+    }
+    def PhysicsRevoluteJoint "joint"
+    {
+        rel physics:body1 = </World/body>
+        uniform token physics:axis = "Z"
+        float physics:lowerLimit = -45
+        float physics:upperLimit = 45
+    }
+}

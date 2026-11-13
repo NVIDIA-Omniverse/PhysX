@@ -1,0 +1,1762 @@
+{
+  "$schema": "../contract.schema.json",
+  "schema_version": 1,
+  "attributes": [
+    {
+      "id": "debug_enabled",
+      "name": "enabled",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_ENABLED",
+      "cpp_symbol": "kDebugEnabled",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "visualization on/off",
+          "dtype": "u8",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_scale",
+      "name": "scale",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_SCALE",
+      "cpp_symbol": "kDebugScale",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Finite nonnegative visualization magnitude; zero disables this parameter.",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_world_axes",
+      "name": "worldAxes",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_WORLD_AXES",
+      "cpp_symbol": "kDebugWorldAxes",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Finite nonnegative visualization magnitude; zero disables this parameter.",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_body_axes",
+      "name": "bodyAxes",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_BODY_AXES",
+      "cpp_symbol": "kDebugBodyAxes",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Finite nonnegative visualization magnitude; zero disables this parameter.",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_body_mass_axes",
+      "name": "bodyMassAxes",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_BODY_MASS_AXES",
+      "cpp_symbol": "kDebugBodyMassAxes",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Finite nonnegative visualization magnitude; zero disables this parameter.",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_body_linear_velocity",
+      "name": "bodyLinearVelocity",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_BODY_LINEAR_VELOCITY",
+      "cpp_symbol": "kDebugBodyLinearVelocity",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Finite nonnegative visualization magnitude; zero disables this parameter.",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_body_angular_velocity",
+      "name": "bodyAngularVelocity",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_BODY_ANGULAR_VELOCITY",
+      "cpp_symbol": "kDebugBodyAngularVelocity",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Finite nonnegative visualization magnitude; zero disables this parameter.",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_contact_point",
+      "name": "contactPoint",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_CONTACT_POINT",
+      "cpp_symbol": "kDebugContactPoint",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Finite nonnegative visualization magnitude; zero disables this parameter.",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_contact_normal",
+      "name": "contactNormal",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_CONTACT_NORMAL",
+      "cpp_symbol": "kDebugContactNormal",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Finite nonnegative visualization magnitude; zero disables this parameter.",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_contact_error",
+      "name": "contactError",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_CONTACT_ERROR",
+      "cpp_symbol": "kDebugContactError",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Finite nonnegative visualization magnitude; zero disables this parameter.",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_contact_impulse",
+      "name": "contactImpulse",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_CONTACT_IMPULSE",
+      "cpp_symbol": "kDebugContactImpulse",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Finite nonnegative visualization magnitude; zero disables this parameter.",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_friction_point",
+      "name": "frictionPoint",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_FRICTION_POINT",
+      "cpp_symbol": "kDebugFrictionPoint",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Finite nonnegative visualization magnitude; zero disables this parameter.",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_friction_normal",
+      "name": "frictionNormal",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_FRICTION_NORMAL",
+      "cpp_symbol": "kDebugFrictionNormal",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Finite nonnegative visualization magnitude; zero disables this parameter.",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_friction_impulse",
+      "name": "frictionImpulse",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_FRICTION_IMPULSE",
+      "cpp_symbol": "kDebugFrictionImpulse",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Finite nonnegative visualization magnitude; zero disables this parameter.",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_actor_axes",
+      "name": "actorAxes",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_ACTOR_AXES",
+      "cpp_symbol": "kDebugActorAxes",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Finite nonnegative visualization magnitude; zero disables this parameter.",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_collision_aabbs",
+      "name": "collisionAABBs",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_COLLISION_AABBS",
+      "cpp_symbol": "kDebugCollisionAabbs",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Finite nonnegative visualization magnitude; zero disables this parameter.",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_collision_shapes",
+      "name": "collisionShapes",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_COLLISION_SHAPES",
+      "cpp_symbol": "kDebugCollisionShapes",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Finite nonnegative visualization magnitude; zero disables this parameter.",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_collision_axes",
+      "name": "collisionAxes",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_COLLISION_AXES",
+      "cpp_symbol": "kDebugCollisionAxes",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Finite nonnegative visualization magnitude; zero disables this parameter.",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_collision_compounds",
+      "name": "collisionCompounds",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_COLLISION_COMPOUNDS",
+      "cpp_symbol": "kDebugCollisionCompounds",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Finite nonnegative visualization magnitude; zero disables this parameter.",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_collision_face_normals",
+      "name": "collisionFaceNormals",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_COLLISION_FACE_NORMALS",
+      "cpp_symbol": "kDebugCollisionFaceNormals",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Finite nonnegative visualization magnitude; zero disables this parameter.",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_collision_edges",
+      "name": "collisionEdges",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_COLLISION_EDGES",
+      "cpp_symbol": "kDebugCollisionEdges",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Finite nonnegative visualization magnitude; zero disables this parameter.",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_collision_static_pruner",
+      "name": "collisionStaticPruner",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_COLLISION_STATIC_PRUNER",
+      "cpp_symbol": "kDebugCollisionStaticPruner",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Finite nonnegative visualization magnitude; zero disables this parameter.",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_collision_dynamic_pruner",
+      "name": "collisionDynamicPruner",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_COLLISION_DYNAMIC_PRUNER",
+      "cpp_symbol": "kDebugCollisionDynamicPruner",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Finite nonnegative visualization magnitude; zero disables this parameter.",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_joint_local_frames",
+      "name": "jointLocalFrames",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_JOINT_LOCAL_FRAMES",
+      "cpp_symbol": "kDebugJointLocalFrames",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Finite nonnegative visualization magnitude; zero disables this parameter.",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_joint_limits",
+      "name": "jointLimits",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_JOINT_LIMITS",
+      "cpp_symbol": "kDebugJointLimits",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Finite nonnegative visualization magnitude; zero disables this parameter.",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_cull_box",
+      "name": "cullBox",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_CULL_BOX",
+      "cpp_symbol": "kDebugCullBox",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Finite nonnegative visualization magnitude; zero disables this parameter.",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_mbp_regions",
+      "name": "mbpRegions",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_MBP_REGIONS",
+      "cpp_symbol": "kDebugMbpRegions",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Finite nonnegative visualization magnitude; zero disables this parameter.",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_simulation_mesh",
+      "name": "simulationMesh",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_SIMULATION_MESH",
+      "cpp_symbol": "kDebugSimulationMesh",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Finite nonnegative visualization magnitude; zero disables this parameter.",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_sdf",
+      "name": "sdf",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_SDF",
+      "cpp_symbol": "kDebugSdf",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Finite nonnegative visualization magnitude; zero disables this parameter.",
+          "dtype": "f32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "objects"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_culling_box",
+      "name": "cullingBox",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_CULLING_BOX",
+      "cpp_symbol": "kDebugCullingBox",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Read min/max xyz or no row; write enable flag followed by min/max xyz.",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "length",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 6,
+              "shape": [
+                "zero_or_one"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                7
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": [],
+            "units": "culling_box_write"
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_scope",
+      "name": "scope",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_SCOPE",
+      "cpp_symbol": "kDebugScope",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "Read path tokens; write count followed by up to 4096 tokens. Count zero draws everything.",
+          "dtype": "u64",
+          "frame": "not_applicable",
+          "units": "not_applicable",
+          "writability": "WRITABLE",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "path_count"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                4097
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ],
+            "effect": "set_input",
+            "persistence": "until_replaced",
+            "visibility": "commit",
+            "preserves": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "debug_point_position",
+      "name": "pointPosition",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_POINT_POSITION",
+      "cpp_symbol": "kDebugPointPosition",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "point positions",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "length",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "primitive_count",
+                3
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "debug_point_color",
+      "name": "pointColor",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_POINT_COLOR",
+      "cpp_symbol": "kDebugPointColor",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "point colors (`0xAARRGGBB`)",
+          "dtype": "u32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "primitive_count"
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "debug_line_position",
+      "name": "linePosition",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_LINE_POSITION",
+      "cpp_symbol": "kDebugLinePosition",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "line endpoint positions",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "length",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "primitive_count",
+                2,
+                3
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "debug_line_color",
+      "name": "lineColor",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_LINE_COLOR",
+      "cpp_symbol": "kDebugLineColor",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "line endpoint colors",
+          "dtype": "u32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "primitive_count",
+                2
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "debug_triangle_position",
+      "name": "trianglePosition",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_TRIANGLE_POSITION",
+      "cpp_symbol": "kDebugTrianglePosition",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "triangle vertex positions",
+          "dtype": "f32",
+          "frame": "world",
+          "units": "length",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "primitive_count",
+                3,
+                3
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": false
+        }
+      ]
+    },
+    {
+      "id": "debug_triangle_color",
+      "name": "triangleColor",
+      "c_symbol": "OVPHYSX_ATTR_DEBUG_TRIANGLE_COLOR",
+      "cpp_symbol": "kDebugTriangleColor",
+      "public": true,
+      "semantic": "NONE",
+      "uses": [
+        {
+          "target": "DEBUG_RENDER",
+          "description": "triangle vertex colors",
+          "dtype": "u32",
+          "frame": "not_applicable",
+          "units": "dimensionless",
+          "writability": "READ_ONLY",
+          "read": {
+            "residency": "host",
+            "layout": {
+              "kind": "fixed",
+              "lanes": 1,
+              "shape": [
+                "primitive_count",
+                3
+              ]
+            },
+            "conditions": [
+              "session",
+              "debug"
+            ]
+          },
+          "write": false
+        }
+      ]
+    }
+  ]
+}

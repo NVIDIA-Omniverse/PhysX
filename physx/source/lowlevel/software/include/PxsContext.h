@@ -74,7 +74,10 @@ public:
 					PxsContactManager*			createContactManager(PxsContactManager* contactManager, bool useCCD);
 					void						createCache(Gu::Cache& cache, PxGeometryType::Enum geomType0, PxGeometryType::Enum geomType1);
 					void						destroyCache(Gu::Cache& cache);
+					void						destroyManifold(Gu::PersistentContactManifold* manifold);
 					void						destroyContactManager(PxsContactManager* cm);
+					// Same as above for callers that know the index and the CCD state, which saves reading the manager.
+					void						destroyContactManager(PxU32 cmIndex, bool ccd);
 
 	PX_FORCE_INLINE	PxU64						getContextId() const { return mContextID; }
 

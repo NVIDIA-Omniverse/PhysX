@@ -1,0 +1,115 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+# One Ant in /World/envs/env0, every joint position-driven, on a ground plane in a GPU dynamics scene.
+# rl_step_capture.py clones env0 into more environments.
+def Xform "World"
+{
+    def PhysicsScene "physicsScene" (
+        prepend apiSchemas = ["PhysxSceneAPI"]
+    )
+    {
+        vector3f physics:gravityDirection = (0, 0, -1)
+        float physics:gravityMagnitude = 9.81
+        bool physxScene:enableGPUDynamics = true
+        uniform token physxScene:broadphaseType = "GPU"
+    }
+
+    def Plane "GroundPlane" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "Z"
+        uniform token purpose = "guide"
+    }
+
+    def Xform "envs"
+    {
+        def Xform "env0" (
+            prepend references = @./Ant.usda@</ant>
+        )
+        {
+            double3 xformOp:translate = (0, 0, 0.5)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            over "joints"
+            {
+                over "front_left_leg" (
+                    prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+                )
+                {
+                    uniform token drive:angular:physics:type = "force"
+                    float drive:angular:physics:stiffness = 0.5
+                    float drive:angular:physics:damping = 0.05
+                }
+
+                over "front_left_foot" (
+                    prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+                )
+                {
+                    uniform token drive:angular:physics:type = "force"
+                    float drive:angular:physics:stiffness = 0.5
+                    float drive:angular:physics:damping = 0.05
+                }
+
+                over "front_right_leg" (
+                    prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+                )
+                {
+                    uniform token drive:angular:physics:type = "force"
+                    float drive:angular:physics:stiffness = 0.5
+                    float drive:angular:physics:damping = 0.05
+                }
+
+                over "front_right_foot" (
+                    prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+                )
+                {
+                    uniform token drive:angular:physics:type = "force"
+                    float drive:angular:physics:stiffness = 0.5
+                    float drive:angular:physics:damping = 0.05
+                }
+
+                over "left_back_leg" (
+                    prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+                )
+                {
+                    uniform token drive:angular:physics:type = "force"
+                    float drive:angular:physics:stiffness = 0.5
+                    float drive:angular:physics:damping = 0.05
+                }
+
+                over "left_back_foot" (
+                    prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+                )
+                {
+                    uniform token drive:angular:physics:type = "force"
+                    float drive:angular:physics:stiffness = 0.5
+                    float drive:angular:physics:damping = 0.05
+                }
+
+                over "right_back_leg" (
+                    prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+                )
+                {
+                    uniform token drive:angular:physics:type = "force"
+                    float drive:angular:physics:stiffness = 0.5
+                    float drive:angular:physics:damping = 0.05
+                }
+
+                over "right_back_foot" (
+                    prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+                )
+                {
+                    uniform token drive:angular:physics:type = "force"
+                    float drive:angular:physics:stiffness = 0.5
+                    float drive:angular:physics:damping = 0.05
+                }
+            }
+        }
+    }
+}

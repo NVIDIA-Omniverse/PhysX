@@ -37,3 +37,7 @@ and after attaching and releasing a USD stage.
 - The same assertions pass after three complete lifecycles (REQ AC-2).
 - The stage variants also exit with code 23, including Windows DLL/static teardown;
   printing a successful test result before an exit crash is a failure (REQ AC-3).
+
+`HostExit.LiveInstanceWithHeldWorkerExitsCleanly` additionally starts a fresh
+child with a held worker and queued job, then exits without instance destruction.
+The child must terminate with code 23 without joining that worker (REQ AC-4).

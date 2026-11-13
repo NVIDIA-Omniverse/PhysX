@@ -12,6 +12,7 @@
 #include "ScConstraintSim.h"
 #include "ScConstraintInteraction.h"
 #include "PxsSimulationController.h"
+#include "omnipvd/NpOmniPvdSetData.h"
 
 using namespace physx;
 using namespace Sc;
@@ -152,6 +153,11 @@ NpConstraint::NpConstraint(PxRigidActor* actor0, PxRigidActor* actor1, PxConstra
 
 NpConstraint::~NpConstraint()
 {
+#if PX_SUPPORT_OMNI_PVD
+	// The connector and its serializable object are still live at this point.
+	if (OmniPvdPxSampler* sampler = OmniPvdPxSampler::getInstance())
+		sampler->onObjectRemove(*this);
+#endif
 	if(getBaseFlags()&PxBaseFlag::eOWNS_MEMORY)
 		mCore.getPxConnector()->onConstraintRelease();
 
@@ -255,6 +261,11 @@ void NpConstraint::setActors(PxRigidActor* actor0, PxRigidActor* actor1)
 	}
 
 	UPDATE_PVD_PROPERTY
+
+#if PX_SUPPORT_OMNI_PVD
+	if (OmniPvdPxSampler* sampler = OmniPvdPxSampler::getInstance())
+		sampler->onConstraintActorsChange(*this);
+#endif
 }
 
 PxConstraintFlags NpConstraint::getFlags() const

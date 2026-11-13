@@ -3,13 +3,16 @@
 
 """Init-time typed config tests, ONE create+destroy per file.
 
+@implements REQ-CAPI-CONFIG-001
+@covers AC-5 AC-7 AC-8
+
 Tests that PhysXConfig entries passed during construction are applied correctly.
 Runs in its own subprocess (see test_python_runtime.cmake).
 """
 
 import pytest
 
-from ovphysx import GlobalConfigKey, PhysX, PhysXConfig, get_global_config
+from ovphysx import ConfigKey, GlobalConfigKey, PhysX, PhysXConfig, get_global_config
 
 
 def test_typed_config_at_init():
@@ -37,5 +40,6 @@ def test_typed_config_at_init():
         assert get_global_config(GlobalConfigKey.COLLISION_CONE_CUSTOM_GEOMETRY) is False
         assert get_global_config(GlobalConfigKey.COLLISION_CYLINDER_CUSTOM_GEOMETRY) is True
         assert get_global_config(GlobalConfigKey.NUM_THREADS) == 4
+        assert physx.get_config(ConfigKey.ACTIVE_CUDA_GPUS) is None
     finally:
         physx.destroy()

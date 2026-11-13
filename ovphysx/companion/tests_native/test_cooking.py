@@ -181,12 +181,13 @@ def test_volume_recipe_owns_distinct_meshes_and_visual_embedding(physics):
 
 def test_cooking_during_pending_preview_preserves_simulation(physics):
     import ovstage
+    from ovphysx.population import physics_population_descs
     from pathlib import Path
     from ovphysx_companion.preview import PreviewSession
     stage=ovstage.Stage('cooking-safe-point')
     try:
-        ovstage.population.open_usd(stage,str(Path(__file__).resolve().parents[1]/'samples/scenes/two_boxes.usda'),
-                                    ordinal=1,domains=ovstage.PopulationDomain.ALL)
+        ovstage.population.open_usd_with_desc(stage,str(Path(__file__).resolve().parents[1]/'samples/scenes/two_boxes.usda'),
+                                    ordinal=1,time=ovstage.population.DEFAULT_TIME,descs=physics_population_descs(rendering=True))
         stage.advance_write_floor(ordinal=1).wait()
         with CookingService(physics) as service, PreviewSession(physics,stage,read_ordinal=1) as preview:
             preview.simulate(.01)

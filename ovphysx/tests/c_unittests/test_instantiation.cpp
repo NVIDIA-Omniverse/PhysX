@@ -242,11 +242,10 @@ TEST(CpuModeAPI, GetCpuModeReportsEffectivePolicy)
 
     // The CPU CTest pass typically sets OVPHYSX_DISABLE_GPU=1. When that env
     // var is present, hard CPU-only mode must be reported as true. When it is
-    // absent, the getter may still be true if ovphysx_set_cpu_mode(true) was
-    // applied earlier in the process (sticky), so only the env implication is
-    // asserted. Default-false (neither input active) is covered by
-    // CpuNoCudaContextGpuTest and the Python lifecycle probe for
-    // OVPHYSX_DISABLE_GPU latching.
+    // absent, the getter may still be true if CPU-only mode was applied earlier
+    // in the process (sticky), so only the env implication is asserted.
+    // Default-false for the surviving key is covered by CpuNoCudaContextGpuTest.
+    // The Python lifecycle probe covers OVPHYSX_DISABLE_GPU latching.
     if (std::getenv("OVPHYSX_DISABLE_GPU") != nullptr)
     {
         EXPECT_TRUE(cpuOnly)

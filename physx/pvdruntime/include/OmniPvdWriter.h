@@ -34,6 +34,15 @@ struct OmniPvdWriterStatusFlag
  *
  * Allows the registration of OmniPVD classes and attributes, in a similar fashion to an object oriented language. A successful registration returns a unique identifier or handle.
  *
+ * All attribute kinds, including enum values, share one name namespace on each class and its
+ * inheritance chain. Names are case-sensitive and compared using the serialized name bytes.
+ * A name already registered on the same class, an ancestor, or a descendant cannot be registered
+ * again, regardless of kind, type or element count. Siblings and unrelated classes may reuse names.
+ * A rejected duplicate returns OMNI_PVD_INVALID_HANDLE, emits no command, consumes no handle, and
+ * reports through the installed log callback without changing transport status. Do not use the
+ * invalid return as an attribute handle. Registrations that consume a handle retain their names
+ * even if writing fails. setWriteStream() resets names. clearStatus() preserves them.
+ *
  * Once classes and attributes have been registered, one can create for example object instances of a class and set the values of the attributes of a specific object.
  *
  * Objects can be grouped by context using the context handle. The context handle is a user-specified handle which is passed to the set functions and object creation and destruction functions.
@@ -72,7 +81,7 @@ public:
 	 * session and retry epoch.
 	 *
 	 * Every binding resets the writer's per-stream header state, schema handle numbering, and
-	 * status flags so subsequent writes form a self-contained versioned segment. Binding itself
+	 * status flags and registered attribute names so subsequent writes form a self-contained versioned segment. Binding itself
 	 * does not clear transport bytes or reset its cursor. If the stream is already open, the segment
 	 * begins at its current position. If it is closed, the next command first applies that transport's
 	 * reopen policy: a file writer truncates, a memory writer preserves its FIFO position, and a TCP
@@ -123,8 +132,8 @@ public:
 	 * \param classHandle The handle from the registerClass() call
 	 * \param attributeName The name of the enum value
 	 * \param value The value of the enum value
-	 * \return A unique attribute handle, or OMNI_PVD_INVALID_HANDLE if no stream is bound or its
-	 * lazy open fails.
+	 * \return A unique attribute handle, or OMNI_PVD_INVALID_HANDLE if no stream is bound, its
+	 * lazy open fails, or the name is already registered on this class, an ancestor or a descendant.
 	 *
 	 * \see OmniPvdWriter::registerClass()
 	 */
@@ -139,8 +148,8 @@ public:
 	 * \param attributeName The attribute name
 	 * \param attributeDataType The attribute data type
 	 * \param nbElements The number of elements in the array. Set this to 0 to indicate a variable length array
-	 * \return A unique attribute handle, or OMNI_PVD_INVALID_HANDLE if no stream is bound or its
-	 * lazy open fails.
+	 * \return A unique attribute handle, or OMNI_PVD_INVALID_HANDLE if no stream is bound, its
+	 * lazy open fails, or the name is already registered on this class, an ancestor or a descendant.
 	 *
 	 * \see OmniPvdWriter::registerClass()
 	 * \see OmniPvdWriter::setAttribute()
@@ -157,8 +166,8 @@ public:
 	 * \param classHandle The handle from the registerClass() call of the class
 	 * \param attributeName The attribute name
 	 * \param enumClassHandle The handle from the registerClass() call of the enum
-	 * \return A unique attribute handle, or OMNI_PVD_INVALID_HANDLE if no stream is bound or its
-	 * lazy open fails.
+	 * \return A unique attribute handle, or OMNI_PVD_INVALID_HANDLE if no stream is bound, its
+	 * lazy open fails, or the name is already registered on this class, an ancestor or a descendant.
 	 *
 	 * \see OmniPvdWriter::registerClass()
 	 * \see OmniPvdWriter::setAttribute()
@@ -175,8 +184,8 @@ public:
 	 * \param classHandle The handle from the registerClass() call of the class
 	 * \param attributeName The attribute name
 	 * \param classAttributeHandle The handle from the registerClass() call of the class attribute
-	 * \return A unique handle, or OMNI_PVD_INVALID_HANDLE if no stream is bound or its lazy open
-	 * fails.
+	 * \return A unique attribute handle, or OMNI_PVD_INVALID_HANDLE if no stream is bound, its
+	 * lazy open fails, or the name is already registered on this class, an ancestor or a descendant.
 	 *
 	 * \see OmniPvdWriter::registerClass()
 	 * \see OmniPvdWriter::setAttribute()
@@ -191,8 +200,8 @@ public:
 	 * \param classHandle The handle from the registerClass() call of the class
 	 * \param attributeName The attribute name
 	 * \param attributeDataType The data type of the items which will get added to the list attribute
-	 * \return A unique handle, or OMNI_PVD_INVALID_HANDLE if no stream is bound or its lazy open
-	 * fails.
+	 * \return A unique attribute handle, or OMNI_PVD_INVALID_HANDLE if no stream is bound, its
+	 * lazy open fails, or the name is already registered on this class, an ancestor or a descendant.
 	 *
 	 * \see OmniPvdWriter::registerClass()
 	 * \see OmniPvdWriter::addToUniqueListAttribute()
@@ -402,6 +411,7 @@ public:
 	 *
 	 * This function performs no stream I/O. If a failed first-write lazy open is latched, clearing
 	 * the status permits the next writer command to attempt the open once in a new status epoch.
+	 * Registered classes and attribute names are retained, including registrations whose writes failed.
 	 */
 	virtual void OMNI_PVD_CALL clearStatus() = 0;
 

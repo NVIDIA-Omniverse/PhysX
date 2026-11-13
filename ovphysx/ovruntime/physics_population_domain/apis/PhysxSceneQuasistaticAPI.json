@@ -1,0 +1,88 @@
+{
+  "$schema": "../contract.schema.json",
+  "kind": "api_schema",
+  "id": "PhysxSceneQuasistaticAPI",
+  "title": "PhysxSceneQuasistaticAPI",
+  "summary": "Quasistatic mode for a scene: while enableQuasistatic is on, the runtime clears the velocities of the scene's dynamic actors and articulation links after every step, or only of the members of its quasistaticactors collection when that has any. The scene parse reads enableQuasistatic only when the PhysicsScene prim lists the API.",
+  "status": "draft",
+  "authoring": false,
+  "applies_to": [
+    "PhysicsScene"
+  ],
+  "multi_apply": false,
+  "population": {
+    "physics": true,
+    "row": false
+  },
+  "columns": [
+    {
+      "name": "physxSceneQuasistatic:enableQuasistatic",
+      "usd_type": "bool",
+      "origin": "schema",
+      "kind": "attribute",
+      "semantic": "NONE",
+      "dtype": {
+        "code": "bool",
+        "bits": 8,
+        "lanes": 1,
+        "is_array": false
+      },
+      "required": false,
+      "raw_fallback": true,
+      "parser_default": false,
+      "absent": "false: quasistatic mode stays off (the scene descriptor default). USD resolves the unauthored attribute to true and USD population publishes it, so only a Stage that omits the column gets false.",
+      "raw_fallback_diverges": true,
+      "units": "none",
+      "implemented_in": [
+        "source/omni.physics.parse/ParseScene.cpp",
+        "source/omni.physx/plugins/propertiesUpdate/PhysXScenePropertiesUpdate.cpp"
+      ],
+      "notes": "The ovstage walker requests the column with the other scene columns. Live changes are applied (the change handler matches the column by name). The velocity clearing is skipped while readback is suppressed."
+    },
+    {
+      "name": "collection:quasistaticactors",
+      "python_name": "collection_quasistaticactors",
+      "builder": false,
+      "origin": "producer",
+      "kind": "relationship",
+      "semantic": "RELATIONSHIP_PATH_ID",
+      "dtype": {
+        "code": "uint",
+        "bits": 64,
+        "lanes": 1,
+        "is_array": true
+      },
+      "required": false,
+      "producer": {
+        "writes": "the resolved members of the quasistaticactors collection that are rigid bodies or colliders, as relationship targets",
+        "via": "derive",
+        "resolve": {
+          "kind": "collection_members",
+          "collection": "quasistaticactors",
+          "members": {
+            "applied": [
+              "PhysicsRigidBodyAPI",
+              "PhysicsCollisionAPI"
+            ]
+          },
+          "member_properties": {
+            "none": true
+          }
+        },
+        "when": "always"
+      },
+      "absent": "Nothing: the parser resolves collection:quasistaticactors:includes and :excludes itself.",
+      "notes": "The parser does not read it yet. Published empty when nothing resolves."
+    }
+  ],
+  "interactions": [
+    {
+      "with": "CollectionAPI",
+      "rule": "The built-in CollectionAPI:quasistaticactors on the scene picks the actors. The runtime resolves it only when this API is listed, and an empty collection means every dynamic actor and link of the scene; live changes of collection:quasistaticactors:includes and excludes re-resolve it."
+    },
+    {
+      "with": "PhysicsScene",
+      "rule": "Read on the PhysicsScene prim only, as part of the scene descriptor."
+    }
+  ]
+}

@@ -70,7 +70,8 @@ struct UjitsoProcessManager
 
     /**
      * Find a process by requestId.  The requestId may be set by the user in the process implementation, to
-     * match, for example, a data + build parameter hash.
+     * match, for example, a data + build parameter hash.  A canceled process is not found: it delivers no
+     * cooked data, so a new request for the same build must not be attached to it.
      *
      * \param[in]   requestId   The user-set ID.
      *
@@ -152,12 +153,13 @@ struct UjitsoProcessManager
 private:
     typedef std::list<UjitsoProcessContext*> Queue;
     typedef std::unordered_map<UjitsoProcessContext*, Queue::iterator> ProcessMap;
-    typedef std::unordered_map<UjitsoProcessContext::RequestId, Queue::iterator> RequestMap;
+    typedef std::unordered_map<UjitsoProcessContext::RequestId, UjitsoProcessContext*> RequestMap;
     typedef std::unordered_map<UjitsoProcessContext::OwnerId, UjitsoProcessContext*> OwnerMap;
 
     void _insert(lock_guard&, UjitsoProcessContext* process);
     void _remove(lock_guard&, UjitsoProcessContext* process);
     bool _cancel(lock_guard&, Queue::iterator q, bool invokeCallbacks);
+    bool _releaseRequestId(lock_guard&, UjitsoProcessContext* process);
     UjitsoProcessContext* _find(lock_guard&, UjitsoProcessContext::RequestId requestId) const;
     size_t _getQueuedProcessCount(lock_guard&) const
     {
@@ -170,7 +172,7 @@ private:
     const std::string m_name;
     Queue m_queue; // Holds all processes
     ProcessMap m_processMap; // Maps from process to iterator in m_queue
-    RequestMap m_requestMap; // Maps from RequestId to iterator in m_queue
+    RequestMap m_requestMap; // Maps from RequestId to the queued process building it (canceled ones excluded)
     OwnerMap m_ownerMap; // Maps from OwnerId to process
     size_t m_maxRunningProcessCount;
 

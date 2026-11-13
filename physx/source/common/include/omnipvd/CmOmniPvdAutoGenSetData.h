@@ -11,6 +11,11 @@
 // OMNI_PVD_GET_WRITER and OMNI_PVD_GET_REGISTRATION_DATA have to be defined before
 // including this header. These two macros need to fetch and assign the pointer to
 // the OmniPvdWriter instance and the registration structure instance respectively.
+// The recording predicates OMNI_PVD_SHOULD_RECORD_CREATION, OMNI_PVD_SHOULD_RECORD_DESTRUCTION
+// and OMNI_PVD_SHOULD_RECORD_VALUE have to be defined as well, plus OMNI_PVD_SHOULD_RECORD_ADDITION
+// and OMNI_PVD_SHOULD_RECORD_REMOVAL if OMNI_PVD_ADD or OMNI_PVD_REMOVE is used. There are no
+// default definitions. A predicate returns true if the command is to be written. It may also
+// update the schema's recording state and write other commands first.
 // See CmOmniPvdAutoGenCreateRegistrationStruct.h for a more detailed overview of the
 // whole approach.
 //
@@ -62,6 +67,7 @@ OMNI_PVD_GET_REGISTRATION_DATA(regData)
                                                                                      \
 PX_ASSERT(writer);                                                                   \
 PX_ASSERT(regData);                                                                  \
+if (OMNI_PVD_SHOULD_RECORD_CREATION(writer, regData, classID, objectRef)) \
 regData->pvd##classID.createInstance(*writer, contextHandle, objectRef);
 
 
@@ -91,6 +97,7 @@ OMNI_PVD_WRITE_SCOPE_END                                                        
                                                                                       \
 PX_ASSERT(writer);                                                                    \
 PX_ASSERT(regData);                                                                   \
+if (OMNI_PVD_SHOULD_RECORD_DESTRUCTION(writer, regData, classID, objectRef)) \
 regData->pvd##classID.destroyInstance(*writer, contextHandle, objectRef);
 
 
@@ -122,6 +129,7 @@ OMNI_PVD_WRITE_SCOPE_END                                                        
                                                                                                          \
 PX_ASSERT(writer);                                                                                       \
 PX_ASSERT(regData);                                                                                      \
+if (OMNI_PVD_SHOULD_RECORD_VALUE(writer, regData, classID, attributeID, objectRef)) \
 regData->pvd##classID.set_##attributeID##_(*writer, contextHandle, objectRef, valueRef);
 
 
@@ -163,6 +171,7 @@ OMNI_PVD_WRITE_SCOPE_END                                                        
                                                                                                                             \
 PX_ASSERT(writer);                                                                                                          \
 PX_ASSERT(regData);                                                                                                         \
+if (OMNI_PVD_SHOULD_RECORD_VALUE(writer, regData, classID, attributeID, objectRef)) \
 regData->pvd##classID.set_##attributeID##_(*writer, contextHandle, objectRef, valuesPtr, valueCount);
 
 
@@ -193,6 +202,7 @@ OMNI_PVD_WRITE_SCOPE_END                                                        
                                                                                                          \
 PX_ASSERT(writer);                                                                                       \
 PX_ASSERT(regData);                                                                                      \
+if (OMNI_PVD_SHOULD_RECORD_ADDITION(writer, regData, classID, attributeID, objectRef, valueRef)) \
 regData->pvd##classID.addTo_##attributeID##_(*writer, contextHandle, objectRef, valueRef);
 
 
@@ -220,6 +230,7 @@ OMNI_PVD_WRITE_SCOPE_END                                                        
                                                                                                             \
 PX_ASSERT(writer);                                                                                          \
 PX_ASSERT(regData);                                                                                         \
+if (OMNI_PVD_SHOULD_RECORD_REMOVAL(writer, regData, classID, attributeID, objectRef, valueRef)) \
 regData->pvd##classID.removeFrom_##attributeID##_(*writer, contextHandle, objectRef, valueRef);
 
 

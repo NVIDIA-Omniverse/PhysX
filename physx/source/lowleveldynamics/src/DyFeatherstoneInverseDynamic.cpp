@@ -269,7 +269,8 @@ namespace Dy
 			const ArticulationLink& rLink = mArticulationData.getLink(0);
 			// PT:: tag: scalar transform*transform
 			rLink.bodyCore->body2World = cache.rootLinkData->transform * rLink.bodyCore->getBody2Actor();
-			mGPUDirtyFlags |= ArticulationDirtyFlag::eDIRTY_ROOT_TRANSFORM;
+			// The root transform moves every link (see teleportLinks below), so every link is dirty.
+			mGPUDirtyFlags |= ArticulationDirtyFlag::eDIRTY_LINKS;
 		}
 
 		if(flag & PxArticulationCacheFlag::eROOT_VELOCITIES)
@@ -278,7 +279,9 @@ namespace Dy
 			rLink.bodyCore->linearVelocity = cache.rootLinkData->worldLinVel;
 			rLink.bodyCore->angularVelocity = cache.rootLinkData->worldAngVel;
 			localShouldWake = localShouldWake || (!cache.rootLinkData->worldLinVel.isZero()) || (!cache.rootLinkData->worldAngVel.isZero());
-			mGPUDirtyFlags |= ArticulationDirtyFlag::eDIRTY_ROOT_VELOCITIES;
+			// The root velocities change every link's velocity (see computeLinkVelocities below), so every link is dirty,
+			// as when they are set through PxArticulationReducedCoordinate::setRootLinearVelocity().
+			mGPUDirtyFlags |= ArticulationDirtyFlag::eDIRTY_LINKS;
 		}
 		
 		if (flag & PxArticulationCacheFlag::ePOSITION)
@@ -1623,7 +1626,7 @@ namespace Dy
 
 			Dy::SpatialMatrix cSpatialInertia = compositeSpatialInertia[i];
 			//transform current link's spatial inertia to parent's space
-			PxVec3 rw = link.bodyCore->body2World.p - links[link.parent].bodyCore->body2World.p;
+			const PxVec3& rw = mArticulationData.getRw()[i];
 			FeatherstoneArticulation::translateInertia(FeatherstoneArticulation::constructSkewSymmetricMatrix(rw), cSpatialInertia);
 
 			//compute parent's composite spatial inertia
@@ -1680,7 +1683,7 @@ namespace Dy
 
 			Dy::SpatialMatrix cSpatialInertia = compositeSpatialInertia[i];
 			// transform current link's spatial inertia to parent's space
-			PxVec3 rw = link.bodyCore->body2World.p - links[link.parent].bodyCore->body2World.p;
+			const PxVec3& rw = mArticulationData.getRw()[i];
 			FeatherstoneArticulation::translateInertia(FeatherstoneArticulation::constructSkewSymmetricMatrix(rw), cSpatialInertia);
 
 			// compute parent's composite spatial inertia
@@ -1705,7 +1708,7 @@ namespace Dy
 
 			// transform F to the base link space
 
-			PxVec3 brw = links[j].bodyCore->body2World.p - links[0].bodyCore->body2World.p;
+			const PxVec3& brw = mArticulationData.getRw()[j];
 			for (PxU32 ind = 0; ind < jointDatum.nbDof; ++ind)
 			{
 				f[ind] = translateSpatialVector(brw, f[ind]);

@@ -6,10 +6,13 @@
  * @covers AC-2
  *
  * @implements REQ-PARSE-JOINT-006
- * @covers AC-1 AC-2 AC-3 AC-4
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-6
  *
  * @implements REQ-SIM-ARTJOINTDRIVE-002
  * @covers AC-5
+ *
+ * @implements REQ-LOAD-JOINTLIMIT-001
+ * @covers AC-5 AC-6 AC-7 AC-8 AC-9
  */
 
 // The gear/rack-joint hinge relationship reads below route through
@@ -25,6 +28,7 @@
 #include <OmniPhysX.h>
 
 #include <PhysXCustomJoint.h>
+#include <JointLimitConversion.h>
 #include <PhysXUSDProperties.h>
 
 #include <usdLoad/AttachedStage.h>
@@ -62,7 +66,7 @@ static std::string tokenName(const AttachedStage& attachedStage, omni::physics::
 // unchanged (no schema-type-name normalisation needed).
 //
 // The plain typed-prim isA("PhysicsJoint") check uses KnownTokens'
-// prim-type-name vocabulary (ADR-0018); tok.physicsJoint interns to
+// prim-type-name vocabulary (ADR-0018); tok.physicsJointType interns to
 // "PhysicsJoint", the same schema-identifier string
 // UsdSchemaRegistry::GetSchemaTypeName(TfType::Find<UsdPhysicsJoint>())
 // used to produce.
@@ -76,7 +80,7 @@ static bool jointHasApiInstance(const AttachedStage& attachedStage,
         return false;
     omni::physics::parse::KnownTokens tok;
     tok.intern(*src);
-    if (!src->isA(key, tok.physicsJoint))
+    if (!src->isA(key, tok.physicsJointType))
         return false;
     const std::string appliedSchema =
         std::string(src->tokenToString(schemaName)) + ":" + std::string(src->tokenToString(instance));
@@ -619,7 +623,7 @@ bool omni::physx::updateDriveMaxActuatorVelocity(AttachedStage& attachedStage, o
             case PxArticulationJointType::eREVOLUTE:
             case PxArticulationJointType::eREVOLUTE_UNWRAPPED:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxDrivePerformanceEnvelopeAPI, tok.angular))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.physxDrivePerformanceEnvelopeAPI, tok.angular))
                 {
                     intJoint->mJointDrive.maxActuatorVelocity = toPhysXMaxActuatorVelocity(data, true);
                     updateArticulationJointDrive(intJoint->mJointDrive, joint, ::physx::PxArticulationAxis::eTWIST);
@@ -628,7 +632,7 @@ bool omni::physx::updateDriveMaxActuatorVelocity(AttachedStage& attachedStage, o
             break;
             case PxArticulationJointType::ePRISMATIC:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxDrivePerformanceEnvelopeAPI, tok.linear))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.physxDrivePerformanceEnvelopeAPI, tok.linear))
                 {       
                     intJoint->mJointDrive.maxActuatorVelocity = toPhysXMaxActuatorVelocity(data, false);
                     updateArticulationJointDrive(intJoint->mJointDrive, joint, ::physx::PxArticulationAxis::eX);
@@ -645,7 +649,7 @@ bool omni::physx::updateDriveMaxActuatorVelocity(AttachedStage& attachedStage, o
                     if (validAxis)
                     {
                         mapAxisToToken(attachedStage, tok, axis, token);
-                        if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxDrivePerformanceEnvelopeAPI, token))
+                        if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.physxDrivePerformanceEnvelopeAPI, token))
                         {
                             intJoint->mJointDrives[axis].maxActuatorVelocity = toPhysXMaxActuatorVelocity(data, true);
                             updateArticulationJointDrive(intJoint->mJointDrives[axis], joint, axis);
@@ -690,7 +694,7 @@ bool omni::physx::updateDriveVelocityDependentResistance(AttachedStage& attached
             case PxArticulationJointType::eREVOLUTE:
             case PxArticulationJointType::eREVOLUTE_UNWRAPPED:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxDrivePerformanceEnvelopeAPI, tok.angular))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.physxDrivePerformanceEnvelopeAPI, tok.angular))
                 {
                     intJoint->mJointDrive.velocityDependentResistance = toPhysXVelocityDependentResistance(data, true);
                     updateArticulationJointDrive(intJoint->mJointDrive, joint, ::physx::PxArticulationAxis::eTWIST);
@@ -699,7 +703,7 @@ bool omni::physx::updateDriveVelocityDependentResistance(AttachedStage& attached
             break;
             case PxArticulationJointType::ePRISMATIC:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxDrivePerformanceEnvelopeAPI, tok.linear))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.physxDrivePerformanceEnvelopeAPI, tok.linear))
                 {       
                     intJoint->mJointDrive.velocityDependentResistance = toPhysXVelocityDependentResistance(data, false);
                     updateArticulationJointDrive(intJoint->mJointDrive, joint, ::physx::PxArticulationAxis::eX);
@@ -716,7 +720,7 @@ bool omni::physx::updateDriveVelocityDependentResistance(AttachedStage& attached
                     if (validAxis)
                     {
                         mapAxisToToken(attachedStage, tok, axis, token);
-                        if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxDrivePerformanceEnvelopeAPI, token))
+                        if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.physxDrivePerformanceEnvelopeAPI, token))
                         {
                             intJoint->mJointDrives[axis].velocityDependentResistance = toPhysXVelocityDependentResistance(data, true);
                             updateArticulationJointDrive(intJoint->mJointDrives[axis], joint, axis);
@@ -761,7 +765,7 @@ bool omni::physx::updateDriveSpeedEffortGradient(AttachedStage& attachedStage, o
             case PxArticulationJointType::eREVOLUTE:
             case PxArticulationJointType::eREVOLUTE_UNWRAPPED:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxDrivePerformanceEnvelopeAPI, tok.angular))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.physxDrivePerformanceEnvelopeAPI, tok.angular))
                 {
                     intJoint->mJointDrive.speedEffortGradient = toPhysXSpeedEffortGradient(data, true);
                     updateArticulationJointDrive(intJoint->mJointDrive, joint, ::physx::PxArticulationAxis::eTWIST);
@@ -770,7 +774,7 @@ bool omni::physx::updateDriveSpeedEffortGradient(AttachedStage& attachedStage, o
             break;
             case PxArticulationJointType::ePRISMATIC:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxDrivePerformanceEnvelopeAPI, tok.linear))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.physxDrivePerformanceEnvelopeAPI, tok.linear))
                 {       
                     intJoint->mJointDrive.speedEffortGradient = toPhysXSpeedEffortGradient(data, false);
                     updateArticulationJointDrive(intJoint->mJointDrive, joint, ::physx::PxArticulationAxis::eX);
@@ -787,7 +791,7 @@ bool omni::physx::updateDriveSpeedEffortGradient(AttachedStage& attachedStage, o
                     if (validAxis)
                     {
                         mapAxisToToken(attachedStage, tok, axis, token);
-                        if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxDrivePerformanceEnvelopeAPI, token))
+                        if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.physxDrivePerformanceEnvelopeAPI, token))
                         {
                             intJoint->mJointDrives[axis].speedEffortGradient = toPhysXSpeedEffortGradient(data, true);
                             updateArticulationJointDrive(intJoint->mJointDrives[axis], joint, axis);
@@ -1267,6 +1271,150 @@ bool omni::physx::updateJointStateVelocity(AttachedStage& attachedStage, omni::p
     return updateJointStateInternal(attachedStage, objectId, property, timeCode, false);
 }
 
+// Whether a live limit value can be applied to an articulation joint. An open (infinite) bound is
+// clamped by updateArticulationJointLimitHigh/Low as on joint creation. The cone angles of a
+// spherical joint have no such conversion, so a non-finite one, like a NaN, needs a restart.
+static bool isLiveArticulationLimitValue(const PxArticulationJointReducedCoordinate& joint, const InternalJoint& intJoint, const float data)
+{
+    if (std::isnan(data))
+        return false;
+    const bool sphericalCone = joint.getJointType() == PxArticulationJointType::eSPHERICAL && intJoint.mJointType != usdparser::eJointD6;
+    return isfinite(data) || !sphericalCone;
+}
+
+// The live bounds of the low/high limit pair that the attribute `name` belongs to: the revolute and
+// prismatic "physics:lowerLimit"/"physics:upperLimit", or a D6 axis "limit:<axis>:physics:low"/
+// "high". Null for a limit without such a pair, like a cone angle or a distance, and for a limit
+// name of another joint type, such as one left on the prim after it was retyped, so it cannot
+// stand in for the other bound of a limit the joint has.
+static JointLiveLimitBounds* liveLimitBounds(InternalJoint& intJoint, const std::string& name)
+{
+    if (intJoint.mJointType == eJointRevolute || intJoint.mJointType == eJointPrismatic)
+    {
+        if (name == "physics:lowerLimit" || name == "physics:upperLimit")
+            return &intJoint.mLiveLimits[0];
+        return nullptr;
+    }
+    if (intJoint.mJointType != eJointD6)
+        return nullptr;
+    const char* const axes[] = { "transX", "transY", "transZ", "rotX", "rotY", "rotZ" };
+    for (size_t i = 0; i < 6; i++)
+    {
+        const std::string prefix = std::string("limit:") + axes[i] + ":physics:";
+        if (name == prefix + "low" || name == prefix + "high")
+            return &intJoint.mLiveLimits[i];
+    }
+    return nullptr;
+}
+
+// Records a live low or high change in the limit pair it belongs to and returns the other bound of
+// that pair, so the change sets both bounds as joint creation does. The limit then depends only on
+// the authored bounds, not on the order in which a low and a high change are processed. The other
+// bound is the value last delivered for it, not read back from the source: that read would resolve
+// at the source's latest state, past the change being processed, and could fail
+// (REQ-LOAD-JOINTLIMIT-001 AC-9). NaN, for a limit without a pair or an other bound not changed
+// since the joint was created, tells the caller to keep the current other bound.
+template <bool isHighLimit>
+static float recordLiveLimitBound(InternalJoint& intJoint, const std::string& name, const float data)
+{
+    JointLiveLimitBounds* bounds = liveLimitBounds(intJoint, name);
+    if (!bounds)
+        return std::numeric_limits<float>::quiet_NaN();
+    if (isHighLimit)
+    {
+        bounds->high = data;
+        return bounds->low;
+    }
+    bounds->low = data;
+    return bounds->high;
+}
+
+// Converts a live limit pair as on joint creation into `lower` and `upper`, which hold the current
+// bounds. A NaN bound keeps the current one. A pair whose low ends up above its high is not set:
+// creation would lock or skip such an axis, and a live update does not change the axis motion
+// (REQ-LOAD-JOINTLIMIT-001 AC-7, AC-9).
+template <typename Convert>
+static bool convertLiveLimitPair(const float usdLow, const float usdHigh, Convert convert, PxReal& lower, PxReal& upper)
+{
+    const float newLower = std::isnan(usdLow) ? lower : convert(usdLow);
+    const float newUpper = std::isnan(usdHigh) ? upper : convert(usdHigh);
+    if (newLower > newUpper)
+        return false;
+    lower = newLower;
+    upper = newUpper;
+    return true;
+}
+
+static bool updateLinearLimitBounds(PxD6Joint& d6Joint, const PxD6Axis::Enum axis, const float usdLow, const float usdHigh)
+{
+    PxJointLinearLimitPair limitPair = d6Joint.getLinearLimit(axis);
+    if (convertLiveLimitPair(usdLow, usdHigh, toLinearLimitBound, limitPair.lower, limitPair.upper))
+        d6Joint.setLinearLimit(axis, limitPair);
+    return true;
+}
+
+// Live update of a standalone revolute, prismatic or D6 axis limit from its authored low and high
+// bounds. Returns false for a limit without a low/high pair, which the caller updates from the
+// changed bound alone.
+static bool updateJointLimitBounds(const AttachedStage& attachedStage, const InternalDatabase::Record& objectRecord,
+                                   const std::string& name, const float usdLow, const float usdHigh)
+{
+    const auto toTwist = [](const float bound) { return toTwistLimitBound(degToRad(bound)); };
+    const auto toPyramidSwing = [](const float bound) { return toPyramidSwingLimitBound(degToRad(bound)); };
+
+    const InternalJoint& intJoint = *(const InternalJoint*)objectRecord.mInternalPtr;
+    switch (intJoint.mJointType)
+    {
+    case eJointRevolute:
+    {
+        PxD6Joint& revJoint = *(PxD6Joint*)objectRecord.mPtr;
+        PxJointAngularLimitPair limitPair = revJoint.getTwistLimit();
+        if (convertLiveLimitPair(usdLow, usdHigh, toTwist, limitPair.lower, limitPair.upper))
+        {
+            checkRevoluteJointLimits(limitPair, attachedStage.textFor(objectRecord.mKey));
+            revJoint.setTwistLimit(limitPair);
+        }
+        return true;
+    }
+    case eJointPrismatic:
+        return updateLinearLimitBounds(*(PxD6Joint*)objectRecord.mPtr, (PxD6Axis::Enum)intJoint.mAxisIndex, usdLow, usdHigh);
+    case eJointD6:
+    {
+        PxD6Joint& d6Joint = *(PxD6Joint*)objectRecord.mPtr;
+        if (name.rfind("limit:transX:", 0) == 0)
+            return updateLinearLimitBounds(d6Joint, PxD6Axis::eX, usdLow, usdHigh);
+        if (name.rfind("limit:transY:", 0) == 0)
+            return updateLinearLimitBounds(d6Joint, PxD6Axis::eY, usdLow, usdHigh);
+        if (name.rfind("limit:transZ:", 0) == 0)
+            return updateLinearLimitBounds(d6Joint, PxD6Axis::eZ, usdLow, usdHigh);
+        if (name.rfind("limit:rotX:", 0) == 0)
+        {
+            PxJointAngularLimitPair limitPair = d6Joint.getTwistLimit();
+            if (convertLiveLimitPair(usdLow, usdHigh, toTwist, limitPair.lower, limitPair.upper))
+                d6Joint.setTwistLimit(limitPair);
+            return true;
+        }
+        if (name.rfind("limit:rotY:", 0) == 0)
+        {
+            PxJointLimitPyramid limit = d6Joint.getPyramidSwingLimit();
+            if (convertLiveLimitPair(usdLow, usdHigh, toPyramidSwing, limit.yAngleMin, limit.yAngleMax))
+                d6Joint.setPyramidSwingLimit(limit);
+            return true;
+        }
+        if (name.rfind("limit:rotZ:", 0) == 0)
+        {
+            PxJointLimitPyramid limit = d6Joint.getPyramidSwingLimit();
+            if (convertLiveLimitPair(usdLow, usdHigh, toPyramidSwing, limit.zAngleMin, limit.zAngleMax))
+                d6Joint.setPyramidSwingLimit(limit);
+            return true;
+        }
+        return false;
+    }
+    default:
+        return false;
+    }
+}
+
 template <bool isHighLimit>
 void computeArticulationJointLimitValueAndAxis
 (const PxArticulationJointReducedCoordinate& joint, const InternalJoint& intJoint, const float& data, const std::string& propertyString,
@@ -1309,9 +1457,31 @@ void computeArticulationJointLimitValueAndAxis
     }
 }
 
+// Sets both bounds of an articulation axis limit from the authored pair, converted and checked as
+// on joint creation, so the limit does not depend on the order in which a low and a high change
+// are processed (REQ-LOAD-JOINTLIMIT-001 AC-9). Without a usable other bound (NaN), only the
+// changed bound is set against the current limit.
+template <bool isHighLimit>
+void updateArticulationJointLimitBounds
+(const PxArticulationAxis::Enum axis, const float limitToSet, const float otherLimitToSet,
+ PxArticulationJointReducedCoordinate* joint, const InternalJoint* intJoint)
+{
+    if (std::isnan(otherLimitToSet))
+    {
+        if (isHighLimit)
+            intJoint->updateArticulationJointLimitHigh(joint, axis, limitToSet);
+        else
+            intJoint->updateArticulationJointLimitLow(joint, axis, limitToSet);
+    }
+    else if (isHighLimit)
+        intJoint->setArticulationJointLimits(joint, axis, otherLimitToSet, limitToSet);
+    else
+        intJoint->setArticulationJointLimits(joint, axis, limitToSet, otherLimitToSet);
+}
+
 template <bool isHighLimit>
 void updateArticulationJointLimit
-(const PxArticulationAxis::Enum axis, const float limitToSet,
+(const PxArticulationAxis::Enum axis, const float limitToSet, const float otherLimitToSet,
  PxArticulationJointReducedCoordinate* joint, const InternalJoint* intJoint)
 {
     switch (joint->getJointType())
@@ -1319,19 +1489,13 @@ void updateArticulationJointLimit
     case PxArticulationJointType::eREVOLUTE:
     case PxArticulationJointType::eREVOLUTE_UNWRAPPED:
     case PxArticulationJointType::ePRISMATIC:
-        if(isHighLimit)
-            intJoint->updateArticulationJointLimitHigh(joint, axis, limitToSet);
-        else   
-            intJoint->updateArticulationJointLimitLow(joint, axis, limitToSet);
+        updateArticulationJointLimitBounds<isHighLimit>(axis, limitToSet, otherLimitToSet, joint, intJoint);
         break;
     case PxArticulationJointType::eSPHERICAL:
     {
         if (intJoint->mJointType == usdparser::eJointD6)
         {
-            if(isHighLimit)
-                intJoint->updateArticulationJointLimitHigh(joint, axis, limitToSet);
-            else
-                intJoint->updateArticulationJointLimitLow(joint, axis, limitToSet);
+            updateArticulationJointLimitBounds<isHighLimit>(axis, limitToSet, otherLimitToSet, joint, intJoint);
         }
         else  
         {
@@ -1413,33 +1577,40 @@ bool omni::physx::updateLimitHigh(AttachedStage& attachedStage, ObjectId objectI
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
             return true;
 
-        if (!isfinite(data))
-        {
-            OMNI_LOG_WARN(
-                kRoboticsLogChannel,
-                "Cannot change high limit to %2.f on %s during simulation. This change requires a simulation restart.",
-                data, attachedStage.textFor(objectRecord->mKey));
-            return true;
-        }            
-
         PxArticulationJointReducedCoordinate* joint = (PxArticulationJointReducedCoordinate*)objectRecord->mPtr;
         InternalJoint* intJoint = (InternalJoint*)objectRecord->mInternalPtr;
         if (joint && intJoint)
         {
+            if (!isLiveArticulationLimitValue(*joint, *intJoint, data))
+            {
+                OMNI_LOG_WARN(
+                    kRoboticsLogChannel,
+                    "Cannot change high limit to %2.f on %s during simulation. This change requires a simulation restart.",
+                    data, attachedStage.textFor(objectRecord->mKey));
+                return true;
+            }
+
             // Work out which axis is addressed by the limit change and convert to radians as required.
+            const std::string name = tokenName(attachedStage, property);
             PxArticulationAxis::Enum axis = PxArticulationAxis::eCOUNT;
             float limitToSet = data;
-            computeArticulationJointLimitValueAndAxis<true>(*joint, *intJoint, data, tokenName(attachedStage, property), axis, limitToSet);
+            computeArticulationJointLimitValueAndAxis<true>(*joint, *intJoint, data, name, axis, limitToSet);
 
             // Skip the update if a warning was emitted.
             if(emitArticulationJointLimitWarnings<true>(*joint, attachedStage.textFor(objectRecord->mKey), axis))
                 return true;
-            
+
+            // The low bound of the pair, converted like the changed one, so both are set together.
+            const float otherData = recordLiveLimitBound<true>(*intJoint, name, data);
+            PxArticulationAxis::Enum otherAxis = axis;
+            float otherLimitToSet = otherData;
+            computeArticulationJointLimitValueAndAxis<true>(*joint, *intJoint, otherData, name, otherAxis, otherLimitToSet);
+
             PxArticulationReducedCoordinate& articulation = joint->getChildArticulationLink().getArticulation();
             if (articulation.getScene())
                 articulation.wakeUp();
 
-            updateArticulationJointLimit<true>(axis, limitToSet, joint, intJoint);
+            updateArticulationJointLimit<true>(axis, limitToSet, otherLimitToSet, joint, intJoint);
         }
     }
     else if (internalType == ePTJoint)
@@ -1448,35 +1619,28 @@ bool omni::physx::updateLimitHigh(AttachedStage& attachedStage, ObjectId objectI
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
             return true;
 
-        if (!isfinite(data))
+        // Revolute, prismatic and D6 axis bounds below are converted like on joint creation, so an
+        // open (infinite) bound is clamped rather than ignored. The axis motion is left as it is;
+        // see REQ-LOAD-JOINTLIMIT-001 AC-7 for how that differs from a reload.
+        if (std::isnan(data))
             return true;
 
         PxJoint* joint = (PxJoint*)objectRecord->mPtr;
         InternalJoint* intJoint = (InternalJoint*)objectRecord->mInternalPtr;
         if (joint)
         {
+            // Revolute, prismatic and D6 axis limits are set from both bounds of the pair.
+            const std::string nameString = tokenName(attachedStage, property);
+            const float otherData = recordLiveLimitBound<true>(*intJoint, nameString, data);
+            if (updateJointLimitBounds(attachedStage, *objectRecord, nameString, otherData, data))
+                return true;
+
             switch (intJoint->mJointType)
             {
-            case eJointRevolute:
-            {
-                PxD6Joint* revJoint = (PxD6Joint*)joint;
-                PxJointAngularLimitPair limitPair = revJoint->getTwistLimit();
-                data = degToRad(data);
-                limitPair.upper = data;
-                checkRevoluteJointLimits(limitPair, attachedStage.textFor(objectRecord->mKey));
-                revJoint->setTwistLimit(limitPair);
-            }
-            break;
-            case eJointPrismatic:
-            {
-                PxD6Joint* prismJoint = (PxD6Joint*)joint;
-                PxJointLinearLimitPair limitPair = prismJoint->getLinearLimit((PxD6Axis::Enum)intJoint->mAxisIndex);
-                limitPair.upper = data;
-                prismJoint->setLinearLimit((PxD6Axis::Enum)intJoint->mAxisIndex, limitPair);
-            }
-            break;
             case eJointSpherical:
             {
+                if (!isfinite(data))
+                    break;
                 PxD6Joint* d6j = (PxD6Joint*)joint;
                 PxJointLimitCone coneLimit = d6j->getSwingLimit();
                 data = degToRad(data);
@@ -1486,6 +1650,8 @@ bool omni::physx::updateLimitHigh(AttachedStage& attachedStage, ObjectId objectI
             break;
             case eJointDistance:
             {
+                if (!isfinite(data))
+                    break;
                 PxDistanceJoint* distanceJoint = (PxDistanceJoint*)joint;
                 if (data >= 0.0f)
                 {
@@ -1501,51 +1667,11 @@ bool omni::physx::updateLimitHigh(AttachedStage& attachedStage, ObjectId objectI
             case eJointD6:
             {
                 PxD6Joint* d6Joint = (PxD6Joint*)joint;
-                const std::string nameString = tokenName(attachedStage, property);
-                if (nameString == "limit:transX:physics:high")
-                {
-                    PxJointLinearLimitPair limitPair = d6Joint->getLinearLimit(PxD6Axis::eX);
-                    limitPair.upper = data;
-                    d6Joint->setLinearLimit(PxD6Axis::eX, limitPair);
-                }
-                else if (nameString == "limit:transY:physics:high")
-                {
-                    PxJointLinearLimitPair limitPair = d6Joint->getLinearLimit(PxD6Axis::eY);
-                    limitPair.upper = data;
-                    d6Joint->setLinearLimit(PxD6Axis::eY, limitPair);
-                }
-                else if (nameString == "limit:transZ:physics:high")
-                {
-                    PxJointLinearLimitPair limitPair = d6Joint->getLinearLimit(PxD6Axis::eZ);
-                    limitPair.upper = data;
-                    d6Joint->setLinearLimit(PxD6Axis::eZ, limitPair);
-                }
-                else if (nameString == "limit:distance:physics:high")
+                if (nameString == "limit:distance:physics:high" && isfinite(data))
                 {
                     PxJointLinearLimit limit = d6Joint->getDistanceLimit();
                     limit.value = data;
                     d6Joint->setDistanceLimit(limit);
-                }
-                else if (nameString == "limit:rotX:physics:high")
-                {
-                    PxJointAngularLimitPair limitPair = d6Joint->getTwistLimit();
-                    data = degToRad(data);
-                    limitPair.upper = data;
-                    d6Joint->setTwistLimit(limitPair);
-                }
-                else if (nameString == "limit:rotY:physics:high")
-                {
-                    PxJointLimitPyramid limitPair = d6Joint->getPyramidSwingLimit();
-                    data = degToRad(data);
-                    limitPair.yAngleMax = data;
-                    d6Joint->setPyramidSwingLimit(limitPair);
-                }
-                else if (nameString == "limit:rotZ:physics:high")
-                {
-                    PxJointLimitPyramid limitPair = d6Joint->getPyramidSwingLimit();
-                    data = degToRad(data);
-                    limitPair.zAngleMax = data;
-                    d6Joint->setPyramidSwingLimit(limitPair);
                 }
             }
             break;
@@ -1574,33 +1700,40 @@ bool omni::physx::updateLimitLow(AttachedStage& attachedStage, ObjectId objectId
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
             return true;
 
-        if (!isfinite(data))
-        {
-            OMNI_LOG_WARN(
-                kRoboticsLogChannel,
-                "Cannot change low limit to %2.f on %s during simulation. This change requires a simulation restart.",
-                data, attachedStage.textFor(objectRecord->mKey));
-            return true;
-        }
-
         PxArticulationJointReducedCoordinate* joint = (PxArticulationJointReducedCoordinate*)objectRecord->mPtr;
         InternalJoint* intJoint = (InternalJoint*)objectRecord->mInternalPtr;
         if (joint && intJoint)
         {
+            if (!isLiveArticulationLimitValue(*joint, *intJoint, data))
+            {
+                OMNI_LOG_WARN(
+                    kRoboticsLogChannel,
+                    "Cannot change low limit to %2.f on %s during simulation. This change requires a simulation restart.",
+                    data, attachedStage.textFor(objectRecord->mKey));
+                return true;
+            }
+
             // Work out which axis is addressed by the limit change and convert to radians as required.
+            const std::string name = tokenName(attachedStage, property);
             PxArticulationAxis::Enum axis;
             float limitToSet = data;
-            computeArticulationJointLimitValueAndAxis<false>(*joint, *intJoint, data, tokenName(attachedStage, property), axis, limitToSet);
+            computeArticulationJointLimitValueAndAxis<false>(*joint, *intJoint, data, name, axis, limitToSet);
 
             // Skip the update if a warning was emitted.
             if(emitArticulationJointLimitWarnings<false>(*joint, attachedStage.textFor(objectRecord->mKey), axis))
                 return true;
 
+            // The high bound of the pair, converted like the changed one, so both are set together.
+            const float otherData = recordLiveLimitBound<false>(*intJoint, name, data);
+            PxArticulationAxis::Enum otherAxis = axis;
+            float otherLimitToSet = otherData;
+            computeArticulationJointLimitValueAndAxis<false>(*joint, *intJoint, otherData, name, otherAxis, otherLimitToSet);
+
             PxArticulationReducedCoordinate& articulation = joint->getChildArticulationLink().getArticulation();
             if (articulation.getScene())
                 articulation.wakeUp();
 
-            updateArticulationJointLimit<false>(axis, limitToSet, joint, intJoint);
+            updateArticulationJointLimit<false>(axis, limitToSet, otherLimitToSet, joint, intJoint);
         }
     }
     else if (internalType == ePTJoint)
@@ -1609,36 +1742,28 @@ bool omni::physx::updateLimitLow(AttachedStage& attachedStage, ObjectId objectId
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
             return true;
 
-        // not right strictly speaking we should be able to switch between free/limited
-        if (!isfinite(data))
+        // Revolute, prismatic and D6 axis bounds below are converted like on joint creation, so an
+        // open (infinite) bound is clamped rather than ignored. The axis motion is left as it is;
+        // see REQ-LOAD-JOINTLIMIT-001 AC-7 for how that differs from a reload.
+        if (std::isnan(data))
             return true;
 
         PxJoint* joint = (PxJoint*)objectRecord->mPtr;
         InternalJoint* intJoint = (InternalJoint*)objectRecord->mInternalPtr;
         if (joint)
         {
+            // Revolute, prismatic and D6 axis limits are set from both bounds of the pair.
+            const std::string nameString = tokenName(attachedStage, property);
+            const float otherData = recordLiveLimitBound<false>(*intJoint, nameString, data);
+            if (updateJointLimitBounds(attachedStage, *objectRecord, nameString, data, otherData))
+                return true;
+
             switch (intJoint->mJointType)
             {
-            case eJointRevolute:
-            {
-                PxD6Joint* revJoint = (PxD6Joint*)joint;
-                PxJointAngularLimitPair limitPair = revJoint->getTwistLimit();
-                data = degToRad(data);
-                limitPair.lower = data;
-                checkRevoluteJointLimits(limitPair, attachedStage.textFor(objectRecord->mKey));
-                revJoint->setTwistLimit(limitPair);
-            }
-            break;
-            case eJointPrismatic:
-            {
-                PxD6Joint* prismJoint = (PxD6Joint*)joint;
-                PxJointLinearLimitPair limitPair = prismJoint->getLinearLimit((PxD6Axis::Enum)intJoint->mAxisIndex);
-                limitPair.lower = data;
-                prismJoint->setLinearLimit((PxD6Axis::Enum)intJoint->mAxisIndex, limitPair);
-            }
-            break;
             case eJointSpherical:
             {
+                if (!isfinite(data))
+                    break;
                 PxD6Joint* d6j = (PxD6Joint*)joint;
                 PxJointLimitCone coneLimit = d6j->getSwingLimit();
                 data = degToRad(data);
@@ -1648,6 +1773,8 @@ bool omni::physx::updateLimitLow(AttachedStage& attachedStage, ObjectId objectId
             break;
             case eJointDistance:
             {
+                if (!isfinite(data))
+                    break;
                 PxDistanceJoint* distanceJoint = (PxDistanceJoint*)joint;
                 if (data >= 0.0f)
                 {
@@ -1657,51 +1784,6 @@ bool omni::physx::updateLimitLow(AttachedStage& attachedStage, ObjectId objectId
                 else
                 {
                     distanceJoint->setDistanceJointFlag(PxDistanceJointFlag::eMIN_DISTANCE_ENABLED, false);
-                }
-            }
-            break;
-            case eJointD6:
-            {
-                PxD6Joint* d6Joint = (PxD6Joint*)joint;
-                const std::string nameString = tokenName(attachedStage, property);
-                if (nameString == "limit:transX:physics:low")
-                {
-                    PxJointLinearLimitPair limitPair = d6Joint->getLinearLimit(PxD6Axis::eX);
-                    limitPair.lower = data;                    
-                    d6Joint->setLinearLimit(PxD6Axis::eX, limitPair);
-                }
-                else if (nameString == "limit:transY:physics:low")
-                {
-                    PxJointLinearLimitPair limitPair = d6Joint->getLinearLimit(PxD6Axis::eY);
-                    limitPair.lower = data;
-                    d6Joint->setLinearLimit(PxD6Axis::eY, limitPair);
-                }
-                else if (nameString == "limit:transZ:physics:low")
-                {
-                    PxJointLinearLimitPair limitPair = d6Joint->getLinearLimit(PxD6Axis::eZ);
-                    limitPair.lower = data;
-                    d6Joint->setLinearLimit(PxD6Axis::eZ, limitPair);
-                }
-                else if (nameString == "limit:rotX:physics:low")
-                {
-                    PxJointAngularLimitPair limitPair = d6Joint->getTwistLimit();
-                    data = degToRad(data);
-                    limitPair.lower = data;
-                    d6Joint->setTwistLimit(limitPair);
-                }
-                else if (nameString == "limit:rotY:physics:low")
-                {
-                    PxJointLimitPyramid limitPair = d6Joint->getPyramidSwingLimit();
-                    data = degToRad(data);
-                    limitPair.yAngleMin = data;
-                    d6Joint->setPyramidSwingLimit(limitPair);
-                }
-                else if (nameString == "limit:rotZ:physics:low")
-                {
-                    PxJointLimitPyramid limitPair = d6Joint->getPyramidSwingLimit();
-                    data = degToRad(data);
-                    limitPair.zAngleMin = data;
-                    d6Joint->setPyramidSwingLimit(limitPair);
                 }
             }
             break;
@@ -2427,7 +2509,7 @@ bool omni::physx::updateArticulationMaxJointVelocity(AttachedStage& attachedStag
             case PxArticulationJointType::eREVOLUTE:
             case PxArticulationJointType::eREVOLUTE_UNWRAPPED:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, tok.angular))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.physxJointAxisAPI, tok.angular))
                 {
                     data =  isfinite(data) ? degToRad(data) : FLT_MAX;
                     joint->setMaxJointVelocity(PxArticulationAxis::eTWIST, data);
@@ -2436,7 +2518,7 @@ bool omni::physx::updateArticulationMaxJointVelocity(AttachedStage& attachedStag
             break;
             case PxArticulationJointType::ePRISMATIC:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, tok.linear))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.physxJointAxisAPI, tok.linear))
                 {
                     data = isfinite(data) ? data : FLT_MAX;
                     joint->setMaxJointVelocity(PxArticulationAxis::eX, data);
@@ -2451,7 +2533,7 @@ bool omni::physx::updateArticulationMaxJointVelocity(AttachedStage& attachedStag
                 if (validAxis)
                 {
                     mapAxisToToken(attachedStage, tok, axis, token);
-                    if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, token))
+                    if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.physxJointAxisAPI, token))
                     {
                         data = isfinite(data) ? degToRad(data) : FLT_MAX;
                         joint->setMaxJointVelocity(axis, data);
@@ -2524,7 +2606,7 @@ template <typename HasOpinion, typename Apply>
 void applyToAxesWithoutOpinion(AttachedStage& attachedStage, const NewtonJointEdit& edit, HasOpinion hasOpinion, Apply apply)
 {
     auto withoutOpinion = [&](omni::physics::parse::TokenId instance) {
-        return !jointHasApiInstance(attachedStage, edit.key, edit.tok->PhysxJointAxisAPI, instance) || !hasOpinion(instance);
+        return !jointHasApiInstance(attachedStage, edit.key, edit.tok->physxJointAxisAPI, instance) || !hasOpinion(instance);
     };
     bool woken = false;
     auto wakeAndApply = [&](PxArticulationAxis::Enum axis, bool rotational) {
@@ -2569,6 +2651,15 @@ bool omni::physx::updateNewtonJointVelocityLimit(AttachedStage& attachedStage, o
     NewtonJointEdit edit;
     if (!beginNewtonJointEdit(attachedStage, objectId, property, timeCode, edit))
         return true;
+    // Match attachment: Newton wins when finite; otherwise use the legacy fallback.
+    if (!omni::physics::parse::hasAxisVelocityLimitOpinion(edit.value))
+    {
+        float legacyVelocity = FLT_MAX;
+        getValue<float>(attachedStage, edit.key, edit.tok->physxJointMaxJointVelocity,
+                        omni::physics::parse::ReadTime::defaultTime(), legacyVelocity);
+        if (omni::physics::parse::hasAxisVelocityLimitOpinion(legacyVelocity))
+            edit.value = PxMax(0.0f, legacyVelocity);
+    }
     applyToAxesWithoutOpinion(attachedStage, edit,
         [&](omni::physics::parse::TokenId instance) {
             return omni::physics::parse::hasAxisVelocityLimitOpinion(perAxisValue(attachedStage, edit, instance, "maxJointVelocity", FLT_MAX));
@@ -2666,7 +2757,7 @@ bool omni::physx::updateArticulationArmature(AttachedStage& attachedStage, Objec
             case PxArticulationJointType::eREVOLUTE:
             case PxArticulationJointType::eREVOLUTE_UNWRAPPED:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, tok.angular))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.physxJointAxisAPI, tok.angular))
                 {
                     data = isfinite(data) ? data : FLT_MAX;
                     joint->setArmature(PxArticulationAxis::eTWIST, data);
@@ -2675,7 +2766,7 @@ bool omni::physx::updateArticulationArmature(AttachedStage& attachedStage, Objec
             break;
             case PxArticulationJointType::ePRISMATIC:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, tok.linear))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.physxJointAxisAPI, tok.linear))
                 {
                     data = isfinite(data) ? data : FLT_MAX;
                     joint->setArmature(PxArticulationAxis::eX, data);
@@ -2690,7 +2781,7 @@ bool omni::physx::updateArticulationArmature(AttachedStage& attachedStage, Objec
                 if (validAxis)
                 {
                     mapAxisToToken(attachedStage, tok, axis, token);
-                    if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, token))
+                    if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.physxJointAxisAPI, token))
                     {
                         data = isfinite(data) ? data : FLT_MAX;
                         joint->setArmature(axis, data);
@@ -2740,7 +2831,7 @@ bool omni::physx::updateArticulationStaticFrictionEffort(AttachedStage& attached
             case PxArticulationJointType::eREVOLUTE:
             case PxArticulationJointType::eREVOLUTE_UNWRAPPED:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, tok.angular))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.physxJointAxisAPI, tok.angular))
                 {
                     PxJointFrictionParams params = joint->getFrictionParams(PxArticulationAxis::eTWIST);
                     params.staticFrictionEffort = isfinite(data) ? data : FLT_MAX;
@@ -2750,7 +2841,7 @@ bool omni::physx::updateArticulationStaticFrictionEffort(AttachedStage& attached
             break;
             case PxArticulationJointType::ePRISMATIC:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, tok.linear))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.physxJointAxisAPI, tok.linear))
                 {
                     PxJointFrictionParams params = joint->getFrictionParams(PxArticulationAxis::eX);
                     params.staticFrictionEffort = isfinite(data) ? data : FLT_MAX;
@@ -2766,7 +2857,7 @@ bool omni::physx::updateArticulationStaticFrictionEffort(AttachedStage& attached
                 if (validAxis)
                     {
                         mapAxisToToken(attachedStage, tok, axis, token);
-                        if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, token))
+                        if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.physxJointAxisAPI, token))
                         {
                             PxJointFrictionParams params = joint->getFrictionParams(axis);
                             params.staticFrictionEffort = isfinite(data) ? data : FLT_MAX;
@@ -2818,7 +2909,7 @@ bool omni::physx::updateArticulationDynamicFrictionEffort(AttachedStage& attache
             case PxArticulationJointType::eREVOLUTE:
             case PxArticulationJointType::eREVOLUTE_UNWRAPPED:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, tok.angular))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.physxJointAxisAPI, tok.angular))
                 {
                     PxJointFrictionParams params = joint->getFrictionParams(PxArticulationAxis::eTWIST);
                     params.dynamicFrictionEffort = isfinite(data) ? data : FLT_MAX;
@@ -2828,7 +2919,7 @@ bool omni::physx::updateArticulationDynamicFrictionEffort(AttachedStage& attache
             break;
             case PxArticulationJointType::ePRISMATIC:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, tok.linear))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.physxJointAxisAPI, tok.linear))
                 {
                     PxJointFrictionParams params = joint->getFrictionParams(PxArticulationAxis::eX);
                     params.dynamicFrictionEffort = isfinite(data) ? data : FLT_MAX;
@@ -2844,7 +2935,7 @@ bool omni::physx::updateArticulationDynamicFrictionEffort(AttachedStage& attache
                 if (validAxis)
                     {
                         mapAxisToToken(attachedStage, tok, axis, token);
-                        if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, token))
+                        if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.physxJointAxisAPI, token))
                         {
                             PxJointFrictionParams params = joint->getFrictionParams(axis);
                             params.dynamicFrictionEffort = isfinite(data) ? data : FLT_MAX;
@@ -2896,7 +2987,7 @@ bool omni::physx::updateArticulationViscousFrictionCoefficient(AttachedStage& at
             case PxArticulationJointType::eREVOLUTE:
             case PxArticulationJointType::eREVOLUTE_UNWRAPPED:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, tok.angular))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.physxJointAxisAPI, tok.angular))
                 {
                     PxJointFrictionParams params = joint->getFrictionParams(PxArticulationAxis::eTWIST);
                     params.viscousFrictionCoefficient = isfinite(data) ? radToDeg(data) : FLT_MAX; // torque * second / degrees
@@ -2906,7 +2997,7 @@ bool omni::physx::updateArticulationViscousFrictionCoefficient(AttachedStage& at
             break;
             case PxArticulationJointType::ePRISMATIC:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, tok.linear))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.physxJointAxisAPI, tok.linear))
                 {
                     PxJointFrictionParams params = joint->getFrictionParams(PxArticulationAxis::eX);
                     params.viscousFrictionCoefficient = isfinite(data) ? data : FLT_MAX;;
@@ -2922,7 +3013,7 @@ bool omni::physx::updateArticulationViscousFrictionCoefficient(AttachedStage& at
                 if (validAxis)
                     {
                         mapAxisToToken(attachedStage, tok, axis, token);
-                        if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, token))
+                        if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.physxJointAxisAPI, token))
                         {
                             PxJointFrictionParams params = joint->getFrictionParams(axis);
                             params.viscousFrictionCoefficient = isfinite(data) ? radToDeg(data) : FLT_MAX; // torque * second / degrees

@@ -39,10 +39,10 @@ live leases and can be retried after closing sessions. Detach makes old sessions
 stale; acquire a new session after reattachment. Serialize live operations with
 core operations on that instance. Scene counters are copied at an idle owner.
 
-Population examples and custom schema/vehicle descriptors use ALL domains with
-OVStage 0.3 so parent transforms compose into world matrices before sealing.
-Hosts choosing PHYSICS-only follow the core transform preparation contract;
-direct world-matrix producers retain their authored values. Physics snapshot
+Population examples and custom schema/vehicle descriptors populate ovphysx's
+physics population description with RENDERING beside it. Sealing composes parent
+transforms into world matrices with or without RENDERING; direct world-matrix
+producers retain their authored values. Physics snapshot
 capture still excludes unrelated render payload.
 
 `compute_mass_properties(library, shapes)` is a stopped, SI computation for boxes,
@@ -126,7 +126,27 @@ The standard `cmake -P scripts/test_python_runtime.cmake` supplies platform-spec
 environment setup and runs both suites separately on qualified Linux x86-64 builds.
 Windows companion runs require the explicit
 `-DOVPHYSX_TEST_UNQUALIFIED_COMPANION=ON` opt-in; those runs do not qualify that platform. An
-installed wheel resolves its own library dependencies and needs no source paths.
+installed wheel's normal Python loader resolves its dependencies automatically.
+The stopped-mass and vehicle samples call the companion's private worker loader:
+on Linux it preloads the separate OVStage wheel before opening the selected
+ovphysx wheel library, without initializing simulation. This setup runs only
+inside the native worker (or the standalone vehicle math process); the
+customer-USD parent does not load either native library.
+
+For an installed Linux wheel, select its core library before running the sample:
+
+```bash
+export OVPHYSX_LIB="$(python -c 'import importlib.util,pathlib; print(pathlib.Path(importlib.util.find_spec("ovphysx").origin).parent / "lib/libovphysx.so")')"
+python samples/stopped_mass_editor.py
+python samples/vehicle_authoring.py
+python samples/vehicle_control.py --math-only
+```
+
+Both wheels must be installed in the worker's Python environment. A raw
+`ctypes.CDLL(OVPHYSX_LIB)` does not perform this setup. Explicit SDK/source
+overrides continue to require the matching runtime paths shown above; the
+worker loader does not substitute an installed OVStage wheel for an SDK's
+selected runtime.
 
 The wrapper uses the existing locked dependencies. `--confcutdir` keeps the main
 suite's native-library fixtures out of this customer-USD process. On Windows use
@@ -302,8 +322,9 @@ advertised geometry/backend qualification.
 ## Character controllers
 
 `CharacterController` borrows a ToolsSession or PreviewSession and controls one
-ovstage-created capsule. Populate PHYSICS and RENDERING: the physics domain alone
-omits capsules carrying only PhysxCharacterControllerAPI. Movement uses world
+ovstage-created capsule. Populate through ovphysx's physics population description,
+which publishes a capsule carrying only PhysxCharacterControllerAPI with its
+dimensions; the samples add RENDERING beside it. Movement uses world
 stage length units and seconds; copied collision bits distinguish side/above/below.
 The explicit query mask selects static, dynamic and other controller collisions.
 Simulation collision-group filtering is not implicitly applied. Call while idle,
@@ -392,8 +413,9 @@ actor-local or COM-local coordinates. Shared suspension components require equal
 per-wheel masses; split them before assigning different values. Scaled/sheared
 vehicle transforms are rejected by this authoring helper.
 
-`vehicle.population_desc()` adds the suspension reference-frame metadata to the
-normal physics domain. Pass it to `open_usd_with_desc`; otherwise absent metadata
+`vehicle.population_desc()` adds the suspension reference-frame metadata to
+ovphysx's physics population description. Pass it to `open_usd_with_desc` beside
+that description, `descs=[physics_population_desc(), population_desc()]`; otherwise absent metadata
 keeps the runtime's legacy COM-frame default. Complete vehicle replacement must
 republish shared wheel/tire/suspension/drive dependencies too; an isolated vehicle
 subtree is not sufficient for every runtime source backend.
@@ -482,9 +504,10 @@ completes its selected owner before reading; neither facade steps or waits.
 shape at an explicit pose. Use `Mode.ALL` plus capacity to obtain a sorted bounded
 set with `total` and `truncated`; `Mode.ANY` is an existence test. Include/exclude
 filters take resolved body/shape references, allowing individual point instances.
-GPU query/inspection and triangle/compound query geometry report unavailable.
+Queries also run on GPU-dynamics scenes. DirectGPU queries, GPU inspection and
+triangle/compound query geometry report unavailable.
 
-`viewport_drag.py` demonstrates the viewport gesture lifecycle: ray pick, default CPU force grab (explicit D6 remains available),
+`viewport_drag.py` demonstrates the viewport gesture lifecycle: ray pick, default force grab on CPU or GPU-dynamics scenes (explicit D6 remains available),
 point spring, host-owned stepping against a collision wall and cancel with zero
 velocity. `native/read_only.h` demonstrates exceptional read-only C++ SDK access;
 Python consumers use `Inspector.read` instead of pointer callbacks.

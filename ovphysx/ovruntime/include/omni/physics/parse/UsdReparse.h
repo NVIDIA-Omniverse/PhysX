@@ -96,7 +96,7 @@ public:
     // Encode a path string into its legacy `asInt(SdfPath)` bit value -- the exact inverse of
     // legacyPathBitsToString (`out = asInt(SdfPath(path))`). Returns false, leaving `out`
     // untouched, for a null/empty path. Lets the USD-free PropertyQuery bridge produce the
-    // SdfPath-bits values its Kit/USD-authoring-only public interface carries (IPhysxPropertyQuery
+    // SdfPath-bits values its Kit/USD-authoring-only public interface carries (omni::physx::queryPrim
     // request primPath / response usdPath / ArticulationLink rigidBody+joint), without naming pxr.
     //
     // @implements REQ-USDLIB-LOADABLE-001

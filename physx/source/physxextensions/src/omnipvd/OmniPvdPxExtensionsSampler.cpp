@@ -15,6 +15,8 @@
 #include "PxConstraint.h"
 #include "foundation/PxArray.h"
 #include "foundation/PxHashSet.h"
+#include "foundation/PxString.h"
+#include <string.h>
 #include "geometry/PxGeometry.h"
 #include "geometry/PxCustomGeometry.h"
 #include "extensions/PxCustomGeometryExt.h"
@@ -55,7 +57,7 @@ void OmniPvdPxExtensionsSampler::registerClasses()
 }
 
 OmniPvdPxExtensionsSampler::OmniPvdPxExtensionsSampler(physx::PxPhysics& physics)
-	: mPhysics(physics)
+	: mPhysics(physics), mRecordSecondaryData(true), mRecordAllObjects(true)
 {
 	mOmniPvdInstance = NULL;
 }
@@ -69,7 +71,7 @@ void OmniPvdPxExtensionsSampler::setOmniPvdInstance(physx::PxOmniPvd* omniPvdIns
 	mOmniPvdInstance = omniPvdInstance;
 }
 
-void OmniPvdPxExtensionsSampler::onStartSampling(physx::PxOmniPvd& omniPvd)
+void OmniPvdPxExtensionsSampler::onStartSampling(physx::PxOmniPvd& omniPvd, const physx::PxOmniPvdFilterDesc* filter)
 {
 	// PxOmniPvdEventCallback entry: startSampling() calls this after the core world is emitted.
 	// Re-emit the live extension joints of the captured PxPhysics onto the bound stream.
@@ -87,7 +89,13 @@ void OmniPvdPxExtensionsSampler::onStartSampling(physx::PxOmniPvd& omniPvd)
 	// constraint references are plain object handles resolved at read time), so it neither reads core
 	// PhysX class data nor depends on the core schema being registered first. The emission passes do
 	// need to come after the core snapshot, since they reference core actor / constraint objects.
+	mRecordSecondaryData = !filter || filter->recordSecondaryData;
+	mRecordAllObjects = !filter || (!filter->nbScenes && !filter->nbObjects);
 	registerClasses();
+	mEmittedObjects.clear();
+	mRefreshingJoints.clear();
+	mJointReferences.clear();
+	mSelectedCustomCallbacks.clear();
 	snapshotConstraints();
 	snapshotCustomGeometryCallbacks();
 }
@@ -107,8 +115,6 @@ void OmniPvdPxExtensionsSampler::snapshotConstraints()
 	OmniPvdWriter* pvdWriter = scope.getWriter();
 	if (pvdWriter == NULL)
 		return;
-	const physx::Ext::OmniPvdPxExtensionsRegistrationData* pvdRegData = &mRegistrationData;
-
 	const PxU32 batchSize = 256;
 	PxConstraint* batch[batchSize];
 	for (PxU32 off = 0; off < nbConstraints; off += batchSize)
@@ -121,32 +127,11 @@ void OmniPvdPxExtensionsSampler::snapshotConstraints()
 				continue;
 
 			PxU32 typeID = PxConstraintExtIDs::eINVALID_ID;
-			void* externalRef = constraint->getExternalReference(typeID);
-			if (typeID != PxConstraintExtIDs::eJOINT || externalRef == NULL)
-				continue; // skip vehicle joints and any non-joint constraints
-
-			PxJoint* joint = static_cast<PxJoint*>(externalRef);
-			switch (joint->getConcreteType())
-			{
-			case PxJointConcreteType::eD6:
-				physx::Ext::omniPvdInitJoint(pvdWriter, pvdRegData, static_cast<physx::Ext::D6Joint&>(*joint)); break;
-			case PxJointConcreteType::eREVOLUTE:
-				physx::Ext::omniPvdInitJoint(pvdWriter, pvdRegData, static_cast<physx::Ext::RevoluteJoint&>(*joint)); break;
-			case PxJointConcreteType::ePRISMATIC:
-				physx::Ext::omniPvdInitJoint(pvdWriter, pvdRegData, static_cast<physx::Ext::PrismaticJoint&>(*joint)); break;
-			case PxJointConcreteType::eFIXED:
-				physx::Ext::omniPvdInitJoint(pvdWriter, pvdRegData, static_cast<physx::Ext::FixedJoint&>(*joint)); break;
-			case PxJointConcreteType::eDISTANCE:
-				physx::Ext::omniPvdInitJoint(pvdWriter, pvdRegData, static_cast<physx::Ext::DistanceJoint&>(*joint)); break;
-			case PxJointConcreteType::eSPHERICAL:
-				physx::Ext::omniPvdInitJoint(pvdWriter, pvdRegData, static_cast<physx::Ext::SphericalJoint&>(*joint)); break;
-			case PxJointConcreteType::eGEAR:
-				physx::Ext::omniPvdInitJoint(pvdWriter, pvdRegData, static_cast<physx::Ext::GearJoint&>(*joint)); break;
-			case PxJointConcreteType::eRACK_AND_PINION:
-				physx::Ext::omniPvdInitJoint(pvdWriter, pvdRegData, static_cast<physx::Ext::RackAndPinionJoint&>(*joint)); break;
-			default:
-				break;
-			}
+			const void* externalRef = constraint->getExternalReference(typeID);
+			if (typeID == PxConstraintExtIDs::eJOINT && externalRef &&
+				mEmittedObjects.contains(reinterpret_cast<PxU64>(externalRef)))
+				continue;
+			snapshotConstraint(*constraint, pvdWriter);
 		}
 	}
 }
@@ -172,39 +157,202 @@ void OmniPvdPxExtensionsSampler::snapshotCustomGeometryCallbacks()
 	OmniPvdWriter* pvdWriter = scope.getWriter();
 	if (pvdWriter == NULL)
 		return;
-	const physx::Ext::OmniPvdPxExtensionsRegistrationData* pvdRegData = &mRegistrationData;
-
 	const PxU32 batchSize = 256;
 	PxShape* shapeBatch[batchSize];
-	PxHashSet<const void*> emitted;
 	for (PxU32 off = 0; off < nbShapes; off += batchSize)
 	{
 		const PxU32 got = mPhysics.getShapes(shapeBatch, batchSize, off);
 		for (PxU32 i = 0; i < got; ++i)
 		{
 			PxShape* shape = shapeBatch[i];
-			if (shape == NULL)
+			if (shape == NULL || !mOmniPvdInstance->isObjectRecorded(*shape))
 				continue;
-			const PxGeometry& geom = shape->getGeometry();
-			if (geom.getType() != PxGeometryType::eCUSTOM)
-				continue;
-
-			PxCustomGeometry::Callbacks* cb = static_cast<const PxCustomGeometry&>(geom).callbacks;
-			if (cb == NULL)
-				continue;
-			if (!emitted.insert(cb)) // already emitted (the same callbacks object can back many shapes)
-				continue;
-
-			// Switch on the custom type and call the shared per-type emitter (the same one the
-			// callbacks constructor uses), as the joint pass does with omniPvdInitJoint. A user's own
-			// (non-Ext) callbacks matches neither type and carries no extension schema, so it is skipped.
-			const PxCustomGeometry::Type type = cb->getCustomType();
-			if (type == PxCustomGeometryExt::CylinderCallbacks::TYPE())
-				physx::Ext::omniPvdInitCustomGeometryExt(pvdWriter, pvdRegData, static_cast<const PxCustomGeometryExt::CylinderCallbacks&>(*cb));
-			else if (type == PxCustomGeometryExt::ConeCallbacks::TYPE())
-				physx::Ext::omniPvdInitCustomGeometryExt(pvdWriter, pvdRegData, static_cast<const PxCustomGeometryExt::ConeCallbacks&>(*cb));
+			snapshotCustomGeometry(*shape, pvdWriter);
 		}
 	}
+}
+
+void OmniPvdPxExtensionsSampler::snapshotConstraint(PxConstraint& constraint, OmniPvdWriter* pvdWriter)
+{
+	PxU32 typeID = PxConstraintExtIDs::eINVALID_ID;
+	void* externalRef = constraint.getExternalReference(typeID);
+	if (typeID != PxConstraintExtIDs::eJOINT || externalRef == NULL)
+		return;
+	PxJoint& joint = *static_cast<PxJoint*>(externalRef);
+	// Scene admission can precede the constructor's connector attachment.
+	if (joint.getConstraint() != &constraint)
+		return;
+	if (!mOmniPvdInstance->isObjectRecorded(constraint))
+	{
+		if (shouldRecordDestruction(reinterpret_cast<PxU64>(&joint)))
+		{
+			// D6 drive objects use synthetic handles owned by the joint.
+			if (joint.getConcreteType() == PxJointConcreteType::eD6)
+				static_cast<physx::Ext::D6Joint&>(joint).omniPvdDestroyDrives(pvdWriter, &mRegistrationData);
+			pvdWriter->destroyObject(1, reinterpret_cast<PxU64>(&joint));
+		}
+		return;
+	}
+	const physx::Ext::OmniPvdPxExtensionsRegistrationData* pvdRegData = &mRegistrationData;
+	// Keep the recorded identity, but refresh configuration that may have changed while excluded.
+	// Gear/rack references can recurse into this pass. Only the outer refresh emits each joint.
+	const PxU64 handle = reinterpret_cast<PxU64>(&joint);
+	if (!mRefreshingJoints.insert(handle)) return;
+	switch (joint.getConcreteType())
+	{
+	case PxJointConcreteType::eD6:
+		physx::Ext::omniPvdInitJoint(pvdWriter, pvdRegData, static_cast<physx::Ext::D6Joint&>(joint)); break;
+	case PxJointConcreteType::eREVOLUTE:
+		physx::Ext::omniPvdInitJoint(pvdWriter, pvdRegData, static_cast<physx::Ext::RevoluteJoint&>(joint)); break;
+	case PxJointConcreteType::ePRISMATIC:
+		physx::Ext::omniPvdInitJoint(pvdWriter, pvdRegData, static_cast<physx::Ext::PrismaticJoint&>(joint)); break;
+	case PxJointConcreteType::eFIXED:
+		physx::Ext::omniPvdInitJoint(pvdWriter, pvdRegData, static_cast<physx::Ext::FixedJoint&>(joint)); break;
+	case PxJointConcreteType::eDISTANCE:
+		physx::Ext::omniPvdInitJoint(pvdWriter, pvdRegData, static_cast<physx::Ext::DistanceJoint&>(joint)); break;
+	case PxJointConcreteType::eSPHERICAL:
+		physx::Ext::omniPvdInitJoint(pvdWriter, pvdRegData, static_cast<physx::Ext::SphericalJoint&>(joint)); break;
+	case PxJointConcreteType::eGEAR:
+		physx::Ext::omniPvdInitJoint(pvdWriter, pvdRegData, static_cast<physx::Ext::GearJoint&>(joint)); break;
+	case PxJointConcreteType::eRACK_AND_PINION:
+		physx::Ext::omniPvdInitJoint(pvdWriter, pvdRegData, static_cast<physx::Ext::RackAndPinionJoint&>(joint)); break;
+	default: break;
+	}
+	mRefreshingJoints.erase(handle);
+}
+
+const PxBase* OmniPvdPxExtensionsSampler::captureJointReference(const PxBase* reference, OmniPvdWriter* writer)
+{
+	if (!reference || !writer || !mOmniPvdInstance || !mOmniPvdInstance->isSampling())
+		return NULL;
+	if (reference->getConcreteType() == PxConcreteType::eARTICULATION_JOINT_REDUCED_COORDINATE)
+		return mOmniPvdInstance->isObjectRecorded(*reference) ? reference : NULL;
+	const PxJoint* joint = reference->is<PxJoint>();
+	if (!joint || !joint->getConstraint() || !mOmniPvdInstance->isObjectRecorded(*joint->getConstraint()))
+		return NULL;
+	// Register identities before attributes to deduplicate recursion and create targets before references.
+	const PxU64 handle = reinterpret_cast<PxU64>(joint);
+	if (!mEmittedObjects.contains(handle))
+		snapshotConstraint(*joint->getConstraint(), writer);
+	return mEmittedObjects.contains(handle) ? reference : NULL;
+}
+
+void OmniPvdPxExtensionsSampler::cacheJointReferences(PxU64 dependent, const PxBase* joint0, const PxBase* joint1)
+{
+	const JointReferences references = { reinterpret_cast<PxU64>(joint0), reinterpret_cast<PxU64>(joint1) };
+	mJointReferences[dependent] = references;
+}
+
+void OmniPvdPxExtensionsSampler::snapshotCustomGeometry(const PxShape& shape, OmniPvdWriter* pvdWriter)
+{
+	const PxGeometry& geom = shape.getGeometry();
+	if (geom.getType() != PxGeometryType::eCUSTOM)
+		return;
+	PxCustomGeometry::Callbacks* cb = static_cast<const PxCustomGeometry&>(geom).callbacks;
+	if (!cb || mEmittedObjects.contains(reinterpret_cast<PxU64>(cb)))
+		return;
+	mSelectedCustomCallbacks.insert(cb);
+	const physx::Ext::OmniPvdPxExtensionsRegistrationData* pvdRegData = &mRegistrationData;
+	const PxCustomGeometry::Type type = cb->getCustomType();
+	if (type == PxCustomGeometryExt::CylinderCallbacks::TYPE())
+		physx::Ext::omniPvdInitCustomGeometryExt(pvdWriter, pvdRegData, static_cast<const PxCustomGeometryExt::CylinderCallbacks&>(*cb));
+	else if (type == PxCustomGeometryExt::ConeCallbacks::TYPE())
+		physx::Ext::omniPvdInitCustomGeometryExt(pvdWriter, pvdRegData, static_cast<const PxCustomGeometryExt::ConeCallbacks&>(*cb));
+	mSelectedCustomCallbacks.erase(cb);
+}
+
+void OmniPvdPxExtensionsSampler::onCaptureReset(PxOmniPvd& omniPvd, const PxOmniPvdFilterDesc& filter)
+{
+	PX_UNUSED(filter);
+	// Retire module objects before old core objects are retired.
+	PxOmniPvd::ScopedExclusiveWriter scope(&omniPvd);
+	OmniPvdWriter* writer = scope.getWriter();
+	if (writer)
+		for (PxHashSet<PxU64>::Iterator it = mEmittedObjects.getIterator(); !it.done(); ++it)
+			writer->destroyObject(1, *it);
+	mEmittedObjects.clear();
+	mSelectedCustomCallbacks.clear();
+}
+
+void OmniPvdPxExtensionsSampler::onObjectCapture(PxOmniPvd& omniPvd, const PxBase& object)
+{
+	PX_ASSERT(mOmniPvdInstance == &omniPvd);
+	// The core invokes this callback while it owns the writer lock.
+	OmniPvdWriter* writer = omniPvd.getWriter();
+	if (!writer)
+		return;
+	if (object.getConcreteType() == PxConcreteType::eSHAPE)
+		snapshotCustomGeometry(static_cast<const PxShape&>(object), writer);
+	else if (object.getConcreteType() == PxConcreteType::eCONSTRAINT)
+	{
+		PxConstraint& constraint = const_cast<PxConstraint&>(static_cast<const PxConstraint&>(object));
+		const bool selected = omniPvd.isObjectRecorded(constraint);
+		if (selected) snapshotConstraint(constraint, writer);
+		if (mRecordAllObjects) return;
+		PxU32 typeID = PxConstraintExtIDs::eINVALID_ID;
+		const void* changed = constraint.getExternalReference(typeID);
+		if (!changed || typeID != PxConstraintExtIDs::eJOINT) return;
+		// Never walk the factory constraint set here. Other threads can change other scenes.
+		const PxU64 changedHandle = reinterpret_cast<PxU64>(changed);
+		PxArray<PxU64> dependents; // snapshotConstraint can update the map.
+		for (PxHashMap<PxU64, JointReferences>::Iterator it = mJointReferences.getIterator(); !it.done(); ++it)
+			if (it->second.joint0 == changedHandle || it->second.joint1 == changedHandle)
+				dependents.pushBack(it->first);
+		for (PxU32 i = 0; i < dependents.size(); ++i)
+		{
+			PxConstraint* dependent = reinterpret_cast<const PxJoint*>(dependents[i])->getConstraint();
+			if (dependent && omniPvd.isObjectRecorded(*dependent)) snapshotConstraint(*dependent, writer);
+		}
+		if (!selected) snapshotConstraint(constraint, writer);
+	}
+}
+
+bool OmniPvdPxExtensionsSampler::shouldRecordCreation(const char* className, PxU64 objectHandle)
+{
+	if (!mOmniPvdInstance || !mOmniPvdInstance->isSampling())
+		return false;
+	if (Pxstrncmp(className, "PxCustomGeometryExt", sizeof("PxCustomGeometryExt") - 1) == 0)
+	{
+		// Shape emission deduplicates callbacks; a constructor reusing an address retires its prior lifetime.
+		if (mEmittedObjects.erase(objectHandle))
+			mOmniPvdInstance->getWriter()->destroyObject(1, objectHandle);
+		if (!mRecordAllObjects && !mSelectedCustomCallbacks.contains(reinterpret_cast<const void*>(objectHandle)))
+			return false;
+	}
+	else if (Pxstrcmp(className, "PxD6JointDrive") == 0)
+	{
+		if (!mRecordSecondaryData)
+			return false;
+	}
+	else if (!physx::Ext::OmniPvdCaptureJoint(*reinterpret_cast<const PxJoint*>(objectHandle)))
+		return false;
+	return mEmittedObjects.insert(objectHandle);
+}
+
+bool OmniPvdPxExtensionsSampler::shouldRecordDestruction(PxU64 objectHandle)
+{
+	mJointReferences.erase(objectHandle);
+	return mEmittedObjects.erase(objectHandle);
+}
+
+bool OmniPvdPxExtensionsSampler::shouldRecordValue(const char* className, const char* attributeName, PxU64 objectHandle) const
+{
+	if (!mEmittedObjects.contains(objectHandle))
+		return false;
+	if (mRecordAllObjects && mRecordSecondaryData)
+		return true;
+	if (Pxstrncmp(className, "PxCustomGeometryExt", sizeof("PxCustomGeometryExt") - 1) == 0)
+		return true;
+	if (Pxstrcmp(className, "PxD6JointDrive") &&
+		!physx::Ext::OmniPvdCaptureJoint(*reinterpret_cast<const PxJoint*>(objectHandle)))
+		return false;
+	static const char* const primaryAttributes[] = { "constraint", "type", "actor0", "actor1", "name", "concreteTypeName",
+		"actor0LocalPose", "actor1LocalPose", "angle", "position", "velocity", "twistAngle", "distance", "swingYAngle",
+		"swingZAngle", "hinges", "joints" };
+	for (PxU32 i = 0; i < PxU32(sizeof(primaryAttributes) / sizeof(primaryAttributes[0])); ++i)
+		if (Pxstrcmp(attributeName, primaryAttributes[i]) == 0)
+			return true;
+	return mRecordSecondaryData;
 }
 
 physx::PxOmniPvd* OmniPvdPxExtensionsSampler::getOmniPvdInstance() {
@@ -237,6 +385,42 @@ namespace physx
 {
 namespace Ext
 {
+
+bool OmniPvdCaptureJoint(const PxJoint& joint)
+{
+	PxOmniPvd* ovd = OmniPvdGetInstance();
+	return ovd && ovd->isSampling() && joint.getConstraint() && ovd->isObjectRecorded(*joint.getConstraint());
+}
+
+const PxBase* OmniPvdCaptureJointReference(const PxBase* joint, OmniPvdWriter* writer)
+{
+	OmniPvdPxExtensionsSampler* sampler = OmniPvdPxExtensionsSampler::getInstance();
+	return sampler ? sampler->captureJointReference(joint, writer) : NULL;
+}
+
+void OmniPvdCacheJointReferences(const PxJoint& dependent, const PxBase* joint0, const PxBase* joint1)
+{
+	if (OmniPvdPxExtensionsSampler* sampler = OmniPvdPxExtensionsSampler::getInstance())
+		sampler->cacheJointReferences(reinterpret_cast<PxU64>(&dependent), joint0, joint1);
+}
+
+bool OmniPvdShouldRecordCreation(const char* className, PxU64 objectHandle)
+{
+	OmniPvdPxExtensionsSampler* sampler = OmniPvdPxExtensionsSampler::getInstance();
+	return sampler && sampler->shouldRecordCreation(className, objectHandle);
+}
+
+bool OmniPvdShouldRecordDestruction(PxU64 objectHandle)
+{
+	OmniPvdPxExtensionsSampler* sampler = OmniPvdPxExtensionsSampler::getInstance();
+	return sampler && sampler->shouldRecordDestruction(objectHandle);
+}
+
+bool OmniPvdShouldRecordValue(const char* className, const char* attributeName, PxU64 objectHandle)
+{
+	OmniPvdPxExtensionsSampler* sampler = OmniPvdPxExtensionsSampler::getInstance();
+	return sampler && sampler->shouldRecordValue(className, attributeName, objectHandle);
+}
 
 const OmniPvdPxExtensionsRegistrationData* OmniPvdGetPxExtensionsRegistrationData()
 {

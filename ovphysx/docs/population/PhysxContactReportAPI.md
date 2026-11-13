@@ -5,9 +5,9 @@
 
 # PhysxContactReportAPI
 
-Registers a rigid actor (including a standalone static collider), or every link of an articulation, for contact reporting. A standalone static collider reports on CPU simulation and GPU dynamics with CPU readback; on DirectGPU its sensor row remains but reads zero force. On a separate child collider, the API enables sensor selection on CPU simulation and GPU dynamics with CPU readback but does not enable the owning body's reporting. Read by the runtime at actor creation, not by the parse library; without the API in usd-schemas nothing is registered even if the attributes are authored.
+Registers a rigid actor (including a standalone static collider), or every link of an articulation, for contact reporting. A standalone static collider reports on CPU simulation and GPU dynamics with CPU readback; on DirectGPU its sensor row remains but reads zero force. On a separate child collider, the API enables sensor selection on CPU simulation and GPU dynamics with CPU readback but does not enable the owning body's reporting. Read by the runtime at actor creation, not by the parse library; without the API in [usd-schemas](prim.md#columns) nothing is registered even if the attributes are authored.
 
-- **Applies to:** `Xformable`
+- **Applies to:** [`Xformable`](glossary.md#xformable)
 - **Read only when listed in `usd-schemas`.**
 - **Uses blocks:** [`stage_units`](stage_units.md)
 
@@ -17,12 +17,12 @@ The threshold is published at its resolved value (raw fallback 1.0 when unauthor
 
 ## Columns
 
-*Raw fallback* is the USD schema value. *Producer writes* is what ovstage population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
+*Raw fallback* is the [USD](glossary.md#usd) schema value. *Producer writes* is what [ovstage](glossary.md#ovstage) population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
 
 | Column | Type | Units | Raw fallback | Producer writes | Parser default | If absent |
 |---|---|---|---|---|---|---|
 | `physxContactReport:threshold` | float32 | mass*length/s (impulse) | 1.0 | resolved USD value (authored, else raw fallback) | `1 / metersPerUnit` | One tolerances length (1 / metersPerUnit): 1 on a meter stage, 100 on a centimeter stage. Ambiguous-fallback collapse: a column that reads exactly 1.0 is treated as unauthored and yields the same units-scaled default, so writing the raw fallback literally is equivalent to omitting the column, and an intended threshold of exactly 1.0 cannot be expressed on a non-meter stage. |
-| `physxContactReport:reportPairs` | uint64 array, RELATIONSHIP_PATH_ID |  |  | not written |  | Wildcard: contacts with EVERY other actor are reported. This is decided by hasRelationship, not by the target count: a relationship that is present but empty registers nothing, and a present relationship whose targets all fail to resolve to live objects also registers nothing rather than widening into the wildcard. |
+| `physxContactReport:reportPairs` | uint64 array, RELATIONSHIP_PATH_ID |  |  | not written |  | Wildcard: contacts with EVERY other actor are reported. This is decided by whether the relationship is present, not by the target count: a relationship that is present but empty registers nothing, and a present relationship whose targets all fail to resolve to live objects also registers nothing rather than widening into the wildcard. |
 
 ## Interactions
 

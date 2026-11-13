@@ -28,6 +28,7 @@ Compare a retained live debug frame with a stopped collision overlay and capabil
 ## Then
 
 - Retained geometry remains coherent for its original step with documented colors/frame/culling (REQ AC-1).
+- Shape wireframes of falling bodies match their poses from the start of the frame's step, not the post-step poses (REQ AC-1).
 - Counters have documented scope/units and no mutable internal pointer escapes (REQ AC-2).
 - The stopped overlay is generated without attach and represents the cooked collider (REQ AC-3).
 - The absent export reports unsupported without changing recording state (REQ AC-4).
@@ -36,7 +37,7 @@ Compare a retained live debug frame with a stopped collision overlay and capabil
 
 [test_debug.py](../../../tests_native/test_debug.py):
 
-Completed copied frames, owner identity, canaries/capacity, pending admission and retirement pass. Stopped cooked overlays verify transformed geometry, normals and per-shape color without attach. RepX/legacy-PVD requests fail through separate availability discovery. Statistics are exercised by test_bridge.py.
+Completed copied frames, pre-step shape poses of falling bodies, owner identity, canaries/capacity, pending admission and retirement pass. Stopped cooked overlays verify transformed geometry, normals and per-shape color without attach. RepX/legacy-PVD requests fail through separate availability discovery. Statistics are exercised by test_bridge.py.
 
 Qualification: Linux x86_64 CPU and customer USD 26.8. No GPU/device execution
 or same-process legacy-provider coexistence is claimed.

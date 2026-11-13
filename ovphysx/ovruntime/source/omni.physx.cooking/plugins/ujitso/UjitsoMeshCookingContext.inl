@@ -1,6 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-ATTACH-SERVICES-001
+ * @covers AC-3
+ */
+
 #pragma once
 
 #include "../service/CookingComputeService.h"
@@ -18,6 +23,8 @@
 
 #include <carb/ujitso/UjitsoUtils.inl>
 #include <omni/physx/IPhysxCookingService.h>
+
+#include <atomic>
 
 using namespace carb::ujitso;
 using namespace physx;
@@ -198,10 +205,25 @@ private:
 
     virtual ~MeshCookingContext()
     {
-        delete m_triangulationContainer;
-        delete m_volumeDeformableBodyInputContainer;
-        delete m_deformableVolumeMeshInputContainer;
-        delete m_surfaceDeformableBodyInputContainer;
+        // The registry holds a reference to each registered container; it must let go of them
+        // before they are deleted here, even on a path that reached neither postbuild() nor
+        // cancel() (e.g. agent->requestBuild() failing after prebuild() registered them).
+        unregisterContainers("~MeshCookingContext");
+
+        // The containers are reference counted and registerContainer() acquires them. Release ours
+        // instead of deleting them: when a cook is canceled while it runs, the registry can rarely
+        // still hold its reference after unregisterContainer() succeeded, and drops it only when
+        // the agent shuts down -- deleting the container here left it a dangling pointer.
+        releaseContainer(m_triangulationContainer);
+        releaseContainer(m_volumeDeformableBodyInputContainer);
+        releaseContainer(m_deformableVolumeMeshInputContainer);
+        releaseContainer(m_surfaceDeformableBodyInputContainer);
+    }
+
+    static void releaseContainer(carb::ujitso::IContainer* container)
+    {
+        if (container)
+            container->release();
     }
 
     // Using the prim ID as the process owner ID
@@ -224,6 +246,10 @@ private:
 
         // Call base context version do common state setting
         UjitsoProcessContext::onComplete();
+
+        // The build's callback has returned by now, so it can no longer overwrite the result
+        if (m_canceledBeforeFinished)
+            m_cookingResult.result = PhysxCookingResult::eERROR_CANCELED;
 
         // Keep this outside of the if () block below, so that its data is available for any callbacks that are fired
         std::vector<PhysxCookedDataSpan> spans;
@@ -263,45 +289,84 @@ private:
 
         UjitsoProcessContext::prebuild();
 
+        // Kept for unregisterContainers(), which may run after the agent has been returned
+        m_registry = getAgent()->registry;
+
         // Build the container to pass data through to the processor
-        m_containerHandle = getAgent()->registry->registerContainer(*m_triangulationContainer);
+        m_containerHandle = m_registry->registerContainer(*m_triangulationContainer);
         getRequestBuilder().add(PHYSICS_TRIANGULATION_INPUT_CONTAINER_NAME, m_containerHandle);
 
         const PhysxCookingDataType::Enum dataType =
             (PhysxCookingDataType::Enum)getRequestBuilder().getRequest().getAsDefault(DATA_TYPE_STR, (uint32_t)0);
         if (dataType == PhysxCookingDataType::eVOLUME_DEFORMABLE_BODY)
         {
-            m_volumeDeformableBodyContainerHandle = getAgent()->registry->registerContainer(*m_volumeDeformableBodyInputContainer);
+            m_volumeDeformableBodyContainerHandle = m_registry->registerContainer(*m_volumeDeformableBodyInputContainer);
             getRequestBuilder().add(PHYSICS_VOLUME_DEFORMABLE_BODY_INPUT_CONTAINER_NAME, m_volumeDeformableBodyContainerHandle);
         }
         else if (dataType == PhysxCookingDataType::eDEFORMABLE_VOLUME_MESH)
         {
-            m_deformableVolumeMeshContainerHandle = getAgent()->registry->registerContainer(*m_deformableVolumeMeshInputContainer);
+            m_deformableVolumeMeshContainerHandle = m_registry->registerContainer(*m_deformableVolumeMeshInputContainer);
             getRequestBuilder().add(PHYSICS_DEFORMABLE_VOLUME_MESH_INPUT_CONTAINER_NAME, m_deformableVolumeMeshContainerHandle);
         }
         else if (dataType == PhysxCookingDataType::eSURFACE_DEFORMABLE_BODY)
         {
-            m_surfaceDeformableBodyContainerHandle = getAgent()->registry->registerContainer(*m_surfaceDeformableBodyInputContainer);
+            m_surfaceDeformableBodyContainerHandle = m_registry->registerContainer(*m_surfaceDeformableBodyInputContainer);
             getRequestBuilder().add(PHYSICS_SURFACE_DEFORMABLE_BODY_INPUT_CONTAINER_NAME, m_surfaceDeformableBodyContainerHandle);
         }
+
+        // Publish the handles to unregisterContainers() only once all of them are stored
+        m_containersRegistered.store(true, std::memory_order_release);
     }
 
-    bool unregisterContainerWithLogging(const ContainerHandle& handle, const char* containerName)
+    bool unregisterContainerWithLogging(const ContainerHandle& handle, const char* containerName, const char* caller)
     {
         constexpr uint32_t timeout = 60000;
-        const OperationResult result = getAgent()->registry->unregisterContainer(handle, timeout);
+        const OperationResult result = m_registry->unregisterContainer(handle, timeout);
         switch (result)
         {
         case OperationResult::SUCCESS:
             return true;
         case OperationResult::TIMEOUT_ERROR:
-            CARB_LOG_ERROR("MeshCookingContext::postbuild: Unable to unregister %s in %ds.",
-                containerName, timeout / 1000);
+            CARB_LOG_ERROR("MeshCookingContext::%s: Unable to unregister %s in %ds.",
+                caller, containerName, timeout / 1000);
             return false;
         default:
-            CARB_LOG_ERROR("MeshCookingContext::postbuild: unregisterContainer returned error value %d.",
-                (uint32_t)result);
+            CARB_LOG_ERROR("MeshCookingContext::%s: unregisterContainer returned error value %d.",
+                caller, (uint32_t)result);
             return false;
+        }
+    }
+
+    // Unregisters every container prebuild() registered, exactly once.
+    //
+    // A cook canceled while it is running gets here several times: from postbuild(), on the
+    // UJITSO worker that completes the build, and from cancel(), on the thread retiring the
+    // cooking context -- which a stage detach calls more than once (cancelAllTasks, then
+    // destroyAsyncContext and ~UjitsoProcessManager) -- possibly while postbuild() is running.
+    // unregisterContainer() releases the registry's reference to the container, so a second
+    // call for the same handle is refused once the first has finished, and over-releases the
+    // registry's HandleDatabase entry while it has not: carb then aborts on the worker with
+    // "HandleDatabase::release: Precondition failure: `mapped` is already destroyed".
+    // Whichever caller claims the registration first tears the containers down; the others
+    // find it gone.
+    void unregisterContainers(const char* caller)
+    {
+        if (!m_containersRegistered.exchange(false, std::memory_order_acq_rel))
+            return;
+
+        unregisterContainerWithLogging(m_containerHandle, "triangulation container", caller);
+
+        if (m_cookingRequest.dataType == PhysxCookingDataType::eVOLUME_DEFORMABLE_BODY)
+        {
+            unregisterContainerWithLogging(m_volumeDeformableBodyContainerHandle, "volume deformable body", caller);
+        }
+        else if (m_cookingRequest.dataType == PhysxCookingDataType::eDEFORMABLE_VOLUME_MESH)
+        {
+            unregisterContainerWithLogging(m_deformableVolumeMeshContainerHandle, "deformable volume mesh", caller);
+        }
+        else if (m_cookingRequest.dataType == PhysxCookingDataType::eSURFACE_DEFORMABLE_BODY)
+        {
+            unregisterContainerWithLogging(m_surfaceDeformableBodyContainerHandle, "surface deformable body", caller);
         }
     }
 
@@ -371,24 +436,8 @@ private:
             CARB_LOG_WARN("UjitsoMeshCookingContext: cooking failure%s%s", text ? " for " : "", text ? text : "");
         }
 
-        // tear down the triangulation container
-        unregisterContainerWithLogging(m_containerHandle, "triangulation container");
-
-        if (m_cookingRequest.dataType == PhysxCookingDataType::eVOLUME_DEFORMABLE_BODY)
-        {
-            // tear down the volume deformable body cooking input container
-            unregisterContainerWithLogging(m_volumeDeformableBodyContainerHandle, "volume deformable body");
-        }
-        else if (m_cookingRequest.dataType == PhysxCookingDataType::eDEFORMABLE_VOLUME_MESH)
-        {
-            // tear down the deformable volume mesh cooking input container
-            unregisterContainerWithLogging(m_deformableVolumeMeshContainerHandle, "deformable volume mesh");
-        }
-        else if (m_cookingRequest.dataType == PhysxCookingDataType::eSURFACE_DEFORMABLE_BODY)
-        {
-            // tear down the surface deformable body cooking input container
-            unregisterContainerWithLogging(m_surfaceDeformableBodyContainerHandle, "surface deformable body");
-        }
+        // tear down the input containers, unless a concurrent cancel() already has
+        unregisterContainers("postbuild");
 
         return success;
     }
@@ -402,32 +451,16 @@ private:
         if (!invokeCallbacks)
             m_muteCallbacks = true;
 
+        // A build that has not finished yet is reported as canceled. Its callback may still be running
+        // and write m_cookingResult, so onComplete() sets the result once that has returned.
         if (getState() != Finishing)
-            m_cookingResult.result = PhysxCookingResult::eERROR_CANCELED;
+            m_canceledBeforeFinished = true;
 
         UjitsoProcessContext::cancel(invokeCallbacks);
 
-        // tear down the triangulation container if agent is available
-        // it's apparently possible to cancel before prebuild is called)
-        carb::ujitso::Agent* agent = getAgent();
-        if (agent != nullptr)
-        {
-            constexpr uint32_t timeout = 60000;
-            const OperationResult unregisterResult = agent->registry->unregisterContainer(m_containerHandle, timeout);
-            switch (unregisterResult)
-            {
-            case OperationResult::SUCCESS:
-                break;
-            case OperationResult::TIMEOUT_ERROR:
-                CARB_LOG_ERROR(
-                    "MeshCookingContext::cancel: Unable to unregister triangulation container in %ds.", timeout / 1000);
-                break;
-            default:
-                CARB_LOG_ERROR("MeshCookingContext::cancel: unregisterContainer returned error value %d.",
-                               (uint32_t)unregisterResult);
-                break;
-            }
-        }
+        // tear down the input containers; a no-op if prebuild() has not registered them yet, or if
+        // postbuild() or an earlier cancel() already did
+        unregisterContainers("cancel");
     }
 
     typedef std::vector<omni::function<void(const PhysxCookingComputeResult& result)>> CallbackRequestVector;
@@ -452,8 +485,14 @@ private:
     PhysicsSurfaceDeformableBodyInputContainer* m_surfaceDeformableBodyInputContainer;
     ContainerHandle                             m_surfaceDeformableBodyContainerHandle;
 
+    carb::ujitso::IRegistry*            m_registry = nullptr;
+    // Set by prebuild() once the containers above are registered; claimed by unregisterContainers()
+    std::atomic<bool>                   m_containersRegistered{ false };
+
     CallbackRequestVector               m_requestCallbacks;
     bool                                m_muteCallbacks;
+    // Set by cancel() before the build finished; onComplete() then reports eERROR_CANCELED
+    bool                                m_canceledBeforeFinished = false;
 
     uint64_t                            m_contextId;
 };

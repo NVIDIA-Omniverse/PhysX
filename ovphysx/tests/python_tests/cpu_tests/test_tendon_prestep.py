@@ -9,6 +9,9 @@
 # @implements REQ-CAPI-WRITE-001
 # @covers AC-5a
 # @maps_to TEST-CAPI-WRITE-001
+# @implements REQ-INPUT-CORE-001
+# @covers AC-1
+# @maps_to TEST-INPUT-CORE-001
 
 from pathlib import Path
 
@@ -95,3 +98,45 @@ def test_tendon_read_during_runtime_addition(physx_sdk, tendon_scene, pattern):
     for _ in range(2):
         physx_sdk.step_sync(1e-4)
         _assert_damping(physx_sdk, object_type, [12, 20])
+
+
+def _write_all(physx, object_type, attribute, value):
+    """Fill every row of a whole-type write with `value`; return the number of rows written."""
+    with physx.write_sync(object_type, [attribute]) as session:
+        for group in session.groups:
+            for tensor in group.tensors:
+                tensor.fill_(value)
+            session.commit_sync(group)
+        return sum(group.prim_count for group in session.groups)
+
+
+def _read_all(physx, object_type, attribute):
+    with physx.read_sync(object_type, [attribute]) as result:
+        rows = sum(group.prim_count for group in result.groups)
+        values = [tensor.numpy().reshape(-1) for group in result.groups for tensor in group.tensors]
+        return rows, np.concatenate(values) if values else np.zeros(0)
+
+
+@pytest.mark.parametrize("write_kind", ["tendon", "joint", "joint_property", "root"])
+def test_write_first_after_runtime_addition(physx_sdk, tendon_scene, write_kind):
+    """A read during a runtime addition builds the articulation view before the insertion. A write that is the
+    first access after the inserting step must still cover the added articulation."""
+    stage, object_type, addition = tendon_scene
+    physx_sdk.step_sync(1e-4)  # no read yet, so the read below is the one that builds the view
+    _add_at_runtime(physx_sdk, stage, addition)
+    with physx_sdk.read_sync(object_type, ["tendonDamping"]):
+        pass
+    physx_sdk.step_sync(1e-4)
+
+    target_type, attribute, value = {
+        "tendon": (object_type, "tendonDamping", 30.0),
+        "joint": (SimObjectType.ARTICULATION_JOINT, "jointPosition", 0.05),
+        "joint_property": (SimObjectType.ARTICULATION_JOINT, "jointStiffness", 123.0),
+        "root": (SimObjectType.ARTICULATION, "rootPosition", 3.0),
+    }[write_kind]
+    written = _write_all(physx_sdk, target_type, attribute, value)
+    rows, values = _read_all(physx_sdk, target_type, attribute)
+    assert written == rows, "the write must cover the added articulation, like the read after it"
+    if write_kind in ("tendon", "root"):
+        assert rows == 2
+    np.testing.assert_allclose(values, value, rtol=0, atol=1e-5)

@@ -6,6 +6,8 @@
 #include <carb/ujitso/UjitsoUtils.inl>
 #include <carb/extras/Hash.h>
 
+#include <atomic>
+
 namespace omni
 {
 namespace physx
@@ -193,6 +195,21 @@ private:
 
     void setBuildFinished();
 
+    // True from agent->requestBuild() until requestCallback() has returned; while it is set, a UJITSO
+    // worker may still run postbuild() on this context, so it must not be released or deleted
+    bool callbackPending() const
+    {
+        return m_callbackPending.load(std::memory_order_acquire);
+    }
+
+    // Waits up to timeoutMs for a pending build callback to return; true once none is pending
+    bool waitForCallback(uint32_t timeoutMs);
+
+    bool canceled() const
+    {
+        return m_canceled;
+    }
+
     static void requestCallback(void* ctx0,
                                 void* ctx1,
                                 carb::ujitso::RequestHandle requestHandle,
@@ -209,6 +226,9 @@ private:
     carb::ujitso::OperationResult m_processResult;
     std::atomic<int32_t> m_state;
     carb::ujitso::CacheBehaviorType m_cacheBehavior;
+    std::atomic<bool> m_callbackPending{ false };
+    // Set by cancel(); a canceled process no longer takes on new requests for its build
+    bool m_canceled = false;
 
     // The process manager has permission to access low-level (private) processing functions.
     friend struct UjitsoProcessManager;

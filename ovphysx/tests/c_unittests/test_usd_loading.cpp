@@ -23,6 +23,12 @@
  * @implements REQ-CAPI-OVSTAGE-ATTACH-001
  * @covers AC-1 AC-2 AC-3
  *
+ * @implements REQ-CAPI-OVSTAGE-UPDATE-001
+ * @covers AC-1 AC-3 AC-4
+ *
+ * @implements REQ-CAPI-OVSTAGE-UPDATE-002
+ * @covers AC-1
+ *
  * @implements REQ-CAPI-DETACH-002
  * @covers AC-4
  */
@@ -62,8 +68,8 @@ bool populateTwoArticulations(ovstage_instance_t* stage)
         return false;
     constexpr const char* path = "tests/data/two_articulations.usda";
     const ovx_string_t pathString{ path, std::strlen(path) };
-    const ovstage_population_enqueue_result_t enqueue = ovstage_population_open_usd_from_file(
-        stage, pathString, /*ordinal=*/1, /*time=*/0.0, OVSTAGE_POPULATION_DOMAIN_PHYSICS);
+    const ovstage_population_enqueue_result_t enqueue = ovphysx_sample_open_usd_from_file(
+        stage, pathString, /*ordinal=*/1, /*time=*/0.0, /*with_rendering=*/false);
     if (enqueue.status != OVSTAGE_OK || enqueue.op_index == OVSTAGE_POPULATION_INVALID_OP_ID)
         return false;
 
@@ -107,7 +113,7 @@ bool writeUnconsumedAttribute(ovstage_instance_t* stage, ovx_token_t& attributeT
     write.tensor_count = 1;
 
     constexpr const char* attribute = "custom:unconsumed";
-    ovx_string_or_token_t name{};
+    ovx_token_or_string_t name{};
     name.string = { attribute, std::strlen(attribute) };
     const bool writeResult = waitAndReleaseOvstageOp(
         stage, ovstage_write_attribute(stage, query, name, /*ordinal=*/1, write, OVSTAGE_PRIM_MODE_UPSERT));
@@ -121,14 +127,29 @@ bool writeUnconsumedAttribute(ovstage_instance_t* stage, ovx_token_t& attributeT
 bool advanceWriteFloor(ovstage_instance_t* stage,
                        ovstage_scope_t scope,
                        const ovx_token_t* attributes = nullptr,
-                       size_t attributeCount = 0)
+                       size_t attributeCount = 0,
+                       uint64_t ordinal = 1)
 {
     ovstage_write_floor_desc_t floor{};
-    floor.ordinal = 1;
+    floor.ordinal = ordinal;
     floor.scope = scope;
     floor.attributes = attributes;
     floor.attribute_count = attributeCount;
     return waitAndReleaseOvstageOp(stage, ovstage_advance_write_floor(stage, &floor));
+}
+
+void expectArticulations(ovphysx_instance_handle_t handle, uint64_t count = 2)
+{
+    ovphysx_query_handle_t query = 0;
+    ovstage_query_result_t summary{};
+    EXPECT_EQ(test_utils::complete_task(handle, ovphysx_query(handle, OVPHYSX_QUERY_TARGET_ARTICULATION,
+                                                          OVPHYSX_SCOPE_ALL, &query, &summary)).status,
+              OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(summary.total_prim_count, count);
+    if (query != 0)
+    {
+        EXPECT_EQ(test_utils::complete_task(handle, ovphysx_release_query(handle, query)).status, OVPHYSX_API_SUCCESS);
+    }
 }
 
 struct OvstageGuard
@@ -221,6 +242,67 @@ TEST_F(PhysXTestFixture, UnsealedAttachFailsAndSealedRetrySucceeds)
     stageGuard.attachedHandle = OVPHYSX_INVALID_HANDLE;
 }
 
+class PartialSealAttachTest : public PhysXTestFixture, public ::testing::WithParamInterface<bool>
+{
+};
+
+TEST_P(PartialSealAttachTest, FailedAttachCanRetryAfterSealingJointRelationships)
+{
+    ovstage_instance_desc_t desc{};
+    desc.name = "ovphysx-partial-seal-attach-test";
+    ovstage_instance_t* stage = nullptr;
+    ASSERT_EQ(ovstage_create_instance(&desc, &stage), OVSTAGE_OK);
+    OvstageGuard stageGuard{ stage };
+    ASSERT_TRUE(populateTwoArticulations(stage));
+
+    ovx_path_dictionary_t* dictionary = ovstage_get_path_dictionary(stage);
+    ASSERT_NE(dictionary, nullptr);
+    const bool schemasOnly = GetParam();
+    const char* names[] = { schemasOnly ? "usd-schemas" : "physics:body0", "physics:body1" };
+    const size_t attributeCount = schemasOnly ? 1 : 2;
+    ovx_token_t attributes[2]{};
+    for (size_t i = 0; i < attributeCount; ++i)
+    {
+        const ovx_string_t name{ names[i], std::strlen(names[i]) };
+        ASSERT_EQ(ovx_path_dictionary_intern_token(dictionary, name, &attributes[i]), OVX_OK);
+    }
+    ASSERT_TRUE(advanceWriteFloor(stage, schemasOnly ? OVSTAGE_SCOPE_INCLUDE : OVSTAGE_SCOPE_EXCLUDE,
+                                 attributes, attributeCount));
+
+    const ovphysx_enqueue_result_t attach = ovphysx_attach_ovstage(m_handle, stage, 1);
+    ASSERT_EQ(attach.status, OVPHYSX_API_SUCCESS);
+    ASSERT_NE(attach.op_index, 0u);
+    stageGuard.attachedHandle = m_handle;
+    ovphysx::physx::WaitResult result;
+    ASSERT_EQ(result.waitTask(m_handle, attach), OVPHYSX_API_ERROR);
+    ASSERT_EQ(result.errorCount(), 1u);
+    EXPECT_EQ(result.errorTaskAt(0).op_index, attach.op_index);
+    const ovphysx_string_t error = ovphysx_get_last_task_error(m_handle, attach);
+    ASSERT_NE(error.ptr, nullptr);
+    const std::string message(error.ptr, error.length);
+    EXPECT_NE(message.find("ordinal 1"), std::string::npos) << message;
+    if (!schemasOnly)
+    {
+        EXPECT_NE(message.find("relationship read"), std::string::npos) << message;
+        EXPECT_NE(message.find("physics:body"), std::string::npos) << message;
+        EXPECT_NE(message.find("/World/"), std::string::npos) << message;
+    }
+    bool attached = true;
+    ASSERT_EQ(ovphysx_is_stage_attached(m_handle, nullptr, &attached).status, OVPHYSX_API_SUCCESS);
+    ASSERT_FALSE(attached);
+    stageGuard.attachedHandle = OVPHYSX_INVALID_HANDLE;
+
+    ASSERT_TRUE(advanceWriteFloor(stage, OVSTAGE_SCOPE_ALL));
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_attach_ovstage(m_handle, stage, 1)).status,
+              OVPHYSX_API_SUCCESS);
+    stageGuard.attachedHandle = m_handle;
+    expectArticulations(m_handle);
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_detach_ovstage(m_handle)).status, OVPHYSX_API_SUCCESS);
+    stageGuard.attachedHandle = OVPHYSX_INVALID_HANDLE;
+}
+
+INSTANTIATE_TEST_SUITE_P(PartialSeals, PartialSealAttachTest, ::testing::Values(true, false));
+
 TEST_F(PhysXTestFixture, ScopedSealAllowsUnrelatedUnsealedData)
 {
     ovstage_instance_desc_t desc{};
@@ -237,6 +319,7 @@ TEST_F(PhysXTestFixture, ScopedSealAllowsUnrelatedUnsealedData)
 
     ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_attach_ovstage(m_handle, stage, 1)).status, OVPHYSX_API_SUCCESS);
     stageGuard.attachedHandle = m_handle;
+    expectArticulations(m_handle);
 
     ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_detach_ovstage(m_handle)).status, OVPHYSX_API_SUCCESS);
     stageGuard.attachedHandle = OVPHYSX_INVALID_HANDLE;
@@ -273,6 +356,8 @@ TEST_F(PhysXTestFixture, DetachWithoutStepDropsPendingArticulations)
 // @covers AC-5
 // @implements REQ-CAPI-OVSTAGE-UPDATE-001
 // @covers AC-3
+// @implements REQ-CAPI-ASYNC-003
+// @covers AC-3
 TEST_F(PhysXTestFixture, AttachAndUpdateReturnCollectableTasks)
 {
     ovstage_instance_desc_t desc{};
@@ -290,10 +375,13 @@ TEST_F(PhysXTestFixture, AttachAndUpdateReturnCollectableTasks)
     stageGuard.attachedHandle = m_handle;
     ASSERT_TRUE(waitForTaskSuccess(m_handle, attach));
 
+    // The already-attached check runs in the attach job: the duplicate is accepted and its
+    // task fails, and the first attachment stays live.
     const ovphysx_enqueue_result_t duplicate = ovphysx_attach_ovstage(m_handle, stage, 1);
-    EXPECT_NE(duplicate.status, OVPHYSX_API_SUCCESS);
-    EXPECT_EQ(duplicate.op_index, 0u);
-    EXPECT_EQ(duplicate.instance, 0u);
+    ASSERT_EQ(duplicate.status, OVPHYSX_API_SUCCESS);
+    EXPECT_GT(duplicate.op_index, attach.op_index);
+    EXPECT_EQ(duplicate.instance, m_handle);
+    EXPECT_TRUE(waitForTaskFailure(m_handle, duplicate, "a stage is already attached"));
 
     const ovstage_ordinal_range_t range{1, 1, true};
     const ovphysx_enqueue_result_t update = ovphysx_update_from_ovstage(m_handle, range);
@@ -317,10 +405,99 @@ TEST_F(PhysXTestFixture, AttachOvstageRejectsZeroReadOrdinal)
     ASSERT_EQ(ovstage_create_instance(&desc, &stage), OVSTAGE_OK);
     OvstageGuard stageGuard{ stage };
 
-    const ovphysx_enqueue_result_t zeroOrdinal = ovphysx_attach_ovstage(m_handle, stage, 0);
-    ASSERT_EQ(zeroOrdinal.status, OVPHYSX_API_INVALID_ARGUMENT);
-    EXPECT_EQ(zeroOrdinal.op_index, 0u);
-    EXPECT_EQ(zeroOrdinal.instance, 0u);
+    // 0 is reserved, and the negative ordinals ovstage also writes are not attachable.
+    for (const ovstage_ordinal_t ordinal : { ovstage_ordinal_t{ 0 }, ovstage_ordinal_t{ -1 }, OVSTAGE_ORDINAL_MIN })
+    {
+        const ovphysx_enqueue_result_t rejected = ovphysx_attach_ovstage(m_handle, stage, ordinal);
+        ASSERT_EQ(rejected.status, OVPHYSX_API_INVALID_ARGUMENT) << ordinal;
+        EXPECT_EQ(rejected.op_index, 0u);
+        EXPECT_EQ(rejected.instance, 0u);
+    }
 
     ASSERT_TRUE(attach_usd_with_ovstage(m_handle, "tests/data/minimal_scene.usda"));
+}
+
+TEST_F(PhysXTestFixture, PartialSealIncrementalScanCanRetryAfterSealingJointRelationships)
+{
+    ovstage_instance_desc_t desc{};
+    desc.name = "ovphysx-partial-seal-update-test";
+    ovstage_instance_t* stage = nullptr;
+    ASSERT_EQ(ovstage_create_instance(&desc, &stage), OVSTAGE_OK);
+    OvstageGuard stageGuard{ stage };
+    ASSERT_TRUE(populateTwoArticulations(stage));
+    ASSERT_TRUE(advanceWriteFloor(stage, OVSTAGE_SCOPE_ALL));
+    ASSERT_EQ(complete_task(m_handle, ovphysx_attach_ovstage(m_handle, stage, 1)).status, OVPHYSX_API_SUCCESS);
+    stageGuard.attachedHandle = m_handle;
+    expectArticulations(m_handle);
+
+    // Add a new subtree after attachment so its properties are initialized by
+    // the structural rescan, rather than the change feed's existing-object reads.
+    constexpr const char* usda = R"usda(#usda 1.0
+(defaultPrim = "Added")
+def Xform "Added" (prepend apiSchemas = ["PhysicsArticulationRootAPI"])
+{
+    def Cube "Link0" (prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI"])
+    {
+        double size = 1
+    }
+    def Cube "Link1" (prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI"])
+    {
+        double size = 1
+        double3 xformOp:translate = (0, 0, 2)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+    def PhysicsRevoluteJoint "Joint"
+    {
+        rel physics:body0 = </Added/Link0>
+        rel physics:body1 = </Added/Link1>
+        uniform token physics:axis = "X"
+    }
+}
+)usda";
+    const auto waitPopulation = [stage](ovstage_population_enqueue_result_t enqueue) {
+        if (enqueue.status != OVSTAGE_OK || enqueue.op_index == OVSTAGE_POPULATION_INVALID_OP_ID)
+            return false;
+        ovstage_population_op_wait_result_t waitResult{};
+        return ovstage_population_wait_op(stage, enqueue.op_index, OVSTAGE_TIMEOUT_INFINITE, &waitResult) == OVSTAGE_OK &&
+               waitResult.error_op_id_count == 0;
+    };
+    ovstage_population_usd_reference_handle_t reference{};
+    constexpr const char* target = "/World/Added";
+    ASSERT_TRUE(waitPopulation(ovstage_population_add_usd_reference_from_string(
+        stage, { usda, std::strlen(usda) }, { target, std::strlen(target) }, &reference)));
+    ASSERT_TRUE(waitPopulation(ovstage_population_apply_usd_changes(stage, 2)));
+
+    ovx_path_dictionary_t* dictionary = ovstage_get_path_dictionary(stage);
+    ASSERT_NE(dictionary, nullptr);
+    const char* names[] = { "physics:body0", "physics:body1" };
+    ovx_token_t relationships[2]{};
+    for (size_t i = 0; i < 2; ++i)
+    {
+        ASSERT_EQ(ovx_path_dictionary_intern_token(dictionary, { names[i], std::strlen(names[i]) }, &relationships[i]),
+                  OVX_OK);
+    }
+    ASSERT_TRUE(advanceWriteFloor(stage, OVSTAGE_SCOPE_EXCLUDE, relationships, 2, 2));
+    ovstage_ordinal_range_t range{};
+    range.start_ordinal = 2;
+    range.end_ordinal = 2;
+    range.has_start_ordinal = true;
+    const ovphysx_enqueue_result_t update = ovphysx_update_from_ovstage(m_handle, range);
+    ASSERT_EQ(update.status, OVPHYSX_API_SUCCESS);
+    ovphysx::physx::WaitResult result;
+    EXPECT_EQ(result.waitTask(m_handle, update), OVPHYSX_API_ERROR);
+    EXPECT_EQ(result.errorCount(), 1u);
+    const ovphysx_string_t error = ovphysx_get_last_task_error(m_handle, update);
+    const std::string message(error.ptr ? error.ptr : "", error.length);
+    EXPECT_NE(message.find("relationship read"), std::string::npos) << message;
+    EXPECT_NE(message.find("ordinal 2"), std::string::npos) << message;
+    expectArticulations(m_handle);
+
+    // A second unsealed attempt must also fail, without consuming the range.
+    EXPECT_EQ(complete_task(m_handle, ovphysx_update_from_ovstage(m_handle, range)).status, OVPHYSX_API_ERROR);
+    expectArticulations(m_handle);
+    ASSERT_TRUE(advanceWriteFloor(stage, OVSTAGE_SCOPE_ALL, nullptr, 0, 2));
+    ASSERT_EQ(complete_task(m_handle, ovphysx_update_from_ovstage(m_handle, range)).status, OVPHYSX_API_SUCCESS);
+    expectArticulations(m_handle, 3);
+    ASSERT_EQ(complete_task(m_handle, ovphysx_update_from_ovstage(m_handle, range)).status, OVPHYSX_API_SUCCESS);
+    expectArticulations(m_handle, 3);
 }

@@ -10,6 +10,7 @@
 
 #include "tensors/ArticulationDofOvStageRecord.h"
 #include "tensors/ArticulationMetatype.h"
+#include "tensors/CenterOfMassEpoch.h"
 #include "tensors/CommonTypes.h"
 #include "tensors/base/BaseSimulationData.h"
 #include "tensors/base/OvStageShapeProperty.h"
@@ -66,15 +67,16 @@ public:
         eMassMatrix,
         eCoriolisForce,
         eGravityForce,
-        eCentroidalMomentum,
-        // Width is a constant 2, so it needs none of the topology arithmetic the others do. It is here
-        // so that it is EMITTED per cohort like them, keeping it on the same partitioning as the
-        // jacobian it describes, which a caller then matches by prim list.
-        eJacobianShape
+        eCentroidalMomentum
     };
 
-    // The flattened lane count one row needs, or 0 if the row cannot serve the column at all --
-    // which today means a fixed-base articulation asked for centroidal momentum.
+    // One row's own dimensions for an inverse dynamics column, which the read publishes as tensor axes
+    // (REQ-READ-INVDYN-001 AC-1): jacobian {R, C}, mass matrix {M, M}, Coriolis and gravity {M}, centroidal
+    // momentum {6, numDofs + 7}. Empty when the row cannot serve the column at all -- today a fixed-base
+    // articulation asked for centroidal momentum.
+    std::vector<int64_t> inverseDynamicsColumnShapeForRow(::physx::PxU32 row, InverseDynamicsColumn column) const;
+
+    // The values one row of the column holds: the product of its dimensions above, 0 where it has none.
     ::physx::PxU32 inverseDynamicsColumnWidthForRow(::physx::PxU32 row, InverseDynamicsColumn column) const;
 
     // One requested DOF property column: which quantity, and where its values go. Declared here rather
@@ -361,11 +363,6 @@ public:
     bool getTopologyMetadataOvStage(TopologyMetadata property, const TensorDesc* dstTensor,
                                     const ::physx::PxU32* rows, ::physx::PxU32 count) const;
 
-    // Host-resident like getShapeCountsOvStage above: derived from the metatype, not from simulation
-    // state. It is the shape side channel for the flattened `jacobian` column, whose two dimensions both
-    // vary with topology and so cannot be recovered from dtype.lanes (REQ-READ-INVDYN-001 AC-6).
-    bool getJacobianShapesOvStage(const TensorDesc* dstTensor, const ::physx::PxU32* rows, ::physx::PxU32 count) const;
-
     uint32_t maxShapesForRows(const ::physx::PxU32* rows, ::physx::PxU32 count) const;
 
     bool setMaterialProperties(const TensorDesc* srcTensor, const TensorDesc* indexTensor) const override;
@@ -449,14 +446,19 @@ protected:
     const DofImpl* resolveDofImpl(const ArticulationDofOvStageRecord& record) const;
 
     bool validComsCache = true;
+    // The centre-of-mass epoch the COM table was built at: a centre of mass changed through any path since makes the
+    // table stale.
+    uint64_t mComsEpoch = centerOfMassEpoch();
 
     void setComsCacheStateValid(bool flag)
     {
         validComsCache = flag;
+        if (flag)
+            mComsEpoch = centerOfMassEpoch();
     };
     bool getComsCacheStateValid()
     {
-        return validComsCache;
+        return validComsCache && mComsEpoch == centerOfMassEpoch();
     };
 };
 

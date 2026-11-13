@@ -5,11 +5,11 @@
 
 # PhysxConvexHullCollisionAPI
 
-Convex hull cooking parameters for a Mesh collider with physics:approximation convexHull. Cooking inputs only: PhysX exposes no getter for them, so nothing here is verified.
+Convex hull cooking parameters for a [Mesh](glossary.md#mesh) collider with physics:approximation convexHull. Cooking inputs only: [PhysX](glossary.md#physx) exposes no getter for them, so nothing here is verified.
 
-- **Applies to:** `Gprim`
+- **Applies to:** [`Gprim`](glossary.md#gprim)
 - **Requires on the same prim:** [`PhysicsCollisionAPI`](PhysicsCollisionAPI.md)
-- **Read only when listed in `usd-schemas`.**
+- **Read only when listed in [`usd-schemas`](prim.md#columns).**
 
 ## What USD population writes
 
@@ -17,16 +17,16 @@ Every declared attribute of an applied collision API is published at its resolve
 
 ## Columns
 
-*Raw fallback* is the USD schema value. *Producer writes* is what ovstage population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
+*Raw fallback* is the [USD](glossary.md#usd) schema value. *Producer writes* is what [ovstage](glossary.md#ovstage) population puts in the column for a USD stage. *Parser default* applies on the consumer when the column is absent, in stage units. **diverges** means writing the raw fallback literally parses differently from omitting the column (the parser default): USD population may well publish that very value for an unauthored attribute, so the marker is about the column being present, not about its value.
 
 | Column | Type | Units | Raw fallback | Producer writes | Parser default | If absent |
 |---|---|---|---|---|---|---|
-| `physxConvexHullCollision:minThickness` | float32 | length | 0.001 | resolved USD value (authored, else raw fallback) | 0.001 | 0.001 (defaultCookedMinThickness) from the ConvexMeshCookingParams constructor. Unauthored preserves the existing value; no clamping. |
-| `physxConvexHullCollision:hullVertexLimit` | int32 | none | 64 | resolved USD value (authored, else raw fallback) | 64 | 64 (defaultCookedMaxHullVertices), unless the free attribute newton:maxHullVertices is present with a value > 0, which then supplies the limit. Read through an int64 hop and cast to uint32; no clamping. |
+| `physxConvexHullCollision:minThickness` | float32 | length | 0.001 | resolved USD value (authored, else raw fallback) | 0.001 | 0.001, the convex mesh cooking default. Unauthored preserves the existing value; no clamping. |
+| `physxConvexHullCollision:hullVertexLimit` | int32 | none | 64 | resolved USD value (authored, else raw fallback) | 64 | 64, the cooking default, unless the free attribute newton:maxHullVertices is present with a value > 0, which then supplies the limit. Read through an int64 hop and cast to uint32; no clamping. |
 
 ## Interactions
 
-- **[`PhysicsMeshCollisionAPI`](PhysicsMeshCollisionAPI.md):** Read by parseConvexHullCookingExt only when the descriptor kind is convexHull, including the silent promotion of none and meshSimplification on a dynamic body. Both columns are gated on this API being in usd-schemas.
+- **[`PhysicsMeshCollisionAPI`](PhysicsMeshCollisionAPI.md):** Read only when the descriptor kind is convexHull, including the silent promotion of none and meshSimplification on a dynamic body. Both columns are gated on this API being in usd-schemas.
 
 ## Notes
 

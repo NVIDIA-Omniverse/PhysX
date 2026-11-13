@@ -19,6 +19,9 @@
 # @implements REQ-CAPI-BENCHMARK-007
 # @covers AC-1 AC-2 AC-3 AC-4
 #
+# @implements REQ-CAPI-BENCHMARK-008
+# @covers AC-1 AC-5
+#
 # ovphysx benchmark producer contract.
 #
 # This is a producer contract, not a performance run. It does not compare
@@ -1470,3 +1473,6 @@ message(STATUS "ovphysx write-only diagnostics contract: PASSED (${WRITE_ONLY_TO
 
 # The normal write families must pass before accepting their performance data.
 include("${CMAKE_CURRENT_LIST_DIR}/test_output_write_contract.cmake")
+
+# Separate caller-retention rows do not change the original benchmark families.
+include("${CMAKE_CURRENT_LIST_DIR}/test_query_retention_contract.cmake")
