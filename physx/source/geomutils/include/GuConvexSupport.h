@@ -471,7 +471,7 @@ namespace physx
 			{
 				if (dir.magnitude() < FLT_EPSILON)
 					return PxVec3(0);
-				TriangleCore core; memcpy(&core, data, sizeof(core));
+				const TriangleCore& core = *reinterpret_cast<const TriangleCore*>(data);
 				PxVec3 point = core.point(0);
 				PxReal maxDot = -FLT_MAX;
 				for (PxU32 i = 0; i < 3; ++i)
@@ -486,7 +486,7 @@ namespace physx
 			PxU32 contactFace<Type::eTRIANGLE>(const PxVec3& dir, const PxVec3& point, const void* data,
 				PxVec3& faceNormal, PxVec3 facePoints[MAX_FACE_POINTS])
 			{
-				TriangleCore triangle; memcpy(&triangle, data, sizeof(triangle));
+				const TriangleCore& triangle = *reinterpret_cast<const TriangleCore*>(data);
 				const PxVec3 points[3] = { triangle.point(0), triangle.point(1), triangle.point(2) };
 				const PointsCore core = { points, PxVec3(1), PxQuat(PxIdentity),
 					3, sizeof(PxVec3), { 0, 0 } };
