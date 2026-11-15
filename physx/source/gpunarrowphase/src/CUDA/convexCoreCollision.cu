@@ -911,6 +911,91 @@ namespace physx
 	}
 }
 
+// Bounds for per-triangle rejection in the mesh query frame.
+// Near-axial cylinder/cone support samples can underbound; use pose columns
+// without normalization to match PxQuat::rotate() in exact arithmetic.
+// Pad by max(margin + contactDist, convex GJK tolerance).
+// The triangle bounds include their own margin.
+static __device__ PxBounds3 computeTriangleCullBounds(const Gu::ConvexShape& convex, PxReal contactDist)
+{
+	const PxQuat& q = convex.pose.q;
+	const PxVec3 axis0 = q.getBasisVector0(), axis1 = q.getBasisVector1(), axis2 = q.getBasisVector2();
+	const PxVec3 abs0 = axis0.abs(), abs1 = axis1.abs(), abs2 = axis2.abs();
+	PxVec3 offset(0.0f);	// center of the bounds relative to pose.p, in the query frame
+	PxVec3 extents(0.0f);	// half extents along the query-frame axes
+	switch (convex.coreType)
+	{
+		case Gu::ConvexCore::Type::eSEGMENT:
+		{
+			Gu::ConvexCore::SegmentCore core;
+			memcpy(&core, convex.coreData, sizeof(core));
+			extents = abs0 * (core.length * 0.5f);
+			break;
+		}
+		case Gu::ConvexCore::Type::eBOX:
+		{
+			Gu::ConvexCore::BoxCore core;
+			memcpy(&core, convex.coreData, sizeof(core));
+			extents = (abs0 * core.extents.x + abs1 * core.extents.y + abs2 * core.extents.z) * 0.5f;
+			break;
+		}
+		case Gu::ConvexCore::Type::eELLIPSOID:
+		{
+			// Contains the ellipsoid without squaring the radii.
+			Gu::ConvexCore::EllipsoidCore core;
+			memcpy(&core, convex.coreData, sizeof(core));
+			extents = abs0 * core.radii.x + abs1 * core.radii.y + abs2 * core.radii.z;
+			break;
+		}
+		case Gu::ConvexCore::Type::eCYLINDER:
+		case Gu::ConvexCore::Type::eCONE:
+		{
+			PxReal height, radius;
+			if (convex.coreType == Gu::ConvexCore::Type::eCYLINDER)
+			{
+				Gu::ConvexCore::CylinderCore core;
+				memcpy(&core, convex.coreData, sizeof(core));
+				height = core.height;
+				radius = core.radius;
+			}
+			else
+			{
+				Gu::ConvexCore::ConeCore core;
+				memcpy(&core, convex.coreData, sizeof(core));
+				height = core.height;
+				radius = core.radius;
+			}
+			// The axis is local X; the rim spans the two lateral columns.
+			const PxVec3 rim = PxVec3(PxSqrt(axis1.x * axis1.x + axis2.x * axis2.x),
+				PxSqrt(axis1.y * axis1.y + axis2.y * axis2.y),
+				PxSqrt(axis1.z * axis1.z + axis2.z * axis2.z)) * radius;
+			if (convex.coreType == Gu::ConvexCore::Type::eCYLINDER)
+			{
+				extents = abs0 * (height * 0.5f) + rim;
+			}
+			else
+			{
+				// Apex at +X, rim at -X: the bounds of the apex point and the base disc.
+				const PxVec3 apex = axis0 * (height * 0.5f), base = -apex;
+				const PxBounds3 local((base - rim).minimum(apex), (base + rim).maximum(apex));
+				offset = local.getCenter();
+				extents = local.getExtents();
+			}
+			break;
+		}
+		default:	// ePOINT
+			break;
+	}
+	PxBounds3 bounds = PxBounds3::centerExtents(convex.pose.p + offset, extents);
+	// Upper bound on the pair's GJK zero-distance tolerance.
+	const PxReal gjkTolerance = 0.01f * Gu::RefGjkEpa::Convex<Gu::ConvexShape>(convex, convex.pose).getAccuracy();
+	// Allowance for evaluating these bounds in single precision. It does not cover rounding
+	// inside GJK itself.
+	const PxReal scale = PxMax(1.0f, PxMax(bounds.minimum.abs().maxElement(), bounds.maximum.abs().maxElement()));
+	bounds.fattenFast(PxMax(convex.margin + contactDist, gjkTolerance) + 16.0f * FLT_EPSILON * scale);
+	return bounds;
+}
+
 extern "C" __global__ __launch_bounds__(128)
 void convexCoreTrimeshNphase_Kernel32(
 	PxU32 numTests,
@@ -951,6 +1036,7 @@ void convexCoreTrimeshNphase_Kernel32(
 		Gu::ConvexShape convex;
 		PxTransform transform0in1;
 		PxBounds3 convexBounds;
+		PxBounds3 cullBounds;
 		TestTrimesh trimesh;
 		Gu::Contact32 contact;
 
@@ -976,6 +1062,7 @@ void convexCoreTrimeshNphase_Kernel32(
 		Gu::makeConvexShape(in.shape0, transform0in1, convex);
 		convexBounds = convex.computeBounds();
 		convexBounds.fattenFast(in.contactDist);
+		_sh.cullBounds = computeTriangleCullBounds(convex, in.contactDist);
 		PX_PLACEMENT_NEW(&trimesh, TestTrimesh(TrimeshBvh(in.shape1)));
 		contact.init();
 	}
@@ -988,15 +1075,27 @@ void convexCoreTrimeshNphase_Kernel32(
 		__device__ Callback(_Shared& _sh) : sh(_sh) {}
 		__device__ void operator()(const Gu::ConvexShape& tri, PxU32 triIndex) const
 		{
-			PxVec3 normal;
+			// addPoints() rotates the normal on every lane, including lanes without contacts.
+			PxVec3 normal(0.0f);
 			PxVec3 points[Gu::MAX_CONVEX_CONTACTS];
 			PxReal dists[Gu::MAX_CONVEX_CONTACTS];
 			PxU32 numPoints = 0;
 
 			if (triIndex != 0xffffffff)
 			{
-				const PxVec3 triNormal = sh.trimesh.bvh.getTriNormal(triIndex);
-				numPoints = Gu::generateContacts(sh.convex, tri, sh.in.contactDist, triNormal, normal, points, dists);
+				// Cull individual triangles before GJK/EPA; traversal tests leaf bounds.
+				Gu::ConvexCore::PointsCore core;
+				memcpy(&core, tri.coreData, sizeof(core));
+				const float4* verts = static_cast<const float4*>(core.points);
+				const PxVec3 a = PxLoad3(verts[0]), b = PxLoad3(verts[1]), c = PxLoad3(verts[2]);
+				PxBounds3 triBounds(a.minimum(b).minimum(c), a.maximum(b).maximum(c));
+				const PxReal scale = PxMax(1.0f, PxMax(triBounds.minimum.abs().maxElement(), triBounds.maximum.abs().maxElement()));
+				triBounds.fattenFast(tri.margin + 16.0f * FLT_EPSILON * scale);
+				if (sh.cullBounds.intersects(triBounds))
+				{
+					const PxVec3 triNormal = sh.trimesh.bvh.getTriNormal(triIndex);
+					numPoints = Gu::generateContacts(sh.convex, tri, sh.in.contactDist, triNormal, normal, points, dists);
+				}
 			}
 
 			sh.contact.addPoints(normal, points, dists, numPoints, sh.in.transform1);
