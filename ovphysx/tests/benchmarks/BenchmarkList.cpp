@@ -33,6 +33,7 @@ extern void initLabAnymal();
 extern void initLabHumanoid();
 extern void initAuthoringPopulationAdd();
 extern void initAuthoringTeleport();
+extern void initAuthoringKinematicDrive();
 extern void initAuthoringDrain();
 extern void initAuthoringPopulationChurn();
 extern void initAuthoringPopulationScale();
@@ -62,6 +63,7 @@ void bmInitialize(bool sanityCheck, const char* dataFolder, int32_t numThreads, 
     initLabHumanoid();
     initAuthoringPopulationAdd();
     initAuthoringTeleport();
+    initAuthoringKinematicDrive();
     initAuthoringDrain();
     initAuthoringPopulationChurn();
     initAuthoringPopulationScale();

@@ -1,0 +1,2061 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    doc = "Kinematic-drive microbenchmark fixture: per unit one kinematic slab plus one resting dynamic rider, CPU dynamics. See gen_kinematic_drive.py."
+    metersPerUnit = 1
+    upAxis = "Y"
+    kilogramsPerUnit = 1
+)
+
+def Xform "World"
+{
+    def PhysicsScene "PhysicsScene" (
+        prepend apiSchemas = ["PhysxSceneAPI"]
+    )
+    {
+        vector3f physics:gravityDirection = (0, -1, 0)
+        float physics:gravityMagnitude = 9.81
+        bool physxScene:enableGPUDynamics = false
+        string physxScene:broadphaseType = "MBP"
+    }
+
+    def Material "HighFriction" (
+        prepend apiSchemas = ["PhysicsMaterialAPI"]
+    )
+    {
+        float physics:staticFriction = 1.0
+        float physics:dynamicFriction = 1.0
+        float physics:restitution = 0.0
+    }
+
+    def Cube "KinematicSlab0" (
+        prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+    )
+    {
+        rel material:binding:physics = </World/HighFriction> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        bool physics:kinematicEnabled = true
+        float physics:mass = 10.0
+        double size = 1
+        double3 xformOp:scale = (6.0, 1.0, 6.0)
+        double3 xformOp:translate = (0.0, 0, 0.0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Xform "Articulation0" (
+        prepend apiSchemas = ["PhysicsArticulationRootAPI", "PhysxArticulationAPI"]
+    )
+    {
+        bool physxArticulation:enabledSelfCollisions = 0
+        int physxArticulation:solverPositionIterationCount = 4
+        int physxArticulation:solverVelocityIterationCount = 1
+
+        def Cube "link0" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (0.0, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link1" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (0.4, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link2" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (0.8, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link3" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (1.2000000000000002, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link4" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (1.6, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link5" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (2.0, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link6" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (2.4000000000000004, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link7" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (2.8000000000000003, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link8" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (3.2, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link9" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (3.6, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link10" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (4.0, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link11" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (4.4, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link12" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (4.800000000000001, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link13" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (5.2, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link14" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (5.6000000000000005, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link15" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (6.0, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link16" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (6.4, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link17" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (6.800000000000001, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link18" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (7.2, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link19" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (7.6000000000000005, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link20" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (8.0, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link21" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (8.4, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link22" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (8.8, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link23" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (9.200000000000001, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link24" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (9.600000000000001, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link25" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (10.0, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link26" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (10.4, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link27" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (10.8, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link28" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (11.200000000000001, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link29" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (11.600000000000001, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link30" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (12.0, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link31" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (12.4, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link32" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (12.8, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link33" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (13.200000000000001, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link34" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (13.600000000000001, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link35" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (14.0, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link36" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (14.4, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link37" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (14.8, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link38" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (15.200000000000001, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link39" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (15.600000000000001, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link40" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (16.0, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link41" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (16.400000000000002, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link42" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (16.8, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link43" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (17.2, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link44" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (17.6, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link45" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (18.0, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link46" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (18.400000000000002, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link47" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (18.8, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link48" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (19.200000000000003, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link49" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (19.6, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link50" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (20.0, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link51" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (20.400000000000002, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link52" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (20.8, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link53" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (21.200000000000003, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link54" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (21.6, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link55" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (22.0, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link56" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (22.400000000000002, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link57" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (22.8, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link58" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (23.200000000000003, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link59" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (23.6, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link60" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (24.0, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link61" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (24.400000000000002, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link62" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (24.8, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link63" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (25.200000000000003, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "link64" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+        )
+        {
+            double size = 1
+            float physics:mass = 0.1
+            float physxRigidBody:sleepThreshold = 0.0
+            float physxRigidBody:stabilizationThreshold = 0.0
+            double3 xformOp:translate = (25.6, 0.62, 0.0)
+            double3 xformOp:scale = (0.4, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def PhysicsFixedJoint "rootJoint"
+        {
+            rel physics:body0 = </World/KinematicSlab0>
+            rel physics:body1 = </World/Articulation0/link0>
+            point3f physics:localPos0 = (0, 0.62, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+        }
+
+        def PhysicsRevoluteJoint "joint0" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link0>
+            rel physics:body1 = </World/Articulation0/link1>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint1" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link1>
+            rel physics:body1 = </World/Articulation0/link2>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint2" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link2>
+            rel physics:body1 = </World/Articulation0/link3>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint3" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link3>
+            rel physics:body1 = </World/Articulation0/link4>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint4" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link4>
+            rel physics:body1 = </World/Articulation0/link5>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint5" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link5>
+            rel physics:body1 = </World/Articulation0/link6>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint6" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link6>
+            rel physics:body1 = </World/Articulation0/link7>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint7" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link7>
+            rel physics:body1 = </World/Articulation0/link8>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint8" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link8>
+            rel physics:body1 = </World/Articulation0/link9>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint9" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link9>
+            rel physics:body1 = </World/Articulation0/link10>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint10" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link10>
+            rel physics:body1 = </World/Articulation0/link11>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint11" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link11>
+            rel physics:body1 = </World/Articulation0/link12>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint12" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link12>
+            rel physics:body1 = </World/Articulation0/link13>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint13" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link13>
+            rel physics:body1 = </World/Articulation0/link14>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint14" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link14>
+            rel physics:body1 = </World/Articulation0/link15>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint15" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link15>
+            rel physics:body1 = </World/Articulation0/link16>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint16" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link16>
+            rel physics:body1 = </World/Articulation0/link17>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint17" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link17>
+            rel physics:body1 = </World/Articulation0/link18>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint18" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link18>
+            rel physics:body1 = </World/Articulation0/link19>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint19" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link19>
+            rel physics:body1 = </World/Articulation0/link20>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint20" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link20>
+            rel physics:body1 = </World/Articulation0/link21>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint21" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link21>
+            rel physics:body1 = </World/Articulation0/link22>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint22" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link22>
+            rel physics:body1 = </World/Articulation0/link23>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint23" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link23>
+            rel physics:body1 = </World/Articulation0/link24>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint24" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link24>
+            rel physics:body1 = </World/Articulation0/link25>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint25" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link25>
+            rel physics:body1 = </World/Articulation0/link26>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint26" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link26>
+            rel physics:body1 = </World/Articulation0/link27>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint27" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link27>
+            rel physics:body1 = </World/Articulation0/link28>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint28" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link28>
+            rel physics:body1 = </World/Articulation0/link29>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint29" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link29>
+            rel physics:body1 = </World/Articulation0/link30>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint30" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link30>
+            rel physics:body1 = </World/Articulation0/link31>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint31" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link31>
+            rel physics:body1 = </World/Articulation0/link32>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint32" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link32>
+            rel physics:body1 = </World/Articulation0/link33>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint33" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link33>
+            rel physics:body1 = </World/Articulation0/link34>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint34" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link34>
+            rel physics:body1 = </World/Articulation0/link35>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint35" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link35>
+            rel physics:body1 = </World/Articulation0/link36>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint36" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link36>
+            rel physics:body1 = </World/Articulation0/link37>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint37" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link37>
+            rel physics:body1 = </World/Articulation0/link38>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint38" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link38>
+            rel physics:body1 = </World/Articulation0/link39>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint39" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link39>
+            rel physics:body1 = </World/Articulation0/link40>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint40" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link40>
+            rel physics:body1 = </World/Articulation0/link41>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint41" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link41>
+            rel physics:body1 = </World/Articulation0/link42>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint42" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link42>
+            rel physics:body1 = </World/Articulation0/link43>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint43" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link43>
+            rel physics:body1 = </World/Articulation0/link44>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint44" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link44>
+            rel physics:body1 = </World/Articulation0/link45>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint45" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link45>
+            rel physics:body1 = </World/Articulation0/link46>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint46" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link46>
+            rel physics:body1 = </World/Articulation0/link47>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint47" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link47>
+            rel physics:body1 = </World/Articulation0/link48>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint48" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link48>
+            rel physics:body1 = </World/Articulation0/link49>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint49" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link49>
+            rel physics:body1 = </World/Articulation0/link50>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint50" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link50>
+            rel physics:body1 = </World/Articulation0/link51>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint51" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link51>
+            rel physics:body1 = </World/Articulation0/link52>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint52" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link52>
+            rel physics:body1 = </World/Articulation0/link53>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint53" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link53>
+            rel physics:body1 = </World/Articulation0/link54>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint54" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link54>
+            rel physics:body1 = </World/Articulation0/link55>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint55" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link55>
+            rel physics:body1 = </World/Articulation0/link56>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint56" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link56>
+            rel physics:body1 = </World/Articulation0/link57>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint57" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link57>
+            rel physics:body1 = </World/Articulation0/link58>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint58" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link58>
+            rel physics:body1 = </World/Articulation0/link59>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint59" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link59>
+            rel physics:body1 = </World/Articulation0/link60>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint60" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link60>
+            rel physics:body1 = </World/Articulation0/link61>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint61" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link61>
+            rel physics:body1 = </World/Articulation0/link62>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint62" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link62>
+            rel physics:body1 = </World/Articulation0/link63>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+
+        def PhysicsRevoluteJoint "joint63" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/Articulation0/link63>
+            rel physics:body1 = </World/Articulation0/link64>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -45
+            float physics:upperLimit = 45
+            float drive:angular:physics:damping = 10
+            float drive:angular:physics:stiffness = 50
+            float drive:angular:physics:targetPosition = 0
+        }
+    }
+}

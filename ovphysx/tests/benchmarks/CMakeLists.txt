@@ -60,6 +60,7 @@ set(OVPHYSX_BENCHMARK_SUITE_SRCS
     benchmarks/LabHumanoid.cpp
     benchmarks/AuthoringPopulationAdd.cpp
     benchmarks/AuthoringTeleport.cpp
+    benchmarks/AuthoringKinematicDrive.cpp
     benchmarks/AuthoringDrain.cpp
     benchmarks/AuthoringPopulationChurn.cpp
     benchmarks/AuthoringPopulationScale.cpp
