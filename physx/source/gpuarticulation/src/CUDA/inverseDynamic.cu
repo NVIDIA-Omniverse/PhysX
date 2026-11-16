@@ -459,6 +459,7 @@ extern "C" __global__ void computeArtiMassMatrices(
 			// A unit joint acceleration is assumed for each dof of the considered link
 			// This calculates the diagonal terms using the spatial articulated inertia for obtaining
 			// the force applied to the considered dof due to the applied unit joint acceleration
+			const Dy::ArticulationJointCore& joint = arti.joints[link];
 			for (PxU32 dof0 = 0; dof0 < jointData.nbDof; ++dof0)
 			{
 				const Cm::UnAlignedSpatialVector& Im0 = spatialInertia_worldMotionMatrix[dof0];
@@ -469,6 +470,8 @@ extern "C" __global__ void computeArtiMassMatrices(
 					const PxU32 col = jointData.jointOffset + dof1 + rootDof;
 					massMatrix[row * matSize + col] = m1.innerProduct(Im0);
 				}
+				// The forward dynamics add the joint armature to the joint-space inertia of each axis
+				massMatrix[row * matSize + row] += joint.armature[joint.dofIds[dof0]];
 			}
 
 			// The calculated force is then propagated inward to calculate the above diagonal terms of the mass matrix
