@@ -10,7 +10,7 @@ try {
         dynamicLibraries: [sideUrl],
         locateFile: file => new URL(file, moduleUrl).href,
     } : undefined);
-    const fixtures = Object.fromEntries(await Promise.all(['contact', 'articulation'].map(async name => {
+    const fixtures = Object.fromEntries(await Promise.all(['contact', 'articulation', 'sdf'].map(async name => {
         const response = await fetch(new URL(`./${name}.usda`, import.meta.url));
         if (!response.ok) throw new Error(`Fixture HTTP ${response.status}`);
         return [name, await response.text()];

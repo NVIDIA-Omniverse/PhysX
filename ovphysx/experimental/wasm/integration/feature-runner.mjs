@@ -7,7 +7,7 @@ const requireCondition = (condition, message) => {
 
 /** Execute one scene in its own stage/runtime owner using the original public C API. */
 export async function runRuntimeFeature(runtime, fixtures, { scenario = 'contact' } = {}) {
-    requireCondition(['contact', 'articulation'].includes(scenario), 'Unknown physics feature scenario');
+    requireCondition(['contact', 'articulation', 'sdf'].includes(scenario), 'Unknown physics feature scenario');
     const offset = (pointer, bytes = 0) => {
         const value = Number(pointer);
         if (!Number.isSafeInteger(value) || value < 0 || value + bytes > runtime.wasmMemory.buffer.byteLength)
@@ -106,18 +106,24 @@ export async function runRuntimeFeature(runtime, fixtures, { scenario = 'contact
     try {
         requireCondition(runtime._ovs_wasm_pointer_bytes() === 8, 'Expected genuine WASM64 stage/runtime image');
         const result = { passed: true, runtime: 'official-ovphysx-cpu-wasm64', scenario, checks: [] };
-        if (scenario !== 'articulation') {
+        if (scenario === 'contact') {
             result.contact = await withStage(fixtures.contact, contact, true);
             console.log(`Contact passed: resting Y=${result.contact.position[1]}, vy=${result.contact.velocity[1]}`);
             result.checks.push('actual rigid body floor collision and resting velocity',
                 'rejected zero ordinal cleans up and permits valid attach');
         }
-        if (scenario !== 'contact') {
+        if (scenario === 'articulation') {
             result.articulation = await withStage(fixtures.articulation, articulation);
             console.log(`Articulation passed: joint position=${result.articulation.joints[0]} degrees`);
             result.checks.push('actual two-link articulation and one joint DOF',
                 'gravity-driven joint motion in documented degree units',
                 'fixed base and hinge constraint remain enforced');
+        }
+        if (scenario === 'sdf') {
+            result.sdf = await withStage(fixtures.sdf, contact);
+            console.log(`SDF cooking passed: resting Y=${result.sdf.position[1]}, vy=${result.sdf.velocity[1]}`);
+            result.checks.push('SDF triangle mesh cooks without exhausting the browser pthread pool',
+                'cooked dynamic SDF collision reaches a stable resting contact');
         }
         return result;
     } finally {
@@ -137,6 +143,7 @@ export async function runRuntimeFeatures(createRuntime, fixtures) {
     };
     const contact = await run('contact');
     const articulation = await run('articulation');
+    const sdf = await run('sdf');
     const repeatedContact = await run('contact');
     for (const field of ['position', 'velocity']) {
         requireCondition(contact.contact[field].every((value, index) =>
@@ -147,11 +154,12 @@ export async function runRuntimeFeatures(createRuntime, fixtures) {
         passed: true,
         runtime: 'official-ovphysx-cpu-wasm64',
         scenario: 'all',
-        checks: [...contact.checks, ...articulation.checks,
-            'three complete lifecycles with a fresh stage/runtime owner module per scene',
+        checks: [...contact.checks, ...articulation.checks, ...sdf.checks,
+            'complete lifecycles with a fresh stage/runtime owner module per scene',
             'reset to a fresh owner restores authored contact state and repeats the same collision'],
         contact: contact.contact,
         articulation: articulation.articulation,
+        sdf: sdf.sdf,
         repeatedContact: repeatedContact.contact,
     };
 }

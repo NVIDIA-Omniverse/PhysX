@@ -12,7 +12,7 @@ The executed profile uses Emscripten 5.0.7, memory64, pthreads, JavaScript C++
 exceptions and RTTI. PhysX uses scalar CPU paths. Node 24.19.0 and Chrome 157
 have executed real creation, attachment, stepping, reads, sealed OVStage pose
 publication, detach, destruction and fresh-owner reset. The feature suite checks
-floor contact and a two-link articulation. Those fixtures do not establish full
+floor contact, SDF triangle-mesh collision cooking and a two-link articulation. Those fixtures do not establish full
 native feature parity.
 
 ## Build and test
@@ -20,7 +20,8 @@ native feature parity.
 The source baseline is `ovphysx-0.8.0`, commit
 `7d6f6ac8b83e1610bdf715f1f2f1d6b718aee586`. Use emsdk revision
 `708dcbcc9ee23bc7d2dad44fc90db377e38b771c` with Emscripten 5.0.7. The driver reads
-actual include/compiler settings from a completed native OVStage WASM Makefiles
+the actual source commit and requires that release baseline in its ancestry; the
+toolchain revision remains exact. It reads include/compiler settings from a completed native OVStage WASM Makefiles
 build, then records source, object and archive hashes. Required external inputs
 include matching OVStage/USDRT/Fabric/Carbonite headers and a pinned WASM64
 OpenUSD/oneTBB installation. A public PhysX clone alone cannot rebuild that host.
@@ -95,8 +96,15 @@ calls while replacing native filesystem/plugin-directory loading. See
 [host/README.md](host/README.md) for focused service behavior tests.
 
 The selected profile requires `CPU_ONLY=true`, `ASYNC_EXECUTION=false`, zero
-solver scheduler workers and disabled UJITSO/compiled caches. CUDA declarations
-remain consistent across SDK/runtime compilation, but driver loading and device
+solver scheduler workers and disabled UJITSO/compiled caches. The build generates
+`generated/cooking/TriangleMeshCookingTask.cpp` with one SDF construction thread.
+The original SDK then computes the same SDF inline. Its native default of 16
+threads can exhaust the preallocated browser pthread pool and block attachment
+while waiting for a thread that cannot start. Serial SDF cooking avoids that
+hang but increases initial loading time for detailed collision meshes; it does
+not replace them with simpler shapes. Original runtime sources remain unchanged,
+and the object receipt records both original and generated source hashes.
+CUDA declarations remain consistent across SDK/runtime compilation, but driver loading and device
 operations are unavailable. Generated GPU entry points throw unsupported errors;
 CUDA adapters reject operations and preserve failure semantics. They do not
 simulate successful GPU work. The focused boundary test is:

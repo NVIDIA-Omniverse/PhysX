@@ -1,0 +1,43 @@
+#usda 1.0
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+def Xform "World"
+{
+    def PhysicsScene "Physics"
+    {
+        vector3f physics:gravityDirection = (0, -1, 0)
+        float physics:gravityMagnitude = 9.81
+    }
+    def Cube "Ground" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0, -0.5, 0)
+        float3 xformOp:scale = (10, 1, 10)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+    def Mesh "SdfBox" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMeshCollisionAPI", "PhysxSDFMeshCollisionAPI"]
+    )
+    {
+        double3 xformOp:translate = (0, 2, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        float physics:mass = 2
+        float physxRigidBody:sleepThreshold = 0
+        uniform token physics:approximation = "sdf"
+        uniform int physxSDFMeshCollision:sdfResolution = 32
+        uniform int physxSDFMeshCollision:sdfSubgridResolution = 0
+        uniform bool physxSDFMeshCollision:sdfEnableRemeshing = false
+        point3f[] points = [(0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (0.5, 0.5, 0.5), (0.5, -0.5, 0.5),
+                            (-0.5, -0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, 0.5, 0.5), (-0.5, -0.5, 0.5)]
+        int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+        int[] faceVertexIndices = [0, 1, 2, 3, 1, 5, 6, 2, 3, 2, 6, 7, 0, 3, 7, 4, 1, 0, 4, 5, 5, 4, 7, 6]
+        uniform token subdivisionScheme = "none"
+    }
+}

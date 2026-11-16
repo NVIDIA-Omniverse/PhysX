@@ -12,7 +12,7 @@ const createRuntime = () => createModule(sideUrl ? {
     dynamicLibraries: [sideUrl],
     locateFile: file => new URL(file, moduleUrl).href,
 } : undefined);
-const fixtures = Object.fromEntries(await Promise.all(['contact', 'articulation'].map(async name =>
+const fixtures = Object.fromEntries(await Promise.all(['contact', 'articulation', 'sdf'].map(async name =>
     [name, await readFile(new URL(`./${name}.usda`, import.meta.url), 'utf8')])));
 const result = scenario === 'all'
     ? await runRuntimeFeatures(createRuntime, fixtures)

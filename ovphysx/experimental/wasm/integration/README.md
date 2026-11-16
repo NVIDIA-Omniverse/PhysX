@@ -48,10 +48,10 @@ uses `--runtime-dir /path/to/ovphysx-pic-build --shared` with a PIC stage build,
 producing `ovstage.mjs`, `ovstage.wasm` and `ovphysx.wasm`. The [parent README](../README.md)
 gives the actual compile, link and Node smoke/feature commands. Both Node and
 Chrome have passed attachment, steps, output publication, floor contact,
-articulation and fresh-owner reset using these separate libraries.
+articulation, SDF triangle-mesh cooking and fresh-owner reset using these separate libraries.
 
 For browser features, copy `runtime-features-worker.mjs`, `feature-runner.mjs`,
-`contact.usda` and `articulation.usda` beside the matching binaries. Serve the
+`contact.usda`, `articulation.usda` and `sdf.usda` beside the matching binaries. Serve the
 directory with COOP/COEP and the correct JavaScript/WASM MIME types, then run:
 
 ```sh
@@ -66,3 +66,8 @@ actual solver behavior. The host framework and allocator remain owned by the
 main module; the side initializes its local Carbonite globals from that host.
 Native schema verification uses direct imports in the Emscripten build. There
 is no supported dynamic native-plugin discovery or cross-version module mixing.
+
+The local `sdf.usda` fixture exercises actual CPU SDF cooking and settling contact
+without network assets. The browser timeout catches the former pool-exhaustion
+hang in the SDK thread-start loop; the same scenario runs in Node. Run only that
+scenario in Node by replacing `all` with `sdf` in the feature command.

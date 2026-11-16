@@ -30,6 +30,15 @@ def run(args, env, log):
         result = subprocess.run([str(x) for x in args], env=env, stdout=handle, stderr=subprocess.STDOUT)
     return result.returncode
 
+def verify_source_baseline(source, baseline):
+    revision = subprocess.check_output(['git', '-C', str(source), 'rev-parse', 'HEAD'], text=True).strip()
+    result = subprocess.run(['git', '-C', str(source), 'merge-base', '--is-ancestor', baseline, revision],
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if result.returncode != 0:
+        raise ValueError(f'Expected baseline {baseline} in the history at {source}, found {revision}')
+    return revision
+
+
 def sdk(args, env):
     configure = ['cmake', '-S', Path(__file__).parent, '-B', args.out / 'build', '-G', 'Unix Makefiles',
                  f'-DPHYSX_SOURCE_ROOT={args.source}',
@@ -73,7 +82,7 @@ def cache_identity(args, flags, generated, env):
     identity = generated / 'CompiledCacheBuildIdentity.txt'
     manifest = generated / 'CompiledCacheBuildFiles.txt'
     identity.write_text(json.dumps({'platform': 'Emscripten-wasm64', 'emsdkRevision': EMSDK_REVISION,
-                                    'sourceRevision': REVISION, 'flags': flags}, sort_keys=True) + '\n')
+                                    'sourceRevision': args.source_revision, 'sourceBaselineRevision': REVISION, 'flags': flags}, sort_keys=True) + '\n')
     manifest.write_text('\n'.join(str(x) for x in files) + '\n')
     command = ['cmake', f'-DIDENTITY={identity}', f'-DFILES={manifest}', '-DCONFIG=release',
                f'-DOUTPUT={generated}/CompiledCacheBuild.h', '-P',
@@ -109,6 +118,19 @@ def stage_flags(args):
     (args.out / 'stage-build-inputs.json').write_text(json.dumps(receipt, indent=2) + '\n')
     return flags
 
+def prepare_sdf_cooking(source, generated):
+    # The browser pool cannot grow while PxThreadImpl::start waits synchronously.
+    # The SDK's one-thread SDF path executes inline and preserves the algorithm.
+    text = source.read_text()
+    original = 'sdfDesc.numThreadsForSdfConstruction = 16;'
+    if text.count(original) != 1:
+        raise ValueError('SDF cooking thread-count anchor changed')
+    output = generated / 'cooking' / source.name
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(text.replace(original, 'sdfDesc.numThreadsForSdfConstruction = 1;'))
+    return output
+
+
 def compile_sources(args, env):
     flags = stage_flags(args)
     root = args.source / 'ovphysx'
@@ -118,7 +140,7 @@ def compile_sources(args, env):
     build_version = (root / 'ovruntime/VERSION').read_text().strip()
     build_date = subprocess.check_output(['git', '-C', str(args.source), 'show', '-s', '--format=%ad', '--date=format:%b-%d-%Y'], text=True).strip()
     version.write_text('#pragma once\n' + '\n'.join('#define ' + k + ' ' + json.dumps(v) for k, v in {
-        'PHYSICS_BUILD_SHA': REVISION, 'PHYSICS_BUILD_DATE': build_date,
+        'PHYSICS_BUILD_SHA': args.source_revision, 'PHYSICS_BUILD_DATE': build_date,
         'PHYSICS_BUILD_BRANCH': 'ovphysx-0.8.0-wasm64-port', 'PHYSICS_BUILD_VERSION': build_version}.items()) + '\n')
     version_template = (root / 'include/ovphysx/version.h.in').read_text()
     public_version = generated / 'ovphysx/version.h'
@@ -185,11 +207,19 @@ def compile_sources(args, env):
         group, source = item
         stem = group + '_' + source.stem
         output = destination / (stem + '.o')
-        command = flags + [str(source), '-o', str(output)]
+        compiled_source = source
+        extra_includes = []
+        if group == 'cooking' and source.name == 'TriangleMeshCookingTask.cpp':
+            compiled_source = prepare_sdf_cooking(source, generated)
+            extra_includes = ['-I' + str(source.parent)]
+        command = flags + extra_includes + [str(compiled_source), '-o', str(output)]
         code = run(command, env, destination / (stem + '.log'))
         result = {'group': group, 'source': str(source.relative_to(args.source)) if source.is_relative_to(args.source) else str(source), 'sourceSha256': digest(source),
                 'exitCode': code, 'command': command,
                 'object': {'path': str(output), 'bytes': output.stat().st_size, 'sha256': digest(output)} if code == 0 else None}
+        if compiled_source != source:
+            result['compiledSource'] = {'path': str(compiled_source), 'sha256': digest(compiled_source),
+                                        'adaptation': 'serial SDF construction in the bounded WASM worker pool'}
         (destination / (stem + '.json')).write_text(json.dumps(result, indent=2) + '\n')
         return result
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as pool:
@@ -221,15 +251,15 @@ def main():
     args = parser.parse_args()
     if not 1 <= args.jobs <= 4:
         parser.error('jobs must be between 1 and 4')
-    for path, expected in [(args.source, REVISION), (args.emsdk, EMSDK_REVISION)]:
-        actual = subprocess.check_output(['git', '-C', str(path), 'rev-parse', 'HEAD'], text=True).strip()
-        if actual != expected:
-            raise ValueError(f'Expected pinned revision {expected} at {path}, found {actual}')
+    args.source_revision = verify_source_baseline(args.source, REVISION)
+    emsdk_revision = subprocess.check_output(['git', '-C', str(args.emsdk), 'rev-parse', 'HEAD'], text=True).strip()
+    if emsdk_revision != EMSDK_REVISION:
+        raise ValueError(f'Expected pinned revision {EMSDK_REVISION} at {args.emsdk}, found {emsdk_revision}')
     args.out.mkdir(parents=True, exist_ok=True)
     env = dict(os.environ, EM_CONFIG=str(args.emsdk / '.emscripten'))
     receipt_path = args.out / 'port-receipt.json'
     receipt = json.loads(receipt_path.read_text()) if receipt_path.exists() else {}
-    receipt.update({'source': {'repository': 'https://github.com/NVIDIA-Omniverse/PhysX', 'revision': REVISION, 'release': 'ovphysx-0.8.0'},
+    receipt.update({'source': {'repository': 'https://github.com/NVIDIA-Omniverse/PhysX', 'revision': args.source_revision, 'baselineRevision': REVISION, 'release': 'ovphysx-0.8.0'},
                     'toolchain': {'emscripten': '5.0.7', 'emsdkRevision': EMSDK_REVISION},
                     'status': 'prerequisites-only; no linked OvPhysX browser runtime', 'customPhysicsBridge': False,
                     'experimentalSourceSha256': {str(p.relative_to(args.source)): digest(p) for p in Path(__file__).parent.rglob('*') if p.is_file() and '__pycache__' not in p.parts},
