@@ -10,6 +10,9 @@
 #include <omni/physx/NativeParameters.h>
 #include <cstdint>
 #include <cstring>
+#if defined(__EMSCRIPTEN__)
+#include <emscripten/version.h>
+#endif
 #define OVPHYSX_COMPANION_STRINGIFY_(x) #x
 #define OVPHYSX_COMPANION_STRINGIFY(x) OVPHYSX_COMPANION_STRINGIFY_(x)
 namespace ovphysx::companion::native
@@ -23,6 +26,12 @@ struct Compatibility
 #if defined(_MSC_VER)
     char compiler[128] = "msvc:" OVPHYSX_COMPANION_STRINGIFY(_MSC_VER) ":iter:"
         OVPHYSX_COMPANION_STRINGIFY(_ITERATOR_DEBUG_LEVEL) ":dll:" OVPHYSX_COMPANION_STRINGIFY(_DLL);
+#elif defined(__EMSCRIPTEN__)
+    char compiler[128] = "emscripten:" OVPHYSX_COMPANION_STRINGIFY(__EMSCRIPTEN_MAJOR__) "."
+        OVPHYSX_COMPANION_STRINGIFY(__EMSCRIPTEN_MINOR__) "." OVPHYSX_COMPANION_STRINGIFY(__EMSCRIPTEN_TINY__)
+        ":clang:" OVPHYSX_COMPANION_STRINGIFY(__clang_major__) "." OVPHYSX_COMPANION_STRINGIFY(__clang_minor__)
+        "." OVPHYSX_COMPANION_STRINGIFY(__clang_patchlevel__) ":abi:" OVPHYSX_COMPANION_STRINGIFY(__GXX_ABI_VERSION)
+        ":libcxx:" OVPHYSX_COMPANION_STRINGIFY(_LIBCPP_VERSION);
 #elif defined(__clang__)
     char compiler[128] = "clang:" __clang_version__ ":abi:" OVPHYSX_COMPANION_STRINGIFY(__GXX_ABI_VERSION)
         ":stdlib:" OVPHYSX_COMPANION_STRINGIFY(_GLIBCXX_USE_CXX11_ABI);

@@ -12,6 +12,7 @@
 #include <ovstage/ovstage_population.h>
 
 #include <cstdint>
+#include <cstring>
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
@@ -59,6 +60,13 @@ inline void* resolveOvstageSymbol(const char* symbol)
                 return reinterpret_cast<void*>(proc);
         }
     }
+    return nullptr;
+#elif defined(__EMSCRIPTEN__)
+    // The selected OVStage module supplies these imports before physics initialization.
+    if (std::strcmp(symbol, "ovstage_population_register_usd_schemas") == 0)
+        return reinterpret_cast<void*>(&ovstage_population_register_usd_schemas);
+    if (std::strcmp(symbol, "ovstage_population_get_last_error") == 0)
+        return reinterpret_cast<void*>(&ovstage_population_get_last_error);
     return nullptr;
 #else
     static const char* const candidates[] = { "libovstage.so", "libovstage.so.1", "libovstage.so.0" };

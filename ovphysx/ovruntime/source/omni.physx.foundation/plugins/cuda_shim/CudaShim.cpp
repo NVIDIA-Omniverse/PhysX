@@ -164,7 +164,9 @@ static bool hasNvidiaGpuDevice()
 // NOTE: Must only be called under g_initOnce (via initOnce -> ensureInit).
 static bool loadDriverLibrary()
 {
-#if defined(_WIN32)
+#if defined(__EMSCRIPTEN__)
+    return false;
+#elif defined(_WIN32)
     if (g_cudaModule) return true;
 
     if (!hasNvidiaGpuDevice())
@@ -196,7 +198,10 @@ static bool loadDriverLibrary()
 
 static void* getRawSymbol(const char* name)
 {
-#if defined(_WIN32)
+#if defined(__EMSCRIPTEN__)
+    (void)name;
+    return nullptr;
+#elif defined(_WIN32)
     return g_cudaModule ? reinterpret_cast<void*>(::GetProcAddress(g_cudaModule, name)) : nullptr;
 #else
     return g_cudaModule ? ::dlsym(g_cudaModule, name) : nullptr;

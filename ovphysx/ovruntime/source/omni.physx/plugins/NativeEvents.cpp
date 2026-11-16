@@ -7,6 +7,7 @@
 #include <omni/physx/PhysXRuntime.h>
 #include <carb/events/EventsUtils.h>
 #include <carb/dictionary/IDictionary.h>
+#include <carb/dictionary/DictionaryUtils.h>
 #include "RuntimeExecution.h"
 #include "OmniPhysX.h"
 #include "PhysXScene.h"
@@ -284,7 +285,7 @@ try
                 if (std::shared_ptr<omni::physx::native::EventQueue> q=weak.lock())
                 {
                     carb::dictionary::IDictionary * dictionary=carb::getCachedInterface<carb::dictionary::IDictionary>();
-                    const carb::cpp::optional<carb::cpp::basic_zstring_view<char>> message=dictionary->getStringView(dictionary->getItem(data->payload,"errorString"));
+                    const carb::cpp::optional<carb::cpp::basic_zstring_view<char>> message=carb::dictionary::detail::getStringView(dictionary, dictionary->getItem(data->payload,"errorString"));
                     std::lock_guard<std::mutex> lock(q->mutex);
                     omni::physx::native::QueuedEvent event=q->base(EventKind::RuntimeError,4);
                     // The legacy stream is process-scoped. Never attribute an

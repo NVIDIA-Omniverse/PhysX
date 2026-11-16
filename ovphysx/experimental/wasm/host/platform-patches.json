@@ -1,0 +1,40 @@
+[
+  {
+    "path": "carb/extras/AppConfig.h",
+    "source_sha256": "d3b5db93ddc22675f3b013b1d99097a81a375147e3e118cd0cea8349040c847f",
+    "edits": [
+      {
+        "old": "#elif CARB_PLATFORM_LINUX\n        static constexpr char kUserFolderEnvVar[] = \"XDG_CONFIG_HOME\";",
+        "new": "#elif CARB_PLATFORM_LINUX || defined(__EMSCRIPTEN__)\n        static constexpr char kUserFolderEnvVar[] = \"XDG_CONFIG_HOME\";"
+      },
+      {
+        "old": "#if CARB_PLATFORM_LINUX\n            // The XDG standard",
+        "new": "#if CARB_PLATFORM_LINUX || defined(__EMSCRIPTEN__)\n            // The XDG standard"
+      }
+    ]
+  },
+  {
+    "path": "carb/extras/TestEnvironment.h",
+    "source_sha256": "0fb59a7876aadcc27ab70e4edf633bde3180a4fb934964aa8f63ff2c5d424e08",
+    "edits": [
+      {
+        "old": "inline const char* getDistroName()\n{\n#if CARB_POSIX",
+        "new": "inline const char* getDistroName()\n{\n#if defined(__EMSCRIPTEN__)\n    return \"Emscripten\";\n#elif CARB_POSIX"
+      }
+    ]
+  },
+  {
+    "path": "omni/extras/OmniConfig.h",
+    "source_sha256": "17590e2cb88cb903df54c313305d67a1ea0a8698d0feb13a5d52c2ee0004edc4",
+    "edits": [
+      {
+        "old": "#if CARB_PLATFORM_LINUX\n        const carb::extras::Path xdgData",
+        "new": "#if CARB_PLATFORM_LINUX || defined(__EMSCRIPTEN__)\n        const carb::extras::Path xdgData"
+      },
+      {
+        "old": "private:\n#if CARB_PLATFORM_LINUX\n",
+        "new": "private:\n#if CARB_PLATFORM_LINUX || defined(__EMSCRIPTEN__)\n"
+      }
+    ]
+  }
+]

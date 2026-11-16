@@ -4,7 +4,7 @@
 #pragma once
 
 // PT: TODO: refactor
-#ifdef __linux__
+#if defined(__linux__) || defined(__EMSCRIPTEN__)
     #define __forceinline __attribute__((always_inline))
 #endif
 

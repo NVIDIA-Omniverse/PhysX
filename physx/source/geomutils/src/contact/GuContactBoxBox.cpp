@@ -20,7 +20,7 @@ using namespace Cm;
 //#define ABS_GREATER(x, y)			(AIR(x) > IR(y))
 //#define ABS_SMALLER_EQUAL(x, y)		(AIR(x) <= IR(y))
 
-#if PX_X86 && !PX_OSX
+#if PX_X86 && !PX_OSX && !PX_EMSCRIPTEN
 
 	// Some float optimizations ported over from novodex.
 

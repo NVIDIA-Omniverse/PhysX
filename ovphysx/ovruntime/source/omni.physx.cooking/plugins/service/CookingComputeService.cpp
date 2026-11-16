@@ -87,7 +87,11 @@ struct CookingComputeService : public ICookingComputeService
         // is the same -16 delta applied to the prior 376, not compiler-verified (no Windows
         // toolchain in this sandbox) -- the 8-byte Linux/Windows padding gap is isolated to the
         // onFinished boundary, untouched by these two members, which sit earlier in the struct.
-#if CARB_PLATFORM_WINDOWS
+#if defined(__wasm64__)
+        static_assert(alignof(std::max_align_t) == 8, "WASM64 callback alignment");
+        static_assert(sizeof(PhysxCookingComputeRequest) == 360, "sizeof(PhysxCookingComputeRequest)");
+        static_assert(sizeof(PhysxCookingComputeResult) == 152, "sizeof(PhysxCookingComputeResult)");
+#elif CARB_PLATFORM_WINDOWS
         static_assert(sizeof(PhysxCookingComputeRequest) == 360, "sizeof(PhysxCookingComputeRequest)");
         static_assert(sizeof(PhysxCookingComputeResult) == 152, "sizeof(PhysxCookingComputeResult)");
 #else

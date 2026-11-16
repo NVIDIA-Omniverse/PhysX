@@ -5,9 +5,11 @@
 
 #include "tensors/gpu/CudaCommon.h"
 
+#if !defined(__EMSCRIPTEN__)
 #include <thrust/device_free.h>
 #include <thrust/device_malloc.h>
 #include <thrust/execution_policy.h>
+#endif
 
 namespace omni
 {
@@ -16,12 +18,16 @@ namespace physx
 namespace tensors
 {
 
-struct SingleAllocPolicy : thrust::device_execution_policy<SingleAllocPolicy>
+struct SingleAllocPolicy
+#if !defined(__EMSCRIPTEN__)
+    : thrust::device_execution_policy<SingleAllocPolicy>
+#endif
 {
     std::ptrdiff_t mBufferSize = 0;
     void* mBuffer = nullptr;
 };
 
+#if !defined(__EMSCRIPTEN__)
 template <typename T>
 thrust::pair<thrust::device_ptr<T>, std::ptrdiff_t> get_temporary_buffer(SingleAllocPolicy& p, std::ptrdiff_t n)
 {
@@ -52,6 +58,8 @@ void return_temporary_buffer(SingleAllocPolicy&, Pointer p)
 {
     // thrust::device_free(thrust::device_pointer_cast(p.get()));
 }
+
+#endif
 
 } // namespace tensors
 } // namespace physx

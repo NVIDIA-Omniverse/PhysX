@@ -204,7 +204,11 @@ family shortcuts
 // architecture
 #define PX_INTEL_FAMILY (PX_X64 || PX_X86)
 #define PX_ARM_FAMILY (PX_ARM || PX_A64)
+#if defined(__wasm64__)
+#define PX_P64_FAMILY 1
+#else
 #define PX_P64_FAMILY (PX_X64 || PX_A64) // shortcut for 64-bit architectures
+#endif
 
 /**
 C++ standard library defines
@@ -494,11 +498,13 @@ protected:                  \
 	Class& operator=(const Class&);
 
 //#define DISABLE_CUDA_PHYSX
+#ifndef PX_SUPPORT_GPU_PHYSX
 #ifndef DISABLE_CUDA_PHYSX
 	//CUDA is currently supported on x86_64 windows and linux, and ARM_64 linux
 	#define PX_SUPPORT_GPU_PHYSX ((PX_X64 && (PX_WINDOWS_FAMILY || PX_LINUX)) || (PX_A64 && PX_LINUX))
 #else
 	#define PX_SUPPORT_GPU_PHYSX 0
+#endif
 #endif
 
 #ifndef PX_SUPPORT_EXTERN_TEMPLATE

@@ -162,6 +162,13 @@ namespace physx
 		}
 	}
 
+#elif PX_EMSCRIPTEN
+
+	void PxLoadPhysxGPUModule(const char*)
+	{
+		PxUnloadPhysxGPUModule();
+	}
+
 #elif PX_LINUX
 
 	void PxLoadPhysxGPUModule(const char*)

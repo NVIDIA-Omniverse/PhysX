@@ -119,6 +119,8 @@
 #        define NOMINMAX
 #    endif
 #    include <Windows.h>
+#else
+#    include <sys/time.h>
 #endif
 
 #include <omni/physx/IPhysxSettings.h>

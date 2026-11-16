@@ -51,6 +51,9 @@ PhysXGpuLoader::~PhysXGpuLoader()
 
 bool PhysXGpuLoader::load()
 {
+#if defined(__EMSCRIPTEN__)
+    return false;
+#else
     const std::string directory = getLoaderLibraryDirectory();
     const std::array<std::string, 2> directories = {
         directory,
@@ -66,6 +69,7 @@ bool PhysXGpuLoader::load()
     CARB_LOG_ERROR("omni.physx.gpu: failed to load PhysXGpu_64 from '%s' or '%s'", directories[0].c_str(),
                    directories[1].c_str());
     return false;
+#endif
 }
 
 bool PhysXGpuLoader::loadFromDirectory(const char* directory)
@@ -75,6 +79,11 @@ bool PhysXGpuLoader::loadFromDirectory(const char* directory)
 
 bool PhysXGpuLoader::loadFromDirectory(const char* directory, bool logErrors)
 {
+#if defined(__EMSCRIPTEN__)
+    (void)directory;
+    (void)logErrors;
+    return false;
+#else
     if (isLoaded())
     {
         return true;
@@ -113,6 +122,7 @@ bool PhysXGpuLoader::loadFromDirectory(const char* directory, bool logErrors)
     }
 
     return true;
+#endif
 }
 
 void PhysXGpuLoader::unload()

@@ -326,7 +326,7 @@ bool PhysXCustomJointManager::tryUnregisterCustomJoint(size_t id)
     if (getRuntimeCallbackDepth())
         return false;
     std::lock_guard<carb::tasking::MutexWrapper> lock(mRegistryMutex);
-    const std::unordered_map<uint64_t, omni::physx::CustomJointInfo>::iterator found = mCustomJointRegistryMap.find(id);
+    const CustomJointRegistryMap::iterator found = mCustomJointRegistryMap.find(id);
     // Exactly two references belong to the registry and type index. A copied
     // index pins even the interval before create enters the plugin callback.
     if (found == mCustomJointRegistryMap.end() || found->second.lifetime.use_count() != 2)

@@ -244,7 +244,10 @@ void PxThreadImpl::yield()
 
 void PxThreadImpl::yieldProcessor()
 {
-#if (PX_ARM || PX_A64)
+#if PX_EMSCRIPTEN
+	// Browser dispatcher has no CPU pause instruction.
+	return;
+#elif (PX_ARM || PX_A64)
 	__asm__ __volatile__("yield");
 #else
 	__asm__ __volatile__("pause");

@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <cstdio>
 
-#if CARB_PLATFORM_LINUX
+#if CARB_PLATFORM_LINUX || defined(__EMSCRIPTEN__)
 #    include <time.h>
 #endif
 
@@ -54,7 +54,7 @@ public:
     Second getLastTime() const;
 
 private:
-#if CARB_PLATFORM_LINUX
+#if CARB_PLATFORM_LINUX || defined(__EMSCRIPTEN__)
     Second mLastTime;
 #else
     int64_t mTickCount;

@@ -19,6 +19,7 @@
  */
 
 #include <omni/physics/parse/KnownTokens.h>
+#include <carb/dictionary/DictionaryUtils.h>
 
 #include "ContactReport.h"
 #include "internal/InternalScene.h"
@@ -266,8 +267,12 @@ namespace physx
             static_cast<int32_t>(ui64Path >> 32),
         };
         carb::dictionary::Item* item =
-            dict->createItem(eventPtr->payload, itemName, carb::dictionary::ItemType::eDictionary);
+            carb::dictionary::detail::createItem(dict, eventPtr->payload, itemName, carb::dictionary::ItemType::eDictionary);
+#if carb_dictionary_IDictionary >= CARB_HEXVERSION(2, 0)
         dict->setArray<int32_t>(item, splitPath);
+#else
+        dict->setArray<int32_t>(item, splitPath, 2);
+#endif
     }
 
 

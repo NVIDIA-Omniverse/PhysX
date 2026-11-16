@@ -357,7 +357,7 @@ bool PhysXCustomGeometryManager::tryUnregisterCustomGeometry(size_t id)
     if (getRuntimeCallbackDepth())
         return false;
     std::lock_guard<carb::tasking::MutexWrapper> lock(mRegistryMutex);
-    const std::unordered_map<uint64_t, omni::physx::CustomGeometryInfo>::iterator found = mCustomGeometryRegistryMap.find(id);
+    const CustomGeometryRegistryMap::iterator found = mCustomGeometryRegistryMap.find(id);
     if (found == mCustomGeometryRegistryMap.end() || found->second.typeId.use_count() != 2)
         return false;
     const std::string& token = found->second.customGeomtryAPIToken;

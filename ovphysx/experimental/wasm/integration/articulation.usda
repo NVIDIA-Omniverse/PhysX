@@ -1,0 +1,60 @@
+#usda 1.0
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+def Xform "World"
+{
+    def PhysicsScene "Physics"
+    {
+        vector3f physics:gravityDirection = (0, -1, 0)
+        float physics:gravityMagnitude = 9.81
+    }
+    def Xform "Pendulum" (
+        prepend apiSchemas = ["PhysicsArticulationRootAPI"]
+    )
+    {
+        def Cube "Base" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+        )
+        {
+            double size = 0.2
+            double3 xformOp:translate = (0, 2, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+            float physics:mass = 1
+        }
+        def Cube "Arm" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+        )
+        {
+            double size = 1
+            double3 xformOp:translate = (0.5, 2, 0)
+            float3 xformOp:scale = (1, 0.2, 0.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            float physics:mass = 1
+        }
+        def PhysicsFixedJoint "Anchor"
+        {
+            rel physics:body1 = </World/Pendulum/Base>
+            point3f physics:localPos0 = (0, 2, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+        }
+        def PhysicsRevoluteJoint "Hinge"
+        {
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </World/Pendulum/Base>
+            rel physics:body1 = </World/Pendulum/Arm>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -80
+            float physics:upperLimit = 80
+        }
+    }
+}
