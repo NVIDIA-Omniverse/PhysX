@@ -37,5 +37,31 @@ class SourceBaselineTest(unittest.TestCase):
                 build.verify_source_baseline(source, baseline)
 
 
+class SdkMathModeTest(unittest.TestCase):
+    def test_matching_and_mixed_static_abis(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            first = root / 'build/sdk/CMakeFiles/PhysX.dir/flags.make'
+            second = root / 'build/sdk/CMakeFiles/PhysXCommon.dir/flags.make'
+            for path in (first, second):
+                path.parent.mkdir(parents=True)
+                path.write_text('CXX_DEFINES = -DPX_SIMD_DISABLED=1\nCXX_FLAGS = -msimd128 -fno-exceptions\n')
+            build.validate_sdk_math(root, 'scalar')
+            with self.assertRaisesRegex(ValueError, 'math mode mismatch'):
+                build.validate_sdk_math(root, 'sse2')
+            first.write_text('CXX_DEFINES =\nCXX_FLAGS = -msimd128 -msse2 -fno-exceptions\n')
+            for mode in ('scalar', 'sse2'):
+                with self.subTest(mode=mode), self.assertRaisesRegex(ValueError, 'math mode mismatch'):
+                    build.validate_sdk_math(root, mode)
+            second.write_text(first.read_text())
+            build.validate_sdk_math(root, 'sse2')
+
+    def test_vector_build_requires_sdk_evidence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            build.validate_sdk_math(directory, 'scalar')
+            with self.assertRaisesRegex(ValueError, 'matching SIMD SDK'):
+                build.validate_sdk_math(directory, 'sse2')
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -6,7 +6,7 @@ const requireCondition = (condition, message) => {
 };
 
 /** Execute one scene in its own stage/runtime owner using the original public C API. */
-export async function runRuntimeFeature(runtime, fixtures, { scenario = 'contact' } = {}) {
+export async function runRuntimeFeature(runtime, fixtures, { scenario = 'contact', solverWorkers, populationThreads } = {}) {
     requireCondition(['contact', 'articulation', 'sdf'].includes(scenario), 'Unknown physics feature scenario');
     const offset = (pointer, bytes = 0) => {
         const value = Number(pointer);
@@ -54,6 +54,8 @@ export async function runRuntimeFeature(runtime, fixtures, { scenario = 'contact
                 check(runtime._ovp_wasm_destroy());
             }
             check(runtime._ovp_wasm_create(stage, 1n));
+            if (solverWorkers !== undefined) requireCondition(runtime._ovp_wasm_solver_threads() === solverWorkers,
+                'The native owner must retain the selected SDK worker count');
             return { ...test(), ...(rejection ? { rejectedZeroOrdinal: rejection } : {}) };
         } finally {
             // A failed detach must retain the stage for the caller's retry.
@@ -105,7 +107,17 @@ export async function runRuntimeFeature(runtime, fixtures, { scenario = 'contact
     };
     try {
         requireCondition(runtime._ovs_wasm_pointer_bytes() === 8, 'Expected genuine WASM64 stage/runtime image');
-        const result = { passed: true, runtime: 'official-ovphysx-cpu-wasm64', scenario, checks: [] };
+        if (solverWorkers !== undefined) {
+            requireCondition([0, 2, 4].includes(solverWorkers), 'Unsupported SDK worker count');
+            requireCondition(typeof runtime._ovp_wasm_configure_solver_threads === 'function', 'Runtime lacks configurable solver workers');
+            check(runtime._ovp_wasm_configure_solver_threads(solverWorkers));
+        }
+        if (populationThreads !== undefined) {
+            requireCondition([1, 2, 3, 4].includes(populationThreads), 'Unsupported population thread count');
+            check(runtime._ovs_wasm_configure_population_threads(populationThreads), false);
+        }
+        const result = { passed: true, runtime: 'official-ovphysx-cpu-wasm64', scenario,
+            configuration: { solverWorkers, populationThreads }, checks: [] };
         if (scenario === 'contact') {
             result.contact = await withStage(fixtures.contact, contact, true);
             console.log(`Contact passed: resting Y=${result.contact.position[1]}, vy=${result.contact.velocity[1]}`);
@@ -132,14 +144,14 @@ export async function runRuntimeFeature(runtime, fixtures, { scenario = 'contact
 }
 
 /** Reset through fresh owner modules; native stage host reinitialization is unsupported. */
-export async function runRuntimeFeatures(createRuntime, fixtures) {
+export async function runRuntimeFeatures(createRuntime, fixtures, options = {}) {
     requireCondition(typeof createRuntime === 'function', 'A fresh runtime factory is required');
     const memories = new WeakSet();
     const run = async scenario => {
         const runtime = await createRuntime();
         requireCondition(!memories.has(runtime.wasmMemory), 'Each scene must own independent WASM memory');
         memories.add(runtime.wasmMemory);
-        return runRuntimeFeature(runtime, fixtures, { scenario });
+        return runRuntimeFeature(runtime, fixtures, { ...options, scenario });
     };
     const contact = await run('contact');
     const articulation = await run('articulation');
@@ -154,6 +166,7 @@ export async function runRuntimeFeatures(createRuntime, fixtures) {
         passed: true,
         runtime: 'official-ovphysx-cpu-wasm64',
         scenario: 'all',
+        configuration: { solverWorkers: options.solverWorkers, populationThreads: options.populationThreads },
         checks: [...contact.checks, ...articulation.checks, ...sdf.checks,
             'complete lifecycles with a fresh stage/runtime owner module per scene',
             'reset to a fresh owner restores authored contact state and repeats the same collision'],

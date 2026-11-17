@@ -14,6 +14,12 @@ on the caller. Other unsupported host operations retain their existing failures.
 The test checks that behavior for requested worker counts 0, 1 and 8, including
 call order and caller-thread identity.
 
+The separate [solver worker experiment](../integration/SOLVER_THREADS.md) uses
+the native runtime's existing SDK dispatcher option for 2 or 4 additional solver
+workers. It does not add Carbonite scheduling support. The bootstrap accepts
+nonzero solver counts only for that SDK dispatcher; the package owner must check
+preloaded Emscripten pool capacity before attachment. Zero remains the default.
+
 The copied Carbonite headers gain explicit Emscripten branches for environment
 configuration paths and the diagnostic platform name. XDG paths refer to the
 module's Emscripten filesystem; they provide no native host directory access or

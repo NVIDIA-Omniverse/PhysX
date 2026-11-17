@@ -8,12 +8,15 @@ the PhysX CPU solver. OVStage owns USD ingestion and the application-owned stage
 It uses no custom descriptor-to-PhysX bridge and links no second OpenUSD image.
 This is a feasibility experiment, not a supported platform or published package.
 
-The executed profile uses Emscripten 5.0.7, memory64, pthreads, JavaScript C++
-exceptions and RTTI. PhysX uses scalar CPU paths. Node 24.19.0 and Chrome 157
-have executed real creation, attachment, stepping, reads, sealed OVStage pose
-publication, detach, destruction and fresh-owner reset. The feature suite checks
-floor contact, SDF triangle-mesh collision cooking and a two-link articulation. Those fixtures do not establish full
-native feature parity.
+The baseline recipe uses Emscripten 5.0.7, memory64, pthreads, JavaScript C++
+exceptions, RTTI and scalar PhysX math. The [performance configuration](integration/README.md#performance-build-options)
+adds coherent standardized WASM exceptions, SSE2 math lowered to WASM SIMD,
+mimalloc, optional solver workers, and a smaller generated loader. These remain
+explicit build options. Node 24.19.0, Chrome 157 and Firefox 159 have exercised
+real creation, attachment, stepping, reads, sealed OVStage pose publication,
+detach, destruction and fresh-owner reset. The feature suite checks floor
+contact, SDF triangle-mesh collision cooking and a two-link articulation.
+Those fixtures do not establish full native feature parity.
 
 ## Build and test
 
@@ -28,7 +31,7 @@ OpenUSD/oneTBB installation. A public PhysX clone alone cannot rebuild that host
 
 Prepare PIC Abseil and OVStage with the helpers in
 [Kit PR #6034](https://github.com/NVIDIA-Omniverse/kit/pull/6034), commit
-`93ee11e8352384368e37de21f0415b3d0f60a3a4`. Then run from the PhysX repository root:
+`51680981badc4bf4a12c8207251820affa4f86b7`. Then run from the PhysX repository root:
 
 ```sh
 python3 ovphysx/experimental/wasm/build.py \
@@ -51,9 +54,10 @@ binary cost. The ordinary native `ovphysx/build.sh` workflow is unchanged; this
 separate experimental target does not establish Linux/Windows/ARM regression
 coverage for the guarded source changes.
 
-The compact executed output is `ovstage.mjs` (5,465,710 bytes), `ovstage.wasm`
-(20,290,201 bytes) and `ovphysx.wasm` (13,394,574 bytes). These are artifact sizes,
-not heap measurements. Browser tests use a COOP/COEP static server, module workers
+The shared output contains `ovstage.mjs`, `ovstage.wasm` and `ovphysx.wasm`.
+`--validate-artifact-abi` adds the matching `compiled-artifacts.mjs` helper;
+distribute that complete four-file set together. Build receipts record the exact
+sizes and hashes. Browser tests use a COOP/COEP static server, module workers
 and a browser supporting memory64/SharedArrayBuffer. See the [integration
 recipe](integration/README.md) and the [standalone demo and executed
 receipts](https://github.com/NVIDIA-dev/rilei_isaacsim_next_web_standalone).
@@ -95,8 +99,10 @@ storage services. Static adapters preserve original runtime startup and sidecar
 calls while replacing native filesystem/plugin-directory loading. See
 [host/README.md](host/README.md) for focused service behavior tests.
 
-The selected profile requires `CPU_ONLY=true`, `ASYNC_EXECUTION=false`, zero
-solver scheduler workers and disabled UJITSO/compiled caches. The build generates
+The profile requires `CPU_ONLY=true`, `ASYNC_EXECUTION=false` and disabled
+UJITSO/compiled caches. Solver workers default to zero; the qualified runtime can
+select two or four additional CPU workers with explicit pool-capacity checks
+([configuration and lifecycle](integration/SOLVER_THREADS.md)). The build generates
 `generated/cooking/TriangleMeshCookingTask.cpp` with one SDF construction thread.
 The original SDK then computes the same SDF inline. Its native default of 16
 threads can exhaust the preallocated browser pthread pool and block attachment

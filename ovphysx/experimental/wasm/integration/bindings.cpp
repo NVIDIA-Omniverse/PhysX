@@ -4,13 +4,22 @@
 #include <ovphysx/ovphysx.h>
 #include <ovphysx/ovphysx_attributes.h>
 #include <ovphysx/ovphysx_config.h>
+#include <ovphysx/ovphysx_legacy_config.h>
 #include <ovphysx/experimental/OvStageOutput.hpp>
 #include <emscripten/emscripten.h>
 #include <cmath>
 #include <cstring>
+#include <exception>
 #include <limits>
+#include <memory>
 #include <string>
 #include <vector>
+
+#ifndef OVP_WASM_SOLVER_THREADS
+#define OVP_WASM_SOLVER_THREADS 0
+#endif
+static_assert(OVP_WASM_SOLVER_THREADS == 0 || OVP_WASM_SOLVER_THREADS == 2 || OVP_WASM_SOLVER_THREADS == 4,
+              "The experimental solver supports 0, 2 or 4 worker threads");
 
 extern "C" ovstage_instance_t* ovphysx_wasm_borrow_stage(uint32_t handle);
 
@@ -19,8 +28,10 @@ namespace
 ovphysx_instance_handle_t instance = 0;
 bool initialized = false;
 bool attached = false;
+uint32_t solverWorkers = OVP_WASM_SOLVER_THREADS;
 std::string errorText;
 std::vector<float> values;
+std::unique_ptr<ovphysx::utils::OvStageOutputCache> outputCache;
 
 int failure(const char* message)
 {
@@ -62,6 +73,9 @@ int complete(ovphysx_enqueue_result_t task)
 
 int closePhysics()
 {
+    // The cache is bound to one attachment. Release its buffers before detach,
+    // including failed cleanup attempts, so a later attachment starts fresh.
+    outputCache.reset();
     if (instance)
     {
         const int status = check(ovphysx_is_stage_attached(instance, nullptr, &attached));
@@ -129,6 +143,22 @@ extern "C" EMSCRIPTEN_KEEPALIVE const char* ovp_wasm_error()
     return errorText.c_str();
 }
 
+extern "C" EMSCRIPTEN_KEEPALIVE uint32_t ovp_wasm_solver_threads()
+{
+    return solverWorkers;
+}
+
+extern "C" EMSCRIPTEN_KEEPALIVE int ovp_wasm_configure_solver_threads(uint32_t workers)
+{
+    errorText.clear();
+    if (instance || initialized || attached || outputCache)
+        return failure("Solver workers can only be configured before physics initialization");
+    if (workers != 0 && workers != 2 && workers != 4)
+        return failure("Solver workers must be 0, 2 or 4");
+    solverWorkers = workers;
+    return 0;
+}
+
 extern "C" EMSCRIPTEN_KEEPALIVE int ovp_wasm_create(uint32_t stageHandle, int64_t ordinal)
 {
     errorText.clear();
@@ -145,7 +175,11 @@ extern "C" EMSCRIPTEN_KEEPALIVE int ovp_wasm_create(uint32_t stageHandle, int64_
     if (!status)
         status = check(ovphysx_set_global_config(OVPHYSX_GLOBAL_CONFIG_ASYNC_EXECUTION, ovphysx_config_value_bool(false)));
     if (!status)
-        status = check(ovphysx_set_global_config(OVPHYSX_GLOBAL_CONFIG_NUM_THREADS, ovphysx_config_value_int64(0)));
+        status = check(ovphysx_set_global_config(OVPHYSX_GLOBAL_CONFIG_NUM_THREADS, ovphysx_config_value_int64(solverWorkers)));
+    if (!status)
+        status = check(ovphysx_set_global_config_entry(ovphysx_config_entry_carbonite(
+            OVPHYSX_LITERAL("/physics/physxDispatcher"),
+            solverWorkers ? OVPHYSX_LITERAL("true") : OVPHYSX_LITERAL("false"))));
     if (!status)
         status = check(ovphysx_set_global_config(OVPHYSX_GLOBAL_CONFIG_COMPILED_STAGE_CACHE,
                                                ovphysx_config_value_int64(OVPHYSX_COMPILED_STAGE_CACHE_DISABLED)));
@@ -270,8 +304,19 @@ extern "C" EMSCRIPTEN_KEEPALIVE int ovp_wasm_publish(uint32_t stageHandle, int64
     ovstage_instance_t* const stage = ovphysx_wasm_borrow_stage(stageHandle);
     if (!stage)
         return failure("Invalid borrowed OVStage handle");
+    if (!outputCache)
+    {
+        try
+        {
+            outputCache.reset(new ovphysx::utils::OvStageOutputCache);
+        }
+        catch (const std::exception& error)
+        {
+            return failure(error.what());
+        }
+    }
     const ovphysx::utils::OvStageOutputResult result =
-        ovphysx::utils::writeWorldTransformsToOvstage(instance, stage, outputOrdinal);
+        ovphysx::utils::writeWorldTransformsToOvstage(instance, stage, outputOrdinal, outputCache.get());
     if (!result.ok())
     {
         errorText = result.message;

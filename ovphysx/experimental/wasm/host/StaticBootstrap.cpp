@@ -155,11 +155,14 @@ bool CarboniteLoader::loadPhysxPlugins()
         m->lastError = "Static WASM runtime cannot disable the process CPU-only setting";
         return false;
     }
-    if (settings->getAsInt(omni::physx::kSettingNumThreads) != 0 ||
+    const int64_t solverThreads = settings->getAsInt(omni::physx::kSettingNumThreads);
+    if ((solverThreads != 0 && solverThreads != 2 && solverThreads != 4) ||
+        (solverThreads != 0 && !settings->getAsBool(omni::physx::kSettingPhysxDispatcher)) ||
         settings->getAsBool(omni::physx::kSettingUjitsoCollisionCooking) ||
         settings->getAsBool(omni::physx::kSettingUjitsoRemoteCacheEnabled))
     {
-        m->lastError = "Static WASM runtime requires zero solver workers and disabled UJITSO caches";
+        m->lastError = "Static WASM runtime requires 0, 2 or 4 solver workers, the SDK dispatcher for workers, "
+                       "and disabled UJITSO caches";
         return false;
     }
     if (settings->getAsInt(profiling::kSettingProfilerBackend) != OVPHYSX_PROFILER_BACKEND_NONE)
