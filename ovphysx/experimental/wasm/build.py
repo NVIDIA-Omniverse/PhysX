@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""Reproduce genuine OvPhysX WASM64 prerequisite and source compilation probes.
+"""Compile the PhysX SDK and genuine OvPhysX runtime objects for WASM64.
 
-This does not produce a usable @omniverse/ovphysx runtime yet. It never substitutes
-an SDK descriptor bridge or a JavaScript physics implementation for OvPhysX.
+Link these inputs with integration/build-population.py to produce the shared
+OVStage/OvPhysX runtime. No custom physics bridge replaces the native runtime.
 """
 from __future__ import annotations
 import argparse
@@ -121,7 +121,7 @@ def cache_identity(args, flags, generated, env):
     manifest = generated / 'CompiledCacheBuildFiles.txt'
     identity.write_text(json.dumps({'platform': 'Emscripten-wasm64', 'emsdkRevision': EMSDK_REVISION,
                                     'sourceRevision': args.source_revision, 'sourceBaselineRevision': REVISION, 'flags': flags,
-                                    'outputQueryCache': args.output_query_cache, 'sdkMath': args.sdk_math}, sort_keys=True) + '\n')
+                                    'sdkMath': args.sdk_math}, sort_keys=True) + '\n')
     manifest.write_text('\n'.join(str(x) for x in files) + '\n')
     command = ['cmake', f'-DIDENTITY={identity}', f'-DFILES={manifest}', '-DCONFIG=release',
                f'-DOUTPUT={generated}/CompiledCacheBuild.h', '-P',
@@ -228,9 +228,6 @@ def compile_sources(args, env):
     stepper_spec = importlib.util.spec_from_file_location('ovphysx_wasm_stepper', Path(__file__).parent / 'host/prepare-stepper.py')
     stepper = importlib.util.module_from_spec(stepper_spec)
     stepper_spec.loader.exec_module(stepper)
-    output_cache_spec = importlib.util.spec_from_file_location('ovphysx_wasm_output_cache', Path(__file__).parent / 'host/prepare-output-query-cache.py')
-    output_cache = importlib.util.module_from_spec(output_cache_spec)
-    output_cache_spec.loader.exec_module(output_cache)
     groups = {
         'common': named_sources(args.source, 'common', 'COMMON_SOURCE'),
         'parse': named_sources(args.source, 'omni.physics.parse', 'PARSE_SOURCE'),
@@ -273,10 +270,6 @@ def compile_sources(args, env):
             compiled_source = stepper.prepare_stepper(source, generated / 'stepper')
             adaptation = 'synchronous SDK solver workers with no Carbonite scheduler'
             extra_includes = ['-I' + str(source.parent)]
-        elif args.output_query_cache and group == 'api' and source.name == 'OvStageOutput.cpp':
-            compiled_source = output_cache.prepare_output_query_cache(source, generated / 'output-query-cache')
-            adaptation = 'attachment-bound ALL pose selectors; fresh reads each publication'
-            extra_includes = ['-I' + str(source.parent)]
         command = flags + extra_includes + [str(compiled_source), '-o', str(output)]
         code = run(command, env, destination / (stem + '.log'))
         result = {'sdfPathPoolRegionBits': args.sdf_path_pool_region_bits, 'sdkMath': args.sdk_math, 'group': group, 'source': str(source.relative_to(args.source)) if source.is_relative_to(args.source) else str(source), 'sourceSha256': digest(source),
@@ -314,7 +307,6 @@ def main():
     parser.add_argument('--sdk-math', choices=['scalar', 'sse2'], default='scalar',
                         help='Matched PhysX SDK/runtime math implementation; SSE2 lowers to WASM SIMD')
     parser.add_argument('--runtime-objects', action='store_true')
-    parser.add_argument('--output-query-cache', action='store_true', help='Opt-in WASM publication selector cache; rebuild the api component')
     parser.add_argument('--runtime-opt', choices=['1', '2', '3', 's'], default='1',
                         help='Optimization level for OvPhysX runtime objects; PhysX SDK flags are unchanged')
     parser.add_argument('--components', default='common,parse,ovstage')
@@ -331,9 +323,9 @@ def main():
     receipt = json.loads(receipt_path.read_text()) if receipt_path.exists() else {}
     receipt.update({'source': {'repository': 'https://github.com/NVIDIA-Omniverse/PhysX', 'revision': args.source_revision, 'baselineRevision': REVISION, 'release': 'ovphysx-0.8.0'},
                     'toolchain': {'emscripten': '5.0.7', 'emsdkRevision': EMSDK_REVISION},
-                    'status': 'prerequisites-only; no linked OvPhysX browser runtime', 'customPhysicsBridge': False,
+                    'status': 'SDK/runtime build inputs; final link uses integration/build-population.py', 'customPhysicsBridge': False,
                     'experimentalSourceSha256': {str(p.relative_to(args.source)): digest(p) for p in Path(__file__).parent.rglob('*') if p.is_file() and '__pycache__' not in p.parts},
-                    'positionIndependentCode': args.pic, 'sdkMath': args.sdk_math, 'runtimeOptimization': '-O' + args.runtime_opt, 'outputQueryCache': args.output_query_cache, 'recipeSha256': digest(__file__), 'sourceDiffSha256': hashlib.sha256(subprocess.check_output(['git', '-C', str(args.source), 'diff'])).hexdigest(), 'sourceDiff': subprocess.check_output(['git', '-C', str(args.source), 'diff', '--stat'], text=True),
+                    'positionIndependentCode': args.pic, 'sdkMath': args.sdk_math, 'runtimeOptimization': '-O' + args.runtime_opt, 'recipeSha256': digest(__file__), 'sourceDiffSha256': hashlib.sha256(subprocess.check_output(['git', '-C', str(args.source), 'diff'])).hexdigest(), 'sourceDiff': subprocess.check_output(['git', '-C', str(args.source), 'diff', '--stat'], text=True),
                     'sourceModified': subprocess.check_output(['git', '-C', str(args.source), 'status', '--porcelain'], text=True).splitlines()})
     if args.sdk:
         receipt['sdk'] = sdk(args, env)

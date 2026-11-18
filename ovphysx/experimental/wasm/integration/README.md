@@ -1,54 +1,25 @@
-# Official physics population in the shared WASM runtime
+# Shared OVStage/OvPhysX WASM runtime
 
-This is an executed prerequisite for the real OvPhysX port. It links the unchanged
-`ovphysxPopulation.cpp` and its generated native description into the working
-OVStage/OpenUSD/USDRT/Fabric WASM64 image. It does not link or replace the physics
-simulator.
+The current runtime builds the native PhysX CPU implementation as an optional
+side module sharing OVStage's memory. Use the [parent build recipe](../README.md#build-and-test)
+to compile the SDK/runtime objects, then link them with a matching PIC stage build
+using `build-population.py --runtime-dir /path/to/ovphysx-pic-build --shared`.
+The output is `ovstage.mjs`, `ovstage.wasm` and `ovphysx.wasm`; ABI validation adds
+`compiled-artifacts.mjs`. Keep the complete matched artifact set together.
 
-The generated bridge registers the official PhysX and deformable codeless schema
-resources before population, and passes the official physics description alongside
-RENDERING. The original schema resources are embedded with their relative layout.
-The source checkouts and completed OVStage build are left unchanged.
+The link driver reads compile/link metadata from a completed native OVStage Unix
+Makefiles build and checks memory64, pthreads and compatible dependency ABIs.
+It registers official PhysX/deformable codeless schemas before population and
+uses the native physics description alongside RENDERING. It leaves dependency
+source checkouts and the completed stage build unchanged. `commands.json` records
+argv and working directories; `build-info.json` records inputs and artifact hashes.
+This experimental driver does not replace the native PhysX build entry point.
 
-```sh
-python3 ovphysx/experimental/wasm/integration/build-population.py \
-  --ovstage-build /tmp/ovstage-population-build \
-  --out /tmp/ovphysx-stage-integration
+Node and browser tests exercise CPU attachment, stepping, output publication,
+floor contact, articulation, SDF cooking and fresh-owner reset. These fixtures
+do not establish full native feature parity.
 
-/tmp/ovstage-wasm-emsdk/node/24.19.0_64bit/bin/node \
-  ovphysx/experimental/wasm/integration/test-population.mjs \
-  /tmp/ovphysx-stage-integration/ovstage-physics-population.mjs \
-  /home/rilei/dev/kit_2/rendering/ovstage/experimental/wasm/dist/native/index.mjs \
-  /tmp/ovphysx-stage-integration/result.json
-```
-
-The recipe reads compile/link metadata from a completed native OVStage Unix
-Makefiles build. It checks that memory64/pthreads are selected and rejects changed
-bridge anchors. `commands.json` records argv and working directories;
-`build-info.json` records source/config/schema/artifact hashes. The existing build
-must use the compatible current OVStage population API. This is an experimental
-integration driver, not a replacement for the native PhysX build entry point.
-
-The test checks real population output: authored mass and gravity, un-authored
-rigid-body/collision/velocity defaults, PhysX damping defaults, applied schema
-identity, and units/axis. Initial Node 24 run passed. Full initialization, attach,
-stepping and physics read/write are separate acceptance gates.
-
-The generated source also defines internal
-`ovphysx_wasm_borrow_stage(uint32_t handle)`. It calls the existing stage handle
-validator in the same translation unit and returns a borrowed pointer for runtime
-attachment within the shared WASM memory. It is not exported to JavaScript, and does not change
-stage lifetime. The final owner must detach physics before destroying its stage.
-
-
-## Executed shared physics runtime
-
-The population-only command above is a focused diagnostic. The full CPU runtime
-uses `--runtime-dir /path/to/ovphysx-pic-build --shared` with a PIC stage build,
-producing `ovstage.mjs`, `ovstage.wasm` and `ovphysx.wasm`. The [parent README](../README.md)
-gives the actual compile, link and Node smoke/feature commands. Both Node and
-Chrome have passed attachment, steps, output publication, floor contact,
-articulation, SDF triangle-mesh cooking and fresh-owner reset using these separate libraries.
+## Browser runtime validation
 
 For browser features, copy `runtime-features-worker.mjs`, `feature-runner.mjs`,
 `contact.usda`, `articulation.usda` and `sdf.usda` beside the matching binaries. Serve the
@@ -71,6 +42,29 @@ The local `sdf.usda` fixture exercises actual CPU SDF cooking and settling conta
 without network assets. The browser timeout catches the former pool-exhaustion
 hang in the SDK thread-start loop; the same scenario runs in Node. Run only that
 scenario in Node by replacing `all` with `sdf` in the feature command.
+
+## Population-only diagnostic
+
+Omit `--runtime-dir` to link only the official physics population description and
+codeless schemas. This mode isolates authored values, schema defaults and stage
+metadata from solver attachment; retain it when investigating population failures.
+It produces no physics simulator.
+
+```sh
+python3 ovphysx/experimental/wasm/integration/build-population.py \
+  --ovstage-build /path/to/ovstage-build --out /path/to/population-diagnostic
+node ovphysx/experimental/wasm/integration/test-population.mjs \
+  /path/to/population-diagnostic/ovstage-physics-population.mjs \
+  /path/to/kit/rendering/ovstage/experimental/wasm/dist/native/index.mjs \
+  /path/to/population-diagnostic/result.json
+```
+
+The test checks authored mass/gravity, unauthored rigid-body/collision/velocity
+and damping defaults, applied schema identities, units and up-axis. The internal
+`ovphysx_wasm_borrow_stage(uint32_t handle)` validates the stage handle and returns
+a borrowed pointer for runtime attachment in the shared memory. It is not
+exported to JavaScript and does not change stage lifetime; detach physics before
+destroying the stage.
 
 ## Output publication contract
 
@@ -177,10 +171,8 @@ The public physics option is `createPhysics(stage, { solverWorkers: 0 | 2 | 4 })
 It defaults to zero additional workers. More workers helped the active pyramid
 but added overhead to a light grid; they are not universally faster. The owner
 preflights idle pool capacity before attachment. See [solver threads](SOLVER_THREADS.md)
-for lifetime, browser and feature checks. The optional publication selector cache
-remains off: its matched run did not show a gain.
-
-The smaller Sdf region variant remains a separate, unshipped ABI experiment.
-Its smaller logical reservation did not establish a useful Chrome resident-memory
-improvement, and its pyramid core tick regressed. The recommended combined build
-retains the original eight-bit region layout.
+for lifetime, browser and feature checks. Use the original eight-bit Sdf region
+layout; smaller regions did not establish a useful Chrome resident-memory gain
+and regressed the measured pyramid tick. Publication selector caching likewise
+showed no gain and is not part of the build. The performance investigation retains
+the comparison results.
