@@ -18,14 +18,84 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def _validate_output_isolation(carb_include, fabric_host, output):
+    """Reject planned writes into dependency or recipe inputs, including output aliases.
+
+    The output directory may be a common ancestor of the inputs. Only its copied
+    include subtree and files emitted by prepare() must be separate. Existing
+    links are resolved before any mkdir/copy/write; concurrent filesystem changes
+    during preparation are outside this local build tool's contract.
+    """
+    inputs = [carb_include, fabric_host]
+    input_files = set()
+    pending = list(inputs)
+    visited = set()
+    while pending:
+        path = pending.pop()
+        resolved = path.resolve()
+        if resolved in visited:
+            continue
+        visited.add(resolved)
+        if path.is_dir():
+            # copytree follows input directory links, so their targets are inputs too.
+            if all(resolved != source and source not in resolved.parents for source in inputs):
+                inputs.append(resolved)
+            pending.extend(path.iterdir())
+        else:
+            info = path.stat()
+            input_files.add((info.st_dev, info.st_ino))
+
+    # Protect the recipe's actual inputs without reserving its whole directory.
+    recipe_inputs = {(HERE / name).resolve() for name in
+                     ("platform-patches.json", "DictionaryPayload.inl",
+                      "SettingsArrays.inl", "TaskStorage.inl")}
+    recipe_inputs.add(Path(__file__).resolve())
+    for path in recipe_inputs:
+        info = path.stat()
+        input_files.add((info.st_dev, info.st_ino))
+
+    def check_destination(path, tree=False, expect_file=False):
+        resolved = path.resolve()
+        if resolved in recipe_inputs:
+            raise ValueError(f"Generated output overlaps a recipe input file: {path}")
+        if any(resolved == source or source in resolved.parents or
+               (tree and resolved in source.parents) for source in inputs):
+            raise ValueError(f"Generated output overlaps a dependency input tree: {path}")
+        # copy2 treats a directory as a container and appends the source basename.
+        # Reject that alternate target before copytree can bypass the checked path.
+        if expect_file and path.is_dir():
+            raise ValueError(f"Generated file destination is a directory: {path}")
+        if path.exists() and not path.is_dir():
+            info = path.stat()
+            if (info.st_dev, info.st_ino) in input_files:
+                raise ValueError(f"Generated output aliases a source input file: {path}")
+
+    def check_copied_tree(source, destination, ancestors=()):
+        check_destination(destination, tree=True)
+        resolved = source.resolve()
+        if resolved in ancestors:
+            raise ValueError(f"Dependency input contains a recursive directory link: {source}")
+        for child in source.iterdir():
+            target = destination / child.name
+            if child.is_dir():
+                check_copied_tree(child, target, (*ancestors, resolved))
+            else:
+                check_destination(target, expect_file=True)
+
+    check_destination(output)
+    check_copied_tree(carb_include, output / "carb" / "include")
+    for name in ("host.cpp", "DictionaryPayload.inl", "SettingsArrays.inl",
+                 "TaskStorage.inl", "overlay-receipt.json"):
+        check_destination(output / name, expect_file=True)
+
+
 def prepare(carb_include, fabric_host, output):
     """Return copied header/host paths; never modify either dependency source."""
     carb_include = Path(carb_include).resolve()
     fabric_host = Path(fabric_host).resolve()
     output = Path(output).resolve()
     include = output / "carb" / "include"
-    if include == carb_include or carb_include in include.parents:
-        raise ValueError("Output must be separate from the Carbonite input tree")
+    _validate_output_isolation(carb_include, fabric_host, output)
     output.mkdir(parents=True, exist_ok=True)
     patches = json.loads((HERE / "platform-patches.json").read_text())
     for patch in patches:

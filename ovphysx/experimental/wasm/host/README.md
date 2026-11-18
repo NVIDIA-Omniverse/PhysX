@@ -25,7 +25,15 @@ configuration paths and the diagnostic platform name. XDG paths refer to the
 module's Emscripten filesystem; they provide no native host directory access or
 persistent browser storage. The script checks the exact input hashes, records
 all edits and output hashes, and never modifies its dependency sources. Relative
-Carbonite includes require copying the include tree as a unit.
+Carbonite includes require copying the include tree as a unit. Preparation checks
+planned destinations before creating output, including existing symlink and
+hard-link aliases into either dependency or the recipe's source files. Unwritten
+entries in a reused output are left alone; separate output files may live under
+the recipe directory. Pure input-preservation tests require no SDK or native build:
+
+```sh
+python3 ovphysx/experimental/wasm/host/test-prepare.py
+```
 
 Run with the already prepared OVStage browser dependencies:
 
