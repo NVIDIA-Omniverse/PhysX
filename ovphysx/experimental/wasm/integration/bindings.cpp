@@ -7,6 +7,19 @@
 #include <ovphysx/ovphysx_legacy_config.h>
 #include <ovphysx/experimental/OvStageOutput.hpp>
 #include <emscripten/emscripten.h>
+#include "bridge.h"
+#include <ovstage/ovstage.h>
+#include <ovstage/ovstage_query_paths.h>
+#include <ovx/path_dictionary/path_dictionary_utils.h>
+#include <pxr/base/gf/matrix4d.h>
+#include <pxr/base/gf/quatd.h>
+#include <pxr/base/gf/transform.h>
+#include <array>
+#include <algorithm>
+#include <stdexcept>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
 #include <cmath>
 #include <cstring>
 #include <exception>
@@ -71,8 +84,13 @@ int complete(ovphysx_enqueue_result_t task)
     return status;
 }
 
+void resetControls();
+int initializeControls(uint32_t stageHandle, int64_t ordinal);
+void advanceControlsMetadata(int64_t ordinal);
+
 int closePhysics()
 {
+    resetControls();
     // The cache is bound to one attachment. Release its buffers before detach,
     // including failed cleanup attempts, so a later attachment starts fresh.
     outputCache.reset();
@@ -197,6 +215,8 @@ extern "C" EMSCRIPTEN_KEEPALIVE int ovp_wasm_create(uint32_t stageHandle, int64_
         else if (!attached)
             status = failure("OvPhysX completed attach without retaining the requested stage");
     }
+    if (!status)
+        status = initializeControls(stageHandle, ordinal);
     if (status)
     {
         const std::string originalError = errorText;
@@ -322,5 +342,8 @@ extern "C" EMSCRIPTEN_KEEPALIVE int ovp_wasm_publish(uint32_t stageHandle, int64
         errorText = result.message;
         return static_cast<int>(result.status);
     }
+    advanceControlsMetadata(outputOrdinal);
     return 0;
 }
+
+#include "controls.inl"

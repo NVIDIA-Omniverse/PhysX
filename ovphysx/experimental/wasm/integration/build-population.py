@@ -360,6 +360,7 @@ extern "C" carb::Framework* ovphysx_wasm_borrow_framework()
         sources += [('physics-population', population)]
     if args.runtime_dir:
         sources += [('physics-bindings', HERE / 'bindings.cpp'), ('host', args.runtime_dir / 'host/host.cpp')]
+        runtime_inputs.append(HERE / 'controls.inl')
     else:
         sources += [('physics-population', population)]
     for name, source in sources:
@@ -412,7 +413,9 @@ extern "C" carb::Framework* ovphysx_wasm_borrow_framework()
             side_archives = [side_bootstrap if path == bootstrap else path for path in archives]
             side_output = out / 'ovphysx.wasm'
             exports = ['_ovp_wasm_' + name for name in
-                       ['create', 'step', 'read_vectors', 'read_links', 'read_joints', 'values', 'value_count', 'error', 'publish', 'destroy', 'solver_threads', 'configure_solver_threads']]
+                       ['create', 'step', 'read_vectors', 'read_links', 'read_joints', 'values', 'value_count', 'error', 'publish', 'destroy', 'solver_threads', 'configure_solver_threads',
+                        'set_joint_velocity_targets', 'read_joint_states', 'set_kinematic_targets',
+                        'read_body_states', 'apply_controls', 'control_error_is_partial']]
             side_link = [compiler, '-O2', '-sMEMORY64=1', '-pthread', *exception_flags, '-sSIDE_MODULE=2',
                          '-Wl,--error-limit=0', '-sEXPORTED_FUNCTIONS=' + json.dumps(exports),
                          str(out / 'physics-bindings.o'), '-Wl,--start-group',

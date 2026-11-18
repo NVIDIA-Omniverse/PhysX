@@ -31,7 +31,7 @@ OpenUSD/oneTBB installation. A public PhysX clone alone cannot rebuild that host
 
 Prepare PIC Abseil and OVStage with the helpers in
 [Kit PR #6034](https://github.com/NVIDIA-Omniverse/kit/pull/6034), commit
-`51680981badc4bf4a12c8207251820affa4f86b7`. Then run from the PhysX repository root:
+`320688609f7dadf2119b9a833cc6fd995bb6ece7`. Then run from the PhysX repository root:
 
 ```sh
 python3 ovphysx/experimental/wasm/build.py \
@@ -91,6 +91,92 @@ Important integration details:
 - Official physics and rendering population descriptions and codeless schemas
   supply defaults, geometry, units and axes before attachment. Publication uses
   genuine CPU output and a separate sealed ordinal; it does not reset simulation.
+
+## Named CPU controls
+
+The shared build exposes four optional JavaScript control methods through
+`@omniverse/ovphysx`. The package and its matching native artifacts are maintained
+in the [standalone repository](https://github.com/NVIDIA-dev/rilei_isaacsim_next_web_standalone/tree/main/packages/ovphysx).
+These methods borrow the existing attachment; they do not create another solver,
+advance simulation time, or modify the authored USD layer.
+
+| JavaScript method | Input/output contract | Native implementation |
+| --- | --- | --- |
+| `setJointVelocityTargets(targets)` | Named revolute-joint targets in radians/second. The joint must already have an angular drive with positive damping and force limit. Existing gains, stiffness and position targets are retained. | Transient OVStage drive-column writes, followed by the original OVPhysX property-update path. |
+| `readJointStates(paths)` | Owned ordered results, including duplicate paths: position in radians and velocity in radians/second, with authored body1-relative-to-body0 sign. | Public articulation-joint state columns, or standalone-joint state derived from actual actor poses/angular velocities and the original joint frames. |
+| `setKinematicTargets(targets)` | World positions in metres and normalized quaternions in `(x, y, z, w)` order. Targets integrate on the next explicit `physics.step(dt)`. | Public OVPhysX kinematic write sessions. The adapter converts metres to stage units. |
+| `readBodyStates(paths)` | Named dynamic, kinematic, static or articulation-link states. World body-origin position is in metres; linear velocity is the centre-of-mass world velocity in metres/second; angular velocity is in radians/second. | Public body/link state columns. Static actors use their fixed configured world pose after native actor membership is verified; they have zero solver velocity. |
+
+For standalone revolute joints, the adapter measures relative orientation and
+angular velocity; it never reports the authored target as measured state. It
+matches the native twist branch, including the `(-2π, 2π]` wrapping convention.
+Joint endpoint frames are captured at attachment before simulation publication,
+including supported relationships to transformed descendants of bodies. Public
+articulation columns already encode authored endpoint sign and angular values
+in degrees; the adapter converts units once. This is a CPU rigid-body/revolute
+profile, not a general joint, deformable, vehicle or DirectGPU control interface.
+Unsupported joint metadata remains a named-control rejection rather than making
+an otherwise usable physics scene fail to attach.
+
+Breakable joints are not qualified in the current Official WASM host. A real
+joint-break event reaches the unimplemented host dictionary `setIntArray` path
+and can abort the owner; dispose it and create a fresh owner. This is an existing
+platform boundary, not parity with Nano's broken-joint rejection. Shared
+relationship-frame tests use uniformly scaled body descendants; Nano rejects
+indirect joint targets with nonuniform scale. These limits must remain explicit
+when selecting assets or comparing the two implementations.
+
+### Ordinals and ownership
+
+A joint-target batch follows this sequence in the owner worker:
+
+1. Validate every target and prepare the stage writes before changing a drive.
+2. Write `drive:angular:physics:targetVelocity` at a new control ordinal, converting
+   radians/second to the native USD degrees/second convention.
+3. Seal that ordinal through the stage facade, then call
+   `ovphysx_update_from_ovstage` for exactly that control ordinal.
+4. Let the application call `physics.step(dt)` with `dt` in seconds and later
+   `physics.publish()` at a separate higher output ordinal.
+
+Output ordinals are excluded from subsequent control updates, so physics does
+not consume its own published poses. Runtime control values may be visible in
+OVStage reads; they are not authored USD edits and are absent from USD export
+and authoring checkpoints. Disposal detaches physics and releases control
+metadata; it does not restore runtime poses or drive values. Use a fresh stage
+owner to restore the authored scene, as the standalone Stop/reset workflow does.
+The initial native attachment ordinal must be positive.
+
+The private C adapter is `integration/controls.inl`. Its packed-path calls back
+four public operations: `ovp_wasm_set_joint_velocity_targets`,
+`ovp_wasm_read_joint_states`, `ovp_wasm_set_kinematic_targets` and
+`ovp_wasm_read_body_states`. Joint writes additionally use
+`ovp_wasm_apply_controls` after the facade seal. The
+`ovp_wasm_control_error_is_partial` flag distinguishes a rejected preflight from
+an admitted operation or cleanup failure; the JavaScript owner retains its
+failed state after the latter and requires disposal. No rollback is promised.
+The C read-result buffer is borrowed until the next adapter operation; JavaScript
+copies and validates it before returning an owned result. Public query-group
+prim identities establish ownership; no SDK pointer value is dereferenced.
+
+### Reproduce the package checks
+
+Build a complete matched shared runtime with the recipes above, then follow the
+standalone [distribution recipe](https://github.com/NVIDIA-dev/rilei_isaacsim_next_web_standalone/blob/main/docs/DISTRIBUTION.md)
+to prepare the retained-ordinal profile and vendor that matched artifact pair.
+From the standalone checkout, use Node 24 or newer:
+
+```sh
+npm ci
+node --test tests/physics-controls-conformance-real.mjs
+node --test tests/robot-arm-demo-real.mjs
+```
+
+Both commands exercise the same public scene/controller contract through the
+Official and Nano factory pairs. The first checks named state, drive direction
+and units, batch rejection, kinematic contact, endpoint frames, output ownership
+and fresh-owner reset. The second checks physical pick-and-place replays and a
+weak-grip negative control. These are correctness checks on the qualified profile;
+they do not establish full native feature parity or a performance comparison.
 
 ## Host and capability limits
 
