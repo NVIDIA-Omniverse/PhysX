@@ -91,8 +91,10 @@ and runs the native hierarchy update.
 
 The browser performance experiment keeps the native API and fresh worker owner
 boundary. Its measured candidates and limitations are recorded in the standalone
-[performance investigation](https://github.com/NVIDIA-dev/rilei_isaacsim_next_web_standalone/blob/main/docs/official-performance-investigation.md).
-Build flags remain opt-in; these are not a new native OVPhysX build policy.
+[historical performance investigation](https://github.com/NVIDIA-dev/rilei_isaacsim_next_web_standalone/blob/2e5800c2951eae7e5597e5e7fe853ed880b6f356/docs/official-performance-investigation.md).
+See the [current implementation review](https://github.com/NVIDIA-dev/rilei_isaacsim_next_web_standalone/blob/main/docs/web-implementation-review.md)
+for subsequent findings and qualification limits. Build flags remain opt-in;
+these are not a new native OVPhysX build policy.
 
 Rebuild OpenUSD, TBB, Abseil and every stage/runtime consumer with the same
 exception ABI. `population/build.py --exceptions wasm` selects standardized
