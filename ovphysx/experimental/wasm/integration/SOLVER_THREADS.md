@@ -75,13 +75,13 @@ and `nativeDefaultWorkers` from each attachment's actual requested/getter count.
 A separate main-module lifetime issue was found during repeated-owner testing:
 releasing the last TBB `global_control` between owners restores the machine's
 hardware concurrency, and background TBB workers can exhaust the pool before the
-next attachment. The isolated thread qualification bridge retains a one-thread
-control between owners and constructs its replacement before releasing the old
-control. Idle population-thread configuration remains allowed when no stage is
-active. This bridge override is recorded separately from the canonical build;
-it does not silently modify the stage recipe. Solver startup/join checks passed
-with this bounded lifetime. Full same-module schema/provider/render lifecycle
-qualification is a separate requirement, not established by physics tests alone.
+next attachment. The canonical Kit stage bridge now retains a one-thread control
+between owners and constructs its replacement before releasing the old control.
+Idle population-thread configuration remains allowed when no stage is active.
+The earlier isolated thread qualification used the same bounded lifetime, and
+its solver startup/join checks passed. Full same-module schema/provider/render
+lifecycle qualification remains separate; the canonical idle cap and physics
+tests alone do not establish safe module reuse.
 
 ## Validation and comparison
 
