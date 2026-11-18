@@ -11,7 +11,7 @@ import subprocess
 
 HERE = Path(__file__).resolve().parent
 OVPHYSX = HERE.parents[2]
-HOST_SHA256 = "e2c8a674c4f9c89b15f57165663695b37bc87073f3858a09682f4f9e8468f40e"
+HOST_SHA256 = "5f9a5a4bf14815af71aca4b21471a0e02f88619dbb48aa7a088154be99435f75"
 
 
 def digest(data):
@@ -208,6 +208,30 @@ def run_test(paths, fabric_host, compiler, node):
     print(result.stdout, end="")
     if result.returncode:
         raise RuntimeError(f"Dispatcher test failed; see {output / 'dispatcher-test.log'}")
+    # Exercise the same settings contract after the physics dictionary overlay is installed.
+    settings_source = fabric_host.parents[1] / "population/native/settings-test.cpp"
+    settings_command = [str(settings_source) if part == str(HERE / "dispatcher-test.cpp") else
+                        part.replace("dispatcher-test.js", "settings-test.js")
+                            .replace("-sPTHREAD_POOL_SIZE=0", "-sPTHREAD_POOL_SIZE=4")
+                        for part in command]
+    (output / "settings-command.json").write_text(json.dumps(settings_command, indent=2) + "\n")
+    settings_build = subprocess.run(settings_command, capture_output=True, text=True)
+    (output / "settings-build.log").write_text(settings_build.stdout + settings_build.stderr)
+    if settings_build.returncode:
+        raise RuntimeError(f"Settings provider compile failed; see {output / 'settings-build.log'}")
+    settings_execution = [str(node), str(output / "settings-test.js")]
+    settings_result = subprocess.run(settings_execution, capture_output=True, text=True, timeout=30)
+    (output / "settings-test.log").write_text(settings_result.stdout + settings_result.stderr)
+    (output / "settings-test-receipt.json").write_text(json.dumps({
+        "command": settings_execution, "exit": settings_result.returncode,
+        "source": str(settings_source), "sourceSha256": digest(settings_source.read_bytes()),
+        "hostSha256": digest(paths["host"].read_bytes()),
+        "scope": "Native settings contract through the generated physics dictionary overlay"
+    }, indent=2) + "\n")
+    print(settings_result.stdout, end="")
+    if settings_result.returncode:
+        raise RuntimeError(f"Settings provider test failed; see {output / 'settings-test.log'}")
+
     event_command = [part.replace("dispatcher-test.cpp", "events-test.cpp")
                     .replace("dispatcher-test.js", "events-test.js")
                     .replace("-sPTHREAD_POOL_SIZE=0", "-sPTHREAD_POOL_SIZE=2") for part in command]

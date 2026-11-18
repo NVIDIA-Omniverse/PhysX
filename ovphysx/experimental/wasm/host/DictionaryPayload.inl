@@ -72,18 +72,18 @@ carb::dictionary::Item* payloadPath(carb::dictionary::Item* base, std::string pa
         if (create)
             unsupported("creating settings through the payload dictionary");
         std::string basePath;
-        if (base == &state().root)
+        if (base == state().root.get())
             basePath = "/";
         else
-            for (const std::pair<const std::string, Setting>& entry : state().settings)
-                if (&entry.second == base)
+            for (const std::pair<const std::string, std::shared_ptr<Setting>>& entry : state().settings)
+                if (entry.second.get() == base)
                     basePath = entry.first;
         if (basePath.empty())
             return nullptr;
         if (path.empty())
             return base;
         const auto found = state().settings.find(key(((basePath == "/" ? basePath : basePath + "/") + path).c_str()));
-        return found == state().settings.end() ? nullptr : &found->second;
+        return found == state().settings.end() ? nullptr : found->second.get();
     }
     size_t offset = 0;
     while (offset < path.size())
@@ -116,9 +116,9 @@ carb::dictionary::Item* payloadPath(carb::dictionary::Item* base, std::string pa
 void installPayloadDictionary(carb::dictionary::IDictionary& table)
 {
     using Item = carb::dictionary::Item;
-    table.readLock = [](const Item*) { state().mutex.lock(); };
-    table.writeLock = [](Item*) { state().mutex.lock(); };
-    table.unlock = [](const Item*) { state().mutex.unlock(); };
+    table.readLock = [](const Item*) { lockSettings(); };
+    table.writeLock = [](Item*) { lockSettings(); };
+    table.unlock = [](const Item*) { unlockSettings(); };
     table.getItem = [](const Item* base, const char* path) -> const Item* {
         return payloadPath(const_cast<Item*>(base), path ? path : "", false, ItemType::eCount);
     };

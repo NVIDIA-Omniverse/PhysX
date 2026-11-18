@@ -49,7 +49,7 @@ python3 ovphysx/experimental/wasm/host/prepare.py \
 
 The selected compiler must support memory64 and the Node runtime must support
 WebAssembly memory64 (the tested Emscripten 5.0.7 output requires Node 23+).
-`dispatcher-command.json`, `events-command.json`, build/test logs,
+`dispatcher-command.json`, `settings-command.json`, `events-command.json`, build/test logs,
 `overlay-receipt.json`, and the corresponding test receipts are written to the output directory. The test uses C++20 for
 the existing host; genuine OvPhysX source objects use their upstream C++17 mode.
 All linked objects must agree on memory64, threads, exceptions, SDK compile-time
@@ -82,7 +82,13 @@ service.
 for event payloads to the copied host. Integer, floating-point, boolean, string,
 and nested payload writes use the same real IDictionary interface that physics
 calls. It retains the existing flat settings store and its notification behavior.
-Unsupported settings-tree enumeration still fails explicitly. All dictionary
+The overlay's scoped locks delegate to the stage host's lock-depth tracking, so
+settings callbacks run after the outermost scope releases. Retained settings items
+and tree roots preserve callback lifetime through deletion and recreation. The
+`--test` command compiles the canonical stage `population/native/settings-test.cpp`
+against this generated host, catching overlay changes that would bypass the stage
+host's callback rules. Callbacks must not throw; destruction callbacks may hold
+internal locks. Unsupported settings-tree enumeration still fails explicitly. All dictionary
 operations share the host recursive mutex. Payload roots must be destroyed
 before the owner shuts the host down.
 

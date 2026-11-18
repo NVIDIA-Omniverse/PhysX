@@ -23,7 +23,7 @@ size_t settingsArrayLength(const char* path)
         return 0;
     const std::string parent = key(path) + "/";
     size_t children = 0;
-    for (const std::pair<const std::string, Setting>& entry : state().settings)
+    for (const std::pair<const std::string, std::shared_ptr<Setting>>& entry : state().settings)
         if (entry.first.compare(0, parent.size(), parent) == 0 &&
             entry.first.find('/', parent.size()) == std::string::npos)
             ++children;
