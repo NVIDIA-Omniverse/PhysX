@@ -248,10 +248,19 @@ def merge_ovstage_notices(
     notice_roots.append(ovstage_dir)
 
     for notice_root in dict.fromkeys(notice_roots):
-        root_notice = notice_root / "THIRD-PARTY-NOTICES.txt"
-        if root_notice.is_file():
-            visible_notice = root_notice
-            payloads.append((root_notice, "ovstage/THIRD-PARTY-NOTICES.txt"))
+        # Match the supported package and source layouts selected by CMake.
+        # The source-owned curated notice is also the one Kit places at the
+        # archive root; never synthesize a notice from unrelated build inputs.
+        for root_notice in (
+            notice_root / "THIRD-PARTY-NOTICES.txt",
+            notice_root / "ovstage" / "THIRD-PARTY-NOTICES.txt",
+            notice_root / "ovstage" / "public" / "THIRD-PARTY-NOTICES.txt",
+        ):
+            if root_notice.is_file():
+                visible_notice = root_notice
+                payloads.append((root_notice, "ovstage/THIRD-PARTY-NOTICES.txt"))
+                break
+        if payloads:
             break
 
         for legacy_dir in (

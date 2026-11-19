@@ -7,6 +7,9 @@ cmake_minimum_required(VERSION 3.22)
 # automatically deploys binaries to _install/.
 set(CMAKE_VS_INCLUDE_INSTALL_TO_DEFAULT_BUILD 1)
 
+# Establish architecture policy before any local CUDA compiler initialization.
+include("${CMAKE_CURRENT_LIST_DIR}/cmake/CudaArchitectures.cmake")
+
 project(physics-ovruntime)
 
 # Per-config install prefix.  build.bat passes --prefix at install time which

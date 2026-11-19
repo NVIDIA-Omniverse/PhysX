@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+# Execute the actual policy before and after simulated compiler initialization.
+set(helper "${CMAKE_CURRENT_LIST_DIR}/../../ovruntime/cmake/CudaArchitectures.cmake")
+foreach(case IN ITEMS absent empty explicit multi)
+    unset(CMAKE_CUDA_ARCHITECTURES)
+    if(case STREQUAL "empty")
+        set(CMAKE_CUDA_ARCHITECTURES "")
+    elseif(case STREQUAL "explicit")
+        set(CMAKE_CUDA_ARCHITECTURES 89)
+    elseif(case STREQUAL "multi")
+        set(CMAKE_CUDA_ARCHITECTURES "86;89")
+    endif()
+    include("${helper}")
+    # Compiler discovery would initialize an absent value. The early policy
+    # must already supply the distribution default or the caller's selection.
+    if(NOT CMAKE_CUDA_ARCHITECTURES)
+        set(CMAKE_CUDA_ARCHITECTURES 52)
+    endif()
+    include("${helper}")
+    set(expected "70;75;80;86;89;90;100;120")
+    if(case STREQUAL "explicit")
+        set(expected 89)
+    elseif(case STREQUAL "multi")
+        set(expected "86;89")
+    endif()
+    if(NOT "${OVRUNTIME_CUDA_ARCHITECTURES}" STREQUAL "${expected}")
+        message(FATAL_ERROR "Wrong effective architectures for ${case}: ${OVRUNTIME_CUDA_ARCHITECTURES}")
+    endif()
+endforeach()
+# Check both actual entry points select policy before their own project() and
+# hence before benchmark / PhysXDependency / CudaUtils CUDA discovery paths.
+foreach(entry IN ITEMS "../../CMakeLists.txt" "../../ovruntime/CMakeLists.txt")
+    file(READ "${CMAKE_CURRENT_LIST_DIR}/${entry}" source)
+    string(FIND "${source}" "CudaArchitectures.cmake" policy)
+    string(FIND "${source}" "\nproject(" project)
+    if(policy LESS 0 OR project LESS policy)
+        message(FATAL_ERROR "Architecture policy is not before project(): ${entry}")
+    endif()
+endforeach()
+message(STATUS "Four architecture cases and both real entry-point orders passed")

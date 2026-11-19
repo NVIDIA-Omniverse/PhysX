@@ -495,6 +495,42 @@ def test_merge_ovstage_notices_is_exact_and_idempotent(tmp_path):
     assert (install_dir / "ovstage-THIRD-PARTY-NOTICES.txt").read_bytes() == notice.read_bytes()
 
 
+@pytest.mark.parametrize("relative", ["ovstage/THIRD-PARTY-NOTICES.txt", "ovstage/public/THIRD-PARTY-NOTICES.txt"])
+def test_merge_ovstage_notices_accepts_selected_source_layout(tmp_path, relative):
+    ovstage_dir = tmp_path / "rendering"
+    notice = ovstage_dir / relative
+    notice.parent.mkdir(parents=True)
+    notice.write_bytes(b"exact source-owned notice\n")
+    install_dir = tmp_path / "install"
+    install_dir.mkdir()
+    license_archive = tmp_path / "absent-public-source-license.zip"
+
+    entries = package_deps_module.merge_ovstage_notices(
+        ovstage_dir, ovstage_dir / "_build/linux-x86_64/release", license_archive,
+        install_dir, license_archive_required=False,
+    )
+
+    assert entries == ["ovstage-THIRD-PARTY-NOTICES.txt"]
+    assert (install_dir / entries[0]).read_bytes() == notice.read_bytes()
+    assert not license_archive.exists()
+
+
+def test_merge_ovstage_notices_root_payload_precedes_source_fallback(tmp_path):
+    ovstage_dir = tmp_path / "rendering"
+    nested = ovstage_dir / "ovstage/public/THIRD-PARTY-NOTICES.txt"
+    nested.parent.mkdir(parents=True)
+    nested.write_bytes(b"unselected fallback\n")
+    selected = ovstage_dir / "THIRD-PARTY-NOTICES.txt"
+    selected.write_bytes(b"selected package notice\n")
+    install_dir = tmp_path / "install"
+    install_dir.mkdir()
+    package_deps_module.merge_ovstage_notices(
+        ovstage_dir, ovstage_dir / "bin", tmp_path / "absent.zip", install_dir,
+        license_archive_required=False,
+    )
+    assert (install_dir / "ovstage-THIRD-PARTY-NOTICES.txt").read_bytes() == selected.read_bytes()
+
+
 def test_merge_ovstage_notices_accepts_legacy_package_layout(tmp_path):
     ovstage_dir = tmp_path / "ovstage"
     install_dir = tmp_path / "install"
