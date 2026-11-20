@@ -190,7 +190,7 @@ void trimeshPlaneNarrowphase(
 
 			int mask = __ballot_sync(FULL_MASK, hasContact);
 
-			mask = contactReduce<true, true, PLANE_TRI_MAX_CONTACTS, false>(worldPoint, separation, worldNormal, mask, clusterTolerance);
+			mask = contactReduceDeepest<true, true, PLANE_TRI_MAX_CONTACTS, false>(worldPoint, separation, worldNormal, mask, clusterTolerance);
 
 			counters[warpIndex] = __popc(mask);
 
@@ -246,7 +246,7 @@ void trimeshPlaneNarrowphase(
 					mask = __ballot_sync(FULL_MASK, hasContact);
 					ind += __popc(readMask);
 
-					mask = contactReduce<true, true, PLANE_TRI_MAX_CONTACTS, false>(worldPoint, separation, worldNormal, mask, clusterTolerance);
+					mask = contactReduceDeepest<true, true, PLANE_TRI_MAX_CONTACTS, false>(worldPoint, separation, worldNormal, mask, clusterTolerance);
 
 					hasContact = mask & (1 << threadIndexInWarp);
 				}

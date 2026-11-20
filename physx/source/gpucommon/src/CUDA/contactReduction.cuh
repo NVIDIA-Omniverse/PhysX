@@ -154,6 +154,16 @@ static __device__ int contactReduce(const PxVec3& pointRaw, const PxReal separat
 }
 
 
+// Same as contactReduce, but p0 is the deepest point. contactReduce takes the point with the largest separation as p0.
+template<bool TClustering, bool TKeepAnotherDeepestForPCM, int TMaxPoints, bool TDoDupeTest = true>
+static __device__ int contactReduceDeepest(const PxVec3& pointRaw, const PxReal separation, const PxVec3& normal, int allMask,
+	PxReal clusterBias)
+{
+	return contactReduceShared<TClustering, TKeepAnotherDeepestForPCM, TMaxPoints, TDoDupeTest>(pointRaw, separation, normal, allMask,
+		clusterBias, 0.0f, -separation);
+}
+
+
 template<bool TClustering, bool TKeepAnotherDeepestForPCM, int TMaxPoints, bool TDoDupeTest = true>
 static __device__ int contactReduce2(const PxVec3& pointRaw, const PxReal separation, const PxVec3& normal, int allMask,
 	PxReal clusterBias)
