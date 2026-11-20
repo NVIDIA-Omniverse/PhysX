@@ -35,19 +35,15 @@
 
 #define PX_MAX_DOMINANCE_GROUP 32
 
-namespace
-{
-class OverlapFilterTask;
-class OnOverlapCreatedTask;
-class IslandInsertionTask;
-}
-
 namespace physx
 {
 	class NpShape;
 
 struct PxTriggerPair;
 
+class OverlapFilterTask;
+class OnOverlapCreatedTask;
+class IslandInsertionTask;
 class PxsSimulationController;
 class PxsSimulationControllerCallback;
 class PxsMemoryManager;

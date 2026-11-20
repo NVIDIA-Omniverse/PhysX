@@ -17,7 +17,6 @@ namespace physx
 	{
 		class PsPvd;
 		class PvdDataStream;
-        struct PvdMetaDataBindingData;
 	}
 }
 
@@ -31,6 +30,8 @@ struct Contact;
 
 namespace Vd
 {
+
+struct PvdMetaDataBindingData;
 
 using namespace physx::pvdsdk;
 
