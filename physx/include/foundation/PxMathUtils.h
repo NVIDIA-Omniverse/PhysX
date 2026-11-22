@@ -78,8 +78,6 @@ Returns angle between -PI and PI in radians
 */
 PX_CUDA_CALLABLE PX_INLINE PxQuat PxSlerp(const PxReal t, const PxQuat& left, const PxQuat& right)
 {
-	const PxReal quatEpsilon = (PxReal(1.0e-8f));
-
 	PxReal cosine = left.dot(right);
 	PxReal sign = PxReal(1);
 	if (cosine < 0)
@@ -88,11 +86,9 @@ PX_CUDA_CALLABLE PX_INLINE PxQuat PxSlerp(const PxReal t, const PxQuat& left, co
 		sign = PxReal(-1);
 	}
 
-	PxReal sine = PxReal(1) - cosine * cosine;
-
-	if (sine >= quatEpsilon * quatEpsilon)
+	if (cosine < PxReal(1))
 	{
-		sine = PxSqrt(sine);
+		const PxReal sine = PxSqrt(PxReal(1) - cosine * cosine);
 		const PxReal angle = PxAtan2(sine, cosine);
 		const PxReal i_sin_angle = PxReal(1) / sine;
 
